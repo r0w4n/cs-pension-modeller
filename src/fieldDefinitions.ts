@@ -125,7 +125,7 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "alphaPensionLeaveAge",
-        label: "Age You Leave Alpha Pensionable Service",
+        label: "Age You Leave Alpha Scheme",
         type: "range",
         min: 40,
         max: 70,

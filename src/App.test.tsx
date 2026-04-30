@@ -18,7 +18,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(getTodayIsoDate());
     expect(screen.getByLabelText("Your Date of Birth")).toHaveValue(defaultSettings.dateOfBirth);
     expect(screen.getByLabelText("Your Normal Pension Age")).toHaveAttribute("type", "range");
-    expect(screen.getByLabelText("Age You Leave Alpha Pensionable Service")).toHaveAttribute(
+    expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveAttribute(
       "type",
       "range",
     );
@@ -322,7 +322,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Your Normal Pension Age")).toHaveValue("68");
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue("0");
     expect(screen.getByLabelText("Added Alpha Pension (£ per month)")).toHaveValue("225");
-    expect(screen.getByLabelText("Age You Leave Alpha Pensionable Service")).toHaveValue("40");
+    expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue("40");
     expect(
       screen.getByLabelText("Alpha Pension Accrued at Last Statement (£ per year)"),
     ).toHaveValue("12500");

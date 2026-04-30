@@ -20,6 +20,15 @@
   --accent-strong: #0b3c5d;
   --shadow: 0 20px 50px rgba(18, 32, 51, 0.08);
   --shadow-soft: 0 12px 30px rgba(18, 32, 51, 0.06);
+  --font-size-body: 1rem;
+  --font-size-body-sm: 0.9375rem;
+  --font-size-label: 0.8125rem;
+  --font-size-eyebrow: 0.75rem;
+  --font-size-heading-sm: 1.125rem;
+  --line-height-tight: 1.15;
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+  --line-height-loose: 1.6;
 }
 
 * {
@@ -34,6 +43,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
 }
 
 button,
@@ -79,7 +90,8 @@ select {
   margin: 0 0 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  font-size: 0.75rem;
+  font-size: var(--font-size-eyebrow);
+  line-height: var(--line-height-heading);
   font-weight: 700;
   color: var(--accent);
 }
@@ -88,6 +100,7 @@ select {
   max-width: 42rem;
   margin: 0;
   font-size: clamp(1rem, 1.8vw, 1.125rem);
+  line-height: var(--line-height-loose);
   color: var(--text-muted);
 }
 
@@ -101,20 +114,21 @@ p {
 h1 {
   margin-bottom: 1rem;
   font-size: clamp(2.2rem, 8vw, 4.5rem);
-  line-height: 0.95;
+  line-height: 1;
   letter-spacing: -0.04em;
 }
 
 h2 {
   margin-bottom: 0.75rem;
   font-size: clamp(1.4rem, 3vw, 2rem);
-  line-height: 1.05;
+  line-height: var(--line-height-tight);
   letter-spacing: -0.03em;
 }
 
 h3 {
   margin-bottom: 0.6rem;
-  font-size: 1.05rem;
+  font-size: var(--font-size-heading-sm);
+  line-height: var(--line-height-heading);
 }
 
 .hero-actions,
@@ -136,6 +150,8 @@ h3 {
 .section-copy,
 .field-card p {
   margin-bottom: 0;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
   color: var(--text-muted);
 }
 
@@ -146,11 +162,13 @@ h3 {
 .summary-card-amounts h2 {
   margin-bottom: 0.2rem;
   font-size: clamp(1.45rem, 3vw, 1.9rem);
+  line-height: var(--line-height-tight);
   white-space: nowrap;
 }
 
 .summary-card-secondary-amount {
-  font-size: 0.95rem;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
   font-weight: 600;
 }
 
@@ -167,7 +185,8 @@ h3 {
 
 .card-label {
   margin-bottom: 0.6rem;
-  font-size: 0.82rem;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-heading);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -210,6 +229,8 @@ h3 {
 }
 
 .field-label {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
   font-weight: 700;
 }
 
@@ -229,7 +250,7 @@ h3 {
   border: 1px solid currentColor;
   border-radius: 999px;
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: var(--font-size-label);
   font-weight: 600;
   line-height: 1;
   text-decoration: none;
@@ -241,6 +262,8 @@ h3 {
 
 .field-value {
   color: var(--accent);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
   font-weight: 700;
   text-align: right;
   overflow-wrap: anywhere;
@@ -260,6 +283,8 @@ h3 {
   padding: 0.9rem 1rem;
   background: #f9fcfb;
   color: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
 }
 
 .range-input {
@@ -284,6 +309,8 @@ h3 {
   padding: 0.55rem 0.65rem;
   background: #f9fcfb;
   color: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
 }
 
 .range-scale {
@@ -291,7 +318,8 @@ h3 {
   justify-content: space-between;
   gap: 1rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
 }
 
 .settings-panel {
@@ -316,6 +344,7 @@ h3 {
 .section-heading h3 {
   margin-bottom: 0.45rem;
   font-size: 1.35rem;
+  line-height: var(--line-height-tight);
 }
 
 .side-panel {
@@ -355,11 +384,15 @@ h3 {
 }
 
 .snapshot-list dt {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
   font-weight: 700;
 }
 
 .snapshot-list dd {
   margin: 0;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
   color: var(--text-muted);
   text-align: right;
 }
@@ -387,7 +420,8 @@ h3 {
 .table-status {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
 }
 
 .projection-table {
@@ -436,13 +470,13 @@ h3 {
 
 .projection-table thead th {
   background: #f3f9f8;
-  font-size: 0.76rem;
+  font-size: var(--font-size-eyebrow);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-muted);
   white-space: normal;
   overflow-wrap: anywhere;
-  line-height: 1.2;
+  line-height: var(--line-height-heading);
 }
 
 .projection-table--body tbody tr:last-child td {
@@ -497,9 +531,15 @@ h3 {
   background: #fff3cf;
   border: 1px solid rgba(210, 138, 0, 0.24);
   color: #925d00;
-  font-size: 0.78rem;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-heading);
   font-weight: 700;
   white-space: nowrap;
+}
+
+.projection-table tbody td {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
 }
 
 .projection-table tbody td:not(:first-child) {
@@ -512,6 +552,8 @@ h3 {
   padding: 0.85rem 1.1rem;
   background: #d8ece9;
   color: #11333c;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-heading);
   font-weight: 700;
   cursor: pointer;
 }
@@ -525,7 +567,8 @@ h3 {
   padding: 0.15rem 0;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.88rem;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
   font-weight: 600;
   border-radius: 0;
   text-decoration: underline;

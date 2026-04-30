@@ -28,6 +28,7 @@ import {
 
 function App() {
   const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
+  const useDropdownDates = useMobileDateDropdowns();
   const validationIssues = validateSettings(settings);
   const projectionRows = createProjectionTable(settings);
   const pensionSummary = generatePensionSummary(projectionRows, settings);
@@ -154,6 +155,7 @@ function App() {
                       field={field}
                       value={settings[field.id]}
                       onChange={updateSetting}
+                      useDropdownDates={useDropdownDates}
                     />
                   ))}
                 </div>
@@ -162,6 +164,7 @@ function App() {
                   <AddedPensionLumpSumsEditor
                     lumpSums={settings.alphaAddedPensionLumpSums}
                     defaultStartDate={settings.startDate}
+                    useDropdownDates={useDropdownDates}
                     onChange={(nextLumpSums) =>
                       updateSetting("alphaAddedPensionLumpSums", nextLumpSums)
                     }
@@ -312,12 +315,18 @@ type FieldProps = {
   field: FieldDefinition;
   value: PensionSettings[SettingsKey];
   onChange: <K extends SettingsKey>(key: K, value: PensionSettings[K]) => void;
+  useDropdownDates: boolean;
 };
 
-function Field({ field, value, onChange }: FieldProps) {
+function Field({ field, value, onChange, useDropdownDates }: FieldProps) {
   if (field.type === "date") {
     return (
-      <DateSettingField field={field} value={value as string} onChange={onChange} />
+      <DateSettingField
+        field={field}
+        value={value as string}
+        onChange={onChange}
+        useDropdowns={useDropdownDates}
+      />
     );
   }
 
@@ -413,14 +422,129 @@ function Field({ field, value, onChange }: FieldProps) {
   return null;
 }
 
+type DateParts = {
+  year: string;
+  month: string;
+  day: string;
+};
+
+type DateSelectFieldProps = {
+  label: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+  idPrefix: string;
+  yearRange: {
+    min: number;
+    max: number;
+  };
+};
+
+function DateSelectField({
+  label,
+  value,
+  onChange,
+  idPrefix,
+  yearRange,
+}: DateSelectFieldProps) {
+  const parts = getDateParts(value);
+  const selectedYear = Number(parts.year);
+  const selectedMonth = Number(parts.month);
+  const minYear = Math.min(
+    yearRange.min,
+    Number.isFinite(selectedYear) ? selectedYear : yearRange.min,
+  );
+  const maxYear = Math.max(
+    yearRange.max,
+    Number.isFinite(selectedYear) ? selectedYear : yearRange.max,
+  );
+  const yearOptions = Array.from(
+    { length: maxYear - minYear + 1 },
+    (_, index) => String(maxYear - index),
+  );
+  const dayCount = getDaysInMonth(selectedYear, selectedMonth);
+  const dayOptions = Array.from({ length: dayCount }, (_, index) =>
+    String(index + 1).padStart(2, "0"),
+  );
+
+  const commit = (nextParts: DateParts) => {
+    const nextValue = `${nextParts.year}-${nextParts.month}-${nextParts.day}`;
+    onChange(nextValue);
+  };
+
+  return (
+    <div className="date-select-grid" role="group" aria-label={label}>
+      <label className="date-select-field" htmlFor={`${idPrefix}-day`}>
+        <span className="date-select-label">Day</span>
+        <select
+          id={`${idPrefix}-day`}
+          aria-label={`${label} day`}
+          className="select-input"
+          value={parts.day}
+          onChange={(event) => commit({ ...parts, day: event.target.value })}
+        >
+          {dayOptions.map((day) => (
+            <option key={day} value={day}>
+              {day}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="date-select-field" htmlFor={`${idPrefix}-month`}>
+        <span className="date-select-label">Month</span>
+        <select
+          id={`${idPrefix}-month`}
+          aria-label={`${label} month`}
+          className="select-input"
+          value={parts.month}
+          onChange={(event) => {
+            const nextMonth = event.target.value;
+            const nextDay = clampDay(parts.day, parts.year, nextMonth);
+            commit({ ...parts, month: nextMonth, day: nextDay });
+          }}
+        >
+          {monthOptions.map((month) => (
+            <option key={month.value} value={month.value}>
+              {month.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="date-select-field" htmlFor={`${idPrefix}-year`}>
+        <span className="date-select-label">Year</span>
+        <select
+          id={`${idPrefix}-year`}
+          aria-label={`${label} year`}
+          className="select-input"
+          value={parts.year}
+          onChange={(event) => {
+            const nextYear = event.target.value;
+            const nextDay = clampDay(parts.day, nextYear, parts.month);
+            commit({ ...parts, year: nextYear, day: nextDay });
+          }}
+        >
+          {yearOptions.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 function DateSettingField({
   field,
   value,
   onChange,
+  useDropdowns,
 }: {
   field: DateField;
   value: string;
   onChange: FieldProps["onChange"];
+  useDropdowns: boolean;
 }) {
   function commitDateValue(nextValue: string) {
     const normalizedValue = normalizeSetting(
@@ -432,21 +556,33 @@ function DateSettingField({
   }
 
   return (
-    <label className="field-card">
+    <div className="field-card">
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
-      <input
-        key={value}
-        aria-label={field.label}
-        className="date-input"
-        type="date"
-        defaultValue={value}
-        onBlur={(event) => {
-          commitDateValue(event.target.value);
-        }}
-      />
-    </label>
+      {useDropdowns ? (
+        <DateSelectField
+          label={field.label}
+          value={value}
+          idPrefix={field.id}
+          yearRange={getPrimaryDateYearRange(field.id)}
+          onChange={(nextValue) => {
+            commitDateValue(nextValue);
+          }}
+        />
+      ) : (
+        <input
+          key={value}
+          aria-label={field.label}
+          className="date-input"
+          type="date"
+          defaultValue={value}
+          onBlur={(event) => {
+            commitDateValue(event.target.value);
+          }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -630,12 +766,14 @@ function formatYears(value: number) {
 type AddedPensionLumpSumsEditorProps = {
   lumpSums: AddedPensionLumpSum[];
   defaultStartDate: string;
+  useDropdownDates: boolean;
   onChange: (nextLumpSums: AddedPensionLumpSum[]) => void;
 };
 
 function AddedPensionLumpSumsEditor({
   lumpSums,
   defaultStartDate,
+  useDropdownDates,
   onChange,
 }: AddedPensionLumpSumsEditorProps) {
   function updateLumpSum(
@@ -692,19 +830,29 @@ function AddedPensionLumpSumsEditor({
               }
             />
 
-            <label className="field-label" htmlFor={`lump-sum-start-${lumpSum.id}`}>
-              Payment start date
-            </label>
-            <input
-              id={`lump-sum-start-${lumpSum.id}`}
-              aria-label={`Lump sum start date ${index + 1}`}
-              className="date-input"
-              type="date"
-              value={lumpSum.startDate}
-              onChange={(event) =>
-                updateLumpSum(lumpSum.id, { startDate: event.target.value })
-              }
-            />
+            <span className="field-label">Payment start date</span>
+            {useDropdownDates ? (
+              <DateSelectField
+                label={`Lump sum start date ${index + 1}`}
+                value={lumpSum.startDate}
+                idPrefix={`lump-sum-start-${lumpSum.id}`}
+                yearRange={getLumpSumDateYearRange("start")}
+                onChange={(nextValue) =>
+                  updateLumpSum(lumpSum.id, { startDate: nextValue })
+                }
+              />
+            ) : (
+              <input
+                id={`lump-sum-start-${lumpSum.id}`}
+                aria-label={`Lump sum start date ${index + 1}`}
+                className="date-input"
+                type="date"
+                value={lumpSum.startDate}
+                onChange={(event) =>
+                  updateLumpSum(lumpSum.id, { startDate: event.target.value })
+                }
+              />
+            )}
 
             <label className="field-label" htmlFor={`lump-sum-cadence-${lumpSum.id}`}>
               Cadence
@@ -726,19 +874,29 @@ function AddedPensionLumpSumsEditor({
 
             {lumpSum.cadence === "yearly" ? (
               <>
-                <label className="field-label" htmlFor={`lump-sum-end-${lumpSum.id}`}>
-                  Repeat until
-                </label>
-                <input
-                  id={`lump-sum-end-${lumpSum.id}`}
-                  aria-label={`Lump sum end date ${index + 1}`}
-                  className="date-input"
-                  type="date"
-                  value={lumpSum.endDate}
-                  onChange={(event) =>
-                    updateLumpSum(lumpSum.id, { endDate: event.target.value })
-                  }
-                />
+                <span className="field-label">Repeat until</span>
+                {useDropdownDates ? (
+                  <DateSelectField
+                    label={`Lump sum end date ${index + 1}`}
+                    value={lumpSum.endDate}
+                    idPrefix={`lump-sum-end-${lumpSum.id}`}
+                    yearRange={getLumpSumDateYearRange("end")}
+                    onChange={(nextValue) =>
+                      updateLumpSum(lumpSum.id, { endDate: nextValue })
+                    }
+                  />
+                ) : (
+                  <input
+                    id={`lump-sum-end-${lumpSum.id}`}
+                    aria-label={`Lump sum end date ${index + 1}`}
+                    className="date-input"
+                    type="date"
+                    value={lumpSum.endDate}
+                    onChange={(event) =>
+                      updateLumpSum(lumpSum.id, { endDate: event.target.value })
+                    }
+                  />
+                )}
               </>
             ) : null}
 
@@ -758,6 +916,95 @@ function AddedPensionLumpSumsEditor({
       </button>
     </section>
   );
+}
+
+const monthOptions = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+] as const;
+
+function getDateParts(value: string): DateParts {
+  const [year = "", month = "", day = ""] = value.split("-");
+  return { year, month, day };
+}
+
+function getDaysInMonth(year: number, month: number) {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    return 31;
+  }
+
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function clampDay(day: string, year: string, month: string) {
+  const maxDay = getDaysInMonth(Number(year), Number(month));
+  const nextDay = Math.min(Number(day), maxDay);
+  return String(nextDay).padStart(2, "0");
+}
+
+function getPrimaryDateYearRange(fieldId: DateField["id"]) {
+  const currentYear = new Date().getUTCFullYear();
+
+  switch (fieldId) {
+    case "dateOfBirth":
+      return { min: currentYear - 100, max: currentYear };
+    case "startDate":
+      return { min: currentYear - 5, max: currentYear + 5 };
+    case "alphaPensionAbsDate":
+      return { min: 2015, max: currentYear };
+    default:
+      return { min: currentYear - 25, max: currentYear + 25 };
+  }
+}
+
+function getLumpSumDateYearRange(kind: "start" | "end") {
+  const currentYear = new Date().getUTCFullYear();
+
+  if (kind === "start") {
+    return { min: currentYear - 5, max: currentYear + 40 };
+  }
+
+  return { min: currentYear - 5, max: currentYear + 50 };
+}
+
+function useMobileDateDropdowns() {
+  const mobileBreakpoint = "(max-width: 480px)";
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return false;
+    }
+
+    return window.matchMedia(mobileBreakpoint).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(mobileBreakpoint);
+    const updateMatch = (event: MediaQueryListEvent) => {
+      setMatches(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", updateMatch);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateMatch);
+    };
+  }, []);
+
+  return matches;
 }
 
 export default App;

@@ -282,6 +282,25 @@ h3 {
   line-height: var(--line-height-body);
 }
 
+.date-select-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.date-select-field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.date-select-label {
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .range-input {
   width: 100%;
   min-width: 0;
@@ -611,6 +630,10 @@ h3 {
 }
 
 @container (max-width: 26rem) {
+  .date-select-grid {
+    grid-template-columns: 1fr;
+  }
+
   .range-control-grid {
     grid-template-columns: 1fr;
     width: 100%;

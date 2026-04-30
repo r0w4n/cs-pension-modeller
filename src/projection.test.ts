@@ -443,7 +443,7 @@ describe("projection calculations", () => {
     const alphaAbsDate = resolveAlphaAbsDate(settings.alphaPensionAbsDate);
 
     expect(rows[0]?.date).toBe(alphaAbsDate);
-    expect(rows[0]?.milestones).toEqual(["Last ABS statement"]);
+    expect(rows[0]?.milestones).toEqual(["Last ABS"]);
     expect(findRowByDate(rows, "2025-12-15")?.milestones).toContain("Calculation start");
     expect(findRowByDate(rows, alphaAbsDate)?.annualAccruedAlphaPension).toBeCloseTo(8250, 6);
   });
@@ -568,7 +568,7 @@ describe("projection calculations", () => {
       "2047-08-15",
     );
 
-    expect(milestoneMap.get("2047-04-01")).toContain("Last ABS statement");
+    expect(milestoneMap.get("2047-04-01")).toContain("Last ABS");
   });
 
   it("flags the life expectancy row for the life expectancy milestone", () => {
@@ -600,7 +600,7 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
-    expect(rows[0]?.milestones).toEqual(["Last ABS statement"]);
+    expect(rows[0]?.milestones).toEqual(["Last ABS"]);
     expect(findRowByDate(rows, "2047-05-15")?.milestones).toEqual(["Calculation start"]);
     expect(findRowByDate(rows, "2047-06-15")?.milestones).toEqual([
       "Leave Alpha Pension Scheme",

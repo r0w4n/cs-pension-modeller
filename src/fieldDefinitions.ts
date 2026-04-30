@@ -105,7 +105,7 @@ export const fieldGroups: FieldGroup[] = [
     fields: [
       {
         id: "alphaPensionAbsDate",
-        label: "Last Alpha ABS year",
+        label: "Last Annual Benifits Statement",
         type: "year",
         infoUrl:
           "https://www.civilservicepensionscheme.org.uk/memberhub/your-pension/yearly-pension-updates/annual-benefit-statement/",

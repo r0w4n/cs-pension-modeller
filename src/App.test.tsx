@@ -35,7 +35,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(
       defaultSettings.currentStatePension.toString(),
     );
-    expect(screen.getByLabelText("Last Alpha ABS year")).toHaveValue(
+    expect(screen.getByLabelText("Last Annual Benifits Statement")).toHaveValue(
       "2025",
     );
     expect(
@@ -67,7 +67,7 @@ describe("App settings form", () => {
       "https://www.gov.uk/state-pension-age",
     );
     expect(
-      screen.getByRole("link", { name: "Last Alpha ABS year information" }),
+      screen.getByRole("link", { name: "Last Annual Benifits Statement information" }),
     ).toHaveAttribute(
       "href",
       "https://www.civilservicepensionscheme.org.uk/memberhub/your-pension/yearly-pension-updates/annual-benefit-statement/",
@@ -82,7 +82,7 @@ describe("App settings form", () => {
     const startDateInput = screen.getByLabelText("Calculation Start Date");
     const birthDateInput = screen.getByLabelText("Your Date of Birth");
     const statePensionDateInput = screen.getByLabelText("State Pension Age");
-    const absDateInput = screen.getByLabelText("Last Alpha ABS year");
+    const absDateInput = screen.getByLabelText("Last Annual Benifits Statement");
 
     fireEvent.change(startDateInput, {
       target: { value: "2020-04-01" },
@@ -161,7 +161,7 @@ describe("App settings form", () => {
   it("stores the Alpha ABS date as just the selected year", () => {
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText("Last Alpha ABS year"), {
+    fireEvent.change(screen.getByLabelText("Last Annual Benifits Statement"), {
       target: { value: "2024" },
     });
 

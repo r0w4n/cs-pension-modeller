@@ -59,7 +59,7 @@ export type PensionSummary = {
 
 const MONTHLY_ALPHA_ACCRUAL_RATE = 0.0232 / 12;
 const CALCULATION_START_LABEL = "Calculation start";
-const LAST_ABS_STATEMENT_LABEL = "Last ABS statement";
+const LAST_ABS_STATEMENT_LABEL = "Last ABS";
 const STOPS_ALPHA_ACCRUAL_LABEL = "Leave Alpha Pension Scheme";
 const STARTS_ALPHA_PENSION_LABEL = "Starts Drawing Alpha Pension";
 const STARTS_STATE_PENSION_LABEL = "Starts Drawing State Pension";

@@ -9,7 +9,6 @@ import {
   calculateMonthlyAddedPension,
   calculateMonthlyAlphaAccrual,
   calculateMonthlyAlphaPensionTakeHome,
-  calculateMonthlyAlphaPensionIncludingReduction,
   calculateStartingAlphaPensionAtStartDate,
   calculateWholeMonthDifference,
   calculateMonthlyStatePension,

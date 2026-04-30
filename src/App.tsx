@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   fieldGroups,
+  type DateField,
   type FieldDefinition,
   type SettingsKey,
 } from "./fieldDefinitions";
@@ -298,41 +299,8 @@ type FieldProps = {
 
 function Field({ field, value, onChange }: FieldProps) {
   if (field.type === "date") {
-    const [draftValue, setDraftValue] = useState(value as string);
-
-    useEffect(() => {
-      setDraftValue(value as string);
-    }, [value]);
-
-    function commitDateValue(nextValue: string) {
-      const normalizedValue = normalizeSetting(
-        field.id,
-        nextValue as PensionSettings[typeof field.id],
-      ) as string;
-
-      setDraftValue(normalizedValue);
-      onChange(field.id, normalizedValue as PensionSettings[typeof field.id]);
-    }
-
     return (
-      <label className="field-card">
-        <span className="field-header">
-          <FieldLabel field={field} />
-          <span className="field-value">{formatDate(draftValue)}</span>
-        </span>
-        <input
-          aria-label={field.label}
-          className="date-input"
-          type="date"
-          value={draftValue}
-          onChange={(event) => {
-            setDraftValue(event.target.value);
-          }}
-          onBlur={(event) => {
-            commitDateValue(event.target.value);
-          }}
-        />
-      </label>
+      <DateSettingField field={field} value={value as string} onChange={onChange} />
     );
   }
 
@@ -430,6 +398,50 @@ function Field({ field, value, onChange }: FieldProps) {
 
   return null;
 }
+
+function DateSettingField({
+  field,
+  value,
+  onChange,
+}: {
+  field: DateField;
+  value: string;
+  onChange: FieldProps["onChange"];
+}) {
+  const [draftValue, setDraftValue] = useState(value);
+
+  function commitDateValue(nextValue: string) {
+    const normalizedValue = normalizeSetting(
+      field.id,
+      nextValue as PensionSettings[typeof field.id],
+    ) as string;
+
+    setDraftValue(normalizedValue);
+    onChange(field.id, normalizedValue as PensionSettings[typeof field.id]);
+  }
+
+  return (
+    <label className="field-card">
+      <span className="field-header">
+        <FieldLabel field={field} />
+        <span className="field-value">{formatDate(draftValue)}</span>
+      </span>
+      <input
+        aria-label={field.label}
+        className="date-input"
+        type="date"
+        value={draftValue}
+        onChange={(event) => {
+          setDraftValue(event.target.value);
+        }}
+        onBlur={(event) => {
+          commitDateValue(event.target.value);
+        }}
+      />
+    </label>
+  );
+}
+
 function formatFieldValue(value: number, format?: "currency") {
   if (format === "currency") {
     return formatCurrency(value);

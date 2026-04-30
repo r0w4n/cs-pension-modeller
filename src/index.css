@@ -146,6 +146,10 @@ h3 {
   background: var(--surface-strong);
 }
 
+.field-card {
+  container-type: inline-size;
+}
+
 .summary-card p,
 .section-copy,
 .field-card p {
@@ -260,15 +264,6 @@ h3 {
   color: var(--accent-strong);
 }
 
-.field-value {
-  color: var(--accent);
-  font-size: var(--font-size-body);
-  line-height: var(--line-height-heading);
-  font-weight: 700;
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-
 .date-input,
 .select-input {
   display: block;
@@ -298,6 +293,12 @@ h3 {
   grid-template-columns: minmax(0, 1fr) minmax(6.5rem, 8rem);
   align-items: center;
   gap: 0.75rem;
+}
+
+.range-slider-group {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .number-input {
@@ -609,12 +610,37 @@ h3 {
   }
 }
 
-@media (max-width: 480px) {
+@container (max-width: 26rem) {
   .range-control-grid {
     grid-template-columns: 1fr;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .range-slider-group {
+    width: 100%;
   }
 
   .number-input {
     max-width: 10rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-panel .panel-heading,
+  .field-card,
+  .table-controls {
+    justify-items: center;
+  }
+
+  .table-controls {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .secondary-button,
+  .field-reset-button {
+    justify-self: center;
+    margin-inline: auto;
   }
 }

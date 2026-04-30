@@ -20,7 +20,6 @@ import {
   calculateStatePensionDrawDate,
   loadStoredSettings,
   normalizeSetting,
-  resolveAlphaAbsDate,
   saveSettings,
   validateSettings,
   type AddedPensionLumpSum,
@@ -335,7 +334,6 @@ function Field({ field, value, onChange }: FieldProps) {
       <label className="field-card">
         <span className="field-header">
           <FieldLabel field={field} />
-          <span className="field-value">{formatDate(resolveAlphaAbsDate(value as string))}</span>
         </span>
         <select
           aria-label={field.label}
@@ -365,22 +363,24 @@ function Field({ field, value, onChange }: FieldProps) {
       <div className="field-card">
         <span className="field-header">
           <FieldLabel field={field} />
-          <span className="field-value">
-            {formatFieldValue(value as number, field.format)}
-            {field.valuePrefix ?? ""}
-          </span>
         </span>
         <div className="range-control-grid">
-          <input
-            aria-label={field.label}
-            className="range-input"
-            type="range"
-            min={field.min}
-            max={field.max}
-            step={field.step}
-            value={value as number}
-            onChange={(event) => commitRangeValue(Number(event.target.value))}
-          />
+          <div className="range-slider-group">
+            <input
+              aria-label={field.label}
+              className="range-input"
+              type="range"
+              min={field.min}
+              max={field.max}
+              step={field.step}
+              value={value as number}
+              onChange={(event) => commitRangeValue(Number(event.target.value))}
+            />
+            <div className="range-scale">
+              <span>{formatFieldValue(field.min, field.format)}</span>
+              <span>{formatFieldValue(field.max, field.format)}</span>
+            </div>
+          </div>
           <input
             aria-label={`${field.label} exact value`}
             className="number-input"
@@ -391,10 +391,6 @@ function Field({ field, value, onChange }: FieldProps) {
             value={value as number}
             onChange={(event) => commitRangeValue(Number(event.target.value))}
           />
-        </div>
-        <div className="range-scale">
-          <span>{formatFieldValue(field.min, field.format)}</span>
-          <span>{formatFieldValue(field.max, field.format)}</span>
         </div>
         {field.id === "currentStatePension" ? (
           <button
@@ -426,19 +422,12 @@ function DateSettingField({
   value: string;
   onChange: FieldProps["onChange"];
 }) {
-  const [draftValue, setDraftValue] = useState(value);
-
-  useEffect(() => {
-    setDraftValue(value);
-  }, [value]);
-
   function commitDateValue(nextValue: string) {
     const normalizedValue = normalizeSetting(
       field.id,
       nextValue as PensionSettings[typeof field.id],
     ) as string;
 
-    setDraftValue(normalizedValue);
     onChange(field.id, normalizedValue as PensionSettings[typeof field.id]);
   }
 
@@ -446,16 +435,13 @@ function DateSettingField({
     <label className="field-card">
       <span className="field-header">
         <FieldLabel field={field} />
-        <span className="field-value">{formatDate(draftValue)}</span>
       </span>
       <input
+        key={value}
         aria-label={field.label}
         className="date-input"
         type="date"
-        value={draftValue}
-        onChange={(event) => {
-          setDraftValue(event.target.value);
-        }}
+        defaultValue={value}
         onBlur={(event) => {
           commitDateValue(event.target.value);
         }}
@@ -688,7 +674,6 @@ function AddedPensionLumpSumsEditor({
           <div className="field-card" key={lumpSum.id}>
             <span className="field-header">
               <span className="field-label">Lump sum #{index + 1}</span>
-              <span className="field-value">{formatCurrencyDetailed(lumpSum.amount)}</span>
             </span>
 
             <label className="field-label" htmlFor={`lump-sum-amount-${lumpSum.id}`}>

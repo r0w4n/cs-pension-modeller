@@ -145,6 +145,8 @@ h3 {
 
 .summary-card-amounts h2 {
   margin-bottom: 0.2rem;
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  white-space: nowrap;
 }
 
 .summary-card-secondary-amount {
@@ -525,23 +527,25 @@ h3 {
     gap: 1.5rem;
   }
 
-  .hero {
-    grid-template-columns: 1.2fr 1fr;
-  }
-
   .layout {
     grid-template-columns: minmax(0, 1.8fr) minmax(18rem, 0.9fr);
     align-items: start;
-  }
-
-  .hero-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 }
 
 @media (min-width: 860px) {
   .field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .hero {
+    grid-template-columns: 1.1fr 1fr;
+  }
+
+  .hero-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

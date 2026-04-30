@@ -327,14 +327,14 @@ function Field({ field, value, onChange }: FieldProps) {
     }
 
     return (
-      <div className="field-card">
+      <label className="field-card">
         <span className="field-header">
           <FieldLabel field={field} />
           <span className="field-value">{formatDate(draftValue)}</span>
         </span>
         <input
           aria-label={field.label}
-          className="select-input"
+          className="date-input"
           type="date"
           value={draftValue}
           onChange={(event) => {
@@ -344,7 +344,7 @@ function Field({ field, value, onChange }: FieldProps) {
             commitDateValue(event.target.value);
           }}
         />
-      </div>
+      </label>
     );
   }
 
@@ -365,7 +365,7 @@ function Field({ field, value, onChange }: FieldProps) {
         </span>
         <select
           aria-label={field.label}
-          className="date-input"
+          className="select-input"
           value={draftYear}
           onChange={(event) => {
             const nextValue = event.target.value;
@@ -388,7 +388,7 @@ function Field({ field, value, onChange }: FieldProps) {
     };
 
     return (
-      <label className="field-card">
+      <div className="field-card">
         <span className="field-header">
           <FieldLabel field={field} />
           <span className="field-value">
@@ -436,7 +436,7 @@ function Field({ field, value, onChange }: FieldProps) {
             Reset to default
           </button>
         ) : null}
-      </label>
+      </div>
     );
   }
 

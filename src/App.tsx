@@ -12,7 +12,6 @@ import {
 } from "./projection";
 import {
   createDefaultAddedPensionLumpSum,
-  createDefaultSettings,
   defaultSettings,
   formatCurrency,
   getAlphaAbsYear,
@@ -40,10 +39,6 @@ function App() {
       ...current,
       [key]: normalizeSetting(key, value),
     }));
-  }
-
-  function resetSettings() {
-    setSettings(createDefaultSettings());
   }
 
   return (
@@ -104,13 +99,6 @@ function App() {
               Everything is saved in one place, with the fields grouped by topic
               so they still read like separate sections.
             </p>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={resetSettings}
-            >
-              Reset all assumptions
-            </button>
           </div>
 
           <div className="settings-sections">

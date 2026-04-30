@@ -1,5 +1,6 @@
 import {
   SETTINGS_STORAGE_KEY,
+  calculateStatePensionDrawDate,
   createAlphaAbsDateFromYear,
   createDefaultSettings,
   defaultSettings,
@@ -44,9 +45,6 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("startDate", "not-a-date")).toBe("2026-04-25");
     expect(normalizeSetting("dateOfBirth", "2026-99-99")).toBe(defaultSettings.dateOfBirth);
     expect(normalizeSetting("dateOfBirth", "2026-02-31")).toBe(defaultSettings.dateOfBirth);
-    expect(normalizeSetting("statePensionDrawDate", "")).toBe(
-      defaultSettings.statePensionDrawDate,
-    );
   });
 
   it("rejects impossible calendar dates during strict validation", () => {
@@ -75,7 +73,6 @@ describe("settings unit tests", () => {
       lifeExpectancy: defaultSettings.lifeExpectancy,
       normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
-      statePensionDrawDate: defaultSettings.statePensionDrawDate,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: 225,
       alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
@@ -148,7 +145,7 @@ describe("settings unit tests", () => {
     const issues = validateSettings({
       ...defaultSettings,
       startDate: "2076-01-01",
-      statePensionDrawDate: "2046-01-01",
+      alphaPensionDrawAge: 70,
     });
 
     expect(issues).toEqual(
@@ -161,6 +158,18 @@ describe("settings unit tests", () => {
 
   it("normalizes legacy Alpha ABS dates to just the year", () => {
     expect(normalizeSetting("alphaPensionAbsDate", "2024-04-01")).toBe("2024");
+  });
+
+  it("derives State Pension age from date of birth under the current UK timetable", () => {
+    expect(calculateStatePensionDrawDate("1954-09-06")).toBe("2020-09-06");
+    expect(calculateStatePensionDrawDate("1954-10-06")).toBe("2020-10-06");
+    expect(calculateStatePensionDrawDate("1960-04-06")).toBe("2026-05-06");
+    expect(calculateStatePensionDrawDate("1960-12-31")).toBe("2027-09-30");
+    expect(calculateStatePensionDrawDate("1961-03-06")).toBe("2028-03-06");
+    expect(calculateStatePensionDrawDate("1977-04-06")).toBe("2044-05-06");
+    expect(calculateStatePensionDrawDate("1978-03-06")).toBe("2046-03-06");
+    expect(calculateStatePensionDrawDate("1978-04-06")).toBe("2046-04-06");
+    expect(calculateStatePensionDrawDate("1987-06-15")).toBe("2055-06-15");
   });
 
   it("normalizes lump sum added pension schedules", () => {

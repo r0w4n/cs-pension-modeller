@@ -7,7 +7,7 @@ The calculator models:
 - current accrued Alpha pension from the latest Annual Benefit Statement
 - ongoing Alpha accrual from pensionable earnings
 - Alpha pension draw date and early-retirement reduction
-- State Pension start date and annual amount
+- State Pension start date derived from date of birth, plus annual amount
 - monthly added pension contributions
 - one-off or yearly lump-sum added pension purchases
 
@@ -37,7 +37,6 @@ The current version is driven by these inputs:
 - `Life Expectancy`
 - `Normal Pension Age`
 - `State Pension amount`
-- `State Pension start date`
 - `Alpha ABS year`
 - `Accrued Alpha pension at last ABS`
 - `Monthly added pension contribution`
@@ -64,7 +63,7 @@ Some important current assumptions in the projection logic:
 - Lump-sum added pension is converted into extra annual pension using the age-based factor table in `src/data/alpha_pension_added_pension_factors.json`.
 - Lump-sum purchases appear once in the row where they land, then remain embedded in annual accrued pension from that point onward.
 - Early-retirement reduction is applied using the factor table in `src/data/alpha_pension_reduction_factors.json`.
-- State Pension is treated as a flat annual amount that starts on the configured date.
+- State Pension is treated as a flat annual amount. Its start date is derived from date of birth using the current GOV.UK State Pension age timetable.
 
 ## Project Structure
 

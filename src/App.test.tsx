@@ -62,10 +62,7 @@ describe("App settings form", () => {
     expect(screen.getAllByText("Starts Drawing Alpha Pension").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Calculation start").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Life expectancy").length).toBeGreaterThan(0);
-    expect(screen.getByRole("link", { name: "State Pension Age information" })).toHaveAttribute(
-      "href",
-      "https://www.gov.uk/state-pension-age",
-    );
+    expect(screen.queryByLabelText("State Pension Age")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Last Annual Benifits Statement information" }),
     ).toHaveAttribute(
@@ -80,25 +77,20 @@ describe("App settings form", () => {
     render(<App />);
 
     const birthDateInput = screen.getByLabelText("Your Date of Birth");
-    const statePensionDateInput = screen.getByLabelText("State Pension Age");
 
     fireEvent.change(birthDateInput, {
       target: { value: "1990-02-14" },
     });
     fireEvent.blur(birthDateInput);
-    fireEvent.change(statePensionDateInput, {
-      target: { value: "2058-02-14" },
-    });
-    fireEvent.blur(statePensionDateInput);
     fireEvent.change(screen.getByLabelText("Current Full State Pension (£ per year)"), {
       target: { value: "11800" },
     });
 
+    expect(screen.getAllByText("14 Feb 2058").length).toBeGreaterThan(0);
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
         dateOfBirth: "1990-02-14",
         currentStatePension: 11800,
-        statePensionDrawDate: "2058-02-14",
       }),
     );
   });
@@ -115,7 +107,6 @@ describe("App settings form", () => {
       lifeExpectancy: defaultSettings.lifeExpectancy,
       normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
-      statePensionDrawDate: defaultSettings.statePensionDrawDate,
       alphaPensionAbsDate: "2024",
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
       alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
@@ -141,7 +132,6 @@ describe("App settings form", () => {
       lifeExpectancy: defaultSettings.lifeExpectancy,
       normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
-      statePensionDrawDate: defaultSettings.statePensionDrawDate,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
       alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
@@ -158,7 +148,6 @@ describe("App settings form", () => {
       lifeExpectancy: defaultSettings.lifeExpectancy,
       normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
-      statePensionDrawDate: defaultSettings.statePensionDrawDate,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
       alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
@@ -307,7 +296,7 @@ describe("App settings form", () => {
       SETTINGS_STORAGE_KEY,
       JSON.stringify({
         ...defaultSettings,
-        statePensionDrawDate: "2046-01-01",
+        alphaPensionDrawAge: 70,
       }),
     );
 

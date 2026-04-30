@@ -1,7 +1,7 @@
 import type { PensionSettings } from "./settings";
 
 export type DateField = {
-  id: "startDate" | "dateOfBirth" | "statePensionDrawDate" | "alphaPensionAbsDate";
+  id: "startDate" | "dateOfBirth" | "alphaPensionAbsDate";
   label: string;
   type: "date" | "year";
   infoUrl?: string;
@@ -88,12 +88,6 @@ export const fieldGroups: FieldGroup[] = [
         max: 15000,
         step: 0.01,
         format: "currency",
-      },
-      {
-        id: "statePensionDrawDate",
-        label: "State Pension Age",
-        type: "date",
-        infoUrl: "https://www.gov.uk/state-pension-age",
       },
     ],
   },

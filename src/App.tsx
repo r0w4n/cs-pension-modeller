@@ -16,6 +16,7 @@ import {
   defaultSettings,
   formatCurrency,
   getAlphaAbsYear,
+  calculateStatePensionDrawDate,
   loadStoredSettings,
   normalizeSetting,
   resolveAlphaAbsDate,
@@ -39,6 +40,11 @@ function App() {
     setSettings((current) => ({
       ...current,
       [key]: normalizeSetting(key, value),
+      ...(key === "dateOfBirth"
+        ? {
+            statePensionDrawDate: calculateStatePensionDrawDate(value as string),
+          }
+        : {}),
     }));
   }
 

@@ -13,6 +13,7 @@ import {
 } from "./projection";
 import {
   createDefaultAddedPensionLumpSum,
+  calculateNormalPensionAge,
   createDefaultSettings,
   defaultSettings,
   formatCurrency,
@@ -43,6 +44,7 @@ function App() {
       [key]: normalizeSetting(key, value),
       ...(key === "dateOfBirth"
         ? {
+            normalPensionAge: calculateNormalPensionAge(value as string),
             statePensionDrawDate: calculateStatePensionDrawDate(value as string),
           }
         : {}),
@@ -107,8 +109,8 @@ function App() {
           <div className="panel-heading">
             <h2>Pension Parameters</h2>
             <p className="section-copy">
-              Everything is saved in one place, with the fields grouped by topic
-              so they still read like separate sections.
+              These inputs define your pension scenario, letting you see how
+              different assumptions affect your outcome.
             </p>
             <button
               type="button"

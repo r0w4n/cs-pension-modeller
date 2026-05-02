@@ -1,5 +1,6 @@
 import {
   SETTINGS_STORAGE_KEY,
+  calculateNormalPensionAge,
   calculateStatePensionDrawDate,
   createAlphaAbsDateFromYear,
   createDefaultSettings,
@@ -32,7 +33,6 @@ describe("settings unit tests", () => {
 
   it("normalizes numeric settings to allowed ranges and steps", () => {
     expect(normalizeSetting("lifeExpectancy", 120)).toBe(100);
-    expect(normalizeSetting("normalPensionAge", 120)).toBe(68);
     expect(normalizeSetting("currentStatePension", -10)).toBe(0);
     expect(normalizeSetting("currentStatePension", 12547.6)).toBe(12547.6);
     expect(normalizeSetting("alphaAddedPensionMonthly", 233)).toBe(225);
@@ -71,7 +71,6 @@ describe("settings unit tests", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       dateOfBirth: defaultSettings.dateOfBirth,
       lifeExpectancy: defaultSettings.lifeExpectancy,
-      normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: 225,
@@ -89,7 +88,6 @@ describe("settings unit tests", () => {
       JSON.stringify({
         dateOfBirth: "bad-date",
         lifeExpectancy: 120,
-        normalPensionAge: 120,
         currentStatePension: -10,
         statePensionDrawDate: "bad-date",
         alphaPensionAbsDate: "bad-date",
@@ -114,7 +112,7 @@ describe("settings unit tests", () => {
       startDate: "2026-04-25",
       dateOfBirth: defaultSettings.dateOfBirth,
       lifeExpectancy: 100,
-      normalPensionAge: 68,
+      normalPensionAge: calculateNormalPensionAge(defaultSettings.dateOfBirth),
       currentStatePension: 0,
       statePensionDrawDate: defaultSettings.statePensionDrawDate,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
@@ -161,6 +159,11 @@ describe("settings unit tests", () => {
   });
 
   it("derives State Pension age from date of birth under the current UK timetable", () => {
+    expect(calculateNormalPensionAge("1954-09-06")).toBe(66);
+    expect(calculateNormalPensionAge("1960-04-06")).toBe(66);
+    expect(calculateNormalPensionAge("1977-04-06")).toBe(67);
+    expect(calculateNormalPensionAge("1978-04-06")).toBe(68);
+    expect(calculateNormalPensionAge("1987-06-15")).toBe(68);
     expect(calculateStatePensionDrawDate("1954-09-06")).toBe("2020-09-06");
     expect(calculateStatePensionDrawDate("1954-10-06")).toBe("2020-10-06");
     expect(calculateStatePensionDrawDate("1960-04-06")).toBe("2026-05-06");

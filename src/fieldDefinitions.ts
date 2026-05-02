@@ -10,7 +10,6 @@ export type DateField = {
 export type RangeField = {
   id:
     | "lifeExpectancy"
-    | "normalPensionAge"
     | "currentStatePension"
     | "alphaAddedPensionMonthly"
     | "alphaPensionLeaveAge"
@@ -72,14 +71,6 @@ export const fieldGroups: FieldGroup[] = [
     title: "Wider pension details",
     description: "Main retirement ages and total pension income assumptions.",
     fields: [
-      {
-        id: "normalPensionAge",
-        label: "Your Normal Pension Age",
-        type: "range",
-        min: 65,
-        max: 68,
-        step: 1,
-      },
       {
         id: "currentStatePension",
         label: "Current Full State Pension (£ per year)",

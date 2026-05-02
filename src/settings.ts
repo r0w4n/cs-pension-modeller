@@ -31,11 +31,13 @@ export type PensionValidationIssue = {
   message: string;
 };
 
-type StoredPensionSettings = Omit<PensionSettings, "startDate" | "statePensionDrawDate">;
+type StoredPensionSettings = Omit<
+  PensionSettings,
+  "startDate" | "statePensionDrawDate" | "normalPensionAge"
+>;
 
 const numericSettingRules = {
   lifeExpectancy: { min: 75, max: 100, step: 1 },
-  normalPensionAge: { min: 65, max: 68, step: 1 },
   currentStatePension: { min: 0, max: 15000, step: 0.01 },
   alphaAddedPensionMonthly: { min: 0, max: 1000, step: 25 },
   alphaPensionLeaveAge: { min: 40, max: 70, step: 1 },
@@ -95,6 +97,7 @@ export function saveSettings(settings: PensionSettings) {
   const normalizedSettings = normalizeSettings(settings);
   const {
     startDate: _startDate,
+    normalPensionAge: _normalPensionAge,
     statePensionDrawDate: _statePensionDrawDate,
     ...storedSettings
   } = normalizedSettings;
@@ -136,7 +139,6 @@ function coerceSettings(
   return {
     dateOfBirth: coerceString(input.dateOfBirth),
     lifeExpectancy: coerceNumber(input.lifeExpectancy),
-    normalPensionAge: coerceNumber(input.normalPensionAge),
     currentStatePension: coerceNumber(input.currentStatePension),
     alphaPensionAbsDate: coerceString(input.alphaPensionAbsDate),
     alphaAddedPensionMonthly: coerceNumber(input.alphaAddedPensionMonthly),
@@ -169,8 +171,11 @@ function coerceString(value: unknown) {
 }
 
 export function createDefaultSettings(): PensionSettings {
+  const normalPensionAge = calculateNormalPensionAge(defaultSettings.dateOfBirth);
+
   return {
     ...defaultSettings,
+    normalPensionAge,
     startDate: getTodayIsoDate(),
     statePensionDrawDate: calculateStatePensionDrawDate(defaultSettings.dateOfBirth),
   };
@@ -250,7 +255,7 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
     startDate: normalizeSetting("startDate", settings.startDate),
     dateOfBirth,
     lifeExpectancy: normalizeSetting("lifeExpectancy", settings.lifeExpectancy),
-    normalPensionAge: normalizeSetting("normalPensionAge", settings.normalPensionAge),
+    normalPensionAge: calculateNormalPensionAge(dateOfBirth),
     currentStatePension: normalizeSetting(
       "currentStatePension",
       settings.currentStatePension,
@@ -445,6 +450,17 @@ export function calculateStatePensionDrawDate(dateOfBirth: string) {
   }
 
   return addYearsToIsoDate(normalizedDateOfBirth, 68);
+}
+
+export function calculateNormalPensionAge(dateOfBirth: string) {
+  const normalizedDateOfBirth = normalizeDate(dateOfBirth, defaultSettings.dateOfBirth);
+  const statePensionDrawDate = calculateStatePensionDrawDate(normalizedDateOfBirth);
+  const [birthYear, birthMonth, birthDay] = normalizedDateOfBirth.split("-").map(Number);
+  const [drawYear, drawMonth, drawDay] = statePensionDrawDate.split("-").map(Number);
+  const hasReachedBirthday =
+    drawMonth > birthMonth || (drawMonth === birthMonth && drawDay >= birthDay);
+
+  return drawYear - birthYear - (hasReachedBirthday ? 0 : 1);
 }
 
 const fixedStatePensionDateRules = [

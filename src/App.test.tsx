@@ -17,7 +17,6 @@ describe("App settings form", () => {
 
     expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(getTodayIsoDate());
     expect(screen.getByLabelText("Your Date of Birth")).toHaveValue(defaultSettings.dateOfBirth);
-    expect(screen.getByLabelText("Your Normal Pension Age")).toHaveAttribute("type", "range");
     expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveAttribute(
       "type",
       "range",
@@ -28,9 +27,6 @@ describe("App settings form", () => {
     );
     expect(screen.getByLabelText("Assumed Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString(),
-    );
-    expect(screen.getByLabelText("Your Normal Pension Age")).toHaveValue(
-      defaultSettings.normalPensionAge.toString(),
     );
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(
       defaultSettings.currentStatePension.toString(),
@@ -63,6 +59,7 @@ describe("App settings form", () => {
     expect(screen.getAllByText("Calculation start").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Life expectancy").length).toBeGreaterThan(0);
     expect(screen.queryByLabelText("State Pension Age")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Your Normal Pension Age")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Last Annual Benifits Statement information" }),
     ).toHaveAttribute(
@@ -105,7 +102,6 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       dateOfBirth: defaultSettings.dateOfBirth,
       lifeExpectancy: defaultSettings.lifeExpectancy,
-      normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
       alphaPensionAbsDate: "2024",
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
@@ -130,7 +126,6 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       dateOfBirth: defaultSettings.dateOfBirth,
       lifeExpectancy: defaultSettings.lifeExpectancy,
-      normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
@@ -146,7 +141,6 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       dateOfBirth: "1977-04-10",
       lifeExpectancy: defaultSettings.lifeExpectancy,
-      normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
@@ -164,14 +158,12 @@ describe("App settings form", () => {
       JSON.stringify({
         ...defaultSettings,
         startDate: "1999-01-01",
-        normalPensionAge: 69,
       }),
     );
 
     render(<App />);
 
     expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(getTodayIsoDate());
-    expect(screen.getByLabelText("Your Normal Pension Age")).toHaveValue("68");
     expect(screen.getAllByText(/At State Pension start/i).length).toBeGreaterThan(0);
   });
 
@@ -219,7 +211,6 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       dateOfBirth: defaultSettings.dateOfBirth,
       lifeExpectancy: defaultSettings.lifeExpectancy,
-      normalPensionAge: defaultSettings.normalPensionAge,
       currentStatePension: defaultSettings.currentStatePension,
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
@@ -306,7 +297,6 @@ describe("App settings form", () => {
       JSON.stringify({
         ...defaultSettings,
         lifeExpectancy: 120,
-        normalPensionAge: 120,
         currentStatePension: -10,
         alphaAddedPensionMonthly: 233,
         alphaPensionLeaveAge: 10,
@@ -319,7 +309,6 @@ describe("App settings form", () => {
     render(<App />);
 
     expect(screen.getByLabelText("Assumed Life Expectancy (Age)")).toHaveValue("100");
-    expect(screen.getByLabelText("Your Normal Pension Age")).toHaveValue("68");
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue("0");
     expect(screen.getByLabelText("Added Alpha Pension (£ per month)")).toHaveValue("225");
     expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue("40");

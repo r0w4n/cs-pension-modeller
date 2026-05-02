@@ -24,6 +24,7 @@ export type ProjectionRow = {
   age: number;
   ageMonths: number;
   milestones: string[];
+  milestoneDates: string[];
   monthlyAddedPension: number;
   lumpSumAddedPension: number;
   annualAccruedAlphaPension: number;
@@ -55,6 +56,11 @@ export type PensionSummary = {
     yearsBetweenStoppingAccrualAndDrawingPension: number;
     yearsBetweenAlphaPensionAndStatePension: number;
   };
+  calculated: {
+    normalPensionAge: number;
+    statePensionAge: number;
+    earlyRetirementReductionPercent: number;
+  };
 };
 
 const MONTHLY_ALPHA_ACCRUAL_RATE = 0.0232 / 12;
@@ -72,7 +78,7 @@ type MilestoneDefinition = {
   label: string;
 };
 
-type ProjectionRowWithoutMilestones = Omit<ProjectionRow, "milestones">;
+type ProjectionRowWithoutMilestones = Omit<ProjectionRow, "milestones" | "milestoneDates">;
 
 export type DerivedProjectionInputs = {
   endDate: string;
@@ -224,22 +230,28 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
   });
 
   const allRows = [...historicalRows, ...projectionRows];
+  const milestoneDefinitions = generateMilestoneDefinitions(
+    settings.startDate,
+    accrualStopDate,
+    drawDate,
+    settings.statePensionDrawDate,
+    endDate,
+    settings.alphaAddedPensionLumpSums,
+    alphaAbsDate,
+  );
   const milestoneRows = buildMilestoneMapForRowDates(
-    generateMilestoneDefinitions(
-      settings.startDate,
-      accrualStopDate,
-      drawDate,
-      settings.statePensionDrawDate,
-      endDate,
-      settings.alphaAddedPensionLumpSums,
-      alphaAbsDate,
-    ),
+    milestoneDefinitions,
+    allRows.map((row) => row.date),
+  );
+  const milestoneDateRows = buildMilestoneDateMapForRowDates(
+    milestoneDefinitions,
     allRows.map((row) => row.date),
   );
 
   return allRows.map((row) => ({
     ...row,
     milestones: milestoneRows.get(row.date) ?? [],
+    milestoneDates: milestoneDateRows.get(row.date) ?? [],
   }));
 }
 
@@ -264,6 +276,14 @@ export function generatePensionSummary(
       alphaPensionDrawDate,
       addYears(settings.dateOfBirth, settings.alphaPensionLeaveAge),
     );
+    const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+    const reductionFactor =
+      alphaPensionDrawDate > npaDate
+        ? 1
+        : getEarlyRetirementReductionFactor(
+            settings.normalPensionAge,
+            settings.alphaPensionDrawAge,
+          );
 
     return {
       keyDates: {
@@ -293,6 +313,11 @@ export function generatePensionSummary(
           settings.statePensionDrawDate,
         ),
       },
+      calculated: {
+        normalPensionAge: settings.normalPensionAge,
+        statePensionAge: calculateAge(settings.dateOfBirth, settings.statePensionDrawDate),
+        earlyRetirementReductionPercent: Math.max(0, (1 - reductionFactor) * 100),
+      },
     };
   }
 
@@ -305,6 +330,14 @@ export function generatePensionSummary(
     addYears(settings.dateOfBirth, settings.alphaPensionLeaveAge),
   );
   const statePensionStartDate = settings.statePensionDrawDate;
+  const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+  const reductionFactor =
+    alphaPensionDrawDate > npaDate
+      ? 1
+      : getEarlyRetirementReductionFactor(
+          settings.normalPensionAge,
+          settings.alphaPensionDrawAge,
+        );
   const alphaDrawRow =
     findFirstRowAtOrAfterDate(tableData, alphaPensionDrawDate) ?? tableData.at(-1);
   const statePensionRow =
@@ -339,6 +372,11 @@ export function generatePensionSummary(
         alphaPensionDrawDate,
         statePensionStartDate,
       ),
+    },
+    calculated: {
+      normalPensionAge: settings.normalPensionAge,
+      statePensionAge: calculateAge(settings.dateOfBirth, statePensionStartDate),
+      earlyRetirementReductionPercent: Math.max(0, (1 - reductionFactor) * 100),
     },
   };
 }
@@ -795,6 +833,26 @@ function buildMilestoneMapForRowDates(
 
     const existingMilestones = milestoneMap.get(matchingRowDate) ?? [];
     milestoneMap.set(matchingRowDate, [...existingMilestones, milestone.label]);
+  }
+
+  return milestoneMap;
+}
+
+function buildMilestoneDateMapForRowDates(
+  milestones: MilestoneDefinition[],
+  rows: string[],
+) {
+  const milestoneMap = new Map<string, string[]>();
+
+  for (const milestone of milestones) {
+    const matchingRowDate = rows.find((rowDate) => rowDate >= milestone.date);
+
+    if (!matchingRowDate) {
+      continue;
+    }
+
+    const existingMilestones = milestoneMap.get(matchingRowDate) ?? [];
+    milestoneMap.set(matchingRowDate, [...existingMilestones, milestone.date]);
   }
 
   return milestoneMap;

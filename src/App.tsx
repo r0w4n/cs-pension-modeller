@@ -206,61 +206,62 @@ type PensionSummaryPanelProps = {
   summary: PensionSummary;
 };
 
+type SummaryItem = {
+  label: string;
+  value: string;
+  infoUrl?: string;
+};
+
 function PensionSummaryPanel({ summary }: PensionSummaryPanelProps) {
   return (
     <div className="summary-sections">
       <SummarySection
         title="Alpha Pension"
         items={[
-          [
-            "Annual Alpha Pension at retirement",
-            formatCurrencyDetailed(summary.alphaPension.annualAtDraw),
-          ],
-          [
-            "Monthly Alpha Pension at retirement",
-            formatCurrencyDetailed(summary.alphaPension.monthlyAtDraw),
-          ],
-          [
-            "Maximum Annual Alpha Pension Accrued",
-            formatCurrencyDetailed(summary.alphaPension.maximumAnnualAccrued),
-          ],
-          [
-            "Total Alpha pension added after today",
-            formatCurrencyDetailed(summary.alphaPension.totalAddedAfterToday),
-          ],
-          [
-            "Monthly income at Alpha pension start",
-            formatCurrencyDetailed(summary.incomeOverTime.monthlyAtAlphaStart),
-          ],
-          [
-            "Monthly State Pension",
-            formatCurrencyDetailed(summary.incomeOverTime.monthlyStatePension),
-          ],
-          [
-            "Total Monthly Pension at State Pension start",
-            formatCurrencyDetailed(summary.incomeOverTime.monthlyAtStateStart),
-          ],
-          [
-            "Monthly income after State Pension",
-            formatCurrencyDetailed(summary.incomeOverTime.monthlyAfterStatePension),
-          ],
+          {
+            label: "Annual Alpha Pension at retirement",
+            value: formatCurrencyDetailed(summary.alphaPension.annualAtDraw),
+          },
+          {
+            label: "Monthly Alpha Pension at retirement",
+            value: formatCurrencyDetailed(summary.alphaPension.monthlyAtDraw),
+          },
+          {
+            label: "Maximum Annual Alpha Pension Accrued",
+            value: formatCurrencyDetailed(summary.alphaPension.maximumAnnualAccrued),
+          },
+          {
+            label: "Total Alpha pension added after today",
+            value: formatCurrencyDetailed(summary.alphaPension.totalAddedAfterToday),
+          },
+          {
+            label: "Monthly income at Alpha pension start",
+            value: formatCurrencyDetailed(summary.incomeOverTime.monthlyAtAlphaStart),
+          },
+          {
+            label: "Monthly State Pension",
+            value: formatCurrencyDetailed(summary.incomeOverTime.monthlyStatePension),
+          },
+          {
+            label: "Total Monthly Pension at State Pension start",
+            value: formatCurrencyDetailed(summary.incomeOverTime.monthlyAtStateStart),
+          },
+          {
+            label: "Monthly income after State Pension",
+            value: formatCurrencyDetailed(summary.incomeOverTime.monthlyAfterStatePension),
+          },
         ]}
       />
 
       <SummarySection
-        title="Key Dates"
+        title="Calculated details"
         items={[
-          ["Stops Alpha accrual", formatDate(summary.keyDates.stopsAlphaAccrual)],
-          ["Starts Alpha pension", formatDate(summary.keyDates.startsAlphaPension)],
-          ["Starts State Pension", formatDate(summary.keyDates.startsStatePension)],
-          [
-            "Years between stopping accrual and drawing pension",
-            formatYears(summary.transitions.yearsBetweenStoppingAccrualAndDrawingPension),
-          ],
-          [
-            "Years between Alpha pension and State pension",
-            formatYears(summary.transitions.yearsBetweenAlphaPensionAndStatePension),
-          ],
+          { label: "Normal Pension Age", value: `${summary.calculated.normalPensionAge}` },
+          {
+            label: "State Pension draw date",
+            value: formatDate(summary.keyDates.startsStatePension),
+            infoUrl: "https://www.gov.uk/state-pension-age",
+          },
         ]}
       />
     </div>
@@ -269,7 +270,7 @@ function PensionSummaryPanel({ summary }: PensionSummaryPanelProps) {
 
 type SummarySectionProps = {
   title: string;
-  items: Array<[label: string, value: string]>;
+  items: SummaryItem[];
 };
 
 function SummarySection({ title, items }: SummarySectionProps) {
@@ -277,9 +278,25 @@ function SummarySection({ title, items }: SummarySectionProps) {
     <section className="summary-section">
       <h3>{title}</h3>
       <dl className="snapshot-list">
-        {items.map(([label, value]) => (
+        {items.map(({ label, value, infoUrl }) => (
           <div key={label}>
-            <dt>{label}</dt>
+            <dt>
+              <span className="field-label-group">
+                <span>{label}</span>
+                {infoUrl ? (
+                  <a
+                    className="field-info-link"
+                    href={infoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${label} information`}
+                    title={`More information about ${label}`}
+                  >
+                    <span aria-hidden="true">i</span>
+                  </a>
+                ) : null}
+              </span>
+            </dt>
             <dd>{value}</dd>
           </div>
         ))}
@@ -716,7 +733,7 @@ function ProjectionTable({ rows }: ProjectionTableProps) {
               >
                 <td>
                   <div className="projection-date-cell">
-                    <span>{formatDate(row.date)}</span>
+                    <span>{formatDate(row.milestoneDates[0] ?? row.date)}</span>
                     {row.milestones.length > 0 ? (
                       <span className="milestone-badges">
                         {row.milestones.map((milestone: string) => (
@@ -774,10 +791,6 @@ function formatCurrencyDetailed(value: number) {
 
 function formatAge(years: number, months: number) {
   return `${years}y ${months}m`;
-}
-
-function formatYears(value: number) {
-  return `${value.toFixed(1)} years`;
 }
 
 type AddedPensionLumpSumsEditorProps = {

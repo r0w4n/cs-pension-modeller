@@ -83,7 +83,7 @@ describe("App settings form", () => {
       target: { value: "11800" },
     });
 
-    expect(screen.getAllByText("14 Feb 2058").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/14 Feb 2058/).length).toBeGreaterThan(0);
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
         dateOfBirth: "1990-02-14",

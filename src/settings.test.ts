@@ -162,6 +162,7 @@ describe("settings unit tests", () => {
     expect(calculateNormalPensionAge("1954-09-06")).toBe(66);
     expect(calculateNormalPensionAge("1960-04-06")).toBe(66);
     expect(calculateNormalPensionAge("1977-04-06")).toBe(67);
+    expect(calculateNormalPensionAge("1977-04-10")).toBe(67);
     expect(calculateNormalPensionAge("1978-04-06")).toBe(68);
     expect(calculateNormalPensionAge("1987-06-15")).toBe(68);
     expect(calculateStatePensionDrawDate("1954-09-06")).toBe("2020-09-06");
@@ -170,6 +171,7 @@ describe("settings unit tests", () => {
     expect(calculateStatePensionDrawDate("1960-12-31")).toBe("2027-09-30");
     expect(calculateStatePensionDrawDate("1961-03-06")).toBe("2028-03-06");
     expect(calculateStatePensionDrawDate("1977-04-06")).toBe("2044-05-06");
+    expect(calculateStatePensionDrawDate("1977-04-10")).toBe("2044-05-06");
     expect(calculateStatePensionDrawDate("1978-03-06")).toBe("2046-03-06");
     expect(calculateStatePensionDrawDate("1978-04-06")).toBe("2046-04-06");
     expect(calculateStatePensionDrawDate("1987-06-15")).toBe("2055-06-15");

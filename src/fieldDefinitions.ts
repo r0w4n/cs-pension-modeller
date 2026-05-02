@@ -67,11 +67,13 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "lifeExpectancy",
-        label: "Assumed Life Expectancy (Age)",
+        label: "Life Expectancy (Age)",
         type: "range",
         min: 75,
         max: 100,
         step: 1,
+        infoUrl:
+          "https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/healthandlifeexpectancies/articles/lifeexpectancycalculator/2019-06-07",
       },
       {
         id: "currentStatePension",
@@ -81,6 +83,7 @@ export const fieldGroups: FieldGroup[] = [
         max: 15000,
         step: 0.01,
         format: "currency",
+        infoUrl: "https://www.gov.uk/check-state-pension",
       },
     ],
   },

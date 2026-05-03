@@ -61,7 +61,8 @@ describe("App settings form", () => {
         name: "Age (years/months)",
       }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { name: "Pension Summary" })).toHaveLength(2);
+    expect(screen.getByRole("heading", { name: "Alpha Pension" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
     expect(screen.getByText("Monthly Alpha Pension at retirement")).toBeInTheDocument();
     expect(screen.getByText("Total Monthly Pension at State Pension start")).toBeInTheDocument();
     expect(screen.getAllByText("Starts Drawing Alpha Pension").length).toBeGreaterThan(0);

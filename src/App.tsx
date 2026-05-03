@@ -92,8 +92,8 @@ function App() {
       <main className="app-shell" aria-hidden={!hasAcknowledgedNotice}>
         <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Civil Service Alpha</p>
-          <h1>Pension Summary</h1>
+          <p className="eyebrow">Civil Service</p>
+          <h1>Alpha Pension</h1>
           <p className="lead">
             A concise read-out of what you are projected to receive, when key
             pension milestones land, and how monthly income changes across
@@ -138,6 +138,18 @@ function App() {
       </section>
 
       <section className="layout">
+        <aside className="panel side-panel">
+          <div className="panel-heading">
+            <h2>Pension Summary</h2>
+            <p className="section-copy">
+              The headline outcomes below are all derived from the same monthly
+              projection rows shown in the table.
+            </p>
+          </div>
+
+          <PensionSummaryPanel summary={pensionSummary} />
+        </aside>
+
         <section className="panel settings-panel">
           <div className="panel-heading">
             <h2>Pension Parameters</h2>
@@ -201,18 +213,6 @@ function App() {
             ))}
           </div>
         </section>
-
-        <aside className="panel side-panel">
-          <div className="panel-heading">
-            <h2>Pension Summary</h2>
-            <p className="section-copy">
-              The headline outcomes below are all derived from the same monthly
-              projection rows shown in the table.
-            </p>
-          </div>
-
-          <PensionSummaryPanel summary={pensionSummary} />
-        </aside>
       </section>
 
       <section className="panel">

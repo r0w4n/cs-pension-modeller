@@ -189,8 +189,14 @@ function App() {
                       onChange={updateSetting}
                       useDropdownDates={useDropdownDates}
                       disabled={
-                        field.id === "assumedCpiPercent" &&
-                        !settings.applyPensionIncreases
+                        (field.id === "assumedCpiPercent" &&
+                          !settings.applyPensionIncreases) ||
+                        ([
+                          "alphaEpaYearsBeforeNpa",
+                          "alphaEpaStartDate",
+                          "alphaEpaEndDate",
+                        ].includes(field.id) &&
+                          !settings.alphaEpaEnabled)
                       }
                     />
                   ))}
@@ -392,6 +398,7 @@ function Field({ field, value, onChange, useDropdownDates, disabled = false }: F
         value={value as string}
         onChange={onChange}
         useDropdowns={useDropdownDates}
+        disabled={disabled}
       />
     );
   }
@@ -535,11 +542,11 @@ function Field({ field, value, onChange, useDropdownDates, disabled = false }: F
         <button
           type="button"
           className="secondary-button field-reset-button"
-          aria-label="Reset current full State Pension to default"
+          aria-label={`Reset ${field.label} to default`}
           onClick={() =>
             onChange(
               field.id,
-              defaultSettings.currentStatePension as PensionSettings[typeof field.id],
+              defaultSettings[field.id] as PensionSettings[typeof field.id],
             )
           }
         >
@@ -567,6 +574,7 @@ type DateSelectFieldProps = {
     min: number;
     max: number;
   };
+  disabled?: boolean;
 };
 
 function DateSelectField({
@@ -575,6 +583,7 @@ function DateSelectField({
   onChange,
   idPrefix,
   yearRange,
+  disabled = false,
 }: DateSelectFieldProps) {
   const parts = getDateParts(value);
   const selectedYear = Number(parts.year);
@@ -610,6 +619,7 @@ function DateSelectField({
           aria-label={`${label} day`}
           className="select-input"
           value={parts.day}
+          disabled={disabled}
           onChange={(event) => commit({ ...parts, day: event.target.value })}
         >
           {dayOptions.map((day) => (
@@ -627,6 +637,7 @@ function DateSelectField({
           aria-label={`${label} month`}
           className="select-input"
           value={parts.month}
+          disabled={disabled}
           onChange={(event) => {
             const nextMonth = event.target.value;
             const nextDay = clampDay(parts.day, parts.year, nextMonth);
@@ -648,6 +659,7 @@ function DateSelectField({
           aria-label={`${label} year`}
           className="select-input"
           value={parts.year}
+          disabled={disabled}
           onChange={(event) => {
             const nextYear = event.target.value;
             const nextDay = clampDay(parts.day, nextYear, parts.month);
@@ -670,11 +682,13 @@ function DateSettingField({
   value,
   onChange,
   useDropdowns,
+  disabled = false,
 }: {
   field: DateField;
   value: string;
   onChange: FieldProps["onChange"];
   useDropdowns: boolean;
+  disabled?: boolean;
 }) {
   function commitDateValue(nextValue: string) {
     const normalizedValue = normalizeSetting(
@@ -686,7 +700,7 @@ function DateSettingField({
   }
 
   return (
-    <div className="field-card">
+    <div className={`field-card${disabled ? " field-card--disabled" : ""}`}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
@@ -696,6 +710,7 @@ function DateSettingField({
           value={value}
           idPrefix={field.id}
           yearRange={getPrimaryDateYearRange(field.id)}
+          disabled={disabled}
           onChange={(nextValue) => {
             commitDateValue(nextValue);
           }}
@@ -707,6 +722,7 @@ function DateSettingField({
           className="date-input"
           type="date"
           defaultValue={value}
+          disabled={disabled}
           onBlur={(event) => {
             commitDateValue(event.target.value);
           }}
@@ -733,6 +749,8 @@ const projectionTableColumns = [
   { key: "age", label: "Age (years/months)", width: "7rem" },
   { key: "monthlyAddedPension", label: "Monthly Added Pension", width: "7rem" },
   { key: "lumpSumAddedPension", label: "Lump sum added pension", width: "7rem" },
+  { key: "annualStandardAlphaPension", label: "Standard Alpha Pension", width: "8rem" },
+  { key: "annualEpaAlphaPension", label: "EPA Alpha Pension", width: "8rem" },
   { key: "annualAccruedAlphaPension", label: "Annual Accrued Alpha Pension", width: "8rem" },
   {
     key: "annualAlphaPensionIncludingReduction",
@@ -844,6 +862,8 @@ function ProjectionTable({ rows }: ProjectionTableProps) {
                 <td>{formatAge(row.age, row.ageMonths)}</td>
                 <td>{formatCurrencyDetailed(row.monthlyAddedPension)}</td>
                 <td>{formatCurrencyDetailed(row.lumpSumAddedPension)}</td>
+                <td>{formatCurrencyDetailed(row.annualStandardAlphaPension)}</td>
+                <td>{formatCurrencyDetailed(row.annualEpaAlphaPension)}</td>
                 <td>{formatCurrencyDetailed(row.annualAccruedAlphaPension)}</td>
                 <td>{formatCurrencyDetailed(row.annualAlphaPensionIncludingReduction)}</td>
                 <td>{formatCurrencyDetailed(row.monthlyAlphaPensionTakeHome)}</td>

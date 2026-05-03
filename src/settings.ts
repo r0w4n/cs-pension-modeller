@@ -25,6 +25,10 @@ export type PensionSettings = {
   accruedPensionAtLastAbs: number;
   pensionableEarnings: number;
   alphaPensionDrawAge: number;
+  alphaEpaEnabled: boolean;
+  alphaEpaYearsBeforeNpa: number;
+  alphaEpaStartDate: string;
+  alphaEpaEndDate: string;
   alphaAddedPensionLumpSums: AddedPensionLumpSum[];
 };
 
@@ -44,9 +48,10 @@ const numericSettingRules = {
   assumedCpiPercent: { min: 0, max: 10, step: 0.1 },
   alphaAddedPensionMonthly: { min: 0, max: 1000, step: 25 },
   alphaPensionLeaveAge: { min: 40, max: 70, step: 1 },
-  accruedPensionAtLastAbs: { min: 0, max: 50000, step: 250 },
+  accruedPensionAtLastAbs: { min: 0, max: 50000, step: 1 },
   pensionableEarnings: { min: 10000, max: 150000, step: 500 },
   alphaPensionDrawAge: { min: 55, max: 70, step: 1 },
+  alphaEpaYearsBeforeNpa: { min: 1, max: 3, step: 1 },
 } as const;
 
 type NumericSettingKey = keyof typeof numericSettingRules;
@@ -66,6 +71,10 @@ export const defaultSettings: PensionSettings = {
   accruedPensionAtLastAbs: 8250,
   pensionableEarnings: 42000,
   alphaPensionDrawAge: 60,
+  alphaEpaEnabled: false,
+  alphaEpaYearsBeforeNpa: 3,
+  alphaEpaStartDate: "2026-04-01",
+  alphaEpaEndDate: "2047-03-31",
   alphaAddedPensionLumpSums: [],
 };
 
@@ -125,7 +134,11 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         defaultSettings.statePensionDrawDate,
       ) as PensionSettings[K];
     case "applyPensionIncreases":
+    case "alphaEpaEnabled":
       return Boolean(value) as PensionSettings[K];
+    case "alphaEpaStartDate":
+    case "alphaEpaEndDate":
+      return normalizeDate(value as string, defaultSettings[key] as string) as PensionSettings[K];
     case "alphaPensionAbsDate":
       return normalizeAlphaAbsYear(
         value as string,
@@ -155,6 +168,10 @@ function coerceSettings(
     accruedPensionAtLastAbs: coerceNumber(input.accruedPensionAtLastAbs),
     pensionableEarnings: coerceNumber(input.pensionableEarnings),
     alphaPensionDrawAge: coerceNumber(input.alphaPensionDrawAge),
+    alphaEpaEnabled: coerceBoolean(input.alphaEpaEnabled),
+    alphaEpaYearsBeforeNpa: coerceNumber(input.alphaEpaYearsBeforeNpa),
+    alphaEpaStartDate: coerceString(input.alphaEpaStartDate),
+    alphaEpaEndDate: coerceString(input.alphaEpaEndDate),
     alphaAddedPensionLumpSums: coerceAddedPensionLumpSums(
       input.alphaAddedPensionLumpSums,
     ),
@@ -236,6 +253,7 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     settings.dateOfBirth,
     settings.alphaPensionLeaveAge,
   );
+  const alphaEpaAgeDate = getAlphaEpaDate(settings);
 
   if (settings.startDate > lifeExpectancyDate) {
     issues.push({
@@ -255,6 +273,20 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     issues.push({
       field: "alphaPensionLeaveAge",
       message: "Alpha pensionable service leave age must be within life expectancy.",
+    });
+  }
+
+  if (settings.alphaEpaEnabled && settings.alphaEpaStartDate > settings.alphaEpaEndDate) {
+    issues.push({
+      field: "alphaEpaStartDate",
+      message: "EPA start date must be on or before EPA end date.",
+    });
+  }
+
+  if (settings.alphaEpaEnabled && alphaEpaAgeDate < addYearsToIsoDate(settings.dateOfBirth, 65)) {
+    issues.push({
+      field: "alphaEpaYearsBeforeNpa",
+      message: "EPA age cannot be earlier than age 65.",
     });
   }
 
@@ -303,11 +335,28 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
       "alphaPensionDrawAge",
       settings.alphaPensionDrawAge,
     ),
+    alphaEpaEnabled: Boolean(settings.alphaEpaEnabled),
+    alphaEpaYearsBeforeNpa: normalizeSetting(
+      "alphaEpaYearsBeforeNpa",
+      settings.alphaEpaYearsBeforeNpa,
+    ),
+    alphaEpaStartDate: normalizeSetting(
+      "alphaEpaStartDate",
+      settings.alphaEpaStartDate,
+    ),
+    alphaEpaEndDate: normalizeSetting("alphaEpaEndDate", settings.alphaEpaEndDate),
     alphaAddedPensionLumpSums: normalizeSetting(
       "alphaAddedPensionLumpSums",
       settings.alphaAddedPensionLumpSums,
     ),
   };
+}
+
+export function getAlphaEpaDate(settings: PensionSettings) {
+  return addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.normalPensionAge - settings.alphaEpaYearsBeforeNpa,
+  );
 }
 
 function normalizeNumericSetting(key: NumericSettingKey, value: unknown) {

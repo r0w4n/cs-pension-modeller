@@ -77,7 +77,9 @@ describe("App settings form", () => {
     );
     expect(screen.getByRole("button", { name: "Add lump sum purchase" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Reset current full State Pension to default" }),
+      screen.getByRole("button", {
+        name: "Reset Current Full State Pension (£ per year) to default",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Reset assumed CPI to default" }),
@@ -125,6 +127,10 @@ describe("App settings form", () => {
       accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
       pensionableEarnings: defaultSettings.pensionableEarnings,
       alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
       alphaAddedPensionLumpSums: [],
     });
   });
@@ -151,6 +157,10 @@ describe("App settings form", () => {
       accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
       pensionableEarnings: defaultSettings.pensionableEarnings,
       alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
       alphaAddedPensionLumpSums: [],
     });
 
@@ -168,6 +178,10 @@ describe("App settings form", () => {
       accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
       pensionableEarnings: defaultSettings.pensionableEarnings,
       alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
       alphaAddedPensionLumpSums: [],
     });
   });
@@ -198,7 +212,9 @@ describe("App settings form", () => {
     expect(statePensionSlider).toHaveValue(13000);
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Reset current full State Pension to default" }),
+      screen.getByRole("button", {
+        name: "Reset Current Full State Pension (£ per year) to default",
+      }),
     );
 
     expect(statePensionSlider).toHaveValue(defaultSettings.currentStatePension);
@@ -269,6 +285,10 @@ describe("App settings form", () => {
       accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
       pensionableEarnings: defaultSettings.pensionableEarnings,
       alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
       alphaAddedPensionLumpSums: [],
     });
   });
@@ -365,7 +385,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue("40");
     expect(
       screen.getByLabelText("Alpha Pension Accrued at Last Statement (£ per year)"),
-    ).toHaveValue("12500");
+    ).toHaveValue(12444);
     expect(screen.getByLabelText("Current Pensionable Earnings (£ per year)")).toHaveValue(
       "56500",
     );
@@ -387,6 +407,45 @@ describe("App settings form", () => {
     expect(
       screen.getByText("No projection rows are available for the current settings."),
     ).toBeInTheDocument();
+  });
+
+  it("renders projection rows for the shared EPA settings", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        dateOfBirth: "1977-04-10",
+        lifeExpectancy: 90,
+        currentStatePension: 12547.6,
+        applyPensionIncreases: false,
+        assumedCpiPercent: 3.2,
+        alphaPensionAbsDate: "2021",
+        alphaAddedPensionMonthly: 0,
+        alphaPensionLeaveAge: 68,
+        accruedPensionAtLastAbs: 27750,
+        pensionableEarnings: 70000,
+        alphaPensionDrawAge: 67,
+        alphaEpaEnabled: true,
+        alphaEpaYearsBeforeNpa: 2,
+        alphaEpaStartDate: "2026-04-01",
+        alphaEpaEndDate: "2047-03-31",
+        alphaAddedPensionLumpSums: [
+          {
+            id: "2804c522-7db7-4acf-a6ee-5d428af449bb",
+            amount: 500000,
+            startDate: "2026-05-02",
+            cadence: "once",
+            endDate: "2026-05-02",
+          },
+        ],
+      }),
+    );
+
+    renderAcknowledgedApp();
+
+    expect(
+      screen.queryByText("No projection rows are available for the current settings."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Showing \d+ of \d+ rows/)).toBeInTheDocument();
   });
 
   it("shows milestone rows by default and can expand to all rows", () => {

@@ -1,6 +1,7 @@
 import addedPensionFactors from "./data/alpha_pension_added_pension_factors.json";
 import reductionFactors from "./data/alpha_pension_reduction_factors.json";
 import {
+  getAlphaEpaDate,
   resolveAlphaAbsDate,
   validateSettings,
   type AddedPensionLumpSum,
@@ -27,6 +28,8 @@ export type ProjectionRow = {
   milestoneDates: string[];
   monthlyAddedPension: number;
   lumpSumAddedPension: number;
+  annualStandardAlphaPension: number;
+  annualEpaAlphaPension: number;
   annualAccruedAlphaPension: number;
   annualAlphaPensionIncludingReduction: number;
   monthlyAlphaPensionTakeHome: number;
@@ -83,6 +86,7 @@ type ProjectionRowWithoutMilestones = Omit<ProjectionRow, "milestones" | "milest
 type AlphaBenefitComponent = {
   amount: number;
   startDate: string;
+  portion: "standard" | "epa";
 };
 
 export type DerivedProjectionInputs = {
@@ -92,7 +96,9 @@ export type DerivedProjectionInputs = {
   accrualStopDate: string;
   addedPensionStopDate: string;
   npaDate: string;
+  epaDate: string;
   reductionFactor: number;
+  epaReductionFactor: number;
 };
 
 export function deriveProjectionInputs(
@@ -108,6 +114,7 @@ export function deriveProjectionInputs(
   const accrualStopDate = minIsoDate(drawDate, alphaStopDate);
   const addedPensionStopDate = accrualStopDate;
   const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+  const epaDate = getAlphaEpaDate(settings);
   const reductionFactor =
     drawDate > npaDate
       ? 1
@@ -115,6 +122,11 @@ export function deriveProjectionInputs(
           settings.normalPensionAge,
           settings.alphaPensionDrawAge,
         );
+  const epaDrawAge = settings.normalPensionAge - settings.alphaEpaYearsBeforeNpa;
+  const epaReductionFactor =
+    !settings.alphaEpaEnabled || drawDate >= epaDate
+      ? 1
+      : getEarlyRetirementReductionFactor(epaDrawAge, settings.alphaPensionDrawAge);
 
   return {
     endDate,
@@ -123,7 +135,9 @@ export function deriveProjectionInputs(
     accrualStopDate,
     addedPensionStopDate,
     npaDate,
+    epaDate,
     reductionFactor,
+    epaReductionFactor,
   };
 }
 
@@ -144,18 +158,17 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     accrualStopDate,
     addedPensionStopDate,
     npaDate,
+    epaDate,
     reductionFactor,
+    epaReductionFactor,
   } = derivedInputs;
   const alphaAbsDate = resolveAlphaAbsDate(settings.alphaPensionAbsDate);
 
-  const startingAlphaPensionAtStartDate = calculateStartingAlphaPensionAtStartDate({
-    alphaPensionAccruedAtLastStatement: settings.accruedPensionAtLastAbs,
-    alphaPensionAbsDate: alphaAbsDate,
-    startDate: settings.startDate,
-    pensionableEarnings: settings.pensionableEarnings,
-    alphaAccrualRate: DEFAULT_ALPHA_ACCRUAL_RATE,
+  const startingAlphaPortionsAtStartDate = calculateStartingAlphaPortionsAtStartDate({
+    settings,
+    alphaAbsDate,
+    accrualStopDate,
   });
-  let cumulativeMonthlyAccrual = 0;
   const historicalRows = createHistoricalProjectionRows({
     settings,
     alphaAbsDate,
@@ -163,9 +176,13 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     accrualStopDate,
     addedPensionStopDate,
     npaDate,
+    epaDate,
     reductionFactor,
+    epaReductionFactor,
   });
-  let cumulativeLumpSumAddedPension = historicalRows.reduce(
+  let cumulativeStandardAccrual = 0;
+  let cumulativeEpaAccrual = 0;
+  let cumulativeStandardAddedPension = historicalRows.reduce(
     (total, row) => total + row.lumpSumAddedPension,
     0,
   );
@@ -174,12 +191,17 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
   const projectionRows = generateMonthlyDateRange(settings.startDate, endDate).map((rowDate) => {
     const age = calculateAge(settings.dateOfBirth, rowDate);
     const ageMonths = calculateAgeMonths(settings.dateOfBirth, rowDate);
-    const monthlyAlphaAccrual =
+    const monthlyStandardAlphaAccrual =
       rowDate <= accrualStopDate
-        ? calculateMonthlyAlphaAccrual(settings.pensionableEarnings)
+        ? calculateMonthlyStandardAlphaAccrual(settings, rowDate)
+        : 0;
+    const monthlyEpaAlphaAccrual =
+      rowDate <= accrualStopDate
+        ? calculateMonthlyEpaAlphaAccrual(settings, rowDate)
         : 0;
 
-    cumulativeMonthlyAccrual += monthlyAlphaAccrual;
+    cumulativeStandardAccrual += monthlyStandardAlphaAccrual;
+    cumulativeEpaAccrual += monthlyEpaAlphaAccrual;
 
     const monthlyAddedPension = calculateMonthlyAddedPension({
       rowDate,
@@ -193,18 +215,25 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
       dateOfBirth: settings.dateOfBirth,
       lumpSums: settings.alphaAddedPensionLumpSums,
     });
-    cumulativeLumpSumAddedPension += lumpSumAddedPensionPurchasedThisRow;
-    const annualAccruedAlphaPension = calculateAccruedAlphaPension(
-      startingAlphaPensionAtStartDate,
-      cumulativeMonthlyAccrual + cumulativeLumpSumAddedPension,
+    cumulativeStandardAddedPension += lumpSumAddedPensionPurchasedThisRow;
+    const annualStandardAlphaPension = calculateAccruedAlphaPension(
+      startingAlphaPortionsAtStartDate.standardAlphaPension,
+      cumulativeStandardAccrual + cumulativeStandardAddedPension,
     );
+    const annualEpaAlphaPension =
+      startingAlphaPortionsAtStartDate.epaAlphaPension + cumulativeEpaAccrual;
+    const annualAccruedAlphaPension =
+      annualStandardAlphaPension + annualEpaAlphaPension;
     const annualAlphaPensionIncludingReduction =
-      calculateAnnualAlphaPensionIncludingReduction(
-        annualAccruedAlphaPension,
-        drawDate,
+      calculateAnnualAlphaPensionIncludingEpaReduction({
+        standardAlphaPension: annualStandardAlphaPension,
+        epaAlphaPension: annualEpaAlphaPension,
+        alphaPensionDrawDate: drawDate,
         npaDate,
+        epaDate,
         reductionFactor,
-      );
+        epaReductionFactor,
+      });
     const monthlyAlphaPensionTakeHome = calculateMonthlyAlphaPensionTakeHome(
       rowDate,
       drawDate,
@@ -226,6 +255,8 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
       ageMonths,
       monthlyAddedPension,
       lumpSumAddedPension: lumpSumAddedPensionPurchasedThisRow,
+      annualStandardAlphaPension,
+      annualEpaAlphaPension,
       annualAccruedAlphaPension,
       annualAlphaPensionIncludingReduction,
       monthlyAlphaPensionTakeHome,
@@ -274,7 +305,9 @@ function createProjectionTableWithPensionIncreases(
     accrualStopDate,
     addedPensionStopDate,
     npaDate,
+    epaDate,
     reductionFactor,
+    epaReductionFactor,
   } = derivedInputs;
   const alphaAbsDate = resolveAlphaAbsDate(settings.alphaPensionAbsDate);
   const firstRowDate = minIsoDate(alphaAbsDate, settings.startDate);
@@ -282,6 +315,7 @@ function createProjectionTableWithPensionIncreases(
     {
       amount: settings.accruedPensionAtLastAbs,
       startDate: alphaAbsDate,
+      portion: "standard",
     },
   ];
   let previousRowDate: string | undefined;
@@ -290,15 +324,28 @@ function createProjectionTableWithPensionIncreases(
     const age = calculateAge(settings.dateOfBirth, rowDate);
     const ageMonths = calculateAgeMonths(settings.dateOfBirth, rowDate);
     const shouldShowAbsStatementOnly = rowDate === alphaAbsDate && rowDate < settings.startDate;
-    const monthlyAlphaAccrual =
+    const monthlyStandardAlphaAccrual =
       rowDate <= accrualStopDate && !shouldShowAbsStatementOnly
-        ? calculateMonthlyAlphaAccrual(settings.pensionableEarnings)
+        ? calculateMonthlyStandardAlphaAccrual(settings, rowDate)
+        : 0;
+    const monthlyEpaAlphaAccrual =
+      rowDate <= accrualStopDate && !shouldShowAbsStatementOnly
+        ? calculateMonthlyEpaAlphaAccrual(settings, rowDate)
         : 0;
 
-    if (monthlyAlphaAccrual > 0) {
+    if (monthlyStandardAlphaAccrual > 0) {
       benefitComponents.push({
-        amount: monthlyAlphaAccrual,
+        amount: monthlyStandardAlphaAccrual,
         startDate: rowDate,
+        portion: "standard",
+      });
+    }
+
+    if (monthlyEpaAlphaAccrual > 0) {
+      benefitComponents.push({
+        amount: monthlyEpaAlphaAccrual,
+        startDate: rowDate,
+        portion: "epa",
       });
     }
 
@@ -319,22 +366,30 @@ function createProjectionTableWithPensionIncreases(
       benefitComponents.push({
         amount: lumpSumAddedPension,
         startDate: rowDate,
+        portion: "standard",
       });
     }
 
-    const annualAccruedAlphaPension = calculateRevaluedAlphaPension({
+    const alphaPortions = calculateRevaluedAlphaPensionPortions({
       benefitComponents,
       rowDate,
       activeUntilDate: accrualStopDate,
       cpiPercent: settings.assumedCpiPercent,
     });
+    const annualStandardAlphaPension = alphaPortions.standardAlphaPension;
+    const annualEpaAlphaPension = alphaPortions.epaAlphaPension;
+    const annualAccruedAlphaPension =
+      annualStandardAlphaPension + annualEpaAlphaPension;
     const annualAlphaPensionIncludingReduction =
-      calculateAnnualAlphaPensionIncludingReduction(
-        annualAccruedAlphaPension,
-        drawDate,
+      calculateAnnualAlphaPensionIncludingEpaReduction({
+        standardAlphaPension: annualStandardAlphaPension,
+        epaAlphaPension: annualEpaAlphaPension,
+        alphaPensionDrawDate: drawDate,
         npaDate,
+        epaDate,
         reductionFactor,
-      );
+        epaReductionFactor,
+      });
     const monthlyAlphaPensionTakeHome = calculateMonthlyAlphaPensionTakeHome(
       rowDate,
       drawDate,
@@ -354,6 +409,8 @@ function createProjectionTableWithPensionIncreases(
       ageMonths,
       monthlyAddedPension,
       lumpSumAddedPension,
+      annualStandardAlphaPension,
+      annualEpaAlphaPension,
       annualAccruedAlphaPension,
       annualAlphaPensionIncludingReduction,
       monthlyAlphaPensionTakeHome,
@@ -572,6 +629,62 @@ export function calculateMonthlyAlphaAccrual(pensionableEarnings: number) {
   return pensionableEarnings * MONTHLY_ALPHA_ACCRUAL_RATE;
 }
 
+export function calculateMonthlyStandardAlphaAccrual(
+  settings: PensionSettings,
+  rowDate: string,
+) {
+  return isEpaAccrualDate(settings, rowDate)
+    ? 0
+    : calculateMonthlyAlphaAccrual(settings.pensionableEarnings);
+}
+
+export function calculateMonthlyEpaAlphaAccrual(
+  settings: PensionSettings,
+  rowDate: string,
+) {
+  return isEpaAccrualDate(settings, rowDate)
+    ? calculateMonthlyAlphaAccrual(settings.pensionableEarnings)
+    : 0;
+}
+
+function isEpaAccrualDate(settings: PensionSettings, rowDate: string) {
+  return (
+    settings.alphaEpaEnabled &&
+    rowDate >= settings.alphaEpaStartDate &&
+    rowDate <= settings.alphaEpaEndDate
+  );
+}
+
+function calculateStartingAlphaPortionsAtStartDate(input: {
+  settings: PensionSettings;
+  alphaAbsDate: string;
+  accrualStopDate: string;
+}) {
+  const { settings, alphaAbsDate, accrualStopDate } = input;
+
+  if (alphaAbsDate >= settings.startDate) {
+    return {
+      standardAlphaPension: settings.accruedPensionAtLastAbs,
+      epaAlphaPension: 0,
+    };
+  }
+
+  let standardAlphaPension = settings.accruedPensionAtLastAbs;
+  let epaAlphaPension = 0;
+  let rowDate = addMonths(alphaAbsDate, 1);
+
+  while (rowDate <= settings.startDate && rowDate <= accrualStopDate) {
+    standardAlphaPension += calculateMonthlyStandardAlphaAccrual(settings, rowDate);
+    epaAlphaPension += calculateMonthlyEpaAlphaAccrual(settings, rowDate);
+    rowDate = addMonths(rowDate, 1);
+  }
+
+  return {
+    standardAlphaPension,
+    epaAlphaPension,
+  };
+}
+
 export function calculateStartingAlphaPensionAtStartDate(input: {
   alphaPensionAccruedAtLastStatement: number;
   alphaPensionAbsDate: string;
@@ -619,7 +732,7 @@ export function calculateAlphaPensionRevaluationFactor(input: {
   return (1 + activeRate) ** activeYears * (1 + cpiRate) ** deferredYears;
 }
 
-function calculateRevaluedAlphaPension(input: {
+function calculateRevaluedAlphaPensionPortions(input: {
   benefitComponents: AlphaBenefitComponent[];
   rowDate: string;
   activeUntilDate: string;
@@ -627,7 +740,8 @@ function calculateRevaluedAlphaPension(input: {
 }) {
   const { benefitComponents, rowDate, activeUntilDate, cpiPercent } = input;
 
-  return benefitComponents.reduce((total, component) => {
+  return benefitComponents.reduce(
+    (totals, component) => {
     const revaluationFactor = calculateAlphaPensionRevaluationFactor({
       fromDate: component.startDate,
       rowDate,
@@ -635,8 +749,25 @@ function calculateRevaluedAlphaPension(input: {
       cpiPercent,
     });
 
-    return total + component.amount * revaluationFactor;
-  }, 0);
+      const revaluedAmount = component.amount * revaluationFactor;
+
+      if (component.portion === "epa") {
+        return {
+          ...totals,
+          epaAlphaPension: totals.epaAlphaPension + revaluedAmount,
+        };
+      }
+
+      return {
+        ...totals,
+        standardAlphaPension: totals.standardAlphaPension + revaluedAmount,
+      };
+    },
+    {
+      standardAlphaPension: 0,
+      epaAlphaPension: 0,
+    },
+  );
 }
 
 export function calculateMonthlyAddedPension(input: {
@@ -752,6 +883,36 @@ export function calculateAnnualAlphaPensionIncludingReduction(
   return alphaPensionDrawDate > npaDate
     ? accruedAlphaPension
     : accruedAlphaPension * reductionFactor;
+}
+
+export function calculateAnnualAlphaPensionIncludingEpaReduction(input: {
+  standardAlphaPension: number;
+  epaAlphaPension: number;
+  alphaPensionDrawDate: string;
+  npaDate: string;
+  epaDate: string;
+  reductionFactor: number;
+  epaReductionFactor: number;
+}) {
+  const {
+    standardAlphaPension,
+    epaAlphaPension,
+    alphaPensionDrawDate,
+    npaDate,
+    epaDate,
+    reductionFactor,
+    epaReductionFactor,
+  } = input;
+  const standardPensionAfterReduction =
+    alphaPensionDrawDate > npaDate
+      ? standardAlphaPension
+      : standardAlphaPension * reductionFactor;
+  const epaPensionAfterReduction =
+    alphaPensionDrawDate >= epaDate
+      ? epaAlphaPension
+      : epaAlphaPension * epaReductionFactor;
+
+  return standardPensionAfterReduction + epaPensionAfterReduction;
 }
 
 export function calculateMonthlyAlphaPensionTakeHome(
@@ -905,7 +1066,9 @@ function createHistoricalProjectionRows(input: {
   accrualStopDate: string;
   addedPensionStopDate: string;
   npaDate: string;
+  epaDate: string;
   reductionFactor: number;
+  epaReductionFactor: number;
 }) {
   const {
     settings,
@@ -914,7 +1077,9 @@ function createHistoricalProjectionRows(input: {
     accrualStopDate,
     addedPensionStopDate,
     npaDate,
+    epaDate,
     reductionFactor,
+    epaReductionFactor,
   } = input;
 
   if (alphaAbsDate >= settings.startDate) {
@@ -925,6 +1090,8 @@ function createHistoricalProjectionRows(input: {
   let rowDate = alphaAbsDate;
   let previousRowDate: string | undefined;
   let cumulativeLumpSumAddedPension = 0;
+  let cumulativeStandardAlphaPension = settings.accruedPensionAtLastAbs;
+  let cumulativeEpaAlphaPension = 0;
 
   while (rowDate < settings.startDate) {
     const age = calculateAge(settings.dateOfBirth, rowDate);
@@ -942,22 +1109,30 @@ function createHistoricalProjectionRows(input: {
       lumpSums: settings.alphaAddedPensionLumpSums,
     });
     cumulativeLumpSumAddedPension += lumpSumAddedPension;
-    const annualAccruedAlphaPension = calculateStartingAlphaPensionAtStartDate({
-      alphaPensionAccruedAtLastStatement: settings.accruedPensionAtLastAbs,
-      alphaPensionAbsDate: alphaAbsDate,
-      startDate: rowDate <= accrualStopDate ? rowDate : accrualStopDate,
-      pensionableEarnings: settings.pensionableEarnings,
-      alphaAccrualRate: DEFAULT_ALPHA_ACCRUAL_RATE,
-    });
-    const annualAccruedAlphaPensionIncludingLumpSums =
-      annualAccruedAlphaPension + cumulativeLumpSumAddedPension;
-    const annualAlphaPensionIncludingReduction =
-      calculateAnnualAlphaPensionIncludingReduction(
-        annualAccruedAlphaPensionIncludingLumpSums,
-        drawDate,
-        npaDate,
-        reductionFactor,
+    if (rowDate > alphaAbsDate && rowDate <= accrualStopDate) {
+      cumulativeStandardAlphaPension += calculateMonthlyStandardAlphaAccrual(
+        settings,
+        rowDate,
       );
+      cumulativeEpaAlphaPension += calculateMonthlyEpaAlphaAccrual(settings, rowDate);
+    }
+    const annualAccruedAlphaPensionIncludingLumpSums =
+      cumulativeStandardAlphaPension +
+      cumulativeEpaAlphaPension +
+      cumulativeLumpSumAddedPension;
+    const annualStandardAlphaPension =
+      cumulativeStandardAlphaPension + cumulativeLumpSumAddedPension;
+    const annualEpaAlphaPension = cumulativeEpaAlphaPension;
+    const annualAlphaPensionIncludingReduction =
+      calculateAnnualAlphaPensionIncludingEpaReduction({
+        standardAlphaPension: annualStandardAlphaPension,
+        epaAlphaPension: annualEpaAlphaPension,
+        alphaPensionDrawDate: drawDate,
+        npaDate,
+        epaDate,
+        reductionFactor,
+        epaReductionFactor,
+      });
     const monthlyAlphaPensionTakeHome = calculateMonthlyAlphaPensionTakeHome(
       rowDate,
       drawDate,
@@ -975,6 +1150,8 @@ function createHistoricalProjectionRows(input: {
       ageMonths,
       monthlyAddedPension,
       lumpSumAddedPension,
+      annualStandardAlphaPension,
+      annualEpaAlphaPension,
       annualAccruedAlphaPension: annualAccruedAlphaPensionIncludingLumpSums,
       annualAlphaPensionIncludingReduction,
       monthlyAlphaPensionTakeHome,

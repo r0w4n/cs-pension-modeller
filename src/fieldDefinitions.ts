@@ -1,7 +1,12 @@
 import type { PensionSettings } from "./settings";
 
 export type DateField = {
-  id: "startDate" | "dateOfBirth" | "alphaPensionAbsDate";
+  id:
+    | "startDate"
+    | "dateOfBirth"
+    | "alphaPensionAbsDate"
+    | "alphaEpaStartDate"
+    | "alphaEpaEndDate";
   label: string;
   type: "date" | "year";
   infoUrl?: string;
@@ -13,9 +18,9 @@ export type RangeField = {
     | "assumedCpiPercent"
     | "alphaAddedPensionMonthly"
     | "alphaPensionLeaveAge"
-    | "accruedPensionAtLastAbs"
     | "pensionableEarnings"
-    | "alphaPensionDrawAge";
+    | "alphaPensionDrawAge"
+    | "alphaEpaYearsBeforeNpa";
   label: string;
   type: "range";
   min: number;
@@ -27,14 +32,14 @@ export type RangeField = {
 };
 
 export type CheckboxField = {
-  id: "applyPensionIncreases";
+  id: "applyPensionIncreases" | "alphaEpaEnabled";
   label: string;
   type: "checkbox";
   description: string;
 };
 
 export type CurrencyInputField = {
-  id: "currentStatePension";
+  id: "currentStatePension" | "accruedPensionAtLastAbs";
   label: string;
   type: "currency-input";
   min: number;
@@ -135,10 +140,10 @@ export const fieldGroups: FieldGroup[] = [
       {
         id: "accruedPensionAtLastAbs",
         label: "Alpha Pension Accrued at Last Statement (£ per year)",
-        type: "range",
+        type: "currency-input",
         min: 0,
         max: 50000,
-        step: 250,
+        step: 1,
         format: "currency",
       },
       {
@@ -175,6 +180,31 @@ export const fieldGroups: FieldGroup[] = [
         step: 25,
         format: "currency",
         valuePrefix: "/mo",
+      },
+      {
+        id: "alphaEpaEnabled",
+        label: "Add EPA",
+        type: "checkbox",
+        description:
+          "Build an EPA portion of Alpha pension that can be taken unreduced before normal pension age.",
+      },
+      {
+        id: "alphaEpaYearsBeforeNpa",
+        label: "EPA years before NPA",
+        type: "range",
+        min: 1,
+        max: 3,
+        step: 1,
+      },
+      {
+        id: "alphaEpaStartDate",
+        label: "EPA Start Date",
+        type: "date",
+      },
+      {
+        id: "alphaEpaEndDate",
+        label: "EPA End Date",
+        type: "date",
       },
     ],
   },

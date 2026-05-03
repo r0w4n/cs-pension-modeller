@@ -402,6 +402,82 @@ describe("projection calculations", () => {
     );
   });
 
+  it("splits EPA accrual into an unreduced EPA portion", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2047-05-15",
+      dateOfBirth: "1987-06-15",
+      alphaPensionAbsDate: "2047",
+      accruedPensionAtLastAbs: 0,
+      pensionableEarnings: 42000,
+      alphaAddedPensionMonthly: 0,
+      alphaPensionDrawAge: 65,
+      alphaPensionLeaveAge: 65,
+      lifeExpectancy: 66,
+      alphaEpaEnabled: true,
+      alphaEpaYearsBeforeNpa: 3,
+      alphaEpaStartDate: "2047-05-15",
+      alphaEpaEndDate: "2047-06-15",
+    };
+
+    const rows = createProjectionTable(settings);
+    const row = findRowByDate(rows, "2047-06-15");
+
+    expect(row?.annualStandardAlphaPension).toBeCloseTo(81.2, 6);
+    expect(row?.annualEpaAlphaPension).toBeCloseTo(162.4, 6);
+    expect(row?.annualAccruedAlphaPension).toBeCloseTo(243.6, 6);
+    expect(row?.annualAlphaPensionIncludingReduction).toBeCloseTo(230.608, 6);
+  });
+
+  it("still projects rows when EPA is enabled before the EPA age", () => {
+    const rows = createProjectionTable({
+      ...defaultSettings,
+      alphaEpaEnabled: true,
+      alphaEpaYearsBeforeNpa: 3,
+      alphaPensionDrawAge: 60,
+    });
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((row) => row.annualEpaAlphaPension > 0)).toBe(true);
+  });
+
+  it("projects rows for the shared EPA scenario", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-05-02",
+      dateOfBirth: "1977-04-10",
+      lifeExpectancy: 90,
+      currentStatePension: 12547.6,
+      applyPensionIncreases: false,
+      assumedCpiPercent: 3.2,
+      alphaPensionAbsDate: "2021",
+      alphaAddedPensionMonthly: 0,
+      alphaPensionLeaveAge: 68,
+      accruedPensionAtLastAbs: 27750,
+      pensionableEarnings: 70000,
+      alphaPensionDrawAge: 67,
+      normalPensionAge: 68,
+      statePensionDrawDate: "2045-04-10",
+      alphaEpaEnabled: true,
+      alphaEpaYearsBeforeNpa: 2,
+      alphaEpaStartDate: "2026-04-01",
+      alphaEpaEndDate: "2047-03-31",
+      alphaAddedPensionLumpSums: [
+        {
+          id: "2804c522-7db7-4acf-a6ee-5d428af449bb",
+          amount: 500000,
+          startDate: "2026-05-02",
+          cadence: "once",
+          endDate: "2026-05-02",
+        },
+      ],
+    };
+
+    const rows = createProjectionTable(settings);
+
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
   it("shows the lump sum only on the purchase row and carries it into annual accrued pension", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

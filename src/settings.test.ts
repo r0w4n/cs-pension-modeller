@@ -39,6 +39,7 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("assumedCpiPercent", 11)).toBe(10);
     expect(normalizeSetting("alphaAddedPensionMonthly", 233)).toBe(225);
     expect(normalizeSetting("pensionableEarnings", 56321)).toBe(56500);
+    expect(normalizeSetting("accruedPensionAtLastAbs", 12444.4)).toBe(12444);
     expect(normalizeSetting("alphaPensionLeaveAge", 20)).toBe(40);
     expect(normalizeSetting("alphaPensionDrawAge", 200)).toBe(70);
   });
@@ -82,6 +83,10 @@ describe("settings unit tests", () => {
       accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
       pensionableEarnings: defaultSettings.pensionableEarnings,
       alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
       alphaAddedPensionLumpSums: [],
     });
   });
@@ -126,9 +131,13 @@ describe("settings unit tests", () => {
       alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
       alphaAddedPensionMonthly: 225,
       alphaPensionLeaveAge: 40,
-      accruedPensionAtLastAbs: 12500,
+      accruedPensionAtLastAbs: 12444,
       pensionableEarnings: 56500,
       alphaPensionDrawAge: 70,
+      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
       alphaAddedPensionLumpSums: [
         {
           id: "legacy",

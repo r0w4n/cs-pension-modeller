@@ -425,6 +425,22 @@ h3 {
   line-height: var(--line-height-tight);
 }
 
+.settings-subsection {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.settings-subsection-heading h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  line-height: var(--line-height-heading);
+}
+
+.settings-subsection .field-grid {
+  margin-top: 0;
+}
+
 .lump-sum-editor {
   display: grid;
   gap: 1rem;

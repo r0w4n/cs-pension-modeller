@@ -180,27 +180,12 @@ function App() {
                   <p className="section-copy">{group.description}</p>
                 </div>
 
-                <div className="field-grid">
-                  {group.fields.map((field) => (
-                    <Field
-                      key={field.id}
-                      field={field}
-                      value={settings[field.id]}
-                      onChange={updateSetting}
-                      useDropdownDates={useDropdownDates}
-                      disabled={
-                        (field.id === "assumedCpiPercent" &&
-                          !settings.applyPensionIncreases) ||
-                        ([
-                          "alphaEpaYearsBeforeNpa",
-                          "alphaEpaStartDate",
-                          "alphaEpaEndDate",
-                        ].includes(field.id) &&
-                          !settings.alphaEpaEnabled)
-                      }
-                    />
-                  ))}
-                </div>
+                <SettingsFields
+                  fields={group.fields}
+                  settings={settings}
+                  onChange={updateSetting}
+                  useDropdownDates={useDropdownDates}
+                />
 
                 {group.id === "alpha" ? (
                   <AddedPensionLumpSumsEditor
@@ -379,6 +364,78 @@ function FieldLabel({ field }: { field: FieldDefinition }) {
         </a>
       ) : null}
     </span>
+  );
+}
+
+type SettingsFieldsProps = {
+  fields: readonly FieldDefinition[];
+  settings: PensionSettings;
+  onChange: FieldProps["onChange"];
+  useDropdownDates: boolean;
+};
+
+function SettingsFields({
+  fields,
+  settings,
+  onChange,
+  useDropdownDates,
+}: SettingsFieldsProps) {
+  const baseFields = fields.filter(
+    (field) => !["applyPensionIncreases", "assumedCpiPercent"].includes(field.id),
+  );
+  const pensionIncreaseFields = fields.filter((field) =>
+    ["applyPensionIncreases", "assumedCpiPercent"].includes(field.id),
+  );
+
+  return (
+    <>
+      <div className="field-grid">
+        {baseFields.map((field) => (
+          <Field
+            key={field.id}
+            field={field}
+            value={settings[field.id]}
+            onChange={onChange}
+            useDropdownDates={useDropdownDates}
+            disabled={isFieldDisabled(field.id, settings)}
+          />
+        ))}
+      </div>
+
+      {pensionIncreaseFields.length > 0 ? (
+        <div className="settings-subsection">
+          <div className="settings-subsection-heading">
+            <h4>Pension increases</h4>
+            <p className="section-copy">
+              Revalue Alpha benefits annually by CPI + 1.6% while active, and CPI
+              after leaving Alpha service.
+            </p>
+          </div>
+          <div className="field-grid">
+            {pensionIncreaseFields.map((field) => (
+              <Field
+                key={field.id}
+                field={field}
+                value={settings[field.id]}
+                onChange={onChange}
+                useDropdownDates={useDropdownDates}
+                disabled={isFieldDisabled(field.id, settings)}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function isFieldDisabled(fieldId: FieldDefinition["id"], settings: PensionSettings) {
+  return (
+    (fieldId === "assumedCpiPercent" && !settings.applyPensionIncreases) ||
+    (["alphaEpaYearsBeforeNpa", "alphaEpaStartDate", "alphaEpaEndDate"].includes(
+      fieldId,
+    ) &&
+      !settings.alphaEpaEnabled)
   );
 }
 

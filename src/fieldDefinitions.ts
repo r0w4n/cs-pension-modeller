@@ -101,30 +101,6 @@ export const fieldGroups: FieldGroup[] = [
     ],
   },
   {
-    id: "increases",
-    eyebrow: "Pension Increases",
-    title: "Pension increases",
-    description:
-      "Optionally revalue Alpha benefits annually by CPI + 1.6% while active, and CPI after leaving Alpha service.",
-    fields: [
-      {
-        id: "applyPensionIncreases",
-        label: "Apply Alpha pension increases",
-        type: "checkbox",
-        description:
-          "Benefits increase annually by CPI + 1.6% while active, then by CPI after leaving Alpha service.",
-      },
-      {
-        id: "assumedCpiPercent",
-        label: "Assumed CPI (%)",
-        type: "range",
-        min: 0,
-        max: 10,
-        step: 0.1,
-      },
-    ],
-  },
-  {
     id: "alpha",
     eyebrow: "Alpha Pension",
     title: "Alpha pension details",
@@ -205,6 +181,21 @@ export const fieldGroups: FieldGroup[] = [
         id: "alphaEpaEndDate",
         label: "EPA End Date",
         type: "date",
+      },
+      {
+        id: "applyPensionIncreases",
+        label: "Apply Alpha pension increases",
+        type: "checkbox",
+        description:
+          "Benefits increase annually by CPI + 1.6% while active, then by CPI after leaving Alpha service.",
+      },
+      {
+        id: "assumedCpiPercent",
+        label: "Assumed CPI (%)",
+        type: "range",
+        min: 0,
+        max: 10,
+        step: 0.1,
       },
     ],
   },

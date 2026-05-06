@@ -35,6 +35,10 @@ function App() {
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState,
   );
+  const [showSavedFeedback, setShowSavedFeedback] = useState(false);
+  const savedFeedbackTimer = useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
   const useDropdownDates = useMobileDateDropdowns();
   const validationIssues = validateSettings(settings);
   const projectionRows = createProjectionTable(settings);
@@ -44,7 +48,16 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
+  useEffect(() => {
+    return () => {
+      if (savedFeedbackTimer.current) {
+        window.clearTimeout(savedFeedbackTimer.current);
+      }
+    };
+  }, []);
+
   function updateSetting<K extends SettingsKey>(key: K, value: PensionSettings[K]) {
+    showSavedLabel();
     setSettings((current) => ({
       ...current,
       [key]: normalizeSetting(key, value),
@@ -58,7 +71,20 @@ function App() {
   }
 
   function resetSettings() {
+    showSavedLabel();
     setSettings(createDefaultSettings());
+  }
+
+  function showSavedLabel() {
+    if (savedFeedbackTimer.current) {
+      window.clearTimeout(savedFeedbackTimer.current);
+    }
+
+    setShowSavedFeedback(true);
+    savedFeedbackTimer.current = window.setTimeout(() => {
+      setShowSavedFeedback(false);
+      savedFeedbackTimer.current = null;
+    }, 1400);
   }
 
   return (
@@ -90,6 +116,12 @@ function App() {
       ) : null}
 
       <main className="app-shell" aria-hidden={!hasAcknowledgedNotice}>
+        {showSavedFeedback ? (
+          <span className="saved-feedback" role="status" aria-live="polite">
+            Saved Locally
+          </span>
+        ) : null}
+
         <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Civil Service</p>
@@ -138,6 +170,34 @@ function App() {
           </article>
         </div>
       </section>
+
+      <SummarySection
+        title="Pension Summary"
+        headingLevel={2}
+        variant="feature"
+        description="The headline outcomes below are all derived from the same monthly projection rows shown in the table."
+        groupTitle="Alpha Pension"
+        items={[
+          {
+            label: "Annual Alpha Pension at retirement",
+            value: formatCurrencyDetailed(pensionSummary.alphaPension.annualAtDraw),
+          },
+          {
+            label: "Total Alpha pension added after today",
+            value: formatCurrencyDetailed(pensionSummary.alphaPension.totalAddedAfterToday),
+          },
+          {
+            label: "Monthly income at Alpha pension start",
+            value: formatCurrencyDetailed(pensionSummary.alphaPension.monthlyAtDraw),
+          },
+          {
+            label: "Total Monthly Pension at State Pension start",
+            value: formatCurrencyDetailed(
+              pensionSummary.incomeOverTime.monthlyAtStateStart,
+            ),
+          },
+        ]}
+      />
 
       <section className="layout">
         <section className="panel settings-panel">
@@ -256,36 +316,53 @@ type SummaryItem = {
 type SummarySectionProps = {
   title: string;
   items: SummaryItem[];
+  headingLevel?: 2 | 3;
+  description?: string;
+  groupTitle?: string;
+  variant?: "compact" | "feature";
 };
 
-function SummarySection({ title, items }: SummarySectionProps) {
+function SummarySection({
+  title,
+  items,
+  headingLevel = 3,
+  description,
+  groupTitle,
+  variant = "compact",
+}: SummarySectionProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
+
   return (
-    <section className="summary-section">
-      <h3>{title}</h3>
-      <dl className="snapshot-list">
-        {items.map(({ label, value, infoUrl }) => (
-          <div key={label}>
-            <dt>
-              <span className="field-label-group">
-                <span>{label}</span>
-                {infoUrl ? (
-                  <a
-                    className="field-info-link"
-                    href={infoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`${label} information`}
-                    title={`More information about ${label}`}
-                  >
-                    <span aria-hidden="true">i</span>
-                  </a>
-                ) : null}
-              </span>
-            </dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
+    <section className={`summary-section summary-section--${variant}`}>
+      <Heading>{title}</Heading>
+      {description ? <p className="section-copy">{description}</p> : null}
+      <div className="summary-section-inner">
+        {groupTitle ? <h3>{groupTitle}</h3> : null}
+        <dl className="snapshot-list">
+          {items.map(({ label, value, infoUrl }) => (
+            <div key={label}>
+              <dt>
+                <span className="field-label-group">
+                  <span>{label}</span>
+                  {infoUrl ? (
+                    <a
+                      className="field-info-link"
+                      href={infoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${label} information`}
+                      title={`More information about ${label}`}
+                    >
+                      <span aria-hidden="true">i</span>
+                    </a>
+                  ) : null}
+                </span>
+              </dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </section>
   );
 }
@@ -343,6 +420,7 @@ function SettingsFields({
             onChange={onChange}
             useDropdownDates={useDropdownDates}
             disabled={isFieldDisabled(field.id, settings)}
+            hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
           />
         ))}
       </div>
@@ -365,6 +443,7 @@ function SettingsFields({
                 onChange={onChange}
                 useDropdownDates={useDropdownDates}
                 disabled={isFieldDisabled(field.id, settings)}
+                hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
               />
             ))}
           </div>
@@ -384,15 +463,43 @@ function isFieldDisabled(fieldId: FieldDefinition["id"], settings: PensionSettin
   );
 }
 
+function isFieldHiddenOnMobile(fieldId: FieldDefinition["id"], settings: PensionSettings) {
+  return (
+    (fieldId === "assumedCpiPercent" && !settings.applyPensionIncreases) ||
+    (["alphaEpaYearsBeforeNpa", "alphaEpaStartDate", "alphaEpaEndDate"].includes(
+      fieldId,
+    ) &&
+      !settings.alphaEpaEnabled)
+  );
+}
+
+function getFieldCardClassName(disabled: boolean, hideOnMobile: boolean) {
+  return [
+    "field-card",
+    disabled ? "field-card--disabled" : "",
+    hideOnMobile ? "field-card--mobile-hidden" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 type FieldProps = {
   field: FieldDefinition;
   value: PensionSettings[SettingsKey];
   onChange: <K extends SettingsKey>(key: K, value: PensionSettings[K]) => void;
   useDropdownDates: boolean;
   disabled?: boolean;
+  hideOnMobile?: boolean;
 };
 
-function Field({ field, value, onChange, useDropdownDates, disabled = false }: FieldProps) {
+function Field({
+  field,
+  value,
+  onChange,
+  useDropdownDates,
+  disabled = false,
+  hideOnMobile = false,
+}: FieldProps) {
   if (field.type === "date") {
     return (
       <DateSettingField
@@ -401,6 +508,7 @@ function Field({ field, value, onChange, useDropdownDates, disabled = false }: F
         onChange={onChange}
         useDropdowns={useDropdownDates}
         disabled={disabled}
+        hideOnMobile={hideOnMobile}
       />
     );
   }
@@ -445,7 +553,7 @@ function Field({ field, value, onChange, useDropdownDates, disabled = false }: F
     const canResetToDefault = field.id === "assumedCpiPercent";
 
     return (
-      <div className={`field-card${disabled ? " field-card--disabled" : ""}`}>
+      <div className={getFieldCardClassName(disabled, hideOnMobile)}>
         <span className="field-header">
           <FieldLabel field={field} />
         </span>
@@ -685,12 +793,14 @@ function DateSettingField({
   onChange,
   useDropdowns,
   disabled = false,
+  hideOnMobile = false,
 }: {
   field: DateField;
   value: string;
   onChange: FieldProps["onChange"];
   useDropdowns: boolean;
   disabled?: boolean;
+  hideOnMobile?: boolean;
 }) {
   function commitDateValue(nextValue: string) {
     const normalizedValue = normalizeSetting(
@@ -702,7 +812,7 @@ function DateSettingField({
   }
 
   return (
-    <div className={`field-card${disabled ? " field-card--disabled" : ""}`}>
+    <div className={getFieldCardClassName(disabled, hideOnMobile)}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>

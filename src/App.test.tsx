@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
 import App from "./App";
 import { createProjectionTable } from "./projection";
 import {
@@ -15,6 +16,10 @@ function renderAcknowledgedApp() {
 describe("App settings form", () => {
   beforeEach(() => {
     window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("renders sensible default values", () => {
@@ -62,7 +67,11 @@ describe("App settings form", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Alpha Pension" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Pension Summary" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Pension Summary" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Alpha Pension" })).toBeInTheDocument();
+    expect(screen.getByText("Annual Alpha Pension at retirement")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Calculated details" })).toBeInTheDocument();
     expect(screen.getByText("At State Pension start")).toBeInTheDocument();
     expect(screen.getAllByText("Starts Drawing Alpha Pension").length).toBeGreaterThan(0);
@@ -107,6 +116,25 @@ describe("App settings form", () => {
         currentStatePension: 11800,
       }),
     );
+  });
+
+  it("briefly confirms when changed parameters are saved", () => {
+    vi.useFakeTimers();
+    renderAcknowledgedApp();
+
+    expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Current Full State Pension (£ per year)"), {
+      target: { value: "11800" },
+    });
+
+    expect(screen.getByText("Saved Locally")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1400);
+    });
+
+    expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
   });
 
   it("stores the Alpha ABS date as just the selected year", () => {

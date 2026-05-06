@@ -381,16 +381,51 @@ describe("App settings form", () => {
     fireEvent.change(
       screen.getByLabelText("Current Pensionable Earnings (£ per year) exact value"),
       {
-        target: { value: "56500" },
+        target: { value: "10001" },
       },
     );
 
     expect(screen.getByLabelText("Current Pensionable Earnings (£ per year)")).toHaveValue(
-      "56500",
+      "10001",
     );
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
-        pensionableEarnings: 56500,
+        pensionableEarnings: 10001,
+      }),
+    );
+  });
+
+  it("keeps partial exact numeric entry editable before saving a valid range value", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        ...defaultSettings,
+        lifeExpectancy: 100,
+      }),
+    );
+    renderAcknowledgedApp();
+
+    const exactLifeExpectancyInput = screen.getByLabelText(
+      "Life Expectancy (Age) exact value",
+    );
+
+    fireEvent.focus(exactLifeExpectancyInput);
+    fireEvent.change(exactLifeExpectancyInput, {
+      target: { value: "9" },
+    });
+
+    expect(exactLifeExpectancyInput).toHaveValue(9);
+    expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("100");
+
+    fireEvent.change(exactLifeExpectancyInput, {
+      target: { value: "90" },
+    });
+
+    expect(exactLifeExpectancyInput).toHaveValue(90);
+    expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("90");
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        lifeExpectancy: 90,
       }),
     );
   });
@@ -517,13 +552,13 @@ describe("App settings form", () => {
 
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("100");
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(0);
-    expect(screen.getByLabelText("Added Alpha Pension (£ per month)")).toHaveValue("225");
+    expect(screen.getByLabelText("Added Alpha Pension (£ per month)")).toHaveValue("233");
     expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue("40");
     expect(
       screen.getByLabelText("Alpha Pension Accrued at Last Statement (£ per year)"),
     ).toHaveValue(12444);
     expect(screen.getByLabelText("Current Pensionable Earnings (£ per year)")).toHaveValue(
-      "56500",
+      "56321",
     );
     expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue("70");
   });

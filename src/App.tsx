@@ -3,6 +3,7 @@ import {
   fieldGroups,
   type DateField,
   type FieldDefinition,
+  type RangeField,
   type SettingsKey,
 } from "./fieldDefinitions";
 import {
@@ -589,63 +590,14 @@ function Field({
   }
 
   if (field.type === "range") {
-    const commitRangeValue = (nextValue: number) => {
-      onChange(field.id, nextValue as PensionSettings[typeof field.id]);
-    };
-    const canResetToDefault = field.id === "assumedCpiPercent";
-
     return (
-      <div className={getFieldCardClassName(disabled, hideOnMobile)}>
-        <span className="field-header">
-          <FieldLabel field={field} />
-        </span>
-        <div className="range-control-grid">
-          <div className="range-slider-group">
-            <input
-              aria-label={field.label}
-              className="range-input"
-              type="range"
-              min={field.min}
-              max={field.max}
-              step={field.step}
-              value={value as number}
-              disabled={disabled}
-              onChange={(event) => commitRangeValue(Number(event.target.value))}
-            />
-            <div className="range-scale">
-              <span>{formatFieldValue(field.min, field.format)}</span>
-              <span>{formatFieldValue(field.max, field.format)}</span>
-            </div>
-          </div>
-          <input
-            aria-label={`${field.label} exact value`}
-            className="number-input"
-            type="number"
-            min={field.min}
-            max={field.max}
-            step={field.step}
-            value={value as number}
-            disabled={disabled}
-            onChange={(event) => commitRangeValue(Number(event.target.value))}
-          />
-        </div>
-        {canResetToDefault ? (
-          <button
-            type="button"
-            className="secondary-button field-reset-button"
-            aria-label="Reset assumed CPI to default"
-            disabled={disabled}
-            onClick={() =>
-              onChange(
-                field.id,
-                defaultSettings.assumedCpiPercent as PensionSettings[typeof field.id],
-              )
-            }
-          >
-            Reset to default
-          </button>
-        ) : null}
-      </div>
+      <RangeSettingField
+        field={field}
+        value={value as number}
+        onChange={onChange}
+        disabled={disabled}
+        hideOnMobile={hideOnMobile}
+      />
     );
   }
 
@@ -736,6 +688,127 @@ function Field({
   }
 
   return null;
+}
+
+function RangeSettingField({
+  field,
+  value,
+  onChange,
+  disabled = false,
+  hideOnMobile = false,
+}: {
+  field: RangeField;
+  value: number;
+  onChange: FieldProps["onChange"];
+  disabled?: boolean;
+  hideOnMobile?: boolean;
+}) {
+  const [draftExactValue, setDraftExactValue] = useState(value.toString());
+  const [isEditingExactValue, setIsEditingExactValue] = useState(false);
+  const canResetToDefault = field.id === "assumedCpiPercent";
+  const displayedExactValue = isEditingExactValue ? draftExactValue : value.toString();
+
+  const commitRangeValue = (nextValue: number) => {
+    onChange(field.id, nextValue as PensionSettings[typeof field.id]);
+  };
+
+  const commitExactValue = (nextDraftValue: string) => {
+    const parsedValue = Number(nextDraftValue);
+
+    if (
+      nextDraftValue.trim() !== "" &&
+      Number.isFinite(parsedValue) &&
+      parsedValue >= field.min &&
+      parsedValue <= field.max
+    ) {
+      commitRangeValue(parsedValue);
+    }
+  };
+
+  const normalizeExactValue = (nextDraftValue: string) => {
+    const parsedValue = Number(nextDraftValue);
+    const nextValue =
+      nextDraftValue.trim() === "" || !Number.isFinite(parsedValue)
+        ? value
+        : parsedValue;
+
+    commitRangeValue(nextValue);
+    setDraftExactValue(
+      normalizeSetting(field.id, nextValue as PensionSettings[typeof field.id]).toString(),
+    );
+  };
+
+  return (
+    <div className={getFieldCardClassName(disabled, hideOnMobile)}>
+      <span className="field-header">
+        <FieldLabel field={field} />
+      </span>
+      <div className="range-control-grid">
+        <div className="range-slider-group">
+          <input
+            aria-label={field.label}
+            className="range-input"
+            type="range"
+            min={field.min}
+            max={field.max}
+            step={field.step}
+            value={value}
+            disabled={disabled}
+            onChange={(event) => commitRangeValue(Number(event.target.value))}
+          />
+          <div className="range-scale">
+            <span>{formatFieldValue(field.min, field.format)}</span>
+            <span>{formatFieldValue(field.max, field.format)}</span>
+          </div>
+        </div>
+        <input
+          aria-label={`${field.label} exact value`}
+          className="number-input"
+          type="number"
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          value={displayedExactValue}
+          disabled={disabled}
+          onFocus={(event) => {
+            setDraftExactValue(event.currentTarget.value);
+            setIsEditingExactValue(true);
+          }}
+          onChange={(event) => {
+            const nextDraftValue = event.target.value;
+            setDraftExactValue(nextDraftValue);
+            commitExactValue(nextDraftValue);
+          }}
+          onBlur={(event) => {
+            setIsEditingExactValue(false);
+            normalizeExactValue(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              normalizeExactValue(event.currentTarget.value);
+              event.currentTarget.blur();
+            }
+          }}
+        />
+      </div>
+      {canResetToDefault ? (
+        <button
+          type="button"
+          className="secondary-button field-reset-button"
+          aria-label="Reset assumed CPI to default"
+          disabled={disabled}
+          onClick={() =>
+            onChange(
+              field.id,
+              defaultSettings.assumedCpiPercent as PensionSettings[typeof field.id],
+            )
+          }
+        >
+          Reset to default
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 type DateParts = {

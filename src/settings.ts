@@ -443,17 +443,14 @@ function normalizeNumericSetting(key: NumericSettingKey, value: unknown) {
 
   const { min, max, step } = numericSettingRules[key];
   const clamped = Math.min(max, Math.max(min, parsed));
+
+  if (step !== 1) {
+    return clamped;
+  }
+
   const snapped = Math.round((clamped - min) / step) * step + min;
-  const decimalPlaces = getDecimalPlaces(step);
 
-  return Number(Math.min(max, Math.max(min, snapped)).toFixed(decimalPlaces));
-}
-
-function getDecimalPlaces(value: number) {
-  const text = value.toString();
-  const decimalIndex = text.indexOf(".");
-
-  return decimalIndex === -1 ? 0 : text.length - decimalIndex - 1;
+  return Math.min(max, Math.max(min, snapped));
 }
 
 function normalizeDate(value: string, fallback: string) {

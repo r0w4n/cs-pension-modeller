@@ -331,6 +331,10 @@ describe("App settings form", () => {
       "href",
       "https://www.gov.uk/check-state-pension",
     );
+    expect(screen.getByRole("link", { name: "What is the triple lock?" })).toHaveAttribute(
+      "href",
+      "https://commonslibrary.parliament.uk/research-briefings/cbp-7812/",
+    );
     expect(screen.getByRole("link", { name: "Check State Pension age" })).toHaveAttribute(
       "href",
       "https://www.gov.uk/state-pension-age",

@@ -54,6 +54,8 @@ export type CheckboxField = {
   label: string;
   type: "checkbox";
   description: string;
+  infoUrl?: string;
+  infoLinkText?: string;
 };
 
 export type CurrencyInputField = {
@@ -196,6 +198,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "checkbox",
         description:
           "Uprate the current forecast each year until State Pension age using the highest of CPI, wage growth, and 2.5%.",
+        infoUrl:
+          "https://commonslibrary.parliament.uk/research-briefings/cbp-7812/",
+        infoLinkText: "What is the triple lock?",
       },
       {
         id: "statePensionCpiPercent",

@@ -34,6 +34,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     alphaAddedPensionLumpSums: [],
     sippCurrentPot: defaultSettings.sippCurrentPot,
     sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+    sippDrawAge: defaultSettings.sippDrawAge,
     sippLumpSums: defaultSettings.sippLumpSums,
     sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
     sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
@@ -42,6 +43,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
     isaCurrentPot: defaultSettings.isaCurrentPot,
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+    isaDrawAge: defaultSettings.isaDrawAge,
     isaLumpSums: defaultSettings.isaLumpSums,
     isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
     isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
@@ -100,6 +102,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Regular SIPP contribution (£ per month)")).toHaveValue(
       defaultSettings.sippMonthlyContribution.toString(),
     );
+    expect(screen.getByLabelText("SIPP draw start age")).toHaveValue(
+      defaultSettings.sippDrawAge.toString(),
+    );
     expect(screen.getByRole("button", { name: "Add SIPP lump sum" })).toBeInTheDocument();
     expect(screen.getByLabelText("Apply 25% tax relief to SIPP additions")).toBeChecked();
     expect(screen.getByLabelText("Apply real interest to SIPP pot")).not.toBeChecked();
@@ -112,7 +117,10 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Current ISA pot (£)")).toHaveValue(
       defaultSettings.isaCurrentPot,
     );
-    expect(screen.getByText("ISA at Alpha draw date")).toBeInTheDocument();
+    expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
+      defaultSettings.isaDrawAge.toString(),
+    );
+    expect(screen.getByText("ISA at ISA draw start")).toBeInTheDocument();
     expect(screen.getByLabelText("Last Annual Benifits Statement")).toHaveValue(
       "2025",
     );
@@ -147,7 +155,7 @@ describe("App settings form", () => {
     expect(screen.getByText("Annual Alpha Pension at retirement")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Calculated details" })).toBeInTheDocument();
     expect(screen.getByText("At State Pension start")).toBeInTheDocument();
-    expect(screen.getByText("SIPP at Alpha draw date")).toBeInTheDocument();
+    expect(screen.getByText("SIPP at SIPP draw start")).toBeInTheDocument();
     expect(screen.getAllByText("Starts Drawing Alpha Pension").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Calculation start").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Life expectancy").length).toBeGreaterThan(0);
@@ -552,7 +560,7 @@ describe("App settings form", () => {
       target: { value: "5000" },
     });
 
-    expect(screen.getByText("ISA at Alpha draw date")).toBeInTheDocument();
+    expect(screen.getByText("ISA at ISA draw start")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Monthly ISA pension" })).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
@@ -587,8 +595,8 @@ describe("App settings form", () => {
     expect(screen.queryByLabelText("Current SIPP pot (£)")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Current ISA pot (£)")).not.toBeInTheDocument();
     expect(screen.queryByText("At State Pension start")).not.toBeInTheDocument();
-    expect(screen.queryByText("SIPP at Alpha draw date")).not.toBeInTheDocument();
-    expect(screen.queryByText("ISA at Alpha draw date")).not.toBeInTheDocument();
+    expect(screen.queryByText("SIPP at SIPP draw start")).not.toBeInTheDocument();
+    expect(screen.queryByText("ISA at ISA draw start")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("columnheader", { name: "Monthly State pension" }),
     ).not.toBeInTheDocument();

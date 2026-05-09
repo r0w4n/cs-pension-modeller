@@ -24,9 +24,11 @@ export type RangeField = {
     | "pensionableEarnings"
     | "alphaPensionDrawAge"
     | "alphaEpaYearsBeforeNpa"
+    | "sippDrawAge"
     | "sippMonthlyContribution"
     | "sippRealInterestPercent"
     | "sippWithdrawalPercent"
+    | "isaDrawAge"
     | "isaMonthlyContribution"
     | "isaRealInterestPercent"
     | "isaWithdrawalPercent";
@@ -295,6 +297,14 @@ export const fieldGroups: FieldGroup[] = [
         valuePrefix: "/mo",
       },
       {
+        id: "sippDrawAge",
+        label: "SIPP draw start age",
+        type: "range",
+        min: 55,
+        max: 70,
+        step: 1,
+      },
+      {
         id: "sippApplyTaxRelief",
         label: "Apply 25% tax relief to SIPP additions",
         type: "checkbox",
@@ -358,6 +368,14 @@ export const fieldGroups: FieldGroup[] = [
         step: 25,
         format: "currency",
         valuePrefix: "/mo",
+      },
+      {
+        id: "isaDrawAge",
+        label: "ISA draw start age",
+        type: "range",
+        min: 55,
+        max: 70,
+        step: 1,
       },
       {
         id: "isaApplyRealInterest",

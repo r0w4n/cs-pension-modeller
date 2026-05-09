@@ -430,6 +430,30 @@ describe("projection calculations", () => {
     ).toBeCloseTo(400, 6);
   });
 
+  it("uses independent SIPP and ISA draw dates for income start", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2047-05-15",
+      dateOfBirth: "1987-06-15",
+      alphaPensionDrawAge: 60,
+      alphaPensionLeaveAge: 60,
+      lifeExpectancy: 66,
+      sippCurrentPot: 120000,
+      isaCurrentPot: 60000,
+      sippDrawAge: 61,
+      isaDrawAge: 62,
+    };
+
+    const rows = createProjectionTable(settings);
+
+    expect(findRowByDate(rows, "2048-05-15")?.monthlySippPension).toBe(0);
+    expect(findRowByDate(rows, "2048-06-15")?.monthlySippPension).toBeGreaterThan(0);
+    expect(findRowByDate(rows, "2049-05-15")?.monthlyIsaPension).toBe(0);
+    expect(findRowByDate(rows, "2049-06-15")?.monthlyIsaPension).toBeGreaterThan(0);
+    expect(findRowByDate(rows, "2048-06-15")?.milestones).toContain("Starts Drawing SIPP");
+    expect(findRowByDate(rows, "2049-06-15")?.milestones).toContain("Starts Drawing ISA");
+  });
+
   it("stops monthly alpha accrual after the earlier of draw date and leave date", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
@@ -694,6 +718,8 @@ describe("projection calculations", () => {
         "2047-04-15",
         "2047-05-15",
         "2047-06-15",
+        "2047-06-15",
+        "2047-06-15",
         "2055-06-15",
         "2055-08-15",
       ),
@@ -709,6 +735,8 @@ describe("projection calculations", () => {
       generateMilestoneDefinitions(
         "2047-04-15",
         "2047-05-15",
+        "2047-06-15",
+        "2047-06-15",
         "2047-06-15",
         "2055-06-15",
         "2055-08-15",
@@ -726,6 +754,8 @@ describe("projection calculations", () => {
         "2055-04-15",
         "2047-05-15",
         "2047-06-15",
+        "2047-06-15",
+        "2047-06-15",
         "2055-06-15",
         "2055-08-15",
       ),
@@ -736,11 +766,32 @@ describe("projection calculations", () => {
     expect(milestoneMap.get("2055-06-15")).toContain("Starts Drawing State Pension");
   });
 
+  it("flags the correct rows for SIPP and ISA draw dates", () => {
+    const milestoneMap = buildMilestoneMap(
+      generateMilestoneDefinitions(
+        "2047-04-15",
+        "2047-05-15",
+        "2047-06-15",
+        "2047-07-15",
+        "2047-08-15",
+        "2055-06-15",
+        "2055-08-15",
+      ),
+      "2047-04-15",
+      "2055-08-15",
+    );
+
+    expect(milestoneMap.get("2047-07-15")).toContain("Starts Drawing SIPP");
+    expect(milestoneMap.get("2047-08-15")).toContain("Starts Drawing ISA");
+  });
+
   it("flags the next row when a milestone falls between generated monthly rows", () => {
     const milestoneMap = buildMilestoneMap(
       generateMilestoneDefinitions(
         "2047-04-15",
         "2047-05-20",
+        "2047-06-20",
+        "2047-06-20",
         "2047-06-20",
         "2055-06-20",
         "2055-08-15",
@@ -762,6 +813,8 @@ describe("projection calculations", () => {
         "2047-06-15",
         "2047-06-15",
         "2047-06-15",
+        "2047-06-15",
+        "2047-06-15",
         "2047-08-15",
         [],
       ),
@@ -772,6 +825,8 @@ describe("projection calculations", () => {
     expect(milestoneMap.get("2047-06-15")).toEqual([
       "Leave Alpha Pension Scheme",
       "Starts Drawing Alpha Pension",
+      "Starts Drawing SIPP",
+      "Starts Drawing ISA",
       "Starts Drawing State Pension",
     ]);
   });
@@ -781,6 +836,8 @@ describe("projection calculations", () => {
       generateMilestoneDefinitions(
         "2047-04-15",
         "2047-05-15",
+        "2047-06-15",
+        "2047-06-15",
         "2047-06-15",
         "2055-06-15",
         "2055-08-15",
@@ -799,6 +856,8 @@ describe("projection calculations", () => {
         "2047-05-15",
         "2047-06-15",
         "2047-07-15",
+        "2047-07-15",
+        "2047-07-15",
         "2055-06-15",
         "2055-08-15",
         [],
@@ -816,6 +875,8 @@ describe("projection calculations", () => {
       generateMilestoneDefinitions(
         "2055-04-15",
         "2047-05-15",
+        "2047-06-15",
+        "2047-06-15",
         "2047-06-15",
         "2055-06-15",
         "2055-08-15",
@@ -845,6 +906,8 @@ describe("projection calculations", () => {
     expect(findRowByDate(rows, "2047-06-15")?.milestones).toEqual([
       "Leave Alpha Pension Scheme",
       "Starts Drawing Alpha Pension",
+      "Starts Drawing SIPP",
+      "Starts Drawing ISA",
       "Starts Drawing State Pension",
     ]);
     expect(rows.at(-1)?.date).toBe("2048-06-15");
@@ -856,6 +919,8 @@ describe("projection calculations", () => {
       generateMilestoneDefinitions(
         "2047-04-15",
         "2047-05-15",
+        "2047-06-15",
+        "2047-06-15",
         "2047-06-15",
         "2055-06-15",
         "2055-08-15",

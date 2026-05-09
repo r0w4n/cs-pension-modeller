@@ -168,7 +168,7 @@ function App() {
 
           {settings.showSipp ? (
             <article className="summary-card">
-              <p className="card-label">SIPP at Alpha draw date</p>
+              <p className="card-label">SIPP at SIPP draw start</p>
               <div className="summary-card-amounts">
                 <h2>{formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw)}</h2>
                 <p className="summary-card-secondary-amount">
@@ -177,14 +177,14 @@ function App() {
               </div>
               <p>
                 Projected SIPP pot and monthly drawdown from{" "}
-                {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
+                {formatDate(pensionSummary.keyDates.startsSippDraw)}.
               </p>
             </article>
           ) : null}
 
           {settings.showIsa ? (
             <article className="summary-card">
-              <p className="card-label">ISA at Alpha draw date</p>
+              <p className="card-label">ISA at ISA draw start</p>
               <div className="summary-card-amounts">
                 <h2>{formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw)}</h2>
                 <p className="summary-card-secondary-amount">
@@ -193,7 +193,7 @@ function App() {
               </div>
               <p>
                 Projected ISA pot and monthly drawdown from{" "}
-                {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
+                {formatDate(pensionSummary.keyDates.startsIsaDraw)}.
               </p>
             </article>
           ) : null}
@@ -247,7 +247,7 @@ function App() {
           ...(settings.showSipp
             ? [
                 {
-                  label: "SIPP pot at Alpha pension start",
+                  label: "SIPP pot at SIPP draw start",
                   value: formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw),
                 },
               ]
@@ -255,7 +255,7 @@ function App() {
           ...(settings.showIsa
             ? [
                 {
-                  label: "ISA pot at Alpha pension start",
+                  label: "ISA pot at ISA draw start",
                   value: formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw),
                 },
               ]

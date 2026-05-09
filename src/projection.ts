@@ -45,6 +45,8 @@ export type PensionSummary = {
   keyDates: {
     stopsAlphaAccrual: string;
     startsAlphaPension: string;
+    startsSippDraw: string;
+    startsIsaDraw: string;
     startsStatePension: string;
   };
   alphaPension: {
@@ -85,6 +87,8 @@ const CALCULATION_START_LABEL = "Calculation start";
 const LAST_ABS_STATEMENT_LABEL = "Last ABS";
 const STOPS_ALPHA_ACCRUAL_LABEL = "Leave Alpha Pension Scheme";
 const STARTS_ALPHA_PENSION_LABEL = "Starts Drawing Alpha Pension";
+const STARTS_SIPP_LABEL = "Starts Drawing SIPP";
+const STARTS_ISA_LABEL = "Starts Drawing ISA";
 const STARTS_STATE_PENSION_LABEL = "Starts Drawing State Pension";
 const LIFE_EXPECTANCY_LABEL = "Life expectancy";
 const LUMP_SUM_ADDED_PENSION_LABEL = "Lump Sum Added Pension";
@@ -178,6 +182,8 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     reductionFactor,
     epaReductionFactor,
   } = derivedInputs;
+  const sippDrawDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
+  const isaDrawDate = addYears(settings.dateOfBirth, settings.isaDrawAge);
   const alphaAbsDate = resolveAlphaAbsDate(settings.alphaPensionAbsDate);
 
   const startingAlphaPortionsAtStartDate = calculateStartingAlphaPortionsAtStartDate({
@@ -208,13 +214,13 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     const sippProjection = calculateSippProjectionRow({
       settings,
       rowDate,
-      drawDate,
+      drawDate: sippDrawDate,
       endDate,
     });
     const isaProjection = calculateIsaProjectionRow({
       settings,
       rowDate,
-      drawDate,
+      drawDate: isaDrawDate,
       endDate,
     });
     const age = calculateAge(settings.dateOfBirth, rowDate);
@@ -308,6 +314,8 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     settings.startDate,
     accrualStopDate,
     drawDate,
+    settings.showSipp ? sippDrawDate : "",
+    settings.showIsa ? isaDrawDate : "",
     settings.statePensionDrawDate,
     endDate,
     settings.alphaAddedPensionLumpSums,
@@ -346,6 +354,8 @@ function createProjectionTableWithPensionIncreases(
     reductionFactor,
     epaReductionFactor,
   } = derivedInputs;
+  const sippDrawDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
+  const isaDrawDate = addYears(settings.dateOfBirth, settings.isaDrawAge);
   const alphaAbsDate = resolveAlphaAbsDate(settings.alphaPensionAbsDate);
   const firstRowDate = minIsoDate(alphaAbsDate, settings.startDate);
   const benefitComponents: AlphaBenefitComponent[] = [
@@ -363,7 +373,7 @@ function createProjectionTableWithPensionIncreases(
         ? calculateSippProjectionRow({
             settings,
             rowDate,
-            drawDate,
+            drawDate: sippDrawDate,
             endDate,
           })
         : { sippPot: 0, monthlySippPension: 0 };
@@ -372,7 +382,7 @@ function createProjectionTableWithPensionIncreases(
         ? calculateIsaProjectionRow({
             settings,
             rowDate,
-            drawDate,
+            drawDate: isaDrawDate,
             endDate,
           })
         : { isaPot: 0, monthlyIsaPension: 0 };
@@ -487,6 +497,8 @@ function createProjectionTableWithPensionIncreases(
     settings.startDate,
     accrualStopDate,
     drawDate,
+    settings.showSipp ? sippDrawDate : "",
+    settings.showIsa ? isaDrawDate : "",
     settings.statePensionDrawDate,
     endDate,
     settings.alphaAddedPensionLumpSums,
@@ -528,6 +540,8 @@ export function generatePensionSummary(
       settings.dateOfBirth,
       settings.alphaPensionDrawAge,
     );
+    const sippDrawDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
+    const isaDrawDate = addYears(settings.dateOfBirth, settings.isaDrawAge);
     const alphaAccrualStopDate = minIsoDate(
       alphaPensionDrawDate,
       addYears(settings.dateOfBirth, settings.alphaPensionLeaveAge),
@@ -545,6 +559,8 @@ export function generatePensionSummary(
       keyDates: {
         stopsAlphaAccrual: alphaAccrualStopDate,
         startsAlphaPension: alphaPensionDrawDate,
+        startsSippDraw: sippDrawDate,
+        startsIsaDraw: isaDrawDate,
         startsStatePension: settings.statePensionDrawDate,
       },
       alphaPension: {
@@ -591,6 +607,8 @@ export function generatePensionSummary(
     settings.dateOfBirth,
     settings.alphaPensionDrawAge,
   );
+  const sippDrawDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
+  const isaDrawDate = addYears(settings.dateOfBirth, settings.isaDrawAge);
   const alphaAccrualStopDate = minIsoDate(
     alphaPensionDrawDate,
     addYears(settings.dateOfBirth, settings.alphaPensionLeaveAge),
@@ -608,15 +626,19 @@ export function generatePensionSummary(
     findFirstRowAtOrAfterDate(tableData, alphaPensionDrawDate) ?? tableData.at(-1);
   const statePensionRow =
     findFirstRowAtOrAfterDate(tableData, statePensionStartDate) ?? tableData.at(-1);
+  const sippDrawRow =
+    findFirstRowAtOrAfterDate(tableData, sippDrawDate) ?? tableData.at(-1);
+  const isaDrawRow =
+    findFirstRowAtOrAfterDate(tableData, isaDrawDate) ?? tableData.at(-1);
   const maximumAnnualAccrued = Math.max(...tableData.map((row) => row.annualAccruedAlphaPension));
   const totalAddedAfterToday = maximumAnnualAccrued - startingAlphaPensionAtStartDate;
-  const sippDrawRow = alphaDrawRow ?? tableData.at(-1);
-  const isaDrawRow = alphaDrawRow ?? tableData.at(-1);
 
   return {
     keyDates: {
       stopsAlphaAccrual: alphaAccrualStopDate,
       startsAlphaPension: alphaPensionDrawDate,
+      startsSippDraw: sippDrawDate,
+      startsIsaDraw: isaDrawDate,
       startsStatePension: statePensionStartDate,
     },
     alphaPension: {
@@ -630,13 +652,13 @@ export function generatePensionSummary(
       monthlyAtDraw: sippDrawRow?.monthlySippPension ?? 0,
       totalContributionsAfterTaxRelief: calculateTotalSippContributionsAfterTaxRelief(
         settings,
-        alphaPensionDrawDate,
+        sippDrawDate,
       ),
     },
     isaPension: {
       potAtDraw: isaDrawRow?.isaPot ?? 0,
       monthlyAtDraw: isaDrawRow?.monthlyIsaPension ?? 0,
-      totalContributions: calculateTotalIsaContributions(settings, alphaPensionDrawDate),
+      totalContributions: calculateTotalIsaContributions(settings, isaDrawDate),
     },
     incomeOverTime: {
       monthlyAtAlphaStart: alphaDrawRow?.totalMonthlyPensionTakeHomePay ?? 0,
@@ -1382,6 +1404,8 @@ export function generateMilestoneDefinitions(
   startDate: string,
   alphaPensionStopDate: string,
   alphaPensionDrawDate: string,
+  sippDrawDate: string,
+  isaDrawDate: string,
   statePensionStartDate: string,
   lifeExpectancyDate: string,
   lumpSums: AddedPensionLumpSum[] = [],
@@ -1395,6 +1419,8 @@ export function generateMilestoneDefinitions(
     { date: startDate, label: CALCULATION_START_LABEL },
     { date: alphaPensionStopDate, label: STOPS_ALPHA_ACCRUAL_LABEL },
     { date: alphaPensionDrawDate, label: STARTS_ALPHA_PENSION_LABEL },
+    ...(sippDrawDate ? [{ date: sippDrawDate, label: STARTS_SIPP_LABEL }] : []),
+    ...(isaDrawDate ? [{ date: isaDrawDate, label: STARTS_ISA_LABEL }] : []),
     ...(includeStatePension
       ? [{ date: statePensionStartDate, label: STARTS_STATE_PENSION_LABEL }]
       : []),

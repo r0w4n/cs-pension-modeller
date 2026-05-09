@@ -41,6 +41,7 @@ export type PensionSettings = {
   alphaAddedPensionLumpSums: AddedPensionLumpSum[];
   sippCurrentPot: number;
   sippMonthlyContribution: number;
+  sippDrawAge: number;
   sippLumpSums: AddedPensionLumpSum[];
   sippApplyRealInterest: boolean;
   sippRealInterestPercent: number;
@@ -49,6 +50,7 @@ export type PensionSettings = {
   sippWithdrawalPercent: number;
   isaCurrentPot: number;
   isaMonthlyContribution: number;
+  isaDrawAge: number;
   isaLumpSums: AddedPensionLumpSum[];
   isaApplyRealInterest: boolean;
   isaRealInterestPercent: number;
@@ -80,10 +82,12 @@ const numericSettingRules = {
   alphaEpaYearsBeforeNpa: { min: 1, max: 3, step: 1 },
   sippCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
+  sippDrawAge: { min: 55, max: 70, step: 1 },
   sippRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   sippWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
   isaCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
+  isaDrawAge: { min: 55, max: 70, step: 1 },
   isaRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   isaWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
 } as const;
@@ -118,6 +122,7 @@ export const defaultSettings: PensionSettings = {
   alphaAddedPensionLumpSums: [],
   sippCurrentPot: 0,
   sippMonthlyContribution: 0,
+  sippDrawAge: 60,
   sippLumpSums: [],
   sippApplyRealInterest: false,
   sippRealInterestPercent: 3,
@@ -126,6 +131,7 @@ export const defaultSettings: PensionSettings = {
   sippWithdrawalPercent: 4,
   isaCurrentPot: 0,
   isaMonthlyContribution: 0,
+  isaDrawAge: 60,
   isaLumpSums: [],
   isaApplyRealInterest: false,
   isaRealInterestPercent: 3,
@@ -262,6 +268,7 @@ function coerceSettings(
     ),
     sippCurrentPot: coerceNumber(input.sippCurrentPot),
     sippMonthlyContribution: coerceNumber(input.sippMonthlyContribution),
+    sippDrawAge: coerceNumber(input.sippDrawAge),
     sippLumpSums:
       coerceAddedPensionLumpSums(input.sippLumpSums) ??
       coerceLegacySippLumpSum(legacySippLumpSumContribution),
@@ -274,6 +281,7 @@ function coerceSettings(
     sippWithdrawalPercent: coerceNumber(input.sippWithdrawalPercent),
     isaCurrentPot: coerceNumber(input.isaCurrentPot),
     isaMonthlyContribution: coerceNumber(input.isaMonthlyContribution),
+    isaDrawAge: coerceNumber(input.isaDrawAge),
     isaLumpSums: coerceAddedPensionLumpSums(input.isaLumpSums),
     isaApplyRealInterest: coerceBoolean(input.isaApplyRealInterest),
     isaRealInterestPercent: coerceNumber(input.isaRealInterestPercent),
@@ -478,6 +486,7 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
       "sippMonthlyContribution",
       settings.sippMonthlyContribution,
     ),
+    sippDrawAge: normalizeSetting("sippDrawAge", settings.sippDrawAge),
     sippLumpSums: normalizeSetting("sippLumpSums", settings.sippLumpSums),
     sippApplyRealInterest: Boolean(settings.sippApplyRealInterest),
     sippRealInterestPercent: normalizeSetting(
@@ -501,6 +510,7 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
       "isaMonthlyContribution",
       settings.isaMonthlyContribution,
     ),
+    isaDrawAge: normalizeSetting("isaDrawAge", settings.isaDrawAge),
     isaLumpSums: normalizeSetting("isaLumpSums", settings.isaLumpSums),
     isaApplyRealInterest: Boolean(settings.isaApplyRealInterest),
     isaRealInterestPercent: normalizeSetting(

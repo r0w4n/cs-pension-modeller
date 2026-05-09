@@ -63,6 +63,10 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("SIPP withdrawal rate (%)")).toHaveValue("4");
     expect(screen.getByLabelText("SIPP withdrawal rate (%)")).toBeDisabled();
     expect(screen.getByLabelText("SIPP withdrawal rate (%) exact value")).toBeDisabled();
+    expect(screen.getByLabelText("Current ISA pot (£)")).toHaveValue(
+      defaultSettings.isaCurrentPot,
+    );
+    expect(screen.getByText("ISA at Alpha draw date")).toBeInTheDocument();
     expect(screen.getByLabelText("Last Annual Benifits Statement")).toHaveValue(
       "2025",
     );
@@ -208,6 +212,13 @@ describe("App settings form", () => {
       sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+      isaCurrentPot: defaultSettings.isaCurrentPot,
+      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+      isaLumpSums: defaultSettings.isaLumpSums,
+      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     });
   });
 
@@ -249,6 +260,13 @@ describe("App settings form", () => {
       sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+      isaCurrentPot: defaultSettings.isaCurrentPot,
+      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+      isaLumpSums: defaultSettings.isaLumpSums,
+      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     });
 
     fireEvent.blur(birthDateInput);
@@ -281,6 +299,13 @@ describe("App settings form", () => {
       sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+      isaCurrentPot: defaultSettings.isaCurrentPot,
+      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+      isaLumpSums: defaultSettings.isaLumpSums,
+      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     });
   });
 
@@ -430,6 +455,13 @@ describe("App settings form", () => {
       sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+      isaCurrentPot: defaultSettings.isaCurrentPot,
+      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+      isaLumpSums: defaultSettings.isaLumpSums,
+      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     });
   });
 
@@ -587,6 +619,31 @@ describe("App settings form", () => {
       expect.objectContaining({
         sippWithdrawalStrategy: "percentage",
         sippWithdrawalPercent: 5.2,
+      }),
+    );
+  });
+
+  it("enables ISA settings and lump sums when included", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.change(screen.getByLabelText("Current ISA pot (£)"), {
+      target: { value: "20000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add ISA lump sum" }));
+    fireEvent.change(screen.getByLabelText("ISA lump sum amount 1"), {
+      target: { value: "5000" },
+    });
+
+    expect(screen.getByText("ISA at Alpha draw date")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Monthly ISA pension" })).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        isaCurrentPot: 20000,
+        isaLumpSums: [
+          expect.objectContaining({
+            amount: 5000,
+          }),
+        ],
       }),
     );
   });

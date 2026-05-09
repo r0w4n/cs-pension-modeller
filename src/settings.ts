@@ -11,6 +11,7 @@ export type AddedPensionLumpSum = {
 };
 
 export type SippWithdrawalStrategy = "zero_at_death" | "percentage";
+export type IsaWithdrawalStrategy = "zero_at_death" | "percentage";
 
 export type PensionSettings = {
   startDate: string;
@@ -43,6 +44,13 @@ export type PensionSettings = {
   sippApplyTaxRelief: boolean;
   sippWithdrawalStrategy: SippWithdrawalStrategy;
   sippWithdrawalPercent: number;
+  isaCurrentPot: number;
+  isaMonthlyContribution: number;
+  isaLumpSums: AddedPensionLumpSum[];
+  isaApplyRealInterest: boolean;
+  isaRealInterestPercent: number;
+  isaWithdrawalStrategy: IsaWithdrawalStrategy;
+  isaWithdrawalPercent: number;
 };
 
 export type PensionValidationIssue = {
@@ -71,6 +79,10 @@ const numericSettingRules = {
   sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
   sippRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   sippWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
+  isaCurrentPot: { min: 0, max: 2_000_000, step: 1 },
+  isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
+  isaRealInterestPercent: { min: -10, max: 10, step: 0.1 },
+  isaWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
 } as const;
 
 type NumericSettingKey = keyof typeof numericSettingRules;
@@ -106,6 +118,13 @@ export const defaultSettings: PensionSettings = {
   sippApplyTaxRelief: true,
   sippWithdrawalStrategy: "zero_at_death",
   sippWithdrawalPercent: 4,
+  isaCurrentPot: 0,
+  isaMonthlyContribution: 0,
+  isaLumpSums: [],
+  isaApplyRealInterest: false,
+  isaRealInterestPercent: 3,
+  isaWithdrawalStrategy: "zero_at_death",
+  isaWithdrawalPercent: 4,
 };
 
 export function loadStoredSettings(): PensionSettings {
@@ -166,6 +185,7 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "applyPensionIncreases":
     case "statePensionApplyFutureGrowth":
     case "alphaEpaEnabled":
+    case "isaApplyRealInterest":
     case "sippApplyRealInterest":
       return Boolean(value) as PensionSettings[K];
     case "sippApplyTaxRelief":
@@ -174,6 +194,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         : defaultSettings.sippApplyTaxRelief) as PensionSettings[K];
     case "sippWithdrawalStrategy":
       return normalizeSippWithdrawalStrategy(value) as PensionSettings[K];
+    case "isaWithdrawalStrategy":
+      return normalizeIsaWithdrawalStrategy(value) as PensionSettings[K];
     case "alphaEpaStartDate":
     case "alphaEpaEndDate":
       return normalizeDate(value as string, defaultSettings[key] as string) as PensionSettings[K];
@@ -183,6 +205,7 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         defaultSettings.alphaPensionAbsDate,
       ) as PensionSettings[K];
     case "alphaAddedPensionLumpSums":
+    case "isaLumpSums":
     case "sippLumpSums":
       return normalizeAddedPensionLumpSums(
         value as AddedPensionLumpSum[],
@@ -237,6 +260,15 @@ function coerceSettings(
       | SippWithdrawalStrategy
       | undefined,
     sippWithdrawalPercent: coerceNumber(input.sippWithdrawalPercent),
+    isaCurrentPot: coerceNumber(input.isaCurrentPot),
+    isaMonthlyContribution: coerceNumber(input.isaMonthlyContribution),
+    isaLumpSums: coerceAddedPensionLumpSums(input.isaLumpSums),
+    isaApplyRealInterest: coerceBoolean(input.isaApplyRealInterest),
+    isaRealInterestPercent: coerceNumber(input.isaRealInterestPercent),
+    isaWithdrawalStrategy: coerceString(input.isaWithdrawalStrategy) as
+      | IsaWithdrawalStrategy
+      | undefined,
+    isaWithdrawalPercent: coerceNumber(input.isaWithdrawalPercent),
   };
 }
 
@@ -449,6 +481,25 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
       "sippWithdrawalPercent",
       settings.sippWithdrawalPercent,
     ),
+    isaCurrentPot: normalizeSetting("isaCurrentPot", settings.isaCurrentPot),
+    isaMonthlyContribution: normalizeSetting(
+      "isaMonthlyContribution",
+      settings.isaMonthlyContribution,
+    ),
+    isaLumpSums: normalizeSetting("isaLumpSums", settings.isaLumpSums),
+    isaApplyRealInterest: Boolean(settings.isaApplyRealInterest),
+    isaRealInterestPercent: normalizeSetting(
+      "isaRealInterestPercent",
+      settings.isaRealInterestPercent,
+    ),
+    isaWithdrawalStrategy: normalizeSetting(
+      "isaWithdrawalStrategy",
+      settings.isaWithdrawalStrategy,
+    ),
+    isaWithdrawalPercent: normalizeSetting(
+      "isaWithdrawalPercent",
+      settings.isaWithdrawalPercent,
+    ),
   };
 }
 
@@ -512,6 +563,12 @@ function normalizeSippWithdrawalStrategy(value: unknown): SippWithdrawalStrategy
   return value === "percentage" || value === "zero_at_death"
     ? value
     : defaultSettings.sippWithdrawalStrategy;
+}
+
+function normalizeIsaWithdrawalStrategy(value: unknown): IsaWithdrawalStrategy {
+  return value === "percentage" || value === "zero_at_death"
+    ? value
+    : defaultSettings.isaWithdrawalStrategy;
 }
 
 function coerceAddedPensionLumpSums(value: unknown) {

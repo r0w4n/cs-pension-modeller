@@ -36,6 +36,8 @@ export type ProjectionRow = {
   monthlyStatePension: number;
   sippPot: number;
   monthlySippPension: number;
+  isaPot: number;
+  monthlyIsaPension: number;
   totalMonthlyPensionTakeHomePay: number;
 };
 
@@ -55,6 +57,11 @@ export type PensionSummary = {
     potAtDraw: number;
     monthlyAtDraw: number;
     totalContributionsAfterTaxRelief: number;
+  };
+  isaPension: {
+    potAtDraw: number;
+    monthlyAtDraw: number;
+    totalContributions: number;
   };
   incomeOverTime: {
     monthlyAtAlphaStart: number;
@@ -82,6 +89,7 @@ const STARTS_STATE_PENSION_LABEL = "Starts Drawing State Pension";
 const LIFE_EXPECTANCY_LABEL = "Life expectancy";
 const LUMP_SUM_ADDED_PENSION_LABEL = "Lump Sum Added Pension";
 const SIPP_LUMP_SUM_LABEL = "SIPP Lump Sum";
+const ISA_LUMP_SUM_LABEL = "ISA Lump Sum";
 const DEFAULT_ALPHA_ACCRUAL_RATE = 0.0232;
 
 type MilestoneDefinition = {
@@ -203,6 +211,12 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
       drawDate,
       endDate,
     });
+    const isaProjection = calculateIsaProjectionRow({
+      settings,
+      rowDate,
+      drawDate,
+      endDate,
+    });
     const age = calculateAge(settings.dateOfBirth, rowDate);
     const ageMonths = calculateAgeMonths(settings.dateOfBirth, rowDate);
     const monthlyStandardAlphaAccrual =
@@ -262,6 +276,7 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
       monthlyAlphaPensionTakeHome,
       monthlyStatePension,
       sippProjection.monthlySippPension,
+      isaProjection.monthlyIsaPension,
     );
 
     const projectionRow = {
@@ -278,6 +293,8 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
       monthlyStatePension,
       sippPot: sippProjection.sippPot,
       monthlySippPension: sippProjection.monthlySippPension,
+      isaPot: isaProjection.isaPot,
+      monthlyIsaPension: isaProjection.monthlyIsaPension,
       totalMonthlyPensionTakeHomePay,
     };
 
@@ -296,6 +313,7 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     settings.alphaAddedPensionLumpSums,
     alphaAbsDate,
     settings.sippLumpSums,
+    settings.isaLumpSums,
   );
   const milestoneRows = buildMilestoneMapForRowDates(
     milestoneDefinitions,
@@ -348,6 +366,15 @@ function createProjectionTableWithPensionIncreases(
             endDate,
           })
         : { sippPot: 0, monthlySippPension: 0 };
+    const isaProjection =
+      rowDate >= settings.startDate
+        ? calculateIsaProjectionRow({
+            settings,
+            rowDate,
+            drawDate,
+            endDate,
+          })
+        : { isaPot: 0, monthlyIsaPension: 0 };
     const age = calculateAge(settings.dateOfBirth, rowDate);
     const ageMonths = calculateAgeMonths(settings.dateOfBirth, rowDate);
     const shouldShowAbsStatementOnly = rowDate === alphaAbsDate && rowDate < settings.startDate;
@@ -444,10 +471,13 @@ function createProjectionTableWithPensionIncreases(
       monthlyStatePension,
       sippPot: sippProjection.sippPot,
       monthlySippPension: sippProjection.monthlySippPension,
+      isaPot: isaProjection.isaPot,
+      monthlyIsaPension: isaProjection.monthlyIsaPension,
       totalMonthlyPensionTakeHomePay: calculateTotalGrossMonthlyPension(
         monthlyAlphaPensionTakeHome,
         monthlyStatePension,
         sippProjection.monthlySippPension,
+        isaProjection.monthlyIsaPension,
       ),
     };
   });
@@ -461,6 +491,7 @@ function createProjectionTableWithPensionIncreases(
     settings.alphaAddedPensionLumpSums,
     alphaAbsDate,
     settings.sippLumpSums,
+    settings.isaLumpSums,
   );
   const milestoneRows = buildMilestoneMapForRowDates(
     milestoneDefinitions,
@@ -525,6 +556,11 @@ export function generatePensionSummary(
         monthlyAtDraw: 0,
         totalContributionsAfterTaxRelief: 0,
       },
+      isaPension: {
+        potAtDraw: 0,
+        monthlyAtDraw: 0,
+        totalContributions: 0,
+      },
       incomeOverTime: {
         monthlyAtAlphaStart: 0,
         monthlyAtStateStart: 0,
@@ -573,6 +609,7 @@ export function generatePensionSummary(
   const maximumAnnualAccrued = Math.max(...tableData.map((row) => row.annualAccruedAlphaPension));
   const totalAddedAfterToday = maximumAnnualAccrued - startingAlphaPensionAtStartDate;
   const sippDrawRow = alphaDrawRow ?? tableData.at(-1);
+  const isaDrawRow = alphaDrawRow ?? tableData.at(-1);
 
   return {
     keyDates: {
@@ -593,6 +630,11 @@ export function generatePensionSummary(
         settings,
         alphaPensionDrawDate,
       ),
+    },
+    isaPension: {
+      potAtDraw: isaDrawRow?.isaPot ?? 0,
+      monthlyAtDraw: isaDrawRow?.monthlyIsaPension ?? 0,
+      totalContributions: calculateTotalIsaContributions(settings, alphaPensionDrawDate),
     },
     incomeOverTime: {
       monthlyAtAlphaStart: alphaDrawRow?.totalMonthlyPensionTakeHomePay ?? 0,
@@ -1017,8 +1059,14 @@ export function calculateTotalGrossMonthlyPension(
   monthlyAlphaPensionIncludingReduction: number,
   monthlyStatePension: number,
   monthlySippPension = 0,
+  monthlyIsaPension = 0,
 ) {
-  return monthlyAlphaPensionIncludingReduction + monthlyStatePension + monthlySippPension;
+  return (
+    monthlyAlphaPensionIncludingReduction +
+    monthlyStatePension +
+    monthlySippPension +
+    monthlyIsaPension
+  );
 }
 
 export function calculateSippPotAtDate(input: {
@@ -1103,6 +1151,96 @@ function calculateSippProjectionRow(input: {
   };
 }
 
+export function calculateIsaPotAtDate(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  drawDate: string;
+}) {
+  const { settings, rowDate, drawDate } = input;
+
+  if (rowDate < settings.startDate) {
+    return 0;
+  }
+
+  const monthlyInterestRate = settings.isaApplyRealInterest
+    ? (1 + settings.isaRealInterestPercent / 100) ** (1 / 12) - 1
+    : 0;
+  const contributionStopDate = minIsoDate(drawDate, rowDate);
+  const contributionMonthCount =
+    calculateWholeMonthDifference(settings.startDate, contributionStopDate) + 1;
+  const projectionMonthCount = calculateWholeMonthDifference(
+    settings.startDate,
+    contributionStopDate,
+  );
+  let pot = settings.isaCurrentPot;
+  let previousProjectionMonthDate: string | undefined;
+
+  for (let monthIndex = 0; monthIndex <= projectionMonthCount; monthIndex += 1) {
+    const projectionMonthDate = addMonths(settings.startDate, monthIndex);
+
+    if (monthIndex > 0) {
+      pot *= 1 + monthlyInterestRate;
+    }
+
+    if (monthIndex < contributionMonthCount) {
+      pot += settings.isaMonthlyContribution;
+    }
+
+    pot += calculateScheduledIsaLumpSums({
+      lumpSums: settings.isaLumpSums,
+      previousRowDate: previousProjectionMonthDate,
+      rowDate: projectionMonthDate,
+    });
+
+    previousProjectionMonthDate = projectionMonthDate;
+  }
+
+  return pot;
+}
+
+function calculateIsaProjectionRow(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  drawDate: string;
+  endDate: string;
+}) {
+  const { settings, rowDate, drawDate, endDate } = input;
+  const isaPot = calculateIsaPotAtDate({ settings, rowDate, drawDate });
+  const potAtDraw = calculateIsaPotAtDate({ settings, rowDate: drawDate, drawDate });
+  const monthlyIsaPension =
+    rowDate >= drawDate
+      ? calculateMonthlyIsaPension({
+          potAtDraw,
+          drawDate,
+          endDate,
+          strategy: settings.isaWithdrawalStrategy,
+          withdrawalPercent: settings.isaWithdrawalPercent,
+        })
+      : 0;
+
+  return {
+    isaPot,
+    monthlyIsaPension,
+  };
+}
+
+export function calculateMonthlyIsaPension(input: {
+  potAtDraw: number;
+  drawDate: string;
+  endDate: string;
+  strategy: PensionSettings["isaWithdrawalStrategy"];
+  withdrawalPercent: number;
+}) {
+  const { potAtDraw, drawDate, endDate, strategy, withdrawalPercent } = input;
+
+  if (strategy === "percentage") {
+    return (potAtDraw * (withdrawalPercent / 100)) / 12;
+  }
+
+  const drawdownMonths = Math.max(1, calculateWholeMonthDifference(drawDate, endDate));
+  return potAtDraw / drawdownMonths;
+}
+
 export function calculateMonthlySippPension(input: {
   potAtDraw: number;
   drawDate: string;
@@ -1139,6 +1277,20 @@ function calculateTotalSippContributionsAfterTaxRelief(
   );
 }
 
+function calculateTotalIsaContributions(settings: PensionSettings, drawDate: string) {
+  if (drawDate < settings.startDate) {
+    return 0;
+  }
+
+  const contributionMonthCount =
+    calculateWholeMonthDifference(settings.startDate, drawDate) + 1;
+
+  return (
+    calculateIsaLumpSumsThroughDate(settings.isaLumpSums, drawDate) +
+    settings.isaMonthlyContribution * contributionMonthCount
+  );
+}
+
 function calculateScheduledSippLumpSums(input: {
   lumpSums: AddedPensionLumpSum[];
   previousRowDate?: string;
@@ -1158,7 +1310,39 @@ function calculateScheduledSippLumpSums(input: {
   }, 0);
 }
 
+function calculateScheduledIsaLumpSums(input: {
+  lumpSums: AddedPensionLumpSum[];
+  previousRowDate?: string;
+  rowDate: string;
+}) {
+  const { lumpSums, previousRowDate, rowDate } = input;
+
+  return lumpSums.reduce((total, lumpSum) => {
+    const matchingPaymentDates = getScheduledPaymentDatesThroughRow(
+      lumpSum,
+      previousRowDate,
+      rowDate,
+    );
+
+    return total + matchingPaymentDates.length * lumpSum.amount;
+  }, 0);
+}
+
 function calculateSippLumpSumsThroughDate(
+  lumpSums: AddedPensionLumpSum[],
+  rowDate: string,
+) {
+  return lumpSums.reduce(
+    (total, lumpSum) =>
+      total +
+      getScheduledPaymentDates(lumpSum).filter((paymentDate) => paymentDate <= rowDate)
+        .length *
+        lumpSum.amount,
+    0,
+  );
+}
+
+function calculateIsaLumpSumsThroughDate(
   lumpSums: AddedPensionLumpSum[],
   rowDate: string,
 ) {
@@ -1181,6 +1365,7 @@ export function generateMilestoneDefinitions(
   lumpSums: AddedPensionLumpSum[] = [],
   alphaAbsDate?: string,
   sippLumpSums: AddedPensionLumpSum[] = [],
+  isaLumpSums: AddedPensionLumpSum[] = [],
 ): MilestoneDefinition[] {
   return [
     ...(alphaAbsDate ? [{ date: alphaAbsDate, label: LAST_ABS_STATEMENT_LABEL }] : []),
@@ -1191,6 +1376,7 @@ export function generateMilestoneDefinitions(
     { date: lifeExpectancyDate, label: LIFE_EXPECTANCY_LABEL },
     ...generateLumpSumMilestoneDefinitions(lumpSums),
     ...generateSippLumpSumMilestoneDefinitions(sippLumpSums),
+    ...generateIsaLumpSumMilestoneDefinitions(isaLumpSums),
   ];
 }
 
@@ -1270,12 +1456,25 @@ function generateSippLumpSumMilestoneDefinitions(lumpSums: AddedPensionLumpSum[]
   );
 }
 
+function generateIsaLumpSumMilestoneDefinitions(lumpSums: AddedPensionLumpSum[]) {
+  return lumpSums.flatMap((lumpSum) =>
+    getScheduledPaymentDates(lumpSum).map((date) => ({
+      date,
+      label: formatIsaLumpSumMilestoneLabel(lumpSum.amount),
+    })),
+  );
+}
+
 function formatLumpSumMilestoneLabel(amount: number) {
   return `${LUMP_SUM_ADDED_PENSION_LABEL} (${formatWholeCurrency(amount)})`;
 }
 
 function formatSippLumpSumMilestoneLabel(amount: number) {
   return `${SIPP_LUMP_SUM_LABEL} (${formatWholeCurrency(amount)})`;
+}
+
+function formatIsaLumpSumMilestoneLabel(amount: number) {
+  return `${ISA_LUMP_SUM_LABEL} (${formatWholeCurrency(amount)})`;
 }
 
 function formatWholeCurrency(value: number) {
@@ -1389,6 +1588,8 @@ function createHistoricalProjectionRows(input: {
       monthlyStatePension,
       sippPot: 0,
       monthlySippPension: 0,
+      isaPot: 0,
+      monthlyIsaPension: 0,
       totalMonthlyPensionTakeHomePay: calculateTotalGrossMonthlyPension(
         monthlyAlphaPensionTakeHome,
         monthlyStatePension,

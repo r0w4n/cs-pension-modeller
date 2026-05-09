@@ -163,6 +163,20 @@ function App() {
           </article>
 
           <article className="summary-card">
+            <p className="card-label">ISA at Alpha draw date</p>
+            <div className="summary-card-amounts">
+              <h2>{formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw)}</h2>
+              <p className="summary-card-secondary-amount">
+                {formatCurrencyDetailed(pensionSummary.isaPension.monthlyAtDraw)} per month
+              </p>
+            </div>
+            <p>
+              Projected ISA pot and monthly drawdown from{" "}
+              {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
+            </p>
+          </article>
+
+          <article className="summary-card">
             <p className="card-label">At State Pension start</p>
             <div className="summary-card-amounts">
               <h2>
@@ -209,6 +223,10 @@ function App() {
           {
             label: "SIPP pot at Alpha pension start",
             value: formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw),
+          },
+          {
+            label: "ISA pot at Alpha pension start",
+            value: formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw),
           },
           {
             label: "Total Monthly Pension at State Pension start",
@@ -293,6 +311,23 @@ function App() {
                     removeButtonLabel="Remove SIPP lump sum"
                     onChange={(nextLumpSums) =>
                       updateSetting("sippLumpSums", nextLumpSums)
+                    }
+                  />
+                ) : null}
+
+                {group.id === "isa" ? (
+                  <AddedPensionLumpSumsEditor
+                    lumpSums={settings.isaLumpSums}
+                    defaultStartDate={settings.startDate}
+                    useDropdownDates={useDropdownDates}
+                    title="ISA lump sums"
+                    description="Add one-off or yearly lump sum ISA contributions. A yearly entry repeats on the same calendar date until its end date."
+                    emptyText="No ISA lump sum contributions set up yet."
+                    itemLabel="ISA lump sum"
+                    addButtonLabel="Add ISA lump sum"
+                    removeButtonLabel="Remove ISA lump sum"
+                    onChange={(nextLumpSums) =>
+                      updateSetting("isaLumpSums", nextLumpSums)
                     }
                   />
                 ) : null}
@@ -493,6 +528,9 @@ function isFieldDisabled(fieldId: FieldDefinition["id"], settings: PensionSettin
     (fieldId === "sippRealInterestPercent" && !settings.sippApplyRealInterest) ||
     (fieldId === "sippWithdrawalPercent" &&
       settings.sippWithdrawalStrategy !== "percentage") ||
+    (fieldId === "isaRealInterestPercent" && !settings.isaApplyRealInterest) ||
+    (fieldId === "isaWithdrawalPercent" &&
+      settings.isaWithdrawalStrategy !== "percentage") ||
     (["alphaEpaYearsBeforeNpa", "alphaEpaStartDate", "alphaEpaEndDate"].includes(
       fieldId,
     ) &&
@@ -510,6 +548,9 @@ function isFieldHiddenOnMobile(fieldId: FieldDefinition["id"], settings: Pension
     (fieldId === "sippRealInterestPercent" && !settings.sippApplyRealInterest) ||
     (fieldId === "sippWithdrawalPercent" &&
       settings.sippWithdrawalStrategy !== "percentage") ||
+    (fieldId === "isaRealInterestPercent" && !settings.isaApplyRealInterest) ||
+    (fieldId === "isaWithdrawalPercent" &&
+      settings.isaWithdrawalStrategy !== "percentage") ||
     (["alphaEpaYearsBeforeNpa", "alphaEpaStartDate", "alphaEpaEndDate"].includes(
       fieldId,
     ) &&
@@ -1015,6 +1056,7 @@ const projectionTableColumns = [
   { key: "monthlyAlphaPensionTakeHome", label: "Monthly Alpha Pension take-home", width: "7rem" },
   { key: "monthlyStatePension", label: "Monthly State pension", width: "6rem" },
   { key: "monthlySippPension", label: "Monthly SIPP pension", width: "7rem" },
+  { key: "monthlyIsaPension", label: "Monthly ISA pension", width: "7rem" },
   { key: "totalMonthlyPensionTakeHomePay", label: "Total Monthly Pension take-home pay", width: "8rem" },
 ] as const;
 
@@ -1125,6 +1167,7 @@ function ProjectionTable({ rows }: ProjectionTableProps) {
                 <td>{formatCurrencyDetailed(row.monthlyAlphaPensionTakeHome)}</td>
                 <td>{formatCurrencyDetailed(row.monthlyStatePension)}</td>
                 <td>{formatCurrencyDetailed(row.monthlySippPension)}</td>
+                <td>{formatCurrencyDetailed(row.monthlyIsaPension)}</td>
                 <td>{formatCurrencyDetailed(row.totalMonthlyPensionTakeHomePay)}</td>
               </tr>
             ))}

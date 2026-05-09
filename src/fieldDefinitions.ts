@@ -26,7 +26,10 @@ export type RangeField = {
     | "alphaEpaYearsBeforeNpa"
     | "sippMonthlyContribution"
     | "sippRealInterestPercent"
-    | "sippWithdrawalPercent";
+    | "sippWithdrawalPercent"
+    | "isaMonthlyContribution"
+    | "isaRealInterestPercent"
+    | "isaWithdrawalPercent";
   label: string;
   type: "range";
   min: number;
@@ -43,6 +46,7 @@ export type CheckboxField = {
     | "applyPensionIncreases"
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
+    | "isaApplyRealInterest"
     | "sippApplyRealInterest"
     | "sippApplyTaxRelief";
   label: string;
@@ -54,7 +58,8 @@ export type CurrencyInputField = {
   id:
     | "currentStatePension"
     | "accruedPensionAtLastAbs"
-    | "sippCurrentPot";
+    | "sippCurrentPot"
+    | "isaCurrentPot";
   label: string;
   type: "currency-input";
   min: number;
@@ -66,11 +71,11 @@ export type CurrencyInputField = {
 };
 
 export type SelectField = {
-  id: "sippWithdrawalStrategy";
+  id: "sippWithdrawalStrategy" | "isaWithdrawalStrategy";
   label: string;
   type: "select";
   options: {
-    value: PensionSettings["sippWithdrawalStrategy"];
+    value: PensionSettings["sippWithdrawalStrategy"] | PensionSettings["isaWithdrawalStrategy"];
     label: string;
   }[];
 };
@@ -322,6 +327,64 @@ export const fieldGroups: FieldGroup[] = [
       {
         id: "sippWithdrawalPercent",
         label: "SIPP withdrawal rate (%)",
+        type: "range",
+        min: 0,
+        max: 15,
+        step: 0.1,
+      },
+    ],
+  },
+  {
+    id: "isa",
+    eyebrow: "ISA",
+    title: "ISA details",
+    description: "ISA pot, contributions, investment return, and drawdown assumptions.",
+    fields: [
+      {
+        id: "isaCurrentPot",
+        label: "Current ISA pot (£)",
+        type: "currency-input",
+        min: 0,
+        max: 2000000,
+        step: 1,
+        format: "currency",
+      },
+      {
+        id: "isaMonthlyContribution",
+        label: "Regular ISA contribution (£ per month)",
+        type: "range",
+        min: 0,
+        max: 5000,
+        step: 25,
+        format: "currency",
+        valuePrefix: "/mo",
+      },
+      {
+        id: "isaApplyRealInterest",
+        label: "Apply real interest to ISA pot",
+        type: "checkbox",
+        description: "Grow the projected ISA pot using a real annual interest rate.",
+      },
+      {
+        id: "isaRealInterestPercent",
+        label: "ISA real interest rate (%)",
+        type: "range",
+        min: -10,
+        max: 10,
+        step: 0.1,
+      },
+      {
+        id: "isaWithdrawalStrategy",
+        label: "ISA withdrawal strategy",
+        type: "select",
+        options: [
+          { value: "zero_at_death", label: "Zero at death" },
+          { value: "percentage", label: "Annual percentage" },
+        ],
+      },
+      {
+        id: "isaWithdrawalPercent",
+        label: "ISA withdrawal rate (%)",
         type: "range",
         min: 0,
         max: 15,

@@ -101,6 +101,13 @@ describe("settings unit tests", () => {
       sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+      isaCurrentPot: defaultSettings.isaCurrentPot,
+      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+      isaLumpSums: defaultSettings.isaLumpSums,
+      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     });
   });
 
@@ -171,6 +178,13 @@ describe("settings unit tests", () => {
       sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+      isaCurrentPot: defaultSettings.isaCurrentPot,
+      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+      isaLumpSums: defaultSettings.isaLumpSums,
+      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     });
   });
 

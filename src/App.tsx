@@ -194,11 +194,10 @@ function App() {
         <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Civil Service</p>
-          <h1>Alpha Pension</h1>
+          <h1>Retirement Income Calculator</h1>
           <p className="lead">
-            A concise read-out of what you are projected to receive, when key
-            pension milestones land, and how monthly income changes across
-            retirement phases.
+            Plan your retirement income by modelling your Alpha pension together
+            with SIPP withdrawals, ISA income and State Pension payments.
           </p>
         </div>
 

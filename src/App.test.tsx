@@ -342,7 +342,12 @@ describe("App settings form", () => {
         name: "Age (years/months)",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Alpha Pension" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Retirement Income Calculator",
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { level: 2, name: "Pension Summary" }),
     ).toBeInTheDocument();

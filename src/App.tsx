@@ -35,6 +35,7 @@ import {
   validateSettings,
   type AddedPensionLumpSum,
   type PensionSettings,
+  type PensionValidationIssue,
 } from "./settings";
 
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-calculator.acknowledgement";
@@ -356,7 +357,9 @@ function App() {
 
                 <ul className="section-copy">
                   {validationIssues.map((issue) => (
-                    <li key={`${issue.field}-${issue.message}`}>{issue.message}</li>
+                    <li key={`${issue.field}-${issue.itemId ?? "field"}-${issue.message}`}>
+                      {issue.message}
+                    </li>
                   ))}
                 </ul>
               </section>
@@ -410,6 +413,7 @@ function App() {
                 <SettingsFields
                   fields={group.fields}
                   settings={settings}
+                  validationIssues={validationIssues}
                   onChange={updateSetting}
                   useDropdownDates={useDropdownDates}
                 />
@@ -419,6 +423,10 @@ function App() {
                     lumpSums={settings.alphaAddedPensionLumpSums}
                     defaultStartDate={settings.startDate}
                     useDropdownDates={useDropdownDates}
+                    validationIssues={getValidationIssuesForField(
+                      validationIssues,
+                      "alphaAddedPensionLumpSums",
+                    )}
                     onChange={(nextLumpSums) =>
                       updateSetting("alphaAddedPensionLumpSums", nextLumpSums)
                     }
@@ -436,6 +444,10 @@ function App() {
                     itemLabel="SIPP lump sum"
                     addButtonLabel="Add SIPP lump sum"
                     removeButtonLabel="Remove SIPP lump sum"
+                    validationIssues={getValidationIssuesForField(
+                      validationIssues,
+                      "sippLumpSums",
+                    )}
                     onChange={(nextLumpSums) =>
                       updateSetting("sippLumpSums", nextLumpSums)
                     }
@@ -453,6 +465,10 @@ function App() {
                     itemLabel="ISA lump sum"
                     addButtonLabel="Add ISA lump sum"
                     removeButtonLabel="Remove ISA lump sum"
+                    validationIssues={getValidationIssuesForField(
+                      validationIssues,
+                      "isaLumpSums",
+                    )}
                     onChange={(nextLumpSums) =>
                       updateSetting("isaLumpSums", nextLumpSums)
                     }
@@ -596,6 +612,7 @@ function InfoLink({ href, text }: { href: string; text: string }) {
 type SettingsFieldsProps = {
   fields: readonly FieldDefinition[];
   settings: PensionSettings;
+  validationIssues: PensionValidationIssue[];
   onChange: FieldProps["onChange"];
   useDropdownDates: boolean;
 };
@@ -603,6 +620,7 @@ type SettingsFieldsProps = {
 function SettingsFields({
   fields,
   settings,
+  validationIssues,
   onChange,
   useDropdownDates,
 }: SettingsFieldsProps) {
@@ -625,6 +643,7 @@ function SettingsFields({
             useDropdownDates={useDropdownDates}
             disabled={isFieldDisabled(field.id, settings)}
             hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
+            validationIssue={getValidationIssueForField(validationIssues, field.id)}
           />
         ))}
       </div>
@@ -648,6 +667,7 @@ function SettingsFields({
                 useDropdownDates={useDropdownDates}
                 disabled={isFieldDisabled(field.id, settings)}
                 hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
+                validationIssue={getValidationIssueForField(validationIssues, field.id)}
               />
             ))}
           </div>
@@ -697,11 +717,30 @@ function isFieldHiddenOnMobile(fieldId: FieldDefinition["id"], settings: Pension
   );
 }
 
-function getFieldCardClassName(disabled: boolean, hideOnMobile: boolean) {
+function getValidationIssueForField(
+  validationIssues: PensionValidationIssue[],
+  fieldId: FieldDefinition["id"],
+) {
+  return validationIssues.find((issue) => issue.field === fieldId);
+}
+
+function getValidationIssuesForField(
+  validationIssues: PensionValidationIssue[],
+  fieldId: SettingsKey,
+) {
+  return validationIssues.filter((issue) => issue.field === fieldId);
+}
+
+function getFieldCardClassName(
+  disabled: boolean,
+  hideOnMobile: boolean,
+  hasValidationIssue = false,
+) {
   return [
     "field-card",
     disabled ? "field-card--disabled" : "",
     hideOnMobile ? "field-card--mobile-hidden" : "",
+    hasValidationIssue ? "field-card--invalid" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -714,6 +753,7 @@ type FieldProps = {
   useDropdownDates: boolean;
   disabled?: boolean;
   hideOnMobile?: boolean;
+  validationIssue?: PensionValidationIssue;
 };
 
 function Field({
@@ -723,6 +763,7 @@ function Field({
   useDropdownDates,
   disabled = false,
   hideOnMobile = false,
+  validationIssue,
 }: FieldProps) {
   if (field.type === "date") {
     return (
@@ -733,6 +774,7 @@ function Field({
         useDropdowns={useDropdownDates}
         disabled={disabled}
         hideOnMobile={hideOnMobile}
+        validationIssue={validationIssue}
       />
     );
   }
@@ -743,6 +785,7 @@ function Field({
         field={field as DateField & { type: "year" }}
         value={value as string}
         onChange={onChange}
+        validationIssue={validationIssue}
       />
     );
   }
@@ -755,6 +798,7 @@ function Field({
         onChange={onChange}
         disabled={disabled}
         hideOnMobile={hideOnMobile}
+        validationIssue={validationIssue}
       />
     );
   }
@@ -765,13 +809,18 @@ function Field({
         field={field as SelectField}
         value={value as string}
         onChange={onChange}
+        validationIssue={validationIssue}
       />
     );
   }
 
   if (field.type === "checkbox") {
+    const validationId = validationIssue ? `${field.id}-validation` : undefined;
+
     return (
-      <label className="field-card checkbox-field-card">
+      <label
+        className={`${getFieldCardClassName(false, false, Boolean(validationIssue))} checkbox-field-card`}
+      >
         <span className="field-header">
           <FieldLabel field={field} />
         </span>
@@ -780,6 +829,8 @@ function Field({
             aria-label={field.label}
             type="checkbox"
             checked={value as boolean}
+            aria-invalid={Boolean(validationIssue) || undefined}
+            aria-describedby={validationId}
             onChange={(event) =>
               onChange(
                 field.id,
@@ -789,6 +840,7 @@ function Field({
           />
           <span>{field.description}</span>
         </span>
+        <FieldValidationMessage id={validationId} issue={validationIssue} />
       </label>
     );
   }
@@ -799,6 +851,7 @@ function Field({
         field={field as CurrencyInputField}
         value={value as number}
         onChange={onChange}
+        validationIssue={validationIssue}
       />
     );
   }
@@ -810,10 +863,12 @@ function YearSettingField({
   field,
   value,
   onChange,
+  validationIssue,
 }: {
   field: DateField & { type: "year" };
   value: string;
   onChange: FieldProps["onChange"];
+  validationIssue?: PensionValidationIssue;
 }) {
   const draftYear = getAlphaAbsYear(value);
   const currentYear = new Date().getUTCFullYear();
@@ -830,6 +885,7 @@ function YearSettingField({
       initialYear={draftYear.toString()}
       yearOptions={yearOptions}
       onChange={onChange}
+      validationIssue={validationIssue}
     />
   );
 }
@@ -839,16 +895,19 @@ function YearSettingFieldEditor({
   initialYear,
   yearOptions,
   onChange,
+  validationIssue,
 }: {
   field: DateField & { type: "year" };
   initialYear: string;
   yearOptions: number[];
   onChange: FieldProps["onChange"];
+  validationIssue?: PensionValidationIssue;
 }) {
   const [localYear, setLocalYear] = useState(initialYear);
+  const validationId = validationIssue ? `${field.id}-validation` : undefined;
 
   return (
-    <label className="field-card">
+    <label className={getFieldCardClassName(false, false, Boolean(validationIssue))}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
@@ -856,6 +915,8 @@ function YearSettingFieldEditor({
         aria-label={field.label}
         className="select-input"
         value={localYear}
+        aria-invalid={Boolean(validationIssue) || undefined}
+        aria-describedby={validationId}
         onChange={(event) => {
           setLocalYear(event.target.value);
         }}
@@ -869,6 +930,7 @@ function YearSettingFieldEditor({
           </option>
         ))}
       </select>
+      <FieldValidationMessage id={validationId} issue={validationIssue} />
     </label>
   );
 }
@@ -877,10 +939,12 @@ function SelectSettingField({
   field,
   value,
   onChange,
+  validationIssue,
 }: {
   field: SelectField;
   value: string;
   onChange: FieldProps["onChange"];
+  validationIssue?: PensionValidationIssue;
 }) {
   return (
     <SelectSettingFieldEditor
@@ -888,6 +952,7 @@ function SelectSettingField({
       field={field}
       initialValue={value}
       onChange={onChange}
+      validationIssue={validationIssue}
     />
   );
 }
@@ -896,15 +961,18 @@ function SelectSettingFieldEditor({
   field,
   initialValue,
   onChange,
+  validationIssue,
 }: {
   field: SelectField;
   initialValue: string;
   onChange: FieldProps["onChange"];
+  validationIssue?: PensionValidationIssue;
 }) {
   const [draftValue, setDraftValue] = useState(initialValue);
+  const validationId = validationIssue ? `${field.id}-validation` : undefined;
 
   return (
-    <label className="field-card">
+    <label className={getFieldCardClassName(false, false, Boolean(validationIssue))}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
@@ -912,6 +980,8 @@ function SelectSettingFieldEditor({
         aria-label={field.label}
         className="select-input"
         value={draftValue}
+        aria-invalid={Boolean(validationIssue) || undefined}
+        aria-describedby={validationId}
         onChange={(event) => {
           setDraftValue(event.target.value);
         }}
@@ -928,6 +998,7 @@ function SelectSettingFieldEditor({
           </option>
         ))}
       </select>
+      <FieldValidationMessage id={validationId} issue={validationIssue} />
     </label>
   );
 }
@@ -936,10 +1007,12 @@ function CurrencySettingField({
   field,
   value,
   onChange,
+  validationIssue,
 }: {
   field: CurrencyInputField;
   value: number;
   onChange: FieldProps["onChange"];
+  validationIssue?: PensionValidationIssue;
 }) {
   const resetValue = defaultSettings[field.id] as PensionSettings[typeof field.id];
 
@@ -950,6 +1023,7 @@ function CurrencySettingField({
       initialValue={value}
       resetValue={resetValue}
       onChange={onChange}
+      validationIssue={validationIssue}
     />
   );
 }
@@ -959,14 +1033,17 @@ function CurrencySettingFieldEditor({
   initialValue,
   resetValue,
   onChange,
+  validationIssue,
 }: {
   field: CurrencyInputField;
   initialValue: number;
   resetValue: PensionSettings[typeof field.id];
   onChange: FieldProps["onChange"];
+  validationIssue?: PensionValidationIssue;
 }) {
   const [draftValue, setDraftValue] = useState(initialValue.toString());
   const showsResetButton = field.id !== "desiredRetirementIncome";
+  const validationId = validationIssue ? `${field.id}-validation` : undefined;
 
   const commitDraftValue = (nextDraftValue: string) => {
     const parsedValue = nextDraftValue.trim() === "" ? 0 : Number(nextDraftValue);
@@ -985,7 +1062,7 @@ function CurrencySettingFieldEditor({
   };
 
   return (
-    <div className="field-card">
+    <div className={getFieldCardClassName(false, false, Boolean(validationIssue))}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
@@ -997,6 +1074,8 @@ function CurrencySettingFieldEditor({
         max={field.max}
         step={field.step}
         value={draftValue}
+        aria-invalid={Boolean(validationIssue) || undefined}
+        aria-describedby={validationId}
         onChange={(event) => {
           setDraftValue(event.target.value);
         }}
@@ -1043,6 +1122,7 @@ function CurrencySettingFieldEditor({
           Reset to default
         </button>
       ) : null}
+      <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
   );
 }
@@ -1053,12 +1133,14 @@ function RangeSettingField({
   onChange,
   disabled = false,
   hideOnMobile = false,
+  validationIssue,
 }: {
   field: RangeField;
   value: number;
   onChange: FieldProps["onChange"];
   disabled?: boolean;
   hideOnMobile?: boolean;
+  validationIssue?: PensionValidationIssue;
 }) {
   const [draftValue, setDraftValue] = useState<number | null>(null);
   const [draftExactValue, setDraftExactValue] = useState<string | null>(null);
@@ -1077,6 +1159,7 @@ function RangeSettingField({
     ? parsedDraftExactValue
     : draftValue ?? value;
   const displayedExactValue = draftExactValue ?? displayedRangeValue.toString();
+  const validationId = validationIssue ? `${field.id}-validation` : undefined;
 
   const commitRangeValue = (nextValue: number) => {
     onChange(field.id, nextValue as PensionSettings[typeof field.id]);
@@ -1108,7 +1191,7 @@ function RangeSettingField({
   };
 
   return (
-    <div className={getFieldCardClassName(disabled, hideOnMobile)}>
+    <div className={getFieldCardClassName(disabled, hideOnMobile, Boolean(validationIssue))}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
@@ -1123,6 +1206,8 @@ function RangeSettingField({
             step={field.step}
             value={displayedRangeValue}
             disabled={disabled}
+            aria-invalid={Boolean(validationIssue) || undefined}
+            aria-describedby={validationId}
             onChange={(event) => {
               const nextValue = Number(event.target.value);
               setDraftValue(nextValue);
@@ -1148,6 +1233,8 @@ function RangeSettingField({
           step={field.step}
           value={displayedExactValue}
           disabled={disabled}
+          aria-invalid={Boolean(validationIssue) || undefined}
+          aria-describedby={validationId}
           onFocus={(event) => {
             setDraftExactValue(event.currentTarget.value);
           }}
@@ -1183,6 +1270,7 @@ function RangeSettingField({
           Reset to default
         </button>
       ) : null}
+      <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
   );
 }
@@ -1203,6 +1291,8 @@ type DateSelectFieldProps = {
     max: number;
   };
   disabled?: boolean;
+  describedBy?: string;
+  hasValidationIssue?: boolean;
 };
 
 function DateSelectField({
@@ -1212,6 +1302,8 @@ function DateSelectField({
   idPrefix,
   yearRange,
   disabled = false,
+  describedBy,
+  hasValidationIssue = false,
 }: DateSelectFieldProps) {
   const parts = getDateParts(value);
   const selectedYear = Number(parts.year);
@@ -1239,7 +1331,12 @@ function DateSelectField({
   };
 
   return (
-    <div className="date-select-grid" role="group" aria-label={label}>
+    <div
+      className="date-select-grid"
+      role="group"
+      aria-label={label}
+      aria-describedby={describedBy}
+    >
       <label className="date-select-field" htmlFor={`${idPrefix}-day`}>
         <span className="date-select-label">Day</span>
         <select
@@ -1248,6 +1345,7 @@ function DateSelectField({
           className="select-input"
           value={parts.day}
           disabled={disabled}
+          aria-invalid={hasValidationIssue || undefined}
           onChange={(event) => commit({ ...parts, day: event.target.value })}
         >
           {dayOptions.map((day) => (
@@ -1266,6 +1364,7 @@ function DateSelectField({
           className="select-input"
           value={parts.month}
           disabled={disabled}
+          aria-invalid={hasValidationIssue || undefined}
           onChange={(event) => {
             const nextMonth = event.target.value;
             const nextDay = clampDay(parts.day, parts.year, nextMonth);
@@ -1288,6 +1387,7 @@ function DateSelectField({
           className="select-input"
           value={parts.year}
           disabled={disabled}
+          aria-invalid={hasValidationIssue || undefined}
           onChange={(event) => {
             const nextYear = event.target.value;
             const nextDay = clampDay(parts.day, nextYear, parts.month);
@@ -1312,6 +1412,7 @@ function DateSettingField({
   useDropdowns,
   disabled = false,
   hideOnMobile = false,
+  validationIssue,
 }: {
   field: DateField;
   value: string;
@@ -1319,7 +1420,10 @@ function DateSettingField({
   useDropdowns: boolean;
   disabled?: boolean;
   hideOnMobile?: boolean;
+  validationIssue?: PensionValidationIssue;
 }) {
+  const validationId = validationIssue ? `${field.id}-validation` : undefined;
+
   function commitDateValue(nextValue: string) {
     const normalizedValue = normalizeSetting(
       field.id,
@@ -1330,7 +1434,7 @@ function DateSettingField({
   }
 
   return (
-    <div className={getFieldCardClassName(disabled, hideOnMobile)}>
+    <div className={getFieldCardClassName(disabled, hideOnMobile, Boolean(validationIssue))}>
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
@@ -1341,6 +1445,8 @@ function DateSettingField({
           idPrefix={field.id}
           yearRange={getPrimaryDateYearRange(field.id)}
           disabled={disabled}
+          describedBy={validationId}
+          hasValidationIssue={Boolean(validationIssue)}
           onChange={(nextValue) => {
             commitDateValue(nextValue);
           }}
@@ -1353,12 +1459,53 @@ function DateSettingField({
           type="date"
           defaultValue={value}
           disabled={disabled}
+          aria-invalid={Boolean(validationIssue) || undefined}
+          aria-describedby={validationId}
           onBlur={(event) => {
             commitDateValue(event.target.value);
           }}
         />
       )}
+      <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
+  );
+}
+
+function FieldValidationMessage({
+  id,
+  issue,
+}: {
+  id?: string;
+  issue?: PensionValidationIssue;
+}) {
+  if (!issue || !id) {
+    return null;
+  }
+
+  return (
+    <p id={id} className="field-error">
+      {issue.message}
+    </p>
+  );
+}
+
+function FieldValidationMessages({
+  id,
+  issues,
+}: {
+  id?: string;
+  issues: PensionValidationIssue[];
+}) {
+  if (!id || issues.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul id={id} className="field-error-list">
+      {issues.map((issue) => (
+        <li key={`${issue.itemId ?? "field"}-${issue.message}`}>{issue.message}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -1605,6 +1752,7 @@ type AddedPensionLumpSumsEditorProps = {
   itemLabel?: string;
   addButtonLabel?: string;
   removeButtonLabel?: string;
+  validationIssues?: PensionValidationIssue[];
   onChange: (nextLumpSums: AddedPensionLumpSum[]) => void;
 };
 
@@ -1618,6 +1766,7 @@ function AddedPensionLumpSumsEditor({
   itemLabel = "Lump sum",
   addButtonLabel = "Add lump sum purchase",
   removeButtonLabel = "Remove lump sum",
+  validationIssues = [],
   onChange,
 }: AddedPensionLumpSumsEditorProps) {
   function updateLumpSum(
@@ -1649,8 +1798,20 @@ function AddedPensionLumpSumsEditor({
           <p className="section-copy">{emptyText}</p>
         ) : null}
 
-        {lumpSums.map((lumpSum, index) => (
-          <div className="field-card" key={lumpSum.id}>
+        {lumpSums.map((lumpSum, index) => {
+          const lumpSumValidationIssues = validationIssues.filter(
+            (issue) => issue.itemId === lumpSum.id,
+          );
+          const validationId = lumpSumValidationIssues.length
+            ? `lump-sum-${lumpSum.id}-validation`
+            : undefined;
+          const hasValidationIssue = lumpSumValidationIssues.length > 0;
+
+          return (
+          <div
+            className={getFieldCardClassName(false, false, hasValidationIssue)}
+            key={lumpSum.id}
+          >
             <span className="field-header">
               <span className="field-label">{itemLabel} #{index + 1}</span>
             </span>
@@ -1666,6 +1827,8 @@ function AddedPensionLumpSumsEditor({
               step={500}
               type="number"
               value={lumpSum.amount}
+              aria-invalid={hasValidationIssue || undefined}
+              aria-describedby={validationId}
               onChange={(event) =>
                 updateLumpSum(lumpSum.id, { amount: Number(event.target.value) })
               }
@@ -1678,6 +1841,8 @@ function AddedPensionLumpSumsEditor({
                 value={lumpSum.startDate}
                 idPrefix={`lump-sum-start-${lumpSum.id}`}
                 yearRange={getLumpSumDateYearRange("start")}
+                describedBy={validationId}
+                hasValidationIssue={hasValidationIssue}
                 onChange={(nextValue) =>
                   updateLumpSum(lumpSum.id, { startDate: nextValue })
                 }
@@ -1689,6 +1854,8 @@ function AddedPensionLumpSumsEditor({
                 className="date-input"
                 type="date"
                 value={lumpSum.startDate}
+                aria-invalid={hasValidationIssue || undefined}
+                aria-describedby={validationId}
                 onChange={(event) =>
                   updateLumpSum(lumpSum.id, { startDate: event.target.value })
                 }
@@ -1703,6 +1870,8 @@ function AddedPensionLumpSumsEditor({
               aria-label={`${itemLabel} cadence ${index + 1}`}
               className="date-input"
               value={lumpSum.cadence}
+              aria-invalid={hasValidationIssue || undefined}
+              aria-describedby={validationId}
               onChange={(event) =>
                 updateLumpSum(lumpSum.id, {
                   cadence: event.target.value as AddedPensionLumpSum["cadence"],
@@ -1722,6 +1891,8 @@ function AddedPensionLumpSumsEditor({
                     value={lumpSum.endDate}
                     idPrefix={`lump-sum-end-${lumpSum.id}`}
                     yearRange={getLumpSumDateYearRange("end")}
+                    describedBy={validationId}
+                    hasValidationIssue={hasValidationIssue}
                     onChange={(nextValue) =>
                       updateLumpSum(lumpSum.id, { endDate: nextValue })
                     }
@@ -1733,6 +1904,8 @@ function AddedPensionLumpSumsEditor({
                     className="date-input"
                     type="date"
                     value={lumpSum.endDate}
+                    aria-invalid={hasValidationIssue || undefined}
+                    aria-describedby={validationId}
                     onChange={(event) =>
                       updateLumpSum(lumpSum.id, { endDate: event.target.value })
                     }
@@ -1748,8 +1921,13 @@ function AddedPensionLumpSumsEditor({
             >
               {removeButtonLabel}
             </button>
+            <FieldValidationMessages
+              id={validationId}
+              issues={lumpSumValidationIssues}
+            />
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <button type="button" className="secondary-button" onClick={addLumpSum}>

@@ -63,6 +63,7 @@ export type PensionSettings = {
 export type PensionValidationIssue = {
   field: keyof PensionSettings;
   message: string;
+  itemId?: string;
 };
 
 type StoredPensionSettings = Omit<
@@ -379,12 +380,52 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     settings.dateOfBirth,
     settings.alphaPensionLeaveAge,
   );
+  const alphaAccrualStopDate =
+    alphaDrawDate <= alphaLeaveDate ? alphaDrawDate : alphaLeaveDate;
+  const alphaAbsDate = resolveAlphaAbsDate(settings.alphaPensionAbsDate);
   const alphaEpaAgeDate = getAlphaEpaDate(settings);
+  const sippDrawDate = addYearsToIsoDate(settings.dateOfBirth, settings.sippDrawAge);
+  const isaDrawDate = addYearsToIsoDate(settings.dateOfBirth, settings.isaDrawAge);
+
+  if (settings.dateOfBirth >= settings.startDate) {
+    issues.push({
+      field: "dateOfBirth",
+      message: "Date of birth must be before the calculation start date.",
+    });
+  }
 
   if (settings.startDate > lifeExpectancyDate) {
     issues.push({
       field: "startDate",
       message: "Calculation start date must be on or before the life expectancy date.",
+    });
+  }
+
+  if (alphaDrawDate > lifeExpectancyDate) {
+    issues.push({
+      field: "alphaPensionDrawAge",
+      message: "Alpha pension draw age must be within life expectancy.",
+    });
+  }
+
+  if (settings.showStatePension && settings.statePensionDrawDate > lifeExpectancyDate) {
+    issues.push({
+      field: "lifeExpectancy",
+      message: "Life expectancy must be after the State Pension start date.",
+    });
+  }
+
+  if (settings.showSipp && sippDrawDate > lifeExpectancyDate) {
+    issues.push({
+      field: "sippDrawAge",
+      message: "SIPP draw start age must be within life expectancy.",
+    });
+  }
+
+  if (settings.showIsa && isaDrawDate > lifeExpectancyDate) {
+    issues.push({
+      field: "isaDrawAge",
+      message: "ISA draw start age must be within life expectancy.",
     });
   }
 
@@ -402,6 +443,13 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     });
   }
 
+  if (alphaAbsDate > settings.startDate) {
+    issues.push({
+      field: "alphaPensionAbsDate",
+      message: "Last Annual Benefits Statement must be on or before the calculation start date.",
+    });
+  }
+
   if (settings.alphaEpaEnabled && settings.alphaEpaStartDate > settings.alphaEpaEndDate) {
     issues.push({
       field: "alphaEpaStartDate",
@@ -416,7 +464,98 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     });
   }
 
+  if (
+    settings.alphaEpaEnabled &&
+    (settings.alphaEpaEndDate < alphaAbsDate ||
+      settings.alphaEpaStartDate > alphaAccrualStopDate)
+  ) {
+    issues.push({
+      field: "alphaEpaStartDate",
+      message: "EPA dates must overlap the Alpha accrual period.",
+    });
+  }
+
+  if (settings.showSipp && sippDrawDate <= settings.startDate) {
+    issues.push({
+      field: "sippDrawAge",
+      message: "SIPP draw start age must be after the calculation start date.",
+    });
+  }
+
+  if (settings.showIsa && isaDrawDate <= settings.startDate) {
+    issues.push({
+      field: "isaDrawAge",
+      message: "ISA draw start age must be after the calculation start date.",
+    });
+  }
+
+  issues.push(
+    ...validateLumpSums(settings.alphaAddedPensionLumpSums, {
+      field: "alphaAddedPensionLumpSums",
+      label: "Alpha lump sum",
+      earliestDate: alphaAbsDate,
+      latestDate: alphaAccrualStopDate,
+      rangeMessage:
+        "Alpha lump sums must fall between the last Annual Benefits Statement and the end of Alpha accrual.",
+    }),
+    ...(settings.showSipp
+      ? validateLumpSums(settings.sippLumpSums, {
+          field: "sippLumpSums",
+          label: "SIPP lump sum",
+          earliestDate: settings.startDate,
+          latestDate: sippDrawDate,
+          rangeMessage:
+            "SIPP lump sums must fall between the calculation start date and SIPP draw start.",
+        })
+      : []),
+    ...(settings.showIsa
+      ? validateLumpSums(settings.isaLumpSums, {
+          field: "isaLumpSums",
+          label: "ISA lump sum",
+          earliestDate: settings.startDate,
+          latestDate: isaDrawDate,
+          rangeMessage:
+            "ISA lump sums must fall between the calculation start date and ISA draw start.",
+        })
+      : []),
+  );
+
   return issues;
+}
+
+function validateLumpSums(
+  lumpSums: AddedPensionLumpSum[],
+  options: {
+    field: "alphaAddedPensionLumpSums" | "sippLumpSums" | "isaLumpSums";
+    label: string;
+    earliestDate: string;
+    latestDate: string;
+    rangeMessage: string;
+  },
+) {
+  return lumpSums.flatMap((lumpSum) => {
+    const issues: PensionValidationIssue[] = [];
+    const scheduleEndDate =
+      lumpSum.cadence === "yearly" ? lumpSum.endDate : lumpSum.startDate;
+
+    if (lumpSum.cadence === "yearly" && lumpSum.endDate < lumpSum.startDate) {
+      issues.push({
+        field: options.field,
+        itemId: lumpSum.id,
+        message: `${options.label} repeat-until date must be on or after its start date.`,
+      });
+    }
+
+    if (lumpSum.startDate < options.earliestDate || scheduleEndDate > options.latestDate) {
+      issues.push({
+        field: options.field,
+        itemId: lumpSum.id,
+        message: options.rangeMessage,
+      });
+    }
+
+    return issues;
+  });
 }
 
 function normalizeSettings(settings: PensionSettings): PensionSettings {
@@ -678,7 +817,7 @@ function normalizeAddedPensionLumpSum(value: AddedPensionLumpSum) {
   const amount = normalizeWholeCurrency(value.amount);
   const cadence = value.cadence === "yearly" ? "yearly" : "once";
   const normalizedEndDate = normalizeDate(value.endDate, startDate);
-  const endDate = cadence === "once" ? startDate : maxIsoDate(startDate, normalizedEndDate);
+  const endDate = cadence === "once" ? startDate : normalizedEndDate;
 
   return {
     id: value.id || createAddedPensionLumpSumId(),
@@ -718,10 +857,6 @@ function normalizeWholeCurrency(value: number) {
 
   const clamped = Math.min(1_000_000, Math.max(0, parsed));
   return Math.round(clamped);
-}
-
-function maxIsoDate(firstDate: string, secondDate: string) {
-  return firstDate >= secondDate ? firstDate : secondDate;
 }
 
 export function calculateStatePensionDrawDate(dateOfBirth: string) {

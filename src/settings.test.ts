@@ -191,7 +191,7 @@ describe("settings unit tests", () => {
           amount: 0,
           startDate: getTodayIsoDate(),
           cadence: "yearly",
-          endDate: getTodayIsoDate(),
+          endDate: "2020-01-01",
         },
       ],
       sippCurrentPot: defaultSettings.sippCurrentPot,
@@ -251,6 +251,164 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({ field: "startDate" }),
         expect.objectContaining({ field: "statePensionDrawDate" }),
+      ]),
+    );
+  });
+
+  it("reports when date of birth is not before the calculation start date", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      startDate: "2026-05-01",
+      dateOfBirth: "2026-05-01",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "dateOfBirth",
+          message: "Date of birth must be before the calculation start date.",
+        }),
+      ]),
+    );
+  });
+
+  it("reports active draw dates that fall outside life expectancy", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-15",
+      lifeExpectancy: 60,
+      alphaPensionDrawAge: 70,
+      sippDrawAge: 70,
+      isaDrawAge: 70,
+      showStatePension: true,
+      showSipp: true,
+      showIsa: true,
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "alphaPensionDrawAge" }),
+        expect.objectContaining({ field: "lifeExpectancy" }),
+        expect.objectContaining({ field: "sippDrawAge" }),
+        expect.objectContaining({ field: "isaDrawAge" }),
+      ]),
+    );
+  });
+
+  it("reports future Annual Benefit Statement years", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      startDate: "2026-03-31",
+      alphaPensionAbsDate: "2026",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "alphaPensionAbsDate",
+          message:
+            "Last Annual Benefits Statement must be on or before the calculation start date.",
+        }),
+      ]),
+    );
+  });
+
+  it("reports EPA dates that do not overlap the Alpha accrual period", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      alphaEpaEnabled: true,
+      alphaPensionLeaveAge: 60,
+      alphaPensionDrawAge: 60,
+      alphaEpaStartDate: "2050-04-01",
+      alphaEpaEndDate: "2051-03-31",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "alphaEpaStartDate",
+          message: "EPA dates must overlap the Alpha accrual period.",
+        }),
+      ]),
+    );
+  });
+
+  it("reports SIPP and ISA draw dates that have already passed", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1960-01-01",
+      startDate: "2026-05-01",
+      sippDrawAge: 55,
+      isaDrawAge: 55,
+      showSipp: true,
+      showIsa: true,
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "sippDrawAge",
+          message: "SIPP draw start age must be after the calculation start date.",
+        }),
+        expect.objectContaining({
+          field: "isaDrawAge",
+          message: "ISA draw start age must be after the calculation start date.",
+        }),
+      ]),
+    );
+  });
+
+  it("reports lump sum schedules outside their valid contribution windows", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      alphaAddedPensionLumpSums: [
+        {
+          id: "alpha-lump",
+          amount: 5000,
+          startDate: "2048-01-01",
+          cadence: "once",
+          endDate: "2048-01-01",
+        },
+      ],
+      sippLumpSums: [
+        {
+          id: "sipp-lump",
+          amount: 5000,
+          startDate: "2030-01-01",
+          cadence: "yearly",
+          endDate: "2029-01-01",
+        },
+      ],
+      isaLumpSums: [
+        {
+          id: "isa-lump",
+          amount: 5000,
+          startDate: "2050-01-01",
+          cadence: "once",
+          endDate: "2050-01-01",
+        },
+      ],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "alphaAddedPensionLumpSums",
+          itemId: "alpha-lump",
+          message:
+            "Alpha lump sums must fall between the last Annual Benefits Statement and the end of Alpha accrual.",
+        }),
+        expect.objectContaining({
+          field: "sippLumpSums",
+          itemId: "sipp-lump",
+          message: "SIPP lump sum repeat-until date must be on or after its start date.",
+        }),
+        expect.objectContaining({
+          field: "isaLumpSums",
+          itemId: "isa-lump",
+          message:
+            "ISA lump sums must fall between the calculation start date and ISA draw start.",
+        }),
       ]),
     );
   });

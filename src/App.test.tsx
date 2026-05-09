@@ -1003,6 +1003,69 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows inline validation when date of birth is not before the calculation start date", async () => {
+    renderAcknowledgedApp();
+
+    fireEvent.change(screen.getByLabelText("Your Date of Birth"), {
+      target: { value: "2999-01-01" },
+    });
+    fireEvent.blur(screen.getByLabelText("Your Date of Birth"));
+
+    expect(
+      await screen.findAllByText("Date of birth must be before the calculation start date."),
+    ).toHaveLength(2);
+    expect(screen.getByLabelText("Your Date of Birth")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByRole("heading", { name: "Check these assumptions" })).toBeInTheDocument();
+  });
+
+  it("shows inline validation when the ABS year is after the calculation start date", async () => {
+    renderAcknowledgedApp();
+
+    fireEvent.change(screen.getByLabelText("Calculation Start Date"), {
+      target: { value: "2026-03-31" },
+    });
+    fireEvent.blur(screen.getByLabelText("Calculation Start Date"));
+    fireEvent.change(screen.getByLabelText("Last Annual Benifits Statement"), {
+      target: { value: "2026" },
+    });
+    fireEvent.blur(screen.getByLabelText("Last Annual Benifits Statement"));
+
+    expect(
+      await screen.findAllByText(
+        "Last Annual Benefits Statement must be on or before the calculation start date.",
+      ),
+    ).toHaveLength(2);
+    expect(screen.getByLabelText("Last Annual Benifits Statement")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  });
+
+  it("shows inline validation for invalid lump sum schedules", async () => {
+    renderAcknowledgedApp();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add lump sum purchase" }));
+    fireEvent.change(screen.getByLabelText("Lump sum cadence 1"), {
+      target: { value: "yearly" },
+    });
+    fireEvent.change(screen.getByLabelText("Lump sum start date 1"), {
+      target: { value: "2030-01-01" },
+    });
+
+    expect(
+      await screen.findAllByText(
+        "Alpha lump sum repeat-until date must be on or after its start date.",
+      ),
+    ).toHaveLength(2);
+    expect(screen.getByLabelText("Lump sum start date 1")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  });
+
   it("renders projection rows for the shared EPA settings", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,

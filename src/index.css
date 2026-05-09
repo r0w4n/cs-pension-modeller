@@ -281,6 +281,34 @@ h3 {
   opacity: 0.55;
 }
 
+.field-card--invalid {
+  border-color: rgba(184, 47, 47, 0.42);
+  background: #fffafa;
+}
+
+.field-card--invalid .date-input,
+.field-card--invalid .select-input,
+.field-card--invalid .number-input {
+  border-color: rgba(184, 47, 47, 0.58);
+}
+
+.field-error {
+  margin: -0.2rem 0 0;
+  color: #9f2424;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+  font-weight: 700;
+}
+
+.field-error-list {
+  margin: -0.2rem 0 0;
+  padding-left: 1.15rem;
+  color: #9f2424;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+  font-weight: 700;
+}
+
 .field-header {
   display: flex;
   align-items: baseline;

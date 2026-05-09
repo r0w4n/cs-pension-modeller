@@ -920,6 +920,7 @@ function CurrencySettingFieldEditor({
   onChange: FieldProps["onChange"];
 }) {
   const [draftValue, setDraftValue] = useState(initialValue.toString());
+  const showsResetButton = field.id !== "desiredRetirementIncome";
 
   const commitDraftValue = (nextDraftValue: string) => {
     const parsedValue = nextDraftValue.trim() === "" ? 0 : Number(nextDraftValue);
@@ -928,6 +929,13 @@ function CurrencySettingFieldEditor({
     setDraftValue(
       normalizeSetting(field.id, nextValue as PensionSettings[typeof field.id]).toString(),
     );
+  };
+
+  const applyPresetValue = (
+    presetValue: NonNullable<CurrencyInputField["presets"]>[number]["value"],
+  ) => {
+    setDraftValue(presetValue.toString());
+    onChange(field.id, presetValue as PensionSettings[typeof field.id]);
   };
 
   return (
@@ -956,18 +964,39 @@ function CurrencySettingFieldEditor({
           }
         }}
       />
-      <button
-        type="button"
-        className="secondary-button field-reset-button"
-        aria-label={`Reset ${field.label} to default`}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => {
-          setDraftValue(resetValue.toString());
-          onChange(field.id, resetValue);
-        }}
-      >
-        Reset to default
-      </button>
+      {field.presets?.length ? (
+        <div className="field-preset-group" aria-label={`${field.label} presets`}>
+          {field.presets.map((preset) => (
+            <button
+              key={`${preset.label}-${preset.value}-${preset.description ?? ""}`}
+              type="button"
+              className="field-preset-button"
+              aria-label={preset.description ? `${preset.label}: ${preset.description}` : preset.label}
+              title={preset.description}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                applyPresetValue(preset.value);
+              }}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {showsResetButton ? (
+        <button
+          type="button"
+          className="secondary-button field-reset-button"
+          aria-label={`Reset ${field.label} to default`}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            setDraftValue(resetValue.toString());
+            onChange(field.id, resetValue);
+          }}
+        >
+          Reset to default
+        </button>
+      ) : null}
     </div>
   );
 }

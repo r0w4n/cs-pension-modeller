@@ -60,6 +60,7 @@ export type CurrencyInputField = {
   id:
     | "currentStatePension"
     | "accruedPensionAtLastAbs"
+    | "desiredRetirementIncome"
     | "sippCurrentPot"
     | "isaCurrentPot";
   label: string;
@@ -68,6 +69,11 @@ export type CurrencyInputField = {
   max: number;
   step: number;
   format?: "currency";
+  presets?: {
+    value: number;
+    label: string;
+    description?: string;
+  }[];
   infoUrl?: string;
   infoLinkText?: string;
 };
@@ -126,6 +132,44 @@ export const fieldGroups: FieldGroup[] = [
         infoUrl:
           "https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/healthandlifeexpectancies/articles/lifeexpectancycalculator/2019-06-07",
         infoLinkText: "Estimate life expectancy",
+      },
+      {
+        id: "desiredRetirementIncome",
+        label: "Retirement living standard target (£ per year)",
+        type: "currency-input",
+        min: 0,
+        max: 200000,
+        step: 1,
+        format: "currency",
+        presets: [
+          {
+            value: 13400,
+            label: "£13,400",
+            description: "Minimum standard for one person household",
+          },
+          {
+            value: 21600,
+            label: "£21,600",
+            description: "Minimum standard for two person household",
+          },
+          {
+            value: 31700,
+            label: "£31,700",
+            description: "Moderate standard for one person household",
+          },
+          {
+            value: 43900,
+            label: "£43,900",
+            description: "Comfortable standard for one person household",
+          },
+          {
+            value: 60600,
+            label: "£60,600",
+            description: "Comfortable standard for two person household",
+          },
+        ],
+        infoUrl: "https://www.retirementlivingstandards.org.uk/",
+        infoLinkText: "Retirement Living Standards",
       },
     ],
   },

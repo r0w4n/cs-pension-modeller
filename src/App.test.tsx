@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+import type { PensionSummary, ProjectionRow } from "./projection";
+import type { PensionSettings } from "./settings";
+
 const projectionFixtures = vi.hoisted(() => {
   const baseRows = [
     {
@@ -73,7 +76,7 @@ vi.mock("./projection", async () => {
 
   return {
     ...actual,
-    createProjectionTable: vi.fn((settings) => {
+    createProjectionTable: vi.fn((settings: PensionSettings): ProjectionRow[] => {
       if (validateSettings(settings).length > 0) {
         return [];
       }
@@ -98,7 +101,8 @@ vi.mock("./projection", async () => {
           (settings.showIsa ? row.monthlyIsaPension : 0),
       }));
     }),
-    generatePensionSummary: vi.fn((rows, settings) => ({
+    generatePensionSummary: vi.fn(
+      (rows: ProjectionRow[], settings: PensionSettings): PensionSummary => ({
       keyDates: {
         stopsAlphaAccrual: settings.startDate,
         startsAlphaPension: settings.startDate,
@@ -140,7 +144,8 @@ vi.mock("./projection", async () => {
         statePensionAge: settings.normalPensionAge,
         earlyRetirementReductionPercent: 0,
       },
-    })),
+      }),
+    ),
   };
 });
 
@@ -160,6 +165,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
     currentStatePension: defaultSettings.currentStatePension,
+    desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
     statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
     statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
     statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
@@ -233,6 +239,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(
       defaultSettings.currentStatePension,
     );
+    expect(
+      screen.getByLabelText("Retirement living standard target (£ per year)"),
+    ).toHaveValue(defaultSettings.desiredRetirementIncome);
     expect(screen.getByLabelText("Project State Pension future growth")).not.toBeChecked();
     expect(screen.getByLabelText("State Pension CPI (%)")).toBeDisabled();
     expect(screen.getByLabelText("State Pension wage growth (%)")).toBeDisabled();
@@ -315,6 +324,9 @@ describe("App settings form", () => {
       "href",
       "https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/healthandlifeexpectancies/articles/lifeexpectancycalculator/2019-06-07",
     );
+    expect(
+      screen.getByRole("link", { name: "Retirement Living Standards" }),
+    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
     expect(screen.getByRole("link", { name: "Check State Pension" })).toHaveAttribute(
       "href",
       "https://www.gov.uk/check-state-pension",
@@ -347,12 +359,38 @@ describe("App settings form", () => {
       target: { value: "11800" },
     });
     fireEvent.blur(screen.getByLabelText("Current Full State Pension (£ per year)"));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "£43,900: Comfortable standard for one person household",
+      }),
+    );
 
     expect(screen.getAllByText(/14 Feb 2058/).length).toBeGreaterThan(0);
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
         dateOfBirth: "1990-02-14",
         currentStatePension: 11800,
+        desiredRetirementIncome: 43900,
+      }),
+    );
+  });
+
+  it("allows a custom retirement living standard target", () => {
+    renderAcknowledgedApp();
+
+    const targetInput = screen.getByLabelText(
+      "Retirement living standard target (£ per year)",
+    );
+
+    fireEvent.change(targetInput, {
+      target: { value: "50000" },
+    });
+    fireEvent.blur(targetInput);
+
+    expect(targetInput).toHaveValue(50000);
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        desiredRetirementIncome: 50000,
       }),
     );
   });

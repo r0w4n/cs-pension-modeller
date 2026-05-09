@@ -22,6 +22,7 @@ export type PensionSettings = {
   showSipp: boolean;
   showIsa: boolean;
   currentStatePension: number;
+  desiredRetirementIncome: number;
   statePensionDrawDate: string;
   statePensionApplyFutureGrowth: boolean;
   statePensionCpiPercent: number;
@@ -71,6 +72,7 @@ type StoredPensionSettings = Omit<
 const numericSettingRules = {
   lifeExpectancy: { min: 75, max: 100, step: 1 },
   currentStatePension: { min: 0, max: 15000, step: 0.01 },
+  desiredRetirementIncome: { min: 0, max: 200000, step: 1 },
   statePensionCpiPercent: { min: 0, max: 10, step: 0.1 },
   statePensionWageGrowthPercent: { min: 0, max: 10, step: 0.1 },
   assumedCpiPercent: { min: 0, max: 10, step: 0.1 },
@@ -103,6 +105,7 @@ export const defaultSettings: PensionSettings = {
   showSipp: true,
   showIsa: true,
   currentStatePension: 12547.6,
+  desiredRetirementIncome: 31700,
   statePensionDrawDate: "2055-06-15",
   statePensionApplyFutureGrowth: false,
   statePensionCpiPercent: 2,
@@ -244,6 +247,7 @@ function coerceSettings(
     showSipp: coerceBoolean(input.showSipp),
     showIsa: coerceBoolean(input.showIsa),
     currentStatePension: coerceNumber(input.currentStatePension),
+    desiredRetirementIncome: coerceNumber(input.desiredRetirementIncome),
     statePensionApplyFutureGrowth: coerceBoolean(
       input.statePensionApplyFutureGrowth,
     ),
@@ -427,6 +431,10 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
     currentStatePension: normalizeSetting(
       "currentStatePension",
       settings.currentStatePension,
+    ),
+    desiredRetirementIncome: normalizeSetting(
+      "desiredRetirementIncome",
+      settings.desiredRetirementIncome,
     ),
     statePensionDrawDate: calculateStatePensionDrawDate(dateOfBirth),
     statePensionApplyFutureGrowth: Boolean(settings.statePensionApplyFutureGrowth),

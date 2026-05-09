@@ -386,6 +386,43 @@ h3 {
   line-height: var(--line-height-body);
 }
 
+.field-preset-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.field-preset-button {
+  border: 1px solid rgba(17, 100, 102, 0.18);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  background: rgba(17, 100, 102, 0.08);
+  color: var(--accent-strong);
+  font-size: var(--font-size-body-sm);
+  font-weight: 600;
+  line-height: var(--line-height-body);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.field-preset-button:hover {
+  background: rgba(17, 100, 102, 0.14);
+  border-color: rgba(17, 100, 102, 0.28);
+}
+
+.field-preset-button:focus-visible {
+  outline: 2px solid rgba(17, 100, 102, 0.4);
+  outline-offset: 2px;
+}
+
+.field-preset-button:active {
+  transform: translateY(1px);
+}
+
 .checkbox-field-card {
   align-content: start;
 }

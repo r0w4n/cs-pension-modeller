@@ -23,6 +23,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
     currentStatePension: defaultSettings.currentStatePension,
+    desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
     statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
     statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
     statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
@@ -80,6 +81,8 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("lifeExpectancy", 120)).toBe(100);
     expect(normalizeSetting("currentStatePension", -10)).toBe(0);
     expect(normalizeSetting("currentStatePension", 12547.6)).toBe(12547.6);
+    expect(normalizeSetting("desiredRetirementIncome", 250000)).toBe(200000);
+    expect(normalizeSetting("desiredRetirementIncome", 43899.6)).toBe(43900);
     expect(normalizeSetting("statePensionCpiPercent", 2.34)).toBe(2.34);
     expect(normalizeSetting("statePensionWageGrowthPercent", 11)).toBe(10);
     expect(normalizeSetting("assumedCpiPercent", 2.34)).toBe(2.34);
@@ -114,6 +117,7 @@ describe("settings unit tests", () => {
       ...createDefaultSettings(),
       startDate: "2026-05-01",
       alphaAddedPensionMonthly: 233,
+      desiredRetirementIncome: 60600,
     };
 
     saveSettings(settings);
@@ -121,6 +125,7 @@ describe("settings unit tests", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expectedStoredSettings({
         alphaAddedPensionMonthly: 233,
+        desiredRetirementIncome: 60600,
       }),
     );
   });
@@ -132,6 +137,7 @@ describe("settings unit tests", () => {
         dateOfBirth: "bad-date",
         lifeExpectancy: 120,
         currentStatePension: -10,
+        desiredRetirementIncome: 43899.6,
         applyPensionIncreases: true,
         assumedCpiPercent: 2.34,
         statePensionDrawDate: "bad-date",
@@ -162,6 +168,7 @@ describe("settings unit tests", () => {
       showSipp: defaultSettings.showSipp,
       showIsa: defaultSettings.showIsa,
       currentStatePension: 0,
+      desiredRetirementIncome: 43900,
       statePensionDrawDate: defaultSettings.statePensionDrawDate,
       statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
       statePensionCpiPercent: defaultSettings.statePensionCpiPercent,

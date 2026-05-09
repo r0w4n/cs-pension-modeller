@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
+  type CurrencyInputField,
   fieldGroups,
   type DateField,
   type FieldDefinition,
   type RangeField,
   type SettingsKey,
+  type SelectField,
 } from "./fieldDefinitions";
 import {
   createProjectionTable,
@@ -50,6 +52,7 @@ const OPTIONAL_SECTION_TOGGLES = [
 
 function App() {
   const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
+  const [settingsFormVersion, setSettingsFormVersion] = useState(0);
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState,
   );
@@ -58,9 +61,19 @@ function App() {
     null,
   );
   const useDropdownDates = useMobileDateDropdowns();
-  const validationIssues = validateSettings(settings);
-  const projectionRows = createProjectionTable(settings);
-  const pensionSummary = generatePensionSummary(projectionRows, settings);
+  const deferredSettings = useDeferredValue(settings);
+  const validationIssues = useMemo(
+    () => validateSettings(deferredSettings),
+    [deferredSettings],
+  );
+  const projectionRows = useMemo(
+    () => createProjectionTable(deferredSettings),
+    [deferredSettings],
+  );
+  const pensionSummary = useMemo(
+    () => generatePensionSummary(projectionRows, deferredSettings),
+    [projectionRows, deferredSettings],
+  );
 
   useEffect(() => {
     saveSettings(settings);
@@ -90,6 +103,7 @@ function App() {
 
   function resetSettings() {
     showSavedLabel();
+    setSettingsFormVersion((current) => current + 1);
     setSettings(createDefaultSettings());
   }
 
@@ -284,13 +298,14 @@ function App() {
             <button
               type="button"
               className="secondary-button settings-reset-button"
+              onMouseDown={(event) => event.preventDefault()}
               onClick={resetSettings}
             >
               Reset parameters
             </button>
           </div>
 
-          <div className="settings-sections">
+          <div className="settings-sections" key={settingsFormVersion}>
             {validationIssues.length > 0 ? (
               <section className="settings-section" aria-live="polite">
                 <div className="section-heading">
@@ -677,35 +692,12 @@ function Field({
   }
 
   if (field.type === "year") {
-    const draftYear = getAlphaAbsYear(value as string);
-    const currentYear = new Date().getUTCFullYear();
-    const firstAbsYear = 2015;
-    const yearOptions = Array.from(
-      { length: currentYear - firstAbsYear + 1 },
-      (_, index) => currentYear - index,
-    );
-
     return (
-      <label className="field-card">
-        <span className="field-header">
-          <FieldLabel field={field} />
-        </span>
-        <select
-          aria-label={field.label}
-          className="select-input"
-          value={draftYear}
-          onChange={(event) => {
-            const nextValue = event.target.value;
-            onChange(field.id, nextValue as PensionSettings[typeof field.id]);
-          }}
-        >
-          {yearOptions.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </label>
+      <YearSettingField
+        field={field as DateField & { type: "year" }}
+        value={value as string}
+        onChange={onChange}
+      />
     );
   }
 
@@ -723,28 +715,11 @@ function Field({
 
   if (field.type === "select") {
     return (
-      <label className="field-card">
-        <span className="field-header">
-          <FieldLabel field={field} />
-        </span>
-        <select
-          aria-label={field.label}
-          className="select-input"
-          value={value as string}
-          onChange={(event) =>
-            onChange(
-              field.id,
-              event.target.value as PensionSettings[typeof field.id],
-            )
-          }
-        >
-          {field.options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <SelectSettingField
+        field={field as SelectField}
+        value={value as string}
+        onChange={onChange}
+      />
     );
   }
 
@@ -774,40 +749,174 @@ function Field({
 
   if (field.type === "currency-input") {
     return (
-      <div className="field-card">
-        <span className="field-header">
-          <FieldLabel field={field} />
-        </span>
-        <input
-          aria-label={field.label}
-          className="select-input"
-          type="number"
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          value={value as number}
-          onChange={(event) =>
-            onChange(field.id, Number(event.target.value) as PensionSettings[typeof field.id])
-          }
-        />
-        <button
-          type="button"
-          className="secondary-button field-reset-button"
-          aria-label={`Reset ${field.label} to default`}
-          onClick={() =>
-            onChange(
-              field.id,
-              defaultSettings[field.id] as PensionSettings[typeof field.id],
-            )
-          }
-        >
-          Reset to default
-        </button>
-      </div>
+      <CurrencySettingField
+        field={field as CurrencyInputField}
+        value={value as number}
+        onChange={onChange}
+      />
     );
   }
 
   return null;
+}
+
+function YearSettingField({
+  field,
+  value,
+  onChange,
+}: {
+  field: DateField & { type: "year" };
+  value: string;
+  onChange: FieldProps["onChange"];
+}) {
+  const draftYear = getAlphaAbsYear(value);
+  const [localYear, setLocalYear] = useState(draftYear.toString());
+  const currentYear = new Date().getUTCFullYear();
+  const firstAbsYear = 2015;
+  const yearOptions = Array.from(
+    { length: currentYear - firstAbsYear + 1 },
+    (_, index) => currentYear - index,
+  );
+
+  useLayoutEffect(() => {
+    setLocalYear(draftYear.toString());
+  }, [draftYear]);
+
+  return (
+    <label className="field-card">
+      <span className="field-header">
+        <FieldLabel field={field} />
+      </span>
+      <select
+        aria-label={field.label}
+        className="select-input"
+        value={localYear}
+        onChange={(event) => {
+          setLocalYear(event.target.value);
+        }}
+        onBlur={(event) => {
+          onChange(field.id, event.target.value as PensionSettings[typeof field.id]);
+        }}
+      >
+        {yearOptions.map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function SelectSettingField({
+  field,
+  value,
+  onChange,
+}: {
+  field: SelectField;
+  value: string;
+  onChange: FieldProps["onChange"];
+}) {
+  const [draftValue, setDraftValue] = useState(value);
+
+  useLayoutEffect(() => {
+    setDraftValue(value);
+  }, [value]);
+
+  return (
+    <label className="field-card">
+      <span className="field-header">
+        <FieldLabel field={field} />
+      </span>
+      <select
+        aria-label={field.label}
+        className="select-input"
+        value={draftValue}
+        onChange={(event) => {
+          setDraftValue(event.target.value);
+        }}
+        onBlur={(event) =>
+          onChange(
+            field.id,
+            event.target.value as PensionSettings[typeof field.id],
+          )
+        }
+      >
+        {field.options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function CurrencySettingField({
+  field,
+  value,
+  onChange,
+}: {
+  field: CurrencyInputField;
+  value: number;
+  onChange: FieldProps["onChange"];
+}) {
+  const [draftValue, setDraftValue] = useState(value.toString());
+  const resetValue = defaultSettings[field.id] as PensionSettings[typeof field.id];
+
+  useLayoutEffect(() => {
+    setDraftValue(value.toString());
+  }, [value]);
+
+  const commitDraftValue = (nextDraftValue: string) => {
+    const parsedValue = nextDraftValue.trim() === "" ? 0 : Number(nextDraftValue);
+    const nextValue = Number.isFinite(parsedValue) ? parsedValue : value;
+    onChange(field.id, nextValue as PensionSettings[typeof field.id]);
+    setDraftValue(
+      normalizeSetting(field.id, nextValue as PensionSettings[typeof field.id]).toString(),
+    );
+  };
+
+  return (
+    <div className="field-card">
+      <span className="field-header">
+        <FieldLabel field={field} />
+      </span>
+      <input
+        aria-label={field.label}
+        className="select-input"
+        type="number"
+        min={field.min}
+        max={field.max}
+        step={field.step}
+        value={draftValue}
+        onChange={(event) => {
+          setDraftValue(event.target.value);
+        }}
+        onBlur={(event) => {
+          commitDraftValue(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            commitDraftValue(event.currentTarget.value);
+            event.currentTarget.blur();
+          }
+        }}
+      />
+      <button
+        type="button"
+        className="secondary-button field-reset-button"
+        aria-label={`Reset ${field.label} to default`}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => {
+          setDraftValue(resetValue.toString());
+          onChange(field.id, resetValue);
+        }}
+      >
+        Reset to default
+      </button>
+    </div>
+  );
 }
 
 function RangeSettingField({
@@ -823,16 +932,27 @@ function RangeSettingField({
   disabled?: boolean;
   hideOnMobile?: boolean;
 }) {
+  const [draftValue, setDraftValue] = useState(value);
   const [draftExactValue, setDraftExactValue] = useState(value.toString());
   const [isEditingExactValue, setIsEditingExactValue] = useState(false);
   const canResetToDefault = field.id === "assumedCpiPercent";
-  const displayedExactValue = isEditingExactValue ? draftExactValue : value.toString();
+  const displayedExactValue = isEditingExactValue ? draftExactValue : draftValue.toString();
+  const resetValue = defaultSettings[field.id] as PensionSettings[typeof field.id];
+
+  useLayoutEffect(() => {
+    if (!isEditingExactValue) {
+      setDraftValue(value);
+      setDraftExactValue(value.toString());
+    }
+  }, [value, isEditingExactValue]);
 
   const commitRangeValue = (nextValue: number) => {
     onChange(field.id, nextValue as PensionSettings[typeof field.id]);
+    setDraftValue(nextValue);
+    setDraftExactValue(nextValue.toString());
   };
 
-  const commitExactValue = (nextDraftValue: string) => {
+  const updateDraftExactValue = (nextDraftValue: string) => {
     const parsedValue = Number(nextDraftValue);
 
     if (
@@ -841,7 +961,7 @@ function RangeSettingField({
       parsedValue >= field.min &&
       parsedValue <= field.max
     ) {
-      commitRangeValue(parsedValue);
+      setDraftValue(parsedValue);
     }
   };
 
@@ -849,7 +969,7 @@ function RangeSettingField({
     const parsedValue = Number(nextDraftValue);
     const nextValue =
       nextDraftValue.trim() === "" || !Number.isFinite(parsedValue)
-        ? value
+        ? draftValue
         : parsedValue;
 
     commitRangeValue(nextValue);
@@ -872,9 +992,16 @@ function RangeSettingField({
             min={field.min}
             max={field.max}
             step={field.step}
-            value={value}
+            value={draftValue}
             disabled={disabled}
-            onChange={(event) => commitRangeValue(Number(event.target.value))}
+            onChange={(event) => {
+              const nextValue = Number(event.target.value);
+              setDraftValue(nextValue);
+              setDraftExactValue(nextValue.toString());
+            }}
+            onMouseUp={(event) => commitRangeValue(Number(event.currentTarget.value))}
+            onTouchEnd={(event) => commitRangeValue(Number(event.currentTarget.value))}
+            onBlur={(event) => commitRangeValue(Number(event.currentTarget.value))}
           />
           <div className="range-scale">
             <span>{formatFieldValue(field.min, field.format)}</span>
@@ -897,7 +1024,7 @@ function RangeSettingField({
           onChange={(event) => {
             const nextDraftValue = event.target.value;
             setDraftExactValue(nextDraftValue);
-            commitExactValue(nextDraftValue);
+            updateDraftExactValue(nextDraftValue);
           }}
           onBlur={(event) => {
             setIsEditingExactValue(false);
@@ -917,12 +1044,12 @@ function RangeSettingField({
           className="secondary-button field-reset-button"
           aria-label="Reset assumed CPI to default"
           disabled={disabled}
-          onClick={() =>
-            onChange(
-              field.id,
-              defaultSettings.assumedCpiPercent as PensionSettings[typeof field.id],
-            )
-          }
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            setDraftValue(resetValue as number);
+            setDraftExactValue((resetValue as number).toString());
+            onChange(field.id, resetValue);
+          }}
         >
           Reset to default
         </button>

@@ -1,5 +1,149 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+const projectionFixtures = vi.hoisted(() => {
+  const baseRows = [
+    {
+      date: "2025-05-09",
+      age: 40,
+      ageMonths: 0,
+      milestones: ["Calculation start"],
+      milestoneDates: ["2025-05-09"],
+      monthlyAddedPension: 0,
+      lumpSumAddedPension: 0,
+      annualStandardAlphaPension: 12000,
+      annualEpaAlphaPension: 0,
+      annualAccruedAlphaPension: 12000,
+      annualAlphaPensionIncludingReduction: 12000,
+      monthlyAlphaPensionTakeHome: 900,
+      monthlyStatePension: 0,
+      sippPot: 40000,
+      monthlySippPension: 0,
+      isaPot: 15000,
+      monthlyIsaPension: 0,
+      totalMonthlyPensionTakeHomePay: 900,
+    },
+    {
+      date: "2050-06-01",
+      age: 65,
+      ageMonths: 1,
+      milestones: [],
+      milestoneDates: [],
+      monthlyAddedPension: 0,
+      lumpSumAddedPension: 0,
+      annualStandardAlphaPension: 18000,
+      annualEpaAlphaPension: 0,
+      annualAccruedAlphaPension: 18000,
+      annualAlphaPensionIncludingReduction: 18000,
+      monthlyAlphaPensionTakeHome: 1300,
+      monthlyStatePension: 0,
+      sippPot: 35000,
+      monthlySippPension: 200,
+      isaPot: 12000,
+      monthlyIsaPension: 100,
+      totalMonthlyPensionTakeHomePay: 1600,
+    },
+    {
+      date: "2058-02-14",
+      age: 72,
+      ageMonths: 0,
+      milestones: ["Starts Drawing Alpha Pension", "Starts Drawing State Pension", "Life expectancy"],
+      milestoneDates: ["2058-02-14"],
+      monthlyAddedPension: 0,
+      lumpSumAddedPension: 0,
+      annualStandardAlphaPension: 22000,
+      annualEpaAlphaPension: 0,
+      annualAccruedAlphaPension: 22000,
+      annualAlphaPensionIncludingReduction: 22000,
+      monthlyAlphaPensionTakeHome: 1600,
+      monthlyStatePension: 900,
+      sippPot: 0,
+      monthlySippPension: 300,
+      isaPot: 0,
+      monthlyIsaPension: 150,
+      totalMonthlyPensionTakeHomePay: 2950,
+    },
+  ];
+
+  return { baseRows };
+});
+
+vi.mock("./projection", async () => {
+  const actual = await vi.importActual<typeof import("./projection")>("./projection");
+  const { validateSettings } = await vi.importActual<typeof import("./settings")>("./settings");
+
+  return {
+    ...actual,
+    createProjectionTable: vi.fn((settings) => {
+      if (validateSettings(settings).length > 0) {
+        return [];
+      }
+
+      return projectionFixtures.baseRows.map((row, index) => ({
+        ...row,
+        milestones:
+          index === 2
+            ? [
+                "Starts Drawing Alpha Pension",
+                ...(settings.showStatePension ? ["Starts Drawing State Pension"] : []),
+                "Life expectancy",
+              ]
+            : row.milestones,
+        monthlyStatePension: settings.showStatePension ? row.monthlyStatePension : 0,
+        monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
+        monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
+        totalMonthlyPensionTakeHomePay:
+          row.monthlyAlphaPensionTakeHome +
+          (settings.showStatePension ? row.monthlyStatePension : 0) +
+          (settings.showSipp ? row.monthlySippPension : 0) +
+          (settings.showIsa ? row.monthlyIsaPension : 0),
+      }));
+    }),
+    generatePensionSummary: vi.fn((rows, settings) => ({
+      keyDates: {
+        stopsAlphaAccrual: settings.startDate,
+        startsAlphaPension: settings.startDate,
+        startsSippDraw: settings.startDate,
+        startsIsaDraw: settings.startDate,
+        startsStatePension: settings.statePensionDrawDate,
+      },
+      alphaPension: {
+        annualAtDraw: rows.at(-1)?.annualAlphaPensionIncludingReduction ?? 0,
+        monthlyAtDraw: rows.at(-1)?.monthlyAlphaPensionTakeHome ?? 0,
+        maximumAnnualAccrued: rows.at(-1)?.annualAccruedAlphaPension ?? 0,
+        totalAddedAfterToday: rows.reduce(
+          (total, row) => total + row.monthlyAddedPension + row.lumpSumAddedPension,
+          0,
+        ),
+      },
+      sippPension: {
+        potAtDraw: rows.at(-1)?.sippPot ?? 0,
+        monthlyAtDraw: rows.at(-1)?.monthlySippPension ?? 0,
+        totalContributionsAfterTaxRelief: 0,
+      },
+      isaPension: {
+        potAtDraw: rows.at(-1)?.isaPot ?? 0,
+        monthlyAtDraw: rows.at(-1)?.monthlyIsaPension ?? 0,
+        totalContributions: 0,
+      },
+      incomeOverTime: {
+        monthlyAtAlphaStart: rows.at(-1)?.monthlyAlphaPensionTakeHome ?? 0,
+        monthlyAtStateStart: rows.at(-1)?.totalMonthlyPensionTakeHomePay ?? 0,
+        monthlyAfterStatePension: rows.at(-1)?.totalMonthlyPensionTakeHomePay ?? 0,
+        monthlyStatePension: rows.at(-1)?.monthlyStatePension ?? 0,
+      },
+      transitions: {
+        yearsBetweenStoppingAccrualAndDrawingPension: 0,
+        yearsBetweenAlphaPensionAndStatePension: 0,
+      },
+      calculated: {
+        normalPensionAge: settings.normalPensionAge,
+        statePensionAge: settings.normalPensionAge,
+        earlyRetirementReductionPercent: 0,
+      },
+    })),
+  };
+});
+
 import App from "./App";
 import { createProjectionTable } from "./projection";
 import {
@@ -202,6 +346,7 @@ describe("App settings form", () => {
     fireEvent.change(screen.getByLabelText("Current Full State Pension (£ per year)"), {
       target: { value: "11800" },
     });
+    fireEvent.blur(screen.getByLabelText("Current Full State Pension (£ per year)"));
 
     expect(screen.getAllByText(/14 Feb 2058/).length).toBeGreaterThan(0);
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
@@ -222,6 +367,10 @@ describe("App settings form", () => {
       target: { value: "11800" },
     });
 
+    expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
+
+    fireEvent.blur(screen.getByLabelText("Current Full State Pension (£ per year)"));
+
     expect(screen.getByText("Saved Locally")).toBeInTheDocument();
 
     act(() => {
@@ -237,6 +386,7 @@ describe("App settings form", () => {
     fireEvent.change(screen.getByLabelText("Last Annual Benifits Statement"), {
       target: { value: "2024" },
     });
+    fireEvent.blur(screen.getByLabelText("Last Annual Benifits Statement"));
 
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       ...expectedStoredSettings({
@@ -314,6 +464,7 @@ describe("App settings form", () => {
     fireEvent.change(cpiInput, {
       target: { value: "3.4" },
     });
+    fireEvent.blur(cpiInput);
 
     expect(applyIncreasesToggle).toBeChecked();
     expect(cpiInput).toHaveValue(3.4);
@@ -347,6 +498,8 @@ describe("App settings form", () => {
     fireEvent.change(wageGrowthInput, {
       target: { value: "4.2" },
     });
+    fireEvent.blur(cpiInput);
+    fireEvent.blur(wageGrowthInput);
 
     expect(applyStateGrowthToggle).toBeChecked();
     expect(cpiInput).toHaveValue(3.1);
@@ -400,6 +553,7 @@ describe("App settings form", () => {
         target: { value: "10001" },
       },
     );
+    fireEvent.blur(screen.getByLabelText("Current Pensionable Earnings (£ per year) exact value"));
 
     expect(screen.getByLabelText("Current Pensionable Earnings (£ per year)")).toHaveValue(
       "10001",
@@ -407,6 +561,31 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
         pensionableEarnings: 10001,
+      }),
+    );
+  });
+
+  it("waits until slider blur before saving range changes", () => {
+    renderAcknowledgedApp();
+
+    const lifeExpectancySlider = screen.getByLabelText("Life Expectancy (Age)");
+
+    fireEvent.change(lifeExpectancySlider, {
+      target: { value: "90" },
+    });
+
+    expect(lifeExpectancySlider).toHaveValue("90");
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.not.objectContaining({
+        lifeExpectancy: 90,
+      }),
+    );
+
+    fireEvent.blur(lifeExpectancySlider);
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        lifeExpectancy: 90,
       }),
     );
   });
@@ -439,6 +618,14 @@ describe("App settings form", () => {
 
     expect(exactLifeExpectancyInput).toHaveValue(90);
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("90");
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.not.objectContaining({
+        lifeExpectancy: 90,
+      }),
+    );
+
+    fireEvent.blur(exactLifeExpectancyInput);
+
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
         lifeExpectancy: 90,
@@ -535,9 +722,11 @@ describe("App settings form", () => {
     fireEvent.change(screen.getByLabelText("SIPP withdrawal strategy"), {
       target: { value: "percentage" },
     });
+    fireEvent.blur(screen.getByLabelText("SIPP withdrawal strategy"));
     fireEvent.change(screen.getByLabelText("SIPP withdrawal rate (%) exact value"), {
       target: { value: "5.2" },
     });
+    fireEvent.blur(screen.getByLabelText("SIPP withdrawal rate (%) exact value"));
 
     expect(screen.getByLabelText("SIPP withdrawal rate (%)")).not.toBeDisabled();
     expect(screen.getByLabelText("SIPP withdrawal rate (%) exact value")).toHaveValue(5.2);
@@ -555,6 +744,7 @@ describe("App settings form", () => {
     fireEvent.change(screen.getByLabelText("Current ISA pot (£)"), {
       target: { value: "20000" },
     });
+    fireEvent.blur(screen.getByLabelText("Current ISA pot (£)"));
     fireEvent.click(screen.getByRole("button", { name: "Add ISA lump sum" }));
     fireEvent.change(screen.getByLabelText("ISA lump sum amount 1"), {
       target: { value: "5000" },
@@ -580,12 +770,15 @@ describe("App settings form", () => {
     fireEvent.change(screen.getByLabelText("Current Full State Pension (£ per year)"), {
       target: { value: "13000" },
     });
+    fireEvent.blur(screen.getByLabelText("Current Full State Pension (£ per year)"));
     fireEvent.change(screen.getByLabelText("Current SIPP pot (£)"), {
       target: { value: "45000" },
     });
+    fireEvent.blur(screen.getByLabelText("Current SIPP pot (£)"));
     fireEvent.change(screen.getByLabelText("Current ISA pot (£)"), {
       target: { value: "12000" },
     });
+    fireEvent.blur(screen.getByLabelText("Current ISA pot (£)"));
 
     fireEvent.click(screen.getByLabelText("State Pension"));
     fireEvent.click(screen.getByLabelText("SIPP"));

@@ -8,6 +8,49 @@ import {
   getTodayIsoDate,
 } from "./settings";
 
+function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
+  return {
+    dateOfBirth: defaultSettings.dateOfBirth,
+    lifeExpectancy: defaultSettings.lifeExpectancy,
+    showStatePension: defaultSettings.showStatePension,
+    showSipp: defaultSettings.showSipp,
+    showIsa: defaultSettings.showIsa,
+    currentStatePension: defaultSettings.currentStatePension,
+    statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
+    statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
+    statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
+    applyPensionIncreases: defaultSettings.applyPensionIncreases,
+    assumedCpiPercent: defaultSettings.assumedCpiPercent,
+    alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
+    alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
+    alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
+    accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
+    pensionableEarnings: defaultSettings.pensionableEarnings,
+    alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+    alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+    alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+    alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+    alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
+    alphaAddedPensionLumpSums: [],
+    sippCurrentPot: defaultSettings.sippCurrentPot,
+    sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+    sippLumpSums: defaultSettings.sippLumpSums,
+    sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
+    sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
+    sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
+    sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
+    sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+    isaCurrentPot: defaultSettings.isaCurrentPot,
+    isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+    isaLumpSums: defaultSettings.isaLumpSums,
+    isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+    isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+    isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+    isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
+    ...overrides,
+  };
+}
+
 function renderAcknowledgedApp() {
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "I understand" }));
@@ -38,6 +81,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString(),
     );
+    expect(screen.getByLabelText("SIPP")).toBeChecked();
+    expect(screen.getByLabelText("State Pension")).toBeChecked();
+    expect(screen.getByLabelText("ISA")).toBeChecked();
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(
       defaultSettings.currentStatePension,
     );
@@ -185,40 +231,9 @@ describe("App settings form", () => {
     });
 
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
-      dateOfBirth: defaultSettings.dateOfBirth,
-      lifeExpectancy: defaultSettings.lifeExpectancy,
-      currentStatePension: defaultSettings.currentStatePension,
-      statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
-      statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
-      statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
-      applyPensionIncreases: defaultSettings.applyPensionIncreases,
-      assumedCpiPercent: defaultSettings.assumedCpiPercent,
-      alphaPensionAbsDate: "2024",
-      alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
-      alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
-      accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
-      pensionableEarnings: defaultSettings.pensionableEarnings,
-      alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
-      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
-      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
-      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
-      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
-      alphaAddedPensionLumpSums: [],
-      sippCurrentPot: defaultSettings.sippCurrentPot,
-      sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
-      sippLumpSums: defaultSettings.sippLumpSums,
-      sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
-      sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
-      sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
-      sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
-      sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
-      isaCurrentPot: defaultSettings.isaCurrentPot,
-      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
-      isaLumpSums: defaultSettings.isaLumpSums,
-      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
-      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
-      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
-      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
+      ...expectedStoredSettings({
+        alphaPensionAbsDate: "2024",
+      }),
     });
   });
 
@@ -232,81 +247,17 @@ describe("App settings form", () => {
     });
 
     expect(birthDateInput).toHaveValue("1977-04-10");
-    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
-      dateOfBirth: defaultSettings.dateOfBirth,
-      lifeExpectancy: defaultSettings.lifeExpectancy,
-      currentStatePension: defaultSettings.currentStatePension,
-      statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
-      statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
-      statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
-      applyPensionIncreases: defaultSettings.applyPensionIncreases,
-      assumedCpiPercent: defaultSettings.assumedCpiPercent,
-      alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
-      alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
-      alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
-      accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
-      pensionableEarnings: defaultSettings.pensionableEarnings,
-      alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
-      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
-      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
-      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
-      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
-      alphaAddedPensionLumpSums: [],
-      sippCurrentPot: defaultSettings.sippCurrentPot,
-      sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
-      sippLumpSums: defaultSettings.sippLumpSums,
-      sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
-      sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
-      sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
-      sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
-      sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
-      isaCurrentPot: defaultSettings.isaCurrentPot,
-      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
-      isaLumpSums: defaultSettings.isaLumpSums,
-      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
-      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
-      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
-      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
-    });
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expectedStoredSettings(),
+    );
 
     fireEvent.blur(birthDateInput);
 
-    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
-      dateOfBirth: "1977-04-10",
-      lifeExpectancy: defaultSettings.lifeExpectancy,
-      currentStatePension: defaultSettings.currentStatePension,
-      statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
-      statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
-      statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
-      applyPensionIncreases: defaultSettings.applyPensionIncreases,
-      assumedCpiPercent: defaultSettings.assumedCpiPercent,
-      alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
-      alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
-      alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
-      accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
-      pensionableEarnings: defaultSettings.pensionableEarnings,
-      alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
-      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
-      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
-      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
-      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
-      alphaAddedPensionLumpSums: [],
-      sippCurrentPot: defaultSettings.sippCurrentPot,
-      sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
-      sippLumpSums: defaultSettings.sippLumpSums,
-      sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
-      sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
-      sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
-      sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
-      sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
-      isaCurrentPot: defaultSettings.isaCurrentPot,
-      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
-      isaLumpSums: defaultSettings.isaLumpSums,
-      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
-      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
-      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
-      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
-    });
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expectedStoredSettings({
+        dateOfBirth: "1977-04-10",
+      }),
+    );
   });
 
   it("loads settings from local storage on first render", () => {
@@ -427,42 +378,9 @@ describe("App settings form", () => {
       defaultSettings.currentStatePension,
     );
     expect(screen.queryByText("Lump sum #1")).not.toBeInTheDocument();
-    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
-      dateOfBirth: defaultSettings.dateOfBirth,
-      lifeExpectancy: defaultSettings.lifeExpectancy,
-      currentStatePension: defaultSettings.currentStatePension,
-      statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
-      statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
-      statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
-      applyPensionIncreases: defaultSettings.applyPensionIncreases,
-      assumedCpiPercent: defaultSettings.assumedCpiPercent,
-      alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
-      alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
-      alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
-      accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
-      pensionableEarnings: defaultSettings.pensionableEarnings,
-      alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
-      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
-      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
-      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
-      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
-      alphaAddedPensionLumpSums: [],
-      sippCurrentPot: defaultSettings.sippCurrentPot,
-      sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
-      sippLumpSums: defaultSettings.sippLumpSums,
-      sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
-      sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
-      sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
-      sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
-      sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
-      isaCurrentPot: defaultSettings.isaCurrentPot,
-      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
-      isaLumpSums: defaultSettings.isaLumpSums,
-      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
-      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
-      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
-      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
-    });
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expectedStoredSettings(),
+    );
   });
 
   it("supports exact numeric entry alongside sliders", () => {
@@ -646,6 +564,59 @@ describe("App settings form", () => {
         ],
       }),
     );
+  });
+
+  it("can hide optional sections without losing their saved values", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.change(screen.getByLabelText("Current Full State Pension (£ per year)"), {
+      target: { value: "13000" },
+    });
+    fireEvent.change(screen.getByLabelText("Current SIPP pot (£)"), {
+      target: { value: "45000" },
+    });
+    fireEvent.change(screen.getByLabelText("Current ISA pot (£)"), {
+      target: { value: "12000" },
+    });
+
+    fireEvent.click(screen.getByLabelText("State Pension"));
+    fireEvent.click(screen.getByLabelText("SIPP"));
+    fireEvent.click(screen.getByLabelText("ISA"));
+
+    expect(screen.queryByLabelText("Current Full State Pension (£ per year)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Current SIPP pot (£)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Current ISA pot (£)")).not.toBeInTheDocument();
+    expect(screen.queryByText("At State Pension start")).not.toBeInTheDocument();
+    expect(screen.queryByText("SIPP at Alpha draw date")).not.toBeInTheDocument();
+    expect(screen.queryByText("ISA at Alpha draw date")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", { name: "Monthly State pension" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", { name: "Monthly SIPP pension" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", { name: "Monthly ISA pension" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Starts Drawing State Pension")).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        showStatePension: false,
+        showSipp: false,
+        showIsa: false,
+        currentStatePension: 13000,
+        sippCurrentPot: 45000,
+        isaCurrentPot: 12000,
+      }),
+    );
+
+    fireEvent.click(screen.getByLabelText("State Pension"));
+    fireEvent.click(screen.getByLabelText("SIPP"));
+    fireEvent.click(screen.getByLabelText("ISA"));
+
+    expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(13000);
+    expect(screen.getByLabelText("Current SIPP pot (£)")).toHaveValue(45000);
+    expect(screen.getByLabelText("Current ISA pot (£)")).toHaveValue(12000);
   });
 
   it("normalizes unexpected stored values back to allowed settings", () => {

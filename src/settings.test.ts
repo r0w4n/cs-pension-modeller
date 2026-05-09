@@ -15,6 +15,49 @@ import {
   type PensionSettings,
 } from "./settings";
 
+function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
+  return {
+    dateOfBirth: defaultSettings.dateOfBirth,
+    lifeExpectancy: defaultSettings.lifeExpectancy,
+    showStatePension: defaultSettings.showStatePension,
+    showSipp: defaultSettings.showSipp,
+    showIsa: defaultSettings.showIsa,
+    currentStatePension: defaultSettings.currentStatePension,
+    statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
+    statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
+    statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
+    applyPensionIncreases: defaultSettings.applyPensionIncreases,
+    assumedCpiPercent: defaultSettings.assumedCpiPercent,
+    alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
+    alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
+    alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
+    accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
+    pensionableEarnings: defaultSettings.pensionableEarnings,
+    alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+    alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+    alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+    alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
+    alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
+    alphaAddedPensionLumpSums: [],
+    sippCurrentPot: defaultSettings.sippCurrentPot,
+    sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+    sippLumpSums: defaultSettings.sippLumpSums,
+    sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
+    sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
+    sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
+    sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
+    sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+    isaCurrentPot: defaultSettings.isaCurrentPot,
+    isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
+    isaLumpSums: defaultSettings.isaLumpSums,
+    isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
+    isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
+    isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
+    isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
+    ...overrides,
+  };
+}
+
 describe("settings unit tests", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -73,42 +116,11 @@ describe("settings unit tests", () => {
 
     saveSettings(settings);
 
-    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
-      dateOfBirth: defaultSettings.dateOfBirth,
-      lifeExpectancy: defaultSettings.lifeExpectancy,
-      currentStatePension: defaultSettings.currentStatePension,
-      statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
-      statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
-      statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
-      applyPensionIncreases: defaultSettings.applyPensionIncreases,
-      assumedCpiPercent: defaultSettings.assumedCpiPercent,
-      alphaPensionAbsDate: defaultSettings.alphaPensionAbsDate,
-      alphaAddedPensionMonthly: 233,
-      alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
-      accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
-      pensionableEarnings: defaultSettings.pensionableEarnings,
-      alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
-      alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
-      alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
-      alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
-      alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
-      alphaAddedPensionLumpSums: [],
-      sippCurrentPot: defaultSettings.sippCurrentPot,
-      sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
-      sippLumpSums: defaultSettings.sippLumpSums,
-      sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
-      sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
-      sippApplyTaxRelief: defaultSettings.sippApplyTaxRelief,
-      sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
-      sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
-      isaCurrentPot: defaultSettings.isaCurrentPot,
-      isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
-      isaLumpSums: defaultSettings.isaLumpSums,
-      isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
-      isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
-      isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
-      isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
-    });
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expectedStoredSettings({
+        alphaAddedPensionMonthly: 233,
+      }),
+    );
   });
 
   it("normalizes unexpected stored settings when loading", () => {
@@ -144,6 +156,9 @@ describe("settings unit tests", () => {
       dateOfBirth: defaultSettings.dateOfBirth,
       lifeExpectancy: 100,
       normalPensionAge: calculateNormalPensionAge(defaultSettings.dateOfBirth),
+      showStatePension: defaultSettings.showStatePension,
+      showSipp: defaultSettings.showSipp,
+      showIsa: defaultSettings.showIsa,
       currentStatePension: 0,
       statePensionDrawDate: defaultSettings.statePensionDrawDate,
       statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,

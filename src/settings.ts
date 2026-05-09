@@ -18,6 +18,9 @@ export type PensionSettings = {
   dateOfBirth: string;
   lifeExpectancy: number;
   normalPensionAge: number;
+  showStatePension: boolean;
+  showSipp: boolean;
+  showIsa: boolean;
   currentStatePension: number;
   statePensionDrawDate: string;
   statePensionApplyFutureGrowth: boolean;
@@ -92,6 +95,9 @@ export const defaultSettings: PensionSettings = {
   dateOfBirth: "1987-06-15",
   lifeExpectancy: 88,
   normalPensionAge: 68,
+  showStatePension: true,
+  showSipp: true,
+  showIsa: true,
   currentStatePension: 12547.6,
   statePensionDrawDate: "2055-06-15",
   statePensionApplyFutureGrowth: false,
@@ -183,6 +189,9 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         defaultSettings.statePensionDrawDate,
       ) as PensionSettings[K];
     case "applyPensionIncreases":
+    case "showStatePension":
+    case "showSipp":
+    case "showIsa":
     case "statePensionApplyFutureGrowth":
     case "alphaEpaEnabled":
     case "isaApplyRealInterest":
@@ -225,6 +234,9 @@ function coerceSettings(
   return {
     dateOfBirth: coerceString(input.dateOfBirth),
     lifeExpectancy: coerceNumber(input.lifeExpectancy),
+    showStatePension: coerceBoolean(input.showStatePension),
+    showSipp: coerceBoolean(input.showSipp),
+    showIsa: coerceBoolean(input.showIsa),
     currentStatePension: coerceNumber(input.currentStatePension),
     statePensionApplyFutureGrowth: coerceBoolean(
       input.statePensionApplyFutureGrowth,
@@ -401,6 +413,9 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
     dateOfBirth,
     lifeExpectancy: normalizeSetting("lifeExpectancy", settings.lifeExpectancy),
     normalPensionAge: calculateNormalPensionAge(dateOfBirth),
+    showStatePension: Boolean(settings.showStatePension),
+    showSipp: Boolean(settings.showSipp),
+    showIsa: Boolean(settings.showIsa),
     currentStatePension: normalizeSetting(
       "currentStatePension",
       settings.currentStatePension,

@@ -1040,6 +1040,44 @@ describe("projection calculations", () => {
     expect(updatedSummary.keyDates.startsAlphaPension).toBe("2048-06-15");
   });
 
+  it("excludes hidden optional sections from rows, totals, and milestones", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2055-04-15",
+      dateOfBirth: "1987-06-15",
+      alphaPensionDrawAge: 60,
+      alphaPensionLeaveAge: 60,
+      statePensionDrawDate: "2055-06-15",
+      lifeExpectancy: 68,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      currentStatePension: 12547.6,
+      sippCurrentPot: 100000,
+      sippMonthlyContribution: 500,
+      isaCurrentPot: 25000,
+      isaMonthlyContribution: 300,
+    };
+
+    const rows = createProjectionTable(settings);
+    const stateRow = rows.find((row) => row.date === "2055-06-15");
+    const summary = generatePensionSummary(rows, settings);
+
+    expect(stateRow?.monthlyStatePension).toBe(0);
+    expect(stateRow?.monthlySippPension).toBe(0);
+    expect(stateRow?.monthlyIsaPension).toBe(0);
+    expect(stateRow?.totalMonthlyPensionTakeHomePay).toBeCloseTo(
+      stateRow?.monthlyAlphaPensionTakeHome ?? 0,
+      6,
+    );
+    expect(rows.some((row) => row.milestones.includes("Starts Drawing State Pension"))).toBe(
+      false,
+    );
+    expect(summary.sippPension.potAtDraw).toBe(0);
+    expect(summary.isaPension.potAtDraw).toBe(0);
+    expect(summary.incomeOverTime.monthlyStatePension).toBe(0);
+  });
+
   it("returns no rows and a safe zeroed summary when settings are invalid", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

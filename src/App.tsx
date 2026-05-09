@@ -29,6 +29,24 @@ import {
 
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-calculator.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
+const OPTIONAL_SECTION_TOGGLES = [
+  {
+    key: "showSipp",
+    label: "SIPP",
+    description: "Show SIPP inputs and include SIPP values in the calculator.",
+  },
+  {
+    key: "showStatePension",
+    label: "State Pension",
+    description:
+      "Show State Pension inputs and include State Pension values in the calculator.",
+  },
+  {
+    key: "showIsa",
+    label: "ISA",
+    description: "Show ISA inputs and include ISA values in the calculator.",
+  },
+] as const;
 
 function App() {
   const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
@@ -148,54 +166,60 @@ function App() {
             </p>
           </article>
 
-          <article className="summary-card">
-            <p className="card-label">SIPP at Alpha draw date</p>
-            <div className="summary-card-amounts">
-              <h2>{formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw)}</h2>
-              <p className="summary-card-secondary-amount">
-                {formatCurrencyDetailed(pensionSummary.sippPension.monthlyAtDraw)} per month
+          {settings.showSipp ? (
+            <article className="summary-card">
+              <p className="card-label">SIPP at Alpha draw date</p>
+              <div className="summary-card-amounts">
+                <h2>{formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw)}</h2>
+                <p className="summary-card-secondary-amount">
+                  {formatCurrencyDetailed(pensionSummary.sippPension.monthlyAtDraw)} per month
+                </p>
+              </div>
+              <p>
+                Projected SIPP pot and monthly drawdown from{" "}
+                {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
               </p>
-            </div>
-            <p>
-              Projected SIPP pot and monthly drawdown from{" "}
-              {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
-            </p>
-          </article>
+            </article>
+          ) : null}
 
-          <article className="summary-card">
-            <p className="card-label">ISA at Alpha draw date</p>
-            <div className="summary-card-amounts">
-              <h2>{formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw)}</h2>
-              <p className="summary-card-secondary-amount">
-                {formatCurrencyDetailed(pensionSummary.isaPension.monthlyAtDraw)} per month
+          {settings.showIsa ? (
+            <article className="summary-card">
+              <p className="card-label">ISA at Alpha draw date</p>
+              <div className="summary-card-amounts">
+                <h2>{formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw)}</h2>
+                <p className="summary-card-secondary-amount">
+                  {formatCurrencyDetailed(pensionSummary.isaPension.monthlyAtDraw)} per month
+                </p>
+              </div>
+              <p>
+                Projected ISA pot and monthly drawdown from{" "}
+                {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
               </p>
-            </div>
-            <p>
-              Projected ISA pot and monthly drawdown from{" "}
-              {formatDate(pensionSummary.keyDates.startsAlphaPension)}.
-            </p>
-          </article>
+            </article>
+          ) : null}
 
-          <article className="summary-card">
-            <p className="card-label">At State Pension start</p>
-            <div className="summary-card-amounts">
-              <h2>
-                {formatCurrencyDetailed(
-                  pensionSummary.incomeOverTime.monthlyAtStateStart * 12,
-                )}
-              </h2>
-              <p className="summary-card-secondary-amount">
-                {formatCurrencyDetailed(pensionSummary.incomeOverTime.monthlyAtStateStart)} per
-                month
+          {settings.showStatePension ? (
+            <article className="summary-card">
+              <p className="card-label">At State Pension start</p>
+              <div className="summary-card-amounts">
+                <h2>
+                  {formatCurrencyDetailed(
+                    pensionSummary.incomeOverTime.monthlyAtStateStart * 12,
+                  )}
+                </h2>
+                <p className="summary-card-secondary-amount">
+                  {formatCurrencyDetailed(pensionSummary.incomeOverTime.monthlyAtStateStart)} per
+                  month
+                </p>
+              </div>
+              <p>
+                Total annual pension from{" "}
+                {formatDate(pensionSummary.keyDates.startsStatePension)}, including{" "}
+                {formatCurrencyDetailed(pensionSummary.incomeOverTime.monthlyStatePension)}{" "}
+                monthly State Pension.
               </p>
-            </div>
-            <p>
-              Total annual pension from{" "}
-              {formatDate(pensionSummary.keyDates.startsStatePension)}, including{" "}
-              {formatCurrencyDetailed(pensionSummary.incomeOverTime.monthlyStatePension)}{" "}
-              monthly State Pension.
-            </p>
-          </article>
+            </article>
+          ) : null}
         </div>
       </section>
 
@@ -220,20 +244,32 @@ function App() {
               pensionSummary.incomeOverTime.monthlyAtAlphaStart,
             ),
           },
-          {
-            label: "SIPP pot at Alpha pension start",
-            value: formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw),
-          },
-          {
-            label: "ISA pot at Alpha pension start",
-            value: formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw),
-          },
-          {
-            label: "Total Monthly Pension at State Pension start",
-            value: formatCurrencyDetailed(
-              pensionSummary.incomeOverTime.monthlyAtStateStart,
-            ),
-          },
+          ...(settings.showSipp
+            ? [
+                {
+                  label: "SIPP pot at Alpha pension start",
+                  value: formatCurrencyDetailed(pensionSummary.sippPension.potAtDraw),
+                },
+              ]
+            : []),
+          ...(settings.showIsa
+            ? [
+                {
+                  label: "ISA pot at Alpha pension start",
+                  value: formatCurrencyDetailed(pensionSummary.isaPension.potAtDraw),
+                },
+              ]
+            : []),
+          ...(settings.showStatePension
+            ? [
+                {
+                  label: "Total Monthly Pension at State Pension start",
+                  value: formatCurrencyDetailed(
+                    pensionSummary.incomeOverTime.monthlyAtStateStart,
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -273,7 +309,45 @@ function App() {
               </section>
             ) : null}
 
-            {fieldGroups.map((group) => (
+            <section className="settings-section">
+              <div className="section-heading">
+                <h3>Optional sections</h3>
+                <p className="section-copy">
+                  Show or hide the optional calculator sections without losing any
+                  settings you have already entered.
+                </p>
+              </div>
+
+              <div className="field-grid">
+                {OPTIONAL_SECTION_TOGGLES.map((toggle) => (
+                  <label key={toggle.key} className="field-card checkbox-field-card">
+                    <span className="field-header">
+                      <span className="field-label-group">
+                        <span className="field-label">{toggle.label}</span>
+                      </span>
+                    </span>
+                    <span className="checkbox-row">
+                      <input
+                        aria-label={toggle.label}
+                        type="checkbox"
+                        checked={settings[toggle.key]}
+                        onChange={(event) =>
+                          updateSetting(
+                            toggle.key,
+                            event.target.checked as PensionSettings[typeof toggle.key],
+                          )
+                        }
+                      />
+                      <span>{toggle.description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            {fieldGroups
+              .filter((group) => isSettingsGroupVisible(group.id, settings))
+              .map((group) => (
               <section className="settings-section" key={group.id}>
                 <div className="section-heading">
                   <h3>{group.title}</h3>
@@ -341,12 +415,16 @@ function App() {
                   label: "Normal Pension Age",
                   value: `${pensionSummary.calculated.normalPensionAge}`,
                 },
-                {
-                  label: "State Pension draw date",
-                  value: formatDate(pensionSummary.keyDates.startsStatePension),
-                  infoUrl: "https://www.gov.uk/state-pension-age",
-                  infoLinkText: "Check State Pension age",
-                },
+                ...(settings.showStatePension
+                  ? [
+                      {
+                        label: "State Pension draw date",
+                        value: formatDate(pensionSummary.keyDates.startsStatePension),
+                        infoUrl: "https://www.gov.uk/state-pension-age",
+                        infoLinkText: "Check State Pension age",
+                      },
+                    ]
+                  : []),
               ]}
             />
           </div>
@@ -362,7 +440,7 @@ function App() {
           </p>
         </div>
 
-        <ProjectionTable rows={projectionRows} />
+        <ProjectionTable rows={projectionRows} settings={settings} />
         </section>
       </main>
     </>
@@ -1038,9 +1116,17 @@ function formatFieldValue(value: number, format?: "currency") {
 
 type ProjectionTableProps = {
   rows: ProjectionRow[];
+  settings: PensionSettings;
 };
 
-const projectionTableColumns = [
+type ProjectionTableColumn = {
+  key: string;
+  label: string;
+  width: string;
+  setting?: "showStatePension" | "showSipp" | "showIsa";
+};
+
+const projectionTableColumns: ProjectionTableColumn[] = [
   { key: "date", label: "Date", width: "7rem" },
   { key: "age", label: "Age (years/months)", width: "7rem" },
   { key: "monthlyAddedPension", label: "Monthly Added Pension", width: "7rem" },
@@ -1054,15 +1140,33 @@ const projectionTableColumns = [
     width: "9rem",
   },
   { key: "monthlyAlphaPensionTakeHome", label: "Monthly Alpha Pension take-home", width: "7rem" },
-  { key: "monthlyStatePension", label: "Monthly State pension", width: "6rem" },
-  { key: "monthlySippPension", label: "Monthly SIPP pension", width: "7rem" },
-  { key: "monthlyIsaPension", label: "Monthly ISA pension", width: "7rem" },
+  {
+    key: "monthlyStatePension",
+    label: "Monthly State pension",
+    width: "6rem",
+    setting: "showStatePension",
+  },
+  {
+    key: "monthlySippPension",
+    label: "Monthly SIPP pension",
+    width: "7rem",
+    setting: "showSipp",
+  },
+  {
+    key: "monthlyIsaPension",
+    label: "Monthly ISA pension",
+    width: "7rem",
+    setting: "showIsa",
+  },
   { key: "totalMonthlyPensionTakeHomePay", label: "Total Monthly Pension take-home pay", width: "8rem" },
 ] as const;
 
-function ProjectionTable({ rows }: ProjectionTableProps) {
+function ProjectionTable({ rows, settings }: ProjectionTableProps) {
   const headerScrollRef = useRef<HTMLDivElement | null>(null);
   const [showMilestonesOnly, setShowMilestonesOnly] = useState(true);
+  const visibleColumns = projectionTableColumns.filter(
+    (column) => !column.setting || settings[column.setting],
+  );
   const visibleRows = showMilestonesOnly
     ? rows.filter((row) => row.milestones.length > 0)
     : rows;
@@ -1103,13 +1207,13 @@ function ProjectionTable({ rows }: ProjectionTableProps) {
         <div className="table-header-scroll" ref={headerScrollRef}>
           <table className="projection-table projection-table--header" aria-hidden="true">
             <colgroup>
-              {projectionTableColumns.map((column) => (
+              {visibleColumns.map((column) => (
                 <col key={column.key} style={{ width: column.width }} />
               ))}
             </colgroup>
             <thead>
               <tr>
-                {projectionTableColumns.map((column) => (
+                {visibleColumns.map((column) => (
                   <th key={column.key} scope="col">
                     {column.label}
                   </th>
@@ -1123,13 +1227,13 @@ function ProjectionTable({ rows }: ProjectionTableProps) {
       <div className="table-body-shell" onScroll={(event) => syncHeaderScroll(event.currentTarget.scrollLeft)}>
         <table className="projection-table projection-table--body">
           <colgroup>
-            {projectionTableColumns.map((column) => (
+            {visibleColumns.map((column) => (
               <col key={column.key} style={{ width: column.width }} />
             ))}
           </colgroup>
           <thead className="projection-table-sr-only">
             <tr>
-              {projectionTableColumns.map((column) => (
+              {visibleColumns.map((column) => (
                 <th key={column.key} scope="col">
                   {column.label}
                 </th>
@@ -1165,9 +1269,15 @@ function ProjectionTable({ rows }: ProjectionTableProps) {
                 <td>{formatCurrencyDetailed(row.annualAccruedAlphaPension)}</td>
                 <td>{formatCurrencyDetailed(row.annualAlphaPensionIncludingReduction)}</td>
                 <td>{formatCurrencyDetailed(row.monthlyAlphaPensionTakeHome)}</td>
-                <td>{formatCurrencyDetailed(row.monthlyStatePension)}</td>
-                <td>{formatCurrencyDetailed(row.monthlySippPension)}</td>
-                <td>{formatCurrencyDetailed(row.monthlyIsaPension)}</td>
+                {settings.showStatePension ? (
+                  <td>{formatCurrencyDetailed(row.monthlyStatePension)}</td>
+                ) : null}
+                {settings.showSipp ? (
+                  <td>{formatCurrencyDetailed(row.monthlySippPension)}</td>
+                ) : null}
+                {settings.showIsa ? (
+                  <td>{formatCurrencyDetailed(row.monthlyIsaPension)}</td>
+                ) : null}
                 <td>{formatCurrencyDetailed(row.totalMonthlyPensionTakeHomePay)}</td>
               </tr>
             ))}
@@ -1207,6 +1317,22 @@ function formatCurrencyDetailed(value: number) {
 
 function formatAge(years: number, months: number) {
   return `${years}y ${months}m`;
+}
+
+function isSettingsGroupVisible(groupId: string, settings: PensionSettings) {
+  if (groupId === "state") {
+    return settings.showStatePension;
+  }
+
+  if (groupId === "sipp") {
+    return settings.showSipp;
+  }
+
+  if (groupId === "isa") {
+    return settings.showIsa;
+  }
+
+  return true;
 }
 
 type AddedPensionLumpSumsEditorProps = {

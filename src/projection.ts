@@ -312,8 +312,9 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     endDate,
     settings.alphaAddedPensionLumpSums,
     alphaAbsDate,
-    settings.sippLumpSums,
-    settings.isaLumpSums,
+    settings.showSipp ? settings.sippLumpSums : [],
+    settings.showIsa ? settings.isaLumpSums : [],
+    settings.showStatePension,
   );
   const milestoneRows = buildMilestoneMapForRowDates(
     milestoneDefinitions,
@@ -490,8 +491,9 @@ function createProjectionTableWithPensionIncreases(
     endDate,
     settings.alphaAddedPensionLumpSums,
     alphaAbsDate,
-    settings.sippLumpSums,
-    settings.isaLumpSums,
+    settings.showSipp ? settings.sippLumpSums : [],
+    settings.showIsa ? settings.isaLumpSums : [],
+    settings.showStatePension,
   );
   const milestoneRows = buildMilestoneMapForRowDates(
     milestoneDefinitions,
@@ -1037,6 +1039,10 @@ export function calculateMonthlyStatePension(
 }
 
 export function calculateAnnualStatePensionAtDraw(settings: PensionSettings) {
+  if (!settings.showStatePension) {
+    return 0;
+  }
+
   if (!settings.statePensionApplyFutureGrowth) {
     return settings.currentStatePension;
   }
@@ -1075,6 +1081,10 @@ export function calculateSippPotAtDate(input: {
   drawDate: string;
 }) {
   const { settings, rowDate, drawDate } = input;
+
+  if (!settings.showSipp) {
+    return 0;
+  }
 
   if (rowDate < settings.startDate) {
     return 0;
@@ -1157,6 +1167,10 @@ export function calculateIsaPotAtDate(input: {
   drawDate: string;
 }) {
   const { settings, rowDate, drawDate } = input;
+
+  if (!settings.showIsa) {
+    return 0;
+  }
 
   if (rowDate < settings.startDate) {
     return 0;
@@ -1262,6 +1276,10 @@ function calculateTotalSippContributionsAfterTaxRelief(
   settings: PensionSettings,
   drawDate: string,
 ) {
+  if (!settings.showSipp) {
+    return 0;
+  }
+
   if (drawDate < settings.startDate) {
     return 0;
   }
@@ -1278,6 +1296,10 @@ function calculateTotalSippContributionsAfterTaxRelief(
 }
 
 function calculateTotalIsaContributions(settings: PensionSettings, drawDate: string) {
+  if (!settings.showIsa) {
+    return 0;
+  }
+
   if (drawDate < settings.startDate) {
     return 0;
   }
@@ -1366,13 +1388,16 @@ export function generateMilestoneDefinitions(
   alphaAbsDate?: string,
   sippLumpSums: AddedPensionLumpSum[] = [],
   isaLumpSums: AddedPensionLumpSum[] = [],
+  includeStatePension = true,
 ): MilestoneDefinition[] {
   return [
     ...(alphaAbsDate ? [{ date: alphaAbsDate, label: LAST_ABS_STATEMENT_LABEL }] : []),
     { date: startDate, label: CALCULATION_START_LABEL },
     { date: alphaPensionStopDate, label: STOPS_ALPHA_ACCRUAL_LABEL },
     { date: alphaPensionDrawDate, label: STARTS_ALPHA_PENSION_LABEL },
-    { date: statePensionStartDate, label: STARTS_STATE_PENSION_LABEL },
+    ...(includeStatePension
+      ? [{ date: statePensionStartDate, label: STARTS_STATE_PENSION_LABEL }]
+      : []),
     { date: lifeExpectancyDate, label: LIFE_EXPECTANCY_LABEL },
     ...generateLumpSumMilestoneDefinitions(lumpSums),
     ...generateSippLumpSumMilestoneDefinitions(sippLumpSums),

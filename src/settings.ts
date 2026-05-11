@@ -68,7 +68,7 @@ export type PensionValidationIssue = {
 
 type StoredPensionSettings = Omit<
   PensionSettings,
-  "startDate" | "statePensionDrawDate" | "normalPensionAge"
+  "startDate" | "normalPensionAge"
 >;
 
 const numericSettingRules = {
@@ -178,7 +178,6 @@ export function saveSettings(settings: PensionSettings) {
   const {
     startDate: _startDate,
     normalPensionAge: _normalPensionAge,
-    statePensionDrawDate: _statePensionDrawDate,
     ...storedSettings
   } = normalizedSettings;
 
@@ -248,6 +247,7 @@ function coerceSettings(
     showIsa: coerceBoolean(input.showIsa),
     currentStatePension: coerceNumber(input.currentStatePension),
     desiredRetirementIncome: coerceNumber(input.desiredRetirementIncome),
+    statePensionDrawDate: coerceString(input.statePensionDrawDate),
     statePensionApplyFutureGrowth: coerceBoolean(
       input.statePensionApplyFutureGrowth,
     ),
@@ -386,6 +386,9 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
   const alphaEpaAgeDate = getAlphaEpaDate(settings);
   const sippDrawDate = addYearsToIsoDate(settings.dateOfBirth, settings.sippDrawAge);
   const isaDrawDate = addYearsToIsoDate(settings.dateOfBirth, settings.isaDrawAge);
+  const defaultStatePensionDrawDate = calculateStatePensionDrawDate(
+    settings.dateOfBirth,
+  );
 
   if (settings.dateOfBirth >= settings.startDate) {
     issues.push({
@@ -415,6 +418,16 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     });
   }
 
+  if (
+    settings.showStatePension &&
+    settings.statePensionDrawDate < defaultStatePensionDrawDate
+  ) {
+    issues.push({
+      field: "statePensionDrawDate",
+      message: "State Pension start date cannot be before State Pension age.",
+    });
+  }
+
   if (settings.showSipp && sippDrawDate > lifeExpectancyDate) {
     issues.push({
       field: "sippDrawAge",
@@ -426,13 +439,6 @@ export function validateSettings(settings: PensionSettings): PensionValidationIs
     issues.push({
       field: "isaDrawAge",
       message: "ISA draw start age must be within life expectancy.",
-    });
-  }
-
-  if (settings.statePensionDrawDate < alphaDrawDate) {
-    issues.push({
-      field: "statePensionDrawDate",
-      message: "State pension start date cannot be earlier than Alpha pension draw date.",
     });
   }
 
@@ -577,7 +583,10 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
       "desiredRetirementIncome",
       settings.desiredRetirementIncome,
     ),
-    statePensionDrawDate: calculateStatePensionDrawDate(dateOfBirth),
+    statePensionDrawDate: normalizeStatePensionDrawDate(
+      settings.statePensionDrawDate,
+      dateOfBirth,
+    ),
     statePensionApplyFutureGrowth: Boolean(settings.statePensionApplyFutureGrowth),
     statePensionCpiPercent: normalizeSetting(
       "statePensionCpiPercent",
@@ -672,6 +681,16 @@ function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.isaWithdrawalPercent,
     ),
   };
+}
+
+export function normalizeStatePensionDrawDate(
+  value: string,
+  dateOfBirth: string,
+) {
+  const defaultDrawDate = calculateStatePensionDrawDate(dateOfBirth);
+  const normalizedDrawDate = normalizeDate(value, defaultDrawDate);
+
+  return normalizedDrawDate < defaultDrawDate ? defaultDrawDate : normalizedDrawDate;
 }
 
 export function getAlphaEpaDate(settings: PensionSettings) {

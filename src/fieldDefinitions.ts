@@ -4,6 +4,7 @@ export type DateField = {
   id:
     | "startDate"
     | "dateOfBirth"
+    | "statePensionDrawDate"
     | "alphaPensionAbsDate"
     | "alphaEpaStartDate"
     | "alphaEpaEndDate";
@@ -127,6 +128,8 @@ export const fieldGroups: FieldGroup[] = [
         id: "dateOfBirth",
         label: "Your Date of Birth",
         type: "date",
+        infoUrl: "https://www.gov.uk/state-pension-age",
+        infoLinkText: "Check State Pension age",
       },
       {
         id: "lifeExpectancy",
@@ -195,6 +198,14 @@ export const fieldGroups: FieldGroup[] = [
         format: "currency",
         infoUrl: "https://www.gov.uk/check-state-pension",
         infoLinkText: "Check State Pension",
+      },
+      {
+        id: "statePensionDrawDate",
+        label: "State Pension draw date",
+        type: "date",
+        infoUrl:
+          "https://www.gov.uk/deferring-state-pension/if-you-reach-state-pension-age-on-or-after-6-april-2016",
+        infoLinkText: "Defer State Pension",
       },
       {
         id: "statePensionApplyFutureGrowth",

@@ -208,6 +208,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showIsa: defaultSettings.showIsa,
     currentStatePension: defaultSettings.currentStatePension,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
+    statePensionDrawDate: defaultSettings.statePensionDrawDate,
     statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
     statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
     statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
@@ -388,9 +389,16 @@ describe("App settings form", () => {
       "href",
       "https://commonslibrary.parliament.uk/research-briefings/cbp-7812/",
     );
-    expect(screen.getByRole("link", { name: "Check State Pension age" })).toHaveAttribute(
+    expect(screen.getAllByRole("link", { name: "Check State Pension age" })).toHaveLength(
+      2,
+    );
+    expect(screen.getAllByRole("link", { name: "Check State Pension age" })[0]).toHaveAttribute(
       "href",
       "https://www.gov.uk/state-pension-age",
+    );
+    expect(screen.getByRole("link", { name: "Defer State Pension" })).toHaveAttribute(
+      "href",
+      "https://www.gov.uk/deferring-state-pension/if-you-reach-state-pension-age-on-or-after-6-april-2016",
     );
     expect(screen.getByRole("link", { name: "Check pension tax relief" })).toHaveAttribute(
       "href",
@@ -401,6 +409,9 @@ describe("App settings form", () => {
       screen.getByRole("button", {
         name: "Reset Current Full State Pension (£ per year) to default",
       }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Reset State Pension draw date to default" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Reset assumed CPI to default" }),
@@ -546,6 +557,7 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-04-10",
+        statePensionDrawDate: "2044-05-06",
       }),
     );
   });
@@ -582,6 +594,44 @@ describe("App settings form", () => {
     );
 
     expect(statePensionSlider).toHaveValue(defaultSettings.currentStatePension);
+  });
+
+  it("can defer the State Pension draw date and reset it to the DOB default", () => {
+    renderAcknowledgedApp();
+
+    const statePensionDateInput = screen.getByLabelText("State Pension draw date");
+
+    expect(statePensionDateInput).toHaveValue("2055-06-15");
+    expect(statePensionDateInput).toHaveAttribute("min", "2055-06-15");
+
+    fireEvent.change(statePensionDateInput, {
+      target: { value: "2056-06-15" },
+    });
+    fireEvent.blur(statePensionDateInput);
+
+    expect(screen.getByLabelText("State Pension draw date")).toHaveValue("2056-06-15");
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        statePensionDrawDate: "2056-06-15",
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText("State Pension draw date"), {
+      target: { value: "2050-06-15" },
+    });
+    fireEvent.blur(screen.getByLabelText("State Pension draw date"));
+
+    expect(screen.getByLabelText("State Pension draw date")).toHaveValue("2055-06-15");
+
+    fireEvent.change(screen.getByLabelText("State Pension draw date"), {
+      target: { value: "2056-06-15" },
+    });
+    fireEvent.blur(screen.getByLabelText("State Pension draw date"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reset State Pension draw date to default" }),
+    );
+
+    expect(screen.getByLabelText("State Pension draw date")).toHaveValue("2055-06-15");
   });
 
   it("can apply pension increases and reset CPI to the default", () => {
@@ -991,7 +1041,9 @@ describe("App settings form", () => {
       SETTINGS_STORAGE_KEY,
       JSON.stringify({
         ...defaultSettings,
-        alphaPensionDrawAge: 70,
+        alphaEpaEnabled: true,
+        alphaEpaStartDate: "2030-01-01",
+        alphaEpaEndDate: "2029-01-01",
       }),
     );
 

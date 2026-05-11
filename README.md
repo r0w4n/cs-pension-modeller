@@ -7,7 +7,8 @@ The calculator models:
 - current accrued Alpha pension from the latest Annual Benefit Statement
 - ongoing Alpha accrual from pensionable earnings
 - Alpha pension draw date and early-retirement reduction
-- State Pension start date derived from date of birth, plus annual amount
+- State Pension draw date derived from date of birth, with optional deferral
+  and future uprating
 - monthly added pension contributions
 - one-off or yearly lump-sum added pension purchases
 
@@ -26,6 +27,7 @@ For each row it calculates:
 - annual Alpha pension after any early-retirement reduction
 - monthly Alpha pension once drawdown starts
 - monthly State Pension once it starts
+- State Pension deferral uplift and future uprating where enabled
 - total monthly pension income
 
 ## Main Inputs
@@ -37,6 +39,8 @@ The current version is driven by these inputs:
 - `Life Expectancy`
 - `Normal Pension Age`
 - `State Pension amount`
+- `State Pension draw date`
+- optional State Pension future growth assumptions
 - `Alpha ABS year`
 - `Accrued Alpha pension at last ABS`
 - `Monthly added pension contribution`
@@ -63,7 +67,9 @@ Some important current assumptions in the projection logic:
 - Lump-sum added pension is converted into extra annual pension using the age-based factor table in `src/data/alpha_pension_added_pension_factors.json`.
 - Lump-sum purchases appear once in the row where they land, then remain embedded in annual accrued pension from that point onward.
 - Early-retirement reduction is applied using the factor table in `src/data/alpha_pension_reduction_factors.json`.
-- State Pension is treated as a flat annual amount. Its start date is derived from date of birth using the current GOV.UK State Pension age timetable.
+- State Pension draw date defaults from date of birth using the current GOV.UK State Pension age timetable, but can be deferred.
+- Deferred new State Pension uses the GOV.UK rule of 1% extra for every 9 weeks deferred, once deferred by at least 9 weeks.
+- When State Pension future growth is enabled, the base State Pension is uprated using the highest of CPI, wage growth, and 2.5%; deferred extra State Pension is uprated by CPI after draw.
 
 ## Project Structure
 
@@ -132,8 +138,8 @@ This is still a planning tool rather than a scheme-authoritative calculator.
 A few notable limitations:
 
 - tax is not modelled
-- inflation is not modelled
-- State Pension is treated as a simple fixed annual amount
+- inflation is modelled only where explicit CPI/growth assumptions are enabled
+- State Pension modelling does not cover benefit interactions, overseas rules, lump-sum arrears choices, or pre-2016 deferral rules
 - revaluation for added pension purchases is currently simplified
 - scheme-specific edge cases are not exhaustively represented
 

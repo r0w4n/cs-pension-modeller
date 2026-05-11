@@ -6,6 +6,7 @@ import {
   calculateAge,
   calculateAlphaPensionRevaluationFactor,
   calculateAnnualStatePensionAtDraw,
+  calculateAnnualStatePensionAtDate,
   calculateAnnualAlphaPensionIncludingReduction,
   calculateLumpSumAddedPension,
   calculateMonthlyAddedPension,
@@ -16,6 +17,7 @@ import {
   calculateWholeMonthDifference,
   calculateMonthlyStatePension,
   calculateSippPotAtDate,
+  calculateStatePensionDeferralIncreasePercent,
   calculateTotalGrossMonthlyPension,
   createProjectionTable,
   deriveProjectionInputs,
@@ -368,6 +370,47 @@ describe("projection calculations", () => {
         statePensionWageGrowthPercent: 10,
       }),
     ).toBe(10000);
+  });
+
+  it("adds the new State Pension deferral uplift from the selected draw date", () => {
+    expect(
+      calculateStatePensionDeferralIncreasePercent("1987-06-15", "2055-08-17"),
+    ).toBeCloseTo(1, 6);
+    expect(
+      calculateStatePensionDeferralIncreasePercent("1987-06-15", "2056-06-14"),
+    ).toBeCloseTo(52 / 9, 6);
+    expect(
+      calculateAnnualStatePensionAtDraw({
+        ...defaultSettings,
+        dateOfBirth: "1987-06-15",
+        statePensionDrawDate: "2056-06-14",
+        currentStatePension: 12000,
+        statePensionApplyFutureGrowth: false,
+      }),
+    ).toBeCloseTo(12693.333333, 6);
+  });
+
+  it("continues to uprate State Pension after draw while deferred extra grows by CPI", () => {
+    const settings = {
+      ...defaultSettings,
+      startDate: "2026-01-01",
+      dateOfBirth: "1987-06-15",
+      statePensionDrawDate: "2056-06-14",
+      currentStatePension: 10000,
+      statePensionApplyFutureGrowth: true,
+      statePensionCpiPercent: 3,
+      statePensionWageGrowthPercent: 4,
+    };
+
+    const baseAtDraw = 10000 * 1.04 ** 30;
+    const deferredExtraAtDraw = baseAtDraw * ((52 / 9) / 100);
+    const baseAtRow = 10000 * 1.04 ** 32;
+    const deferredExtraAtRow = deferredExtraAtDraw * 1.03 ** 2;
+
+    expect(calculateAnnualStatePensionAtDate(settings, "2058-06-14")).toBeCloseTo(
+      baseAtRow + deferredExtraAtRow,
+      6,
+    );
   });
 
   it("derives projection inputs from valid settings", () => {
@@ -1009,11 +1052,13 @@ describe("projection calculations", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       startDate: "2047-05-15",
-      dateOfBirth: "1987-06-15",
-      alphaPensionDrawAge: 60,
-      alphaPensionLeaveAge: 60,
+      dateOfBirth: "1979-06-15",
+      alphaPensionDrawAge: 68,
+      alphaPensionLeaveAge: 68,
+      sippDrawAge: 68,
+      isaDrawAge: 68,
       statePensionDrawDate: "2047-06-15",
-      lifeExpectancy: 61,
+      lifeExpectancy: 69,
     };
 
     const rows = createProjectionTable(settings);

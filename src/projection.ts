@@ -1,6 +1,7 @@
 import addedPensionFactors from "./data/alpha_pension_added_pension_factors.json";
 import reductionFactors from "./data/alpha_pension_reduction_factors.json";
 import {
+  calculateStatePensionDrawDate,
   getAlphaEpaDate,
   resolveAlphaAbsDate,
   validateSettings,
@@ -293,7 +294,7 @@ export function createProjectionTable(settings: PensionSettings): ProjectionRow[
     const monthlyStatePension = calculateMonthlyStatePension(
       rowDate,
       settings.statePensionDrawDate,
-      calculateAnnualStatePensionAtDraw(settings),
+      calculateAnnualStatePensionAtDate(settings, rowDate),
     );
     const totalMonthlyPensionTakeHomePay = calculateTotalGrossMonthlyPension(
       monthlyAlphaPensionTakeHome,
@@ -490,7 +491,7 @@ function createProjectionTableWithPensionIncreases(
     const monthlyStatePension = calculateMonthlyStatePension(
       rowDate,
       settings.statePensionDrawDate,
-      calculateAnnualStatePensionAtDraw(settings),
+      calculateAnnualStatePensionAtDate(settings, rowDate),
     );
 
     previousRowDate = rowDate;
@@ -1156,10 +1157,48 @@ export function calculateMonthlyStatePension(
 }
 
 export function calculateAnnualStatePensionAtDraw(settings: PensionSettings) {
+  return calculateAnnualStatePensionAtDate(settings, settings.statePensionDrawDate);
+}
+
+export function calculateAnnualStatePensionAtDate(
+  settings: PensionSettings,
+  rowDate: string,
+) {
   if (!settings.showStatePension) {
     return 0;
   }
 
+  const baseAnnualStatePensionAtDraw = calculateBaseAnnualStatePensionAtDate(
+    settings,
+    settings.statePensionDrawDate,
+  );
+  const deferralIncreasePercent = calculateStatePensionDeferralIncreasePercent(
+    settings.dateOfBirth,
+    settings.statePensionDrawDate,
+  );
+  const annualDeferredExtraAtDraw =
+    baseAnnualStatePensionAtDraw * (deferralIncreasePercent / 100);
+
+  if (rowDate <= settings.statePensionDrawDate) {
+    return baseAnnualStatePensionAtDraw + annualDeferredExtraAtDraw;
+  }
+
+  const baseAnnualStatePensionAtRow = calculateBaseAnnualStatePensionAtDate(
+    settings,
+    rowDate,
+  );
+  const annualDeferredExtraAtRow =
+    annualDeferredExtraAtDraw *
+    (1 + getStatePensionDeferredExtraGrowthRate(settings)) **
+      calculateWholeYearDifference(settings.statePensionDrawDate, rowDate);
+
+  return baseAnnualStatePensionAtRow + annualDeferredExtraAtRow;
+}
+
+function calculateBaseAnnualStatePensionAtDate(
+  settings: PensionSettings,
+  rowDate: string,
+) {
   if (!settings.statePensionApplyFutureGrowth) {
     return settings.currentStatePension;
   }
@@ -1172,10 +1211,40 @@ export function calculateAnnualStatePensionAtDraw(settings: PensionSettings) {
     ) / 100;
   const growthYears = calculateWholeYearDifference(
     settings.startDate,
-    settings.statePensionDrawDate,
+    rowDate,
   );
 
   return settings.currentStatePension * (1 + annualGrowthRate) ** growthYears;
+}
+
+function getStatePensionDeferredExtraGrowthRate(settings: PensionSettings) {
+  if (!settings.statePensionApplyFutureGrowth) {
+    return 0;
+  }
+
+  return settings.statePensionCpiPercent / 100;
+}
+
+export function calculateStatePensionDeferralIncreasePercent(
+  dateOfBirth: string,
+  statePensionDrawDate: string,
+) {
+  const defaultStatePensionDrawDate = calculateStatePensionDrawDate(dateOfBirth);
+
+  if (statePensionDrawDate <= defaultStatePensionDrawDate) {
+    return 0;
+  }
+
+  const deferredWeeks = calculateWholeWeekDifference(
+    defaultStatePensionDrawDate,
+    statePensionDrawDate,
+  );
+
+  if (deferredWeeks < 9) {
+    return 0;
+  }
+
+  return deferredWeeks / 9;
 }
 
 export function calculateTotalGrossMonthlyPension(
@@ -1734,7 +1803,7 @@ function createHistoricalProjectionRows(input: {
     const monthlyStatePension = calculateMonthlyStatePension(
       rowDate,
       settings.statePensionDrawDate,
-      calculateAnnualStatePensionAtDraw(settings),
+      calculateAnnualStatePensionAtDate(settings, rowDate),
     );
 
     rows.push({
@@ -1849,6 +1918,19 @@ function calculateWholeYearDifference(startDate: string, endDate: string) {
   }
 
   return Math.max(0, years);
+}
+
+function calculateWholeWeekDifference(startDate: string, endDate: string) {
+  if (endDate < startDate) {
+    return 0;
+  }
+
+  const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000;
+
+  return Math.floor(
+    (parseIsoDate(endDate).getTime() - parseIsoDate(startDate).getTime()) /
+      millisecondsPerWeek,
+  );
 }
 
 function parseIsoDate(value: string) {

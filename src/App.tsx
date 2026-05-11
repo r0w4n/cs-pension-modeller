@@ -31,6 +31,7 @@ import {
   calculateStatePensionDrawDate,
   loadStoredSettings,
   normalizeSetting,
+  normalizeStatePensionDrawDate,
   saveSettings,
   validateSettings,
   type AddedPensionLumpSum,
@@ -127,16 +128,23 @@ function App() {
 
   function updateSetting<K extends SettingsKey>(key: K, value: PensionSettings[K]) {
     showSavedLabel();
-    setSettings((current) => ({
-      ...current,
-      [key]: normalizeSetting(key, value),
-      ...(key === "dateOfBirth"
-        ? {
-            normalPensionAge: calculateNormalPensionAge(value as string),
-            statePensionDrawDate: calculateStatePensionDrawDate(value as string),
-          }
-        : {}),
-    }));
+    setSettings((current) => {
+      const normalizedValue =
+        key === "statePensionDrawDate"
+          ? normalizeStatePensionDrawDate(value as string, current.dateOfBirth)
+          : normalizeSetting(key, value);
+
+      return {
+        ...current,
+        [key]: normalizedValue,
+        ...(key === "dateOfBirth"
+          ? {
+              normalPensionAge: calculateNormalPensionAge(value as string),
+              statePensionDrawDate: calculateStatePensionDrawDate(value as string),
+            }
+          : {}),
+      };
+    });
   }
 
   function resetSettings() {
@@ -639,6 +647,7 @@ function SettingsFields({
             key={field.id}
             field={field}
             value={settings[field.id]}
+            settings={settings}
             onChange={onChange}
             useDropdownDates={useDropdownDates}
             disabled={isFieldDisabled(field.id, settings)}
@@ -663,6 +672,7 @@ function SettingsFields({
                 key={field.id}
                 field={field}
                 value={settings[field.id]}
+                settings={settings}
                 onChange={onChange}
                 useDropdownDates={useDropdownDates}
                 disabled={isFieldDisabled(field.id, settings)}
@@ -749,6 +759,7 @@ function getFieldCardClassName(
 type FieldProps = {
   field: FieldDefinition;
   value: PensionSettings[SettingsKey];
+  settings: PensionSettings;
   onChange: <K extends SettingsKey>(key: K, value: PensionSettings[K]) => void;
   useDropdownDates: boolean;
   disabled?: boolean;
@@ -759,6 +770,7 @@ type FieldProps = {
 function Field({
   field,
   value,
+  settings,
   onChange,
   useDropdownDates,
   disabled = false,
@@ -770,6 +782,7 @@ function Field({
       <DateSettingField
         field={field}
         value={value as string}
+        settings={settings}
         onChange={onChange}
         useDropdowns={useDropdownDates}
         disabled={disabled}
@@ -1408,6 +1421,7 @@ function DateSelectField({
 function DateSettingField({
   field,
   value,
+  settings,
   onChange,
   useDropdowns,
   disabled = false,
@@ -1416,6 +1430,7 @@ function DateSettingField({
 }: {
   field: DateField;
   value: string;
+  settings: PensionSettings;
   onChange: FieldProps["onChange"];
   useDropdowns: boolean;
   disabled?: boolean;
@@ -1423,14 +1438,22 @@ function DateSettingField({
   validationIssue?: PensionValidationIssue;
 }) {
   const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const statePensionDefaultDrawDate =
+    field.id === "statePensionDrawDate"
+      ? calculateStatePensionDrawDate(settings.dateOfBirth)
+      : undefined;
 
   function commitDateValue(nextValue: string) {
-    const normalizedValue = normalizeSetting(
-      field.id,
-      nextValue as PensionSettings[typeof field.id],
-    ) as string;
+    const normalizedValue =
+      field.id === "statePensionDrawDate"
+        ? normalizeStatePensionDrawDate(nextValue, settings.dateOfBirth)
+        : (normalizeSetting(
+            field.id,
+            nextValue as PensionSettings[typeof field.id],
+          ) as string);
 
     onChange(field.id, normalizedValue as PensionSettings[typeof field.id]);
+    return normalizedValue;
   }
 
   return (
@@ -1443,7 +1466,7 @@ function DateSettingField({
           label={field.label}
           value={value}
           idPrefix={field.id}
-          yearRange={getPrimaryDateYearRange(field.id)}
+          yearRange={getPrimaryDateYearRange(field.id, settings)}
           disabled={disabled}
           describedBy={validationId}
           hasValidationIssue={Boolean(validationIssue)}
@@ -1452,22 +1475,72 @@ function DateSettingField({
           }}
         />
       ) : (
-        <input
+        <DateInputFieldEditor
           key={value}
-          aria-label={field.label}
-          className="date-input"
-          type="date"
-          defaultValue={value}
+          label={field.label}
+          initialValue={value}
+          min={statePensionDefaultDrawDate}
           disabled={disabled}
-          aria-invalid={Boolean(validationIssue) || undefined}
-          aria-describedby={validationId}
-          onBlur={(event) => {
-            commitDateValue(event.target.value);
-          }}
+          describedBy={validationId}
+          hasValidationIssue={Boolean(validationIssue)}
+          onCommit={commitDateValue}
         />
       )}
+      {statePensionDefaultDrawDate ? (
+        <button
+          type="button"
+          className="secondary-button field-reset-button"
+          aria-label="Reset State Pension draw date to default"
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            onChange(field.id, statePensionDefaultDrawDate);
+          }}
+        >
+          Reset to default
+        </button>
+      ) : null}
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
+  );
+}
+
+function DateInputFieldEditor({
+  label,
+  initialValue,
+  min,
+  disabled = false,
+  describedBy,
+  hasValidationIssue = false,
+  onCommit,
+}: {
+  label: string;
+  initialValue: string;
+  min?: string;
+  disabled?: boolean;
+  describedBy?: string;
+  hasValidationIssue?: boolean;
+  onCommit: (nextValue: string) => string;
+}) {
+  const [draftValue, setDraftValue] = useState(initialValue);
+
+  return (
+    <input
+      aria-label={label}
+      className="date-input"
+      type="date"
+      min={min}
+      value={draftValue}
+      disabled={disabled}
+      aria-invalid={hasValidationIssue || undefined}
+      aria-describedby={describedBy}
+      onChange={(event) => {
+        setDraftValue(event.target.value);
+      }}
+      onBlur={(event) => {
+        setDraftValue(onCommit(event.target.value));
+      }}
+    />
   );
 }
 
@@ -1971,7 +2044,10 @@ function clampDay(day: string, year: string, month: string) {
   return String(nextDay).padStart(2, "0");
 }
 
-function getPrimaryDateYearRange(fieldId: DateField["id"]) {
+function getPrimaryDateYearRange(
+  fieldId: DateField["id"],
+  settings?: PensionSettings,
+) {
   const currentYear = new Date().getUTCFullYear();
 
   switch (fieldId) {
@@ -1981,6 +2057,15 @@ function getPrimaryDateYearRange(fieldId: DateField["id"]) {
       return { min: currentYear - 5, max: currentYear + 5 };
     case "alphaPensionAbsDate":
       return { min: 2015, max: currentYear };
+    case "statePensionDrawDate": {
+      const defaultDrawYear = Number(
+        calculateStatePensionDrawDate(
+          settings?.dateOfBirth ?? defaultSettings.dateOfBirth,
+        ).slice(0, 4),
+      );
+
+      return { min: defaultDrawYear, max: defaultDrawYear + 30 };
+    }
     default:
       return { min: currentYear - 25, max: currentYear + 25 };
   }

@@ -9,6 +9,7 @@ import {
   isValidIsoDate,
   loadStoredSettings,
   normalizeSetting,
+  normalizeStatePensionDrawDate,
   resolveAlphaAbsDate,
   saveSettings,
   validateSettings,
@@ -24,6 +25,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showIsa: defaultSettings.showIsa,
     currentStatePension: defaultSettings.currentStatePension,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
+    statePensionDrawDate: defaultSettings.statePensionDrawDate,
     statePensionApplyFutureGrowth: defaultSettings.statePensionApplyFutureGrowth,
     statePensionCpiPercent: defaultSettings.statePensionCpiPercent,
     statePensionWageGrowthPercent: defaultSettings.statePensionWageGrowthPercent,
@@ -240,17 +242,36 @@ describe("settings unit tests", () => {
     expect(loadStoredSettings().sippTaxReliefRate).toBe("none");
   });
 
+  it("persists a deferred State Pension draw date", () => {
+    const settings: PensionSettings = {
+      ...createDefaultSettings(),
+      statePensionDrawDate: "2056-06-15",
+    };
+
+    saveSettings(settings);
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        statePensionDrawDate: "2056-06-15",
+      }),
+    );
+    expect(loadStoredSettings().statePensionDrawDate).toBe("2056-06-15");
+  });
+
   it("reports relational validation issues for inconsistent pension settings", () => {
     const issues = validateSettings({
       ...defaultSettings,
       startDate: "2076-01-01",
-      alphaPensionDrawAge: 70,
+      statePensionDrawDate: "2050-01-01",
     });
 
     expect(issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: "startDate" }),
-        expect.objectContaining({ field: "statePensionDrawDate" }),
+        expect.objectContaining({
+          field: "statePensionDrawDate",
+          message: "State Pension start date cannot be before State Pension age.",
+        }),
       ]),
     );
   });
@@ -434,6 +455,18 @@ describe("settings unit tests", () => {
     expect(calculateStatePensionDrawDate("1978-03-06")).toBe("2046-03-06");
     expect(calculateStatePensionDrawDate("1978-04-06")).toBe("2046-04-06");
     expect(calculateStatePensionDrawDate("1987-06-15")).toBe("2055-06-15");
+  });
+
+  it("allows State Pension deferral dates but clamps them to State Pension age", () => {
+    expect(normalizeStatePensionDrawDate("2056-06-15", "1987-06-15")).toBe(
+      "2056-06-15",
+    );
+    expect(normalizeStatePensionDrawDate("2050-06-15", "1987-06-15")).toBe(
+      "2055-06-15",
+    );
+    expect(normalizeStatePensionDrawDate("bad-date", "1987-06-15")).toBe(
+      "2055-06-15",
+    );
   });
 
   it("normalizes lump sum added pension schedules", () => {

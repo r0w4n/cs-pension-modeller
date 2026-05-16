@@ -354,7 +354,7 @@ describe("App settings form", () => {
       defaultSettings.isaDrawAge.toString(),
     );
     expect(screen.getByText("ISA at ISA draw start")).toBeInTheDocument();
-    expect(screen.getByLabelText("Last Annual Benifits Statement")).toHaveValue(
+    expect(screen.getByLabelText("Last Annual Benefits Statement")).toHaveValue(
       "2025",
     );
     expect(
@@ -621,10 +621,10 @@ describe("App settings form", () => {
   it("stores the Alpha ABS date as just the selected year", () => {
     renderAcknowledgedApp();
 
-    fireEvent.change(screen.getByLabelText("Last Annual Benifits Statement"), {
+    fireEvent.change(screen.getByLabelText("Last Annual Benefits Statement"), {
       target: { value: "2024" },
     });
-    fireEvent.blur(screen.getByLabelText("Last Annual Benifits Statement"));
+    fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
 
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual({
       ...expectedStoredSettings({
@@ -1175,17 +1175,17 @@ describe("App settings form", () => {
       target: { value: "2026-03-31" },
     });
     fireEvent.blur(screen.getByLabelText("Calculation Start Date"));
-    fireEvent.change(screen.getByLabelText("Last Annual Benifits Statement"), {
+    fireEvent.change(screen.getByLabelText("Last Annual Benefits Statement"), {
       target: { value: "2026" },
     });
-    fireEvent.blur(screen.getByLabelText("Last Annual Benifits Statement"));
+    fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
 
     expect(
       await screen.findAllByText(
         "Last Annual Benefits Statement must be on or before the calculation start date.",
       ),
     ).toHaveLength(2);
-    expect(screen.getByLabelText("Last Annual Benifits Statement")).toHaveAttribute(
+    expect(screen.getByLabelText("Last Annual Benefits Statement")).toHaveAttribute(
       "aria-invalid",
       "true",
     );

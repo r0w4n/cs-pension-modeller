@@ -251,7 +251,7 @@ export const fieldGroups: FieldGroup[] = [
     fields: [
       {
         id: "alphaPensionAbsDate",
-        label: "Last Annual Benifits Statement",
+        label: "Last Annual Benefits Statement",
         type: "year",
         infoUrl: knowledgeLinks.annualBenefitStatement,
         infoLinkText: "Annual Benefit Statement guide",

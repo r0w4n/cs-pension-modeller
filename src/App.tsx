@@ -389,7 +389,7 @@ function App() {
       <section className="layout">
         <section className="panel settings-panel">
           <div className="panel-heading">
-            <h2>Pension Parameters</h2>
+            <h2>Your retirement assumptions</h2>
             <p className="section-copy">
               These inputs define your pension scenario, letting you see how
               different assumptions affect your outcome.

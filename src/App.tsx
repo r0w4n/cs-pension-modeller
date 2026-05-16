@@ -43,7 +43,8 @@ import { knowledgeLinks } from "./knowledgeLinks";
 
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-calculator.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
-const MODDLER_LIMITATIONS = [
+export const APP_MODE_STORAGE_KEY = "cs-pension-calculator.appMode";
+const MODELLER_LIMITATIONS = [
   "Income Tax is estimated from configurable standard assumptions. It does not cover Scottish tax bands, benefit interactions, tax code changes, or other personal reliefs.",
   "Inflation is only modelled where explicit CPI or growth assumptions are enabled.",
   "State Pension modelling does not cover benefit interactions, overseas rules, lump-sum arrears choices, or pre-2016 deferral rules.",
@@ -61,22 +62,22 @@ const OPTIONAL_SECTION_TOGGLES = [
     key: "showStatePension",
     label: "State Pension",
     description:
-      "Show State Pension inputs and include State Pension values in the moddler.",
+      "Show State Pension inputs and include State Pension values in the modeller.",
   },
   {
     key: "showNuvos",
     label: "nuvos",
-    description: "Show nuvos inputs and include nuvos values in the moddler.",
+    description: "Show nuvos inputs and include nuvos values in the modeller.",
   },
   {
     key: "showSipp",
     label: "SIPP",
-    description: "Show SIPP inputs and include SIPP values in the moddler.",
+    description: "Show SIPP inputs and include SIPP values in the modeller.",
   },
   {
     key: "showIsa",
     label: "ISA",
-    description: "Show ISA inputs and include ISA values in the moddler.",
+    description: "Show ISA inputs and include ISA values in the modeller.",
   },
   {
     key: "taxationEnabled",
@@ -134,7 +135,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 2",
         title: "Your planning basics",
         description:
-          "These dates and income targets anchor every projection in the moddler.",
+          "These dates and income targets anchor every projection in the modeller.",
         kind: "fields",
         fieldIds: ["dateOfBirth", "lifeExpectancy", "desiredRetirementIncome"],
       },
@@ -271,7 +272,7 @@ const GUIDED_JOURNEYS = [
 function App() {
   const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
   const [settingsFormVersion, setSettingsFormVersion] = useState(0);
-  const [appMode, setAppMode] = useState<AppMode | null>(null);
+  const [appMode, setAppMode] = useState<AppMode | null>(loadStoredAppMode);
   const [retirementIncomeDisplay, setRetirementIncomeDisplay] =
     useState<RetirementIncomeDisplay>("monthly");
   const [showLimitations, setShowLimitations] = useState(false);
@@ -387,7 +388,7 @@ function App() {
             <p className="eyebrow">Before you continue</p>
             <h2 id="acknowledgement-title">Important information</h2>
             <p className="section-copy">
-              This moddler is for planning and illustration only. It is not financial
+              This modeller is for planning and illustration only. It is not financial
               advice and is not affiliated with the Civil Service Pension Scheme, Capita,
               the Cabinet Office, or the Alpha Pension Scheme.
             </p>
@@ -421,14 +422,14 @@ function App() {
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">Civil Service</p>
-            <h1>Retirement Income Moddler</h1>
+            <h1>Retirement Income Modeller</h1>
             <p className="lead">
               Plan your retirement income by modelling your Civil Service pension
               together with SIPP withdrawals, ISA income and State Pension payments.
             </p>
           </div>
 
-          <ModeSelectionPanel selectedMode={appMode} onSelectMode={setAppMode} />
+          <ModeSelectionPanel selectedMode={appMode} onSelectMode={selectAppMode} />
         </section>
 
         {appMode === "journey" ? (
@@ -473,7 +474,7 @@ function App() {
                     targetLabel={retirementIncomeTargetTitle}
                     targetValue={retirementIncomeTarget}
                   />
-                  <ModdlerLimitations
+                  <ModellerLimitations
                     showLimitations={showLimitations}
                     onToggleLimitations={() => setShowLimitations((current) => !current)}
                   />
@@ -506,7 +507,7 @@ function App() {
                     <div className="section-heading">
                       <h3>Optional sections</h3>
                       <p className="section-copy">
-                        Show or hide the optional moddler sections without losing any
+                        Show or hide the optional modeller sections without losing any
                         settings you have already entered.
                       </p>
                     </div>
@@ -622,7 +623,7 @@ function App() {
                 <h2>Monthly pension projection table</h2>
                 <p className="section-copy">
                   The table is generated from the projection layer so each row stays
-                  traceable back to the moddler inputs and factor tables.
+                  traceable back to the modeller inputs and factor tables.
                 </p>
               </div>
 
@@ -644,6 +645,11 @@ function App() {
       );
     }
   }
+
+  function selectAppMode(mode: AppMode) {
+    setAppMode(mode);
+    saveStoredAppMode(mode);
+  }
 }
 
 type ModeSelectionPanelProps = {
@@ -659,7 +665,7 @@ function ModeSelectionPanel({
     <section className="mode-panel" aria-labelledby="mode-selection-title">
       <div className="panel-heading">
         <p className="eyebrow">Choose your route</p>
-        <h2 id="mode-selection-title">How would you like to use the moddler?</h2>
+        <h2 id="mode-selection-title">How would you like to use the modeller?</h2>
         <p className="section-copy">
           Start with a guided journey if you want the questions one at a time, or
           use expert mode to edit every assumption directly.
@@ -897,7 +903,7 @@ function JourneyStepContent({
                 targetLabel={retirementIncomeTargetTitle}
                 targetValue={retirementIncomeTarget}
               />
-              <ModdlerLimitations
+              <ModellerLimitations
                 showLimitations={showLimitations}
                 onToggleLimitations={onToggleLimitations}
               />
@@ -1011,7 +1017,7 @@ function ValidationIssuesSection({
   );
 }
 
-function ModdlerLimitations({
+function ModellerLimitations({
   showLimitations,
   onToggleLimitations,
 }: {
@@ -1019,9 +1025,9 @@ function ModdlerLimitations({
   onToggleLimitations: () => void;
 }) {
   return (
-    <div className="summary-limitations" aria-label="Moddler limitations">
+    <div className="summary-limitations" aria-label="Modeller limitations">
       <p className="section-copy">
-        This moddler supports planning decisions, not scheme statements, HMRC
+        This modeller supports planning decisions, not scheme statements, HMRC
         calculations, or regulated advice.
       </p>
       <button
@@ -1040,7 +1046,7 @@ function ModdlerLimitations({
             Important assumptions and omissions to keep in mind:
           </p>
           <ul className="limitations-list">
-            {MODDLER_LIMITATIONS.map((limitation) => (
+            {MODELLER_LIMITATIONS.map((limitation) => (
               <li key={limitation}>{limitation}</li>
             ))}
           </ul>
@@ -2866,6 +2872,24 @@ function loadAcknowledgementState() {
     window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY) ===
     ACKNOWLEDGEMENT_VERSION
   );
+}
+
+function loadStoredAppMode(): AppMode | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const storedMode = window.localStorage.getItem(APP_MODE_STORAGE_KEY);
+
+  return storedMode === "journey" || storedMode === "expert" ? storedMode : null;
+}
+
+function saveStoredAppMode(mode: AppMode) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(APP_MODE_STORAGE_KEY, mode);
 }
 
 export default App;

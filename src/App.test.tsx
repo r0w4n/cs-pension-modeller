@@ -245,7 +245,7 @@ vi.mock("./projection", async () => {
   };
 });
 
-import App from "./App";
+import App, { APP_MODE_STORAGE_KEY } from "./App";
 import { createProjectionTable } from "./projection";
 import {
   SETTINGS_STORAGE_KEY,
@@ -354,13 +354,13 @@ describe("App settings form", () => {
     const titleSection = screen
       .getByRole("heading", {
         level: 1,
-        name: "Retirement Income Moddler",
+        name: "Retirement Income Modeller",
       })
       .closest("section");
 
     expect(
       within(titleSection as HTMLElement).getByRole("heading", {
-        name: "How would you like to use the moddler?",
+        name: "How would you like to use the modeller?",
       }),
     ).toBeInTheDocument();
     expect(
@@ -370,6 +370,28 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("heading", { name: "Your retirement assumptions" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("saves the selected modeller mode locally", () => {
+    renderAcknowledgedApp({ mode: null });
+
+    fireEvent.click(screen.getByRole("button", { name: /Use expert mode/i }));
+
+    expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("expert");
+  });
+
+  it("starts in the previously selected expert mode", () => {
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+
+    renderAcknowledgedApp({ mode: null });
+
+    expect(screen.getByRole("button", { name: /Use expert mode/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("heading", { name: "Your retirement assumptions" }),
+    ).toBeInTheDocument();
   });
 
   it("supports a guided retirement date journey with an answer step", () => {
@@ -499,7 +521,7 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Retirement Income Moddler",
+        name: "Retirement Income Modeller",
       }),
     ).toBeInTheDocument();
     expect(
@@ -509,7 +531,7 @@ describe("App settings form", () => {
     const titleSection = screen
       .getByRole("heading", {
         level: 1,
-        name: "Retirement Income Moddler",
+        name: "Retirement Income Modeller",
       })
       .closest("section");
 
@@ -628,7 +650,7 @@ describe("App settings form", () => {
     ]);
   });
 
-  it("shows concise moddler limitations on request", () => {
+  it("shows concise modeller limitations on request", () => {
     renderAcknowledgedApp();
     const summarySection = screen
       .getByRole("heading", { name: "Pension Summary" })

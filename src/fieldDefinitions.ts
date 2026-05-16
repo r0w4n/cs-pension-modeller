@@ -141,7 +141,7 @@ export const fieldGroups: FieldGroup[] = [
     id: "personal",
     eyebrow: "Personal Details",
     title: "Personal details",
-    description: "Core personal dates and assumptions used across the moddler.",
+    description: "Core personal dates and assumptions used across the modeller.",
     fields: [
       {
         id: "startDate",

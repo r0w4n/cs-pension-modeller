@@ -41,9 +41,9 @@ import {
 } from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
 
-const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-calculator.acknowledgement";
+const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
-export const APP_MODE_STORAGE_KEY = "cs-pension-calculator.appMode";
+export const APP_MODE_STORAGE_KEY = "cs-pension-modeller.appMode";
 const MODELLER_LIMITATIONS = [
   "Income Tax is estimated from configurable standard assumptions. It does not cover Scottish tax bands, benefit interactions, tax code changes, or other personal reliefs.",
   "Inflation is only modelled where explicit CPI or growth assumptions are enabled.",

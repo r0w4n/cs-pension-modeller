@@ -1,4 +1,4 @@
-export const SETTINGS_STORAGE_KEY = "cs-pension-calculator.settings";
+export const SETTINGS_STORAGE_KEY = "cs-pension-modeller.settings";
 
 export type AddedPensionLumpSumCadence = "once" | "yearly";
 export type AddedPensionFactorType = "self" | "self_plus_beneficiaries";

@@ -1,8 +1,8 @@
-# Civil Service Pension Calculator
+# Civil Service Pension Modeller
 
 A small React and TypeScript app for exploring a projected Civil Service Alpha pension over time.
 
-The calculator models:
+The modeller models:
 
 - current accrued Alpha pension from the latest Annual Benefit Statement
 - ongoing Alpha accrual from pensionable earnings
@@ -73,11 +73,11 @@ Some important current assumptions in the projection logic:
 
 ## Project Structure
 
-- [src/App.tsx](/Users/rowan/Documents/github/cs-pension-calculator/src/App.tsx) contains the main UI and projection table.
-- [src/settings.ts](/Users/rowan/Documents/github/cs-pension-calculator/src/settings.ts) defines defaults, normalization, validation, and persistence.
-- [src/projection.ts](/Users/rowan/Documents/github/cs-pension-calculator/src/projection.ts) contains the projection and pension calculation logic.
-- [src/data/alpha_pension_added_pension_factors.json](/Users/rowan/Documents/github/cs-pension-calculator/src/data/alpha_pension_added_pension_factors.json) stores age-based added pension purchase factors.
-- [src/data/alpha_pension_reduction_factors.json](/Users/rowan/Documents/github/cs-pension-calculator/src/data/alpha_pension_reduction_factors.json) stores early-retirement reduction factors.
+- [src/App.tsx](src/App.tsx) contains the main UI and projection table.
+- [src/settings.ts](src/settings.ts) defines defaults, normalization, validation, and persistence.
+- [src/projection.ts](src/projection.ts) contains the projection and pension calculation logic.
+- [src/data/alpha_pension_added_pension_factors.json](src/data/alpha_pension_added_pension_factors.json) stores age-based added pension purchase factors.
+- [src/data/alpha_pension_reduction_factors.json](src/data/alpha_pension_reduction_factors.json) stores early-retirement reduction factors.
 
 Tests are colocated with the code in `src/*.test.ts` and `src/*.test.tsx`.
 

@@ -55,8 +55,7 @@ export type CheckboxField = {
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
     | "isaApplyRealInterest"
-    | "sippApplyRealInterest"
-    | "taxationEnabled";
+    | "sippApplyRealInterest";
   label: string;
   type: "checkbox";
   description: string;
@@ -504,15 +503,6 @@ export const fieldGroups: FieldGroup[] = [
     description:
       "Optional Income Tax estimate using current standard UK assumptions for pension income.",
     fields: [
-      {
-        id: "taxationEnabled",
-        label: "Apply taxation",
-        type: "checkbox",
-        description:
-          "Estimate take-home income after Income Tax. ISA withdrawals remain tax-free.",
-        infoUrl: "https://www.gov.uk/income-tax-rates",
-        infoLinkText: "Check Income Tax rates",
-      },
       {
         id: "taxPersonalAllowance",
         label: "Personal Allowance (£ per year)",

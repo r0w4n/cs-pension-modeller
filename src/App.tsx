@@ -59,6 +59,12 @@ const OPTIONAL_SECTION_TOGGLES = [
     label: "ISA",
     description: "Show ISA inputs and include ISA values in the calculator.",
   },
+  {
+    key: "taxationEnabled",
+    label: "Taxation",
+    description:
+      "Show tax assumptions and estimate take-home income after Income Tax.",
+  },
 ] as const;
 
 function App() {
@@ -1879,6 +1885,10 @@ function isSettingsGroupVisible(groupId: string, settings: PensionSettings) {
 
   if (groupId === "isa") {
     return settings.showIsa;
+  }
+
+  if (groupId === "tax") {
+    return settings.taxationEnabled;
   }
 
   return true;

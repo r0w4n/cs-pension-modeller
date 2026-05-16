@@ -313,6 +313,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("SIPP")).toBeChecked();
     expect(screen.getByLabelText("State Pension")).toBeChecked();
     expect(screen.getByLabelText("ISA")).toBeChecked();
+    expect(screen.getByLabelText("Taxation")).not.toBeChecked();
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(
       defaultSettings.currentStatePension,
     );
@@ -326,12 +327,8 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Assumed CPI (%)")).toHaveValue("2");
     expect(screen.getByLabelText("Assumed CPI (%)")).toBeDisabled();
     expect(screen.getByLabelText("Assumed CPI (%) exact value")).toBeDisabled();
-    expect(screen.getByLabelText("Apply taxation")).not.toBeChecked();
-    expect(screen.getByLabelText("Personal Allowance (£ per year)")).toHaveValue(
-      defaultSettings.taxPersonalAllowance,
-    );
-    expect(screen.getByLabelText("Personal Allowance (£ per year)")).toBeDisabled();
-    expect(screen.getByLabelText("Basic tax rate (%)")).toBeDisabled();
+    expect(screen.queryByRole("heading", { name: "Tax assumptions" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Personal Allowance (£ per year)")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Current SIPP pot (£)")).toHaveValue(
       defaultSettings.sippCurrentPot,
     );

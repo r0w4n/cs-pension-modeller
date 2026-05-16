@@ -51,6 +51,18 @@ const MODDLER_LIMITATIONS = [
 ] as const;
 const OPTIONAL_SECTION_TOGGLES = [
   {
+    key: "partialRetirementEnabled",
+    label: "Partial retirement",
+    description:
+      "Show partial retirement inputs and pro-rate regular accruals and contributions.",
+  },
+  {
+    key: "showStatePension",
+    label: "State Pension",
+    description:
+      "Show State Pension inputs and include State Pension values in the moddler.",
+  },
+  {
     key: "showNuvos",
     label: "nuvos",
     description: "Show nuvos inputs and include nuvos values in the moddler.",
@@ -59,12 +71,6 @@ const OPTIONAL_SECTION_TOGGLES = [
     key: "showSipp",
     label: "SIPP",
     description: "Show SIPP inputs and include SIPP values in the moddler.",
-  },
-  {
-    key: "showStatePension",
-    label: "State Pension",
-    description:
-      "Show State Pension inputs and include State Pension values in the moddler.",
   },
   {
     key: "showIsa",
@@ -76,12 +82,6 @@ const OPTIONAL_SECTION_TOGGLES = [
     label: "Taxation",
     description:
       "Show tax assumptions and estimate take-home income after Income Tax.",
-  },
-  {
-    key: "partialRetirementEnabled",
-    label: "Partial retirement",
-    description:
-      "Show partial retirement inputs and pro-rate regular accruals and contributions.",
   },
 ] as const;
 

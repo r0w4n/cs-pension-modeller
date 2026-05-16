@@ -536,6 +536,27 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
+  it("orders optional section toggles like the assumptions sections", () => {
+    renderAcknowledgedApp();
+
+    const optionalSection = screen.getByRole("heading", {
+      name: "Optional sections",
+    }).closest("section");
+
+    expect(
+      Array.from(optionalSection?.querySelectorAll(".field-label") ?? []).map(
+        (label) => label.textContent,
+      ),
+    ).toEqual([
+      "Partial retirement",
+      "State Pension",
+      "nuvos",
+      "SIPP",
+      "ISA",
+      "Taxation",
+    ]);
+  });
+
   it("shows concise moddler limitations on request", () => {
     renderAcknowledgedApp();
 

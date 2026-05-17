@@ -482,7 +482,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("State Pension CPI (%)")).toBeDisabled();
     expect(screen.getByLabelText("State Pension wage growth (%)")).toBeDisabled();
     expect(screen.getByLabelText("Apply Alpha pension increases")).not.toBeChecked();
-    expect(screen.getByLabelText("Assumed CPI (%)")).toHaveValue("2");
+    expect(screen.getByLabelText("Assumed CPI (%)")).toHaveValue(
+      defaultSettings.assumedCpiPercent.toString(),
+    );
     expect(screen.getByLabelText("Assumed CPI (%)")).toBeDisabled();
     expect(screen.getByLabelText("Assumed CPI (%) exact value")).toBeDisabled();
     expect(screen.queryByRole("heading", { name: "Tax assumptions" })).not.toBeInTheDocument();

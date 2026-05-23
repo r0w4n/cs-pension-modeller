@@ -533,12 +533,22 @@ h3 {
   outline: none;
 }
 
+.bridge-milestone-label-bg {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.18));
+}
+
+.bridge-milestone-label-dot {
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 1;
+}
+
 .bridge-milestone-label {
-  font-size: 0.72rem;
+  fill: #122033;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+  letter-spacing: 0;
 }
 
 .bridge-control-grid {
@@ -1481,6 +1491,7 @@ h3 {
 
 @media (max-width: 480px) {
   .bridge-milestone rect,
+  .bridge-milestone .bridge-milestone-label-dot,
   .bridge-milestone text:not(.bridge-handle-icon) {
     display: none;
   }

@@ -107,6 +107,7 @@ type MilestoneKey =
 type MilestoneMarker = {
   key: MilestoneKey;
   label: string;
+  shortLabel: string;
   age: number;
   colour: string;
   editable: boolean;
@@ -171,9 +172,15 @@ const BUILD_UP_META = {
   label: "Build-up",
 };
 const HANDLE_RADIUS = 9;
-const HANDLE_STACK_SPACING = 18;
-const MARKER_LABEL_OFFSET = 12;
-const MARKER_LABEL_SPACING = 14;
+const HANDLE_STACK_SPACING = 28;
+const MARKER_TAG_HEIGHT = 24;
+const MARKER_TAG_GAP = 8;
+const MARKER_TAG_PADDING_X = 8;
+const MARKER_TAG_DOT_RADIUS = 3.5;
+const MARKER_TAG_ROW_SPACING = 8;
+const MARKER_TAG_MIN_WIDTH = 72;
+const MARKER_TAG_MAX_WIDTH = 136;
+const MARKER_TAG_CHAR_WIDTH = 6.4;
 export function RetirementIncomeBridgeChart({
   data,
   targetIncomeAnnual,
@@ -370,6 +377,7 @@ export function RetirementIncomeBridgeChart({
       {
         key: "retirementAge",
         label: "Requirement",
+        shortLabel: "Target",
         age: retirementAge,
         colour: "#0f6f72",
         editable: true,
@@ -377,6 +385,7 @@ export function RetirementIncomeBridgeChart({
       {
         key: "alphaLeaveAge",
         label: "Leave Alpha",
+        shortLabel: "Leave Alpha",
         age: alphaLeaveAge,
         colour: "#b45309",
         editable: true,
@@ -386,6 +395,7 @@ export function RetirementIncomeBridgeChart({
             {
               key: "sippAccessAge" as const,
               label: "SIPP access",
+              shortLabel: "SIPP access",
               age: sippAccessAge,
               colour: "#148c55",
               editable: true,
@@ -397,6 +407,7 @@ export function RetirementIncomeBridgeChart({
             {
               key: "sippUseByAge" as const,
               label: "SIPP use by",
+              shortLabel: "SIPP use",
               age: sippUseByAge,
               colour: "#0d6b40",
               editable: true,
@@ -408,6 +419,7 @@ export function RetirementIncomeBridgeChart({
             {
               key: "isaAccessAge" as const,
               label: "ISA draw",
+              shortLabel: "ISA draw",
               age: isaAccessAge,
               colour: "#1f8ee6",
               editable: true,
@@ -419,6 +431,7 @@ export function RetirementIncomeBridgeChart({
             {
               key: "partialRetirementStartAge" as const,
               label: "Partial retirement",
+              shortLabel: "Partial",
               age: partialRetirementStartAge,
               colour: "#c2410c",
               editable: true,
@@ -428,6 +441,7 @@ export function RetirementIncomeBridgeChart({
       {
         key: "alphaStartAge",
         label: "Alpha starts",
+        shortLabel: "Alpha starts",
         age: alphaStartAge,
         colour: "#7353bf",
         editable: true,
@@ -437,6 +451,7 @@ export function RetirementIncomeBridgeChart({
             {
               key: "isaUseByAge" as const,
               label: "ISA use by",
+              shortLabel: "ISA use",
               age: isaUseByAge,
               colour: "#155ea8",
               editable: true,
@@ -448,6 +463,7 @@ export function RetirementIncomeBridgeChart({
             {
               key: "statePensionAge" as const,
               label: "State Pension",
+              shortLabel: "State",
               age: statePensionAge,
               colour: "#1d62d1",
               editable: statePensionEditable,
@@ -760,17 +776,37 @@ export function RetirementIncomeBridgeChart({
                   <line
                     x1={x}
                     x2={x}
-                    y1={marker.handleY}
+                    y1={marker.handleY + HANDLE_RADIUS}
                     y2={plotHeight}
                     stroke={marker.colour}
                   />
-                  <text
-                    x={x + marker.labelOffsetX}
-                    y={marker.labelY}
-                    className="bridge-milestone-label"
+                  <rect
+                    x={marker.tagX}
+                    y={marker.tagY}
+                    width={marker.tagWidth}
+                    height={MARKER_TAG_HEIGHT}
+                    rx={6}
+                    className="bridge-milestone-label-bg"
+                    stroke={marker.colour}
+                  />
+                  <circle
+                    cx={marker.tagX + MARKER_TAG_PADDING_X + MARKER_TAG_DOT_RADIUS}
+                    cy={marker.tagY + MARKER_TAG_HEIGHT / 2}
+                    r={MARKER_TAG_DOT_RADIUS}
+                    className="bridge-milestone-label-dot"
                     fill={marker.colour}
+                  />
+                  <text
+                    x={
+                      marker.tagX +
+                      MARKER_TAG_PADDING_X * 2 +
+                      MARKER_TAG_DOT_RADIUS * 2
+                    }
+                    y={marker.tagY + MARKER_TAG_HEIGHT / 2}
+                    className="bridge-milestone-label"
+                    dominantBaseline="middle"
                   >
-                    {`${marker.label} ${formatAgeValue(marker.age)}`}
+                    {marker.labelText}
                   </text>
                   <circle cx={x} cy={marker.handleY} r={HANDLE_RADIUS} fill={marker.colour} />
                 </g>
@@ -969,32 +1005,55 @@ function createMarkerLayouts(
 ) {
   const rowEnds: number[] = [];
   const rowByKey = new Map<MilestoneKey, number>();
+  const tagXByKey = new Map<MilestoneKey, number>();
+  const tagWidthByKey = new Map<MilestoneKey, number>();
+  const labelTextByKey = new Map<MilestoneKey, string>();
 
   [...markers]
     .sort((first, second) => xScale(first.age) - xScale(second.age))
     .forEach((marker) => {
       const markerX = xScale(marker.age);
-      const row = rowEnds.findIndex((endX) => markerX - endX >= MARKER_LABEL_SPACING);
+      const labelText = `${marker.shortLabel} ${formatAgeValue(marker.age)}`;
+      const tagWidth = getMarkerTagWidth(labelText);
+      const preferredTagX =
+        markerX + tagWidth + MARKER_TAG_GAP > plotWidth
+          ? markerX - tagWidth - MARKER_TAG_GAP
+          : markerX + MARKER_TAG_GAP;
+      const tagX = clampNumber(preferredTagX, 0, Math.max(0, plotWidth - tagWidth));
+      const row = rowEnds.findIndex(
+        (endX) => tagX - endX >= MARKER_TAG_ROW_SPACING,
+      );
       const nextRow = row === -1 ? rowEnds.length : row;
-      rowEnds[nextRow] = markerX;
+      rowEnds[nextRow] = tagX + tagWidth;
       rowByKey.set(marker.key, nextRow);
+      tagXByKey.set(marker.key, tagX);
+      tagWidthByKey.set(marker.key, tagWidth);
+      labelTextByKey.set(marker.key, labelText);
     });
 
   return markers.map((marker) => {
     const row = rowByKey.get(marker.key) ?? 0;
-    const markerX = xScale(marker.age);
-    const baseOffset = MARKER_LABEL_OFFSET + row * MARKER_LABEL_SPACING;
-    const labelOffsetX = markerX > plotWidth - 36 ? -baseOffset : baseOffset;
     const handleY = row * HANDLE_STACK_SPACING;
-    const labelY = Math.max(10, handleY + 10);
 
     return {
       ...marker,
       handleY,
-      labelOffsetX,
-      labelY,
+      labelText: labelTextByKey.get(marker.key) ?? marker.label,
+      tagX: tagXByKey.get(marker.key) ?? 0,
+      tagY: row * HANDLE_STACK_SPACING - MARKER_TAG_HEIGHT / 2,
+      tagWidth: tagWidthByKey.get(marker.key) ?? MARKER_TAG_MIN_WIDTH,
     };
   });
+}
+
+function getMarkerTagWidth(label: string) {
+  return clampNumber(
+    label.length * MARKER_TAG_CHAR_WIDTH +
+      MARKER_TAG_PADDING_X * 3 +
+      MARKER_TAG_DOT_RADIUS * 2,
+    MARKER_TAG_MIN_WIDTH,
+    MARKER_TAG_MAX_WIDTH,
+  );
 }
 
 function getTargetIncomeControlLimit(

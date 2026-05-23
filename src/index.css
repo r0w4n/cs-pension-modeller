@@ -432,6 +432,7 @@ h3 {
 .bridge-chart-heading {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.5rem;
   justify-content: flex-end;
 }
 
@@ -499,6 +500,19 @@ h3 {
   stroke-dasharray: 8 7;
 }
 
+.bridge-target-line-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  cursor: ns-resize;
+  outline: none;
+}
+
+.bridge-target-line-hitbox:focus-visible {
+  stroke: rgba(11, 77, 194, 0.18);
+  outline: none;
+}
+
 .bridge-milestone line {
   stroke-width: 1.75;
   stroke-dasharray: 4 4;
@@ -506,12 +520,17 @@ h3 {
 
 .bridge-milestone--editable {
   cursor: ew-resize;
+  outline: none;
 }
 
 .bridge-milestone:focus-visible line,
 .bridge-milestone:focus-visible circle {
   stroke: #122033;
   stroke-width: 2.5;
+}
+
+.bridge-milestone:focus-visible {
+  outline: none;
 }
 
 .bridge-milestone-label {
@@ -522,62 +541,10 @@ h3 {
   text-orientation: mixed;
 }
 
-.bridge-handle-icon {
-  fill: #ffffff;
-  font-size: 0.7rem;
-  pointer-events: none;
-}
-
 .bridge-control-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.75rem;
-}
-
-.bridge-source-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.bridge-source-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 2.25rem;
-  border: 1px solid rgba(18, 32, 51, 0.1);
-  border-radius: 999px;
-  padding: 0.35rem 0.75rem 0.35rem 0.45rem;
-  background: #fbfdfc;
-  color: var(--text-muted);
-  font-size: var(--font-size-body-sm);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.bridge-source-toggle span {
-  display: inline-grid;
-  place-items: center;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid var(--control-colour);
-  border-radius: 999px;
-  background: #ffffff;
-}
-
-.bridge-source-toggle[aria-pressed="true"] span {
-  background: var(--control-colour);
-  box-shadow: inset 0 0 0 3px #ffffff;
-}
-
-.bridge-source-toggle[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--control-colour) 36%, transparent);
-  color: #122033;
-}
-
-.bridge-source-toggle:focus-visible {
-  outline: 2px solid rgba(17, 100, 102, 0.4);
-  outline-offset: 2px;
 }
 
 .bridge-control-card {
@@ -613,7 +580,7 @@ h3 {
 
 .bridge-control-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   align-items: center;
 }
@@ -662,13 +629,33 @@ h3 {
   -webkit-overflow-scrolling: touch;
 }
 
-.bridge-legend span {
+.bridge-legend > span,
+.bridge-legend-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.bridge-legend span span {
+.bridge-legend-toggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.bridge-legend-toggle[aria-pressed="false"] {
+  opacity: 0.48;
+}
+
+.bridge-legend-toggle:focus-visible {
+  outline: 2px solid rgba(17, 100, 102, 0.4);
+  outline-offset: 3px;
+}
+
+.bridge-legend > span > span,
+.bridge-legend-toggle > span {
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 999px;
@@ -1446,6 +1433,27 @@ h3 {
   .journey-step-button {
     grid-template-columns: auto minmax(0, 1fr);
     border-radius: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .bridge-chart-heading {
+    justify-content: stretch;
+  }
+
+  .bridge-mode-button {
+    flex: 1 1 10rem;
+  }
+
+  .bridge-legend--overlay {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .bridge-control-grid {
+    grid-template-columns: 1fr;
   }
 }
 

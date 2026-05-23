@@ -39,10 +39,12 @@ export type RangeField = {
     | "sippMonthlyContribution"
     | "sippRealInterestPercent"
     | "sippWithdrawalPercent"
+    | "sippWithdrawalTargetAge"
     | "isaDrawAge"
     | "isaMonthlyContribution"
     | "isaRealInterestPercent"
     | "isaWithdrawalPercent"
+    | "isaWithdrawalTargetAge"
     | "taxBasicRatePercent"
     | "taxHigherRatePercent"
     | "taxAdditionalRatePercent"
@@ -303,7 +305,7 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "statePensionDrawDate",
-        label: "State Pension draw date",
+        label: "State Pension start age",
         type: "date",
         infoUrl: knowledgeLinks.statePensionDeferral,
         infoLinkText: "Defer State Pension",
@@ -576,6 +578,7 @@ export const fieldGroups: FieldGroup[] = [
         options: [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
+          { value: "use_by_age", label: "Use by age" },
         ],
       },
       {
@@ -585,6 +588,15 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 15,
         step: 0.1,
+      },
+      {
+        id: "sippWithdrawalTargetAge",
+        label: "SIPP use-by age",
+        type: "range",
+        min: 55,
+        max: 100,
+        step: 1,
+        inputStep: 0.1,
       },
     ],
   },
@@ -614,6 +626,15 @@ export const fieldGroups: FieldGroup[] = [
         valuePrefix: "/mo",
       },
       {
+        id: "isaDrawAge",
+        label: "ISA draw start age",
+        type: "range",
+        min: 0,
+        max: 70,
+        step: 1,
+        inputStep: 0.1,
+      },
+      {
         id: "isaApplyRealInterest",
         label: "Apply investment growth to ISA pot",
         type: "checkbox",
@@ -635,6 +656,7 @@ export const fieldGroups: FieldGroup[] = [
         options: [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
+          { value: "use_by_age", label: "Use by age" },
         ],
       },
       {
@@ -644,6 +666,15 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 15,
         step: 0.1,
+      },
+      {
+        id: "isaWithdrawalTargetAge",
+        label: "ISA use-by age",
+        type: "range",
+        min: 0,
+        max: 100,
+        step: 1,
+        inputStep: 0.1,
       },
     ],
   },

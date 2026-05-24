@@ -598,9 +598,10 @@ describe("settings unit tests", () => {
 
   it("derives State Pension age from date of birth under the current UK timetable", () => {
     expect(calculateNormalPensionAge("1954-09-06")).toBe(66);
-    expect(calculateNormalPensionAge("1960-04-06")).toBe(66);
-    expect(calculateNormalPensionAge("1977-04-06")).toBe(67);
-    expect(calculateNormalPensionAge("1977-04-10")).toBe(67);
+    expect(calculateNormalPensionAge("1960-04-06")).toBeCloseTo(66 + 1 / 12, 6);
+    expect(calculateNormalPensionAge("1960-12-31")).toBeCloseTo(66 + 9 / 12, 6);
+    expect(calculateNormalPensionAge("1977-04-06")).toBeCloseTo(67 + 1 / 12, 6);
+    expect(calculateNormalPensionAge("1977-04-10")).toBeCloseTo(67 + 1 / 12, 6);
     expect(calculateNormalPensionAge("1978-04-06")).toBe(68);
     expect(calculateNormalPensionAge("1987-06-15")).toBe(68);
     expect(calculateStatePensionDrawDate("1954-09-06")).toBe("2020-09-06");

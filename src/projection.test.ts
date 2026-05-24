@@ -36,6 +36,7 @@ import {
   getLifeExpectancyDate,
 } from "./projection";
 import {
+  calculateNormalPensionAge,
   defaultSettings,
   resolveAlphaAbsDate,
   type PensionSettings,
@@ -588,6 +589,17 @@ describe("projection calculations", () => {
     );
   });
 
+  it("interpolates early retirement reduction factors for decimal normal pension ages", () => {
+    expect(getEarlyRetirementReductionFactor(66 + 1 / 12, 60)).toBeCloseTo(
+      0.729 + (0.687 - 0.729) / 12,
+      6,
+    );
+  });
+
+  it("does not reduce pension when a decimal draw age is at or after decimal NPA", () => {
+    expect(getEarlyRetirementReductionFactor(66 + 1 / 12, 66.1)).toBe(1);
+  });
+
   it("applies early retirement reduction when draw date is on or before NPA", () => {
     expect(
       calculateAnnualAlphaPensionIncludingReduction(
@@ -740,6 +752,30 @@ describe("projection calculations", () => {
       npaDate: "2055-06-15",
       reductionFactor: 0.648,
     });
+  });
+
+  it("keeps transitional normal pension ages at month precision", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2025-04-01",
+      dateOfBirth: "1960-04-06",
+      lifeExpectancy: 90,
+      alphaPensionAbsDate: "2025",
+      alphaPensionDrawAge: 60,
+      alphaPensionLeaveAge: 60,
+      normalPensionAge: calculateNormalPensionAge("1960-04-06"),
+      statePensionDrawDate: "2026-05-06",
+      showSipp: false,
+      showIsa: false,
+    };
+
+    const derivedInputs = deriveProjectionInputs(settings);
+
+    expect(derivedInputs?.npaDate).toBe("2026-05-06");
+    expect(derivedInputs?.reductionFactor).toBeCloseTo(
+      0.729 + (0.687 - 0.729) / 12,
+      6,
+    );
   });
 
   it("refuses to derive projection inputs when settings fail validation", () => {

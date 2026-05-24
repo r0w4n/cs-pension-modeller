@@ -992,7 +992,8 @@ export function normalizeStatePensionDrawDate(
 export function getAlphaEpaDate(settings: PensionSettings) {
   return addYearsToIsoDate(
     settings.dateOfBirth,
-    settings.normalPensionAge - settings.alphaEpaYearsBeforeNpa,
+    calculateNormalPensionAge(settings.dateOfBirth) -
+      settings.alphaEpaYearsBeforeNpa,
   );
 }
 
@@ -1266,12 +1267,22 @@ export function calculateStatePensionDrawDate(dateOfBirth: string) {
 export function calculateNormalPensionAge(dateOfBirth: string) {
   const normalizedDateOfBirth = normalizeDate(dateOfBirth, defaultSettings.dateOfBirth);
   const statePensionDrawDate = calculateStatePensionDrawDate(normalizedDateOfBirth);
-  const [birthYear, birthMonth, birthDay] = normalizedDateOfBirth.split("-").map(Number);
-  const [drawYear, drawMonth, drawDay] = statePensionDrawDate.split("-").map(Number);
-  const hasReachedBirthday =
-    drawMonth > birthMonth || (drawMonth === birthMonth && drawDay >= birthDay);
 
-  return drawYear - birthYear - (hasReachedBirthday ? 0 : 1);
+  return calculateNormalPensionAgeMonths(
+    normalizedDateOfBirth,
+    statePensionDrawDate,
+  ) / 12;
+}
+
+function calculateNormalPensionAgeMonths(dateOfBirth: string, statePensionDrawDate: string) {
+  const [birthYear, birthMonth] = dateOfBirth.split("-").map(Number);
+  const [drawYear, drawMonth] = statePensionDrawDate.split("-").map(Number);
+  const monthDifference = (drawYear - birthYear) * 12 + (drawMonth - birthMonth);
+  const dateAtMonthDifference = addMonthsToIsoDate(dateOfBirth, monthDifference);
+
+  return dateAtMonthDifference >= statePensionDrawDate
+    ? monthDifference
+    : monthDifference + 1;
 }
 
 const fixedStatePensionDateRules = [

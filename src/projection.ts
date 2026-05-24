@@ -1,6 +1,7 @@
 import addedPensionFactors from "./data/alpha_pension_added_pension_factors.json";
 import reductionFactors from "./data/alpha_pension_reduction_factors.json";
 import {
+  calculateNormalPensionAge,
   calculateStatePensionDrawDate,
   getPartialRetirementContributionMultiplier,
   getPartialRetirementStartDate,
@@ -251,16 +252,17 @@ export function deriveProjectionInputs(
           settings.nuvosPensionDrawAge,
         );
   const addedPensionStopDate = accrualStopDate;
-  const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+  const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
+  const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const epaDate = getAlphaEpaDate(settings);
   const reductionFactor =
     drawDate > npaDate
       ? 1
       : getEarlyRetirementReductionFactor(
-          settings.normalPensionAge,
+          normalPensionAge,
           settings.alphaPensionDrawAge,
         );
-  const epaDrawAge = settings.normalPensionAge - settings.alphaEpaYearsBeforeNpa;
+  const epaDrawAge = normalPensionAge - settings.alphaEpaYearsBeforeNpa;
   const epaReductionFactor =
     !settings.alphaEpaEnabled || drawDate >= epaDate
       ? 1
@@ -787,12 +789,13 @@ export function generatePensionSummary(
       nuvosPensionDrawDate,
       addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge),
     );
-    const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+    const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
+    const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
     const reductionFactor =
       alphaPensionDrawDate > npaDate
         ? 1
         : getEarlyRetirementReductionFactor(
-            settings.normalPensionAge,
+            normalPensionAge,
             settings.alphaPensionDrawAge,
           );
 
@@ -844,7 +847,7 @@ export function generatePensionSummary(
         ),
       },
       calculated: {
-        normalPensionAge: settings.normalPensionAge,
+        normalPensionAge,
         statePensionAge: calculateAge(settings.dateOfBirth, settings.statePensionDrawDate),
         earlyRetirementReductionPercent: Math.max(0, (1 - reductionFactor) * 100),
       },
@@ -871,12 +874,13 @@ export function generatePensionSummary(
     addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge),
   );
   const statePensionStartDate = settings.statePensionDrawDate;
-  const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+  const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
+  const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const reductionFactor =
     alphaPensionDrawDate > npaDate
       ? 1
       : getEarlyRetirementReductionFactor(
-          settings.normalPensionAge,
+          normalPensionAge,
           settings.alphaPensionDrawAge,
         );
   const alphaDrawRow =
@@ -946,7 +950,7 @@ export function generatePensionSummary(
       ),
     },
     calculated: {
-      normalPensionAge: settings.normalPensionAge,
+      normalPensionAge,
       statePensionAge: calculateAge(settings.dateOfBirth, statePensionStartDate),
       earlyRetirementReductionPercent: Math.max(0, (1 - reductionFactor) * 100),
     },
@@ -1389,37 +1393,92 @@ export function getEarlyRetirementReductionFactor(
   normalPensionAge: number,
   retirementAge: number,
 ) {
-  const records = (reductionFactors as ReductionFactorRecord[])
-    .filter((record) => record.normal_pension_age === normalPensionAge)
-    .sort((first, second) => first.retirement_age - second.retirement_age);
-  const match = records.find(
-    (record) =>
-      record.retirement_age === retirementAge,
+  if (retirementAge >= normalPensionAge) {
+    return 1;
+  }
+
+  const records = reductionFactors as ReductionFactorRecord[];
+  const normalPensionAges = Array.from(
+    new Set(records.map((record) => record.normal_pension_age)),
+  ).sort((first, second) => first - second);
+  const exactNormalPensionAge = normalPensionAges.find(
+    (age) => age === normalPensionAge,
   );
 
-  if (!match) {
-    const lowerRecord = [...records]
-      .reverse()
-      .find((record) => record.retirement_age < retirementAge);
-    const upperRecord = records.find(
-      (record) => record.retirement_age > retirementAge,
-    );
-
-    if (!lowerRecord || !upperRecord) {
-      return 1;
-    }
-
-    const ageProgress =
-      (retirementAge - lowerRecord.retirement_age) /
-      (upperRecord.retirement_age - lowerRecord.retirement_age);
-
-    return (
-      lowerRecord.reduction_factor +
-      (upperRecord.reduction_factor - lowerRecord.reduction_factor) * ageProgress
+  if (exactNormalPensionAge !== undefined) {
+    return getReductionFactorForNormalPensionAge(
+      records,
+      exactNormalPensionAge,
+      retirementAge,
     );
   }
 
-  return match.reduction_factor;
+  const lowerNormalPensionAge = [...normalPensionAges]
+    .reverse()
+    .find((age) => age < normalPensionAge);
+  const upperNormalPensionAge = normalPensionAges.find(
+    (age) => age > normalPensionAge,
+  );
+
+  if (lowerNormalPensionAge === undefined || upperNormalPensionAge === undefined) {
+    return 1;
+  }
+
+  const lowerReductionFactor = getReductionFactorForNormalPensionAge(
+    records,
+    lowerNormalPensionAge,
+    retirementAge,
+  );
+  const upperReductionFactor = getReductionFactorForNormalPensionAge(
+    records,
+    upperNormalPensionAge,
+    retirementAge,
+  );
+  const normalPensionAgeProgress =
+    (normalPensionAge - lowerNormalPensionAge) /
+    (upperNormalPensionAge - lowerNormalPensionAge);
+
+  return (
+    lowerReductionFactor +
+    (upperReductionFactor - lowerReductionFactor) * normalPensionAgeProgress
+  );
+}
+
+function getReductionFactorForNormalPensionAge(
+  records: ReductionFactorRecord[],
+  normalPensionAge: number,
+  retirementAge: number,
+) {
+  const recordsForNormalPensionAge = records
+    .filter((record) => record.normal_pension_age === normalPensionAge)
+    .sort((first, second) => first.retirement_age - second.retirement_age);
+  const match = recordsForNormalPensionAge.find(
+    (record) => record.retirement_age === retirementAge,
+  );
+
+  if (match) {
+    return match.reduction_factor;
+  }
+
+  const lowerRecord = [...recordsForNormalPensionAge]
+    .reverse()
+    .find((record) => record.retirement_age < retirementAge);
+  const upperRecord = recordsForNormalPensionAge.find(
+    (record) => record.retirement_age > retirementAge,
+  );
+
+  if (!lowerRecord || !upperRecord) {
+    return 1;
+  }
+
+  const ageProgress =
+    (retirementAge - lowerRecord.retirement_age) /
+    (upperRecord.retirement_age - lowerRecord.retirement_age);
+
+  return (
+    lowerRecord.reduction_factor +
+    (upperRecord.reduction_factor - lowerRecord.reduction_factor) * ageProgress
+  );
 }
 
 export function calculateAnnualAlphaPensionIncludingReduction(

@@ -622,7 +622,7 @@ function App() {
               items={[
                 {
                   label: "Normal Pension Age",
-                  value: `${pensionSummary.calculated.normalPensionAge}`,
+                  value: formatDecimalAge(pensionSummary.calculated.normalPensionAge),
                 },
                 ...(settings.showStatePension
                   ? [
@@ -958,7 +958,7 @@ function JourneyStepContent({
               : []),
             {
               label: "Normal Pension Age",
-              value: `${pensionSummary.calculated.normalPensionAge}`,
+              value: formatDecimalAge(pensionSummary.calculated.normalPensionAge),
             },
           ]}
         />
@@ -2732,6 +2732,14 @@ function formatModelledReturn(
 
 function formatAge(years: number, months: number) {
   return `${years}y ${months}m`;
+}
+
+function formatDecimalAge(age: number) {
+  const totalMonths = Math.round(age * 12);
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  return months === 0 ? `${years}` : `${years}y ${months}m`;
 }
 
 function isSettingsGroupVisible(groupId: string, settings: PensionSettings) {

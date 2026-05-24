@@ -647,15 +647,38 @@ export function RetirementIncomeBridgeChart({
         <h3 id={chartTitleId} className="bridge-chart-title">
           Retirement income bridge
         </h3>
-        <button
-          type="button"
-          className="secondary-button bridge-mode-button"
-          onClick={() =>
-            setDisplayMode((current) => (current === "annual" ? "monthly" : "annual"))
-          }
+        <div
+          className="summary-toggle bridge-display-toggle"
+          role="group"
+          aria-label="Chart income display"
         >
-          Show as {displayMode === "annual" ? "monthly" : "annual"}
-        </button>
+          <button
+            type="button"
+            className={
+              displayMode === "monthly"
+                ? "summary-toggle-button summary-toggle-button--active"
+                : "summary-toggle-button"
+            }
+            aria-label="Show chart as monthly"
+            aria-pressed={displayMode === "monthly"}
+            onClick={() => setDisplayMode("monthly")}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            className={
+              displayMode === "annual"
+                ? "summary-toggle-button summary-toggle-button--active"
+                : "summary-toggle-button"
+            }
+            aria-label="Show chart as annual"
+            aria-pressed={displayMode === "annual"}
+            onClick={() => setDisplayMode("annual")}
+          >
+            Annual
+          </button>
+        </div>
       </div>
 
       <div className="bridge-chart-shell" ref={shellRef}>

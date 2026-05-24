@@ -1,4 +1,7 @@
 export const knowledgeLinks = {
+  inflationExplainer: "https://www.bankofengland.co.uk/knowledgebank/what-is-inflation",
+  inflationTarget:
+    "https://www.bankofengland.co.uk/monetary%20policy/Inflation",
   alphaAccrual:
     "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01107",
   alphaContributions:

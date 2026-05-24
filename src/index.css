@@ -481,7 +481,7 @@ h3 {
   justify-content: flex-end;
 }
 
-.bridge-mode-button {
+.bridge-display-toggle {
   justify-self: start;
 }
 
@@ -1493,7 +1493,7 @@ h3 {
     justify-content: stretch;
   }
 
-  .bridge-mode-button {
+  .bridge-display-toggle {
     flex: 1 1 10rem;
   }
 

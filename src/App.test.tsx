@@ -1122,6 +1122,32 @@ describe("App settings form", () => {
     );
   });
 
+  it("can reset the long-term inflation assumption to its default", () => {
+    renderAcknowledgedApp();
+
+    const inflationInput = screen.getByLabelText("Long-term inflation assumption exact value");
+
+    fireEvent.change(inflationInput, {
+      target: { value: "3.4" },
+    });
+    fireEvent.blur(inflationInput);
+
+    expect(inflationInput).toHaveValue(3.4);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Reset Long-term inflation assumption to default",
+      }),
+    );
+
+    expect(screen.getByLabelText("Long-term inflation assumption exact value")).toHaveValue(2.5);
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        inflationRateAnnual: 2.5,
+      }),
+    );
+  });
+
   it("uses the global inflation assumption for nuvos pension increases", () => {
     renderAcknowledgedApp();
 

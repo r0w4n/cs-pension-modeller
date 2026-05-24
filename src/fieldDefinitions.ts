@@ -269,6 +269,8 @@ export const fieldGroups: FieldGroup[] = [
         ],
         description:
           "Real terms shows figures in today's purchasing power, which makes future income easier to compare with retirement living standards. Nominal terms shows future cash amounts after inflation has been applied.",
+        infoUrl: knowledgeLinks.inflationExplainer,
+        infoLinkText: "What is inflation?",
       },
       {
         id: "inflationRateAnnual",
@@ -279,8 +281,8 @@ export const fieldGroups: FieldGroup[] = [
         step: 0.1,
         description:
           "The long-term CPI-style assumption used when projecting income targets, pension increases, and nominal investment balances. The default of 2.5% aligns with the minimum annual increase used in the State Pension triple lock.",
-        infoUrl: knowledgeLinks.civilServicePensionIncreases,
-        infoLinkText: "Pension increases",
+        infoUrl: knowledgeLinks.inflationTarget,
+        infoLinkText: "Inflation and the 2% target",
       },
     ],
   },

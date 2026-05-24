@@ -3355,6 +3355,7 @@ function RangeSettingField({
   const [draftValue, setDraftValue] = useState<number | null>(null);
   const [draftExactValue, setDraftExactValue] = useState<string | null>(null);
   const canResetToDefault = [
+    "inflationRateAnnual",
     "assumedCpiPercent",
     "sippRealInterestPercent",
     "isaRealInterestPercent",

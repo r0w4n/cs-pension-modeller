@@ -1500,6 +1500,11 @@ function buildBridgePotProjection(
     ]);
   };
 
+  addIncomeStartMilestone(
+    addYears(settings.dateOfBirth, settings.requirementAge),
+    "Retirement starts",
+  );
+
   if (settings.showAlpha) {
     addIncomeStartMilestone(
       addYears(settings.dateOfBirth, settings.alphaPensionDrawAge),
@@ -1516,6 +1521,13 @@ function buildBridgePotProjection(
 
   if (settings.showStatePension) {
     addIncomeStartMilestone(settings.statePensionDrawDate, "State Pension starts");
+  }
+
+  if (settings.partialRetirementEnabled) {
+    addIncomeStartMilestone(
+      getPartialRetirementStartDate(settings),
+      "Partial retirement starts",
+    );
   }
 
   let hasStartedIsaDrawdown = false;

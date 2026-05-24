@@ -2210,7 +2210,7 @@ describe("projection calculations", () => {
     ).toBe(true);
   });
 
-  it("adds bridge pot milestones only for draw starts and pot exhaustion", () => {
+  it("adds bridge pot milestones for retirement, draw starts and pot exhaustion", () => {
     const settings = prepareBridgeProjectionSettings({
       ...defaultSettings,
       startDate: "2026-04-01",
@@ -2241,9 +2241,45 @@ describe("projection calculations", () => {
 
     expect(bridgeMilestones).toEqual([
       "ISA drawdown starts",
+      "Retirement starts",
       "ISA pot exhausted",
       "SIPP drawdown starts",
     ]);
+  });
+
+  it("shows partial retirement in the bridge pot projection timeline", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      dateOfBirth: "1980-04-01",
+      requirementAge: 50,
+      lifeExpectancy: 60,
+      desiredRetirementIncome: 12000,
+      showAlpha: false,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: true,
+      showIsa: true,
+      sippDrawAge: 57,
+      isaCurrentPot: 100000,
+      sippCurrentPot: 100000,
+      partialRetirementEnabled: true,
+      partialRetirementStartAge: 53,
+    });
+    const pensionRows = createProjectionTable({
+      ...settings,
+      showSipp: false,
+      showIsa: false,
+    });
+
+    const analysis = generateRetirementBridgeAnalysis(pensionRows, settings);
+    const partialRetirementRow = analysis.potProjection.find((row) =>
+      row.milestones.includes("Partial retirement starts"),
+    );
+
+    expect(partialRetirementRow).toBeDefined();
+    expect(partialRetirementRow?.date).toBe("2033-04-01");
+    expect(partialRetirementRow?.milestoneDates).toContain("2033-04-01");
   });
 
   it("shows secure pension starts in the bridge pot projection timeline", () => {

@@ -1,6 +1,8 @@
 import {
+  createContext,
   useDeferredValue,
   useEffect,
+  useContext,
   useMemo,
   useRef,
   useState,
@@ -67,6 +69,8 @@ import { knowledgeLinks } from "./knowledgeLinks";
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
 export const APP_MODE_STORAGE_KEY = "cs-pension-modeller.appMode";
+const GUIDANCE_NOTES_STORAGE_KEY = "cs-pension-modeller.guidanceNotes";
+const GuidanceNotesContext = createContext(true);
 const MODELLER_LIMITATIONS = [
   "Income Tax is estimated from configurable standard assumptions. It does not cover Scottish tax bands, benefit interactions, tax code changes, or other personal reliefs.",
   "Inflation is only modelled where explicit CPI or growth assumptions are enabled.",
@@ -160,7 +164,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 1",
         title: "What should we include?",
         description:
-          "Choose the parts of your retirement picture you want to model. You can come back and add more later.",
+          "Choose the parts of your retirement picture you want to model. Turn sections on when that income source belongs in the scenario. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
       },
       {
@@ -168,7 +172,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 2",
         title: "Your planning basics",
         description:
-          "These dates and income targets anchor every projection in the modeller.",
+          "Set the personal dates and income target that anchor the projection.",
         kind: "fields",
         fieldIds: [
           "dateOfBirth",
@@ -182,7 +186,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 3",
         title: "Inflation and projection basis",
         description:
-          "Choose whether to view today’s purchasing power or future inflated pound amounts.",
+          "Choose the basis used to compare future values with today’s spending power.",
         kind: "fields",
         fieldIds: ["projectionBasis", "inflationRateAnnual"],
       },
@@ -191,7 +195,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 4",
         title: "Your Alpha pension plan",
         description:
-          "Tell us when you expect to leave Alpha, when you want to draw it, and what your latest statement says.",
+          "Enter your Alpha statement values, pensionable earnings, and draw/leave ages.",
         kind: "fields",
         fieldIds: [
           "alphaPensionDrawAge",
@@ -210,7 +214,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Optional",
         title: "State Pension",
         description:
-          "Add your State Pension forecast and any future uprating assumption.",
+          "Add your forecast, start date, and any future uprating assumption.",
         kind: "fields",
         fieldIds: [
           "currentStatePension",
@@ -224,7 +228,8 @@ const GUIDED_JOURNEYS = [
         id: "nuvos",
         eyebrow: "Optional",
         title: "nuvos pension",
-        description: "Include any nuvos benefits you want to model alongside Alpha.",
+        description:
+          "Add any nuvos statement value, earnings, and draw timing you want to model.",
         kind: "fields",
         fieldIds: [
           "nuvosPensionDrawAge",
@@ -241,7 +246,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Optional",
         title: "SIPP drawdown",
         description:
-          "Add a personal pension pot, contributions, investment assumptions and drawdown timing.",
+          "Add personal pension balances, contributions, tax relief, growth, and drawdown rules.",
         kind: "fields",
         fieldIds: [
           "sippCurrentPot",
@@ -261,7 +266,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Optional",
         title: "ISA income",
         description:
-          "Add ISA savings, contributions, investment assumptions and drawdown timing.",
+          "Add ISA savings, contributions, growth, and drawdown rules for flexible bridge money.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
@@ -280,7 +285,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Optional",
         title: "Partial retirement",
         description:
-          "Model a reduced work pattern and lower regular additions from that point.",
+          "Model a reduced work pattern and lower regular accruals or savings from that point.",
         kind: "fields",
         fieldIds: [
           "partialRetirementStartAge",
@@ -313,7 +318,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Result",
         title: "Your retirement income answer",
         description:
-          "This is the answer from the assumptions you have just walked through.",
+          "Review the scenario answer from the assumptions you have just walked through.",
         kind: "answer",
       },
     ],
@@ -342,7 +347,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 2",
         title: "Your personal details",
         description:
-          "These dates anchor the scenario and define how long the bridge is modelled for.",
+          "Set the dates that define current age, access ages, and the length of the bridge.",
         kind: "fields",
         fieldIds: ["startDate", "dateOfBirth", "lifeExpectancy"],
         fieldLabels: {
@@ -354,7 +359,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 3",
         title: "Your Civil Service pensions",
         description:
-          "We include State Pension, ISA and SIPP by default. Tell us which Civil Service pensions you have.",
+          "We include State Pension, ISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
         toggleKeys: ["showAlpha", "showNuvos"],
       },
@@ -417,7 +422,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Step 5",
         title: "Your bridging pots",
         description:
-          "Keep ISA and SIPP separate so the model respects SIPP access age.",
+          "Keep ISA and SIPP separate so the model respects tax relief, access ages, and drawdown timing.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
@@ -444,7 +449,7 @@ const GUIDED_JOURNEYS = [
         eyebrow: "Result",
         title: "Your retirement bridge",
         description:
-          "This shows the gap between stopping work and secure pension income starting.",
+          "Review the gap between stopping work and secure pension income starting.",
         kind: "bridge-answer",
       },
     ],
@@ -467,6 +472,9 @@ function App() {
   const [chartUndoStack, setChartUndoStack] = useState<PensionSettings[]>([]);
   const [settingsFormVersion, setSettingsFormVersion] = useState(0);
   const [appMode, setAppMode] = useState<AppMode | null>(loadStoredAppMode);
+  const [showGuidanceNotes, setShowGuidanceNotes] = useState(
+    loadStoredGuidanceNotes,
+  );
   const [retirementIncomeDisplay, setRetirementIncomeDisplay] =
     useState<RetirementIncomeDisplay>("monthly");
   const [showLimitations, setShowLimitations] = useState(false);
@@ -552,6 +560,10 @@ function App() {
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    saveStoredGuidanceNotes(showGuidanceNotes);
+  }, [showGuidanceNotes]);
 
   useEffect(() => {
     return () => {
@@ -933,7 +945,7 @@ function App() {
   }
 
   return (
-    <>
+    <GuidanceNotesContext.Provider value={showGuidanceNotes}>
       {!hasAcknowledgedNotice ? (
         <div className="acknowledgement-overlay" role="dialog" aria-modal="true" aria-labelledby="acknowledgement-title">
           <section className="acknowledgement-card">
@@ -1008,6 +1020,8 @@ function App() {
             onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
             showLimitations={showLimitations}
             onToggleLimitations={() => setShowLimitations((current) => !current)}
+            showGuidanceNotes={showGuidanceNotes}
+            onShowGuidanceNotesChange={setShowGuidanceNotes}
           />
         ) : null}
 
@@ -1035,6 +1049,8 @@ function App() {
             onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
             showLimitations={showLimitations}
             onToggleLimitations={() => setShowLimitations((current) => !current)}
+            showGuidanceNotes={showGuidanceNotes}
+            onShowGuidanceNotesChange={setShowGuidanceNotes}
           />
         ) : null}
 
@@ -1093,9 +1109,14 @@ function App() {
                     <div className="section-heading">
                       <h3>Optional sections</h3>
                       <p className="section-copy">
-                        Show or hide the optional modeller sections without losing any
-                        settings you have already entered.
+                        Choose which parts of the modeller are in this scenario.
+                        Hidden sections keep their saved values, and guidance notes
+                        can be turned off once the controls feel familiar.
                       </p>
+                      <GuidanceNotesToggle
+                        checked={showGuidanceNotes}
+                        onChange={setShowGuidanceNotes}
+                      />
                     </div>
 
                     <OptionalSectionToggleGrid
@@ -1107,79 +1128,79 @@ function App() {
             {fieldGroups
               .filter((group) => isSettingsGroupVisible(group.id, settings))
               .map((group) => (
-              <section className="settings-section" key={group.id}>
-                <div className="section-heading">
-                  <h3>{group.title}</h3>
-                  <p className="section-copy">{group.description}</p>
-                </div>
+                <section className="settings-section" key={group.id}>
+                  <div className="section-heading">
+                    <h3>{group.title}</h3>
+                    <p className="section-copy">{group.description}</p>
+                  </div>
 
-                <SettingsFields
-                  fields={group.fields}
-                  settings={settings}
-                  validationIssues={validationIssues}
-                  onChange={updateSetting}
-                  useDropdownDates={useDropdownDates}
-                />
-
-                {group.id === "alpha" ? (
-                  <AddedPensionLumpSumsEditor
-                    lumpSums={settings.alphaAddedPensionLumpSums}
-                    defaultStartDate={settings.startDate}
+                  <SettingsFields
+                    fields={group.fields}
+                    settings={settings}
+                    validationIssues={validationIssues}
+                    onChange={updateSetting}
                     useDropdownDates={useDropdownDates}
-                    showFactorType
-                    validationIssues={getValidationIssuesForField(
-                      validationIssues,
-                      "alphaAddedPensionLumpSums",
-                    )}
-                    onChange={(nextLumpSums) =>
-                      updateSetting("alphaAddedPensionLumpSums", nextLumpSums)
-                    }
                   />
-                ) : null}
 
-                {group.id === "sipp" ? (
-                  <AddedPensionLumpSumsEditor
-                    lumpSums={settings.sippLumpSums}
-                    defaultStartDate={settings.startDate}
-                    useDropdownDates={useDropdownDates}
-                    title="SIPP lump sums"
-                    description="Add one-off or yearly lump sum contributions. A yearly entry repeats on the same calendar date until its end date."
-                    emptyText="No SIPP lump sum contributions set up yet."
-                    itemLabel="SIPP lump sum"
-                    addButtonLabel="Add SIPP lump sum"
-                    removeButtonLabel="Remove SIPP lump sum"
-                    validationIssues={getValidationIssuesForField(
-                      validationIssues,
-                      "sippLumpSums",
-                    )}
-                    onChange={(nextLumpSums) =>
-                      updateSetting("sippLumpSums", nextLumpSums)
-                    }
-                  />
-                ) : null}
+                  {group.id === "alpha" ? (
+                    <AddedPensionLumpSumsEditor
+                      lumpSums={settings.alphaAddedPensionLumpSums}
+                      defaultStartDate={settings.startDate}
+                      useDropdownDates={useDropdownDates}
+                      showFactorType
+                      validationIssues={getValidationIssuesForField(
+                        validationIssues,
+                        "alphaAddedPensionLumpSums",
+                      )}
+                      onChange={(nextLumpSums) =>
+                        updateSetting("alphaAddedPensionLumpSums", nextLumpSums)
+                      }
+                    />
+                  ) : null}
 
-                {group.id === "isa" ? (
-                  <AddedPensionLumpSumsEditor
-                    lumpSums={settings.isaLumpSums}
-                    defaultStartDate={settings.startDate}
-                    useDropdownDates={useDropdownDates}
-                    title="ISA lump sums"
-                    description="Add one-off or yearly lump sum ISA contributions. A yearly entry repeats on the same calendar date until its end date."
-                    emptyText="No ISA lump sum contributions set up yet."
-                    itemLabel="ISA lump sum"
-                    addButtonLabel="Add ISA lump sum"
-                    removeButtonLabel="Remove ISA lump sum"
-                    validationIssues={getValidationIssuesForField(
-                      validationIssues,
-                      "isaLumpSums",
-                    )}
-                    onChange={(nextLumpSums) =>
-                      updateSetting("isaLumpSums", nextLumpSums)
-                    }
-                  />
-                ) : null}
-              </section>
-            ))}
+                  {group.id === "sipp" ? (
+                    <AddedPensionLumpSumsEditor
+                      lumpSums={settings.sippLumpSums}
+                      defaultStartDate={settings.startDate}
+                      useDropdownDates={useDropdownDates}
+                      title="SIPP lump sums"
+                      description="Add one-off or yearly lump sum contributions. A yearly entry repeats on the same calendar date until its end date."
+                      emptyText="No SIPP lump sum contributions set up yet."
+                      itemLabel="SIPP lump sum"
+                      addButtonLabel="Add SIPP lump sum"
+                      removeButtonLabel="Remove SIPP lump sum"
+                      validationIssues={getValidationIssuesForField(
+                        validationIssues,
+                        "sippLumpSums",
+                      )}
+                      onChange={(nextLumpSums) =>
+                        updateSetting("sippLumpSums", nextLumpSums)
+                      }
+                    />
+                  ) : null}
+
+                  {group.id === "isa" ? (
+                    <AddedPensionLumpSumsEditor
+                      lumpSums={settings.isaLumpSums}
+                      defaultStartDate={settings.startDate}
+                      useDropdownDates={useDropdownDates}
+                      title="ISA lump sums"
+                      description="Add one-off or yearly lump sum ISA contributions. A yearly entry repeats on the same calendar date until its end date."
+                      emptyText="No ISA lump sum contributions set up yet."
+                      itemLabel="ISA lump sum"
+                      addButtonLabel="Add ISA lump sum"
+                      removeButtonLabel="Remove ISA lump sum"
+                      validationIssues={getValidationIssuesForField(
+                        validationIssues,
+                        "isaLumpSums",
+                      )}
+                      onChange={(nextLumpSums) =>
+                        updateSetting("isaLumpSums", nextLumpSums)
+                      }
+                    />
+                  ) : null}
+                </section>
+              ))}
 
             {pensionSummary ? (
               <SummarySection
@@ -1239,7 +1260,7 @@ function App() {
           </>
         ) : null}
       </main>
-    </>
+    </GuidanceNotesContext.Provider>
   );
 
   function acknowledgeNotice() {
@@ -1331,6 +1352,25 @@ function getModeCardClassName(isActive: boolean) {
     .join(" ");
 }
 
+function GuidanceNotesToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="guidance-toggle">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span>Show guidance notes</span>
+    </label>
+  );
+}
+
 type GuidedJourneyProps = {
   journey: JourneyDefinition;
   settings: PensionSettings;
@@ -1355,6 +1395,8 @@ type GuidedJourneyProps = {
   onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
   showLimitations: boolean;
   onToggleLimitations: () => void;
+  showGuidanceNotes: boolean;
+  onShowGuidanceNotesChange: (checked: boolean) => void;
 };
 
 function GuidedJourney({
@@ -1379,6 +1421,8 @@ function GuidedJourney({
   onRetirementIncomeDisplayChange,
   showLimitations,
   onToggleLimitations,
+  showGuidanceNotes,
+  onShowGuidanceNotesChange,
 }: GuidedJourneyProps) {
   const visibleSteps = journey.steps.filter(
     (step) => !step.visible || step.visible(settings),
@@ -1419,8 +1463,14 @@ function GuidedJourney({
           <h2 id="journey-title">{journey.title}</h2>
           <p className="section-copy">{journey.description}</p>
         </div>
-        <div className="journey-progress" aria-label="Journey progress">
-          Step {activeStepIndex + 1} of {visibleSteps.length}
+        <div className="journey-heading-actions">
+          <div className="journey-progress" aria-label="Journey progress">
+            Step {activeStepIndex + 1} of {visibleSteps.length}
+          </div>
+          <GuidanceNotesToggle
+            checked={showGuidanceNotes}
+            onChange={onShowGuidanceNotesChange}
+          />
         </div>
       </div>
 
@@ -1503,7 +1553,10 @@ function GuidedJourney({
   );
 }
 
-type JourneyStepContentProps = Omit<GuidedJourneyProps, "journey"> & {
+type JourneyStepContentProps = Omit<
+  GuidedJourneyProps,
+  "journey" | "showGuidanceNotes" | "onShowGuidanceNotesChange"
+> & {
   step: JourneyStepDefinition;
 };
 
@@ -2443,21 +2496,35 @@ function SummarySection({
 function FieldLabel({ field }: { field: FieldDefinition }) {
   const infoUrl = "infoUrl" in field ? field.infoUrl : undefined;
   const infoLinkText = "infoLinkText" in field ? field.infoLinkText : undefined;
+  const extraInfoLinks = "infoLinks" in field ? (field.infoLinks ?? []) : [];
+  const infoLinks = [
+    ...(infoUrl
+      ? [{ href: infoUrl, text: infoLinkText ?? `More about ${field.label}` }]
+      : []),
+    ...extraInfoLinks,
+  ];
 
   return (
     <span className="field-label-group">
       <span className="field-label">{field.label}</span>
-      {infoUrl ? (
-        <InfoLink href={infoUrl} text={infoLinkText ?? `More about ${field.label}`} />
-      ) : null}
+      {infoLinks.map((link) => (
+        <InfoLink
+          href={link.href}
+          text={link.text}
+          key={`${link.href}-${link.text}`}
+        />
+      ))}
     </span>
   );
 }
 
 function FieldHelp({ field }: { field: FieldDefinition }) {
+  const showGuidanceNotes = useContext(GuidanceNotesContext);
   const description = "description" in field ? field.description : undefined;
 
-  return description ? <p className="field-help">{description}</p> : null;
+  return showGuidanceNotes && description ? (
+    <p className="field-help">{description}</p>
+  ) : null;
 }
 
 function InfoLink({ href, text }: { href: string; text: string }) {
@@ -2680,6 +2747,8 @@ function Field({
   hideOnMobile = false,
   validationIssue,
 }: FieldProps) {
+  const showGuidanceNotes = useContext(GuidanceNotesContext);
+
   if (field.id === "statePensionDrawDate") {
     return (
       <StatePensionAgeField
@@ -2771,7 +2840,7 @@ function Field({
               )
             }
           />
-          <span>{field.description}</span>
+          {showGuidanceNotes ? <span>{field.description}</span> : null}
         </span>
         <FieldValidationMessage id={validationId} issue={validationIssue} />
       </label>
@@ -3037,6 +3106,7 @@ function YearSettingFieldEditor({
           </option>
         ))}
       </select>
+      <FieldHelp field={field} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </label>
   );
@@ -3707,6 +3777,7 @@ function DateSettingField({
           Reset to default
         </button>
       ) : null}
+      <FieldHelp field={field} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
   );
@@ -4959,6 +5030,12 @@ function loadStoredAppMode(): AppMode | null {
     : null;
 }
 
+function loadStoredGuidanceNotes() {
+  const storedPreference = readStorageItem(GUIDANCE_NOTES_STORAGE_KEY);
+
+  return storedPreference === null ? true : storedPreference !== "false";
+}
+
 function isEditableShortcutTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -4976,6 +5053,13 @@ function isEditableShortcutTarget(target: EventTarget | null) {
 
 function saveStoredAppMode(mode: AppMode) {
   writeStorageItem(APP_MODE_STORAGE_KEY, mode);
+}
+
+function saveStoredGuidanceNotes(showGuidanceNotes: boolean) {
+  writeStorageItem(
+    GUIDANCE_NOTES_STORAGE_KEY,
+    showGuidanceNotes ? "true" : "false",
+  );
 }
 
 export default App;

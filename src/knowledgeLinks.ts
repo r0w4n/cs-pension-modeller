@@ -1,6 +1,8 @@
 export const knowledgeLinks = {
   alphaAccrual:
     "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01107",
+  alphaContributions:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/joining-the-pension-scheme/contribution-rates/",
   alphaNormalPensionAge:
     "https://www.civilservicepensionscheme.org.uk/memberhub/joining-the-pension-scheme/alpha-or-partnership/",
   alphaEarlyRetirementFactors:
@@ -26,4 +28,9 @@ export const knowledgeLinks = {
   retirementLivingStandards: "https://www.retirementlivingstandards.org.uk/",
   pensionTaxRelief:
     "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+  pensionAccessAge:
+    "https://www.gov.uk/personal-pensions-your-rights/how-you-can-take-pension",
+  incomeTaxRates: "https://www.gov.uk/income-tax-rates",
+  isaAllowance: "https://www.gov.uk/individual-savings-accounts",
+  pensionTaxFree: "https://www.gov.uk/tax-on-pension/tax-free",
 } as const;

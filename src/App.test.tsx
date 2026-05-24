@@ -253,6 +253,8 @@ import {
   getTodayIsoDate,
 } from "./settings";
 
+const GUIDANCE_NOTES_STORAGE_KEY = "cs-pension-modeller.guidanceNotes";
+
 function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   return {
     dateOfBirth: defaultSettings.dateOfBirth,
@@ -449,6 +451,26 @@ describe("App settings form", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Your Alpha pension plan" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/career-average defined benefit pension, not a savings pot/),
+    ).toBeInTheDocument();
+    expect(document.body).toHaveTextContent(
+      /does not make the pension accrue at 5% or 7%/,
+    );
+    expect(document.body).toHaveTextContent(
+      /does not multiply your pension by your employee contribution rate/,
+    );
+    expect(screen.getByRole("link", { name: "Contribution rates" })).toHaveAttribute(
+      "href",
+      "https://www.civilservicepensionscheme.org.uk/memberhub/joining-the-pension-scheme/contribution-rates/",
+    );
+
+    fireEvent.click(screen.getByLabelText("Show guidance notes"));
+
+    expect(
+      screen.queryByText(/career-average defined benefit pension, not a savings pot/),
+    ).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(GUIDANCE_NOTES_STORAGE_KEY)).toBe("false");
 
     fireEvent.change(screen.getByLabelText("Planned Alpha Pension Draw Age exact value"), {
       target: { value: "62" },
@@ -673,7 +695,7 @@ describe("App settings form", () => {
       "href",
       "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01107",
     );
-    expect(screen.getByRole("link", { name: "Early retirement factors" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Reduction factors" })).toHaveAttribute(
       "href",
       "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__csops__early-payment-reduction-normal-health-and-age-addition/tables",
     );
@@ -683,7 +705,7 @@ describe("App settings form", () => {
     );
     expect(screen.getByRole("link", { name: "Alpha pension increases" })).toHaveAttribute(
       "href",
-      "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01107",
+      "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01215",
     );
     expect(screen.getByRole("link", { name: "Check pension tax relief" })).toHaveAttribute(
       "href",

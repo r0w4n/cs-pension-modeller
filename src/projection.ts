@@ -1,6 +1,7 @@
 import addedPensionFactors from "./data/alpha_pension_added_pension_factors.json";
 import reductionFactors from "./data/alpha_pension_reduction_factors.json";
 import {
+  calculateNormalPensionAge,
   calculateStatePensionDrawDate,
   getPartialRetirementContributionMultiplier,
   getPartialRetirementStartDate,
@@ -320,16 +321,17 @@ export function deriveProjectionInputs(
           settings.nuvosPensionDrawAge,
         );
   const addedPensionStopDate = accrualStopDate;
-  const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+  const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
+  const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const epaDate = getAlphaEpaDate(settings);
   const reductionFactor =
     drawDate > npaDate
       ? 1
       : getEarlyRetirementReductionFactor(
-          settings.normalPensionAge,
+          normalPensionAge,
           settings.alphaPensionDrawAge,
         );
-  const epaDrawAge = settings.normalPensionAge - settings.alphaEpaYearsBeforeNpa;
+  const epaDrawAge = normalPensionAge - settings.alphaEpaYearsBeforeNpa;
   const epaReductionFactor =
     !settings.alphaEpaEnabled || drawDate >= epaDate
       ? 1
@@ -862,12 +864,13 @@ export function generatePensionSummary(
       nuvosPensionDrawDate,
       addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge),
     );
-    const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+    const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
+    const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
     const reductionFactor =
       alphaPensionDrawDate > npaDate
         ? 1
         : getEarlyRetirementReductionFactor(
-            settings.normalPensionAge,
+            normalPensionAge,
             settings.alphaPensionDrawAge,
           );
 
@@ -919,7 +922,7 @@ export function generatePensionSummary(
         ),
       },
       calculated: {
-        normalPensionAge: settings.normalPensionAge,
+        normalPensionAge,
         statePensionAge: calculateAge(settings.dateOfBirth, settings.statePensionDrawDate),
         earlyRetirementReductionPercent: Math.max(0, (1 - reductionFactor) * 100),
       },
@@ -946,12 +949,13 @@ export function generatePensionSummary(
     addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge),
   );
   const statePensionStartDate = settings.statePensionDrawDate;
-  const npaDate = addYears(settings.dateOfBirth, settings.normalPensionAge);
+  const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
+  const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const reductionFactor =
     alphaPensionDrawDate > npaDate
       ? 1
       : getEarlyRetirementReductionFactor(
-          settings.normalPensionAge,
+          normalPensionAge,
           settings.alphaPensionDrawAge,
         );
   const alphaDrawRow =
@@ -1021,7 +1025,7 @@ export function generatePensionSummary(
       ),
     },
     calculated: {
-      normalPensionAge: settings.normalPensionAge,
+      normalPensionAge,
       statePensionAge: calculateAge(settings.dateOfBirth, statePensionStartDate),
       earlyRetirementReductionPercent: Math.max(0, (1 - reductionFactor) * 100),
     },
@@ -1046,9 +1050,9 @@ export function generatePensionSummary(
 export function prepareBridgeProjectionSettings(settings: PensionSettings): PensionSettings {
   return {
     ...settings,
-    alphaPensionLeaveAge: settings.targetRetirementAge,
-    nuvosPensionLeaveAge: settings.targetRetirementAge,
-    isaDrawAge: settings.targetRetirementAge,
+    alphaPensionLeaveAge: settings.requirementAge,
+    nuvosPensionLeaveAge: settings.requirementAge,
+    isaDrawAge: settings.requirementAge,
   };
 }
 
@@ -1057,7 +1061,7 @@ export function generateRetirementBridgeAnalysis(
   settings: PensionSettings,
   options: { calculateSafeDrawAge?: boolean } = {},
 ): RetirementBridgeAnalysis {
-  const retirementDate = addYears(settings.dateOfBirth, settings.targetRetirementAge);
+  const retirementDate = addYears(settings.dateOfBirth, settings.requirementAge);
   const endDate = getLifeExpectancyDate(settings.dateOfBirth, settings.lifeExpectancy);
   const sippAccessDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
   const monthlyTargetIncome = settings.desiredRetirementIncome / 12;
@@ -1196,7 +1200,7 @@ export function generateRetirementBridgeAnalysis(
   const analysisWithoutSafeDrawAge: RetirementBridgeAnalysis = {
     target: {
       retirementDate,
-      retirementAge: settings.targetRetirementAge,
+      retirementAge: settings.requirementAge,
       annualIncome: settings.desiredRetirementIncome,
       monthlyIncome: monthlyTargetIncome,
       endDate,
@@ -1577,7 +1581,7 @@ function calculateEarliestSustainablePensionDrawAge(settings: PensionSettings) {
     return null;
   }
 
-  const earliestAge = Math.max(55, Math.ceil(settings.targetRetirementAge));
+  const earliestAge = Math.max(55, Math.ceil(settings.requirementAge));
   const latestAge = Math.min(
     settings.showAlpha ? settings.normalPensionAge : 70,
     settings.showNuvos ? NUVOS_NORMAL_PENSION_AGE : 70,
@@ -2047,37 +2051,92 @@ export function getEarlyRetirementReductionFactor(
   normalPensionAge: number,
   retirementAge: number,
 ) {
-  const records = (reductionFactors as ReductionFactorRecord[])
-    .filter((record) => record.normal_pension_age === normalPensionAge)
-    .sort((first, second) => first.retirement_age - second.retirement_age);
-  const match = records.find(
-    (record) =>
-      record.retirement_age === retirementAge,
+  if (retirementAge >= normalPensionAge) {
+    return 1;
+  }
+
+  const records = reductionFactors as ReductionFactorRecord[];
+  const normalPensionAges = Array.from(
+    new Set(records.map((record) => record.normal_pension_age)),
+  ).sort((first, second) => first - second);
+  const exactNormalPensionAge = normalPensionAges.find(
+    (age) => age === normalPensionAge,
   );
 
-  if (!match) {
-    const lowerRecord = [...records]
-      .reverse()
-      .find((record) => record.retirement_age < retirementAge);
-    const upperRecord = records.find(
-      (record) => record.retirement_age > retirementAge,
-    );
-
-    if (!lowerRecord || !upperRecord) {
-      return 1;
-    }
-
-    const ageProgress =
-      (retirementAge - lowerRecord.retirement_age) /
-      (upperRecord.retirement_age - lowerRecord.retirement_age);
-
-    return (
-      lowerRecord.reduction_factor +
-      (upperRecord.reduction_factor - lowerRecord.reduction_factor) * ageProgress
+  if (exactNormalPensionAge !== undefined) {
+    return getReductionFactorForNormalPensionAge(
+      records,
+      exactNormalPensionAge,
+      retirementAge,
     );
   }
 
-  return match.reduction_factor;
+  const lowerNormalPensionAge = [...normalPensionAges]
+    .reverse()
+    .find((age) => age < normalPensionAge);
+  const upperNormalPensionAge = normalPensionAges.find(
+    (age) => age > normalPensionAge,
+  );
+
+  if (lowerNormalPensionAge === undefined || upperNormalPensionAge === undefined) {
+    return 1;
+  }
+
+  const lowerReductionFactor = getReductionFactorForNormalPensionAge(
+    records,
+    lowerNormalPensionAge,
+    retirementAge,
+  );
+  const upperReductionFactor = getReductionFactorForNormalPensionAge(
+    records,
+    upperNormalPensionAge,
+    retirementAge,
+  );
+  const normalPensionAgeProgress =
+    (normalPensionAge - lowerNormalPensionAge) /
+    (upperNormalPensionAge - lowerNormalPensionAge);
+
+  return (
+    lowerReductionFactor +
+    (upperReductionFactor - lowerReductionFactor) * normalPensionAgeProgress
+  );
+}
+
+function getReductionFactorForNormalPensionAge(
+  records: ReductionFactorRecord[],
+  normalPensionAge: number,
+  retirementAge: number,
+) {
+  const recordsForNormalPensionAge = records
+    .filter((record) => record.normal_pension_age === normalPensionAge)
+    .sort((first, second) => first.retirement_age - second.retirement_age);
+  const match = recordsForNormalPensionAge.find(
+    (record) => record.retirement_age === retirementAge,
+  );
+
+  if (match) {
+    return match.reduction_factor;
+  }
+
+  const lowerRecord = [...recordsForNormalPensionAge]
+    .reverse()
+    .find((record) => record.retirement_age < retirementAge);
+  const upperRecord = recordsForNormalPensionAge.find(
+    (record) => record.retirement_age > retirementAge,
+  );
+
+  if (!lowerRecord || !upperRecord) {
+    return 1;
+  }
+
+  const ageProgress =
+    (retirementAge - lowerRecord.retirement_age) /
+    (upperRecord.retirement_age - lowerRecord.retirement_age);
+
+  return (
+    lowerRecord.reduction_factor +
+    (upperRecord.reduction_factor - lowerRecord.reduction_factor) * ageProgress
+  );
 }
 
 export function calculateAnnualAlphaPensionIncludingReduction(
@@ -2399,6 +2458,7 @@ export function calculateSippPotAtDate(input: {
   settings: PensionSettings;
   rowDate: string;
   drawDate: string;
+  endDate?: string;
 }) {
   const { settings, rowDate, drawDate } = input;
 
@@ -2406,53 +2466,12 @@ export function calculateSippPotAtDate(input: {
     return 0;
   }
 
-  if (rowDate < settings.startDate) {
-    return 0;
-  }
-
-  const contributionMultiplier = getSippContributionMultiplier(settings.sippTaxReliefRate);
-  const monthlyInterestRate = settings.sippApplyRealInterest
-    ? (1 + getModelledAnnualGrowthRate(settings, settings.sippRealInterestPercent / 100)) **
-        (1 / 12) -
-      1
-    : 0;
-  const contributionStopDate = minIsoDate(drawDate, rowDate);
-  const contributionMonthCount = calculateWholeMonthDifference(
-    settings.startDate,
-    contributionStopDate,
-  ) + 1;
-  const projectionMonthCount = calculateWholeMonthDifference(
-    settings.startDate,
-    contributionStopDate,
-  );
-  let pot = settings.sippCurrentPot;
-  let previousProjectionMonthDate: string | undefined;
-
-  for (let monthIndex = 0; monthIndex <= projectionMonthCount; monthIndex += 1) {
-    const projectionMonthDate = addMonths(settings.startDate, monthIndex);
-
-    if (monthIndex > 0) {
-      pot *= 1 + monthlyInterestRate;
-    }
-
-    if (monthIndex < contributionMonthCount) {
-      pot +=
-        settings.sippMonthlyContribution *
-        contributionMultiplier *
-        getPartialRetirementContributionMultiplier(settings, projectionMonthDate);
-    }
-
-    pot += calculateScheduledSippLumpSums({
-      lumpSums: settings.sippLumpSums,
-      previousRowDate: previousProjectionMonthDate,
-      rowDate: projectionMonthDate,
-      contributionMultiplier,
-    });
-
-    previousProjectionMonthDate = projectionMonthDate;
-  }
-
-  return pot;
+  return calculateSippProjectionRow({
+    settings,
+    rowDate,
+    drawDate,
+    endDate: input.endDate ?? getLifeExpectancyDate(settings.dateOfBirth, settings.lifeExpectancy),
+  }).sippPot;
 }
 
 function calculateSippProjectionRow(input: {
@@ -2462,26 +2481,26 @@ function calculateSippProjectionRow(input: {
   endDate: string;
 }) {
   const { settings, rowDate, drawDate, endDate } = input;
-  const sippPot = calculateSippPotAtDate({ settings, rowDate, drawDate });
-  const potAtDraw = calculateSippPotAtDate({
+  const projection = calculatePotProjectionAtDate({
     settings,
-    rowDate: drawDate,
+    rowDate,
     drawDate,
+    endDate,
+    showPot: settings.showSipp,
+    currentPot: settings.sippCurrentPot,
+    monthlyContribution: settings.sippMonthlyContribution,
+    lumpSums: settings.sippLumpSums,
+    applyRealInterest: settings.sippApplyRealInterest,
+    realInterestPercent: settings.sippRealInterestPercent,
+    withdrawalStrategy: settings.sippWithdrawalStrategy,
+    withdrawalPercent: settings.sippWithdrawalPercent,
+    withdrawalTargetAge: settings.sippWithdrawalTargetAge,
+    contributionMultiplier: getSippContributionMultiplier(settings.sippTaxReliefRate),
   });
-  const monthlySippPension =
-    rowDate >= drawDate
-      ? calculateMonthlySippPension({
-          potAtDraw,
-          drawDate,
-          endDate,
-          strategy: settings.sippWithdrawalStrategy,
-          withdrawalPercent: settings.sippWithdrawalPercent,
-        })
-      : 0;
 
   return {
-    sippPot,
-    monthlySippPension,
+    sippPot: projection.pot,
+    monthlySippPension: projection.monthlyWithdrawal,
   };
 }
 
@@ -2489,6 +2508,7 @@ export function calculateIsaPotAtDate(input: {
   settings: PensionSettings;
   rowDate: string;
   drawDate: string;
+  endDate?: string;
 }) {
   const { settings, rowDate, drawDate } = input;
 
@@ -2496,48 +2516,12 @@ export function calculateIsaPotAtDate(input: {
     return 0;
   }
 
-  if (rowDate < settings.startDate) {
-    return 0;
-  }
-
-  const monthlyInterestRate = settings.isaApplyRealInterest
-    ? (1 + getModelledAnnualGrowthRate(settings, settings.isaRealInterestPercent / 100)) **
-        (1 / 12) -
-      1
-    : 0;
-  const contributionStopDate = minIsoDate(drawDate, rowDate);
-  const contributionMonthCount =
-    calculateWholeMonthDifference(settings.startDate, contributionStopDate) + 1;
-  const projectionMonthCount = calculateWholeMonthDifference(
-    settings.startDate,
-    contributionStopDate,
-  );
-  let pot = settings.isaCurrentPot;
-  let previousProjectionMonthDate: string | undefined;
-
-  for (let monthIndex = 0; monthIndex <= projectionMonthCount; monthIndex += 1) {
-    const projectionMonthDate = addMonths(settings.startDate, monthIndex);
-
-    if (monthIndex > 0) {
-      pot *= 1 + monthlyInterestRate;
-    }
-
-    if (monthIndex < contributionMonthCount) {
-      pot +=
-        settings.isaMonthlyContribution *
-        getPartialRetirementContributionMultiplier(settings, projectionMonthDate);
-    }
-
-    pot += calculateScheduledIsaLumpSums({
-      lumpSums: settings.isaLumpSums,
-      previousRowDate: previousProjectionMonthDate,
-      rowDate: projectionMonthDate,
-    });
-
-    previousProjectionMonthDate = projectionMonthDate;
-  }
-
-  return pot;
+  return calculateIsaProjectionRow({
+    settings,
+    rowDate,
+    drawDate,
+    endDate: input.endDate ?? getLifeExpectancyDate(settings.dateOfBirth, settings.lifeExpectancy),
+  }).isaPot;
 }
 
 function calculateIsaProjectionRow(input: {
@@ -2547,22 +2531,138 @@ function calculateIsaProjectionRow(input: {
   endDate: string;
 }) {
   const { settings, rowDate, drawDate, endDate } = input;
-  const isaPot = calculateIsaPotAtDate({ settings, rowDate, drawDate });
-  const potAtDraw = calculateIsaPotAtDate({ settings, rowDate: drawDate, drawDate });
-  const monthlyIsaPension =
-    rowDate >= drawDate
-      ? calculateMonthlyIsaPension({
-          potAtDraw,
-          drawDate,
-          endDate,
-          strategy: settings.isaWithdrawalStrategy,
-          withdrawalPercent: settings.isaWithdrawalPercent,
-        })
-      : 0;
+  const projection = calculatePotProjectionAtDate({
+    settings,
+    rowDate,
+    drawDate,
+    endDate,
+    showPot: settings.showIsa,
+    currentPot: settings.isaCurrentPot,
+    monthlyContribution: settings.isaMonthlyContribution,
+    lumpSums: settings.isaLumpSums,
+    applyRealInterest: settings.isaApplyRealInterest,
+    realInterestPercent: settings.isaRealInterestPercent,
+    withdrawalStrategy: settings.isaWithdrawalStrategy,
+    withdrawalPercent: settings.isaWithdrawalPercent,
+    withdrawalTargetAge: settings.isaWithdrawalTargetAge,
+    contributionMultiplier: 1,
+  });
 
   return {
-    isaPot,
-    monthlyIsaPension,
+    isaPot: projection.pot,
+    monthlyIsaPension: projection.monthlyWithdrawal,
+  };
+}
+
+function calculatePotProjectionAtDate(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  drawDate: string;
+  endDate: string;
+  showPot: boolean;
+  currentPot: number;
+  monthlyContribution: number;
+  lumpSums: AddedPensionLumpSum[];
+  applyRealInterest: boolean;
+  realInterestPercent: number;
+  withdrawalStrategy: PensionSettings["sippWithdrawalStrategy"];
+  withdrawalPercent: number;
+  withdrawalTargetAge: number;
+  contributionMultiplier: number;
+}) {
+  const {
+    settings,
+    rowDate,
+    drawDate,
+    endDate,
+    showPot,
+    currentPot,
+    monthlyContribution,
+    lumpSums,
+    applyRealInterest,
+    realInterestPercent,
+    withdrawalStrategy,
+    withdrawalPercent,
+    withdrawalTargetAge,
+    contributionMultiplier,
+  } = input;
+
+  if (!showPot || rowDate < settings.startDate) {
+    return {
+      pot: 0,
+      monthlyWithdrawal: 0,
+    };
+  }
+
+  const monthlyInterestRate = applyRealInterest
+    ? (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) ** (1 / 12) -
+      1
+    : 0;
+  const projectionMonthCount = calculateWholeMonthDifference(
+    settings.startDate,
+    rowDate,
+  );
+  const withdrawalEndDate =
+    withdrawalStrategy === "use_by_age"
+      ? addYears(settings.dateOfBirth, withdrawalTargetAge)
+      : endDate;
+  const contributionStopDate = getPotContributionStopDate(settings, drawDate);
+  let pot = currentPot;
+  let monthlyWithdrawal = 0;
+  let levelUseByAgeMonthlyWithdrawal: number | undefined;
+  let previousProjectionMonthDate: string | undefined;
+
+  for (let monthIndex = 0; monthIndex <= projectionMonthCount; monthIndex += 1) {
+    const projectionMonthDate = addMonths(settings.startDate, monthIndex);
+
+    if (monthIndex > 0) {
+      pot *= 1 + monthlyInterestRate;
+    }
+
+    if (projectionMonthDate < contributionStopDate) {
+      pot +=
+        monthlyContribution *
+        contributionMultiplier *
+        getPartialRetirementContributionMultiplier(settings, projectionMonthDate);
+    }
+    pot += calculateScheduledPotLumpSums({
+      lumpSums,
+      previousRowDate: previousProjectionMonthDate,
+      rowDate: projectionMonthDate,
+      contributionMultiplier,
+      latestPaymentDateExclusive: contributionStopDate,
+    });
+
+    if (projectionMonthDate >= drawDate) {
+      if (withdrawalStrategy === "use_by_age") {
+        levelUseByAgeMonthlyWithdrawal ??= calculateLevelMonthlyWithdrawalFromPot({
+          pot,
+          rowDate: projectionMonthDate,
+          endDate: withdrawalEndDate,
+          monthlyInterestRate,
+        });
+        monthlyWithdrawal = Math.min(pot, levelUseByAgeMonthlyWithdrawal);
+      } else {
+        monthlyWithdrawal = calculateMonthlyWithdrawalFromPot({
+          pot,
+          rowDate: projectionMonthDate,
+          drawDate,
+          endDate: withdrawalEndDate,
+          strategy: withdrawalStrategy,
+          withdrawalPercent,
+        });
+      }
+    } else {
+      monthlyWithdrawal = 0;
+    }
+    pot = Math.max(0, pot - monthlyWithdrawal);
+
+    previousProjectionMonthDate = projectionMonthDate;
+  }
+
+  return {
+    pot,
+    monthlyWithdrawal,
   };
 }
 
@@ -2572,14 +2672,21 @@ export function calculateMonthlyIsaPension(input: {
   endDate: string;
   strategy: PensionSettings["isaWithdrawalStrategy"];
   withdrawalPercent: number;
+  targetDate?: string;
 }) {
-  const { potAtDraw, drawDate, endDate, strategy, withdrawalPercent } = input;
+  const { potAtDraw, drawDate, endDate, strategy, withdrawalPercent, targetDate } = input;
 
   if (strategy === "percentage") {
     return (potAtDraw * (withdrawalPercent / 100)) / 12;
   }
 
-  const drawdownMonths = Math.max(1, calculateWholeMonthDifference(drawDate, endDate));
+  const drawdownMonths = Math.max(
+    1,
+    calculateWholeMonthDifference(
+      drawDate,
+      strategy === "use_by_age" ? targetDate ?? endDate : endDate,
+    ),
+  );
   return potAtDraw / drawdownMonths;
 }
 
@@ -2589,15 +2696,75 @@ export function calculateMonthlySippPension(input: {
   endDate: string;
   strategy: PensionSettings["sippWithdrawalStrategy"];
   withdrawalPercent: number;
+  targetDate?: string;
 }) {
-  const { potAtDraw, drawDate, endDate, strategy, withdrawalPercent } = input;
+  const { potAtDraw, drawDate, endDate, strategy, withdrawalPercent, targetDate } = input;
 
   if (strategy === "percentage") {
     return (potAtDraw * (withdrawalPercent / 100)) / 12;
   }
 
-  const drawdownMonths = Math.max(1, calculateWholeMonthDifference(drawDate, endDate));
+  const drawdownMonths = Math.max(
+    1,
+    calculateWholeMonthDifference(
+      drawDate,
+      strategy === "use_by_age" ? targetDate ?? endDate : endDate,
+    ),
+  );
   return potAtDraw / drawdownMonths;
+}
+
+function calculateMonthlyWithdrawalFromPot(input: {
+  pot: number;
+  rowDate: string;
+  drawDate: string;
+  endDate: string;
+  strategy: PensionSettings["sippWithdrawalStrategy"];
+  withdrawalPercent: number;
+}) {
+  const { pot, rowDate, drawDate, endDate, strategy, withdrawalPercent } = input;
+
+  if (pot <= 0 || rowDate < drawDate) {
+    return 0;
+  }
+
+  if (strategy === "percentage") {
+    return Math.min(pot, (pot * (withdrawalPercent / 100)) / 12);
+  }
+
+  const drawdownMonthsRemaining = Math.max(
+    1,
+    calculateWholeMonthDifference(rowDate, endDate),
+  );
+
+  return Math.min(pot, pot / drawdownMonthsRemaining);
+}
+
+function calculateLevelMonthlyWithdrawalFromPot(input: {
+  pot: number;
+  rowDate: string;
+  endDate: string;
+  monthlyInterestRate: number;
+}) {
+  const { pot, rowDate, endDate, monthlyInterestRate } = input;
+  const drawdownMonthsRemaining = Math.max(
+    1,
+    calculateWholeMonthDifference(rowDate, endDate),
+  );
+
+  if (pot <= 0) {
+    return 0;
+  }
+
+  if (Math.abs(monthlyInterestRate) < 0.0000000001) {
+    return pot / drawdownMonthsRemaining;
+  }
+
+  const discountFactor = 1 / (1 + monthlyInterestRate);
+  const annuityDueFactor =
+    (1 - discountFactor ** drawdownMonthsRemaining) / (1 - discountFactor);
+
+  return annuityDueFactor > 0 ? pot / annuityDueFactor : pot / drawdownMonthsRemaining;
 }
 
 function calculateTotalSippContributionsAfterTaxRelief(
@@ -2608,17 +2775,21 @@ function calculateTotalSippContributionsAfterTaxRelief(
     return 0;
   }
 
-  if (drawDate < settings.startDate) {
+  const contributionStopDate = getPotContributionStopDate(settings, drawDate);
+
+  if (contributionStopDate <= settings.startDate) {
     return 0;
   }
 
   const contributionMultiplier = getSippContributionMultiplier(settings.sippTaxReliefRate);
-  const contributionMonthCount =
-    calculateWholeMonthDifference(settings.startDate, drawDate) + 1;
 
   let regularContributions = 0;
 
-  for (let monthIndex = 0; monthIndex < contributionMonthCount; monthIndex += 1) {
+  for (
+    let monthIndex = 0;
+    addMonths(settings.startDate, monthIndex) < contributionStopDate;
+    monthIndex += 1
+  ) {
     const contributionDate = addMonths(settings.startDate, monthIndex);
     regularContributions +=
       settings.sippMonthlyContribution *
@@ -2627,7 +2798,7 @@ function calculateTotalSippContributionsAfterTaxRelief(
   }
 
   return (
-    calculateSippLumpSumsThroughDate(settings.sippLumpSums, drawDate) *
+    calculateSippLumpSumsBeforeDate(settings.sippLumpSums, contributionStopDate) *
       contributionMultiplier +
     regularContributions
   );
@@ -2638,23 +2809,33 @@ function calculateTotalIsaContributions(settings: PensionSettings, drawDate: str
     return 0;
   }
 
-  if (drawDate < settings.startDate) {
+  const contributionStopDate = getPotContributionStopDate(settings, drawDate);
+
+  if (contributionStopDate <= settings.startDate) {
     return 0;
   }
 
-  const contributionMonthCount =
-    calculateWholeMonthDifference(settings.startDate, drawDate) + 1;
-
   let regularContributions = 0;
 
-  for (let monthIndex = 0; monthIndex < contributionMonthCount; monthIndex += 1) {
+  for (
+    let monthIndex = 0;
+    addMonths(settings.startDate, monthIndex) < contributionStopDate;
+    monthIndex += 1
+  ) {
     const contributionDate = addMonths(settings.startDate, monthIndex);
     regularContributions +=
       settings.isaMonthlyContribution *
       getPartialRetirementContributionMultiplier(settings, contributionDate);
   }
 
-  return calculateIsaLumpSumsThroughDate(settings.isaLumpSums, drawDate) + regularContributions;
+  return (
+    calculateIsaLumpSumsBeforeDate(settings.isaLumpSums, contributionStopDate) +
+    regularContributions
+  );
+}
+
+function getPotContributionStopDate(settings: PensionSettings, drawDate: string) {
+  return minIsoDate(drawDate, addYears(settings.dateOfBirth, settings.requirementAge));
 }
 
 function getSippContributionMultiplier(
@@ -2671,65 +2852,54 @@ function getSippContributionMultiplier(
   return 1;
 }
 
-function calculateScheduledSippLumpSums(input: {
+function calculateScheduledPotLumpSums(input: {
   lumpSums: AddedPensionLumpSum[];
   previousRowDate?: string;
   rowDate: string;
   contributionMultiplier: number;
+  latestPaymentDateExclusive: string;
 }) {
-  const { lumpSums, previousRowDate, rowDate, contributionMultiplier } = input;
+  const {
+    lumpSums,
+    previousRowDate,
+    rowDate,
+    contributionMultiplier,
+    latestPaymentDateExclusive,
+  } = input;
 
   return lumpSums.reduce((total, lumpSum) => {
     const matchingPaymentDates = getScheduledPaymentDatesThroughRow(
       lumpSum,
       previousRowDate,
       rowDate,
-    );
+    ).filter((paymentDate) => paymentDate < latestPaymentDateExclusive);
 
     return total + matchingPaymentDates.length * lumpSum.amount * contributionMultiplier;
   }, 0);
 }
 
-function calculateScheduledIsaLumpSums(input: {
-  lumpSums: AddedPensionLumpSum[];
-  previousRowDate?: string;
-  rowDate: string;
-}) {
-  const { lumpSums, previousRowDate, rowDate } = input;
-
-  return lumpSums.reduce((total, lumpSum) => {
-    const matchingPaymentDates = getScheduledPaymentDatesThroughRow(
-      lumpSum,
-      previousRowDate,
-      rowDate,
-    );
-
-    return total + matchingPaymentDates.length * lumpSum.amount;
-  }, 0);
-}
-
-function calculateSippLumpSumsThroughDate(
+function calculateSippLumpSumsBeforeDate(
   lumpSums: AddedPensionLumpSum[],
   rowDate: string,
 ) {
   return lumpSums.reduce(
     (total, lumpSum) =>
       total +
-      getScheduledPaymentDates(lumpSum).filter((paymentDate) => paymentDate <= rowDate)
+      getScheduledPaymentDates(lumpSum).filter((paymentDate) => paymentDate < rowDate)
         .length *
         lumpSum.amount,
     0,
   );
 }
 
-function calculateIsaLumpSumsThroughDate(
+function calculateIsaLumpSumsBeforeDate(
   lumpSums: AddedPensionLumpSum[],
   rowDate: string,
 ) {
   return lumpSums.reduce(
     (total, lumpSum) =>
       total +
-      getScheduledPaymentDates(lumpSum).filter((paymentDate) => paymentDate <= rowDate)
+      getScheduledPaymentDates(lumpSum).filter((paymentDate) => paymentDate < rowDate)
         .length *
         lumpSum.amount,
     0,

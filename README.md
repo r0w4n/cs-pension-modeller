@@ -119,6 +119,12 @@ Run the test suite:
 npm run test
 ```
 
+Run the full local quality gate:
+
+```bash
+npm run check
+```
+
 Run tests with coverage:
 
 ```bash

@@ -1,4 +1,4 @@
-import { CURRENT_MINIMUM_SIPP_ACCESS_AGE, type PensionSettings } from "./settings";
+import type { PensionSettings } from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
 
 export type DateField = {
@@ -19,7 +19,7 @@ export type DateField = {
 export type RangeField = {
   id:
     | "lifeExpectancy"
-    | "targetRetirementAge"
+    | "requirementAge"
     | "inflationRateAnnual"
     | "statePensionCpiPercent"
     | "statePensionWageGrowthPercent"
@@ -39,10 +39,12 @@ export type RangeField = {
     | "sippMonthlyContribution"
     | "sippRealInterestPercent"
     | "sippWithdrawalPercent"
+    | "sippWithdrawalTargetAge"
     | "isaDrawAge"
     | "isaMonthlyContribution"
     | "isaRealInterestPercent"
     | "isaWithdrawalPercent"
+    | "isaWithdrawalTargetAge"
     | "taxBasicRatePercent"
     | "taxHigherRatePercent"
     | "taxAdditionalRatePercent"
@@ -159,8 +161,6 @@ export const fieldGroups: FieldGroup[] = [
         id: "dateOfBirth",
         label: "Your Date of Birth",
         type: "date",
-        infoUrl: knowledgeLinks.statePensionAge,
-        infoLinkText: "Check State Pension age",
       },
       {
         id: "lifeExpectancy",
@@ -174,13 +174,15 @@ export const fieldGroups: FieldGroup[] = [
         infoLinkText: "Estimate life expectancy",
       },
       {
-        id: "targetRetirementAge",
-        label: "Target retirement age",
+        id: "requirementAge",
+        label: "Requirement age",
         type: "range",
-        min: 40,
+        min: 0,
         max: 70,
         step: 1,
         inputStep: 0.1,
+        description:
+          "The age from which you want the modeller to assess whether your retirement income target is being met.",
       },
       {
         id: "desiredRetirementIncome",
@@ -303,7 +305,7 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "statePensionDrawDate",
-        label: "State Pension draw date",
+        label: "State Pension start age",
         type: "date",
         infoUrl: knowledgeLinks.statePensionDeferral,
         infoLinkText: "Defer State Pension",
@@ -353,7 +355,7 @@ export const fieldGroups: FieldGroup[] = [
         id: "alphaPensionLeaveAge",
         label: "Age You Leave Alpha Scheme",
         type: "range",
-        min: 40,
+        min: 0,
         max: 70,
         step: 1,
         inputStep: 0.1,
@@ -537,7 +539,7 @@ export const fieldGroups: FieldGroup[] = [
         id: "sippDrawAge",
         label: "SIPP draw start age",
         type: "range",
-        min: CURRENT_MINIMUM_SIPP_ACCESS_AGE,
+        min: 55,
         max: 70,
         step: 1,
         inputStep: 0.1,
@@ -576,6 +578,7 @@ export const fieldGroups: FieldGroup[] = [
         options: [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
+          { value: "use_by_age", label: "Use by age" },
         ],
       },
       {
@@ -585,6 +588,15 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 15,
         step: 0.1,
+      },
+      {
+        id: "sippWithdrawalTargetAge",
+        label: "SIPP use-by age",
+        type: "range",
+        min: 55,
+        max: 100,
+        step: 1,
+        inputStep: 0.1,
       },
     ],
   },
@@ -617,7 +629,7 @@ export const fieldGroups: FieldGroup[] = [
         id: "isaDrawAge",
         label: "ISA draw start age",
         type: "range",
-        min: 55,
+        min: 0,
         max: 70,
         step: 1,
         inputStep: 0.1,
@@ -644,6 +656,7 @@ export const fieldGroups: FieldGroup[] = [
         options: [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
+          { value: "use_by_age", label: "Use by age" },
         ],
       },
       {
@@ -653,6 +666,15 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 15,
         step: 0.1,
+      },
+      {
+        id: "isaWithdrawalTargetAge",
+        label: "ISA use-by age",
+        type: "range",
+        min: 0,
+        max: 100,
+        step: 1,
+        inputStep: 0.1,
       },
     ],
   },

@@ -432,6 +432,274 @@ h3 {
   margin-bottom: 0;
 }
 
+.bridge-chart-panel {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: clamp(1rem, 2.4vw, 1.4rem);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.bridge-chart-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.bridge-mode-button {
+  justify-self: start;
+}
+
+.bridge-chart-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bridge-chart-shell {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.bridge-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.bridge-build-up-band {
+  fill: rgba(199, 139, 29, 0.12);
+}
+
+.bridge-gridline line {
+  stroke: rgba(68, 85, 107, 0.15);
+  stroke-dasharray: 4 5;
+}
+
+.bridge-gridline text,
+.bridge-x-tick text,
+.bridge-axis-title {
+  fill: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.bridge-axis {
+  stroke: rgba(18, 32, 51, 0.2);
+}
+
+.bridge-shortfall-fill {
+  fill: rgba(191, 44, 44, 0.16);
+  stroke: rgba(191, 44, 44, 0.68);
+  stroke-width: 1.5;
+}
+
+.bridge-target-line {
+  fill: none;
+  stroke: #0b4dc2;
+  stroke-width: 2.5;
+  stroke-dasharray: 8 7;
+}
+
+.bridge-target-line-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  cursor: ns-resize;
+  outline: none;
+}
+
+.bridge-target-line-hitbox:focus-visible {
+  stroke: rgba(11, 77, 194, 0.18);
+  outline: none;
+}
+
+.bridge-milestone line {
+  stroke-width: 1.75;
+  stroke-dasharray: 4 4;
+}
+
+.bridge-milestone--editable {
+  cursor: ew-resize;
+  outline: none;
+}
+
+.bridge-milestone:focus-visible line,
+.bridge-milestone:focus-visible circle {
+  stroke: #122033;
+  stroke-width: 2.5;
+}
+
+.bridge-milestone:focus-visible {
+  outline: none;
+}
+
+.bridge-milestone-label-bg {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.18));
+}
+
+.bridge-milestone-label-dot {
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 1;
+}
+
+.bridge-milestone-label {
+  fill: #122033;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.bridge-control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.bridge-control-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.85rem;
+  background: #fbfdfc;
+}
+
+.bridge-control-card {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bridge-control-card > span {
+  color: var(--text-muted);
+  font-size: var(--font-size-label);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bridge-control-card strong {
+  color: var(--control-colour);
+}
+
+.bridge-control-card small {
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  font-weight: 600;
+}
+
+.bridge-control-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.bridge-control-row input {
+  min-width: 0;
+  accent-color: var(--control-colour);
+}
+
+.bridge-control-row button {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(18, 32, 51, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--control-colour);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bridge-control-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bridge-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  font-weight: 700;
+}
+
+.bridge-legend--overlay {
+  margin-top: 0;
+  width: 100%;
+  padding: 0 0.1rem 0 0.1rem;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bridge-legend > span,
+.bridge-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bridge-legend-toggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.bridge-legend-toggle[aria-pressed="false"] {
+  opacity: 0.48;
+}
+
+.bridge-legend-toggle:focus-visible {
+  outline: 2px solid rgba(17, 100, 102, 0.4);
+  outline-offset: 3px;
+}
+
+.bridge-legend > span > span,
+.bridge-legend-toggle > span {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+}
+
+.bridge-shortfall-key {
+  border-radius: 0.15rem;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(191, 44, 44, 0.8) 0 2px,
+      rgba(191, 44, 44, 0.15) 2px 5px
+    );
+}
+
+.bridge-build-up-key {
+  border-radius: 0.15rem;
+  background: rgba(199, 139, 29, 0.45);
+}
+
 .saved-feedback {
   position: fixed;
   left: 50%;
@@ -898,8 +1166,8 @@ h3 {
 }
 
 .summary-toggle-button--active {
-  background: var(--text);
-  color: var(--surface);
+  background: var(--accent-strong);
+  color: #ffffff;
 }
 
 .summary-total {
@@ -1158,6 +1426,15 @@ h3 {
   .mode-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .bridge-control-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bridge-milestone-controls {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 960px) {
@@ -1175,6 +1452,27 @@ h3 {
   .journey-step-button {
     grid-template-columns: auto minmax(0, 1fr);
     border-radius: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .bridge-chart-heading {
+    justify-content: stretch;
+  }
+
+  .bridge-mode-button {
+    flex: 1 1 10rem;
+  }
+
+  .bridge-legend--overlay {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .bridge-control-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1201,6 +1499,12 @@ h3 {
 }
 
 @media (max-width: 480px) {
+  .bridge-milestone rect,
+  .bridge-milestone .bridge-milestone-label-dot,
+  .bridge-milestone text:not(.bridge-handle-icon) {
+    display: none;
+  }
+
   .field-card--mobile-hidden {
     display: none;
   }

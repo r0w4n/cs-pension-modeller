@@ -38,6 +38,7 @@ import {
   prepareBridgeProjectionSettings,
 } from "./projection";
 import {
+  calculateNormalPensionAge,
   defaultSettings,
   resolveAlphaAbsDate,
   type PensionSettings,
@@ -99,9 +100,9 @@ describe("projection calculations", () => {
       accruedPensionAtLastAbs: 0,
       pensionableEarnings: 12000,
       alphaAddedPensionMonthly: 128.2,
-      alphaPensionLeaveAge: 56,
-      alphaPensionDrawAge: 56,
-      lifeExpectancy: 57,
+      alphaPensionLeaveAge: 57,
+      alphaPensionDrawAge: 57,
+      lifeExpectancy: 58,
       showStatePension: false,
       showSipp: false,
       showIsa: false,
@@ -590,6 +591,17 @@ describe("projection calculations", () => {
     );
   });
 
+  it("interpolates early retirement reduction factors for decimal normal pension ages", () => {
+    expect(getEarlyRetirementReductionFactor(66 + 1 / 12, 60)).toBeCloseTo(
+      0.729 + (0.687 - 0.729) / 12,
+      6,
+    );
+  });
+
+  it("does not reduce pension when a decimal draw age is at or after decimal NPA", () => {
+    expect(getEarlyRetirementReductionFactor(66 + 1 / 12, 66.1)).toBe(1);
+  });
+
   it("applies early retirement reduction when draw date is on or before NPA", () => {
     expect(
       calculateAnnualAlphaPensionIncludingReduction(
@@ -744,6 +756,30 @@ describe("projection calculations", () => {
     });
   });
 
+  it("keeps transitional normal pension ages at month precision", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2025-04-01",
+      dateOfBirth: "1960-04-06",
+      lifeExpectancy: 90,
+      alphaPensionAbsDate: "2025",
+      alphaPensionDrawAge: 60,
+      alphaPensionLeaveAge: 60,
+      normalPensionAge: calculateNormalPensionAge("1960-04-06"),
+      statePensionDrawDate: "2026-05-06",
+      showSipp: false,
+      showIsa: false,
+    };
+
+    const derivedInputs = deriveProjectionInputs(settings);
+
+    expect(derivedInputs?.npaDate).toBe("2026-05-06");
+    expect(derivedInputs?.reductionFactor).toBeCloseTo(
+      0.729 + (0.687 - 0.729) / 12,
+      6,
+    );
+  });
+
   it("refuses to derive projection inputs when settings fail validation", () => {
     expect(
       deriveProjectionInputs({
@@ -859,9 +895,9 @@ describe("projection calculations", () => {
       calculateSippPotAtDate({
         settings,
         rowDate: "2026-03-01",
-        drawDate: "2026-01-01",
+        drawDate: "2026-04-01",
       }),
-    ).toBe(11375);
+    ).toBeCloseTo(11625, 6);
   });
 
   it("converts SIPP and ISA nominal returns to real returns in real-terms mode", () => {
@@ -962,6 +998,72 @@ describe("projection calculations", () => {
     ).toBe(1150);
   });
 
+  it("stops SIPP and ISA contributions at the earlier of retirement age and draw age", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2026-01-01",
+      dateOfBirth: "1986-01-01",
+      requirementAge: 41,
+      sippCurrentPot: 0,
+      sippMonthlyContribution: 100,
+      sippLumpSums: [
+        {
+          id: "sipp-before-retirement",
+          amount: 1000,
+          startDate: "2026-06-01",
+          cadence: "once",
+          endDate: "2026-06-01",
+        },
+        {
+          id: "sipp-after-retirement",
+          amount: 1000,
+          startDate: "2027-06-01",
+          cadence: "once",
+          endDate: "2027-06-01",
+        },
+      ],
+      sippDrawAge: 45,
+      sippTaxReliefRate: "20",
+      sippApplyRealInterest: false,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 100,
+      isaLumpSums: [
+        {
+          id: "isa-before-retirement",
+          amount: 1000,
+          startDate: "2026-06-01",
+          cadence: "once",
+          endDate: "2026-06-01",
+        },
+        {
+          id: "isa-after-retirement",
+          amount: 1000,
+          startDate: "2027-06-01",
+          cadence: "once",
+          endDate: "2027-06-01",
+        },
+      ],
+      isaDrawAge: 45,
+      isaApplyRealInterest: false,
+    };
+
+    expect(
+      calculateSippPotAtDate({
+        settings,
+        rowDate: "2030-01-01",
+        drawDate: "2031-01-01",
+      }),
+    ).toBe(2750);
+    expect(
+      calculateIsaPotAtDate({
+        settings,
+        rowDate: "2030-01-01",
+        drawDate: "2031-01-01",
+      }),
+    ).toBe(2200);
+  });
+
   it("projects yearly SIPP lump sums on their scheduled dates", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
@@ -1026,9 +1128,9 @@ describe("projection calculations", () => {
       calculateSippPotAtDate({
         settings,
         rowDate: "2026-03-01",
-        drawDate: "2026-01-01",
+        drawDate: "2026-04-01",
       }),
-    ).toBeCloseTo(11833.333333, 6);
+    ).toBeCloseTo(12166.666667, 6);
   });
 
   it("can calculate SIPP income by zero-at-death or annual percentage strategy", () => {
@@ -1050,6 +1152,178 @@ describe("projection calculations", () => {
         withdrawalPercent: 4,
       }),
     ).toBeCloseTo(400, 6);
+  });
+
+  it("can deplete SIPP and ISA pots by a selected use-by age", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2025-12-01",
+      dateOfBirth: "1986-01-01",
+      lifeExpectancy: 75,
+      requirementAge: 40,
+      alphaPensionDrawAge: 40,
+      alphaPensionLeaveAge: 40,
+      showStatePension: false,
+      sippCurrentPot: 60000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 40,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 45,
+      isaCurrentPot: 30000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 40,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 45,
+    };
+
+    const rows = createProjectionTable(settings);
+
+    expect(findRowByDate(rows, "2026-01-01")?.monthlySippPension).toBeCloseTo(
+      1000,
+      6,
+    );
+    expect(findRowByDate(rows, "2026-01-01")?.monthlyIsaPension).toBeCloseTo(
+      500,
+      6,
+    );
+    expect(findRowByDate(rows, "2031-01-01")?.sippPot).toBeCloseTo(0, 6);
+    expect(findRowByDate(rows, "2031-01-01")?.isaPot).toBeCloseTo(0, 6);
+  });
+
+  it("keeps use-by-age SIPP and ISA withdrawals level while applying drawdown growth", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2025-12-01",
+      dateOfBirth: "1986-01-01",
+      lifeExpectancy: 75,
+      requirementAge: 40,
+      alphaPensionDrawAge: 40,
+      alphaPensionLeaveAge: 40,
+      showStatePension: false,
+      sippCurrentPot: 60000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 40,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 45,
+      sippApplyRealInterest: true,
+      sippRealInterestPercent: 6,
+      isaCurrentPot: 30000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 40,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 45,
+      isaApplyRealInterest: true,
+      isaRealInterestPercent: 6,
+    };
+
+    const rows = createProjectionTable(settings);
+    const firstDrawRow = findRowByDate(rows, "2026-01-01");
+    const laterDrawRow = findRowByDate(rows, "2026-12-01");
+
+    expect(firstDrawRow?.monthlySippPension).toBeGreaterThan(1000);
+    expect(laterDrawRow?.monthlySippPension).toBeCloseTo(
+      firstDrawRow?.monthlySippPension ?? 0,
+      6,
+    );
+    expect(laterDrawRow?.monthlyIsaPension).toBeCloseTo(
+      firstDrawRow?.monthlyIsaPension ?? 0,
+      6,
+    );
+    expect(findRowByDate(rows, "2031-01-01")?.sippPot).toBeCloseTo(0, 6);
+    expect(findRowByDate(rows, "2031-01-01")?.isaPot).toBeCloseTo(0, 6);
+  });
+
+  it("does not add SIPP or ISA contributions on the draw date", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2047-05-15",
+      dateOfBirth: "1987-06-15",
+      lifeExpectancy: 61,
+      requirementAge: 60,
+      alphaPensionDrawAge: 60,
+      alphaPensionLeaveAge: 60,
+      showStatePension: false,
+      sippCurrentPot: 0,
+      sippMonthlyContribution: 100,
+      sippTaxReliefRate: "none",
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "zero_at_death",
+      sippLumpSums: [
+        {
+          id: "sipp-draw-date-lump",
+          amount: 1000,
+          startDate: "2047-06-15",
+          cadence: "once",
+          endDate: "2047-06-15",
+        },
+      ],
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 100,
+      isaDrawAge: 60,
+      isaWithdrawalStrategy: "zero_at_death",
+      isaLumpSums: [
+        {
+          id: "isa-draw-date-lump",
+          amount: 1000,
+          startDate: "2047-06-15",
+          cadence: "once",
+          endDate: "2047-06-15",
+        },
+      ],
+    };
+
+    const rows = createProjectionTable(settings);
+
+    expect(findRowByDate(rows, "2047-06-15")?.monthlySippPension).toBeCloseTo(
+      100 / 12,
+      6,
+    );
+    expect(findRowByDate(rows, "2047-06-15")?.monthlyIsaPension).toBeCloseTo(
+      100 / 12,
+      6,
+    );
+  });
+
+  it("continues applying SIPP and ISA growth during drawdown", () => {
+    const settingsWithoutGrowth: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2025-12-01",
+      dateOfBirth: "1986-01-01",
+      lifeExpectancy: 75,
+      requirementAge: 40,
+      alphaPensionDrawAge: 40,
+      alphaPensionLeaveAge: 40,
+      showStatePension: false,
+      sippCurrentPot: 60000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 40,
+      sippWithdrawalStrategy: "zero_at_death",
+      isaCurrentPot: 30000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 40,
+      isaWithdrawalStrategy: "zero_at_death",
+    };
+    const settingsWithGrowth: PensionSettings = {
+      ...settingsWithoutGrowth,
+      sippApplyRealInterest: true,
+      sippRealInterestPercent: 6,
+      isaApplyRealInterest: true,
+      isaRealInterestPercent: 6,
+    };
+
+    const rowsWithoutGrowth = createProjectionTable(settingsWithoutGrowth);
+    const rowsWithGrowth = createProjectionTable(settingsWithGrowth);
+
+    expect(findRowByDate(rowsWithGrowth, "2026-06-01")?.sippPot).toBeGreaterThan(
+      findRowByDate(rowsWithoutGrowth, "2026-06-01")?.sippPot ?? 0,
+    );
+    expect(findRowByDate(rowsWithGrowth, "2026-06-01")?.isaPot).toBeGreaterThan(
+      findRowByDate(rowsWithoutGrowth, "2026-06-01")?.isaPot ?? 0,
+    );
   });
 
   it("uses independent SIPP and ISA draw dates for income start", () => {
@@ -1323,8 +1597,8 @@ describe("projection calculations", () => {
       accruedPensionAtLastAbs: 8250,
       pensionableEarnings: 42000,
       alphaAddedPensionMonthly: 0,
-      alphaPensionLeaveAge: 55,
-      alphaPensionDrawAge: 55,
+      alphaPensionLeaveAge: 57,
+      alphaPensionDrawAge: 57,
       lifeExpectancy: 70,
     };
 
@@ -1343,8 +1617,8 @@ describe("projection calculations", () => {
       accruedPensionAtLastAbs: 8250,
       pensionableEarnings: 42000,
       alphaAddedPensionMonthly: 0,
-      alphaPensionLeaveAge: 55,
-      alphaPensionDrawAge: 55,
+      alphaPensionLeaveAge: 57,
+      alphaPensionDrawAge: 57,
       lifeExpectancy: 70,
     };
 
@@ -1907,7 +2181,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1980-04-01",
-      targetRetirementAge: 50,
+      requirementAge: 50,
       lifeExpectancy: 58,
       desiredRetirementIncome: 12000,
       showAlpha: false,
@@ -1941,7 +2215,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1980-04-01",
-      targetRetirementAge: 50,
+      requirementAge: 50,
       lifeExpectancy: 60,
       desiredRetirementIncome: 12000,
       showAlpha: false,
@@ -1977,7 +2251,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1980-04-01",
-      targetRetirementAge: 55,
+      requirementAge: 55,
       alphaPensionDrawAge: 57,
       lifeExpectancy: 58,
       desiredRetirementIncome: 30000,
@@ -2010,7 +2284,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1968-04-01",
-      targetRetirementAge: 59,
+      requirementAge: 59,
       lifeExpectancy: 62,
       desiredRetirementIncome: 12000,
       showAlpha: false,
@@ -2040,7 +2314,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1980-04-01",
-      targetRetirementAge: 50,
+      requirementAge: 50,
       lifeExpectancy: 68,
       desiredRetirementIncome: 30000,
       showAlpha: true,
@@ -2072,7 +2346,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1980-04-01",
-      targetRetirementAge: 60,
+      requirementAge: 60,
       lifeExpectancy: 61,
       desiredRetirementIncome: 6000,
       showAlpha: false,
@@ -2102,7 +2376,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1960-04-01",
-      targetRetirementAge: 66,
+      requirementAge: 66,
       lifeExpectancy: 68,
       desiredRetirementIncome: 12000,
       showAlpha: false,
@@ -2138,7 +2412,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1960-04-01",
-      targetRetirementAge: 66,
+      requirementAge: 66,
       lifeExpectancy: 68,
       desiredRetirementIncome: 12000,
       showAlpha: false,
@@ -2176,7 +2450,7 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2026-04-01",
       dateOfBirth: "1980-04-01",
-      targetRetirementAge: 55,
+      requirementAge: 55,
       alphaPensionDrawAge: 68,
       lifeExpectancy: 69,
       desiredRetirementIncome: 40000,

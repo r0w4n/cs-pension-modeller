@@ -245,7 +245,7 @@ vi.mock("./projection", async () => {
   };
 });
 
-import App, { APP_MODE_STORAGE_KEY } from "./App";
+import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
   SETTINGS_STORAGE_KEY,
@@ -257,7 +257,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   return {
     dateOfBirth: defaultSettings.dateOfBirth,
     lifeExpectancy: defaultSettings.lifeExpectancy,
-    targetRetirementAge: defaultSettings.targetRetirementAge,
+    requirementAge: defaultSettings.requirementAge,
     showAlpha: defaultSettings.showAlpha,
     projectionBasis: defaultSettings.projectionBasis,
     inflationRateAnnual: defaultSettings.inflationRateAnnual,
@@ -305,6 +305,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippTaxReliefRate: defaultSettings.sippTaxReliefRate,
     sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
     sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
+    sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
     isaCurrentPot: defaultSettings.isaCurrentPot,
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
     isaDrawAge: defaultSettings.isaDrawAge,
@@ -313,6 +314,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
     isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
     isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
+    isaWithdrawalTargetAge: defaultSettings.isaWithdrawalTargetAge,
     taxPersonalAllowance: defaultSettings.taxPersonalAllowance,
     taxPersonalAllowanceTaperThreshold:
       defaultSettings.taxPersonalAllowanceTaperThreshold,
@@ -485,7 +487,7 @@ describe("App settings form", () => {
     ).toHaveValue(55);
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
-        targetRetirementAge: 55,
+        requirementAge: 55,
       }),
     );
   });
@@ -509,6 +511,9 @@ describe("App settings form", () => {
     );
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString(),
+    );
+    expect(screen.getByLabelText("Requirement age")).toHaveValue(
+      defaultSettings.requirementAge.toString(),
     );
     expect(screen.getByLabelText("How should the modeller treat inflation?")).toHaveValue(
       "real",
@@ -644,10 +649,7 @@ describe("App settings form", () => {
       "href",
       "https://commonslibrary.parliament.uk/research-briefings/cbp-7812/",
     );
-    expect(screen.getAllByRole("link", { name: "Check State Pension age" })).toHaveLength(
-      2,
-    );
-    expect(screen.getAllByRole("link", { name: "Check State Pension age" })[0]).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Check State Pension age" })).toHaveAttribute(
       "href",
       "https://www.gov.uk/state-pension-age",
     );
@@ -682,8 +684,44 @@ describe("App settings form", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Reset State Pension draw date to default" }),
+      screen.getByRole("button", { name: "Reset State Pension start age to default" }),
     ).toBeInTheDocument();
+  });
+
+  it("enforces the same minimum Alpha and SIPP access age of 57 for someone born on 10 April 1977", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          dateOfBirth: "1977-04-10",
+          alphaPensionDrawAge: 55,
+          sippDrawAge: 55,
+          statePensionDrawDate: "2044-05-06",
+        }),
+      ),
+    );
+
+    renderAcknowledgedApp();
+
+    expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue("57");
+    expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveAttribute(
+      "min",
+      "57",
+    );
+    expect(
+      screen.getByLabelText("Planned Alpha Pension Draw Age exact value"),
+    ).toHaveAttribute("min", "57");
+    expect(screen.getByLabelText("SIPP draw start age")).toHaveValue("57");
+    expect(screen.getByLabelText("SIPP draw start age")).toHaveAttribute("min", "57");
+    expect(screen.getByLabelText("SIPP draw start age exact value")).toHaveAttribute(
+      "min",
+      "57",
+    );
+    expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(67.25);
+    expect(screen.getByLabelText("State Pension start age")).toHaveAttribute(
+      "min",
+      "67.25",
+    );
   });
 
   it("orders optional section toggles like the assumptions sections", () => {
@@ -949,7 +987,7 @@ describe("App settings form", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-04-10",
-        statePensionDrawDate: "2044-05-06",
+        statePensionDrawDate: "2044-07-10",
       }),
     );
   });
@@ -988,42 +1026,44 @@ describe("App settings form", () => {
     expect(statePensionSlider).toHaveValue(defaultSettings.currentStatePension);
   });
 
-  it("can defer the State Pension draw date and reset it to the DOB default", () => {
+  it("can defer the State Pension start age and reset it to the DOB default", () => {
     renderAcknowledgedApp();
 
-    const statePensionDateInput = screen.getByLabelText("State Pension draw date");
+    const statePensionAgeSlider = screen.getByLabelText("State Pension start age");
+    const statePensionAgeInput = screen.getByLabelText("State Pension start age exact value");
 
-    expect(statePensionDateInput).toHaveValue("2055-06-15");
-    expect(statePensionDateInput).toHaveAttribute("min", "2055-06-15");
+    expect(statePensionAgeSlider).toHaveValue("68");
+    expect(statePensionAgeSlider).toHaveAttribute("min", "68");
+    expect(statePensionAgeInput).toHaveValue(68);
 
-    fireEvent.change(statePensionDateInput, {
-      target: { value: "2056-06-15" },
+    fireEvent.change(statePensionAgeInput, {
+      target: { value: "69" },
     });
-    fireEvent.blur(statePensionDateInput);
+    fireEvent.blur(statePensionAgeInput);
 
-    expect(screen.getByLabelText("State Pension draw date")).toHaveValue("2056-06-15");
+    expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(69);
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expect.objectContaining({
         statePensionDrawDate: "2056-06-15",
       }),
     );
 
-    fireEvent.change(screen.getByLabelText("State Pension draw date"), {
-      target: { value: "2050-06-15" },
+    fireEvent.change(screen.getByLabelText("State Pension start age exact value"), {
+      target: { value: "67" },
     });
-    fireEvent.blur(screen.getByLabelText("State Pension draw date"));
+    fireEvent.blur(screen.getByLabelText("State Pension start age exact value"));
 
-    expect(screen.getByLabelText("State Pension draw date")).toHaveValue("2055-06-15");
+    expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(68);
 
-    fireEvent.change(screen.getByLabelText("State Pension draw date"), {
-      target: { value: "2056-06-15" },
+    fireEvent.change(screen.getByLabelText("State Pension start age exact value"), {
+      target: { value: "69" },
     });
-    fireEvent.blur(screen.getByLabelText("State Pension draw date"));
+    fireEvent.blur(screen.getByLabelText("State Pension start age exact value"));
     fireEvent.click(
-      screen.getByRole("button", { name: "Reset State Pension draw date to default" }),
+      screen.getByRole("button", { name: "Reset State Pension start age to default" }),
     );
 
-    expect(screen.getByLabelText("State Pension draw date")).toHaveValue("2055-06-15");
+    expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(68);
   });
 
   it("can apply pension increases using the global inflation assumption", () => {
@@ -1088,6 +1128,202 @@ describe("App settings form", () => {
       expect.objectContaining({
         statePensionApplyFutureGrowth: true,
         statePensionWageGrowthPercent: 4.2,
+      }),
+    );
+  });
+
+  it("shows draggable chart markers for ISA draw age and use-by ages", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.change(screen.getByLabelText("SIPP withdrawal strategy"), {
+      target: { value: "use_by_age" },
+    });
+    fireEvent.blur(screen.getByLabelText("SIPP withdrawal strategy"));
+
+    fireEvent.change(screen.getByLabelText("ISA withdrawal strategy"), {
+      target: { value: "use_by_age" },
+    });
+    fireEvent.blur(screen.getByLabelText("ISA withdrawal strategy"));
+
+    expect(screen.getByLabelText("ISA draw, age 60")).toBeInTheDocument();
+    expect(screen.getByLabelText("SIPP use by, age 75")).toBeInTheDocument();
+    expect(screen.getByLabelText("ISA use by, age 75")).toBeInTheDocument();
+  });
+
+  it("keeps the target income line across the build-up period without creating early shortfall", () => {
+    const series = createRetirementIncomeSeries(projectionFixtures.baseRows, {
+      ...defaultSettings,
+      startDate: "2025-01-01",
+    });
+
+    expect(series[0]?.targetIncomeAnnual).toBe(defaultSettings.desiredRetirementIncome);
+    expect(series[0]?.shortfallAnnual).toBe(0);
+  });
+
+  it("shows the current target value in the chart income axis title", () => {
+    renderAcknowledgedApp();
+
+    expect(document.body.innerHTML).toContain("Annual income (£) · Target £31,700");
+  });
+
+  it("inserts an exact transition point so partial retirement and ISA do not overlap at handoff", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2039-06-01",
+      dateOfBirth: "1985-01-15",
+      requirementAge: 54.5,
+      isaDrawAge: 54.5,
+      lifeExpectancy: 60,
+      showStatePension: false,
+      showSipp: false,
+      partialRetirementEnabled: true,
+      partialRetirementStartAge: 51,
+      partialRetirementWorkPercent: 50,
+      pensionableEarnings: 42000,
+    };
+    const rows: ProjectionRow[] = [
+      {
+        ...projectionFixtures.baseRows[0],
+        date: "2039-07-01",
+        age: 54,
+        ageMonths: 6,
+        monthlyIsaPension: 100,
+      },
+      {
+        ...projectionFixtures.baseRows[1],
+        date: "2039-08-01",
+        age: 54,
+        ageMonths: 7,
+        monthlyIsaPension: 100,
+      },
+    ];
+
+    const series = createRetirementIncomeSeries(rows, settings);
+    const preTransitionPoint = series.find((point) => point.date === "2039-07-01");
+    const transitionPoint = series.find((point) => point.date === "2039-07-15");
+
+    expect(preTransitionPoint?.partialRetirementIncomeAnnual).toBe(21000);
+    expect(preTransitionPoint?.isaIncomeAnnual).toBe(0);
+    expect(transitionPoint).toBeDefined();
+    expect(transitionPoint?.partialRetirementIncomeAnnual).toBe(0);
+    expect(transitionPoint?.isaIncomeAnnual).toBe(1200);
+  });
+
+  it("lets the target income line be adjusted directly in the chart", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.keyDown(screen.getByLabelText("Target income line"), {
+      key: "ArrowUp",
+    });
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        desiredRetirementIncome: 32400,
+      }),
+    );
+  });
+
+  it("shows partial retirement timing and work percentage controls in the chart", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.click(screen.getByLabelText("Partial retirement"));
+
+    expect(screen.getByLabelText("Partial retirement, age 55")).toBeInTheDocument();
+    expect(screen.getByText("Partial retirement income")).toBeInTheDocument();
+
+    const partialWorkSlider = screen.getByLabelText("Partial work");
+
+    fireEvent.change(partialWorkSlider, {
+      target: { value: "50" },
+    });
+    fireEvent.mouseUp(partialWorkSlider);
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        partialRetirementEnabled: true,
+        partialRetirementWorkPercent: 50,
+      }),
+    );
+  });
+
+  it("can disable partial retirement from the chart controls", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.click(screen.getByLabelText("Partial retirement"));
+    const partialRetirementKey = screen.getByLabelText(
+      "Toggle chart partial retirement source",
+    );
+
+    expect(partialRetirementKey).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(partialRetirementKey);
+
+    expect(
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"),
+    ).toEqual(
+      expect.objectContaining({
+        partialRetirementEnabled: false,
+      }),
+    );
+    expect(partialRetirementKey).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("only commits chart control slider changes when the pointer is released", () => {
+    renderAcknowledgedApp();
+
+    const alphaAddedPensionSlider = screen.getByLabelText("Added Alpha pension");
+
+    fireEvent.change(alphaAddedPensionSlider, {
+      target: { value: "275" },
+    });
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        alphaAddedPensionMonthly: 150,
+      }),
+    );
+
+    fireEvent.mouseUp(alphaAddedPensionSlider);
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        alphaAddedPensionMonthly: 275,
+      }),
+    );
+  });
+
+  it("can undo the last chart change with the standard keyboard shortcut", () => {
+    renderAcknowledgedApp();
+
+    const alphaAddedPensionSlider = screen.getByLabelText("Added Alpha pension");
+    const dateOfBirthInput = screen.getByLabelText("Your Date of Birth");
+
+    expect(screen.queryByRole("button", { name: "Undo chart change" })).not.toBeInTheDocument();
+
+    fireEvent.change(alphaAddedPensionSlider, {
+      target: { value: "275" },
+    });
+    fireEvent.mouseUp(alphaAddedPensionSlider);
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        alphaAddedPensionMonthly: 275,
+      }),
+    );
+
+    fireEvent.keyDown(dateOfBirthInput, { key: "z", metaKey: true });
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        alphaAddedPensionMonthly: 275,
+      }),
+    );
+
+    fireEvent.keyDown(window, { key: "z", metaKey: true });
+
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
       }),
     );
   });
@@ -1423,7 +1659,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("100");
     expect(screen.getByLabelText("Current Full State Pension (£ per year)")).toHaveValue(0);
     expect(screen.getByLabelText("Added Alpha Pension (£ per month)")).toHaveValue("233");
-    expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue("40");
+    expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue("39");
     expect(
       screen.getByLabelText("Alpha Pension Accrued at Last Statement (£ per year)"),
     ).toHaveValue(12444);

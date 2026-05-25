@@ -172,10 +172,11 @@ const BUILD_UP_META = {
   label: "Build-up",
 };
 const HANDLE_RADIUS = 9;
-const MOBILE_HANDLE_WIDTH = 20;
-const MOBILE_HANDLE_HEIGHT = 68;
+const MOBILE_HANDLE_WIDTH = 24;
+const MOBILE_HANDLE_HEIGHT = 84;
 const HANDLE_STACK_SPACING = 28;
-const MOBILE_HANDLE_STACK_SPACING = 76;
+const MOBILE_HANDLE_STACK_GAP = 16;
+const MOBILE_HANDLE_STACK_SPACING = MOBILE_HANDLE_HEIGHT + MOBILE_HANDLE_STACK_GAP;
 const MARKER_TAG_HEIGHT = 24;
 const MARKER_TAG_GAP = 8;
 const MARKER_TAG_PADDING_X = 8;
@@ -394,7 +395,7 @@ export function RetirementIncomeBridgeChart({
       {
         key: "alphaLeaveAge",
         label: "Leave Alpha",
-        shortLabel: "Leave Alpha",
+        shortLabel: "Leave alpha",
         age: alphaLeaveAge,
         colour: "#b45309",
         editable: true,
@@ -403,8 +404,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "sippAccessAge" as const,
-              label: "SIPP access",
-              shortLabel: "SIPP access",
+              label: "SIPP start",
+              shortLabel: "SIPP start",
               age: sippAccessAge,
               colour: "#148c55",
               editable: true,
@@ -415,8 +416,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "sippUseByAge" as const,
-              label: "SIPP use by",
-              shortLabel: "SIPP use",
+              label: "SIPP stop",
+              shortLabel: "SIPP stop",
               age: sippUseByAge,
               colour: "#0d6b40",
               editable: true,
@@ -427,8 +428,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "isaAccessAge" as const,
-              label: "ISA draw",
-              shortLabel: "ISA draw",
+              label: "ISA start",
+              shortLabel: "ISA start",
               age: isaAccessAge,
               colour: "#1f8ee6",
               editable: true,
@@ -459,8 +460,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "isaUseByAge" as const,
-              label: "ISA use by",
-              shortLabel: "ISA use",
+              label: "ISA stop",
+              shortLabel: "ISA stop",
               age: isaUseByAge,
               colour: "#155ea8",
               editable: true,
@@ -901,7 +902,7 @@ export function RetirementIncomeBridgeChart({
             <text className="bridge-axis-title" x={0} y={plotHeight + 30}>
               Age
             </text>
-            {isCompactChart && draggingMobileMarker ? (
+            {draggingMobileMarker ? (
               <g
                 className="bridge-drag-age"
                 transform={`translate(${xScale(draggingMobileMarker.age)},${plotHeight + 18})`}
@@ -1159,34 +1160,33 @@ function createMarkerLayouts(
   if (isCompactChart) {
     const rowByKey = new Map<MilestoneKey, number>();
     const minimumGap = MOBILE_HANDLE_WIDTH + 6;
-    let previousX = Number.NEGATIVE_INFINITY;
-    let clusterRow = 0;
+    const rowRightEdges: number[] = [];
 
     [...markers]
       .sort((first, second) => xScale(first.layoutAge ?? first.age) - xScale(second.layoutAge ?? second.age))
       .forEach((marker) => {
         const markerX = xScale(marker.layoutAge ?? marker.age);
+        const row = rowRightEdges.findIndex(
+          (rightEdge) => markerX - rightEdge >= minimumGap,
+        );
+        const nextRow = row === -1 ? rowRightEdges.length : row;
 
-        if (markerX - previousX >= minimumGap) {
-          clusterRow = 0;
-        } else {
-          clusterRow += 1;
-        }
-
-        rowByKey.set(marker.key, clusterRow);
-        previousX = markerX;
+        rowRightEdges[nextRow] = markerX;
+        rowByKey.set(marker.key, nextRow);
       });
 
     return markers.map((marker) => {
       const row = rowByKey.get(marker.key) ?? 0;
       const labelText = `${marker.shortLabel} ${formatAgeValue(marker.age)}`;
+      const handleY =
+        MOBILE_HANDLE_HEIGHT / 2 + row * MOBILE_HANDLE_STACK_SPACING;
 
       return {
         ...marker,
-        handleY: row * MOBILE_HANDLE_STACK_SPACING,
+        handleY,
         labelText,
         tagX: 0,
-        tagY: row * MOBILE_HANDLE_STACK_SPACING - MARKER_TAG_HEIGHT / 2,
+        tagY: handleY - MARKER_TAG_HEIGHT / 2,
         tagWidth: getMarkerTagWidth(labelText),
       };
     });
@@ -1266,7 +1266,7 @@ function getMobileMarkerLabel(marker: MilestoneMarker) {
   }
 
   if (marker.key === "alphaLeaveAge") {
-    return "Leave";
+    return "Leave alpha";
   }
 
   if (marker.key === "alphaStartAge") {
@@ -1281,12 +1281,20 @@ function getMobileMarkerLabel(marker: MilestoneMarker) {
     return "Start partial";
   }
 
-  if (marker.key === "sippAccessAge" || marker.key === "sippUseByAge") {
-    return "SIPP";
+  if (marker.key === "sippAccessAge") {
+    return "SIPP start";
   }
 
-  if (marker.key === "isaAccessAge" || marker.key === "isaUseByAge") {
-    return "ISA";
+  if (marker.key === "sippUseByAge") {
+    return "SIPP stop";
+  }
+
+  if (marker.key === "isaAccessAge") {
+    return "ISA start";
+  }
+
+  if (marker.key === "isaUseByAge") {
+    return "ISA stop";
   }
 
   return marker.shortLabel;

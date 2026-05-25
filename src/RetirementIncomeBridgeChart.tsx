@@ -172,7 +172,10 @@ const BUILD_UP_META = {
   label: "Build-up",
 };
 const HANDLE_RADIUS = 9;
+const MOBILE_HANDLE_WIDTH = 20;
+const MOBILE_HANDLE_HEIGHT = 68;
 const HANDLE_STACK_SPACING = 28;
+const MOBILE_HANDLE_STACK_SPACING = 76;
 const MARKER_TAG_HEIGHT = 24;
 const MARKER_TAG_GAP = 8;
 const MARKER_TAG_PADDING_X = 8;
@@ -223,6 +226,9 @@ export function RetirementIncomeBridgeChart({
   const [draftMarkerAges, setDraftMarkerAges] = useState<
     Partial<Record<MilestoneKey, { age: number; baseAge: number }>>
   >({});
+  const [activeMarkerDragKey, setActiveMarkerDragKey] = useState<MilestoneKey | null>(
+    null,
+  );
   const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
     useState<MilestoneKey>("retirementAge");
   const dataSourceTargetIncomeAnnual = data[0]?.targetIncomeAnnual ?? targetIncomeAnnual;
@@ -296,7 +302,7 @@ export function RetirementIncomeBridgeChart({
 
     const observer = new ResizeObserver(([entry]) => {
       if (entry) {
-        setWidth(Math.max(360, entry.contentRect.width));
+        setWidth(Math.max(300, entry.contentRect.width));
       }
     });
 
@@ -313,11 +319,12 @@ export function RetirementIncomeBridgeChart({
       width,
       height,
       marginTop: isCompact ? 38 : 46,
-      marginRight: isCompact ? 22 : 28,
+      marginRight: isCompact ? 8 : 28,
       marginBottom: isCompact ? 34 : 38,
-      marginLeft: isCompact ? 58 : 78,
+      marginLeft: isCompact ? 48 : 78,
     };
   }, [width]);
+  const isCompactChart = width < 640;
 
   const plotWidth = Math.max(
     1,
@@ -378,8 +385,8 @@ export function RetirementIncomeBridgeChart({
       [
       {
         key: "retirementAge",
-        label: "Requirement",
-        shortLabel: "Target",
+        label: "Retire",
+        shortLabel: "Retire",
         age: retirementAge,
         colour: "#0f6f72",
         editable: true,
@@ -432,8 +439,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "partialRetirementStartAge" as const,
-              label: "Partial retirement",
-              shortLabel: "Partial",
+              label: "Start partial",
+              shortLabel: "Start partial",
               age: partialRetirementStartAge,
               colour: "#c2410c",
               editable: true,
@@ -442,8 +449,8 @@ export function RetirementIncomeBridgeChart({
         : []),
       {
         key: "alphaStartAge",
-        label: "Alpha starts",
-        shortLabel: "Alpha starts",
+        label: "Start Alpha",
+        shortLabel: "Start Alpha",
         age: alphaStartAge,
         colour: "#7353bf",
         editable: true,
@@ -464,8 +471,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "statePensionAge" as const,
-              label: "State Pension",
-              shortLabel: "State",
+              label: "Start State",
+              shortLabel: "Start State",
               age: statePensionAge,
               colour: "#1d62d1",
               editable: statePensionEditable,
@@ -497,6 +504,7 @@ export function RetirementIncomeBridgeChart({
       milestoneMarkers.map((marker) => ({
         ...marker,
         age: getDisplayMarkerAge(marker.age, draftMarkerAges[marker.key]),
+        layoutAge: draftMarkerAges[marker.key]?.baseAge ?? marker.age,
       })),
     [draftMarkerAges, milestoneMarkers],
   );
@@ -504,7 +512,12 @@ export function RetirementIncomeBridgeChart({
     displayedMilestoneMarkers,
     xScale,
     plotWidth,
+    isCompactChart,
   );
+  const draggingMobileMarker =
+    activeMarkerDragKey === null
+      ? undefined
+      : displayedMilestoneMarkers.find((marker) => marker.key === activeMarkerDragKey);
   const effectiveSelectedMobileMarkerKey = displayedMilestoneMarkers.some(
     (marker) => marker.key === selectedMobileMarkerKey,
   )
@@ -551,6 +564,7 @@ export function RetirementIncomeBridgeChart({
         .on("start drag", (event) => {
           const nextAge = xScale.invert(clampNumber(event.x, 0, plotWidth));
 
+          setActiveMarkerDragKey(marker.key);
           setDraftMarkerAges((current) => ({
             ...current,
             [marker.key]: {
@@ -568,6 +582,7 @@ export function RetirementIncomeBridgeChart({
             delete nextDraftMarkerAges[marker.key];
             return nextDraftMarkerAges;
           });
+          setActiveMarkerDragKey(null);
           onChangeParameters({ [marker.key]: committedAge });
         });
 
@@ -812,6 +827,7 @@ export function RetirementIncomeBridgeChart({
 
             {markerLayouts.map((marker) => {
               const x = xScale(marker.age);
+              const compactHandleLabel = getMobileMarkerLabel(marker);
 
               return (
                 <g
@@ -845,39 +861,29 @@ export function RetirementIncomeBridgeChart({
                   <line
                     x1={x}
                     x2={x}
-                    y1={marker.handleY + HANDLE_RADIUS}
+                    y1={marker.handleY + MOBILE_HANDLE_HEIGHT / 2}
                     y2={plotHeight}
                     stroke={marker.colour}
                   />
                   <rect
-                    x={marker.tagX}
-                    y={marker.tagY}
-                    width={marker.tagWidth}
-                    height={MARKER_TAG_HEIGHT}
-                    rx={6}
-                    className="bridge-milestone-label-bg"
-                    stroke={marker.colour}
-                  />
-                  <circle
-                    cx={marker.tagX + MARKER_TAG_PADDING_X + MARKER_TAG_DOT_RADIUS}
-                    cy={marker.tagY + MARKER_TAG_HEIGHT / 2}
-                    r={MARKER_TAG_DOT_RADIUS}
-                    className="bridge-milestone-label-dot"
+                    x={x - MOBILE_HANDLE_WIDTH / 2}
+                    y={marker.handleY - MOBILE_HANDLE_HEIGHT / 2}
+                    width={MOBILE_HANDLE_WIDTH}
+                    height={MOBILE_HANDLE_HEIGHT}
+                    rx={MOBILE_HANDLE_WIDTH / 2}
+                    className="bridge-milestone-mobile-handle"
                     fill={marker.colour}
                   />
                   <text
-                    x={
-                      marker.tagX +
-                      MARKER_TAG_PADDING_X * 2 +
-                      MARKER_TAG_DOT_RADIUS * 2
-                    }
-                    y={marker.tagY + MARKER_TAG_HEIGHT / 2}
-                    className="bridge-milestone-label"
+                    x={x}
+                    y={marker.handleY}
+                    className="bridge-milestone-mobile-label"
                     dominantBaseline="middle"
+                    textAnchor="middle"
+                    transform={`rotate(90 ${x} ${marker.handleY})`}
                   >
-                    {marker.labelText}
+                    {compactHandleLabel}
                   </text>
-                  <circle cx={x} cy={marker.handleY} r={HANDLE_RADIUS} fill={marker.colour} />
                 </g>
               );
             })}
@@ -895,6 +901,17 @@ export function RetirementIncomeBridgeChart({
             <text className="bridge-axis-title" x={0} y={plotHeight + 30}>
               Age
             </text>
+            {isCompactChart && draggingMobileMarker ? (
+              <g
+                className="bridge-drag-age"
+                transform={`translate(${xScale(draggingMobileMarker.age)},${plotHeight + 18})`}
+              >
+                <rect x={-18} y={-13} width={36} height={19} rx={6} />
+                <text y="0.12em" textAnchor="middle">
+                  {formatAgeValue(draggingMobileMarker.age)}
+                </text>
+              </g>
+            ) : null}
             <text
               className="bridge-axis-title"
               x={-dimensions.marginLeft + 2}
@@ -1134,10 +1151,47 @@ function BridgeMetricControl({
 }
 
 function createMarkerLayouts(
-  markers: MilestoneMarker[],
+  markers: Array<MilestoneMarker & { layoutAge?: number }>,
   xScale: d3.ScaleLinear<number, number>,
   plotWidth: number,
+  isCompactChart: boolean,
 ) {
+  if (isCompactChart) {
+    const rowByKey = new Map<MilestoneKey, number>();
+    const minimumGap = MOBILE_HANDLE_WIDTH + 6;
+    let previousX = Number.NEGATIVE_INFINITY;
+    let clusterRow = 0;
+
+    [...markers]
+      .sort((first, second) => xScale(first.layoutAge ?? first.age) - xScale(second.layoutAge ?? second.age))
+      .forEach((marker) => {
+        const markerX = xScale(marker.layoutAge ?? marker.age);
+
+        if (markerX - previousX >= minimumGap) {
+          clusterRow = 0;
+        } else {
+          clusterRow += 1;
+        }
+
+        rowByKey.set(marker.key, clusterRow);
+        previousX = markerX;
+      });
+
+    return markers.map((marker) => {
+      const row = rowByKey.get(marker.key) ?? 0;
+      const labelText = `${marker.shortLabel} ${formatAgeValue(marker.age)}`;
+
+      return {
+        ...marker,
+        handleY: row * MOBILE_HANDLE_STACK_SPACING,
+        labelText,
+        tagX: 0,
+        tagY: row * MOBILE_HANDLE_STACK_SPACING - MARKER_TAG_HEIGHT / 2,
+        tagWidth: getMarkerTagWidth(labelText),
+      };
+    });
+  }
+
   const rowEnds: number[] = [];
   const rowByKey = new Map<MilestoneKey, number>();
   const tagXByKey = new Map<MilestoneKey, number>();
@@ -1204,6 +1258,38 @@ function getTargetIncomeControlLimit(
     max: limit.max / 12,
     step: limit.step / 12,
   };
+}
+
+function getMobileMarkerLabel(marker: MilestoneMarker) {
+  if (marker.key === "retirementAge") {
+    return "Retire";
+  }
+
+  if (marker.key === "alphaLeaveAge") {
+    return "Leave";
+  }
+
+  if (marker.key === "alphaStartAge") {
+    return "Start Alpha";
+  }
+
+  if (marker.key === "statePensionAge") {
+    return "Start State";
+  }
+
+  if (marker.key === "partialRetirementStartAge") {
+    return "Start partial";
+  }
+
+  if (marker.key === "sippAccessAge" || marker.key === "sippUseByAge") {
+    return "SIPP";
+  }
+
+  if (marker.key === "isaAccessAge" || marker.key === "isaUseByAge") {
+    return "ISA";
+  }
+
+  return marker.shortLabel;
 }
 
 function createMobileBridgeSummary({

@@ -1027,7 +1027,6 @@ function App() {
               settings={settings}
               validationIssues={validationIssues}
               pensionSummary={pensionSummary}
-              projectionRows={projectionRows}
               retirementIncomeSeries={retirementIncomeSeries}
               bridgeChartParameters={bridgeChartParameters}
               bridgeChartLimits={bridgeChartLimits}
@@ -1058,7 +1057,6 @@ function App() {
               settings={settings}
               validationIssues={validationIssues}
               pensionSummary={pensionSummary}
-              projectionRows={projectionRows}
               retirementIncomeSeries={retirementIncomeSeries}
               bridgeChartParameters={bridgeChartParameters}
               bridgeChartLimits={bridgeChartLimits}
@@ -1761,7 +1759,6 @@ type GuidedJourneyProps = {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
-  projectionRows: ProjectionRow[];
   retirementIncomeSeries: RetirementIncomePoint[];
   bridgeChartParameters: RetirementIncomeBridgeParameters;
   bridgeChartLimits: RetirementIncomeBridgeLimits;
@@ -1789,7 +1786,6 @@ function GuidedJourney({
   settings,
   validationIssues,
   pensionSummary,
-  projectionRows,
   retirementIncomeSeries,
   bridgeChartParameters,
   bridgeChartLimits,
@@ -1958,7 +1954,6 @@ function GuidedJourney({
             settings={settings}
             validationIssues={validationIssues}
             pensionSummary={pensionSummary}
-            projectionRows={projectionRows}
             retirementIncomeSeries={retirementIncomeSeries}
             bridgeChartParameters={bridgeChartParameters}
             bridgeChartLimits={bridgeChartLimits}
@@ -2013,7 +2008,6 @@ function JourneyStepContent({
   settings,
   validationIssues,
   pensionSummary,
-  projectionRows,
   retirementIncomeSeries,
   bridgeChartParameters,
   bridgeChartLimits,
@@ -2118,18 +2112,6 @@ function JourneyStepContent({
           onChangeParameters={onChangeChartParameters}
           {...bridgeChartParameters}
         />
-
-        <section className="panel">
-          <div className="panel-heading">
-            <h2>Monthly pension projection table</h2>
-            <p className="section-copy">
-              The table is generated from the projection layer so each row stays
-              traceable back to the modeller inputs and factor tables.
-            </p>
-          </div>
-
-          <ProjectionTable rows={projectionRows} settings={settings} />
-        </section>
       </div>
     );
   }
@@ -2403,44 +2385,6 @@ function BridgeResult({
         ]}
       />
 
-      <BridgeTable
-        title="Bridging breakdown"
-        description="Each phase shows the target income, what pensions provide, what ISA/SIPP bridge pots add, and any gap left over."
-        columns={[
-          { key: "phase", label: "Phase", width: "13rem" },
-          { key: "ages", label: "Ages", width: "8rem" },
-          { key: "target", label: "Target/yr", width: "8rem" },
-          { key: "alpha", label: "Alpha/yr", width: "8rem" },
-          { key: "nuvos", label: "nuvos/yr", width: "8rem" },
-          { key: "state", label: "State Pension/yr", width: "8rem" },
-          { key: "isa", label: "ISA bridge/yr", width: "8rem" },
-          { key: "sipp", label: "SIPP bridge/yr", width: "8rem" },
-          {
-            key: "gap",
-            label: "Gap/surplus/yr",
-            width: "9rem",
-          },
-          { key: "bridgeNeeded", label: "Total bridge used", width: "10rem" },
-        ]}
-        rows={analysis.phases.map((phase) => [
-          phase.label,
-          `${formatAge(phase.startAge, phase.startAgeMonths)} to ${formatAge(
-            phase.endAge,
-            phase.endAgeMonths,
-          )}`,
-          formatCurrencyDetailed(phase.annualTargetIncome),
-          formatCurrencyDetailed(phase.annualAlphaPension),
-          formatCurrencyDetailed(phase.annualNuvosPension),
-          formatCurrencyDetailed(phase.annualStatePension),
-          formatCurrencyDetailed(phase.annualIsaBridge),
-          formatCurrencyDetailed(phase.annualSippBridge),
-          formatShortfallOrSurplus(phase.annualShortfall, phase.annualSurplus),
-          formatPhaseBridgeTotal(phase),
-        ])}
-      />
-
-      <BridgePotProjectionTable rows={analysis.potProjection} />
-
       <SummarySection
         title="Scenario recap"
         description="The main assumptions used in this bridge calculation."
@@ -2479,118 +2423,6 @@ function BridgeResult({
         ]}
       />
     </div>
-  );
-}
-
-function BridgeTable({
-  title,
-  description,
-  columns,
-  rows,
-}: {
-  title: string;
-  description: string;
-  columns: TableColumn[];
-  rows: string[][];
-}) {
-  return (
-    <section className="bridge-table-section">
-      <div className="summary-section-header">
-        <h3>{title}</h3>
-      </div>
-      <p className="section-copy">{description}</p>
-      <ProjectionTableFrame
-        columns={columns}
-        rows={rows}
-        emptyMessage="No bridge rows are available for the current settings."
-        getRowKey={(_row, rowIndex) => `${title}-${rowIndex}`}
-        minWidth="62rem"
-        renderCells={(row) => row.map((cell) => cell)}
-      />
-    </section>
-  );
-}
-
-const bridgePotProjectionColumns: TableColumn[] = [
-  { key: "date", label: "Date", width: "8rem" },
-  { key: "age", label: "Age", width: "7rem" },
-  { key: "alphaPension", label: "Alpha/yr", width: "8rem" },
-  { key: "nuvosPension", label: "nuvos/yr", width: "8rem" },
-  { key: "statePension", label: "State Pension/yr", width: "8rem" },
-  { key: "isaBalance", label: "ISA balance", width: "9rem" },
-  { key: "sippBalance", label: "SIPP balance", width: "9rem" },
-  { key: "isaDrawdown", label: "ISA drawdown/mo", width: "9rem" },
-  { key: "sippDrawdown", label: "SIPP drawdown/mo", width: "9rem" },
-  { key: "unfunded", label: "Unfunded", width: "9rem" },
-];
-
-function BridgePotProjectionTable({
-  rows,
-}: {
-  rows: RetirementBridgeAnalysis["potProjection"];
-}) {
-  const [showMilestonesOnly, setShowMilestonesOnly] = useState(true);
-  const milestoneRowCount = rows.filter((row) => row.milestones.length > 0).length;
-  const visibleRows = showMilestonesOnly
-    ? rows.filter((row) => row.milestones.length > 0)
-    : rows;
-
-  return (
-    <section className="bridge-table-section">
-      <div className="summary-section-header">
-        <h3>Pot projection</h3>
-      </div>
-      <p className="section-copy">
-        Pension and pot drawdown milestones are shown first. Expand to see every monthly bridge balance.
-      </p>
-      <ProjectionTableFrame
-        columns={bridgePotProjectionColumns}
-        rows={visibleRows}
-        emptyMessage="No ISA or SIPP drawdown milestones occur in this scenario. Show all rows to inspect the monthly balances."
-        getRowKey={(row) => row.date}
-        getRowClassName={(row) =>
-          row.milestones.length > 0
-            ? "projection-row projection-row--milestone"
-            : "projection-row"
-        }
-        getRowTitle={(row) =>
-          row.milestones.length > 0 ? row.milestones.join(", ") : undefined
-        }
-        controls={
-          <>
-            <button
-              type="button"
-              className="secondary-button"
-              aria-pressed={showMilestonesOnly}
-              onClick={() => setShowMilestonesOnly((current) => !current)}
-            >
-              {showMilestonesOnly ? "Show all rows" : "Only show milestone rows"}
-            </button>
-            <p className="table-status">
-              Showing {visibleRows.length} of {rows.length} rows
-              {showMilestonesOnly ? ` (${milestoneRowCount} milestones)` : ""}.
-            </p>
-          </>
-        }
-        renderCells={(row) => [
-          <ProjectionDateCell
-            key="date"
-            date={row.date}
-            milestones={row.milestones}
-            milestoneDates={row.milestoneDates}
-          />,
-          formatAge(row.age, row.ageMonths),
-          formatCurrencyDetailed(row.monthlyAlphaPension * 12),
-          formatCurrencyDetailed(row.monthlyNuvosPension * 12),
-          formatCurrencyDetailed(row.monthlyStatePension * 12),
-          formatCurrencyDetailed(row.isaBalance),
-          formatCurrencyDetailed(row.sippBalance),
-          formatCurrencyDetailed(row.isaDrawdown),
-          formatCurrencyDetailed(row.sippDrawdown),
-          formatCurrencyDetailed(row.unfundedShortfall),
-        ]}
-      />
-    </section>
   );
 }
 
@@ -4772,34 +4604,6 @@ function formatCurrencyDetailed(value: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-function formatShortfallOrSurplus(shortfall: number, surplus: number) {
-  if (shortfall > 0) {
-    return `${formatCurrencyDetailed(shortfall)} shortfall`;
-  }
-
-  if (surplus > 0) {
-    return `${formatCurrencyDetailed(surplus)} surplus`;
-  }
-
-  return formatCurrencyDetailed(0);
-}
-
-function formatPhaseBridgeTotal(phase: RetirementBridgeAnalysis["phases"][number]) {
-  const parts = [
-    phase.totalIsaBridge > 0
-      ? `ISA ${formatCurrencyDetailed(phase.totalIsaBridge)}`
-      : "",
-    phase.totalSippBridge > 0
-      ? `SIPP ${formatCurrencyDetailed(phase.totalSippBridge)}`
-      : "",
-    phase.unfundedShortfall > 0
-      ? `unfunded ${formatCurrencyDetailed(phase.unfundedShortfall)}`
-      : "",
-  ].filter(Boolean);
-
-  return parts.length > 0 ? parts.join(" + ") : formatCurrencyDetailed(0);
 }
 
 function formatPercent(rate: number) {

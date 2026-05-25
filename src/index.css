@@ -690,13 +690,13 @@ h3 {
 
 .bridge-milestone:focus-visible line,
 .bridge-milestone:focus-visible circle,
-.bridge-milestone:focus-visible .bridge-milestone-mobile-handle {
+.bridge-milestone:focus-visible .bridge-milestone-handle {
   stroke: #122033;
   stroke-width: 2.5;
 }
 
 .bridge-milestone--selected circle,
-.bridge-milestone--selected .bridge-milestone-mobile-handle {
+.bridge-milestone--selected .bridge-milestone-handle {
   stroke: #122033;
   stroke-width: 2.5;
 }
@@ -705,31 +705,13 @@ h3 {
   outline: none;
 }
 
-.bridge-milestone-label-bg {
-  fill: rgba(255, 255, 255, 0.94);
-  stroke-width: 1.5;
-  filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.18));
-}
-
-.bridge-milestone-label-dot {
-  stroke: rgba(255, 255, 255, 0.96);
-  stroke-width: 1;
-}
-
-.bridge-milestone-label {
-  fill: #122033;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0;
-}
-
-.bridge-milestone-mobile-handle {
+.bridge-milestone-handle {
   stroke: rgba(255, 255, 255, 0.92);
   stroke-width: 1.5;
   filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.18));
 }
 
-.bridge-milestone-mobile-label {
+.bridge-milestone-handle-label {
   fill: #ffffff;
   font-size: 0.58rem;
   font-weight: 900;
@@ -738,14 +720,14 @@ h3 {
 }
 
 .bridge-drag-age rect {
-  fill: #122033;
-  stroke: rgba(255, 255, 255, 0.92);
-  stroke-width: 1;
-  filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.18));
+  fill: rgba(255, 255, 255, 0.96);
+  stroke: rgba(29, 98, 209, 0.42);
+  stroke-width: 1.25;
+  filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.12));
 }
 
 .bridge-drag-age text {
-  fill: #ffffff;
+  fill: #122033;
   font-size: 0.66rem;
   font-weight: 900;
 }
@@ -1267,10 +1249,10 @@ h3 {
 }
 
 .summary-section--feature .summary-section-inner {
-  padding: clamp(1rem, 2vw, 1.45rem);
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  background: var(--surface-strong);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .summary-section-inner h3 {
@@ -1688,8 +1670,8 @@ h3 {
   }
 
   .journey-answer .summary-section--feature .summary-section-inner {
-    padding: 0.85rem;
-    border-radius: 0.8rem;
+    padding: 0;
+    border-radius: 0;
   }
 
   .journey-answer .bridge-chart-panel {

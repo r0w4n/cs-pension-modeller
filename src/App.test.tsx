@@ -333,9 +333,13 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
 }
 
 function renderAcknowledgedApp(
-  options: { mode?: "expert" | "journey" | "bridge" | null } = {},
+  options: { mode?: "expert" | "journey" | "bridge" | "simple" | null } = {},
 ) {
   const { mode = "expert" } = options;
+
+  if (mode) {
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, mode);
+  }
 
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "I understand" }));
@@ -357,6 +361,14 @@ function renderAcknowledgedApp(
       }),
     );
   }
+
+  if (mode === "simple") {
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Use the simple early retirement journey/i,
+      }),
+    );
+  }
 }
 
 describe("App settings form", () => {
@@ -369,24 +381,12 @@ describe("App settings form", () => {
     vi.useRealTimers();
   });
 
-  it("asks users to choose guided journey or expert mode after the notice", () => {
+  it("starts in the simple early retirement journey after the notice", () => {
     renderAcknowledgedApp({ mode: null });
-    const titleSection = screen
-      .getByRole("heading", {
-        level: 1,
-        name: "Retirement Income Modeller",
-      })
-      .closest("section");
 
     expect(
-      within(titleSection as HTMLElement).getByRole("heading", {
-        name: "How would you like to use the modeller?",
-      }),
+      screen.getByRole("heading", { name: "Simple early retirement journey" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Take me through a journey/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Use expert mode/i })).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Your retirement assumptions" }),
     ).not.toBeInTheDocument();
@@ -485,15 +485,9 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("heading", { name: "Retirement income bridge" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Monthly pension projection table" }),
-    ).toBeInTheDocument();
     const answerText = document.body.textContent ?? "";
     expect(answerText.indexOf("Retirement income bridge")).toBeGreaterThan(
       answerText.indexOf("Pension Summary"),
-    );
-    expect(answerText.indexOf("Monthly pension projection table")).toBeGreaterThan(
-      answerText.indexOf("Retirement income bridge"),
     );
     expect(screen.getByLabelText("Monthly retirement income before tax")).toHaveTextContent(
       "£2,950.00",
@@ -502,6 +496,53 @@ describe("App settings form", () => {
       expect.objectContaining({
         alphaPensionDrawAge: 62,
       }),
+    );
+  });
+
+  it("uses the simplified early retirement journey by default", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    expect(
+      screen.getByRole("heading", { name: "About you and your target" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Date of birth")).toHaveValue(defaultSettings.dateOfBirth);
+    expect(screen.getByLabelText("Early retirement age")).toHaveValue(
+      defaultSettings.requirementAge.toString(),
+    );
+    expect(screen.getByLabelText("Target retirement income (£ per year)")).toHaveValue(
+      defaultSettings.desiredRetirementIncome,
+    );
+    expect(screen.queryByText("What else should we include?")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "State Pension" })).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
+      expect.objectContaining({
+        showStatePension: true,
+        applyPensionIncreases: true,
+        assumedCpiPercent: 0,
+        showSipp: false,
+        showIsa: false,
+      }),
+    );
+  });
+
+  it("shows added pension lump sums in the simple journey added pension step", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Added pension and EPA/i }));
+
+    expect(screen.getByRole("heading", { name: "Added pension lump sums" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add lump sum purchase" })).toBeInTheDocument();
+  });
+
+  it("restores the original early retirement journey as a separate route", () => {
+    renderAcknowledgedApp({ mode: "bridge" });
+
+    expect(
+      screen.getByRole("heading", { name: "Work out what I need to retire early" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your retirement target" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
+      defaultSettings.requirementAge.toString(),
     );
   });
 
@@ -1205,9 +1246,9 @@ describe("App settings form", () => {
     });
     fireEvent.blur(screen.getByLabelText("ISA withdrawal strategy"));
 
-    expect(screen.getByLabelText("ISA draw, age 60")).toBeInTheDocument();
-    expect(screen.getByLabelText("SIPP use by, age 75")).toBeInTheDocument();
-    expect(screen.getByLabelText("ISA use by, age 75")).toBeInTheDocument();
+    expect(screen.getByLabelText("ISA start, age 60")).toBeInTheDocument();
+    expect(screen.getByLabelText("SIPP stop, age 75")).toBeInTheDocument();
+    expect(screen.getByLabelText("ISA stop, age 75")).toBeInTheDocument();
   });
 
   it("keeps the target income line across the build-up period without creating early shortfall", () => {
@@ -1288,7 +1329,7 @@ describe("App settings form", () => {
 
     fireEvent.click(screen.getByLabelText("Partial retirement"));
 
-    expect(screen.getByLabelText("Partial retirement, age 55")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start partial, age 55")).toBeInTheDocument();
     expect(screen.getByText("Partial retirement income")).toBeInTheDocument();
 
     const partialWorkSlider = screen.getByLabelText("Partial work");
@@ -1885,7 +1926,7 @@ describe("App settings form", () => {
     expect(
       screen.getByText(`Showing ${rows.length} of ${rows.length} rows.`),
     ).toBeInTheDocument();
-    expect(screen.getByText(nonMilestoneRowLabel)).toBeInTheDocument();
+    expect(screen.getAllByText(nonMilestoneRowLabel).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Only show milestone rows" }));
 

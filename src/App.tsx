@@ -123,7 +123,7 @@ const OPTIONAL_SECTION_TOGGLES = [
 type OptionalSectionToggleKey = (typeof OPTIONAL_SECTION_TOGGLES)[number]["key"];
 type JourneyFieldLabels = Partial<Record<FieldDefinition["id"], string>>;
 
-type AppMode = "journey" | "bridge" | "compare" | "expert";
+type AppMode = "journey" | "bridge" | "simple" | "compare" | "expert";
 
 type JourneyStepDefinition =
   | {
@@ -455,6 +455,140 @@ const GUIDED_JOURNEYS = [
       },
     ],
   },
+  {
+    id: "simple-early-retirement",
+    title: "Simple early retirement journey",
+    description:
+      "Follow a short early-retirement journey based on the main Civil Service pension calculator inputs, then review the chart at the end.",
+    steps: [
+      {
+        id: "basics",
+        eyebrow: "Step 1",
+        title: "About you and your target",
+        description:
+          "Start with your date of birth, the age you want to retire, and the income you want the plan to support.",
+        kind: "fields",
+        fieldIds: ["dateOfBirth", "requirementAge", "desiredRetirementIncome"],
+        fieldLabels: {
+          dateOfBirth: "Date of birth",
+          requirementAge: "Early retirement age",
+          desiredRetirementIncome: "Target retirement income (£ per year)",
+        },
+      },
+      {
+        id: "alpha",
+        eyebrow: "Step 2",
+        title: "Your Alpha pension",
+        description:
+          "Enter the main figures from your latest statement together with the age you expect to leave and draw Alpha.",
+        kind: "fields",
+        fieldIds: [
+          "alphaPensionAbsDate",
+          "accruedPensionAtLastAbs",
+          "pensionableEarnings",
+          "alphaPensionLeaveAge",
+          "alphaPensionDrawAge",
+        ],
+        fieldLabels: {
+          alphaPensionAbsDate: "Annual Benefits Statement year",
+          accruedPensionAtLastAbs: "Accrued pension to date (£ per year)",
+          pensionableEarnings: "Pensionable earnings (£ per year)",
+          alphaPensionLeaveAge: "Age you leave Alpha",
+          alphaPensionDrawAge: "Alpha pension draw age",
+        },
+      },
+      {
+        id: "alpha-options",
+        eyebrow: "Step 3",
+        title: "Added pension and EPA",
+        description:
+          "Add any monthly added pension and EPA choices you want reflected in the plan.",
+        kind: "fields",
+        fieldIds: [
+          "alphaAddedPensionMonthly",
+          "alphaAddedPensionFactorType",
+          "alphaEpaEnabled",
+          "alphaEpaYearsBeforeNpa",
+        ],
+        fieldLabels: {
+          alphaAddedPensionMonthly: "Monthly added pension payments (£)",
+          alphaAddedPensionFactorType: "Added pension type",
+        },
+      },
+      {
+        id: "partial-retirement",
+        eyebrow: "Optional",
+        title: "Reduced hours",
+        description:
+          "Model a reduced-hours period before full retirement if that is part of your plan.",
+        kind: "fields",
+        fieldIds: [
+          "partialRetirementStartAge",
+          "fullSalary",
+          "partialRetirementWorkPercent",
+        ],
+        fieldLabels: {
+          partialRetirementStartAge: "Reduced hours age",
+          fullSalary: "Full salary before reduced hours (£ per year)",
+          partialRetirementWorkPercent: "Reduced hours percentage",
+        },
+        visible: (settings) => settings.partialRetirementEnabled,
+      },
+      {
+        id: "nuvos",
+        eyebrow: "Optional",
+        title: "nuvos pension",
+        description:
+          "Add nuvos benefits if they should be part of the projection.",
+        kind: "fields",
+        fieldIds: [
+          "nuvosPensionDrawAge",
+          "nuvosPensionAbsDate",
+          "nuvosAccruedPensionAtLastAbs",
+          "nuvosPensionableEarnings",
+          "nuvosApplyPensionIncreases",
+          "nuvosAssumedCpiPercent",
+        ],
+        visible: (settings) => settings.showNuvos,
+      },
+      {
+        id: "pots",
+        eyebrow: "Optional",
+        title: "ISA and SIPP",
+        description:
+          "Add personal pots only if you want the chart to show how they help bridge the gap to secure pension income.",
+        kind: "fields",
+        fieldIds: [
+          "isaCurrentPot",
+          "isaMonthlyContribution",
+          "isaApplyRealInterest",
+          "isaRealInterestPercent",
+          "sippCurrentPot",
+          "sippMonthlyContribution",
+          "sippDrawAge",
+          "sippTaxReliefRate",
+          "sippApplyRealInterest",
+          "sippRealInterestPercent",
+        ],
+        fieldLabels: {
+          isaCurrentPot: "Current ISA balance (£)",
+          isaMonthlyContribution: "Monthly ISA contribution (£)",
+          sippCurrentPot: "Current SIPP balance (£)",
+          sippMonthlyContribution: "Monthly SIPP contribution (£)",
+          sippDrawAge: "SIPP access age",
+        },
+        visible: (settings) => settings.showIsa || settings.showSipp,
+      },
+      {
+        id: "answer",
+        eyebrow: "Result",
+        title: "Your chart and answer",
+        description:
+          "Review the income chart and the main gaps or surpluses in your plan.",
+        kind: "bridge-answer",
+      },
+    ],
+  },
 ] as const satisfies readonly JourneyDefinition[];
 
 function applyBridgeJourneyDefaults(settings: PensionSettings): PensionSettings {
@@ -463,6 +597,21 @@ function applyBridgeJourneyDefaults(settings: PensionSettings): PensionSettings 
     showStatePension: true,
     showSipp: true,
     showIsa: true,
+    taxationEnabled: false,
+    partialRetirementEnabled: false,
+  };
+}
+
+function applySimpleJourneyDefaults(settings: PensionSettings): PensionSettings {
+  return {
+    ...settings,
+    showStatePension: true,
+    showSipp: false,
+    showIsa: false,
+    showNuvos: false,
+    statePensionApplyFutureGrowth: false,
+    applyPensionIncreases: true,
+    assumedCpiPercent: 0,
     taxationEnabled: false,
     partialRetirementEnabled: false,
   };
@@ -506,12 +655,15 @@ function App() {
     [deferredSettings],
   );
   const projectionRows = useMemo(
-    () => (appMode === "bridge" ? [] : createProjectionTable(deferredSettings)),
+    () =>
+      appMode === "bridge" || appMode === "simple"
+        ? []
+        : createProjectionTable(deferredSettings),
     [appMode, deferredSettings],
   );
   const pensionSummary = useMemo(
     () =>
-      appMode === "bridge"
+      appMode === "bridge" || appMode === "simple"
         ? null
         : generatePensionSummary(projectionRows, deferredSettings),
     [appMode, projectionRows, deferredSettings],
@@ -1011,8 +1163,9 @@ function App() {
             <p className="eyebrow">Civil Service</p>
             <h1>Retirement Income Modeller</h1>
             <p className="lead">
-              Plan your retirement income by modelling your Civil Service pension
-              together with SIPP withdrawals, ISA income and State Pension payments.
+              Work through a simple Civil Service pension journey, then review your
+              income chart at the end. Expert mode is still there when you want every
+              setting.
             </p>
           </div>
 
@@ -1055,6 +1208,37 @@ function App() {
             <GuidedJourney
               key="early-retirement-bridge"
               journey={GUIDED_JOURNEYS[1]}
+              settings={settings}
+              validationIssues={validationIssues}
+              pensionSummary={pensionSummary}
+              projectionRows={projectionRows}
+              retirementIncomeSeries={retirementIncomeSeries}
+              bridgeChartParameters={bridgeChartParameters}
+              bridgeChartLimits={bridgeChartLimits}
+              derivedInflationAssumptions={derivedInflationAssumptions}
+              retirementIncomeDisplay={retirementIncomeDisplay}
+              retirementIncomeItems={retirementIncomeItems}
+              retirementIncomeTitle={retirementIncomeTitle}
+              retirementIncomeTotal={retirementIncomeTotal}
+              retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+              retirementIncomeTarget={retirementIncomeTarget}
+              useDropdownDates={useDropdownDates}
+              onChange={updateSetting}
+              onChangeChartParameters={updateBridgeChartParameters}
+              onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
+              showLimitations={showLimitations}
+              onToggleLimitations={() => setShowLimitations((current) => !current)}
+              showGuidanceNotes={showGuidanceNotes}
+              onShowGuidanceNotesChange={setShowGuidanceNotes}
+            />
+          </div>
+        ) : null}
+
+        {appMode === "simple" ? (
+          <div ref={activeModeRef} className="active-mode-region" tabIndex={-1}>
+            <GuidedJourney
+              key="simple-early-retirement"
+              journey={GUIDED_JOURNEYS[2]}
               settings={settings}
               validationIssues={validationIssues}
               pensionSummary={pensionSummary}
@@ -1302,11 +1486,20 @@ function App() {
   function acknowledgeNotice() {
     setHasAcknowledgedNotice(true);
     writeStorageItem(ACKNOWLEDGEMENT_STORAGE_KEY, ACKNOWLEDGEMENT_VERSION);
+
+    if (appMode === null) {
+      selectAppMode("simple");
+    }
   }
 
   function selectAppMode(mode: AppMode) {
     if (mode === "bridge") {
       setSettings((current) => applyBridgeJourneyDefaults(current));
+      setChartUndoStack([]);
+    }
+
+    if (mode === "simple") {
+      setSettings((current) => applySimpleJourneyDefaults(current));
       setChartUndoStack([]);
     }
 
@@ -1331,11 +1524,11 @@ function ModeSelectionPanel({
   return (
     <section className="mode-panel" aria-labelledby="mode-selection-title">
       <div className="panel-heading">
-        <p className="eyebrow">Choose your route</p>
-        <h2 id="mode-selection-title">How would you like to use the modeller?</h2>
+        <p className="eyebrow">Planner view</p>
+        <h2 id="mode-selection-title">Choose the level of detail</h2>
         <p className="section-copy">
-          Start with a guided journey if you want the questions one at a time, or
-          use expert mode to edit every assumption directly.
+          The simple planner is the quickest way through. Switch to expert mode any
+          time if you want every modelling control.
         </p>
       </div>
 
@@ -1363,8 +1556,22 @@ function ModeSelectionPanel({
           <span className="card-label">Early retirement</span>
           <strong>Work out what I need to retire early</strong>
           <span>
-            Start with the age and income you want, then test the ISA and SIPP
-            bridge before pension income fully arrives.
+            Follow a short, statement-led flow that closely matches the main Civil
+            Service calculator inputs and ends on the chart.
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={getModeCardClassName(selectedMode === "simple")}
+          aria-pressed={selectedMode === "simple"}
+          onClick={() => onSelectMode("simple")}
+        >
+          <span className="card-label">Simple journey</span>
+          <strong>Use the simple early retirement journey</strong>
+          <span>
+            Follow a shorter flow with State Pension assumptions handled for you
+            and the chart at the end.
           </span>
         </button>
 
@@ -2159,13 +2366,33 @@ function JourneyStepContent({
 
   if (step.kind === "fields") {
     return (
-      <SettingsFields
-        fields={getFieldsByIds(step.fieldIds, step.fieldLabels)}
-        settings={settings}
-        validationIssues={validationIssues}
-        onChange={onChange}
-        useDropdownDates={useDropdownDates}
-      />
+      <>
+        <SettingsFields
+          fields={getFieldsByIds(step.fieldIds, step.fieldLabels)}
+          settings={settings}
+          validationIssues={validationIssues}
+          onChange={onChange}
+          useDropdownDates={useDropdownDates}
+        />
+
+        {step.fieldIds.includes("alphaAddedPensionMonthly") ? (
+          <AddedPensionLumpSumsEditor
+            lumpSums={settings.alphaAddedPensionLumpSums}
+            defaultStartDate={settings.startDate}
+            useDropdownDates={useDropdownDates}
+            title="Added pension lump sums"
+            description="Add one-off or yearly added-pension lump sum purchases alongside the regular monthly amount."
+            showFactorType
+            validationIssues={getValidationIssuesForField(
+              validationIssues,
+              "alphaAddedPensionLumpSums",
+            )}
+            onChange={(nextLumpSums) =>
+              onChange("alphaAddedPensionLumpSums", nextLumpSums)
+            }
+          />
+        ) : null}
+      </>
     );
   }
 
@@ -2202,7 +2429,7 @@ function OptionalSectionToggleGrid({
               onChange={(event) =>
                 onChange(
                   toggle.key,
-                  event.target.checked as PensionSettings[typeof toggle.key],
+                  event.target.checked,
                 )
               }
             />
@@ -3061,7 +3288,7 @@ function Field({
   if (field.id === "statePensionDrawDate") {
     return (
       <StatePensionAgeField
-        field={field as DateField}
+        field={field}
         value={value as string}
         settings={settings}
         onChange={onChange}
@@ -3115,7 +3342,7 @@ function Field({
   if (field.type === "select") {
     return (
       <SelectSettingField
-        field={field as SelectField}
+        field={field}
         value={value as string}
         onChange={onChange}
         disabled={disabled}
@@ -3145,7 +3372,7 @@ function Field({
             onChange={(event) =>
               onChange(
                 field.id,
-                event.target.checked as PensionSettings[typeof field.id],
+                event.target.checked,
               )
             }
           />
@@ -3159,7 +3386,7 @@ function Field({
   if (field.type === "currency-input") {
     return (
       <CurrencySettingField
-        field={field as CurrencyInputField}
+        field={field}
         value={value as number}
         onChange={onChange}
         disabled={disabled}
@@ -3406,7 +3633,7 @@ function YearSettingFieldEditor({
           setLocalYear(event.target.value);
         }}
         onBlur={(event) => {
-          onChange(field.id, event.target.value as PensionSettings[typeof field.id]);
+          onChange(field.id, event.target.value);
         }}
       >
         {yearOptions.map((year) => (
@@ -3521,7 +3748,7 @@ function CurrencySettingField({
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
 }) {
-  const resetValue = defaultSettings[field.id] as PensionSettings[typeof field.id];
+  const resetValue = defaultSettings[field.id];
 
   return (
     <CurrencySettingFieldEditor
@@ -3561,9 +3788,9 @@ function CurrencySettingFieldEditor({
   const commitDraftValue = (nextDraftValue: string) => {
     const parsedValue = nextDraftValue.trim() === "" ? 0 : Number(nextDraftValue);
     const nextValue = Number.isFinite(parsedValue) ? parsedValue : initialValue;
-    onChange(field.id, nextValue as PensionSettings[typeof field.id]);
+    onChange(field.id, nextValue);
     setDraftValue(
-      normalizeSetting(field.id, nextValue as PensionSettings[typeof field.id]).toString(),
+      normalizeSetting(field.id, nextValue).toString(),
     );
   };
 
@@ -3571,7 +3798,7 @@ function CurrencySettingFieldEditor({
     presetValue: NonNullable<CurrencyInputField["presets"]>[number]["value"],
   ) => {
     setDraftValue(presetValue.toString());
-    onChange(field.id, presetValue as PensionSettings[typeof field.id]);
+    onChange(field.id, presetValue);
   };
 
   return (
@@ -3669,7 +3896,7 @@ function RangeSettingField({
     "sippRealInterestPercent",
     "isaRealInterestPercent",
   ].includes(field.id);
-  const resetValue = defaultSettings[field.id] as PensionSettings[typeof field.id];
+  const resetValue = defaultSettings[field.id];
   const resetLabel = `Reset ${field.label} to default`;
   const isEditingExactValue = draftExactValue !== null;
   const parsedDraftExactValue =
@@ -3692,7 +3919,7 @@ function RangeSettingField({
       Math.max(effectiveField.min, nextValue),
     );
 
-    onChange(field.id, boundedValue as PensionSettings[typeof field.id]);
+    onChange(field.id, boundedValue);
     setDraftValue(null);
     setDraftExactValue(null);
   };
@@ -4036,10 +4263,10 @@ function DateSettingField({
         ? normalizeStatePensionDrawDate(nextValue, settings.dateOfBirth)
         : (normalizeSetting(
             field.id,
-            nextValue as PensionSettings[typeof field.id],
-          ) as string);
+            nextValue,
+          ));
 
-    onChange(field.id, normalizedValue as PensionSettings[typeof field.id]);
+    onChange(field.id, normalizedValue);
     return normalizedValue;
   }
 
@@ -5357,6 +5584,7 @@ function loadStoredAppMode(): AppMode | null {
 
   return storedMode === "journey" ||
     storedMode === "bridge" ||
+    storedMode === "simple" ||
     storedMode === "compare" ||
     storedMode === "expert"
     ? storedMode

@@ -125,6 +125,10 @@ Run the full local quality gate:
 npm run check
 ```
 
+Static analysis is performed with type-aware `eslint` backed by
+`typescript-eslint` and `eslint-plugin-sonarjs`, so `npm run lint` checks for
+TypeScript misuse and common bug patterns in addition to normal lint rules.
+
 Run tests with coverage:
 
 ```bash

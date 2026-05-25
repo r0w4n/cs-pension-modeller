@@ -123,7 +123,7 @@ const OPTIONAL_SECTION_TOGGLES = [
 type OptionalSectionToggleKey = (typeof OPTIONAL_SECTION_TOGGLES)[number]["key"];
 type JourneyFieldLabels = Partial<Record<FieldDefinition["id"], string>>;
 
-type AppMode = "journey" | "bridge" | "expert";
+type AppMode = "journey" | "bridge" | "compare" | "expert";
 
 type JourneyStepDefinition =
   | {
@@ -491,10 +491,12 @@ function App() {
   const scrollActiveModeIntoView = useCallback(() => {
     window.requestAnimationFrame(() => {
       activeModeRef.current?.focus({ preventScroll: true });
-      activeModeRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      if (typeof activeModeRef.current?.scrollIntoView === "function") {
+        activeModeRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
     });
   }, []);
   const useDropdownDates = useMobileDateDropdowns();
@@ -1079,6 +1081,15 @@ function App() {
           </div>
         ) : null}
 
+        {appMode === "compare" ? (
+          <div ref={activeModeRef} className="active-mode-region" tabIndex={-1}>
+            <ComparisonPrototype
+              settings={deferredSettings}
+              validationIssues={validationIssues}
+            />
+          </div>
+        ) : null}
+
         {appMode === "expert" ? (
           <div ref={activeModeRef} className="active-mode-region" tabIndex={-1}>
             <SummarySection
@@ -1359,6 +1370,20 @@ function ModeSelectionPanel({
 
         <button
           type="button"
+          className={getModeCardClassName(selectedMode === "compare")}
+          aria-pressed={selectedMode === "compare"}
+          onClick={() => onSelectMode("compare")}
+        >
+          <span className="card-label">Comparison</span>
+          <strong>Compare what-if scenarios</strong>
+          <span>
+            See the current plan beside earlier retirement, later retirement,
+            higher saving and lower target scenarios.
+          </span>
+        </button>
+
+        <button
+          type="button"
           className={getModeCardClassName(selectedMode === "expert")}
           aria-pressed={selectedMode === "expert"}
           onClick={() => onSelectMode("expert")}
@@ -1379,6 +1404,337 @@ function getModeCardClassName(isActive: boolean) {
   return ["mode-card", isActive ? "mode-card--active" : ""]
     .filter(Boolean)
     .join(" ");
+}
+
+type ComparisonScenario = {
+  id: string;
+  title: string;
+  description: string;
+  settings: PensionSettings;
+};
+
+type ComparisonResult = {
+  scenario: ComparisonScenario;
+  summary: PensionSummary;
+  annualIncome: number;
+  annualTarget: number;
+  annualGap: number;
+};
+
+function ComparisonPrototype({
+  settings,
+  validationIssues,
+}: {
+  settings: PensionSettings;
+  validationIssues: PensionValidationIssue[];
+}) {
+  const [selectedScenarioId, setSelectedScenarioId] = useState("current");
+  const scenarios = useMemo(() => createComparisonScenarios(settings), [settings]);
+  const results = useMemo(
+    () =>
+      scenarios.map((scenario): ComparisonResult => {
+        const rows = createProjectionTable(scenario.settings);
+        const summary = generatePensionSummary(rows, scenario.settings);
+        const retirementDate = addYearsToIsoDate(
+          scenario.settings.dateOfBirth,
+          scenario.settings.requirementAge,
+        );
+        const annualTarget = calculateRetirementIncomeTargetAtDate(
+          scenario.settings,
+          retirementDate,
+        );
+
+        return {
+          scenario,
+          summary,
+          annualIncome: summary.retirementIncome.totalAnnualIncome,
+          annualTarget,
+          annualGap: summary.retirementIncome.totalAnnualIncome - annualTarget,
+        };
+      }),
+    [scenarios],
+  );
+  const selectedResult =
+    results.find((result) => result.scenario.id === selectedScenarioId) ??
+    results[0];
+  const bestIncomeResult = results.reduce(
+    (best, result) => (result.annualIncome > best.annualIncome ? result : best),
+    results[0],
+  );
+  const closestTargetResult = results.reduce((best, result) => {
+    const bestDistance = Math.abs(best.annualGap);
+    const resultDistance = Math.abs(result.annualGap);
+
+    return resultDistance < bestDistance ? result : best;
+  }, results[0]);
+
+  if (validationIssues.length > 0) {
+    return (
+      <section className="panel comparison-panel">
+        <div className="panel-heading">
+          <p className="eyebrow">Scenario comparison</p>
+          <h2>Compare what-if scenarios</h2>
+          <p className="section-copy">
+            Bring the current assumptions back into a valid range, then the
+            comparison view can calculate each scenario.
+          </p>
+        </div>
+        <ValidationIssuesSection validationIssues={validationIssues} />
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel comparison-panel" aria-labelledby="comparison-title">
+      <div className="panel-heading">
+        <p className="eyebrow">Scenario comparison</p>
+        <h2 id="comparison-title">Compare what-if scenarios</h2>
+        <p className="section-copy">
+          Each card starts from your current assumptions and changes one planning
+          choice. Pick a card to inspect the pension mix, target gap and key
+          dates for that scenario.
+        </p>
+      </div>
+
+      <div className="comparison-insight-grid">
+        <SummarySection
+          title="Highest projected income"
+          items={[
+            {
+              label: bestIncomeResult.scenario.title,
+              value: `${formatCurrencyDetailed(bestIncomeResult.annualIncome)} per year`,
+            },
+          ]}
+        />
+        <SummarySection
+          title="Closest to target"
+          items={[
+            {
+              label: closestTargetResult.scenario.title,
+              value: formatShortfallOrSurplus(
+                Math.max(0, -closestTargetResult.annualGap),
+                Math.max(0, closestTargetResult.annualGap),
+              ),
+            },
+          ]}
+        />
+      </div>
+
+      <div className="comparison-card-grid" role="list">
+        {results.map((result) => {
+          const isSelected = result.scenario.id === selectedResult.scenario.id;
+          const gapLabel = formatShortfallOrSurplus(
+            Math.max(0, -result.annualGap),
+            Math.max(0, result.annualGap),
+          );
+
+          return (
+            <button
+              key={result.scenario.id}
+              type="button"
+              className={
+                isSelected
+                  ? "comparison-card comparison-card--active"
+                  : "comparison-card"
+              }
+              aria-pressed={isSelected}
+              onClick={() => setSelectedScenarioId(result.scenario.id)}
+            >
+              <span className="card-label">{result.scenario.title}</span>
+              <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
+              <span>{gapLabel} against target</span>
+              <small>{result.scenario.description}</small>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="comparison-detail-grid">
+        <SummarySection
+          title={selectedResult.scenario.title}
+          variant="feature"
+          description={selectedResult.scenario.description}
+          items={[
+            {
+              label: "Retirement age",
+              value: formatDecimalAge(selectedResult.scenario.settings.requirementAge),
+            },
+            {
+              label: "Projected annual income",
+              value: formatCurrencyDetailed(selectedResult.annualIncome),
+            },
+            {
+              label: "Annual target",
+              value: formatCurrencyDetailed(selectedResult.annualTarget),
+            },
+            {
+              label: "Target gap",
+              value: formatShortfallOrSurplus(
+                Math.max(0, -selectedResult.annualGap),
+                Math.max(0, selectedResult.annualGap),
+              ),
+            },
+          ]}
+        />
+
+        <SummarySection
+          title="Key dates"
+          items={[
+            ...(selectedResult.scenario.settings.showAlpha
+              ? [
+                  {
+                    label: "Alpha pension starts",
+                    value: formatDate(
+                      selectedResult.summary.keyDates.startsAlphaPension,
+                    ),
+                  },
+                ]
+              : []),
+            ...(selectedResult.scenario.settings.showStatePension
+              ? [
+                  {
+                    label: "State Pension starts",
+                    value: formatDate(
+                      selectedResult.summary.keyDates.startsStatePension,
+                    ),
+                  },
+                ]
+              : []),
+            ...(selectedResult.scenario.settings.showSipp
+              ? [
+                  {
+                    label: "SIPP drawdown starts",
+                    value: formatDate(selectedResult.summary.keyDates.startsSippDraw),
+                  },
+                ]
+              : []),
+            ...(selectedResult.scenario.settings.showIsa
+              ? [
+                  {
+                    label: "ISA drawdown starts",
+                    value: formatDate(selectedResult.summary.keyDates.startsIsaDraw),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </div>
+
+      <BridgeTable
+        title="Comparison table"
+        description="The table keeps the core decision metrics in one place so the tradeoffs are easy to scan."
+        columns={[
+          { key: "scenario", label: "Scenario", width: "13rem" },
+          { key: "retirementAge", label: "Retirement age", width: "8rem" },
+          { key: "target", label: "Target/yr", width: "8rem" },
+          { key: "income", label: "Income/yr", width: "8rem" },
+          { key: "gap", label: "Gap/surplus", width: "9rem" },
+          { key: "alpha", label: "Alpha/mo", width: "8rem" },
+          { key: "state", label: "State/mo", width: "8rem" },
+          { key: "sipp", label: "SIPP/mo", width: "8rem" },
+          { key: "isa", label: "ISA/mo", width: "8rem" },
+        ]}
+        rows={results.map((result) => [
+          result.scenario.title,
+          formatDecimalAge(result.scenario.settings.requirementAge),
+          formatCurrencyDetailed(result.annualTarget),
+          formatCurrencyDetailed(result.annualIncome),
+          formatShortfallOrSurplus(
+            Math.max(0, -result.annualGap),
+            Math.max(0, result.annualGap),
+          ),
+          formatCurrencyDetailed(result.summary.alphaPension.monthlyAtDraw),
+          formatCurrencyDetailed(result.summary.incomeOverTime.monthlyStatePension),
+          formatCurrencyDetailed(result.summary.sippPension.monthlyAtDraw),
+          formatCurrencyDetailed(result.summary.isaPension.monthlyAtDraw),
+        ])}
+      />
+    </section>
+  );
+}
+
+function createComparisonScenarios(settings: PensionSettings): ComparisonScenario[] {
+  const currentAge = calculateCurrentPlanningAge(settings);
+  const statePensionAge = calculateStatePensionDrawAge(
+    settings.dateOfBirth,
+    settings.statePensionDrawDate,
+  );
+  const minimumAlphaDrawAge = calculateMinimumPensionAccessAge(settings.dateOfBirth);
+  const minimumSippDrawAge = calculateMinimumSippAccessAge(settings.dateOfBirth);
+  const minimumRetirementAge = Math.max(currentAge, 50);
+  const maximumRetirementAge = Math.min(70, settings.lifeExpectancy);
+
+  const withRetirementAge = (age: number): PensionSettings => {
+    const retirementAge = clampNumber(age, minimumRetirementAge, maximumRetirementAge);
+    const alphaDrawAge = normalizeAlphaPensionDrawAge(
+      Math.max(retirementAge, minimumAlphaDrawAge),
+      settings.dateOfBirth,
+    );
+    const sippDrawAge = normalizeSippDrawAge(
+      Math.max(retirementAge, minimumSippDrawAge),
+      settings.dateOfBirth,
+    );
+
+    return {
+      ...settings,
+      requirementAge: retirementAge,
+      alphaPensionLeaveAge: Math.min(retirementAge, statePensionAge),
+      alphaPensionDrawAge: Math.min(alphaDrawAge, statePensionAge),
+      isaDrawAge: retirementAge,
+      sippDrawAge,
+    };
+  };
+
+  return [
+    {
+      id: "current",
+      title: "Current plan",
+      description: "Your saved assumptions with no comparison adjustment.",
+      settings,
+    },
+    {
+      id: "earlier",
+      title: "Two years earlier",
+      description: "Retire two years sooner and draw flexible pots from that date.",
+      settings: withRetirementAge(settings.requirementAge - 2),
+    },
+    {
+      id: "later",
+      title: "Two years later",
+      description: "Keep working and accruing for two more years before retirement.",
+      settings: withRetirementAge(settings.requirementAge + 2),
+    },
+    {
+      id: "save-more",
+      title: "Save £500 more",
+      description: "Add £250 per month to ISA and £250 per month to SIPP saving.",
+      settings: {
+        ...settings,
+        showIsa: true,
+        showSipp: true,
+        isaMonthlyContribution: normalizeSetting(
+          "isaMonthlyContribution",
+          settings.isaMonthlyContribution + 250,
+        ),
+        sippMonthlyContribution: normalizeSetting(
+          "sippMonthlyContribution",
+          settings.sippMonthlyContribution + 250,
+        ),
+      },
+    },
+    {
+      id: "lower-target",
+      title: "Lower target",
+      description: "Test the same plan against a retirement income target 10% lower.",
+      settings: {
+        ...settings,
+        desiredRetirementIncome: normalizeSetting(
+          "desiredRetirementIncome",
+          settings.desiredRetirementIncome * 0.9,
+        ),
+      },
+    },
+  ];
 }
 
 function GuidanceNotesToggle({
@@ -4173,6 +4529,7 @@ function ProjectionTableFrame<Row>({
   minWidth?: string;
 }) {
   const headerScrollRef = useRef<HTMLDivElement | null>(null);
+  const showMobileCards = useMobileDateDropdowns();
 
   const syncHeaderScroll = (scrollLeft: number) => {
     if (headerScrollRef.current) {
@@ -4193,30 +4550,32 @@ function ProjectionTableFrame<Row>({
     <div className="table-shell">
       {controls ? <div className="table-controls">{controls}</div> : null}
 
-      <div className="projection-mobile-cards">
-        {rows.map((row, rowIndex) => {
-          const rowKey = getRowKey(row, rowIndex);
-          const cells = renderCells(row, rowIndex);
+      {showMobileCards ? (
+        <div className="projection-mobile-cards">
+          {rows.map((row, rowIndex) => {
+            const rowKey = getRowKey(row, rowIndex);
+            const cells = renderCells(row, rowIndex);
 
-          return (
-            <article
-              key={`${rowKey}-mobile`}
-              className={`projection-mobile-card ${getRowClassName?.(row, rowIndex) ?? ""}`}
-              title={getRowTitle?.(row, rowIndex)}
-            >
-              {cells.map((cell, cellIndex) => (
-                <div
-                  key={`${rowKey}-mobile-${columns[cellIndex]?.key}`}
-                  className="projection-mobile-card-row"
-                >
-                  <span>{columns[cellIndex]?.label}</span>
-                  <div className="projection-mobile-card-value">{cell}</div>
-                </div>
-              ))}
-            </article>
-          );
-        })}
-      </div>
+            return (
+              <article
+                key={`${rowKey}-mobile`}
+                className={`projection-mobile-card ${getRowClassName?.(row, rowIndex) ?? ""}`}
+                title={getRowTitle?.(row, rowIndex)}
+              >
+                {cells.map((cell, cellIndex) => (
+                  <div
+                    key={`${rowKey}-mobile-${columns[cellIndex]?.key}`}
+                    className="projection-mobile-card-row"
+                  >
+                    <span>{columns[cellIndex]?.label}</span>
+                    <div className="projection-mobile-card-value">{cell}</div>
+                  </div>
+                ))}
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="table-header-shell">
         <div className="table-header-scroll" ref={headerScrollRef}>
@@ -5151,7 +5510,10 @@ function loadAcknowledgementState() {
 function loadStoredAppMode(): AppMode | null {
   const storedMode = readStorageItem(APP_MODE_STORAGE_KEY);
 
-  return storedMode === "journey" || storedMode === "bridge" || storedMode === "expert"
+  return storedMode === "journey" ||
+    storedMode === "bridge" ||
+    storedMode === "compare" ||
+    storedMode === "expert"
     ? storedMode
     : null;
 }

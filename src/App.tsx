@@ -1027,6 +1027,7 @@ function App() {
               settings={settings}
               validationIssues={validationIssues}
               pensionSummary={pensionSummary}
+              projectionRows={projectionRows}
               retirementIncomeSeries={retirementIncomeSeries}
               bridgeChartParameters={bridgeChartParameters}
               bridgeChartLimits={bridgeChartLimits}
@@ -1057,6 +1058,7 @@ function App() {
               settings={settings}
               validationIssues={validationIssues}
               pensionSummary={pensionSummary}
+              projectionRows={projectionRows}
               retirementIncomeSeries={retirementIncomeSeries}
               bridgeChartParameters={bridgeChartParameters}
               bridgeChartLimits={bridgeChartLimits}
@@ -1618,35 +1620,46 @@ function ComparisonPrototype({
         />
       </div>
 
-      <BridgeTable
-        title="Comparison table"
-        description="The table keeps the core decision metrics in one place so the tradeoffs are easy to scan."
-        columns={[
-          { key: "scenario", label: "Scenario", width: "13rem" },
-          { key: "retirementAge", label: "Retirement age", width: "8rem" },
-          { key: "target", label: "Target/yr", width: "8rem" },
-          { key: "income", label: "Income/yr", width: "8rem" },
-          { key: "gap", label: "Gap/surplus", width: "9rem" },
-          { key: "alpha", label: "Alpha/mo", width: "8rem" },
-          { key: "state", label: "State/mo", width: "8rem" },
-          { key: "sipp", label: "SIPP/mo", width: "8rem" },
-          { key: "isa", label: "ISA/mo", width: "8rem" },
-        ]}
-        rows={results.map((result) => [
-          result.scenario.title,
-          formatDecimalAge(result.scenario.settings.requirementAge),
-          formatCurrencyDetailed(result.annualTarget),
-          formatCurrencyDetailed(result.annualIncome),
-          formatShortfallOrSurplus(
-            Math.max(0, -result.annualGap),
-            Math.max(0, result.annualGap),
-          ),
-          formatCurrencyDetailed(result.summary.alphaPension.monthlyAtDraw),
-          formatCurrencyDetailed(result.summary.incomeOverTime.monthlyStatePension),
-          formatCurrencyDetailed(result.summary.sippPension.monthlyAtDraw),
-          formatCurrencyDetailed(result.summary.isaPension.monthlyAtDraw),
-        ])}
-      />
+      <section className="bridge-table-section">
+        <div className="summary-section-header">
+          <h3>Comparison table</h3>
+        </div>
+        <p className="section-copy">
+          The table keeps the core decision metrics in one place so the tradeoffs
+          are easy to scan.
+        </p>
+        <ProjectionTableFrame
+          columns={[
+            { key: "scenario", label: "Scenario", width: "13rem" },
+            { key: "retirementAge", label: "Retirement age", width: "8rem" },
+            { key: "target", label: "Target/yr", width: "8rem" },
+            { key: "income", label: "Income/yr", width: "8rem" },
+            { key: "gap", label: "Gap/surplus", width: "9rem" },
+            { key: "alpha", label: "Alpha/mo", width: "8rem" },
+            { key: "state", label: "State/mo", width: "8rem" },
+            { key: "sipp", label: "SIPP/mo", width: "8rem" },
+            { key: "isa", label: "ISA/mo", width: "8rem" },
+          ]}
+          rows={results.map((result) => [
+            result.scenario.title,
+            formatDecimalAge(result.scenario.settings.requirementAge),
+            formatCurrencyDetailed(result.annualTarget),
+            formatCurrencyDetailed(result.annualIncome),
+            formatShortfallOrSurplus(
+              Math.max(0, -result.annualGap),
+              Math.max(0, result.annualGap),
+            ),
+            formatCurrencyDetailed(result.summary.alphaPension.monthlyAtDraw),
+            formatCurrencyDetailed(result.summary.incomeOverTime.monthlyStatePension),
+            formatCurrencyDetailed(result.summary.sippPension.monthlyAtDraw),
+            formatCurrencyDetailed(result.summary.isaPension.monthlyAtDraw),
+          ])}
+          emptyMessage="No comparison rows are available for the current settings."
+          getRowKey={(row) => row[0]}
+          minWidth="78rem"
+          renderCells={(row) => row.map((cell) => cell)}
+        />
+      </section>
     </section>
   );
 }
@@ -1759,6 +1772,7 @@ type GuidedJourneyProps = {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
+  projectionRows: ProjectionRow[];
   retirementIncomeSeries: RetirementIncomePoint[];
   bridgeChartParameters: RetirementIncomeBridgeParameters;
   bridgeChartLimits: RetirementIncomeBridgeLimits;
@@ -1786,6 +1800,7 @@ function GuidedJourney({
   settings,
   validationIssues,
   pensionSummary,
+  projectionRows,
   retirementIncomeSeries,
   bridgeChartParameters,
   bridgeChartLimits,
@@ -1954,6 +1969,7 @@ function GuidedJourney({
             settings={settings}
             validationIssues={validationIssues}
             pensionSummary={pensionSummary}
+            projectionRows={projectionRows}
             retirementIncomeSeries={retirementIncomeSeries}
             bridgeChartParameters={bridgeChartParameters}
             bridgeChartLimits={bridgeChartLimits}
@@ -2008,6 +2024,7 @@ function JourneyStepContent({
   settings,
   validationIssues,
   pensionSummary,
+  projectionRows,
   retirementIncomeSeries,
   bridgeChartParameters,
   bridgeChartLimits,
@@ -2112,6 +2129,18 @@ function JourneyStepContent({
           onChangeParameters={onChangeChartParameters}
           {...bridgeChartParameters}
         />
+
+        <section className="panel">
+          <div className="panel-heading">
+            <h2>Monthly pension projection table</h2>
+            <p className="section-copy">
+              The table is generated from the projection layer so each row stays
+              traceable back to the modeller inputs and factor tables.
+            </p>
+          </div>
+
+          <ProjectionTable rows={projectionRows} settings={settings} />
+        </section>
       </div>
     );
   }
@@ -4604,6 +4633,18 @@ function formatCurrencyDetailed(value: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function formatShortfallOrSurplus(shortfall: number, surplus: number) {
+  if (shortfall > 0) {
+    return `${formatCurrencyDetailed(shortfall)} shortfall`;
+  }
+
+  if (surplus > 0) {
+    return `${formatCurrencyDetailed(surplus)} surplus`;
+  }
+
+  return formatCurrencyDetailed(0);
 }
 
 function formatPercent(rate: number) {

@@ -439,8 +439,8 @@ export function RetirementIncomeBridgeChart({
         ? [
             {
               key: "partialRetirementStartAge" as const,
-              label: "Start partial",
-              shortLabel: "Start partial",
+              label: "Partial retirement",
+              shortLabel: "Partial retirement",
               age: partialRetirementStartAge,
               colour: "#c2410c",
               editable: true,
@@ -1278,7 +1278,7 @@ function getMobileMarkerLabel(marker: MilestoneMarker) {
   }
 
   if (marker.key === "partialRetirementStartAge") {
-    return "Start partial";
+    return "Partial retirement";
   }
 
   if (marker.key === "sippAccessAge" || marker.key === "sippUseByAge") {

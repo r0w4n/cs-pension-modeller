@@ -1553,6 +1553,20 @@ function ModeSelectionPanel({
       <div className="mode-card-grid">
         <button
           type="button"
+          className={getModeCardClassName(selectedMode === "simple")}
+          aria-pressed={selectedMode === "simple"}
+          onClick={() => onSelectMode("simple")}
+        >
+          <span className="card-label">Simple journey</span>
+          <strong>Use the simple early retirement journey</strong>
+          <span>
+            Follow a shorter flow with State Pension assumptions handled for you
+            and the chart at the end.
+          </span>
+        </button>
+
+        <button
+          type="button"
           className={getModeCardClassName(selectedMode === "journey")}
           aria-pressed={selectedMode === "journey"}
           onClick={() => onSelectMode("journey")}
@@ -1576,20 +1590,6 @@ function ModeSelectionPanel({
           <span>
             Follow a short, statement-led flow that closely matches the main Civil
             Service calculator inputs and ends on the chart.
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className={getModeCardClassName(selectedMode === "simple")}
-          aria-pressed={selectedMode === "simple"}
-          onClick={() => onSelectMode("simple")}
-        >
-          <span className="card-label">Simple journey</span>
-          <strong>Use the simple early retirement journey</strong>
-          <span>
-            Follow a shorter flow with State Pension assumptions handled for you
-            and the chart at the end.
           </span>
         </button>
 

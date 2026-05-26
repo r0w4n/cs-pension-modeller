@@ -71,6 +71,8 @@ const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
 export const APP_MODE_STORAGE_KEY = "cs-pension-modeller.appMode";
 const GUIDANCE_NOTES_STORAGE_KEY = "cs-pension-modeller.guidanceNotes";
+const COMPARISON_SCENARIOS_STORAGE_KEY =
+  "cs-pension-modeller.comparisonScenarios";
 const MAX_COMPARISON_SCENARIOS = 5;
 const GuidanceNotesContext = createContext(true);
 const MODELLER_LIMITATIONS = [
@@ -630,7 +632,7 @@ function App() {
     useState<RetirementIncomeDisplay>("monthly");
   const [comparisonScenarios, setComparisonScenarios] = useState<
     ComparisonScenario[]
-  >([]);
+  >(loadStoredComparisonScenarios);
   const [showLimitations, setShowLimitations] = useState(false);
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState,
@@ -730,6 +732,10 @@ function App() {
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    saveStoredComparisonScenarios(comparisonScenarios);
+  }, [comparisonScenarios]);
 
   useEffect(() => {
     saveStoredGuidanceNotes(showGuidanceNotes);
@@ -5807,6 +5813,67 @@ function loadStoredGuidanceNotes() {
   return storedPreference === null ? true : storedPreference !== "false";
 }
 
+function loadStoredComparisonScenarios(): ComparisonScenario[] {
+  const storedScenarios = readStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
+
+  if (!storedScenarios) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(storedScenarios) as unknown;
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((scenario, index) => normalizeStoredComparisonScenario(scenario, index))
+      .filter((scenario): scenario is ComparisonScenario => Boolean(scenario))
+      .slice(0, MAX_COMPARISON_SCENARIOS);
+  } catch {
+    return [];
+  }
+}
+
+function normalizeStoredComparisonScenario(
+  scenario: unknown,
+  index: number,
+): ComparisonScenario | null {
+  if (!scenario || typeof scenario !== "object") {
+    return null;
+  }
+
+  const candidate = scenario as Partial<ComparisonScenario>;
+  const settings = candidate.settings;
+
+  if (!settings || typeof settings !== "object") {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+
+  return {
+    id:
+      typeof candidate.id === "string" && candidate.id
+        ? candidate.id
+        : createComparisonScenarioId(),
+    name:
+      typeof candidate.name === "string" && candidate.name.trim()
+        ? candidate.name
+        : `Scenario ${index + 1}`,
+    settings: clonePensionSettings(settings),
+    createdAt:
+      typeof candidate.createdAt === "string" && candidate.createdAt
+        ? candidate.createdAt
+        : now,
+    updatedAt:
+      typeof candidate.updatedAt === "string" && candidate.updatedAt
+        ? candidate.updatedAt
+        : now,
+  };
+}
+
 function isEditableShortcutTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -5824,6 +5891,13 @@ function isEditableShortcutTarget(target: EventTarget | null) {
 
 function saveStoredAppMode(mode: AppMode) {
   writeStorageItem(APP_MODE_STORAGE_KEY, mode);
+}
+
+function saveStoredComparisonScenarios(scenarios: ComparisonScenario[]) {
+  writeStorageItem(
+    COMPARISON_SCENARIOS_STORAGE_KEY,
+    JSON.stringify(scenarios.slice(0, MAX_COMPARISON_SCENARIOS)),
+  );
 }
 
 function saveStoredGuidanceNotes(showGuidanceNotes: boolean) {

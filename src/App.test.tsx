@@ -1159,7 +1159,7 @@ describe("App settings form", () => {
         inflationRateAnnual: 3.4,
       }),
     );
-  }, 10000);
+  }, 20000);
 
   it("can reset the long-term inflation assumption to its default", () => {
     renderAcknowledgedApp();

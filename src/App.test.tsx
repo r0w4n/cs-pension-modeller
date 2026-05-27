@@ -345,7 +345,11 @@ function renderAcknowledgedApp(
   fireEvent.click(screen.getByRole("button", { name: "I understand" }));
 
   if (mode === "expert") {
-    fireEvent.click(screen.getByRole("button", { name: /Use expert mode/i }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Show all settings and unlock full control/i,
+      }),
+    );
   }
 
   if (mode === "journey") {
@@ -395,7 +399,11 @@ describe("App settings form", () => {
   it("saves the selected modeller mode locally", () => {
     renderAcknowledgedApp({ mode: null });
 
-    fireEvent.click(screen.getByRole("button", { name: /Use expert mode/i }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Show all settings and unlock full control/i,
+      }),
+    );
 
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("expert");
   });
@@ -405,10 +413,11 @@ describe("App settings form", () => {
 
     renderAcknowledgedApp({ mode: null });
 
-    expect(screen.getByRole("button", { name: /Use expert mode/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", {
+        name: /Show all settings and unlock full control/i,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("heading", { name: "Your retirement assumptions" }),
     ).toBeInTheDocument();
@@ -425,7 +434,11 @@ describe("App settings form", () => {
     expect(() => render(<App />)).not.toThrow();
 
     fireEvent.click(screen.getByRole("button", { name: "I understand" }));
-    fireEvent.click(screen.getByRole("button", { name: /Use expert mode/i }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Show all settings and unlock full control/i,
+      }),
+    );
 
     expect(
       screen.getByRole("heading", { name: "Your retirement assumptions" }),
@@ -578,10 +591,11 @@ describe("App settings form", () => {
   it("renders sensible default values", () => {
     renderAcknowledgedApp();
 
-    expect(screen.getByRole("button", { name: /Use expert mode/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", {
+        name: /Show all settings and unlock full control/i,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(getTodayIsoDate());
     expect(screen.getByLabelText("Your Date of Birth")).toHaveValue(defaultSettings.dateOfBirth);
     expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveAttribute(
@@ -699,7 +713,7 @@ describe("App settings form", () => {
     expect(titleSection).not.toBeNull();
     expect(
       within(titleSection as HTMLElement).getByRole("button", {
-        name: /Use expert mode/i,
+        name: /Show all settings and unlock full control/i,
       }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Monthly Alpha pension")).toBeInTheDocument();

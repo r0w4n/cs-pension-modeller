@@ -1613,10 +1613,10 @@ function ModeSelectionPanel({
           onClick={() => onSelectMode("expert")}
         >
           <span className="card-label">Expert mode</span>
-          <strong>Use expert mode</strong>
+          <strong>Show all settings and unlock full control.</strong>
           <span>
-            Keep the current full assumptions form, optional sections, lump sums
-            and detailed projection table.
+            Reveal every assumption, optional section, lump sum, and detailed
+            projection table.
           </span>
         </button>
       </div>

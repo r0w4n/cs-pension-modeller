@@ -283,9 +283,9 @@ const JOURNEY_DEFINITIONS = [
       {
         id: "answer",
         eyebrow: "Result",
-        title: "Your retirement bridge",
+        title: "Your results",
         description:
-          "Review the gap between stopping work and secure pension income starting.",
+          "Review your projected income, bridge funding, key dates, and assumptions in one place. Save this result when you want to compare it with alternative retirement scenarios.",
         kind: "bridge-answer",
       },
     ],
@@ -417,9 +417,9 @@ const JOURNEY_DEFINITIONS = [
       {
         id: "answer",
         eyebrow: "Result",
-        title: "Your chart and answer",
+        title: "Your results",
         description:
-          "Review the income chart and the main gaps or surpluses in your plan.",
+          "Review your projected income, bridge funding, key dates, and assumptions in one place. Save this result when you want to compare it with alternative retirement scenarios.",
         kind: "bridge-answer",
       },
     ],
@@ -1424,6 +1424,7 @@ type ComparisonResult = {
   scenario: ComparisonScenario;
   rows: ProjectionRow[];
   summary: PensionSummary;
+  bridgeAnalysis: RetirementBridgeAnalysis;
   annualIncome: number;
   annualTarget: number;
   annualGap: number;
@@ -1444,30 +1445,121 @@ type ComparisonTableRow = {
   sectionStart: boolean;
 };
 
+type ComparisonInsights = {
+  earliestRetirementResult: ComparisonResult | null;
+  bestTargetResult: ComparisonResult | null;
+  lowestShortfallRiskResult: ComparisonResult | null;
+  longestCapitalResult: ComparisonResult | null;
+  highestLaterIncomeResult: ComparisonResult | null;
+};
+
+type ComparisonScenarioActions = {
+  currentScenarioIsValid: boolean;
+  comparisonLimitReached: boolean;
+  scenarioNameDraft: string;
+  setScenarioNameDraft: (value: string) => void;
+  addCurrentScenario: () => void;
+  renameScenario: (id: string, name: string) => void;
+  removeScenario: (id: string) => void;
+  replaceScenario: (id: string) => void;
+};
+
 function ComparisonPrototype({
   settings,
   validationIssues,
   scenarios,
   onScenariosChange,
   onLoadScenario,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  showLimitations,
+  onToggleLimitations,
+  derivedInflationAssumptions,
+  retirementIncomeSeries,
+  bridgeChartParameters,
+  bridgeChartLimits,
+  onChangeChartParameters,
 }: {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   scenarios: ComparisonScenario[];
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (settings: PensionSettings) => void;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
+  showLimitations?: boolean;
+  onToggleLimitations?: () => void;
+  derivedInflationAssumptions?: ReturnType<typeof deriveInflationAssumptions>;
+  retirementIncomeSeries?: RetirementIncomePoint[];
+  bridgeChartParameters?: RetirementIncomeBridgeParameters;
+  bridgeChartLimits?: RetirementIncomeBridgeLimits;
+  onChangeChartParameters?: (
+    patch: Partial<RetirementIncomeBridgeParameters>,
+  ) => void;
 }) {
   const [scenarioNameDraft, setScenarioNameDraft] = useState("");
   const currentSettingsSignature = useMemo(() => getSettingsSignature(settings), [settings]);
   const currentScenarioIsValid = validationIssues.length === 0;
   const comparisonLimitReached = scenarios.length >= MAX_COMPARISON_SCENARIOS;
-  const results = useMemo(
+  const currentScenario = useMemo<ComparisonScenario>(
+    () => ({
+      id: "current-model",
+      name: "Current model",
+      settings: clonePensionSettings(settings),
+      createdAt: "",
+      updatedAt: "",
+    }),
+    [settings],
+  );
+  const currentResult = useMemo(
+    () =>
+      currentScenarioIsValid
+        ? createComparisonResult(currentScenario, currentSettingsSignature)
+        : null,
+    [currentScenario, currentScenarioIsValid, currentSettingsSignature],
+  );
+  const savedResults = useMemo(
     () =>
       scenarios.map((scenario) =>
         createComparisonResult(scenario, currentSettingsSignature),
       ),
     [currentSettingsSignature, scenarios],
   );
+  const matchingSavedResult = savedResults.find((result) => result.currentMatchesSaved) ?? null;
+  const results = matchingSavedResult
+    ? savedResults
+    : currentResult
+      ? [currentResult, ...savedResults]
+      : savedResults;
+  const activeResult = matchingSavedResult ?? currentResult ?? savedResults[0] ?? null;
+  const retirementIncomeItems =
+    activeResult && retirementIncomeDisplay
+      ? buildRetirementIncomeItems(activeResult.summary, retirementIncomeDisplay)
+      : [];
+  const retirementIncomeTitle =
+    retirementIncomeDisplay
+      ? getRetirementIncomeTitle(settings.taxationEnabled, retirementIncomeDisplay)
+      : "";
+  const retirementIncomeTotal =
+    activeResult && retirementIncomeDisplay
+      ? formatCurrencyDetailed(
+          retirementIncomeDisplay === "monthly"
+            ? activeResult.summary.retirementIncome.totalMonthlyIncome
+            : activeResult.summary.retirementIncome.totalAnnualIncome,
+        )
+      : "";
+  const retirementIncomeTargetTitle =
+    retirementIncomeDisplay
+      ? getRetirementIncomeTargetTitle(retirementIncomeDisplay)
+      : "";
+  const retirementIncomeTarget =
+    activeResult && retirementIncomeDisplay
+      ? formatCurrencyDetailed(
+          retirementIncomeDisplay === "monthly"
+            ? activeResult.annualTarget / 12
+            : activeResult.annualTarget,
+        )
+      : "";
   const earliestRetirementResult = results.reduce<ComparisonResult | null>(
     (best, result) =>
       !best ||
@@ -1513,6 +1605,13 @@ function ComparisonPrototype({
         : best,
     null,
   );
+  const insights = {
+    earliestRetirementResult,
+    bestTargetResult,
+    lowestShortfallRiskResult,
+    longestCapitalResult,
+    highestLaterIncomeResult,
+  };
 
   function addCurrentScenario() {
     if (!currentScenarioIsValid || comparisonLimitReached) {
@@ -1572,213 +1671,406 @@ function ComparisonPrototype({
     );
   }
 
+  const scenarioActions = {
+    currentScenarioIsValid,
+    comparisonLimitReached,
+    scenarioNameDraft,
+    setScenarioNameDraft,
+    addCurrentScenario,
+    renameScenario,
+    removeScenario,
+    replaceScenario,
+  };
+
   return (
     <section className="panel comparison-panel" aria-labelledby="comparison-title">
       <div className="panel-heading">
-        <p className="eyebrow">Scenario comparison</p>
-        <h2 id="comparison-title">Compare saved scenarios</h2>
+        <p className="eyebrow">Results breakdown</p>
+        <h2 id="comparison-title">Review this result</h2>
         <p className="section-copy">
-          Add snapshots from the current modeller inputs, then compare the saved
-          scenarios side by side. Saved scenarios stay fixed until you replace
-          them with the current model state.
+          Review the current model in detail, including retirement timing, secure pension income, bridge funding, and assumptions. Save this result as a scenario when you want to compare it with other retirement options.
         </p>
       </div>
 
-      <section className="comparison-builder" aria-labelledby="comparison-builder-title">
-        <div>
-          <h3 id="comparison-builder-title">Add the current model</h3>
-          <p className="section-copy">
-            Up to {MAX_COMPARISON_SCENARIOS} scenarios can be held in this
-            comparison set during the current session.
-          </p>
-        </div>
-        <div className="comparison-add-row">
-          <label className="comparison-name-field">
-            <span>Scenario name</span>
-            <input
-              className="text-input"
-              type="text"
-              value={scenarioNameDraft}
-              placeholder={`Scenario ${scenarios.length + 1}`}
-              onChange={(event) => setScenarioNameDraft(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={!currentScenarioIsValid || comparisonLimitReached}
-            onClick={addCurrentScenario}
-          >
-            Add to comparison
-          </button>
-        </div>
-        {!currentScenarioIsValid ? (
-          <p className="table-status">
-            Fix the current validation issues before adding or replacing a scenario.
-          </p>
-        ) : null}
-        {comparisonLimitReached ? (
-          <p className="table-status">
-            Comparison limit reached. Remove a scenario before adding another.
-          </p>
-        ) : null}
-      </section>
+      <ComparisonPensionSummary
+        activeResult={activeResult}
+        retirementIncomeDisplay={retirementIncomeDisplay}
+        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+        retirementIncomeItems={retirementIncomeItems}
+        retirementIncomeTitle={retirementIncomeTitle}
+        retirementIncomeTotal={retirementIncomeTotal}
+        retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+        retirementIncomeTarget={retirementIncomeTarget}
+        showLimitations={showLimitations}
+        onToggleLimitations={onToggleLimitations}
+      />
 
-      <section className="comparison-saved-section" aria-labelledby="saved-scenarios-title">
-        <div className="summary-section-header">
-          <h3 id="saved-scenarios-title">Saved scenarios</h3>
-          <span className="table-status">
-            {scenarios.length} of {MAX_COMPARISON_SCENARIOS} saved
-          </span>
-        </div>
+      <ComparisonBridgeChart
+        retirementIncomeSeries={retirementIncomeSeries}
+        bridgeChartParameters={bridgeChartParameters}
+        bridgeChartLimits={bridgeChartLimits}
+        onChangeChartParameters={onChangeChartParameters}
+      />
 
-        {scenarios.length === 0 ? (
-          <p className="section-copy">
-            No scenarios saved yet. Configure the model, name the scenario if you
-            want, then add it to the comparison set.
-          </p>
-        ) : (
-          <div className="comparison-card-grid" role="list">
-            {results.map((result) => {
-              return (
-                <article
-                  className="comparison-card"
-                  key={result.scenario.id}
-                >
-                  <label className="comparison-name-field">
-                    <span>Scenario name</span>
-                    <input
-                      className="text-input"
-                      type="text"
-                      value={result.scenario.name}
-                      onChange={(event) =>
-                        renameScenario(result.scenario.id, event.target.value)
-                      }
-                    />
-                  </label>
-                  <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
-                  <span>
-                    {formatShortfallOrSurplus(
-                      Math.max(0, -result.annualGap),
-                      Math.max(0, result.annualGap),
-                    )}{" "}
-                    against target
-                  </span>
-                  <small>
-                    {result.currentMatchesSaved
-                      ? "Matches current model inputs"
-                      : "Current model inputs differ from this saved snapshot"}
-                  </small>
-                  <div className="comparison-card-actions">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => onLoadScenario(result.scenario.settings)}
-                    >
-                      Load this scenario
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      disabled={!currentScenarioIsValid}
-                      onClick={() => replaceScenario(result.scenario.id)}
-                    >
-                      Replace with current
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => removeScenario(result.scenario.id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <ComparisonBuilder
+        scenarios={scenarios}
+        actions={scenarioActions}
+      />
 
-      {results.length < 2 ? (
-        <section className="summary-section summary-section--compact">
-          <div className="summary-section-header">
-            <h3>Comparison appears after two scenarios</h3>
-          </div>
-          <p className="section-copy">
-            Add at least two saved scenarios to unlock the side-by-side summary.
-          </p>
-        </section>
-      ) : (
+      <ComparisonResults
+        results={results}
+        insights={insights}
+      />
+
+      {derivedInflationAssumptions ? (
+        <InflationBasisPanel
+          settings={settings}
+          assumptions={derivedInflationAssumptions}
+        />
+      ) : null}
+
+      <SavedScenariosSection
+        scenarios={scenarios}
+        savedResults={savedResults}
+        currentScenarioIsValid={currentScenarioIsValid}
+        onLoadScenario={onLoadScenario}
+        renameScenario={renameScenario}
+        replaceScenario={replaceScenario}
+        removeScenario={removeScenario}
+      />
+    </section>
+  );
+}
+
+function ComparisonPensionSummary({
+  activeResult,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  retirementIncomeItems,
+  retirementIncomeTitle,
+  retirementIncomeTotal,
+  retirementIncomeTargetTitle,
+  retirementIncomeTarget,
+  showLimitations,
+  onToggleLimitations,
+}: {
+  activeResult: ComparisonResult | null;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
+  retirementIncomeItems: SummaryItem[];
+  retirementIncomeTitle: string;
+  retirementIncomeTotal: string;
+  retirementIncomeTargetTitle: string;
+  retirementIncomeTarget: string;
+  showLimitations?: boolean;
+  onToggleLimitations?: () => void;
+}) {
+  if (!activeResult || !retirementIncomeDisplay) {
+    return null;
+  }
+
+  return (
+    <SummarySection
+      title="Pension Summary"
+      variant="feature"
+      description="This result is generated from the current journey assumptions and uses the same structure as the comparison view."
+      items={retirementIncomeItems}
+      controls={onRetirementIncomeDisplayChange ? (
+        <RetirementIncomeDisplayToggle
+          value={retirementIncomeDisplay}
+          onChange={onRetirementIncomeDisplayChange}
+        />
+      ) : undefined}
+      footer={
         <>
-          <div className="comparison-insight-grid">
-            <SummarySection
-              title="Earliest retirement"
-              items={[
-                {
-                  label: earliestRetirementResult?.scenario.name ?? "Not available",
-                  value: earliestRetirementResult
-                    ? formatDecimalAge(
-                        earliestRetirementResult.scenario.settings.requirementAge,
-                      )
-                    : "Not available",
-                },
-              ]}
+          <RetirementIncomeSummaryFooter
+            totalLabel={retirementIncomeTitle}
+            totalValue={retirementIncomeTotal}
+            targetLabel={retirementIncomeTargetTitle}
+            targetValue={retirementIncomeTarget}
+          />
+          {showLimitations !== undefined && onToggleLimitations ? (
+            <ModellerLimitations
+              showLimitations={showLimitations}
+              onToggleLimitations={onToggleLimitations}
             />
-            <SummarySection
-              title="Best maintains target"
-              items={[
-                {
-                  label: bestTargetResult?.scenario.name ?? "Not available",
-                  value: bestTargetResult
-                    ? formatTargetMissDuration(bestTargetResult.targetMissMonths)
-                    : "Not available",
-                },
-              ]}
-            />
-            <SummarySection
-              title="Lowest shortfall risk"
-              items={[
-                {
-                  label: lowestShortfallRiskResult?.scenario.name ?? "Not available",
-                  value: lowestShortfallRiskResult
-                    ? formatShortfallOrSurplus(
-                        Math.max(0, -lowestShortfallRiskResult.annualGap),
-                        Math.max(0, lowestShortfallRiskResult.annualGap),
-                      )
-                    : "Not available",
-                },
-              ]}
-            />
-            <SummarySection
-              title="Preserves pots longest"
-              items={[
-                {
-                  label: longestCapitalResult?.scenario.name ?? "Not available",
-                  value: longestCapitalResult
-                    ? formatCapitalPreservation(longestCapitalResult)
-                    : "Not available",
-                },
-              ]}
-            />
-            <SummarySection
-              title="Highest later income"
-              items={[
-                {
-                  label: highestLaterIncomeResult?.scenario.name ?? "Not available",
-                  value: highestLaterIncomeResult
-                    ? `${formatCurrencyDetailed(
-                        highestLaterIncomeResult.lifeExpectancyAnnualIncome,
-                      )} per year`
-                    : "Not available",
-                },
-              ]}
-            />
-          </div>
-
-          <ComparisonSummaryTable results={results} />
-
+          ) : null}
         </>
+      }
+    />
+  );
+}
+
+function ComparisonBridgeChart({
+  retirementIncomeSeries,
+  bridgeChartParameters,
+  bridgeChartLimits,
+  onChangeChartParameters,
+}: {
+  retirementIncomeSeries?: RetirementIncomePoint[];
+  bridgeChartParameters?: RetirementIncomeBridgeParameters;
+  bridgeChartLimits?: RetirementIncomeBridgeLimits;
+  onChangeChartParameters?: (
+    patch: Partial<RetirementIncomeBridgeParameters>,
+  ) => void;
+}) {
+  if (
+    !retirementIncomeSeries ||
+    !bridgeChartParameters ||
+    !bridgeChartLimits ||
+    !onChangeChartParameters
+  ) {
+    return null;
+  }
+
+  return (
+    <RetirementIncomeBridgeChart
+      data={retirementIncomeSeries}
+      alphaLabel="Alpha pension"
+      limits={bridgeChartLimits}
+      statePensionEditable
+      onChangeParameters={onChangeChartParameters}
+      {...bridgeChartParameters}
+    />
+  );
+}
+
+function ComparisonBuilder({
+  scenarios,
+  actions,
+}: {
+  scenarios: ComparisonScenario[];
+  actions: ComparisonScenarioActions;
+}) {
+  return (
+    <section className="comparison-builder" aria-labelledby="comparison-builder-title">
+      <div>
+        <h3 id="comparison-builder-title">Add the current model</h3>
+        <p className="section-copy">
+          Up to {MAX_COMPARISON_SCENARIOS} scenarios can be held in this
+          comparison set during the current session.
+        </p>
+      </div>
+      <div className="comparison-add-row">
+        <label className="comparison-name-field">
+          <span>Scenario name</span>
+          <input
+            className="text-input"
+            type="text"
+            value={actions.scenarioNameDraft}
+            placeholder={`Scenario ${scenarios.length + 1}`}
+            onChange={(event) => actions.setScenarioNameDraft(event.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          className="primary-button"
+          disabled={!actions.currentScenarioIsValid || actions.comparisonLimitReached}
+          onClick={actions.addCurrentScenario}
+        >
+          Add to comparison
+        </button>
+      </div>
+      {!actions.currentScenarioIsValid ? (
+        <p className="table-status">
+          Fix the current validation issues before adding or replacing a scenario.
+        </p>
+      ) : null}
+      {actions.comparisonLimitReached ? (
+        <p className="table-status">
+          Comparison limit reached. Remove a scenario before adding another.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function ComparisonResults({
+  results,
+  insights,
+}: {
+  results: ComparisonResult[];
+  insights: ComparisonInsights;
+}) {
+  if (results.length === 0) {
+    return (
+      <section className="summary-section summary-section--compact">
+        <div className="summary-section-header">
+          <h3>No valid result available yet</h3>
+        </div>
+        <p className="section-copy">
+          Fix the current validation issues to populate the result and comparison view.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      {results.length >= 2 ? <ComparisonInsightsGrid insights={insights} /> : null}
+      <ComparisonSummaryTable results={results} />
+    </>
+  );
+}
+
+function ComparisonInsightsGrid({ insights }: { insights: ComparisonInsights }) {
+  return (
+    <div className="comparison-insight-grid">
+      <SummarySection
+        title="Earliest retirement"
+        items={[
+          {
+            label: insights.earliestRetirementResult?.scenario.name ?? "Not available",
+            value: insights.earliestRetirementResult
+              ? formatDecimalAge(
+                  insights.earliestRetirementResult.scenario.settings.requirementAge,
+                )
+              : "Not available",
+          },
+        ]}
+      />
+      <SummarySection
+        title="Best maintains target"
+        items={[
+          {
+            label: insights.bestTargetResult?.scenario.name ?? "Not available",
+            value: insights.bestTargetResult
+              ? formatTargetMissDuration(insights.bestTargetResult.targetMissMonths)
+              : "Not available",
+          },
+        ]}
+      />
+      <SummarySection
+        title="Lowest shortfall risk"
+        items={[
+          {
+            label: insights.lowestShortfallRiskResult?.scenario.name ?? "Not available",
+            value: insights.lowestShortfallRiskResult
+              ? formatShortfallOrSurplus(
+                  Math.max(0, -insights.lowestShortfallRiskResult.annualGap),
+                  Math.max(0, insights.lowestShortfallRiskResult.annualGap),
+                )
+              : "Not available",
+          },
+        ]}
+      />
+      <SummarySection
+        title="Preserves pots longest"
+        items={[
+          {
+            label: insights.longestCapitalResult?.scenario.name ?? "Not available",
+            value: insights.longestCapitalResult
+              ? formatCapitalPreservation(insights.longestCapitalResult)
+              : "Not available",
+          },
+        ]}
+      />
+      <SummarySection
+        title="Highest later income"
+        items={[
+          {
+            label: insights.highestLaterIncomeResult?.scenario.name ?? "Not available",
+            value: insights.highestLaterIncomeResult
+              ? `${formatCurrencyDetailed(
+                  insights.highestLaterIncomeResult.lifeExpectancyAnnualIncome,
+                )} per year`
+              : "Not available",
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+function SavedScenariosSection({
+  scenarios,
+  savedResults,
+  currentScenarioIsValid,
+  onLoadScenario,
+  renameScenario,
+  replaceScenario,
+  removeScenario,
+}: {
+  scenarios: ComparisonScenario[];
+  savedResults: ComparisonResult[];
+  currentScenarioIsValid: boolean;
+  onLoadScenario: (settings: PensionSettings) => void;
+  renameScenario: (id: string, name: string) => void;
+  replaceScenario: (id: string) => void;
+  removeScenario: (id: string) => void;
+}) {
+  return (
+    <section className="comparison-saved-section" aria-labelledby="saved-scenarios-title">
+      <div className="summary-section-header">
+        <h3 id="saved-scenarios-title">Saved scenarios</h3>
+        <span className="table-status">
+          {scenarios.length} of {MAX_COMPARISON_SCENARIOS} saved
+        </span>
+      </div>
+
+      {scenarios.length === 0 ? (
+        <p className="section-copy">
+          No scenarios saved yet. Configure the model, name the scenario if you
+          want, then add it to the comparison set.
+        </p>
+      ) : (
+        <div className="comparison-card-grid" role="list">
+          {savedResults.map((result) => (
+            <article
+              className="comparison-card"
+              key={result.scenario.id}
+            >
+              <label className="comparison-name-field">
+                <span>Scenario name</span>
+                <input
+                  className="text-input"
+                  type="text"
+                  value={result.scenario.name}
+                  onChange={(event) =>
+                    renameScenario(result.scenario.id, event.target.value)
+                  }
+                />
+              </label>
+              <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
+              <span>
+                {formatShortfallOrSurplus(
+                  Math.max(0, -result.annualGap),
+                  Math.max(0, result.annualGap),
+                )}{" "}
+                against target
+              </span>
+              <small>
+                {result.currentMatchesSaved
+                  ? "Matches current model inputs"
+                  : "Current model inputs differ from this saved snapshot"}
+              </small>
+              <div className="comparison-card-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onLoadScenario(result.scenario.settings)}
+                >
+                  Load this scenario
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={!currentScenarioIsValid}
+                  onClick={() => replaceScenario(result.scenario.id)}
+                >
+                  Replace with current
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => removeScenario(result.scenario.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -1800,11 +2092,10 @@ function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
   return (
     <section className="bridge-table-section">
       <div className="summary-section-header">
-        <h3>Comparison table</h3>
+        <h3>Results breakdown</h3>
       </div>
       <p className="section-copy">
-        These are saved snapshots. Changing the live model will not change these
-        rows unless you replace a saved scenario.
+        Review the full breakdown for the current model, including retirement timing, secure pension income, bridge funding, ISA and SIPP use, flexible asset position, and modelling assumptions. If you save additional scenarios, they will appear alongside this result so you can compare them using the same structure.
       </p>
       <ProjectionTableFrame
         columns={columns}
@@ -1826,6 +2117,9 @@ function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
 }
 
 function buildComparisonTableRows(results: ComparisonResult[]): ComparisonTableRow[] {
+  const anyScenarioUsesIsa = results.some((result) => result.scenario.settings.showIsa);
+  const anyScenarioUsesSipp = results.some((result) => result.scenario.settings.showSipp);
+
   return [
     createComparisonSection("Headline outcome", results, [
       ["Overall status", (result) => renderComparisonStatusCell(result)],
@@ -2054,98 +2348,191 @@ function buildComparisonTableRows(results: ComparisonResult[]): ComparisonTableR
             : "n/a",
       ],
     ]),
-    createComparisonSection("ISA bridge", results, [
+    createComparisonSection("Bridge funding", results, [
       [
-        "Current ISA balance",
+        "Plan status",
         (result) =>
-          result.scenario.settings.showIsa
-            ? formatCurrencyDetailed(result.scenario.settings.isaCurrentPot)
-            : "n/a",
+          result.bridgeAnalysis.planWorks ? "Works on these assumptions" : "Shortfall remains",
       ],
       [
-        "ISA draw start age",
-        (result) =>
-          result.scenario.settings.showIsa
-            ? formatDecimalAge(result.scenario.settings.isaDrawAge)
-            : "n/a",
+        "Bridge spending to cover",
+        (result) => formatCurrencyDetailed(result.bridgeAnalysis.totalBridgeRequired),
       ],
       [
-        "ISA use-by age",
-        (result) => formatUseByAge(result.scenario.settings, "isa"),
+        "ISA-only gap before SIPP access",
+        (result) => formatCurrencyDetailed(result.bridgeAnalysis.requiredIsaAtRetirement),
       ],
       [
-        "Total ISA withdrawals",
-        (result) =>
-          result.scenario.settings.showIsa
-            ? formatCurrencyDetailed(getTotalWithdrawals(result.rows, "monthlyIsaPension"))
-            : "n/a",
+        "Later top-up gap after SIPP access",
+        (result) => formatCurrencyDetailed(result.bridgeAnalysis.requiredSippAtAccess),
       ],
       [
-        "ISA depleted age",
+        "Bridge still unfunded",
         (result) =>
-          result.scenario.settings.showIsa
-            ? renderComparisonToneCell(
-                formatDepletionAgeOrNa(result.isaDepletedAge),
-                getPotDepletionTone(result.isaDepletedAge, result.scenario.settings),
-              )
-            : "n/a",
+          renderComparisonToneCell(
+            formatCurrencyDetailed(result.bridgeAnalysis.totalUnfundedShortfall),
+            result.bridgeAnalysis.totalUnfundedShortfall > 0 ? "caution" : "good",
+          ),
       ],
       [
-        "Final ISA balance",
+        "Estimated extra monthly saving",
         (result) =>
-          result.scenario.settings.showIsa
-            ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "isaPot"))
-            : "n/a",
+          formatMonthlyCurrency(result.bridgeAnalysis.additionalMonthlyContributionRequired),
+      ],
+      [
+        "Earliest sustainable pension draw age",
+        (result) =>
+          result.bridgeAnalysis.earliestSustainablePensionDrawAge === null
+            ? "Not found"
+            : formatDecimalAge(result.bridgeAnalysis.earliestSustainablePensionDrawAge),
       ],
     ]),
-    createComparisonSection("SIPP bridge", results, [
+    createComparisonSection("Later secure income", results, [
       [
-        "Current SIPP balance",
+        "All secure pensions active from",
         (result) =>
-          result.scenario.settings.showSipp
-            ? formatCurrencyDetailed(result.scenario.settings.sippCurrentPot)
-            : "n/a",
+          result.bridgeAnalysis.fullSecureIncomeStartDate === null ||
+          result.bridgeAnalysis.fullSecureIncomeStartAge === null ||
+          result.bridgeAnalysis.fullSecureIncomeStartAgeMonths === null
+            ? "Not reached within this model"
+            : `${formatDate(result.bridgeAnalysis.fullSecureIncomeStartDate)} (${formatAge(
+                result.bridgeAnalysis.fullSecureIncomeStartAge,
+                result.bridgeAnalysis.fullSecureIncomeStartAgeMonths,
+              )})`,
       ],
       [
-        "SIPP draw start age",
+        "Secure income at that point",
         (result) =>
-          result.scenario.settings.showSipp
-            ? formatDecimalAge(result.scenario.settings.sippDrawAge)
-            : "n/a",
+          result.bridgeAnalysis.fullSecureIncomeStartDate === null
+            ? "Not available"
+            : formatAnnualCurrency(result.bridgeAnalysis.fullSecureAnnualGuaranteedIncome),
       ],
       [
-        "SIPP use-by age",
-        (result) => formatUseByAge(result.scenario.settings, "sipp"),
-      ],
-      [
-        "SIPP withdrawal strategy",
-        (result) => formatSippWithdrawalStrategy(result.scenario.settings),
-      ],
-      [
-        "Total SIPP withdrawals",
+        "Later secure pension position",
         (result) =>
-          result.scenario.settings.showSipp
-            ? formatCurrencyDetailed(getTotalWithdrawals(result.rows, "monthlySippPension"))
-            : "n/a",
+          renderComparisonToneCell(
+            formatBridgeSecurePosition(result.bridgeAnalysis),
+            getBridgeSecurePositionTone(result.bridgeAnalysis),
+          ),
       ],
       [
-        "SIPP depleted age",
+        "Position by modelling end",
         (result) =>
-          result.scenario.settings.showSipp
-            ? renderComparisonToneCell(
-                formatDepletionAgeOrNa(result.sippDepletedAge),
-                getPotDepletionTone(result.sippDepletedAge, result.scenario.settings),
-              )
-            : "n/a",
+          renderComparisonToneCell(
+            formatAnnualPosition(result.bridgeAnalysis.stableAnnualGuaranteedSurplus),
+            result.bridgeAnalysis.stableAnnualGuaranteedSurplus >= 0 ? "good" : "caution",
+          ),
       ],
       [
-        "Final SIPP balance",
+        "First pot to fail",
         (result) =>
-          result.scenario.settings.showSipp
-            ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "sippPot"))
-            : "n/a",
+          result.bridgeAnalysis.firstPotToFail
+            ? `${result.bridgeAnalysis.firstPotToFail} (${formatDate(
+                result.bridgeAnalysis.firstFailureDate ?? "",
+              )})`
+            : "None",
       ],
     ]),
+    ...(anyScenarioUsesIsa
+      ? [
+          createComparisonSection("ISA bridge", results, [
+            [
+              "Current ISA balance",
+              (result) =>
+                result.scenario.settings.showIsa
+                  ? formatCurrencyDetailed(result.scenario.settings.isaCurrentPot)
+                  : "n/a",
+            ],
+            [
+              "ISA draw start age",
+              (result) =>
+                result.scenario.settings.showIsa
+                  ? formatDecimalAge(result.scenario.settings.isaDrawAge)
+                  : "n/a",
+            ],
+            [
+              "ISA use-by age",
+              (result) => formatUseByAge(result.scenario.settings, "isa"),
+            ],
+            [
+              "Total ISA withdrawals",
+              (result) =>
+                result.scenario.settings.showIsa
+                  ? formatCurrencyDetailed(getTotalWithdrawals(result.rows, "monthlyIsaPension"))
+                  : "n/a",
+            ],
+            [
+              "ISA depleted age",
+              (result) =>
+                result.scenario.settings.showIsa
+                  ? renderComparisonToneCell(
+                      formatDepletionAgeOrNa(result.isaDepletedAge),
+                      getPotDepletionTone(result.isaDepletedAge, result.scenario.settings),
+                    )
+                  : "n/a",
+            ],
+            [
+              "Final ISA balance",
+              (result) =>
+                result.scenario.settings.showIsa
+                  ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "isaPot"))
+                  : "n/a",
+            ],
+          ]),
+        ]
+      : []),
+    ...(anyScenarioUsesSipp
+      ? [
+          createComparisonSection("SIPP bridge", results, [
+            [
+              "Current SIPP balance",
+              (result) =>
+                result.scenario.settings.showSipp
+                  ? formatCurrencyDetailed(result.scenario.settings.sippCurrentPot)
+                  : "n/a",
+            ],
+            [
+              "SIPP draw start age",
+              (result) =>
+                result.scenario.settings.showSipp
+                  ? formatDecimalAge(result.scenario.settings.sippDrawAge)
+                  : "n/a",
+            ],
+            [
+              "SIPP use-by age",
+              (result) => formatUseByAge(result.scenario.settings, "sipp"),
+            ],
+            [
+              "SIPP withdrawal strategy",
+              (result) => formatSippWithdrawalStrategy(result.scenario.settings),
+            ],
+            [
+              "Total SIPP withdrawals",
+              (result) =>
+                result.scenario.settings.showSipp
+                  ? formatCurrencyDetailed(getTotalWithdrawals(result.rows, "monthlySippPension"))
+                  : "n/a",
+            ],
+            [
+              "SIPP depleted age",
+              (result) =>
+                result.scenario.settings.showSipp
+                  ? renderComparisonToneCell(
+                      formatDepletionAgeOrNa(result.sippDepletedAge),
+                      getPotDepletionTone(result.sippDepletedAge, result.scenario.settings),
+                    )
+                  : "n/a",
+            ],
+            [
+              "Final SIPP balance",
+              (result) =>
+                result.scenario.settings.showSipp
+                  ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "sippPot"))
+                  : "n/a",
+            ],
+          ]),
+        ]
+      : []),
     createComparisonSection("Flexible asset position", results, [
       [
         "Total ISA + SIPP withdrawals",
@@ -2245,6 +2632,15 @@ function createComparisonResult(
 ): ComparisonResult {
   const rows = createProjectionTable(scenario.settings);
   const summary = generatePensionSummary(rows, scenario.settings);
+  const bridgeSettings = prepareBridgeProjectionSettings(scenario.settings);
+  const bridgePensionRows = createProjectionTable({
+    ...bridgeSettings,
+    showSipp: false,
+    showIsa: false,
+  });
+  const bridgeAnalysis = generateRetirementBridgeAnalysis(bridgePensionRows, bridgeSettings, {
+    calculateSafeDrawAge: true,
+  });
   const retirementDate = addYearsToIsoDate(
     scenario.settings.dateOfBirth,
     scenario.settings.requirementAge,
@@ -2263,6 +2659,7 @@ function createComparisonResult(
     scenario,
     rows,
     summary,
+    bridgeAnalysis,
     annualIncome,
     annualTarget,
     annualGap: annualIncome - annualTarget,
@@ -2486,6 +2883,39 @@ function formatTargetMissDuration(months: number) {
   return remainingMonths === 0 ? `${years}y` : `${years}y ${remainingMonths}m`;
 }
 
+function buildRetirementIncomeItems(
+  summary: PensionSummary,
+  display: RetirementIncomeDisplay,
+): SummaryItem[] {
+  return summary.retirementIncome.sources.map((source) => ({
+    label: display === "monthly" ? `Monthly ${source.label}` : `Annual ${source.label}`,
+    value: formatCurrencyDetailed(
+      display === "monthly" ? source.monthlyIncome : source.annualIncome,
+    ),
+  }));
+}
+
+function getRetirementIncomeTitle(
+  taxationEnabled: boolean,
+  display: RetirementIncomeDisplay,
+) {
+  if (display === "monthly") {
+    return taxationEnabled
+      ? "Monthly take-home retirement income"
+      : "Monthly retirement income before tax";
+  }
+
+  return taxationEnabled
+    ? "Annual take-home retirement income"
+    : "Annual retirement income before tax";
+}
+
+function getRetirementIncomeTargetTitle(display: RetirementIncomeDisplay) {
+  return display === "monthly"
+    ? "Monthly target retirement income"
+    : "Annual target retirement income";
+}
+
 function formatDepletionAgeOrNa(age: number | null) {
   return age === null ? "Not depleted" : formatDecimalAge(age);
 }
@@ -2496,6 +2926,44 @@ function formatAnnualCurrency(value: number) {
 
 function formatMonthlyCurrency(value: number) {
   return `${formatCurrencyDetailed(value)}/month`;
+}
+
+function formatAnnualPosition(value: number) {
+  return value >= 0
+    ? `${formatCurrencyDetailed(value)} surplus per year`
+    : `${formatCurrencyDetailed(Math.abs(value))} shortfall per year`;
+}
+
+function formatBridgeSecurePosition(analysis: RetirementBridgeAnalysis) {
+  if (analysis.fullSecureIncomeStartDate === null) {
+    return "Not reached within this model";
+  }
+
+  const amount = Math.abs(analysis.fullSecureAnnualGuaranteedSurplus);
+  const annualLabel =
+    analysis.fullSecureAnnualGuaranteedSurplus >= 0 ? "overshoot" : "shortfall";
+
+  return `${formatCurrencyDetailed(amount)} ${annualLabel} per year (${formatCurrencyDetailed(
+    amount / 12,
+  )} per month)`;
+}
+
+function getBridgeSecurePositionTone(
+  analysis: RetirementBridgeAnalysis,
+): "good" | "caution" | "problem" {
+  if (analysis.fullSecureIncomeStartDate === null) {
+    return "caution";
+  }
+
+  if (analysis.fullSecureAnnualGuaranteedSurplus > 0) {
+    return "good";
+  }
+
+  if (analysis.fullSecureAnnualGuaranteedSurplus === 0) {
+    return "good";
+  }
+
+  return "caution";
 }
 
 function formatWholePercent(value: number) {
@@ -3002,6 +3470,15 @@ function JourneyStepContent({
           scenarios={comparisonScenarios}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          showLimitations={showLimitations}
+          onToggleLimitations={onToggleLimitations}
+          derivedInflationAssumptions={derivedInflationAssumptions}
+          retirementIncomeSeries={retirementIncomeSeries}
+          bridgeChartParameters={bridgeChartParameters}
+          bridgeChartLimits={bridgeChartLimits}
+          onChangeChartParameters={onChangeChartParameters}
         />
 
       </div>
@@ -3129,15 +3606,6 @@ function BridgeAnswer({
     () => createProjectionTable(bridgeSettings),
     [bridgeSettings],
   );
-  const bridgePensionRows = useMemo(
-    () =>
-      createProjectionTable({
-        ...bridgeSettings,
-        showSipp: false,
-        showIsa: false,
-      }),
-    [bridgeSettings],
-  );
   const bridgeChartData = useMemo(
     () => createRetirementIncomeSeries(bridgeChartRows, bridgeSettings),
     [bridgeChartRows, bridgeSettings],
@@ -3150,13 +3618,6 @@ function BridgeAnswer({
     () => createBridgeChartLimits(bridgeSettings),
     [bridgeSettings],
   );
-  const bridgeAnalysis = useMemo(
-    () =>
-      generateRetirementBridgeAnalysis(bridgePensionRows, bridgeSettings, {
-        calculateSafeDrawAge: true,
-      }),
-    [bridgePensionRows, bridgeSettings],
-  );
 
   return (
     <div className="journey-answer">
@@ -3164,192 +3625,20 @@ function BridgeAnswer({
         <ValidationIssuesSection validationIssues={validationIssues} />
       ) : null}
 
-      <RetirementIncomeBridgeChart
-        data={bridgeChartData}
-        alphaLabel="Alpha pension"
-        limits={bridgeChartLimits}
-        statePensionEditable
-        onChangeParameters={onChangeChartParameters}
-        {...bridgeChartParameters}
-      />
-
-      <BridgeResult analysis={bridgeAnalysis} settings={bridgeSettings} />
-      <ModellerLimitations
-        showLimitations={showLimitations}
-        onToggleLimitations={onToggleLimitations}
-      />
-
       <ComparisonPrototype
         settings={settings}
         validationIssues={validationIssues}
         scenarios={comparisonScenarios}
         onScenariosChange={onScenariosChange}
         onLoadScenario={onLoadScenario}
-      />
-    </div>
-  );
-}
-
-function BridgeResult({
-  analysis,
-  settings,
-}: {
-  analysis: RetirementBridgeAnalysis;
-  settings: PensionSettings;
-}) {
-  const finalPotRow = analysis.potProjection.at(-1);
-  const longTermPosition =
-    analysis.stableAnnualGuaranteedSurplus >= 0
-      ? `${formatCurrencyDetailed(analysis.stableAnnualGuaranteedSurplus)} surplus per year`
-      : `${formatCurrencyDetailed(Math.abs(analysis.stableAnnualGuaranteedSurplus))} shortfall per year`;
-  const fullSecurePositionAmount = Math.abs(analysis.fullSecureAnnualGuaranteedSurplus);
-  const fullSecurePosition =
-    analysis.fullSecureIncomeStartDate === null
-      ? "Not reached within this model"
-      : analysis.fullSecureAnnualGuaranteedSurplus >= 0
-        ? `${formatCurrencyDetailed(fullSecurePositionAmount)} overshoot per year (${formatCurrencyDetailed(
-            fullSecurePositionAmount / 12,
-          )} per month)`
-        : `${formatCurrencyDetailed(fullSecurePositionAmount)} shortfall per year (${formatCurrencyDetailed(
-            fullSecurePositionAmount / 12,
-          )} per month)`;
-  const fullSecureIncomeStartLabel =
-    analysis.fullSecureIncomeStartDate === null ||
-    analysis.fullSecureIncomeStartAge === null ||
-    analysis.fullSecureIncomeStartAgeMonths === null
-      ? "Not reached within this model"
-      : `${formatDate(analysis.fullSecureIncomeStartDate)} (${formatAge(
-          analysis.fullSecureIncomeStartAge,
-          analysis.fullSecureIncomeStartAgeMonths,
-        )})`;
-  const fullSecurePositionDescription =
-    analysis.fullSecureIncomeStartDate === null
-      ? "Not all selected secure pension sources start before the modelling end age, so there is no later steady-state pension position to compare."
-      : analysis.fullSecureAnnualGuaranteedSurplus > 0
-        ? "Once all selected Civil Service and State Pension income is active, the model shows more secure income than your target. This is the later overshoot you can use when testing whether to adjust draw ages, bridge spending, or target income assumptions."
-        : analysis.fullSecureAnnualGuaranteedSurplus < 0
-          ? "Once all selected Civil Service and State Pension income is active, the model still sits below your target before any ISA/SIPP top-up."
-          : "Once all selected Civil Service and State Pension income is active, the model lands exactly on your target before any ISA/SIPP top-up.";
-  const fullSecurePositionLabel =
-    analysis.fullSecureIncomeStartDate === null
-      ? "Later secure pension position"
-      : analysis.fullSecureAnnualGuaranteedSurplus >= 0
-        ? "Later overshoot after secure pensions start"
-        : "Later shortfall after secure pensions start";
-  const actionItems = [
-    {
-      label: "ISA-only gap before SIPP access",
-      value: formatCurrencyDetailed(analysis.requiredIsaAtRetirement),
-    },
-    {
-      label: "Later top-up gap after SIPP access",
-      value: formatCurrencyDetailed(analysis.requiredSippAtAccess),
-    },
-    {
-      label: "Bridge still unfunded",
-      value: formatCurrencyDetailed(analysis.totalUnfundedShortfall),
-    },
-    {
-      label: "Estimated extra monthly saving",
-      value: formatCurrencyDetailed(analysis.additionalMonthlyContributionRequired),
-    },
-  ];
-
-  return (
-    <div className="bridge-result">
-      <SummarySection
-        title="Action required"
-        description={
-          analysis.planWorks
-            ? "Your entered pots cover the modelled bridge on these assumptions."
-            : "This is the approximate bridge gap to close before the target retirement date."
-        }
-        items={[
-          ...actionItems,
-          {
-            label: "SIPP access age",
-            value: formatDecimalAge(settings.sippDrawAge),
-          },
-          {
-            label: fullSecurePositionLabel,
-            value: fullSecurePosition,
-          },
-        ]}
-      />
-
-      <SummarySection
-        title="Later secure income check"
-        variant="feature"
-        description={fullSecurePositionDescription}
-        items={[
-          {
-            label: "Plan status",
-            value: analysis.planWorks ? "Works on these assumptions" : "Shortfall remains",
-          },
-          {
-            label: "All selected secure pensions active from",
-            value: fullSecureIncomeStartLabel,
-          },
-          {
-            label: "Secure income at that point",
-            value:
-              analysis.fullSecureIncomeStartDate === null
-                ? "Not available"
-                : `${formatCurrencyDetailed(analysis.fullSecureAnnualGuaranteedIncome)} per year`,
-          },
-          {
-            label: "Against your target",
-            value: fullSecurePosition,
-          },
-          {
-            label: "Position by modelling end",
-            value: longTermPosition,
-          },
-          {
-            label: "First pot to fail",
-            value: analysis.firstPotToFail
-              ? `${analysis.firstPotToFail} (${formatDate(analysis.firstFailureDate ?? "")})`
-              : "None",
-          },
-        ]}
-      />
-
-      <SummarySection
-        title="Scenario recap"
-        description="The main assumptions used in this bridge calculation."
-        items={[
-          {
-            label: "Target retirement",
-            value: `${formatDate(analysis.target.retirementDate)} (${formatDecimalAge(analysis.target.retirementAge)})`,
-          },
-          {
-            label: "Target income",
-            value: `${formatCurrencyDetailed(analysis.target.annualIncome)} per year`,
-          },
-          {
-            label: "Covered by existing bridge pots",
-            value: formatCurrencyDetailed(analysis.totalBridgeRequired),
-          },
-          {
-            label: "Bridge still unfunded",
-            value: formatCurrencyDetailed(analysis.totalUnfundedShortfall),
-          },
-          {
-            label: "Earliest sustainable pension draw age",
-            value:
-              analysis.earliestSustainablePensionDrawAge === null
-                ? "Not found"
-                : formatDecimalAge(analysis.earliestSustainablePensionDrawAge),
-          },
-          {
-            label: "Projected ISA at end",
-            value: formatCurrencyDetailed(finalPotRow?.isaBalance ?? 0),
-          },
-          {
-            label: "Projected SIPP at end",
-            value: formatCurrencyDetailed(finalPotRow?.sippBalance ?? 0),
-          },
-        ]}
+        retirementIncomeDisplay="annual"
+        showLimitations={showLimitations}
+        onToggleLimitations={onToggleLimitations}
+        derivedInflationAssumptions={deriveInflationAssumptions(settings)}
+        retirementIncomeSeries={bridgeChartData}
+        bridgeChartParameters={bridgeChartParameters}
+        bridgeChartLimits={bridgeChartLimits}
+        onChangeChartParameters={onChangeChartParameters}
       />
     </div>
   );

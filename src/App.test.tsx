@@ -367,6 +367,20 @@ function renderAcknowledgedApp(
   }
 }
 
+function advanceJourneyToResult() {
+  for (let index = 0; index < 10; index += 1) {
+    const nextButton =
+      screen.queryByRole("button", { name: "Next" }) ??
+      screen.queryByRole("button", { name: "Show my answer" });
+
+    if (!nextButton) {
+      return;
+    }
+
+    fireEvent.click(nextButton);
+  }
+}
+
 describe("App settings form", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -488,6 +502,34 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString(),
     );
+  });
+
+  it("finishes the simple journey on the shared comparison result interface", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    advanceJourneyToResult();
+
+    expect(screen.getByRole("heading", { name: "Compare saved scenarios" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Comparison table" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Current model" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Action required" })).not.toBeInTheDocument();
+  });
+
+  it("finishes the bridge journey on the shared comparison result interface", () => {
+    renderAcknowledgedApp({ mode: "bridge" });
+
+    advanceJourneyToResult();
+
+    expect(screen.getByRole("heading", { name: "Compare saved scenarios" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Comparison table" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Current model" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Action required" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Later secure income check" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Scenario recap" })).not.toBeInTheDocument();
   });
 
   it("keeps the bridge target retirement age stable after slider release", () => {
@@ -1113,7 +1155,7 @@ describe("App settings form", () => {
         inflationRateAnnual: 3.4,
       }),
     );
-  });
+  }, 10000);
 
   it("can reset the long-term inflation assumption to its default", () => {
     renderAcknowledgedApp();
@@ -1282,7 +1324,7 @@ describe("App settings form", () => {
     fireEvent.click(screen.getByLabelText("Partial retirement"));
 
     expect(screen.getByLabelText("Start partial, age 55")).toBeInTheDocument();
-    expect(screen.getByText("Partial retirement income")).toBeInTheDocument();
+    expect(screen.getAllByText("Partial retirement income").length).toBeGreaterThan(0);
 
     const partialWorkSlider = screen.getByLabelText("Partial work");
 

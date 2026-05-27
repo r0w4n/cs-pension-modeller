@@ -20,6 +20,7 @@ import {
 } from "./fieldDefinitions";
 import {
   calculateRetirementIncomeTargetAtDate,
+  calculateMonthlyIncomeTax,
   createProjectionTable,
   deriveInflationAssumptions,
   generateRetirementBridgeAnalysis,
@@ -5865,6 +5866,14 @@ export function createRetirementIncomeSeries(
         alphaIncomeAnnual +
         nuvosIncomeAnnual +
         statePensionIncomeAnnual;
+      const monthlyIncomeTax = calculateMonthlyIncomeTax({
+        settings,
+        monthlyAlphaPension: alphaIncomeAnnual / 12,
+        monthlyNuvosPension: nuvosIncomeAnnual / 12,
+        monthlyStatePension: statePensionIncomeAnnual / 12,
+        monthlySippPension: sippIncomeAnnual / 12,
+      });
+      const assessedIncomeAnnual = totalIncomeAnnual - monthlyIncomeTax * 12;
 
       return {
         date: row.date,
@@ -5877,15 +5886,10 @@ export function createRetirementIncomeSeries(
         nuvosIncomeAnnual,
         statePensionIncomeAnnual,
         totalIncomeAnnual,
-        assessedIncomeAnnual:
-          row.totalMonthlyPensionTakeHomePay * 12 + partialRetirementIncomeAnnual,
+        assessedIncomeAnnual,
         shortfallAnnual:
           row.date >= requirementDate
-            ? Math.max(
-                0,
-                targetIncomeAnnual -
-                  (row.totalMonthlyPensionTakeHomePay * 12 + partialRetirementIncomeAnnual),
-              )
+            ? Math.max(0, targetIncomeAnnual - assessedIncomeAnnual)
             : 0,
         isaBalance: row.isaPot,
         sippBalance: row.sippPot,

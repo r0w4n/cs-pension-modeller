@@ -776,15 +776,15 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
-  it("enforces the same minimum Alpha and SIPP access age of 57 for someone born on 10 April 1977", () => {
+  it("enforces the same minimum Alpha and SIPP access age of 57 for someone born on 23 November 1977", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
         expectedStoredSettings({
-          dateOfBirth: "1977-04-10",
+          dateOfBirth: "1977-11-23",
           alphaPensionDrawAge: 55,
           sippDrawAge: 55,
-          statePensionDrawDate: "2044-05-06",
+          statePensionDrawDate: "2045-07-06",
         }),
       ),
     );
@@ -805,10 +805,10 @@ describe("App settings form", () => {
       "min",
       "57",
     );
-    expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(67.25);
+    expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(67.75);
     expect(screen.getByLabelText("State Pension start age")).toHaveAttribute(
       "min",
-      "67.25",
+      "67.75",
     );
   });
 
@@ -1062,10 +1062,10 @@ describe("App settings form", () => {
     const birthDateInput = screen.getByLabelText("Your Date of Birth");
 
     fireEvent.change(birthDateInput, {
-      target: { value: "1977-04-10" },
+      target: { value: "1977-11-23" },
     });
 
-    expect(birthDateInput).toHaveValue("1977-04-10");
+    expect(birthDateInput).toHaveValue("1977-11-23");
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expectedStoredSettings(),
     );
@@ -1074,8 +1074,8 @@ describe("App settings form", () => {
 
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")).toEqual(
       expectedStoredSettings({
-        dateOfBirth: "1977-04-10",
-        statePensionDrawDate: "2044-07-10",
+        dateOfBirth: "1977-11-23",
+        statePensionDrawDate: "2045-08-23",
       }),
     );
   });
@@ -1869,7 +1869,7 @@ describe("App settings form", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify({
-        dateOfBirth: "1977-04-10",
+        dateOfBirth: "1977-11-23",
         lifeExpectancy: 90,
         currentStatePension: 12547.6,
         applyPensionIncreases: false,

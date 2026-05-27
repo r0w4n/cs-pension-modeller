@@ -581,7 +581,7 @@ describe("settings unit tests", () => {
   it("reports SIPP draw ages that would only be reachable before the 2028 rule change", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
-      dateOfBirth: "1977-04-10",
+      dateOfBirth: "1977-11-23",
       sippDrawAge: 56,
       showSipp: true,
     });
@@ -736,7 +736,7 @@ describe("settings unit tests", () => {
     expect(calculateNormalPensionAge("1960-04-06")).toBeCloseTo(66 + 1 / 12, 6);
     expect(calculateNormalPensionAge("1960-12-31")).toBeCloseTo(66 + 9 / 12, 6);
     expect(calculateNormalPensionAge("1977-04-06")).toBeCloseTo(67 + 1 / 12, 6);
-    expect(calculateNormalPensionAge("1977-04-10")).toBeCloseTo(67 + 1 / 12, 6);
+    expect(calculateNormalPensionAge("1977-11-23")).toBeCloseTo(67 + 8 / 12, 6);
     expect(calculateNormalPensionAge("1978-04-06")).toBe(68);
     expect(calculateNormalPensionAge("1987-06-15")).toBe(68);
     expect(calculateStatePensionDrawDate("1954-09-06")).toBe("2020-09-06");
@@ -745,35 +745,35 @@ describe("settings unit tests", () => {
     expect(calculateStatePensionDrawDate("1960-12-31")).toBe("2027-09-30");
     expect(calculateStatePensionDrawDate("1961-03-06")).toBe("2028-03-06");
     expect(calculateStatePensionDrawDate("1977-04-06")).toBe("2044-05-06");
-    expect(calculateStatePensionDrawDate("1977-04-10")).toBe("2044-05-06");
+    expect(calculateStatePensionDrawDate("1977-11-23")).toBe("2045-07-06");
     expect(calculateStatePensionDrawDate("1978-03-06")).toBe("2046-03-06");
     expect(calculateStatePensionDrawDate("1978-04-06")).toBe("2046-04-06");
     expect(calculateStatePensionDrawDate("1987-06-15")).toBe("2055-06-15");
-    expect(calculateDateAge("1977-04-10", "2044-05-06")).toBeCloseTo(67.07, 2);
-    expect(calculateMinimumStatePensionDrawAge("1977-04-10")).toBe(67.25);
-    expect(calculateStatePensionDrawAge("1977-04-10", "2044-05-06")).toBe(67.25);
-    expect(calculateStatePensionDrawDateFromAge("1977-04-10", 67.25)).toBe("2044-07-10");
+    expect(calculateDateAge("1977-11-23", "2045-07-06")).toBeCloseTo(67.62, 2);
+    expect(calculateMinimumStatePensionDrawAge("1977-11-23")).toBe(67.75);
+    expect(calculateStatePensionDrawAge("1977-11-23", "2045-07-06")).toBe(67.75);
+    expect(calculateStatePensionDrawDateFromAge("1977-11-23", 67.75)).toBe("2045-08-23");
   });
 
   it("derives the earliest Alpha and SIPP access ages from the 2028 minimum pension age change", () => {
     expect(calculateMinimumPensionAccessAge("1971-04-05")).toBe(55);
     expect(calculateMinimumPensionAccessAge("1973-04-05")).toBe(55);
     expect(calculateMinimumPensionAccessAge("1973-04-06")).toBe(57);
-    expect(calculateMinimumPensionAccessAge("1977-04-10")).toBe(57);
+    expect(calculateMinimumPensionAccessAge("1977-11-23")).toBe(57);
     expect(calculateMinimumSippAccessAge("1971-04-05")).toBe(55);
     expect(calculateMinimumSippAccessAge("1973-04-05")).toBe(55);
     expect(calculateMinimumSippAccessAge("1973-04-06")).toBe(57);
-    expect(calculateMinimumSippAccessAge("1977-04-10")).toBe(57);
+    expect(calculateMinimumSippAccessAge("1977-11-23")).toBe(57);
   });
 
   it("normalizes Alpha draw ages that would fall after the 2028 rule change but before age 57", () => {
-    expect(normalizeAlphaPensionDrawAge(55, "1977-04-10")).toBe(57);
+    expect(normalizeAlphaPensionDrawAge(55, "1977-11-23")).toBe(57);
     expect(normalizeAlphaPensionDrawAge(56, "1972-08-01")).toBe(57);
     expect(normalizeAlphaPensionDrawAge(55, "1972-08-01")).toBe(55);
   });
 
   it("normalizes SIPP draw ages that would fall after the 2028 rule change but before age 57", () => {
-    expect(normalizeSippDrawAge(55, "1977-04-10")).toBe(57);
+    expect(normalizeSippDrawAge(55, "1977-11-23")).toBe(57);
     expect(normalizeSippDrawAge(56, "1972-08-01")).toBe(57);
     expect(normalizeSippDrawAge(55, "1972-08-01")).toBe(55);
   });
@@ -794,8 +794,8 @@ describe("settings unit tests", () => {
     expect(normalizeStatePensionDrawDate("bad-date", "1987-06-15")).toBe(
       "2055-06-15",
     );
-    expect(normalizeStatePensionDrawDate("2044-05-06", "1977-04-10")).toBe(
-      "2044-07-10",
+    expect(normalizeStatePensionDrawDate("2045-07-06", "1977-11-23")).toBe(
+      "2045-08-23",
     );
   });
 

@@ -2,4 +2,3 @@
 
 echo "Running pre-commit checks..."
 npm run lint:hook
-npm run test

@@ -258,7 +258,7 @@ const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 5",
         title: "Your bridging pots",
         description:
-          "Keep ISA and SIPP separate so the model respects tax relief, access ages, and drawdown timing.",
+          "Bridge pots are flexible savings used to cover income gaps before pension income fully starts. Keep ISA and SIPP separate so the model respects tax relief, access ages, and drawdown timing.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
@@ -285,7 +285,7 @@ const JOURNEY_DEFINITIONS = [
         eyebrow: "Result",
         title: "Your results",
         description:
-          "Review your projected income, bridge funding, key dates, and assumptions in one place. Save this result when you want to compare it with alternative retirement scenarios.",
+          "Review your projected income, bridge funding, key dates, and assumptions.",
         kind: "bridge-answer",
       },
     ],
@@ -419,7 +419,7 @@ const JOURNEY_DEFINITIONS = [
         eyebrow: "Result",
         title: "Your results",
         description:
-          "Review your projected income, bridge funding, key dates, and assumptions in one place. Save this result when you want to compare it with alternative retirement scenarios.",
+          "Review your projected income, bridge funding, key dates, and assumptions.",
         kind: "bridge-answer",
       },
     ],
@@ -563,6 +563,23 @@ function App() {
     retirementIncomeDisplay === "monthly"
       ? annualRetirementIncomeTarget / 12
       : annualRetirementIncomeTarget,
+  );
+  const currentComparisonResult = useMemo(
+    () =>
+      appMode === "expert" && retirementIncomeDisplay
+        ? createComparisonResult(
+            {
+              id: "current-model",
+              name: "Current model",
+              settings: clonePensionSettings(settings),
+              createdAt: "",
+              updatedAt: "",
+            },
+            getSettingsSignature(settings),
+            comparisonResultCache,
+          )
+        : null,
+    [appMode, comparisonResultCache, retirementIncomeDisplay, settings],
   );
 
   useEffect(() => {
@@ -1016,9 +1033,8 @@ function App() {
             <p className="eyebrow">Civil Service</p>
             <h1>Retirement Income Modeller</h1>
             <p className="lead">
-              Work through a simple Civil Service pension journey, then review your
-              income chart at the end. Expert mode is still there when you want every
-              setting.
+              Work through a Civil Service pension journey, then review your retirement
+              income, funding gaps, key dates, and assumptions.
             </p>
           </div>
 
@@ -1099,32 +1115,20 @@ function App() {
 
         {appMode === "expert" ? (
           <div ref={activeModeRef} className="active-mode-region" tabIndex={-1}>
-            <SummarySection
-              title="Pension Summary"
+            <PensionSummarySection
+              activeResult={currentComparisonResult}
               headingLevel={2}
-              variant="feature"
               description="This summary is generated from the current calculation result, so the same structure can later support side-by-side scenario comparisons."
-              items={retirementIncomeItems}
-              controls={
-                <RetirementIncomeDisplayToggle
-                  value={retirementIncomeDisplay}
-                  onChange={setRetirementIncomeDisplay}
-                />
-              }
-              footer={
-                <>
-                  <RetirementIncomeSummaryFooter
-                    totalLabel={retirementIncomeTitle}
-                    totalValue={retirementIncomeTotal}
-                    targetLabel={retirementIncomeTargetTitle}
-                    targetValue={retirementIncomeTarget}
-                  />
-                  <ModellerLimitations
-                    showLimitations={showLimitations}
-                    onToggleLimitations={() => setShowLimitations((current) => !current)}
-                  />
-                </>
-              }
+              retirementIncomeDisplay={retirementIncomeDisplay}
+              onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
+              retirementIncomeItems={retirementIncomeItems}
+              retirementIncomeTitle={retirementIncomeTitle}
+              retirementIncomeTotal={retirementIncomeTotal}
+              retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+              retirementIncomeTarget={retirementIncomeTarget}
+              statusItems={currentComparisonResult ? buildComparisonStatusItems(currentComparisonResult) : []}
+              showLimitations={showLimitations}
+              onToggleLimitations={() => setShowLimitations((current) => !current)}
             />
 
             <section className="layout">
@@ -1363,8 +1367,8 @@ function ModeSelectionPanel({
       <div className="panel-heading">
         <h2 id="mode-selection-title">Choose the level of detail</h2>
         <p className="section-copy">
-          The simple planner is the quickest way through. Switch to expert mode any
-          time if you want every modelling control.
+          The simplified journey asks fewer questions and keeps assumptions simple.
+          Switch to expert mode any time if you want every modelling control.
         </p>
       </div>
 
@@ -1394,8 +1398,8 @@ function ModeSelectionPanel({
           <span className="card-label">Early retirement</span>
           <strong>Work out what I need to retire early</strong>
           <span>
-            Follow a short, statement-led flow that closely matches the main Civil
-            Service calculator inputs and ends on the chart.
+            Follow a statement-led flow that closely matches the main Civil Service
+            calculator inputs, then review the full results breakdown.
           </span>
         </button>
 
@@ -1831,10 +1835,62 @@ function ComparisonPensionSummary({
   }
 
   return (
+    <PensionSummarySection
+      activeResult={activeResult}
+      description="This summary uses your current journey assumptions and shows your projected annual income before tax."
+      retirementIncomeDisplay={retirementIncomeDisplay}
+      onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+      retirementIncomeItems={retirementIncomeItems}
+      retirementIncomeTitle={retirementIncomeTitle}
+      retirementIncomeTotal={retirementIncomeTotal}
+      retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+      retirementIncomeTarget={retirementIncomeTarget}
+      statusItems={statusItems}
+      showLimitations={showLimitations}
+      onToggleLimitations={onToggleLimitations}
+    />
+  );
+}
+
+function PensionSummarySection({
+  activeResult,
+  description,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  retirementIncomeItems,
+  retirementIncomeTitle,
+  retirementIncomeTotal,
+  retirementIncomeTargetTitle,
+  retirementIncomeTarget,
+  statusItems,
+  headingLevel = 3,
+  showLimitations,
+  onToggleLimitations,
+}: {
+  activeResult: ComparisonResult | null;
+  description: string;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
+  retirementIncomeItems: SummaryItem[];
+  retirementIncomeTitle: string;
+  retirementIncomeTotal: string;
+  retirementIncomeTargetTitle: string;
+  retirementIncomeTarget: string;
+  statusItems: SummaryItem[];
+  headingLevel?: 2 | 3;
+  showLimitations?: boolean;
+  onToggleLimitations?: () => void;
+}) {
+  if (!activeResult || !retirementIncomeDisplay) {
+    return null;
+  }
+
+  return (
     <SummarySection
       title="Pension Summary"
+      headingLevel={headingLevel}
       variant="feature"
-      description="This summary uses your current journey assumptions and shows your projected annual income before tax."
+      description={description}
       items={retirementIncomeItems}
       controls={onRetirementIncomeDisplayChange ? (
         <RetirementIncomeDisplayToggle
@@ -1981,7 +2037,7 @@ function ComparisonResults({
     return (
       <section className="summary-section summary-section--compact">
         <div className="summary-section-header">
-          <h3>No valid result available yet</h3>
+          <h3>Cannot calculate</h3>
         </div>
         <p className="section-copy">
           Fix the current validation issues to populate the result and comparison view.
@@ -2117,13 +2173,7 @@ function SavedScenariosSection({
                 />
               </label>
               <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
-              <span>
-                {formatShortfallOrSurplus(
-                  Math.max(0, -result.annualGap),
-                  Math.max(0, result.annualGap),
-                )}{" "}
-                against target
-              </span>
+              <span>{result.bridgeAnalysis.planWorks ? "Looks workable" : "Needs attention"}</span>
               <small>
                 {result.currentMatchesSaved
                   ? "Matches current model inputs"
@@ -2966,27 +3016,12 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 }
 
 function getComparisonStatusLabel(result: ComparisonResult) {
-  if (result.targetMissMonths === 0) {
-    return "Meets target";
-  }
-
-  const exhaustedAge = findFlexibleAssetsExhaustedAge(result);
-
-  if (exhaustedAge !== null && exhaustedAge < result.scenario.settings.lifeExpectancy) {
-    return "Problem";
-  }
-
-  return "Needs attention";
+  return result.targetMissMonths === 0 ? "Looks workable" : "Needs attention";
 }
 
 function renderComparisonStatusCell(result: ComparisonResult) {
   const status = getComparisonStatusLabel(result);
-  const tone =
-    status === "Problem"
-      ? "problem"
-      : status === "Needs attention"
-        ? "caution"
-        : "good";
+  const tone = status === "Needs attention" ? "caution" : "good";
 
   return renderComparisonToneCell(status, tone);
 }
@@ -3026,7 +3061,7 @@ function buildComparisonStatusItems(result: ComparisonResult): SummaryItem[] {
       ? `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`
       : "No shortfall against the target";
 
-  let mainIssue = "No major issue identified";
+  let mainIssue = "No shortfall identified from the current assumptions.";
 
   if (!result.bridgeAnalysis.planWorks) {
     mainIssue =
@@ -3560,6 +3595,24 @@ function JourneyStepContent({
   showLimitations,
   onToggleLimitations,
 }: JourneyStepContentProps) {
+  const currentComparisonResult = useMemo(
+    () =>
+      pensionSummary
+        ? createComparisonResult(
+            {
+              id: "current-model",
+              name: "Current model",
+              settings: clonePensionSettings(settings),
+              createdAt: "",
+              updatedAt: "",
+            },
+            getSettingsSignature(settings),
+            comparisonResultCache,
+          )
+        : null,
+    [comparisonResultCache, pensionSummary, settings],
+  );
+
   if (step.kind === "optional-sections") {
     return (
       <OptionalSectionToggleGrid
@@ -3581,31 +3634,24 @@ function JourneyStepContent({
           <ValidationIssuesSection validationIssues={validationIssues} />
         ) : null}
 
-        <SummarySection
-          title="Pension Summary"
-          variant="feature"
+        <PensionSummarySection
+          activeResult={currentComparisonResult}
+          headingLevel={2}
           description="This answer updates automatically as you adjust the journey assumptions."
-          items={retirementIncomeItems}
-          controls={
-            <RetirementIncomeDisplayToggle
-              value={retirementIncomeDisplay}
-              onChange={onRetirementIncomeDisplayChange}
-            />
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          retirementIncomeItems={retirementIncomeItems}
+          retirementIncomeTitle={retirementIncomeTitle}
+          retirementIncomeTotal={retirementIncomeTotal}
+          retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+          retirementIncomeTarget={retirementIncomeTarget}
+          statusItems={
+            currentComparisonResult
+              ? buildComparisonStatusItems(currentComparisonResult)
+              : []
           }
-          footer={
-            <>
-              <RetirementIncomeSummaryFooter
-                totalLabel={retirementIncomeTitle}
-                totalValue={retirementIncomeTotal}
-                targetLabel={retirementIncomeTargetTitle}
-                targetValue={retirementIncomeTarget}
-              />
-              <ModellerLimitations
-                showLimitations={showLimitations}
-                onToggleLimitations={onToggleLimitations}
-              />
-            </>
-          }
+          showLimitations={showLimitations}
+          onToggleLimitations={onToggleLimitations}
         />
 
         <InflationBasisPanel
@@ -4761,7 +4807,7 @@ function StatePensionAgeField({
       <button
         type="button"
         className="secondary-button field-reset-button"
-        aria-label="Reset State Pension start age to default"
+        aria-label="Reset State Pension start age to default value"
         disabled={disabled}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => {
@@ -4776,8 +4822,11 @@ function StatePensionAgeField({
           setDraftExactValue(null);
         }}
       >
-        Reset to default
+        Reset to default value
       </button>
+      <small className="field-default-note">
+        Default: State Pension age {formatAgeValue(minimumStatePensionAge)}
+      </small>
       <FieldHelp field={field} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
@@ -4798,6 +4847,7 @@ function YearSettingField({
   const draftYear = getAlphaAbsYear(value);
   const currentYear = new Date().getUTCFullYear();
   const firstAbsYear = 2015;
+  const resetValue = defaultSettings[field.id];
   const yearOptions = Array.from(
     { length: currentYear - firstAbsYear + 1 },
     (_, index) => currentYear - index,
@@ -4808,6 +4858,7 @@ function YearSettingField({
       key={value}
       field={field}
       initialYear={draftYear.toString()}
+      resetValue={resetValue}
       yearOptions={yearOptions}
       onChange={onChange}
       validationIssue={validationIssue}
@@ -4818,12 +4869,14 @@ function YearSettingField({
 function YearSettingFieldEditor({
   field,
   initialYear,
+  resetValue,
   yearOptions,
   onChange,
   validationIssue,
 }: {
   field: DateField & { type: "year" };
   initialYear: string;
+  resetValue: PensionSettings[typeof field.id];
   yearOptions: number[];
   onChange: FieldProps["onChange"];
   validationIssue?: PensionValidationIssue;
@@ -4855,6 +4908,19 @@ function YearSettingFieldEditor({
           </option>
         ))}
       </select>
+      <button
+        type="button"
+        className="secondary-button field-reset-button"
+        aria-label={`Reset ${field.label} to default value`}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => {
+          setLocalYear(String(resetValue));
+          onChange(field.id, resetValue);
+        }}
+      >
+        Reset to default value
+      </button>
+      <small className="field-default-note">Default: {resetValue}</small>
       <FieldHelp field={field} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </label>
@@ -5067,7 +5133,7 @@ function CurrencySettingFieldEditor({
         <button
           type="button"
           className="secondary-button field-reset-button"
-          aria-label={`Reset ${field.label} to default`}
+          aria-label={`Reset ${field.label} to default value`}
           disabled={disabled}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
@@ -5075,8 +5141,13 @@ function CurrencySettingFieldEditor({
             onChange(field.id, resetValue);
           }}
         >
-          Reset to default
+          Reset to default value
         </button>
+      ) : null}
+      {showsResetButton ? (
+        <small className="field-default-note">
+          Default: {formatFieldValue(resetValue, field.format)}
+        </small>
       ) : null}
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
@@ -5110,7 +5181,7 @@ function RangeSettingField({
     "isaRealInterestPercent",
   ].includes(field.id);
   const resetValue = defaultSettings[field.id];
-  const resetLabel = `Reset ${field.label} to default`;
+  const resetLabel = `Reset ${field.label} to default value`;
   const isEditingExactValue = draftExactValue !== null;
   const parsedDraftExactValue =
     draftExactValue === null || draftExactValue.trim() === ""
@@ -5237,8 +5308,13 @@ function RangeSettingField({
             setDraftExactValue(null);
           }}
         >
-          Reset to default
+          Reset to default value
         </button>
+      ) : null}
+      {canResetToDefault ? (
+        <small className="field-default-note">
+          Default: {formatFieldValue(resetValue, field.format)}
+        </small>
       ) : null}
       <FieldHelp field={field} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
@@ -5517,15 +5593,20 @@ function DateSettingField({
         <button
           type="button"
           className="secondary-button field-reset-button"
-          aria-label="Reset State Pension draw date to default"
+          aria-label="Reset State Pension draw date to default value"
           disabled={disabled}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
             onChange(field.id, statePensionDefaultDrawDate);
           }}
         >
-          Reset to default
+          Reset to default value
         </button>
+      ) : null}
+      {statePensionDefaultDrawDate ? (
+        <small className="field-default-note">
+          Default: {formatDate(statePensionDefaultDrawDate)}
+        </small>
       ) : null}
       <FieldHelp field={field} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />

@@ -198,6 +198,14 @@ h3 {
   color: var(--text-muted);
 }
 
+.field-default-note {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-body);
+  color: var(--text-muted);
+}
+
 .guidance-toggle {
   display: inline-grid;
   grid-template-columns: auto minmax(0, 1fr);

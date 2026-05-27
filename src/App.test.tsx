@@ -668,6 +668,7 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Pension Summary" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Plan status" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Review this result" })).toBeInTheDocument();
     const expertBodyText = document.body.textContent ?? "";
     expect(expertBodyText.indexOf("Review this result")).toBeLessThan(
@@ -753,11 +754,11 @@ describe("App settings form", () => {
     expect(screen.getByRole("button", { name: "Add lump sum purchase" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Reset Current Full State Pension (£ per year) to default",
+        name: "Reset Current Full State Pension (£ per year) to default value",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Reset State Pension start age to default" }),
+      screen.getByRole("button", { name: "Reset State Pension start age to default value" }),
     ).toBeInTheDocument();
   });
 
@@ -1092,7 +1093,7 @@ describe("App settings form", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Reset Current Full State Pension (£ per year) to default",
+        name: "Reset Current Full State Pension (£ per year) to default value",
       }),
     );
 
@@ -1133,7 +1134,7 @@ describe("App settings form", () => {
     });
     fireEvent.blur(screen.getByLabelText("State Pension start age exact value"));
     fireEvent.click(
-      screen.getByRole("button", { name: "Reset State Pension start age to default" }),
+      screen.getByRole("button", { name: "Reset State Pension start age to default value" }),
     );
 
     expect(screen.getByLabelText("State Pension start age exact value")).toHaveValue(68);
@@ -1175,7 +1176,7 @@ describe("App settings form", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Reset Long-term inflation assumption to default",
+        name: "Reset Long-term inflation assumption to default value",
       }),
     );
 

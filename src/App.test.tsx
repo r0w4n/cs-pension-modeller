@@ -440,6 +440,9 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "What should we include?" })).toBeInTheDocument();
     expect(screen.getByLabelText("State Pension")).toBeChecked();
+    expect(
+      screen.queryByRole("heading", { name: "Scenario comparison" }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Your planning basics" })).toBeInTheDocument();
@@ -484,6 +487,9 @@ describe("App settings form", () => {
     expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Retirement income bridge" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Compare saved scenarios" }),
     ).toBeInTheDocument();
     const answerText = document.body.textContent ?? "";
     expect(answerText.indexOf("Retirement income bridge")).toBeGreaterThan(
@@ -675,6 +681,13 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Pension Summary" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Compare saved scenarios" }),
+    ).toBeInTheDocument();
+    const expertBodyText = document.body.textContent ?? "";
+    expect(expertBodyText.indexOf("Compare saved scenarios")).toBeLessThan(
+      expertBodyText.indexOf("Monthly pension projection table"),
+    );
 
     const titleSection = screen
       .getByRole("heading", {

@@ -1212,6 +1212,9 @@ function App() {
               useDropdownDates={useDropdownDates}
               onChange={updateSetting}
               onChangeChartParameters={updateBridgeChartParameters}
+              comparisonScenarios={comparisonScenarios}
+              onScenariosChange={setComparisonScenarios}
+              onLoadScenario={loadComparisonScenario}
               onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
               showLimitations={showLimitations}
               onToggleLimitations={() => setShowLimitations((current) => !current)}
@@ -1243,6 +1246,9 @@ function App() {
               useDropdownDates={useDropdownDates}
               onChange={updateSetting}
               onChangeChartParameters={updateBridgeChartParameters}
+              comparisonScenarios={comparisonScenarios}
+              onScenariosChange={setComparisonScenarios}
+              onLoadScenario={loadComparisonScenario}
               onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
               showLimitations={showLimitations}
               onToggleLimitations={() => setShowLimitations((current) => !current)}
@@ -1274,6 +1280,9 @@ function App() {
               useDropdownDates={useDropdownDates}
               onChange={updateSetting}
               onChangeChartParameters={updateBridgeChartParameters}
+              comparisonScenarios={comparisonScenarios}
+              onScenariosChange={setComparisonScenarios}
+              onLoadScenario={loadComparisonScenario}
               onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
               showLimitations={showLimitations}
               onToggleLimitations={() => setShowLimitations((current) => !current)}
@@ -1478,9 +1487,9 @@ function App() {
           </div>
         ) : null}
 
-        {appMode ? (
+        {appMode === "expert" ? (
           <ComparisonPrototype
-            settings={deferredSettings}
+            settings={settings}
             validationIssues={validationIssues}
             scenarios={comparisonScenarios}
             onScenariosChange={setComparisonScenarios}
@@ -2851,6 +2860,9 @@ type GuidedJourneyProps = {
   onChangeChartParameters: (
     patch: Partial<RetirementIncomeBridgeParameters>,
   ) => void;
+  comparisonScenarios: ComparisonScenario[];
+  onScenariosChange: (scenarios: ComparisonScenario[]) => void;
+  onLoadScenario: (scenarioSettings: PensionSettings) => void;
   onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
   showLimitations: boolean;
   onToggleLimitations: () => void;
@@ -2877,6 +2889,9 @@ function GuidedJourney({
   useDropdownDates,
   onChange,
   onChangeChartParameters,
+  comparisonScenarios,
+  onScenariosChange,
+  onLoadScenario,
   onRetirementIncomeDisplayChange,
   showLimitations,
   onToggleLimitations,
@@ -3046,6 +3061,9 @@ function GuidedJourney({
             useDropdownDates={useDropdownDates}
             onChange={onChange}
             onChangeChartParameters={onChangeChartParameters}
+            comparisonScenarios={comparisonScenarios}
+            onScenariosChange={onScenariosChange}
+            onLoadScenario={onLoadScenario}
             onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
             showLimitations={showLimitations}
             onToggleLimitations={onToggleLimitations}
@@ -3100,6 +3118,9 @@ function JourneyStepContent({
   useDropdownDates,
   onChange,
   onChangeChartParameters,
+  comparisonScenarios,
+  onScenariosChange,
+  onLoadScenario,
   onRetirementIncomeDisplayChange,
   showLimitations,
   onToggleLimitations,
@@ -3192,6 +3213,14 @@ function JourneyStepContent({
           {...bridgeChartParameters}
         />
 
+        <ComparisonPrototype
+          settings={settings}
+          validationIssues={validationIssues}
+          scenarios={comparisonScenarios}
+          onScenariosChange={onScenariosChange}
+          onLoadScenario={onLoadScenario}
+        />
+
       </div>
     );
   }
@@ -3202,6 +3231,9 @@ function JourneyStepContent({
         settings={settings}
         validationIssues={validationIssues}
         onChangeChartParameters={onChangeChartParameters}
+        comparisonScenarios={comparisonScenarios}
+        onScenariosChange={onScenariosChange}
+        onLoadScenario={onLoadScenario}
         showLimitations={showLimitations}
         onToggleLimitations={onToggleLimitations}
       />
@@ -3289,6 +3321,9 @@ function BridgeAnswer({
   settings,
   validationIssues,
   onChangeChartParameters,
+  comparisonScenarios,
+  onScenariosChange,
+  onLoadScenario,
   showLimitations,
   onToggleLimitations,
 }: {
@@ -3297,6 +3332,9 @@ function BridgeAnswer({
   onChangeChartParameters: (
     patch: Partial<RetirementIncomeBridgeParameters>,
   ) => void;
+  comparisonScenarios: ComparisonScenario[];
+  onScenariosChange: (scenarios: ComparisonScenario[]) => void;
+  onLoadScenario: (scenarioSettings: PensionSettings) => void;
   showLimitations: boolean;
   onToggleLimitations: () => void;
 }) {
@@ -3356,6 +3394,14 @@ function BridgeAnswer({
       <ModellerLimitations
         showLimitations={showLimitations}
         onToggleLimitations={onToggleLimitations}
+      />
+
+      <ComparisonPrototype
+        settings={settings}
+        validationIssues={validationIssues}
+        scenarios={comparisonScenarios}
+        onScenariosChange={onScenariosChange}
+        onLoadScenario={onLoadScenario}
       />
     </div>
   );

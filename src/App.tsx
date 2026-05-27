@@ -292,9 +292,9 @@ const JOURNEY_DEFINITIONS = [
   },
   {
     id: "simple-early-retirement",
-    title: "Simple early retirement journey",
+    title: "Simplified retirement journey",
     description:
-      "Follow a short early-retirement journey based on the main Civil Service pension calculator inputs, then review the chart at the end.",
+      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, funding gaps, and assumptions.",
     steps: [
       {
         id: "basics",
@@ -1285,7 +1285,7 @@ function App() {
         ) : null}
 
         {appMode === "expert" ? (
-          <ComparisonPrototype
+          <ComparisonPanel
             settings={settings}
             validationIssues={validationIssues}
             scenarios={comparisonScenarios}
@@ -1367,10 +1367,12 @@ function ModeSelectionPanel({
           onClick={() => onSelectMode("simple")}
         >
           <span className="card-label">Simple journey</span>
-          <strong>Use the simple early retirement journey</strong>
+          <strong>Simplified retirement journey</strong>
           <span>
-            Follow a shorter flow with State Pension assumptions handled for you
-            and the chart at the end.
+            Answer a smaller set of questions to see what your retirement could
+            look like financially. This journey keeps the main assumptions simple
+            and shows your projected income, key dates, and funding gaps at the
+            end.
           </span>
         </button>
 
@@ -1464,7 +1466,7 @@ type ComparisonScenarioActions = {
   replaceScenario: (id: string) => void;
 };
 
-function ComparisonPrototype({
+function ComparisonPanel({
   settings,
   validationIssues,
   scenarios,
@@ -1532,6 +1534,8 @@ function ComparisonPrototype({
       ? [currentResult, ...savedResults]
       : savedResults;
   const activeResult = matchingSavedResult ?? currentResult ?? savedResults[0] ?? null;
+  const hasVisibleShortfall =
+    retirementIncomeSeries?.some((point) => point.shortfallAnnual > 0) ?? false;
   const retirementIncomeItems =
     activeResult && retirementIncomeDisplay
       ? buildRetirementIncomeItems(activeResult.summary, retirementIncomeDisplay)
@@ -1605,6 +1609,7 @@ function ComparisonPrototype({
         : best,
     null,
   );
+  const resultStatusItems = activeResult ? buildComparisonStatusItems(activeResult) : [];
   const insights = {
     earliestRetirementResult,
     bestTargetResult,
@@ -1701,9 +1706,17 @@ function ComparisonPrototype({
         retirementIncomeTotal={retirementIncomeTotal}
         retirementIncomeTargetTitle={retirementIncomeTargetTitle}
         retirementIncomeTarget={retirementIncomeTarget}
+        statusItems={resultStatusItems}
         showLimitations={showLimitations}
         onToggleLimitations={onToggleLimitations}
       />
+
+      {hasVisibleShortfall ? (
+        <p className="section-copy bridge-shortfall-explainer">
+          The shaded shortfall shows where projected income is below your target
+          before secure pension income is fully in place.
+        </p>
+      ) : null}
 
       <ComparisonBridgeChart
         retirementIncomeSeries={retirementIncomeSeries}
@@ -1721,14 +1734,6 @@ function ComparisonPrototype({
         results={results}
         insights={insights}
       />
-
-      {derivedInflationAssumptions ? (
-        <InflationBasisPanel
-          settings={settings}
-          assumptions={derivedInflationAssumptions}
-        />
-      ) : null}
-
       <SavedScenariosSection
         scenarios={scenarios}
         savedResults={savedResults}
@@ -1738,6 +1743,13 @@ function ComparisonPrototype({
         replaceScenario={replaceScenario}
         removeScenario={removeScenario}
       />
+
+      {derivedInflationAssumptions ? (
+        <InflationBasisPanel
+          settings={settings}
+          assumptions={derivedInflationAssumptions}
+        />
+      ) : null}
     </section>
   );
 }
@@ -1751,6 +1763,7 @@ function ComparisonPensionSummary({
   retirementIncomeTotal,
   retirementIncomeTargetTitle,
   retirementIncomeTarget,
+  statusItems,
   showLimitations,
   onToggleLimitations,
 }: {
@@ -1762,6 +1775,7 @@ function ComparisonPensionSummary({
   retirementIncomeTotal: string;
   retirementIncomeTargetTitle: string;
   retirementIncomeTarget: string;
+  statusItems: SummaryItem[];
   showLimitations?: boolean;
   onToggleLimitations?: () => void;
 }) {
@@ -1773,7 +1787,7 @@ function ComparisonPensionSummary({
     <SummarySection
       title="Pension Summary"
       variant="feature"
-      description="This result is generated from the current journey assumptions and uses the same structure as the comparison view."
+      description="This summary uses your current journey assumptions and shows your projected annual income before tax."
       items={retirementIncomeItems}
       controls={onRetirementIncomeDisplayChange ? (
         <RetirementIncomeDisplayToggle
@@ -1789,6 +1803,31 @@ function ComparisonPensionSummary({
             targetLabel={retirementIncomeTargetTitle}
             targetValue={retirementIncomeTarget}
           />
+          <div className="summary-status-block">
+            <h3>Plan status</h3>
+            <p className="section-copy">
+              This section highlights whether the current plan appears to work,
+              where it falls short, and what may need attention.
+            </p>
+            <dl className="snapshot-list">
+              {statusItems.map(({ label, value, infoUrl, infoLinkText }) => (
+                <div key={label}>
+                  <dt>
+                    <span className="field-label-group">
+                      <span>{label}</span>
+                      {infoUrl ? (
+                        <InfoLink
+                          href={infoUrl}
+                          text={infoLinkText ?? `More about ${label}`}
+                        />
+                      ) : null}
+                    </span>
+                  </dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
           {showLimitations !== undefined && onToggleLimitations ? (
             <ModellerLimitations
               showLimitations={showLimitations}
@@ -1845,10 +1884,9 @@ function ComparisonBuilder({
   return (
     <section className="comparison-builder" aria-labelledby="comparison-builder-title">
       <div>
-        <h3 id="comparison-builder-title">Add the current model</h3>
+        <h3 id="comparison-builder-title">Save this result as a scenario</h3>
         <p className="section-copy">
-          Up to {MAX_COMPARISON_SCENARIOS} scenarios can be held in this
-          comparison set during the current session.
+          You can save up to {MAX_COMPARISON_SCENARIOS} scenarios during this session.
         </p>
       </div>
       <div className="comparison-add-row">
@@ -2010,8 +2048,8 @@ function SavedScenariosSection({
 
       {scenarios.length === 0 ? (
         <p className="section-copy">
-          No scenarios saved yet. Configure the model, name the scenario if you
-          want, then add it to the comparison set.
+          No scenarios saved yet. Save this result to compare it with other
+          retirement options during this session.
         </p>
       ) : (
         <div className="comparison-card-grid" role="list">
@@ -2092,7 +2130,7 @@ function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
   return (
     <section className="bridge-table-section">
       <div className="summary-section-header">
-        <h3>Results breakdown</h3>
+        <h3>Detailed breakdown</h3>
       </div>
       <p className="section-copy">
         Review the full breakdown for the current model, including retirement timing, secure pension income, bridge funding, ISA and SIPP use, flexible asset position, and modelling assumptions. If you save additional scenarios, they will appear alongside this result so you can compare them using the same structure.
@@ -2848,13 +2886,17 @@ function getComparisonStatusLabel(result: ComparisonResult) {
     return "Problem";
   }
 
-  return "Caution";
+  return "Needs attention";
 }
 
 function renderComparisonStatusCell(result: ComparisonResult) {
   const status = getComparisonStatusLabel(result);
   const tone =
-    status === "Problem" ? "problem" : status === "Caution" ? "caution" : "good";
+    status === "Problem"
+      ? "problem"
+      : status === "Needs attention"
+        ? "caution"
+        : "good";
 
   return renderComparisonToneCell(status, tone);
 }
@@ -2881,6 +2923,50 @@ function formatTargetMissDuration(months: number) {
   }
 
   return remainingMonths === 0 ? `${years}y` : `${years}y ${remainingMonths}m`;
+}
+
+function buildComparisonStatusItems(result: ComparisonResult): SummaryItem[] {
+  const overallWorks =
+    result.targetMissMonths === 0 &&
+    result.bridgeAnalysis.planWorks &&
+    result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus >= 0;
+
+  const targetShortfall =
+    result.targetMissMonths > 0
+      ? `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`
+      : "No shortfall against the target";
+
+  let mainIssue = "No major issue identified";
+
+  if (!result.bridgeAnalysis.planWorks) {
+    mainIssue =
+      result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
+        ? `Bridge still unfunded; estimated extra monthly saving ${formatMonthlyCurrency(
+            result.bridgeAnalysis.additionalMonthlyContributionRequired,
+          )}`
+        : "Bridge still unfunded";
+  } else if (result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus < 0) {
+    mainIssue = `Secure pension income is ${formatAnnualCurrency(
+      Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus),
+    )} below target once the bridge ends`;
+  } else if (result.targetMissMonths > 0) {
+    mainIssue = "Income drops below target before secure pension income is fully in place";
+  }
+
+  return [
+    {
+      label: "Overall status",
+      value: overallWorks ? "Looks workable" : "Needs attention",
+    },
+    {
+      label: "Target shortfall",
+      value: targetShortfall,
+    },
+    {
+      label: "Main issue",
+      value: mainIssue,
+    },
+  ];
 }
 
 function buildRetirementIncomeItems(
@@ -3464,7 +3550,7 @@ function JourneyStepContent({
           {...bridgeChartParameters}
         />
 
-        <ComparisonPrototype
+        <ComparisonPanel
           settings={settings}
           validationIssues={validationIssues}
           scenarios={comparisonScenarios}
@@ -3625,7 +3711,7 @@ function BridgeAnswer({
         <ValidationIssuesSection validationIssues={validationIssues} />
       ) : null}
 
-      <ComparisonPrototype
+      <ComparisonPanel
         settings={settings}
         validationIssues={validationIssues}
         scenarios={comparisonScenarios}

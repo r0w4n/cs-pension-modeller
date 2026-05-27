@@ -361,7 +361,7 @@ function renderAcknowledgedApp(
   if (mode === "simple") {
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Use the simple early retirement journey/i,
+        name: /Simplified retirement journey/i,
       }),
     );
   }
@@ -395,7 +395,7 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: null });
 
     expect(
-      screen.getByRole("heading", { name: "Simple early retirement journey" }),
+      screen.getByRole("heading", { name: "Simplified retirement journey" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Your retirement assumptions" }),
@@ -509,10 +509,16 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByRole("heading", { name: "Compare saved scenarios" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Comparison table" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Review this result" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Detailed breakdown" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Current model" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Plan status" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This summary uses your current journey assumptions and shows your projected annual income before tax.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Action required" })).not.toBeInTheDocument();
   });
 
@@ -521,8 +527,8 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByRole("heading", { name: "Compare saved scenarios" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Comparison table" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Review this result" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Detailed breakdown" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Current model" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Action required" })).not.toBeInTheDocument();
@@ -662,11 +668,9 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Pension Summary" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Compare saved scenarios" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Review this result" })).toBeInTheDocument();
     const expertBodyText = document.body.textContent ?? "";
-    expect(expertBodyText.indexOf("Compare saved scenarios")).toBeLessThan(
+    expect(expertBodyText.indexOf("Review this result")).toBeLessThan(
       expertBodyText.indexOf("Monthly pension projection table"),
     );
 

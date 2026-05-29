@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "ignoreFiles": [
+    "src/pages/about.tsx",
+    "src/pages/methodology.tsx",
+    "src/pages/privacy.tsx",
+    "src/pages/static-page-layout.tsx"
+  ]
+}

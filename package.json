@@ -8,7 +8,9 @@
     "build": "tsc && vite build",
     "check": "npm run lint && npm run audit && npm run test:coverage && npm run build",
     "audit": "npm audit --audit-level=moderate",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "npm run lint:eslint && npm run lint:knip",
+    "lint:eslint": "eslint . --max-warnings=0",
+    "lint:knip": "knip --dependencies --files",
     "lint:hook": "npm run lint",
     "preview": "vite preview",
     "prepublishOnly": "sh .githooks/pre-publish",
@@ -22,14 +24,13 @@
   "dependencies": {
     "d3": "^7.9.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "yarn": "^1.22.22"
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
     "@types/d3": "^7.4.3",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.9",
@@ -45,6 +46,7 @@
     "eslint-plugin-sonarjs": "^4.0.3",
     "globals": "^17.5.0",
     "jsdom": "^29.0.2",
+    "knip": "^6.14.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.59.1",
     "vite": "^7.1.4",

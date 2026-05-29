@@ -12,7 +12,7 @@ type ProjectionTableSectionContainerProps = {
   children: ReactNode;
 };
 
-type TableColumn = {
+export type TableColumn = {
   key: string;
   label: string;
   width: string;
@@ -236,7 +236,7 @@ export function ProjectionTable({ rows, settings }: ProjectionTableProps) {
   );
 }
 
-function ProjectionTableFrame<Row>({
+export function ProjectionTableFrame<Row>({
   columns,
   rows,
   emptyMessage,

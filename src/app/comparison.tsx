@@ -1,7 +1,79 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { type RetirementIncomeDisplay, type deriveInflationAssumptions } from "../projection";
+import type { PensionSettings, PensionValidationIssue } from "../settings";
+import type {
+  RetirementIncomeBridgeLimits,
+  RetirementIncomeBridgeParameters,
+  RetirementIncomePoint,
+} from "../RetirementIncomeBridgeChart";
+import {
+  clonePensionSettings,
+  createComparisonResult,
+  createComparisonScenarioId,
+  getSettingsSignature,
+  type ComparisonResult,
+  type ComparisonResultCache,
+  type ComparisonScenario,
+} from "../app-domains";
+import { ComparisonBridgeChart, DeferredBelowFold } from "./chart";
+import { ComparisonResults } from "./comparison-results";
+import { buildComparisonPanelData } from "./comparison-state";
+import {
+  InflationBasisPanel,
+  ModellerLimitations,
+  RetirementIncomeDisplayToggle,
+  RetirementIncomeSummaryFooter,
+  SummarySection,
+  type SummaryItem,
+} from "./results-summary";
+import { SavedScenariosSection } from "./saved-scenarios";
 
 type ComparisonSectionProps = {
   children: ReactNode;
+};
+
+export type ComparisonPanelProps = {
+  settings: PensionSettings;
+  validationIssues: PensionValidationIssue[];
+  scenarios: ComparisonScenario[];
+  comparisonResultCache?: ComparisonResultCache;
+  onScenariosChange: (scenarios: ComparisonScenario[]) => void;
+  onLoadScenario: (settings: PensionSettings) => void;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
+  showLimitations?: boolean;
+  onToggleLimitations?: () => void;
+  derivedInflationAssumptions?: ReturnType<typeof deriveInflationAssumptions>;
+  retirementIncomeSeries?: RetirementIncomePoint[];
+  bridgeChartParameters?: RetirementIncomeBridgeParameters;
+  bridgeChartLimits?: RetirementIncomeBridgeLimits;
+  onChangeChartParameters?: (
+    patch: Partial<RetirementIncomeBridgeParameters>,
+  ) => void;
+};
+
+type ComparisonScenarioActions = {
+  currentScenarioIsValid: boolean;
+  comparisonLimitReached: boolean;
+  scenarioNameDraft: string;
+  setScenarioNameDraft: (value: string) => void;
+  addCurrentScenario: () => void;
+};
+
+type PensionSummarySectionProps = {
+  activeResult: ComparisonResult | null;
+  description: string;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
+  retirementIncomeItems: SummaryItem[];
+  retirementIncomeTitle: string;
+  retirementIncomeTotal: string;
+  retirementIncomeTargetTitle: string;
+  retirementIncomeTarget: string;
+  statusItems: SummaryItem[];
+  headingLevel?: 2 | 3;
+  showLimitations?: boolean;
+  onToggleLimitations?: () => void;
 };
 
 export function ComparisonSection({ children }: ComparisonSectionProps) {
@@ -9,14 +81,6 @@ export function ComparisonSection({ children }: ComparisonSectionProps) {
 }
 
 export const MAX_COMPARISON_SCENARIOS = 5;
-
-export type ComparisonScenarioActions = {
-  currentScenarioIsValid: boolean;
-  comparisonLimitReached: boolean;
-  scenarioNameDraft: string;
-  setScenarioNameDraft: (value: string) => void;
-  addCurrentScenario: () => void;
-};
 
 export function ComparisonBuilder({
   scenarioCount,
@@ -64,5 +128,356 @@ export function ComparisonBuilder({
         </p>
       ) : null}
     </section>
+  );
+}
+
+export function ComparisonPanel({
+  settings,
+  validationIssues,
+  scenarios,
+  comparisonResultCache,
+  onScenariosChange,
+  onLoadScenario,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  showLimitations,
+  onToggleLimitations,
+  derivedInflationAssumptions,
+  retirementIncomeSeries,
+  bridgeChartParameters,
+  bridgeChartLimits,
+  onChangeChartParameters,
+}: ComparisonPanelProps) {
+  const [scenarioNameDraft, setScenarioNameDraft] = useState("");
+  const currentSettingsSignature = useMemo(() => getSettingsSignature(settings), [settings]);
+  const currentScenarioIsValid = validationIssues.length === 0;
+  const comparisonLimitReached = scenarios.length >= MAX_COMPARISON_SCENARIOS;
+  const currentScenario = useMemo<ComparisonScenario>(
+    () => ({
+      id: "current-model",
+      name: "Current model",
+      settings: clonePensionSettings(settings),
+      createdAt: "",
+      updatedAt: "",
+    }),
+    [settings],
+  );
+  const currentResult = useMemo(
+    () =>
+      currentScenarioIsValid
+        ? createComparisonResult(
+            currentScenario,
+            currentSettingsSignature,
+            comparisonResultCache,
+          )
+        : null,
+    [
+      comparisonResultCache,
+      currentScenario,
+      currentScenarioIsValid,
+      currentSettingsSignature,
+    ],
+  );
+  const comparisonPanelData = useMemo(
+    () =>
+      buildComparisonPanelData({
+        comparisonResultCache,
+        currentResult,
+        currentSettingsSignature,
+        retirementIncomeDisplay,
+        retirementIncomeSeries,
+        scenarios,
+        taxationEnabled: settings.taxationEnabled,
+      }),
+    [
+      comparisonResultCache,
+      currentResult,
+      currentSettingsSignature,
+      retirementIncomeDisplay,
+      retirementIncomeSeries,
+      scenarios,
+      settings.taxationEnabled,
+    ],
+  );
+  const {
+    activeResult,
+    hasVisibleShortfall,
+    insights,
+    resultStatusItems,
+    results,
+    retirementIncomeItems,
+    retirementIncomeTarget,
+    retirementIncomeTargetTitle,
+    retirementIncomeTitle,
+    retirementIncomeTotal,
+    savedResults,
+  } = comparisonPanelData;
+
+  function addCurrentScenario() {
+    if (!currentScenarioIsValid || comparisonLimitReached) {
+      return;
+    }
+
+    const scenarioNumber = scenarios.length + 1;
+    const now = new Date().toISOString();
+    const name = scenarioNameDraft.trim() || `Scenario ${scenarioNumber}`;
+
+    onScenariosChange([
+      ...scenarios,
+      {
+        id: createComparisonScenarioId(),
+        name,
+        settings: clonePensionSettings(settings),
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+    setScenarioNameDraft("");
+  }
+
+  function renameScenario(id: string, name: string) {
+    onScenariosChange(
+      scenarios.map((scenario, index) =>
+        scenario.id === id
+          ? {
+              ...scenario,
+              name: name.trim() || `Scenario ${index + 1}`,
+              updatedAt: new Date().toISOString(),
+            }
+          : scenario,
+      ),
+    );
+  }
+
+  function removeScenario(id: string) {
+    onScenariosChange(scenarios.filter((scenario) => scenario.id !== id));
+  }
+
+  function replaceScenario(id: string) {
+    if (!currentScenarioIsValid) {
+      return;
+    }
+
+    onScenariosChange(
+      scenarios.map((scenario) =>
+        scenario.id === id
+          ? {
+              ...scenario,
+              settings: clonePensionSettings(settings),
+              updatedAt: new Date().toISOString(),
+            }
+          : scenario,
+      ),
+    );
+  }
+
+  return (
+    <section className="panel comparison-panel" aria-labelledby="comparison-title">
+      <div className="panel-heading">
+        <p className="eyebrow">Results breakdown</p>
+        <h2 id="comparison-title">Review this result</h2>
+        <p className="section-copy">
+          Review the current model in detail, including retirement timing, secure pension income, bridge funding, and assumptions. Save this result as a scenario when you want to compare it with other retirement options.
+        </p>
+      </div>
+
+      <ComparisonPensionSummary
+        activeResult={activeResult}
+        retirementIncomeDisplay={retirementIncomeDisplay}
+        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+        retirementIncomeItems={retirementIncomeItems}
+        retirementIncomeTitle={retirementIncomeTitle}
+        retirementIncomeTotal={retirementIncomeTotal}
+        retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+        retirementIncomeTarget={retirementIncomeTarget}
+        statusItems={resultStatusItems}
+        showLimitations={showLimitations}
+        onToggleLimitations={onToggleLimitations}
+      />
+
+      {hasVisibleShortfall ? (
+        <p className="section-copy bridge-shortfall-explainer">
+          The shaded shortfall shows where projected income is below your target
+          before secure pension income is fully in place.
+        </p>
+      ) : null}
+
+      <DeferredBelowFold estimatedHeight={420} forceRender={validationIssues.length > 0}>
+        <ComparisonBridgeChart
+          retirementIncomeSeries={retirementIncomeSeries}
+          bridgeChartParameters={bridgeChartParameters}
+          bridgeChartLimits={bridgeChartLimits}
+          validationIssues={validationIssues}
+          onChangeChartParameters={onChangeChartParameters}
+        />
+      </DeferredBelowFold>
+
+      <DeferredBelowFold estimatedHeight={180}>
+        <ComparisonBuilder
+          scenarioCount={scenarios.length}
+          actions={{
+            currentScenarioIsValid,
+            comparisonLimitReached,
+            scenarioNameDraft,
+            setScenarioNameDraft,
+            addCurrentScenario,
+          }}
+        />
+      </DeferredBelowFold>
+
+      <DeferredBelowFold estimatedHeight={420}>
+        <ComparisonResults results={results} insights={insights} />
+      </DeferredBelowFold>
+
+      <DeferredBelowFold estimatedHeight={260}>
+        <SavedScenariosSection
+          scenarios={scenarios}
+          savedResults={savedResults}
+          currentScenarioIsValid={currentScenarioIsValid}
+          maxScenarios={MAX_COMPARISON_SCENARIOS}
+          onLoadScenario={onLoadScenario}
+          renameScenario={renameScenario}
+          replaceScenario={replaceScenario}
+          removeScenario={removeScenario}
+        />
+      </DeferredBelowFold>
+
+      {derivedInflationAssumptions ? (
+        <DeferredBelowFold estimatedHeight={240}>
+          <InflationBasisPanel
+            settings={settings}
+            assumptions={derivedInflationAssumptions}
+          />
+        </DeferredBelowFold>
+      ) : null}
+    </section>
+  );
+}
+
+export function PensionSummarySection({
+  activeResult,
+  description,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  retirementIncomeItems,
+  retirementIncomeTitle,
+  retirementIncomeTotal,
+  retirementIncomeTargetTitle,
+  retirementIncomeTarget,
+  statusItems,
+  headingLevel = 3,
+  showLimitations,
+  onToggleLimitations,
+}: PensionSummarySectionProps) {
+  if (!activeResult || !retirementIncomeDisplay) {
+    return null;
+  }
+
+  return (
+    <SummarySection
+      title="Pension Summary"
+      headingLevel={headingLevel}
+      variant="feature"
+      description={description}
+      items={retirementIncomeItems}
+      controls={onRetirementIncomeDisplayChange ? (
+        <RetirementIncomeDisplayToggle
+          value={retirementIncomeDisplay}
+          onChange={onRetirementIncomeDisplayChange}
+        />
+      ) : undefined}
+      footer={
+        <>
+          <RetirementIncomeSummaryFooter
+            totalLabel={retirementIncomeTitle}
+            totalValue={retirementIncomeTotal}
+            targetLabel={retirementIncomeTargetTitle}
+            targetValue={retirementIncomeTarget}
+          />
+          <div className="summary-status-block">
+            <h3>Plan status</h3>
+            <p className="section-copy">
+              This section highlights whether the current plan appears to work,
+              where it falls short, and what may need attention.
+            </p>
+            <dl className="snapshot-list">
+              {statusItems.map(({ label, value, infoUrl, infoLinkText }) => (
+                <div key={label}>
+                  <dt>
+                    <span className="field-label-group">
+                      <span>{label}</span>
+                      {infoUrl ? (
+                        <a
+                          className="field-info-link"
+                          href={infoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {infoLinkText ?? `More about ${label}`}
+                        </a>
+                      ) : null}
+                    </span>
+                  </dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          {showLimitations !== undefined && onToggleLimitations ? (
+            <ModellerLimitations
+              showLimitations={showLimitations}
+              onToggleLimitations={onToggleLimitations}
+            />
+          ) : null}
+        </>
+      }
+    />
+  );
+}
+
+function ComparisonPensionSummary({
+  activeResult,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  retirementIncomeItems,
+  retirementIncomeTitle,
+  retirementIncomeTotal,
+  retirementIncomeTargetTitle,
+  retirementIncomeTarget,
+  statusItems,
+  showLimitations,
+  onToggleLimitations,
+}: {
+  activeResult: ComparisonResult | null;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
+  retirementIncomeItems: SummaryItem[];
+  retirementIncomeTitle: string;
+  retirementIncomeTotal: string;
+  retirementIncomeTargetTitle: string;
+  retirementIncomeTarget: string;
+  statusItems: SummaryItem[];
+  showLimitations?: boolean;
+  onToggleLimitations?: () => void;
+}) {
+  if (!activeResult || !retirementIncomeDisplay) {
+    return null;
+  }
+
+  return (
+    <PensionSummarySection
+      activeResult={activeResult}
+      description="This summary uses your current journey assumptions and shows your projected annual income before tax."
+      retirementIncomeDisplay={retirementIncomeDisplay}
+      onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+      retirementIncomeItems={retirementIncomeItems}
+      retirementIncomeTitle={retirementIncomeTitle}
+      retirementIncomeTotal={retirementIncomeTotal}
+      retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+      retirementIncomeTarget={retirementIncomeTarget}
+      statusItems={statusItems}
+      showLimitations={showLimitations}
+      onToggleLimitations={onToggleLimitations}
+    />
   );
 }

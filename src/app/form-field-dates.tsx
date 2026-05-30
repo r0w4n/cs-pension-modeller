@@ -265,11 +265,8 @@ export function StatePensionAgeField({
           setDraftExactValue(null);
         }}
       >
-        Reset to default value
+        {`Reset to default (State Pension age ${formatAgeValue(minimumStatePensionAge)})`}
       </button>
-      <small className="field-default-note">
-        Default: State Pension age {formatAgeValue(minimumStatePensionAge)}
-      </small>
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
@@ -365,9 +362,8 @@ function YearSettingFieldEditor({
           onChange(field.id, resetValue);
         }}
       >
-        Reset to default value
+        {`Reset to default (${resetValue})`}
       </button>
-      <small className="field-default-note">Default: {resetValue}</small>
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </label>
@@ -562,13 +558,8 @@ export function DateSettingField({
             onChange(field.id, statePensionDefaultDrawDate);
           }}
         >
-          Reset to default value
+          {`Reset to default (${formatDate(statePensionDefaultDrawDate)})`}
         </button>
-      ) : null}
-      {statePensionDefaultDrawDate ? (
-        <small className="field-default-note">
-          Default: {formatDate(statePensionDefaultDrawDate)}
-        </small>
       ) : null}
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />

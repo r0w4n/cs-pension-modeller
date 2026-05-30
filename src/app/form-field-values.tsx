@@ -225,13 +225,8 @@ function CurrencySettingFieldEditor({
             onCommit(resetValue);
           }}
         >
-          Reset to default value
+          {`Reset to default (${formatCurrency(resetValue)})`}
         </button>
-      ) : null}
-      {showsResetButton ? (
-        <small className="field-default-note">
-          Default: {formatCurrency(resetValue)}
-        </small>
       ) : null}
     </>
   );
@@ -386,11 +381,8 @@ export function RangeSettingField({
           setDraftExactValue(null);
         }}
       >
-        Reset to default value
+        {`Reset to default (${formatFieldValue(resetValue, effectiveField.format)})`}
       </button>
-      <small className="field-default-note">
-        Default: {formatFieldValue(resetValue, effectiveField.format)}
-      </small>
       <FieldHelp field={effectiveField} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>

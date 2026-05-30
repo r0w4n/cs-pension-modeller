@@ -177,8 +177,6 @@ export const fieldGroups: FieldGroup[] = [
         type: "date",
         description:
           "Sets your current age, State Pension age, Alpha Normal Pension Age, and the minimum ages at which pension pots can be accessed.",
-        infoUrl: knowledgeLinks.statePensionAge,
-        infoLinkText: "State Pension age rules",
       },
       {
         id: "lifeExpectancy",
@@ -324,8 +322,6 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         description:
           "The share of full salary used for partial-retirement income and regular SIPP/ISA contribution modelling. Alpha and nuvos accruals are pro-rated from pensionable earnings, so lower actual pensionable earnings reduce future 2.32% Alpha accrual.",
-        infoUrl: knowledgeLinks.alphaAccrual,
-        infoLinkText: "Pensionable earnings",
       },
     ],
   },

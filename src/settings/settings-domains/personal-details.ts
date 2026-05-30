@@ -4,8 +4,8 @@ import { getTodayIsoDate } from "../settings-shared/date";
 export const personalDetailsDefaults = {
   startDate: getTodayIsoDate(),
   dateOfBirth: "1987-06-15",
-  lifeExpectancy: 88,
-  requirementAge: 60,
+  lifeExpectancy: 80,
+  requirementAge: 68,
   desiredRetirementIncome: 31700,
 } as const;
 

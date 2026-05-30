@@ -48,8 +48,7 @@ import {
   ValidationIssuesSection as ValidationIssuesSectionFeature,
 } from "./results-summary";
 
-export type JourneyStepContentProps = {
-  step: JourneyStepDefinition;
+export type JourneyStepViewModel = {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
@@ -79,34 +78,43 @@ export type JourneyStepContentProps = {
   onToggleLimitations: () => void;
 };
 
+export type JourneyStepContentProps = {
+  step: JourneyStepDefinition;
+  viewModel: JourneyStepViewModel;
+};
+
 export function JourneyStepContent({
   step,
-  settings,
-  validationIssues,
-  pensionSummary,
-  retirementIncomeSeries,
-  bridgeChartParameters,
-  bridgeChartLimits,
-  derivedInflationAssumptions,
-  retirementIncomeDisplay,
-  retirementIncomeItems,
-  retirementIncomeTitle,
-  retirementIncomeTotal,
-  retirementIncomeTargetTitle,
-  retirementIncomeTarget,
-  showGuidanceNotes,
-  useDropdownDates,
-  onChange,
-  onChangeChartParameters,
-  comparisonScenarios,
-  comparisonResultCache,
-  bridgeAnswerResultCache,
-  onScenariosChange,
-  onLoadScenario,
-  onRetirementIncomeDisplayChange,
-  showLimitations,
-  onToggleLimitations,
+  viewModel,
 }: JourneyStepContentProps) {
+  const {
+    settings,
+    validationIssues,
+    pensionSummary,
+    retirementIncomeSeries,
+    bridgeChartParameters,
+    bridgeChartLimits,
+    derivedInflationAssumptions,
+    retirementIncomeDisplay,
+    retirementIncomeItems,
+    retirementIncomeTitle,
+    retirementIncomeTotal,
+    retirementIncomeTargetTitle,
+    retirementIncomeTarget,
+    showGuidanceNotes,
+    useDropdownDates,
+    onChange,
+    onChangeChartParameters,
+    comparisonScenarios,
+    comparisonResultCache,
+    bridgeAnswerResultCache,
+    onScenariosChange,
+    onLoadScenario,
+    onRetirementIncomeDisplayChange,
+    showLimitations,
+    onToggleLimitations,
+  } = viewModel;
+
   const currentComparisonResult = useMemo(
     () =>
       pensionSummary

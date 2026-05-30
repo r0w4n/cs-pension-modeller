@@ -2,6 +2,12 @@ import type { ReactNode } from "react";
 import { deriveInflationAssumptions, type RetirementIncomeDisplay } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import { formatModelledReturn, formatPercent } from "../app-domains";
+import {
+  GOVERNED_ASSUMPTIONS_REGISTRY,
+  getAffectedFieldLabels,
+  getGovernedAssumptionsLatestReviewDate,
+} from "../assumptions-registry";
+import { resolveAppBaseHref } from "./app-base";
 
 const MODELLER_LIMITATIONS = [
   "Income Tax is estimated from configurable standard assumptions. It does not cover Scottish tax bands, benefit interactions, tax code changes, or other personal reliefs.",
@@ -210,6 +216,72 @@ export function ModellerLimitations({
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+export function AssumptionsVersionStrip() {
+  const appBaseHref = resolveAppBaseHref();
+  const latestReviewDate = getGovernedAssumptionsLatestReviewDate();
+
+  return (
+    <div className="assumptions-version-strip" aria-label="Assumptions version">
+      <div className="assumptions-version-strip-copy">
+        <strong>Assumptions version {GOVERNED_ASSUMPTIONS_REGISTRY.version}</strong>
+        <span>
+          {GOVERNED_ASSUMPTIONS_REGISTRY.assumptions.length} governed rules. Latest
+          review {latestReviewDate}.
+        </span>
+      </div>
+      <a
+        className="static-backlink assumptions-version-link"
+        href={`${appBaseHref}methodology/index.html`}
+      >
+        View methodology
+      </a>
+    </div>
+  );
+}
+
+export function GovernedAssumptionsTable() {
+  return (
+    <div className="assumption-table-shell">
+      <table className="assumption-table">
+        <thead>
+          <tr>
+            <th scope="col">Rule</th>
+            <th scope="col">Source</th>
+            <th scope="col">Effective date</th>
+            <th scope="col">Last reviewed</th>
+            <th scope="col">Affected fields</th>
+          </tr>
+        </thead>
+        <tbody>
+          {GOVERNED_ASSUMPTIONS_REGISTRY.assumptions.map((assumption) => (
+            <tr key={assumption.id}>
+              <th scope="row">
+                <div className="assumption-rule-title">{assumption.title}</div>
+                <div className="assumption-rule-summary">{assumption.summary}</div>
+              </th>
+              <td data-label="Source">
+                <a
+                  className="field-info-link"
+                  href={assumption.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {assumption.sourceLabel}
+                </a>
+              </td>
+              <td data-label="Effective date">{assumption.effectiveDate}</td>
+              <td data-label="Last reviewed">{assumption.lastReviewedDate}</td>
+              <td data-label="Affected fields">
+                {getAffectedFieldLabels(assumption.affectedFields).join(", ")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

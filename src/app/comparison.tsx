@@ -19,6 +19,7 @@ import { ComparisonBridgeChart, DeferredBelowFold } from "./chart";
 import { ComparisonResults } from "./comparison-results";
 import { buildComparisonPanelData } from "./comparison-state";
 import {
+  AssumptionsVersionStrip,
   InflationBasisPanel,
   ModellerLimitations,
   RetirementIncomeDisplayToggle,
@@ -429,6 +430,7 @@ export function PensionSummarySection({
               onToggleLimitations={onToggleLimitations}
             />
           ) : null}
+          <AssumptionsVersionStrip />
         </>
       }
     />

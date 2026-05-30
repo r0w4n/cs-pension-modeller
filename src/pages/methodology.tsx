@@ -1,5 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { GOVERNED_ASSUMPTIONS_REGISTRY } from "../assumptions-registry";
+import { GovernedAssumptionsTable } from "../app/results-summary";
 import { StaticPageLayout } from "./static-page-layout";
 import "../index.css";
 
@@ -34,6 +36,12 @@ function MethodologyPage() {
           draw ages, contribution rates, inflation and growth settings). Where defaults
           exist, they are intended as a starting point rather than a recommendation.
         </p>
+        <p className="section-copy">
+          Governed pension rules are tracked separately in assumptions version{" "}
+          <strong>{GOVERNED_ASSUMPTIONS_REGISTRY.version}</strong>, released on{" "}
+          {GOVERNED_ASSUMPTIONS_REGISTRY.releasedOn}.
+        </p>
+        <GovernedAssumptionsTable />
       </section>
 
       <section>
@@ -53,4 +61,3 @@ createRoot(document.getElementById("root")!).render(
     <MethodologyPage />
   </StrictMode>,
 );
-

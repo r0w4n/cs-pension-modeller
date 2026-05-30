@@ -521,6 +521,9 @@ describe("App settings form", () => {
         "This summary uses your current journey assumptions and shows your projected annual income before tax.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText("Assumptions version")).toHaveTextContent(
+      "Assumptions version 2026.05",
+    );
     expect(screen.queryByRole("heading", { name: "Action required" })).not.toBeInTheDocument();
   });
 

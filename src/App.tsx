@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import {
   type SettingsKey,
@@ -83,13 +84,61 @@ import {
   type BridgeAnswerResultCache,
   type ComparisonResultCache,
   type ComparisonScenario,
+  type JourneyDefinition,
 } from "./app-domains";
 import {
   useMobileDateDropdowns as useMobileDateDropdownsHook,
 } from "./app/form-fields";
-import { JourneyStepContent } from "./app/journey-step-content";
+import {
+  JourneyStepContent,
+  type JourneyStepViewModel,
+} from "./app/journey-step-content";
 import { SettingsPanel } from "./app/settings-panel";
 import { SiteFooter } from "./app/site-footer";
+
+type JourneyMode = Extract<AppMode, "bridge" | "simple">;
+
+type JourneyModeScreenProps = {
+  activeModeRef: RefObject<HTMLDivElement | null>;
+  mode: JourneyMode;
+  journey: JourneyDefinition;
+  settings: PensionSettings;
+  showGuidanceNotes: boolean;
+  onShowGuidanceNotesChange: (checked: boolean) => void;
+  journeyStepViewModel: JourneyStepViewModel;
+};
+
+const [bridgeJourneyDefinition, simpleJourneyDefinition] = JOURNEY_DEFINITIONS;
+
+const JOURNEY_DEFINITION_BY_MODE: Record<JourneyMode, JourneyDefinition> = {
+  bridge: bridgeJourneyDefinition,
+  simple: simpleJourneyDefinition,
+};
+
+function JourneyModeScreen({
+  activeModeRef,
+  mode,
+  journey,
+  settings,
+  showGuidanceNotes,
+  onShowGuidanceNotesChange,
+  journeyStepViewModel,
+}: JourneyModeScreenProps) {
+  return (
+    <JourneySection activeModeRef={activeModeRef}>
+      <JourneyFlowFeature
+        key={mode}
+        journey={journey}
+        settings={settings}
+        showGuidanceNotes={showGuidanceNotes}
+        onShowGuidanceNotesChange={onShowGuidanceNotesChange}
+        renderStepContent={(step) => (
+          <JourneyStepContent step={step} viewModel={journeyStepViewModel} />
+        )}
+      />
+    </JourneySection>
+  );
+}
 
 function App() {
   const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
@@ -319,6 +368,43 @@ function App() {
     });
   }
 
+  const toggleLimitations = useCallback(() => {
+    setShowLimitations((current) => !current);
+  }, []);
+
+  const activeJourneyMode =
+    appMode === "bridge" || appMode === "simple" ? appMode : null;
+  const activeJourneyDefinition = activeJourneyMode
+    ? JOURNEY_DEFINITION_BY_MODE[activeJourneyMode]
+    : null;
+  const journeyStepViewModel: JourneyStepViewModel = {
+    settings: visibleSettings,
+    validationIssues,
+    pensionSummary,
+    retirementIncomeSeries,
+    bridgeChartParameters,
+    bridgeChartLimits,
+    derivedInflationAssumptions,
+    retirementIncomeDisplay,
+    retirementIncomeItems,
+    retirementIncomeTitle,
+    retirementIncomeTotal,
+    retirementIncomeTargetTitle,
+    retirementIncomeTarget,
+    showGuidanceNotes,
+    useDropdownDates,
+    onChange: updateSetting,
+    onChangeChartParameters: updateBridgeChartParameters,
+    comparisonScenarios,
+    comparisonResultCache,
+    bridgeAnswerResultCache,
+    onScenariosChange: setComparisonScenarios,
+    onLoadScenario: loadComparisonScenario,
+    onRetirementIncomeDisplayChange: setRetirementIncomeDisplay,
+    showLimitations,
+    onToggleLimitations: toggleLimitations,
+  };
+
   return (
     <>
       {!hasAcknowledgedNotice ? (
@@ -372,88 +458,16 @@ function App() {
           <ModeSelection selectedMode={appMode} onSelectMode={selectAppMode} />
         </section>
 
-        {appMode === "bridge" ? (
-          <JourneySection activeModeRef={activeModeRef}>
-            <JourneyFlowFeature
-              key="early-retirement-bridge"
-              journey={JOURNEY_DEFINITIONS[0]}
-              settings={visibleSettings}
-              showGuidanceNotes={showGuidanceNotes}
-              onShowGuidanceNotesChange={setShowGuidanceNotes}
-              renderStepContent={(step) => (
-                <JourneyStepContent
-                  step={step}
-                  settings={visibleSettings}
-                  validationIssues={validationIssues}
-                  pensionSummary={pensionSummary}
-                  retirementIncomeSeries={retirementIncomeSeries}
-                  bridgeChartParameters={bridgeChartParameters}
-                  bridgeChartLimits={bridgeChartLimits}
-                  derivedInflationAssumptions={derivedInflationAssumptions}
-                  retirementIncomeDisplay={retirementIncomeDisplay}
-                  retirementIncomeItems={retirementIncomeItems}
-                  retirementIncomeTitle={retirementIncomeTitle}
-                  retirementIncomeTotal={retirementIncomeTotal}
-                  retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-                  retirementIncomeTarget={retirementIncomeTarget}
-                  useDropdownDates={useDropdownDates}
-                  onChange={updateSetting}
-                  onChangeChartParameters={updateBridgeChartParameters}
-                  comparisonScenarios={comparisonScenarios}
-                  comparisonResultCache={comparisonResultCache}
-                  bridgeAnswerResultCache={bridgeAnswerResultCache}
-                  onScenariosChange={setComparisonScenarios}
-                  onLoadScenario={loadComparisonScenario}
-                  onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
-                  showGuidanceNotes={showGuidanceNotes}
-                  showLimitations={showLimitations}
-                  onToggleLimitations={() => setShowLimitations((current) => !current)}
-                />
-              )}
-            />
-          </JourneySection>
-        ) : null}
-
-        {appMode === "simple" ? (
-          <JourneySection activeModeRef={activeModeRef}>
-            <JourneyFlowFeature
-              key="simple-early-retirement"
-              journey={JOURNEY_DEFINITIONS[1]}
-              settings={visibleSettings}
-              showGuidanceNotes={showGuidanceNotes}
-              onShowGuidanceNotesChange={setShowGuidanceNotes}
-              renderStepContent={(step) => (
-                <JourneyStepContent
-                  step={step}
-                  settings={visibleSettings}
-                  validationIssues={validationIssues}
-                  pensionSummary={pensionSummary}
-                  retirementIncomeSeries={retirementIncomeSeries}
-                  bridgeChartParameters={bridgeChartParameters}
-                  bridgeChartLimits={bridgeChartLimits}
-                  derivedInflationAssumptions={derivedInflationAssumptions}
-                  retirementIncomeDisplay={retirementIncomeDisplay}
-                  retirementIncomeItems={retirementIncomeItems}
-                  retirementIncomeTitle={retirementIncomeTitle}
-                  retirementIncomeTotal={retirementIncomeTotal}
-                  retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-                  retirementIncomeTarget={retirementIncomeTarget}
-                  useDropdownDates={useDropdownDates}
-                  onChange={updateSetting}
-                  onChangeChartParameters={updateBridgeChartParameters}
-                  comparisonScenarios={comparisonScenarios}
-                  comparisonResultCache={comparisonResultCache}
-                  bridgeAnswerResultCache={bridgeAnswerResultCache}
-                  onScenariosChange={setComparisonScenarios}
-                  onLoadScenario={loadComparisonScenario}
-                  onRetirementIncomeDisplayChange={setRetirementIncomeDisplay}
-                  showGuidanceNotes={showGuidanceNotes}
-                  showLimitations={showLimitations}
-                  onToggleLimitations={() => setShowLimitations((current) => !current)}
-                />
-              )}
-            />
-          </JourneySection>
+        {activeJourneyMode && activeJourneyDefinition ? (
+          <JourneyModeScreen
+            activeModeRef={activeModeRef}
+            mode={activeJourneyMode}
+            journey={activeJourneyDefinition}
+            settings={visibleSettings}
+            showGuidanceNotes={showGuidanceNotes}
+            onShowGuidanceNotesChange={setShowGuidanceNotes}
+            journeyStepViewModel={journeyStepViewModel}
+          />
         ) : null}
 
         {appMode === "expert" ? (

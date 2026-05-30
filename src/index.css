@@ -1445,6 +1445,48 @@ h3 {
   margin-bottom: 0;
 }
 
+.assumptions-version-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: rgba(17, 100, 102, 0.06);
+}
+
+.assumptions-version-strip-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.assumptions-version-strip-copy strong {
+  font-size: var(--font-size-body);
+}
+
+.assumptions-version-strip-copy span {
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+}
+
+.assumptions-version-link {
+  margin-top: 0;
+}
+
+.assumption-rule-title {
+  font-weight: 700;
+}
+
+.assumption-rule-summary {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  font-weight: 400;
+}
+
 .summary-toggle {
   display: inline-flex;
   gap: 0.35rem;
@@ -1884,6 +1926,15 @@ h3 {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  .assumptions-version-strip {
+    align-items: start;
+  }
+
+  .assumptions-version-link {
+    width: 100%;
+    justify-content: center;
   }
 
   .table-header-shell,

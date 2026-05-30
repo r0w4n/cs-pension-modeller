@@ -2116,7 +2116,7 @@ h3 {
     width: 100%;
   }
 
-  .number-input {
+  .range-control-grid .number-input {
     order: 1;
     max-width: 10rem;
   }

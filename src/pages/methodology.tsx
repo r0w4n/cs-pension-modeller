@@ -30,10 +30,32 @@ function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Calculation conventions</h2>
+        <h3>Real investment returns</h3>
+        <p className="section-copy">
+          Where the modeller needs a real return, it converts nominal investment returns
+          using compound inflation adjustment rather than simple subtraction.
+        </p>
+        <p className="section-copy">
+          Formula: real return = ((1 + nominal return) / (1 + inflation)) - 1
+        </p>
+        <p className="section-copy">
+          For example, 5% nominal growth with 2.5% inflation gives a real return of
+          about 2.44%.
+        </p>
+      </section>
+
+      <section>
         <h2>Assumptions</h2>
         <p className="section-copy">
-          Calculations depend entirely on the assumptions you enter (for example accrual,
-          draw ages, contribution rates, inflation and growth settings). Where defaults
+          This section covers externally governed or user-entered assumptions used by
+          the projection, including State Pension age, State Pension deferral, Alpha
+          early-retirement assumptions, nuvos assumptions, and minimum pension access
+          age.
+        </p>
+        <p className="section-copy">
+          Calculations depend on the assumptions you enter (for example accrual, draw
+          ages, contribution rates, inflation, and growth settings). Where defaults
           exist, they are intended as a starting point rather than a recommendation.
         </p>
         <p className="section-copy">

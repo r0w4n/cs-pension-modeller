@@ -566,21 +566,49 @@ h3 {
   line-height: var(--line-height-body);
 }
 
-.comparison-summary-row--section td:first-child {
-  color: var(--text);
+.comparison-summary-row td:first-child {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
-.comparison-summary-row td:nth-child(2) {
-  color: var(--text-muted);
+.comparison-summary-row td {
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.comparison-summary-row td:first-child {
+  hyphens: auto;
+}
+
+.comparison-summary-row--divider td {
+  background: #f3f6f8;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+.comparison-summary-row--divider td:first-child {
+  color: var(--text);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+}
+
+.comparison-summary-row--divider td:not(:first-child) {
+  color: transparent;
 }
 
 .comparison-cell {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   min-height: 1.9rem;
   padding: 0.2rem 0.5rem;
   border-radius: 0.45rem;
   font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .comparison-cell--good {
@@ -596,6 +624,28 @@ h3 {
 .comparison-cell--problem {
   background: rgba(220, 38, 38, 0.12);
   color: #b91c1c;
+}
+
+/* Override shared projection table nowrap so comparison values can wrap safely. */
+.projection-table tbody tr.comparison-summary-row td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.bridge-table-section .projection-table tbody tr.comparison-summary-row td:first-child,
+.bridge-table-section .projection-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface-strong);
+}
+
+.bridge-table-section .projection-table thead th:first-child {
+  z-index: 3;
+}
+
+.bridge-table-section .projection-table tbody tr.comparison-summary-row--divider td:first-child {
+  background: #f3f6f8;
 }
 
 .bridge-chart-panel {

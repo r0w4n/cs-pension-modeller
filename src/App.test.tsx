@@ -522,8 +522,10 @@ describe("App settings form", () => {
     advanceJourneyToResult();
 
     expect(await screen.findByRole("region", { name: "Comparison results" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Detailed breakdown" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Current model" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Scenario comparison" })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("columnheader", { name: "Current model" }).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Plan status" })).toBeInTheDocument();
     expect(
@@ -546,8 +548,10 @@ describe("App settings form", () => {
     advanceJourneyToResult();
 
     expect(await screen.findByRole("region", { name: "Comparison results" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Detailed breakdown" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Current model" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Scenario comparison" })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("columnheader", { name: "Current model" }).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Pension Summary" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Action required" })).not.toBeInTheDocument();
     expect(

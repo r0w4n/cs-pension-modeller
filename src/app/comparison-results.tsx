@@ -110,8 +110,7 @@ function ComparisonInsightsGrid({ insights }: { insights: ComparisonInsights }) 
 
 function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
   const columns: TableColumn[] = [
-    { key: "section", label: "Section", width: "14rem" },
-    { key: "metric", label: "Metric", width: "18rem" },
+    { key: "metric", label: "Metric", width: "16rem" },
     ...results.map((result, index) => ({
       key: result.scenario.id,
       label: result.scenario.name || `Scenario ${index + 1}`,
@@ -119,19 +118,15 @@ function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
     })),
   ];
   const rows = buildComparisonTableRows(results);
-  const minWidth = `${32 + results.length * 13}rem`;
+  const minWidth = `${16 + results.length * 13}rem`;
 
   return (
     <section className="bridge-table-section">
       <div className="summary-section-header">
-        <h3>Detailed breakdown</h3>
+        <h3>Scenario comparison</h3>
       </div>
       <p className="section-copy">
-        Review the full breakdown for the current model, including retirement timing,
-        secure pension income, bridge funding, ISA and SIPP use, flexible asset
-        position, and modelling assumptions. If you save additional scenarios, they
-        will appear alongside this result so you can compare them using the same
-        structure.
+        Compare the key decision metrics across scenarios.
       </p>
       <ProjectionTableFrame
         columns={columns}
@@ -139,14 +134,13 @@ function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
         emptyMessage="No comparison rows are available."
         getRowKey={(row) => row.key}
         getRowClassName={(row) =>
-          row.sectionStart
-            ? "comparison-summary-row comparison-summary-row--section"
+          row.isSectionDivider
+            ? "comparison-summary-row comparison-summary-row--divider"
             : "comparison-summary-row"
         }
         minWidth={minWidth}
         renderCells={(row) => [
-          row.sectionStart ? <strong>{row.section}</strong> : "",
-          row.metric,
+          row.isSectionDivider ? <strong>{row.section}</strong> : row.metric,
           ...row.values,
         ]}
       />

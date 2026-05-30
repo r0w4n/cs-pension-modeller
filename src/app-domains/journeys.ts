@@ -189,13 +189,11 @@ export const JOURNEY_DEFINITIONS = [
         fieldIds: [
           "isaCurrentPot",
           "isaMonthlyContribution",
-          "isaApplyRealInterest",
           "isaRealInterestPercent",
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
           "sippTaxReliefRate",
-          "sippApplyRealInterest",
           "sippRealInterestPercent",
         ],
         fieldLabels: {
@@ -322,13 +320,11 @@ export const JOURNEY_DEFINITIONS = [
         fieldIds: [
           "isaCurrentPot",
           "isaMonthlyContribution",
-          "isaApplyRealInterest",
           "isaRealInterestPercent",
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
           "sippTaxReliefRate",
-          "sippApplyRealInterest",
           "sippRealInterestPercent",
         ],
         fieldLabels: {

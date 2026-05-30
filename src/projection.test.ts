@@ -88,7 +88,6 @@ const bridgeBoundaryScenario1: PensionSettings = {
   sippMonthlyContribution: 350,
   sippDrawAge: 60,
   sippLumpSums: [],
-  sippApplyRealInterest: true,
   sippRealInterestPercent: 5,
   sippTaxReliefRate: "20",
   sippWithdrawalStrategy: "use_by_age",
@@ -98,7 +97,6 @@ const bridgeBoundaryScenario1: PensionSettings = {
   isaMonthlyContribution: 1550,
   isaDrawAge: 55,
   isaLumpSums: [],
-  isaApplyRealInterest: true,
   isaRealInterestPercent: 5,
   isaWithdrawalStrategy: "use_by_age",
   isaWithdrawalPercent: 4,
@@ -169,7 +167,6 @@ const isaToAlphaBoundaryScenario: PensionSettings = {
   sippMonthlyContribution: 350,
   sippDrawAge: 60.25,
   sippLumpSums: [],
-  sippApplyRealInterest: true,
   sippRealInterestPercent: 5,
   sippTaxReliefRate: "20",
   sippWithdrawalStrategy: "use_by_age",
@@ -179,7 +176,6 @@ const isaToAlphaBoundaryScenario: PensionSettings = {
   isaMonthlyContribution: 0,
   isaDrawAge: 58.5,
   isaLumpSums: [],
-  isaApplyRealInterest: true,
   isaRealInterestPercent: 5,
   isaWithdrawalStrategy: "use_by_age",
   isaWithdrawalPercent: 4,
@@ -840,11 +836,9 @@ describe("projection calculations", () => {
       dateOfBirth: "1986-01-01",
       sippCurrentPot: 10000,
       sippMonthlyContribution: 0,
-      sippApplyRealInterest: true,
       sippRealInterestPercent: 7,
       isaCurrentPot: 10000,
       isaMonthlyContribution: 0,
-      isaApplyRealInterest: true,
       isaRealInterestPercent: 7,
     };
 
@@ -954,7 +948,6 @@ describe("projection calculations", () => {
       ],
       sippDrawAge: 45,
       sippTaxReliefRate: "20",
-      sippApplyRealInterest: false,
       isaCurrentPot: 0,
       isaMonthlyContribution: 100,
       isaLumpSums: [
@@ -974,7 +967,6 @@ describe("projection calculations", () => {
         },
       ],
       isaDrawAge: 45,
-      isaApplyRealInterest: false,
     };
 
     expect(
@@ -1012,7 +1004,6 @@ describe("projection calculations", () => {
         },
       ],
       sippTaxReliefRate: "20",
-      sippApplyRealInterest: false,
     };
 
     expect(
@@ -1050,7 +1041,6 @@ describe("projection calculations", () => {
         },
       ],
       sippTaxReliefRate: "40",
-      sippApplyRealInterest: false,
     };
 
     expect(
@@ -1115,14 +1105,12 @@ describe("projection calculations", () => {
       sippDrawAge: 40,
       sippWithdrawalStrategy: "use_by_age",
       sippWithdrawalTargetAge: 45,
-      sippApplyRealInterest: true,
       sippRealInterestPercent: 6,
       isaCurrentPot: 30000,
       isaMonthlyContribution: 0,
       isaDrawAge: 40,
       isaWithdrawalStrategy: "use_by_age",
       isaWithdrawalTargetAge: 45,
-      isaApplyRealInterest: true,
       isaRealInterestPercent: 6,
     };
 
@@ -1338,9 +1326,7 @@ describe("projection calculations", () => {
     };
     const settingsWithGrowth: PensionSettings = {
       ...settingsWithoutGrowth,
-      sippApplyRealInterest: true,
       sippRealInterestPercent: 6,
-      isaApplyRealInterest: true,
       isaRealInterestPercent: 6,
     };
 

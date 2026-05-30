@@ -100,7 +100,6 @@ function coerceSettings(input: Partial<StoredPensionSettings>): Partial<StoredPe
     sippLumpSums:
       coerceAddedPensionLumpSums(input.sippLumpSums) ??
       coerceLegacySippLumpSum(legacySippLumpSumContribution),
-    sippApplyRealInterest: coerceBoolean(input.sippApplyRealInterest),
     sippRealInterestPercent: coerceNumber(input.sippRealInterestPercent),
     sippTaxReliefRate: coerceSippTaxReliefRate(
       (input as { sippTaxReliefRate?: unknown }).sippTaxReliefRate,
@@ -115,7 +114,6 @@ function coerceSettings(input: Partial<StoredPensionSettings>): Partial<StoredPe
     isaMonthlyContribution: coerceNumber(input.isaMonthlyContribution),
     isaDrawAge: coerceNumber(input.isaDrawAge),
     isaLumpSums: coerceAddedPensionLumpSums(input.isaLumpSums),
-    isaApplyRealInterest: coerceBoolean(input.isaApplyRealInterest),
     isaRealInterestPercent: coerceNumber(input.isaRealInterestPercent),
     isaWithdrawalStrategy: coerceString(input.isaWithdrawalStrategy) as
       | IsaWithdrawalStrategy

@@ -75,9 +75,7 @@ export type CheckboxField = {
     | "applyPensionIncreases"
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
-    | "nuvosApplyPensionIncreases"
-    | "isaApplyRealInterest"
-    | "sippApplyRealInterest";
+    | "nuvosApplyPensionIncreases";
   label: string;
   type: "checkbox";
   description: string;
@@ -661,13 +659,6 @@ export const fieldGroups: FieldGroup[] = [
           "How the modeller grosses up net SIPP contributions. This affects the SIPP pot projection, not Alpha defined benefit accrual.",
       },
       {
-        id: "sippApplyRealInterest",
-        label: "Apply investment growth to SIPP pot",
-        type: "checkbox",
-        description:
-          "Grow the projected SIPP pot using the expected annual return below. Real-terms mode converts that return into an inflation-adjusted rate.",
-      },
-      {
         id: "sippRealInterestPercent",
         label: "SIPP expected nominal return (%)",
         type: "range",
@@ -754,13 +745,6 @@ export const fieldGroups: FieldGroup[] = [
           "The age ISA drawdown starts. ISA money can usually be accessed earlier than pension money, which makes it useful for an early-retirement bridge.",
         infoUrl: knowledgeLinks.isaAllowance,
         infoLinkText: "ISA rules",
-      },
-      {
-        id: "isaApplyRealInterest",
-        label: "Apply investment growth to ISA pot",
-        type: "checkbox",
-        description:
-          "Grow the projected ISA pot using the expected annual return below. A higher expected return improves the bridge but adds uncertainty; real-terms mode converts the return into an inflation-adjusted rate.",
       },
       {
         id: "isaRealInterestPercent",

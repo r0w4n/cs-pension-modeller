@@ -30,7 +30,7 @@ describe("projection isa domain", () => {
         rowDate: "2026-03-01",
         drawDate: "2027-01-01",
       }),
-    ).toBe(1150);
+    ).toBeCloseTo(1152.311871, 6);
   });
 
   it("calculates monthly ISA pension for percentage and zero-at-death strategies", () => {

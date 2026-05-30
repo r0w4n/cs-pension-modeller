@@ -75,7 +75,6 @@ export type PensionSettings = {
   sippMonthlyContribution: number;
   sippDrawAge: number;
   sippLumpSums: AddedPensionLumpSum[];
-  sippApplyRealInterest: boolean;
   sippRealInterestPercent: number;
   sippTaxReliefRate: SippTaxReliefRate;
   sippWithdrawalStrategy: SippWithdrawalStrategy;
@@ -85,7 +84,6 @@ export type PensionSettings = {
   isaMonthlyContribution: number;
   isaDrawAge: number;
   isaLumpSums: AddedPensionLumpSum[];
-  isaApplyRealInterest: boolean;
   isaRealInterestPercent: number;
   isaWithdrawalStrategy: IsaWithdrawalStrategy;
   isaWithdrawalPercent: number;

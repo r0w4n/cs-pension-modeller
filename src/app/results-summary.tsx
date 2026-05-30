@@ -368,7 +368,7 @@ function buildInflationRows(
     rows.push(
       createReturnRow(
         "SIPP nominal return",
-        settings.sippApplyRealInterest,
+        true,
         assumptions.sippNominalReturnAnnual,
         assumptions.sippModelledReturnAnnual,
         settings.projectionBasis,
@@ -380,7 +380,7 @@ function buildInflationRows(
     rows.push(
       createReturnRow(
         "ISA nominal return",
-        settings.isaApplyRealInterest,
+        true,
         assumptions.isaNominalReturnAnnual,
         assumptions.isaModelledReturnAnnual,
         settings.projectionBasis,

@@ -102,7 +102,6 @@ export function calculateSippProjectionRow(input: {
     currentPot: settings.sippCurrentPot,
     monthlyContribution: settings.sippMonthlyContribution,
     lumpSums: settings.sippLumpSums,
-    applyRealInterest: settings.sippApplyRealInterest,
     realInterestPercent: settings.sippRealInterestPercent,
     withdrawalStrategy: settings.sippWithdrawalStrategy,
     withdrawalPercent: settings.sippWithdrawalPercent,
@@ -125,7 +124,6 @@ function calculatePotProjectionAtDate(input: {
   currentPot: number;
   monthlyContribution: number;
   lumpSums: AddedPensionLumpSum[];
-  applyRealInterest: boolean;
   realInterestPercent: number;
   withdrawalStrategy: PensionSettings["sippWithdrawalStrategy"];
   withdrawalPercent: number;
@@ -141,7 +139,6 @@ function calculatePotProjectionAtDate(input: {
     currentPot,
     monthlyContribution,
     lumpSums,
-    applyRealInterest,
     realInterestPercent,
     withdrawalStrategy,
     withdrawalPercent,
@@ -156,9 +153,8 @@ function calculatePotProjectionAtDate(input: {
     };
   }
 
-  const monthlyInterestRate = applyRealInterest
-    ? (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) ** (1 / 12) - 1
-    : 0;
+  const monthlyInterestRate =
+    (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) ** (1 / 12) - 1;
   const projectionMonthCount = calculateWholeMonthDifference(settings.startDate, rowDate);
   const withdrawalEndDate =
     withdrawalStrategy === "use_by_age"

@@ -6,7 +6,7 @@ import {
 import { defaultSettings, type PensionSettings } from "../settings";
 
 describe("projection sipp domain", () => {
-  it("projects SIPP pot with tax relief and optional real interest", () => {
+  it("projects SIPP pot with tax relief and growth", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       startDate: "2026-01-01",
@@ -25,7 +25,6 @@ describe("projection sipp domain", () => {
         },
       ],
       sippTaxReliefRate: "20",
-      sippApplyRealInterest: false,
     };
 
     expect(
@@ -34,7 +33,7 @@ describe("projection sipp domain", () => {
         rowDate: "2026-03-01",
         drawDate: "2026-04-01",
       }),
-    ).toBeCloseTo(11625, 6);
+    ).toBeCloseTo(11671.028074, 6);
   });
 
   it("can calculate SIPP income by zero-at-death or annual percentage strategy", () => {

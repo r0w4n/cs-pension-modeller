@@ -19,7 +19,6 @@ export function isIsaFieldDisabled(
   settings: PensionSettings,
 ) {
   return (
-    (fieldId === "isaRealInterestPercent" && !settings.isaApplyRealInterest) ||
     (fieldId === "isaWithdrawalPercent" &&
       settings.isaWithdrawalStrategy !== "percentage") ||
     (fieldId === "isaWithdrawalTargetAge" &&

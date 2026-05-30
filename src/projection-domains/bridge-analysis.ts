@@ -103,12 +103,8 @@ export function generateRetirementBridgeAnalysis(
   const sippAccessDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
   const monthlyTargetIncome = settings.desiredRetirementIncome / 12;
   const bridgeRows = generateMonthlyDateRange(retirementDate, endDate);
-  const isaMonthlyGrowthRate = settings.isaApplyRealInterest
-    ? (1 + settings.isaRealInterestPercent / 100) ** (1 / 12) - 1
-    : 0;
-  const sippMonthlyGrowthRate = settings.sippApplyRealInterest
-    ? (1 + settings.sippRealInterestPercent / 100) ** (1 / 12) - 1
-    : 0;
+  const isaMonthlyGrowthRate = (1 + settings.isaRealInterestPercent / 100) ** (1 / 12) - 1;
+  const sippMonthlyGrowthRate = (1 + settings.sippRealInterestPercent / 100) ** (1 / 12) - 1;
   let isaBalance = settings.showIsa
     ? calculateIsaPotAtDate({
         settings: { ...settings, showIsa: true },

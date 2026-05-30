@@ -18,7 +18,6 @@ export function isSippFieldDisabled(
   settings: PensionSettings,
 ) {
   return (
-    (fieldId === "sippRealInterestPercent" && !settings.sippApplyRealInterest) ||
     (fieldId === "sippWithdrawalPercent" &&
       settings.sippWithdrawalStrategy !== "percentage") ||
     (fieldId === "sippWithdrawalTargetAge" &&

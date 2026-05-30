@@ -92,7 +92,6 @@ export function calculateIsaProjectionRow(input: {
     currentPot: settings.isaCurrentPot,
     monthlyContribution: settings.isaMonthlyContribution,
     lumpSums: settings.isaLumpSums,
-    applyRealInterest: settings.isaApplyRealInterest,
     realInterestPercent: settings.isaRealInterestPercent,
     withdrawalStrategy: settings.isaWithdrawalStrategy,
     withdrawalPercent: settings.isaWithdrawalPercent,
@@ -115,7 +114,6 @@ function calculatePotProjectionAtDate(input: {
   currentPot: number;
   monthlyContribution: number;
   lumpSums: AddedPensionLumpSum[];
-  applyRealInterest: boolean;
   realInterestPercent: number;
   withdrawalStrategy: PensionSettings["isaWithdrawalStrategy"];
   withdrawalPercent: number;
@@ -131,7 +129,6 @@ function calculatePotProjectionAtDate(input: {
     currentPot,
     monthlyContribution,
     lumpSums,
-    applyRealInterest,
     realInterestPercent,
     withdrawalStrategy,
     withdrawalPercent,
@@ -146,9 +143,8 @@ function calculatePotProjectionAtDate(input: {
     };
   }
 
-  const monthlyInterestRate = applyRealInterest
-    ? (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) ** (1 / 12) - 1
-    : 0;
+  const monthlyInterestRate =
+    (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) ** (1 / 12) - 1;
   const projectionMonthCount = calculateWholeMonthDifference(settings.startDate, rowDate);
   const withdrawalEndDate =
     withdrawalStrategy === "use_by_age"

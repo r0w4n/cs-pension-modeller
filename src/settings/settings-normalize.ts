@@ -183,10 +183,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "partialRetirementEnabled":
       return normalizePartialRetirementBooleanSetting(value) as PensionSettings[K];
     case "showSipp":
-    case "sippApplyRealInterest":
       return normalizeSippBooleanSetting(value) as PensionSettings[K];
     case "showIsa":
-    case "isaApplyRealInterest":
       return normalizeIsaBooleanSetting(value) as PensionSettings[K];
     case "statePensionApplyFutureGrowth":
       return normalizeStatePensionBooleanSetting(value) as PensionSettings[K];
@@ -318,7 +316,6 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     sippMonthlyContribution: normalizeSetting("sippMonthlyContribution", settings.sippMonthlyContribution),
     sippDrawAge: normalizeSippDrawAge(settings.sippDrawAge, dateOfBirth),
     sippLumpSums: normalizeSetting("sippLumpSums", settings.sippLumpSums),
-    sippApplyRealInterest: Boolean(settings.sippApplyRealInterest),
     sippRealInterestPercent: normalizeSetting("sippRealInterestPercent", settings.sippRealInterestPercent),
     sippTaxReliefRate: normalizeSetting("sippTaxReliefRate", settings.sippTaxReliefRate),
     sippWithdrawalStrategy: normalizeSetting("sippWithdrawalStrategy", settings.sippWithdrawalStrategy),
@@ -331,7 +328,6 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     isaMonthlyContribution: normalizeSetting("isaMonthlyContribution", settings.isaMonthlyContribution),
     isaDrawAge: normalizeSetting("isaDrawAge", requirementAge),
     isaLumpSums: normalizeSetting("isaLumpSums", settings.isaLumpSums),
-    isaApplyRealInterest: Boolean(settings.isaApplyRealInterest),
     isaRealInterestPercent: normalizeSetting("isaRealInterestPercent", settings.isaRealInterestPercent),
     isaWithdrawalStrategy: normalizeSetting("isaWithdrawalStrategy", settings.isaWithdrawalStrategy),
     isaWithdrawalPercent: normalizeSetting("isaWithdrawalPercent", settings.isaWithdrawalPercent),

@@ -301,7 +301,6 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
     sippDrawAge: defaultSettings.sippDrawAge,
     sippLumpSums: defaultSettings.sippLumpSums,
-    sippApplyRealInterest: defaultSettings.sippApplyRealInterest,
     sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
     sippTaxReliefRate: defaultSettings.sippTaxReliefRate,
     sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
@@ -311,7 +310,6 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
     isaDrawAge: defaultSettings.isaDrawAge,
     isaLumpSums: defaultSettings.isaLumpSums,
-    isaApplyRealInterest: defaultSettings.isaApplyRealInterest,
     isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
     isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
     isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
@@ -639,9 +637,8 @@ describe("App settings form", () => {
     );
     expect(screen.getByRole("button", { name: "Add SIPP lump sum" })).toBeInTheDocument();
     expect(screen.getByLabelText("SIPP tax relief on net additions")).toHaveValue("20");
-    expect(screen.getByLabelText("Apply investment growth to SIPP pot")).not.toBeChecked();
-    expect(screen.getByLabelText("SIPP expected nominal return (%)")).toBeDisabled();
-    expect(screen.getByLabelText("SIPP expected nominal return (%) exact value")).toBeDisabled();
+    expect(screen.getByLabelText("SIPP expected nominal return (%)")).toBeEnabled();
+    expect(screen.getByLabelText("SIPP expected nominal return (%) exact value")).toBeEnabled();
     expect(screen.getByLabelText("SIPP withdrawal strategy")).toHaveValue("zero_at_death");
     expect(screen.queryByLabelText("SIPP withdrawal rate (%)")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Current ISA pot (£)")).toHaveValue(

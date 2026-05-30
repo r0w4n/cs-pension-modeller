@@ -64,7 +64,6 @@ export function JourneyFlow({
     (step) => !step.visible || step.visible(settings),
   );
   const [activeStepId, setActiveStepId] = useState(visibleSteps[0]?.id ?? "");
-  const [showMobileSteps, setShowMobileSteps] = useState(false);
   const activeStep = visibleSteps.find((step) => step.id === activeStepId) ?? visibleSteps[0];
   const activeStepIndex = Math.max(
     0,
@@ -72,15 +71,15 @@ export function JourneyFlow({
   );
   const isFirstStep = activeStepIndex === 0;
   const isLastStep = activeStepIndex === visibleSteps.length - 1;
-  const stepRef = useRef<HTMLElement | null>(null);
+  const stepperRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!activeStep) {
       return;
     }
 
-    if (typeof stepRef.current?.scrollIntoView === "function") {
-      stepRef.current.scrollIntoView({ block: "start" });
+    if (typeof stepperRef.current?.scrollIntoView === "function") {
+      stepperRef.current.scrollIntoView({ block: "start" });
     }
   }, [activeStep]);
 
@@ -88,12 +87,19 @@ export function JourneyFlow({
     return null;
   }
 
+  const getStepState = (stepIndex: number) => {
+    if (stepIndex === activeStepIndex) {
+      return "active";
+    }
+
+    return stepIndex < activeStepIndex ? "completed" : "upcoming";
+  };
+
   const goToStep = (stepIndex: number) => {
     const nextStep = visibleSteps[stepIndex];
 
     if (nextStep) {
       setActiveStepId(nextStep.id);
-      setShowMobileSteps(false);
     }
   };
 
@@ -116,120 +122,54 @@ export function JourneyFlow({
         </div>
       </div>
 
-      <div className="journey-layout">
-        <nav className="journey-sidebar" aria-label="Journey steps">
-          {visibleSteps.map((step, index) => (
+      <nav ref={stepperRef} className="journey-stepper" aria-label="Journey steps">
+        {visibleSteps.map((step, index) => {
+          const stepState = getStepState(index);
+
+          return (
             <button
               key={step.id}
               type="button"
-              className={
-                step.id === activeStep.id
-                  ? "journey-step-button journey-step-button--active"
-                  : "journey-step-button"
-              }
+              className={`journey-step-button journey-step-button--${stepState}`}
               aria-current={step.id === activeStep.id ? "step" : undefined}
+              data-step-state={stepState}
               onClick={() => goToStep(index)}
             >
               <span>{index + 1}</span>
               {step.title}
             </button>
-          ))}
-        </nav>
+          );
+        })}
+      </nav>
 
-        <section
-          className="journey-step"
-          ref={stepRef}
-          aria-labelledby={`journey-step-${activeStep.id}`}
-        >
-          <div className="journey-mobile-steps">
-            <div className="journey-mobile-step-summary">
-              <div>
-                <span>
-                  Step {activeStepIndex + 1} of {visibleSteps.length}
-                </span>
-                <strong>{activeStep.title}</strong>
-              </div>
-              <button
-                type="button"
-                className="secondary-button"
-                aria-expanded={showMobileSteps}
-                aria-controls="journey-mobile-step-list"
-                onClick={() => setShowMobileSteps((current) => !current)}
-              >
-                {showMobileSteps ? "Hide steps" : "View all steps"}
-              </button>
-            </div>
-            <div
-              className="journey-progress-bar"
-              role="progressbar"
-              aria-label="Journey progress"
-              aria-valuemin={1}
-              aria-valuemax={visibleSteps.length}
-              aria-valuenow={activeStepIndex + 1}
-            >
-              <span
-                style={{
-                  width: `${((activeStepIndex + 1) / visibleSteps.length) * 100}%`,
-                }}
-              />
-            </div>
-            {showMobileSteps ? (
-              <nav
-                id="journey-mobile-step-list"
-                className="journey-mobile-step-list"
-                aria-label="Journey steps"
-              >
-                {visibleSteps.map((step, index) => (
-                  <button
-                    key={step.id}
-                    type="button"
-                    className={
-                      step.id === activeStep.id
-                        ? "journey-step-button journey-step-button--active"
-                        : "journey-step-button"
-                    }
-                    aria-current={step.id === activeStep.id ? "step" : undefined}
-                    onClick={() => {
-                      setActiveStepId(step.id);
-                      setShowMobileSteps(false);
-                    }}
-                  >
-                    <span>{index + 1}</span>
-                    {step.title}
-                  </button>
-                ))}
-              </nav>
-            ) : null}
-          </div>
+      <section className="journey-step" aria-labelledby={`journey-step-${activeStep.id}`}>
+        <div className="section-heading">
+          <p className="eyebrow">{activeStep.eyebrow}</p>
+          <h3 id={`journey-step-${activeStep.id}`}>{activeStep.title}</h3>
+          <p className="section-copy">{activeStep.description}</p>
+        </div>
 
-          <div className="section-heading">
-            <p className="eyebrow">{activeStep.eyebrow}</p>
-            <h3 id={`journey-step-${activeStep.id}`}>{activeStep.title}</h3>
-            <p className="section-copy">{activeStep.description}</p>
-          </div>
+        {renderStepContent(activeStep)}
 
-          {renderStepContent(activeStep)}
-
-          <div className="journey-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={isFirstStep}
-              onClick={() => goToStep(activeStepIndex - 1)}
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              className="primary-button"
-              disabled={isLastStep}
-              onClick={() => goToStep(activeStepIndex + 1)}
-            >
-              {activeStepIndex === visibleSteps.length - 2 ? "Show my answer" : "Next"}
-            </button>
-          </div>
-        </section>
-      </div>
+        <div className="journey-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={isFirstStep}
+            onClick={() => goToStep(activeStepIndex - 1)}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={isLastStep}
+            onClick={() => goToStep(activeStepIndex + 1)}
+          >
+            {activeStepIndex === visibleSteps.length - 2 ? "Show my answer" : "Next"}
+          </button>
+        </div>
+      </section>
     </section>
   );
 }

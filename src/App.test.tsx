@@ -465,6 +465,18 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("heading", { name: "About you and your target" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /About you and your target/i }),
+    ).toHaveAttribute("aria-current", "step");
+    expect(
+      screen.getByRole("button", { name: /Your Alpha pension/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Added pension and EPA/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Your results/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toHaveValue(defaultSettings.dateOfBirth);
     expect(screen.getByLabelText("Early retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString(),

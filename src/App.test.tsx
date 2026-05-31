@@ -476,7 +476,7 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Your results/i }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth")).toHaveValue(defaultSettings.dateOfBirth);
-    expect(screen.getByLabelText("Early retirement age")).toHaveValue(
+    expect(screen.getByLabelText("Retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString(),
     );
     expect(screen.getByLabelText("Target retirement income (£ per year)")).toHaveValue(
@@ -561,6 +561,43 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("heading", { name: "Monthly pension projection table" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows non-empty summary results in the simple journey for a valid retirement-at-68 scenario", async () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          dateOfBirth: "1987-06-15",
+          lifeExpectancy: 80,
+          requirementAge: 68,
+          showAlpha: true,
+          showNuvos: false,
+          showStatePension: true,
+          showSipp: false,
+          showIsa: false,
+          taxationEnabled: false,
+          partialRetirementEnabled: false,
+          desiredRetirementIncome: 31700,
+          statePensionDrawDate: "2055-06-15",
+          applyPensionIncreases: true,
+          assumedCpiPercent: 0,
+          alphaPensionAbsDate: "2025",
+          alphaPensionLeaveAge: 68,
+          accruedPensionAtLastAbs: 16000,
+          pensionableEarnings: 42000,
+          alphaPensionDrawAge: 68,
+        }),
+      ),
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+    advanceJourneyToResult();
+
+    expect(await screen.findByText("Monthly Alpha pension")).toBeInTheDocument();
+    expect(screen.getByLabelText("Monthly retirement income before tax")).not.toHaveTextContent(
+      "£0.00",
+    );
   });
 
   it("keeps the bridge target retirement age stable after slider release", () => {

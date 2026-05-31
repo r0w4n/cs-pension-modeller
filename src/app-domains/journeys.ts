@@ -232,7 +232,7 @@ export const JOURNEY_DEFINITIONS = [
         fieldIds: ["dateOfBirth", "requirementAge", "desiredRetirementIncome"],
         fieldLabels: {
           dateOfBirth: "Date of birth",
-          requirementAge: "Early retirement age",
+          requirementAge: "Retirement age",
           desiredRetirementIncome: "Target retirement income (£ per year)",
         },
       },

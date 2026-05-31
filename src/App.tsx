@@ -183,18 +183,12 @@ function App() {
     [deferredSettings],
   );
   const projectionRows = useMemo(
-    () =>
-      appMode === "bridge" || appMode === "simple"
-        ? []
-        : createProjectionTable(deferredSettings),
-    [appMode, deferredSettings],
+    () => createProjectionTable(deferredSettings),
+    [deferredSettings],
   );
   const pensionSummary = useMemo(
-    () =>
-      appMode === "bridge" || appMode === "simple"
-        ? null
-        : generatePensionSummary(projectionRows, deferredSettings),
-    [appMode, projectionRows, deferredSettings],
+    () => generatePensionSummary(projectionRows, deferredSettings),
+    [projectionRows, deferredSettings],
   );
   const retirementIncomeSeries = useMemo(
     () => createRetirementIncomeSeries(projectionRows, deferredSettings),

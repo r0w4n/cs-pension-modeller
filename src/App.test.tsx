@@ -1643,6 +1643,21 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("ISA stop, age 75")).toBeInTheDocument();
   });
 
+  it("keeps the leave alpha marker visible when the build-up window hides earlier ages", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        ...defaultSettings,
+        alphaPensionLeaveAge: 60,
+      })
+    );
+
+    renderAcknowledgedApp({ mode: "bridge" });
+    advanceJourneyToResult();
+
+    expect(screen.getByLabelText("Leave Alpha, age 60")).toBeInTheDocument();
+  });
+
   it("keeps the retirement marker from crossing the Alpha start marker", () => {
     renderAcknowledgedExpertResult();
 

@@ -583,9 +583,15 @@ export function RetirementIncomeBridgeChart({
   );
   const visibleMilestoneMarkers = useMemo(
     () =>
-      displayedMilestoneMarkers.filter(
-        (marker) => marker.age >= xDomainMin && marker.age <= xDomainMax
-      ),
+      displayedMilestoneMarkers.map((marker) => ({
+        ...marker,
+        plotAge: clampNumber(marker.age, xDomainMin, xDomainMax),
+        layoutAge: clampNumber(
+          marker.layoutAge ?? marker.age,
+          xDomainMin,
+          xDomainMax
+        ),
+      })),
     [displayedMilestoneMarkers, xDomainMax, xDomainMin]
   );
   const markerLayouts = createMarkerLayouts(
@@ -962,7 +968,7 @@ export function RetirementIncomeBridgeChart({
             />
 
             {markerLayouts.map((marker) => {
-              const x = xScale(marker.age);
+              const x = xScale(marker.plotAge);
               const handleLabel = getMarkerHandleLabel(marker);
 
               return (
@@ -1058,7 +1064,7 @@ export function RetirementIncomeBridgeChart({
             {draggingMobileMarker ? (
               <g
                 className="bridge-drag-age"
-                transform={`translate(${xScale(draggingMobileMarker.age)},${plotHeight + 18})`}
+                transform={`translate(${xScale(draggingMobileMarker.plotAge)},${plotHeight + 18})`}
               >
                 <rect x={-18} y={-13} width={36} height={19} rx={6} />
                 <text y="0.12em" textAnchor="middle">
@@ -1513,11 +1519,9 @@ function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {
   return undefined;
 }
 
-function createMarkerLayouts(
-  markers: Array<MilestoneMarker & { layoutAge?: number }>,
-  xScale: d3.ScaleLinear<number, number>,
-  plotHeight: number
-) {
+function createMarkerLayouts<
+  T extends MilestoneMarker & { layoutAge?: number },
+>(markers: T[], xScale: d3.ScaleLinear<number, number>, plotHeight: number) {
   const rowByKey = new Map<MilestoneKey, number>();
   const minimumGap = HANDLE_LABEL_WIDTH + 6;
   const rowRightEdges: number[] = [];

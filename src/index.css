@@ -786,6 +786,7 @@ h3 {
   stroke-width: 18;
   cursor: ns-resize;
   outline: none;
+  touch-action: none;
 }
 
 .bridge-target-line-hitbox:focus-visible {
@@ -801,6 +802,7 @@ h3 {
 .bridge-milestone--editable {
   cursor: ew-resize;
   outline: none;
+  touch-action: none;
 }
 
 .bridge-milestone--invalid line {

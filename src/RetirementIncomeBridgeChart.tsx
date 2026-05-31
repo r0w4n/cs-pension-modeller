@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type PointerEvent,
 } from "react";
 import * as d3 from "d3";
 import type { PensionValidationIssue } from "./settings";
@@ -119,11 +120,14 @@ type MilestoneMarker = {
   editable: boolean;
 };
 
-type SvgDragEvent<Element extends SVGElement> = d3.D3DragEvent<
-  Element,
-  unknown,
-  unknown
->;
+type ChartDimensions = {
+  width: number;
+  height: number;
+  marginTop: number;
+  marginRight: number;
+  marginBottom: number;
+  marginLeft: number;
+};
 
 const incomeKeys: IncomeKey[] = [
   "isaIncomeAnnual",
@@ -221,8 +225,8 @@ export function RetirementIncomeBridgeChart({
   onChangeParameters,
 }: RetirementIncomeBridgeChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null);
-  const targetLineRef = useRef<SVGPathElement | null>(null);
-  const markerRefs = useRef(new Map<MilestoneKey, SVGGElement>());
+  const activeMarkerDragPointerIdRef = useRef<number | null>(null);
+  const activeTargetDragPointerIdRef = useRef<number | null>(null);
   const [width, setWidth] = useState(960);
   const [displayMode, setDisplayMode] = useState<"annual" | "monthly">(
     "annual"
@@ -331,7 +335,7 @@ export function RetirementIncomeBridgeChart({
     return () => observer.disconnect();
   }, []);
 
-  const dimensions = useMemo(() => {
+  const dimensions = useMemo<ChartDimensions>(() => {
     const isCompact = width < 640;
     const height = isCompact ? 420 : 460;
 
@@ -572,6 +576,10 @@ export function RetirementIncomeBridgeChart({
       statePensionEditable,
     ]
   );
+  const milestoneMarkerLookup = useMemo(
+    () => new Map(milestoneMarkers.map((marker) => [marker.key, marker])),
+    [milestoneMarkers]
+  );
   const displayedMilestoneMarkers = useMemo(
     () =>
       milestoneMarkers.map((marker) => ({
@@ -635,95 +643,6 @@ export function RetirementIncomeBridgeChart({
   );
   const buildUpWidth = Math.max(0, xScale(retirementAge) - xScale(xDomainMin));
 
-  useEffect(() => {
-    const cleanup: Array<() => void> = [];
-
-    milestoneMarkers.forEach((marker) => {
-      const node = markerRefs.current.get(marker.key);
-
-      if (!node || !marker.editable) {
-        return;
-      }
-
-      const drag = d3
-        .drag<SVGGElement, unknown>()
-        .on("start drag", (event: SvgDragEvent<SVGGElement>) => {
-          const nextAge = xScale.invert(clampNumber(event.x, 0, plotWidth));
-
-          setActiveMarkerDragKey(marker.key);
-          setDraftMarkerAges((current) => ({
-            ...current,
-            [marker.key]: {
-              age: snapToLimit(nextAge, limits[marker.key]),
-              baseAge: marker.age,
-            },
-          }));
-        })
-        .on("end", (event: SvgDragEvent<SVGGElement>) => {
-          const nextAge = xScale.invert(clampNumber(event.x, 0, plotWidth));
-          const committedAge = snapToLimit(nextAge, limits[marker.key]);
-
-          setDraftMarkerAges((current) => {
-            const nextDraftMarkerAges = { ...current };
-            delete nextDraftMarkerAges[marker.key];
-            return nextDraftMarkerAges;
-          });
-          setActiveMarkerDragKey(null);
-          onChangeParameters({ [marker.key]: committedAge });
-        });
-
-      d3.select(node).call(drag);
-      cleanup.push(() => d3.select(node).on(".drag", null));
-    });
-
-    return () => {
-      cleanup.forEach((clean) => clean());
-    };
-  }, [limits, milestoneMarkers, onChangeParameters, plotWidth, xScale]);
-
-  useEffect(() => {
-    const node = targetLineRef.current;
-
-    if (!node) {
-      return;
-    }
-
-    const drag = d3
-      .drag<SVGPathElement, unknown>()
-      .on("start drag", (event: SvgDragEvent<SVGPathElement>) => {
-        const nextValue =
-          yScale.invert(clampNumber(event.y, 0, plotHeight)) * divisor;
-
-        setDraftTargetIncomeAnnual(
-          snapToLimit(nextValue, limits.targetIncomeAnnual)
-        );
-      })
-      .on("end", (event: SvgDragEvent<SVGPathElement>) => {
-        const nextValue =
-          yScale.invert(clampNumber(event.y, 0, plotHeight)) * divisor;
-        const committedValue = snapToLimit(
-          nextValue,
-          limits.targetIncomeAnnual
-        );
-
-        setDraftTargetIncomeAnnual(null);
-        setPendingTargetIncomeAnnual(committedValue);
-        onChangeParameters({ targetIncomeAnnual: committedValue });
-      });
-
-    d3.select(node).call(drag);
-
-    return () => {
-      d3.select(node).on(".drag", null);
-    };
-  }, [
-    divisor,
-    limits.targetIncomeAnnual,
-    onChangeParameters,
-    plotHeight,
-    yScale,
-  ]);
-
   const handleMarkerKeyDown = (
     event: KeyboardEvent<SVGGElement>,
     marker: MilestoneMarker
@@ -771,6 +690,207 @@ export function RetirementIncomeBridgeChart({
         limits.targetIncomeAnnual
       )
     );
+  };
+
+  const getPlotPointerPosition = (
+    event: PointerEvent<SVGElement>
+  ): { x: number; y: number } | null => {
+    const svg = event.currentTarget.ownerSVGElement;
+
+    if (!svg) {
+      return null;
+    }
+
+    const rect = svg.getBoundingClientRect();
+
+    if (rect.width === 0 || rect.height === 0) {
+      return null;
+    }
+
+    const viewBoxWidth = svg.viewBox.baseVal.width || dimensions.width;
+    const viewBoxHeight = svg.viewBox.baseVal.height || dimensions.height;
+
+    return {
+      x:
+        ((event.clientX - rect.left) * viewBoxWidth) / rect.width -
+        dimensions.marginLeft,
+      y:
+        ((event.clientY - rect.top) * viewBoxHeight) / rect.height -
+        dimensions.marginTop,
+    };
+  };
+
+  const isPrimaryPointerDragStart = (
+    event: PointerEvent<SVGElement>
+  ): boolean =>
+    event.isPrimary && (event.pointerType !== "mouse" || event.button === 0);
+
+  const getMarkerAgeFromPointer = (
+    event: PointerEvent<SVGGElement>,
+    markerKey: MilestoneKey
+  ) => {
+    const pointerPosition = getPlotPointerPosition(event);
+    const marker = milestoneMarkerLookup.get(markerKey);
+
+    if (!pointerPosition || !marker) {
+      return marker?.age ?? limits[markerKey].min;
+    }
+
+    return snapToLimit(
+      xScale.invert(clampNumber(pointerPosition.x, 0, plotWidth)),
+      limits[markerKey]
+    );
+  };
+
+  const updateDraftMarkerAge = (
+    event: PointerEvent<SVGGElement>,
+    markerKey: MilestoneKey
+  ) => {
+    const marker = milestoneMarkerLookup.get(markerKey);
+
+    if (!marker) {
+      return;
+    }
+
+    const nextAge = getMarkerAgeFromPointer(event, markerKey);
+
+    setDraftMarkerAges((current) => ({
+      ...current,
+      [markerKey]: {
+        age: nextAge,
+        baseAge: current[markerKey]?.baseAge ?? marker.age,
+      },
+    }));
+  };
+
+  const clearMarkerDraft = (markerKey: MilestoneKey) => {
+    setDraftMarkerAges((current) => {
+      const nextDraftMarkerAges = { ...current };
+      delete nextDraftMarkerAges[markerKey];
+      return nextDraftMarkerAges;
+    });
+  };
+
+  const handleMarkerPointerDown = (
+    event: PointerEvent<SVGGElement>,
+    markerKey: MilestoneKey
+  ) => {
+    const marker = milestoneMarkerLookup.get(markerKey);
+
+    if (!marker?.editable || !isPrimaryPointerDragStart(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activeMarkerDragPointerIdRef.current = event.pointerId;
+    setSelectedMobileMarkerKey(markerKey);
+    setActiveMarkerDragKey(markerKey);
+    updateDraftMarkerAge(event, markerKey);
+  };
+
+  const handleMarkerPointerMove = (
+    event: PointerEvent<SVGGElement>,
+    markerKey: MilestoneKey
+  ) => {
+    if (
+      activeMarkerDragKey !== markerKey ||
+      activeMarkerDragPointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+
+    updateDraftMarkerAge(event, markerKey);
+  };
+
+  const finishMarkerPointerDrag = (
+    event: PointerEvent<SVGGElement>,
+    markerKey: MilestoneKey,
+    commit: boolean
+  ) => {
+    if (
+      activeMarkerDragKey !== markerKey ||
+      activeMarkerDragPointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+
+    const committedAge = getMarkerAgeFromPointer(event, markerKey);
+
+    activeMarkerDragPointerIdRef.current = null;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    clearMarkerDraft(markerKey);
+    setActiveMarkerDragKey(null);
+
+    if (commit) {
+      onChangeParameters({ [markerKey]: committedAge });
+    }
+  };
+
+  const getTargetIncomeFromPointer = (event: PointerEvent<SVGPathElement>) => {
+    const pointerPosition = getPlotPointerPosition(event);
+
+    if (!pointerPosition) {
+      return displayedTargetIncomeAnnual;
+    }
+
+    return snapToLimit(
+      yScale.invert(clampNumber(pointerPosition.y, 0, plotHeight)) * divisor,
+      limits.targetIncomeAnnual
+    );
+  };
+
+  const updateDraftTargetIncome = (event: PointerEvent<SVGPathElement>) => {
+    setDraftTargetIncomeAnnual(getTargetIncomeFromPointer(event));
+  };
+
+  const handleTargetPointerDown = (event: PointerEvent<SVGPathElement>) => {
+    if (!isPrimaryPointerDragStart(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activeTargetDragPointerIdRef.current = event.pointerId;
+    updateDraftTargetIncome(event);
+  };
+
+  const handleTargetPointerMove = (event: PointerEvent<SVGPathElement>) => {
+    if (activeTargetDragPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    updateDraftTargetIncome(event);
+  };
+
+  const finishTargetPointerDrag = (
+    event: PointerEvent<SVGPathElement>,
+    commit: boolean
+  ) => {
+    if (activeTargetDragPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const committedValue = getTargetIncomeFromPointer(event);
+
+    activeTargetDragPointerIdRef.current = null;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    setDraftTargetIncomeAnnual(null);
+
+    if (commit) {
+      setPendingTargetIncomeAnnual(committedValue);
+      onChangeParameters({ targetIncomeAnnual: committedValue });
+    }
   };
 
   return (
@@ -955,7 +1075,6 @@ export function RetirementIncomeBridgeChart({
               d={targetLine(visibleData) ?? undefined}
             />
             <path
-              ref={targetLineRef}
               className="bridge-target-line-hitbox"
               d={targetLine(visibleData) ?? undefined}
               role="slider"
@@ -965,6 +1084,10 @@ export function RetirementIncomeBridgeChart({
               aria-valuemax={limits.targetIncomeAnnual.max / divisor}
               aria-valuenow={displayedTargetIncomeAnnual / divisor}
               onKeyDown={handleTargetLineKeyDown}
+              onPointerDown={handleTargetPointerDown}
+              onPointerMove={handleTargetPointerMove}
+              onPointerUp={(event) => finishTargetPointerDrag(event, true)}
+              onPointerCancel={(event) => finishTargetPointerDrag(event, false)}
             />
 
             {markerLayouts.map((marker) => {
@@ -974,13 +1097,6 @@ export function RetirementIncomeBridgeChart({
               return (
                 <g
                   key={marker.key}
-                  ref={(node) => {
-                    if (node) {
-                      markerRefs.current.set(marker.key, node);
-                    } else {
-                      markerRefs.current.delete(marker.key);
-                    }
-                  }}
                   className={[
                     "bridge-milestone",
                     marker.editable ? "bridge-milestone--editable" : "",
@@ -1000,6 +1116,18 @@ export function RetirementIncomeBridgeChart({
                   aria-valuemax={limits[marker.key].max}
                   aria-valuenow={marker.age}
                   onKeyDown={(event) => handleMarkerKeyDown(event, marker)}
+                  onPointerDown={(event) =>
+                    handleMarkerPointerDown(event, marker.key)
+                  }
+                  onPointerMove={(event) =>
+                    handleMarkerPointerMove(event, marker.key)
+                  }
+                  onPointerUp={(event) =>
+                    finishMarkerPointerDrag(event, marker.key, true)
+                  }
+                  onPointerCancel={(event) =>
+                    finishMarkerPointerDrag(event, marker.key, false)
+                  }
                 >
                   <line
                     x1={x}

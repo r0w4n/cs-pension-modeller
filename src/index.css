@@ -1022,6 +1022,10 @@ h3 {
 }
 
 .bridge-legend-toggle[aria-pressed="false"] {
+  color: #526377;
+}
+
+.bridge-legend-toggle[aria-pressed="false"] > span {
   opacity: 0.48;
 }
 
@@ -1725,7 +1729,8 @@ h3 {
   border-bottom: 0;
 }
 
-.projection-table-sr-only {
+.projection-table-sr-only,
+.visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;

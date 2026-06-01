@@ -217,6 +217,24 @@ Run tests in watch mode:
 npm run test:watch
 ```
 
+Run the Playwright accessibility checks:
+
+```bash
+npm run test:a11y
+```
+
+The accessibility checks use `@axe-core/playwright` against key app states:
+
+- the first-run acknowledgement dialog
+- the main mode-selection screen
+- the simple and expert journey entry screens
+- the bridge journey results screen
+- the static About, Methodology, and Privacy pages
+
+These automated axe checks help catch regressions in CI, but they do not prove
+full WCAG compliance. Manual keyboard, focus-management, zoom, and screen-reader
+checks are still needed before release.
+
 ## Purpose
 
 The goal of the project is to make pension timing decisions easier to reason about by turning a set of assumptions into something visual, editable, and testable.

@@ -1706,7 +1706,7 @@ describe("App settings form", () => {
     advanceJourneyToResult();
 
     expect(
-      await screen.findByRole("img", { name: "Retirement income bridge" })
+      await screen.findByRole("region", { name: "Retirement income bridge" })
     ).toBeInTheDocument();
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The chart is showing the current assumptions, but they do not produce a valid projection."

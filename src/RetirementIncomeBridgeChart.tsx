@@ -897,6 +897,7 @@ export function RetirementIncomeBridgeChart({
     <section
       className={`bridge-chart-panel${hasValidationIssues ? " bridge-chart-panel--invalid" : ""}`}
       aria-labelledby={chartTitleId}
+      aria-describedby={chartDescriptionId}
       aria-live="polite"
     >
       <div className="bridge-chart-heading">
@@ -963,22 +964,20 @@ export function RetirementIncomeBridgeChart({
         ))}
       </div>
 
+      <p id={chartDescriptionId} className="visually-hidden">
+        Stacked income chart showing ISA, SIPP, partial retirement income,
+        Alpha, Nuvos and State Pension income against the target retirement
+        income over age.
+      </p>
+
       <div className="bridge-chart-shell" ref={shellRef}>
         <svg
           className="bridge-chart-svg"
           width={dimensions.width}
           height={dimensions.height}
           viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-          role="img"
-          aria-labelledby={chartTitleId}
-          aria-describedby={chartDescriptionId}
-          tabIndex={0}
+          focusable="false"
         >
-          <desc id={chartDescriptionId}>
-            Stacked income chart showing ISA, SIPP, partial retirement income,
-            Alpha, Nuvos and State Pension income against the target retirement
-            income over age.
-          </desc>
           <defs>
             <pattern
               id="shortfall-hatch"
@@ -1343,7 +1342,7 @@ export function RetirementIncomeBridgeChart({
             value={isaMonthlyContribution}
             suffix="/ month"
             limit={limits.isaMonthlyContribution}
-            colour="#1f8ee6"
+            colour="#155ea8"
             onChange={(value) =>
               onChangeParameters({ isaMonthlyContribution: value })
             }
@@ -1355,7 +1354,7 @@ export function RetirementIncomeBridgeChart({
             value={sippMonthlyContribution}
             suffix="/ month"
             limit={limits.sippMonthlyContribution}
-            colour="#148c55"
+            colour="#0d6b40"
             onChange={(value) =>
               onChangeParameters({ sippMonthlyContribution: value })
             }
@@ -1384,7 +1383,7 @@ export function RetirementIncomeBridgeChart({
               max: fullBuildUpWindowYears,
               step: 0.25,
             }}
-            colour="#b7791f"
+            colour="#8a5a0a"
             formatValue={(value) => `${Math.round(value)} years`}
             onChange={setBuildUpWindowYears}
           />

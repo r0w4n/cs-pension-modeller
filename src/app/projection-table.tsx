@@ -351,6 +351,7 @@ export function ProjectionTableFrame<Row>({
 
       <div
         className="table-body-shell"
+        aria-label="Scrollable monthly pension projection table"
         onScroll={(event) => syncHeaderScroll(event.currentTarget.scrollLeft)}
       >
         <table

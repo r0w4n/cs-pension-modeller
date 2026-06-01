@@ -41,16 +41,24 @@ test.describe("app end-to-end journeys", () => {
 
     await page
       .getByRole("button", {
-        name: /Show all settings and unlock full control/i,
+        name: /Work through every setting with full control/i,
       })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your retirement assumptions" })
+      page.getByRole("heading", { name: "Optional sections" })
     ).toBeVisible();
 
+    await page.getByRole("button", { name: "Next" }).click();
     await fillExactNumber(page, "Requirement age exact value", "60");
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current SIPP pot (£)", "125000");
+    await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current ISA pot (£)", "40000");
+    await page.getByRole("button", { name: "Show my answer" }).click();
+    await renderDeferredComparisonContent(page);
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
@@ -207,10 +215,12 @@ async function acknowledgeAndOpenMode(
   }
 
   await page
-    .getByRole("button", { name: /Show all settings and unlock full control/i })
+    .getByRole("button", {
+      name: /Work through every setting with full control/i,
+    })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Your retirement assumptions" })
+    page.getByRole("heading", { name: "Optional sections" })
   ).toBeVisible();
 }
 

@@ -64,6 +64,7 @@ export function JourneyFlow({
     (step) => !step.visible || step.visible(settings)
   );
   const [activeStepId, setActiveStepId] = useState(visibleSteps[0]?.id ?? "");
+  const [showMobileSteps, setShowMobileSteps] = useState(false);
   const activeStep =
     visibleSteps.find((step) => step.id === activeStepId) ?? visibleSteps[0];
   const activeStepIndex = Math.max(
@@ -100,6 +101,7 @@ export function JourneyFlow({
     const nextStep = visibleSteps[stepIndex];
 
     if (nextStep) {
+      setShowMobileSteps(false);
       setActiveStepId(nextStep.id);
     }
   };
@@ -151,6 +153,67 @@ export function JourneyFlow({
         className="journey-step"
         aria-labelledby={`journey-step-${activeStep.id}`}
       >
+        <div className="journey-mobile-steps">
+          <div className="journey-mobile-step-summary">
+            <div>
+              <span>
+                Step {activeStepIndex + 1} of {visibleSteps.length}
+              </span>
+              <strong>{activeStep.title}</strong>
+            </div>
+            <button
+              type="button"
+              className="secondary-button"
+              aria-expanded={showMobileSteps}
+              aria-controls="journey-mobile-step-list"
+              onClick={() => setShowMobileSteps((current) => !current)}
+            >
+              {showMobileSteps ? "Hide steps" : "View all steps"}
+            </button>
+          </div>
+          <div
+            className="journey-progress-bar"
+            role="progressbar"
+            aria-label="Journey progress"
+            aria-valuemin={1}
+            aria-valuemax={visibleSteps.length}
+            aria-valuenow={activeStepIndex + 1}
+          >
+            <span
+              style={{
+                width: `${((activeStepIndex + 1) / visibleSteps.length) * 100}%`,
+              }}
+            />
+          </div>
+          {showMobileSteps ? (
+            <nav
+              id="journey-mobile-step-list"
+              className="journey-mobile-step-list"
+              aria-label="Journey steps"
+            >
+              {visibleSteps.map((step, index) => {
+                const stepState = getStepState(index);
+
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    className={`journey-step-button journey-step-button--${stepState}`}
+                    aria-current={
+                      step.id === activeStep.id ? "step" : undefined
+                    }
+                    data-step-state={stepState}
+                    onClick={() => goToStep(index)}
+                  >
+                    <span>{index + 1}</span>
+                    {step.title}
+                  </button>
+                );
+              })}
+            </nav>
+          ) : null}
+        </div>
+
         <div className="section-heading">
           <p className="eyebrow">{activeStep.eyebrow}</p>
           <h3 id={`journey-step-${activeStep.id}`}>{activeStep.title}</h3>

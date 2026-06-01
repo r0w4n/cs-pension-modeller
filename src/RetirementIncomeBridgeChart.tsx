@@ -439,9 +439,13 @@ export function RetirementIncomeBridgeChart({
     .curve(d3.curveStepAfter);
   const shortfallArea = d3
     .area<RetirementIncomePoint>()
-    .defined((point) => point.shortfallAnnual > 0)
+    .defined((point) => point.age >= retirementAge)
     .x((point) => xScale(point.age))
-    .y0((point) => yScale(point.assessedIncomeAnnual / divisor))
+    .y0((point) =>
+      yScale(
+        Math.min(point.assessedIncomeAnnual, point.targetIncomeAnnual) / divisor
+      )
+    )
     .y1((point) => yScale(point.targetIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
   const targetLine = d3

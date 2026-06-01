@@ -96,6 +96,10 @@ function getTargetLinePath() {
     .getAttribute("d");
 }
 
+function getShortfallFillPath() {
+  return document.querySelector(".bridge-shortfall-fill")?.getAttribute("d");
+}
+
 function getXAxisLabels() {
   return [...document.querySelectorAll(".bridge-x-tick text")].map(
     (node) => node.textContent
@@ -115,6 +119,73 @@ describe("RetirementIncomeBridgeChart", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 
     expect(getTargetLinePath()).toMatch(/^M0,/);
+  });
+
+  it("extends stepped shortfall shading to the alpha start boundary", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2054-12-15",
+          age: 66.5,
+          targetIncomeAnnual: 31700,
+          assessedIncomeAnnual: 31700,
+          phase: "build-up",
+        },
+        {
+          ...basePoint,
+          date: "2055-03-15",
+          age: 66.75,
+          targetIncomeAnnual: 31700,
+          assessedIncomeAnnual: 0,
+          shortfallAnnual: 31700,
+          phase: "build-up",
+        },
+        {
+          ...basePoint,
+          date: "2055-08-15",
+          age: 67 + 2 / 12,
+          targetIncomeAnnual: 31700,
+          assessedIncomeAnnual: 0,
+          shortfallAnnual: 31700,
+          phase: "build-up",
+        },
+        {
+          ...basePoint,
+          date: "2055-09-15",
+          age: 67.25,
+          targetIncomeAnnual: 31700,
+          alphaIncomeAnnual: 31700,
+          totalIncomeAnnual: 31700,
+          assessedIncomeAnnual: 31700,
+          shortfallAnnual: 0,
+          phase: "alpha-only",
+        },
+        {
+          ...basePoint,
+          date: "2056-06-15",
+          age: 68,
+          targetIncomeAnnual: 31700,
+          alphaIncomeAnnual: 31700,
+          totalIncomeAnnual: 31700,
+          assessedIncomeAnnual: 31700,
+          shortfallAnnual: 0,
+          phase: "alpha-state",
+        },
+      ],
+      retirementAge: 66.75,
+      alphaLeaveAge: 66.75,
+      alphaStartAge: 67.25,
+      statePensionAge: 68,
+    });
+
+    const alphaStartX = screen
+      .getByRole("slider", { name: /Start Alpha/ })
+      .querySelector("line")
+      ?.getAttribute("x1");
+
+    expect(alphaStartX).toBeDefined();
+    expect(getShortfallFillPath()).toContain(alphaStartX);
   });
 
   it("defaults long build-up periods to two and a half years and lets the user extend them", () => {

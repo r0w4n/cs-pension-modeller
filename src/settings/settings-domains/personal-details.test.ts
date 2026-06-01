@@ -25,7 +25,7 @@ describe("personal-details settings module", () => {
     ).toBe("2026-04-25");
     expect(
       normalizePersonalDateSetting("dateOfBirth", "bad", normalizeIsoDate)
-    ).toBe("1987-06-15");
+    ).toBe("1987-06-01");
   });
 
   it("validates personal details dates", () => {

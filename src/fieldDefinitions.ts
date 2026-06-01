@@ -16,7 +16,7 @@ export type DateField = {
     | "alphaEpaStartDate"
     | "alphaEpaEndDate";
   label: string;
-  type: "date" | "year";
+  type: "date" | "month" | "year";
   description?: string;
   infoUrl?: string;
   infoLinkText?: string;
@@ -172,10 +172,10 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "dateOfBirth",
-        label: "Your Date of Birth",
-        type: "date",
+        label: "Your Birth Month and Year",
+        type: "month",
         description:
-          "Sets your current age, State Pension age, Alpha Normal Pension Age, and the minimum ages at which pension pots can be accessed.",
+          "Sets your current age, State Pension age, Alpha Normal Pension Age, and the minimum ages at which pension pots can be accessed. The modeller assumes the first day of the selected month.",
       },
       {
         id: "lifeExpectancy",

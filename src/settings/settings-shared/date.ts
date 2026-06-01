@@ -40,8 +40,38 @@ export function isValidIsoDate(value: string) {
   return day >= 1 && day <= maxDay;
 }
 
+export function isValidIsoMonth(value: string) {
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+
+  if (!match) {
+    return false;
+  }
+
+  const [, yearText, monthText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+
+  return (
+    Number.isInteger(year) &&
+    Number.isInteger(month) &&
+    month >= 1 &&
+    month <= 12
+  );
+}
+
 export function normalizeIsoDate(value: string, fallback: string) {
   return isValidIsoDate(value) ? value : fallback;
+}
+
+export function normalizeIsoMonthAsFirstOfMonth(
+  value: string,
+  fallback: string
+) {
+  if (isValidIsoDate(value)) {
+    return value;
+  }
+
+  return isValidIsoMonth(value) ? `${value}-01` : fallback;
 }
 
 export function addMonthsToIsoDate(value: string, monthsToAdd: number) {

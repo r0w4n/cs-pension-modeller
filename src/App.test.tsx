@@ -524,9 +524,8 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("button", { name: /Your results/i })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Date of birth")).toHaveValue(
-      defaultSettings.dateOfBirth
-    );
+    expect(screen.getByLabelText("Date of birth month")).toHaveValue("06");
+    expect(screen.getByLabelText("Date of birth year")).toHaveValue("1987");
     expect(screen.getByLabelText("Retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
@@ -746,8 +745,11 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(
       getTodayIsoDate()
     );
-    expect(screen.getByLabelText("Your Date of Birth")).toHaveValue(
-      defaultSettings.dateOfBirth
+    expect(
+      screen.getByLabelText("Your Birth Month and Year month")
+    ).toHaveValue("06");
+    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
+      "1987"
     );
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString()
@@ -1154,12 +1156,12 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    const birthDateInput = screen.getByLabelText("Your Date of Birth");
-
-    fireEvent.change(birthDateInput, {
-      target: { value: "1990-02-14" },
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
+      target: { value: "02" },
     });
-    fireEvent.blur(birthDateInput);
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
+      target: { value: "1990" },
+    });
     fireEvent.click(
       screen.getByRole("button", {
         name: "£43,900: Comfortable standard for one person household",
@@ -1181,10 +1183,10 @@ describe("App settings form", () => {
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expect.objectContaining({
-        dateOfBirth: "1990-02-14",
+        dateOfBirth: "1990-02-01",
         currentStatePension: 11800,
         desiredRetirementIncome: 43900,
-        statePensionDrawDate: "2058-02-14",
+        statePensionDrawDate: "2058-02-01",
       })
     );
   });
@@ -1381,25 +1383,29 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    const birthDateInput = screen.getByLabelText("Your Date of Birth");
-
-    fireEvent.change(birthDateInput, {
-      target: { value: "1977-11-23" },
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
+      target: { value: "11" },
     });
-
-    expect(birthDateInput).toHaveValue("1977-11-23");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(expectedStoredSettings());
-
-    fireEvent.blur(birthDateInput);
 
     expect(
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expectedStoredSettings({
-        dateOfBirth: "1977-11-23",
-        statePensionDrawDate: "2045-08-23",
+        dateOfBirth: "1987-11-01",
+        statePensionDrawDate: "2055-11-01",
+      })
+    );
+
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
+      target: { value: "1977" },
+    });
+
+    expect(
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
+    ).toEqual(
+      expectedStoredSettings({
+        dateOfBirth: "1977-11-01",
+        statePensionDrawDate: "2045-08-01",
       })
     );
   });
@@ -1477,7 +1483,7 @@ describe("App settings form", () => {
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expect.objectContaining({
-        statePensionDrawDate: "2056-06-15",
+        statePensionDrawDate: "2056-06-01",
       })
     );
 
@@ -1943,10 +1949,12 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    fireEvent.change(screen.getByLabelText("Your Date of Birth"), {
-      target: { value: "1990-02-14" },
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
+      target: { value: "02" },
     });
-    fireEvent.blur(screen.getByLabelText("Your Date of Birth"));
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
+      target: { value: "1990" },
+    });
 
     openJourneyStep(/State pension details/i);
 
@@ -1970,8 +1978,11 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    expect(screen.getByLabelText("Your Date of Birth")).toHaveValue(
-      "1990-02-14"
+    expect(
+      screen.getByLabelText("Your Birth Month and Year month")
+    ).toHaveValue("02");
+    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
+      "1990"
     );
 
     openJourneyStep(/State pension details/i);
@@ -1989,8 +2000,11 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(
       getTodayIsoDate()
     );
-    expect(screen.getByLabelText("Your Date of Birth")).toHaveValue(
-      defaultSettings.dateOfBirth
+    expect(
+      screen.getByLabelText("Your Birth Month and Year month")
+    ).toHaveValue("06");
+    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
+      "1987"
     );
 
     openJourneyStep(/State pension details/i);
@@ -2480,20 +2494,24 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    fireEvent.change(screen.getByLabelText("Your Date of Birth"), {
-      target: { value: "2999-01-01" },
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
+      target: { value: "06" },
     });
-    fireEvent.blur(screen.getByLabelText("Your Date of Birth"));
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
+      target: { value: "2026" },
+    });
 
     expect(
       await screen.findAllByText(
         "Date of birth must be before the calculation start date."
       )
     ).not.toHaveLength(0);
-    expect(screen.getByLabelText("Your Date of Birth")).toHaveAttribute(
-      "aria-invalid",
-      "true"
-    );
+    expect(
+      screen.getByLabelText("Your Birth Month and Year month")
+    ).toHaveAttribute("aria-invalid", "true");
+    expect(
+      screen.getByLabelText("Your Birth Month and Year year")
+    ).toHaveAttribute("aria-invalid", "true");
     expect(
       screen.getAllByRole("heading", { name: "Check these assumptions" }).length
     ).toBeGreaterThan(0);

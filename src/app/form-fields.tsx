@@ -167,6 +167,22 @@ function Field({
     );
   }
 
+  if (field.type === "month") {
+    return (
+      <DateSettingField
+        field={field}
+        value={value as string}
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes={showGuidanceNotes}
+        useDropdowns={useDropdownDates}
+        disabled={disabled}
+        hideOnMobile={hideOnMobile}
+        validationIssue={validationIssue}
+      />
+    );
+  }
+
   if (field.type === "year") {
     return (
       <YearSettingField

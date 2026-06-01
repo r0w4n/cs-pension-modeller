@@ -2,11 +2,14 @@ import type {
   PensionSettings,
   PensionValidationIssue,
 } from "../settings-types";
-import { getTodayIsoDate } from "../settings-shared/date";
+import {
+  getTodayIsoDate,
+  normalizeIsoMonthAsFirstOfMonth,
+} from "../settings-shared/date";
 
 export const personalDetailsDefaults = {
   startDate: getTodayIsoDate(),
-  dateOfBirth: "1987-06-15",
+  dateOfBirth: "1987-06-01",
   lifeExpectancy: 80,
   requirementAge: 68,
   desiredRetirementIncome: 31700,
@@ -27,7 +30,10 @@ export function normalizePersonalDateSetting(
     return normalizeDate(value, getTodayIsoDate());
   }
 
-  return normalizeDate(value, personalDetailsDefaults.dateOfBirth);
+  return normalizeIsoMonthAsFirstOfMonth(
+    value,
+    personalDetailsDefaults.dateOfBirth
+  );
 }
 
 export function calculateDateAge(dateOfBirth: string, date: string) {

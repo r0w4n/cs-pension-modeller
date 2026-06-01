@@ -21,6 +21,7 @@ import {
 import type {
   DateParts,
   DateSelectFieldProps,
+  MonthSelectFieldProps,
   SettingsFieldOnChange,
 } from "./form-field-types";
 import {
@@ -504,6 +505,87 @@ export function DateSelectField({
   );
 }
 
+export function MonthSelectField({
+  label,
+  value,
+  onChange,
+  idPrefix,
+  yearRange,
+  disabled = false,
+  describedBy,
+  hasValidationIssue = false,
+}: MonthSelectFieldProps) {
+  const parts = getDateParts(value);
+  const selectedYear = Number(parts.year);
+  const minYear = Math.min(
+    yearRange.min,
+    Number.isFinite(selectedYear) ? selectedYear : yearRange.min
+  );
+  const maxYear = Math.max(
+    yearRange.max,
+    Number.isFinite(selectedYear) ? selectedYear : yearRange.max
+  );
+  const yearOptions = Array.from(
+    { length: maxYear - minYear + 1 },
+    (_, index) => String(maxYear - index)
+  );
+
+  const commit = (nextYear: string, nextMonth: string) => {
+    onChange(`${nextYear}-${nextMonth}`);
+  };
+
+  return (
+    <div
+      className="date-select-grid"
+      role="group"
+      aria-label={label}
+      aria-describedby={describedBy}
+    >
+      <label className="date-select-field" htmlFor={`${idPrefix}-month`}>
+        <span className="date-select-label">Month</span>
+        <select
+          id={`${idPrefix}-month`}
+          aria-label={`${label} month`}
+          className="select-input"
+          value={parts.month}
+          disabled={disabled}
+          aria-invalid={hasValidationIssue || undefined}
+          onChange={(event) => {
+            commit(parts.year, event.target.value);
+          }}
+        >
+          {monthOptions.map((month) => (
+            <option key={month.value} value={month.value}>
+              {month.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="date-select-field" htmlFor={`${idPrefix}-year`}>
+        <span className="date-select-label">Year</span>
+        <select
+          id={`${idPrefix}-year`}
+          aria-label={`${label} year`}
+          className="select-input"
+          value={parts.year}
+          disabled={disabled}
+          aria-invalid={hasValidationIssue || undefined}
+          onChange={(event) => {
+            commit(event.target.value, parts.month);
+          }}
+        >
+          {yearOptions.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 export function DateSettingField({
   field,
   value,
@@ -552,7 +634,20 @@ export function DateSettingField({
       <span className="field-header">
         <FieldLabel field={field} />
       </span>
-      {useDropdowns ? (
+      {field.type === "month" ? (
+        <MonthSelectField
+          label={field.label}
+          value={value}
+          idPrefix={field.id}
+          yearRange={getPrimaryDateYearRange(field.id, settings)}
+          disabled={disabled}
+          describedBy={validationId}
+          hasValidationIssue={Boolean(validationIssue)}
+          onChange={(nextValue) => {
+            commitDateValue(nextValue);
+          }}
+        />
+      ) : useDropdowns ? (
         <DateSelectField
           label={field.label}
           value={value}

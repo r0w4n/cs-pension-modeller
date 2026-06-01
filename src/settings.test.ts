@@ -171,6 +171,7 @@ describe("settings unit tests", () => {
 
   it("normalizes invalid dates back to defaults", () => {
     expect(normalizeSetting("startDate", "not-a-date")).toBe("2026-04-25");
+    expect(normalizeSetting("dateOfBirth", "2026-02")).toBe("2026-02-01");
     expect(normalizeSetting("dateOfBirth", "2026-99-99")).toBe(
       defaultSettings.dateOfBirth
     );
@@ -376,7 +377,7 @@ describe("settings unit tests", () => {
   it("persists a deferred State Pension draw date", () => {
     const settings: PensionSettings = {
       ...createDefaultSettings(),
-      statePensionDrawDate: "2056-06-15",
+      statePensionDrawDate: "2056-06-01",
     };
 
     saveSettings(settings);
@@ -385,10 +386,10 @@ describe("settings unit tests", () => {
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expect.objectContaining({
-        statePensionDrawDate: "2056-06-15",
+        statePensionDrawDate: "2056-06-01",
       })
     );
-    expect(loadStoredSettings().statePensionDrawDate).toBe("2056-06-15");
+    expect(loadStoredSettings().statePensionDrawDate).toBe("2056-06-01");
   });
 
   it("derives partial retirement contribution multipliers from the start age", () => {

@@ -328,9 +328,9 @@ describe("projection calculations", () => {
     });
 
     expect(derivedInputs).toMatchObject({
-      nuvosNpaDate: "2052-06-15",
-      nuvosDrawDate: "2047-06-15",
-      nuvosAccrualStopDate: "2047-06-15",
+      nuvosNpaDate: "2052-06-01",
+      nuvosDrawDate: "2047-06-01",
+      nuvosAccrualStopDate: "2047-06-01",
       nuvosReductionFactor: 0.771,
     });
   });
@@ -790,12 +790,12 @@ describe("projection calculations", () => {
         alphaPensionLeaveAge: 60,
       })
     ).toMatchObject({
-      endDate: "2075-06-15",
-      drawDate: "2047-06-15",
-      alphaStopDate: "2047-06-15",
-      accrualStopDate: "2047-06-15",
-      addedPensionStopDate: "2047-06-15",
-      npaDate: "2055-06-15",
+      endDate: "2075-06-01",
+      drawDate: "2047-06-01",
+      alphaStopDate: "2047-06-01",
+      accrualStopDate: "2047-06-01",
+      addedPensionStopDate: "2047-06-01",
+      npaDate: "2055-06-01",
       reductionFactor: 0.648,
     });
   });
@@ -1513,13 +1513,13 @@ describe("projection calculations", () => {
       ...defaultSettings,
       startDate: "2074-12-15",
       lifeExpectancy: 88,
-      dateOfBirth: "1987-06-15",
+      dateOfBirth: "1987-06-01",
       showSipp: false,
       showIsa: false,
     };
 
     const rows = createProjectionTable(settings);
-    expect(rows.at(-1)?.date).toBe(addYears("1987-06-15", 88));
+    expect(rows.at(-1)?.date).toBe(addYears("1987-06-01", 88));
   });
 
   it("keeps annual alpha entitlement visible before draw date but only pays monthly alpha after draw date", () => {
@@ -2263,7 +2263,7 @@ describe("projection calculations", () => {
     expect(updatedSummary.incomeOverTime.monthlyAtStateStart).not.toBe(
       baseSummary.incomeOverTime.monthlyAtStateStart
     );
-    expect(updatedSummary.keyDates.startsAlphaPension).toBe("2048-06-15");
+    expect(updatedSummary.keyDates.startsAlphaPension).toBe("2048-06-01");
   });
 
   it("excludes hidden optional sections from rows, totals, and milestones", () => {

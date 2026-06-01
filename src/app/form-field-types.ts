@@ -42,6 +42,10 @@ export type DateSelectFieldProps = {
   hasValidationIssue?: boolean;
 };
 
+export type MonthSelectFieldProps = Omit<DateSelectFieldProps, "value"> & {
+  value: string;
+};
+
 export type AddedPensionLumpSumsEditorProps = {
   lumpSums: AddedPensionLumpSum[];
   defaultStartDate: string;

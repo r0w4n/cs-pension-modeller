@@ -3,7 +3,6 @@ import type { PensionSettings } from "../settings";
 import { createDefaultSettings } from "../settings";
 import {
   applyBridgeJourneyDefaults,
-  applySimpleJourneyDefaults,
   clonePensionSettings,
 } from "../app-domains";
 import { saveStoredAppMode, type AppMode } from "./app-persistence";
@@ -101,7 +100,6 @@ export function selectAppMode({
   }
 
   if (mode === "simple") {
-    setSettings((current) => applySimpleJourneyDefaults(current));
     setChartUndoStack([]);
   }
 

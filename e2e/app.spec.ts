@@ -79,20 +79,12 @@ test.describe("app end-to-end journeys", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "simple");
 
-    await fillExactNumber(page, "Retirement age exact value", "60");
     await fillCurrency(page, "Target retirement income (£ per year)", "32000");
     await page.getByRole("button", { name: "Next" }).click();
 
     await fillCurrency(page, "Accrued pension to date (£ per year)", "17500");
-    await fillExactNumber(page, "Age you leave Alpha exact value", "60");
-    await fillExactNumber(page, "Alpha pension draw age exact value", "60");
     await page.getByRole("button", { name: "Next" }).click();
 
-    await fillExactNumber(
-      page,
-      "Monthly added pension payments (£) exact value",
-      "25"
-    );
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
 

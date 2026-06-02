@@ -42,9 +42,9 @@ import {
   updateSetting as updateSettingAction,
 } from "./chart-state";
 import {
-  JOURNEY_DEFINITIONS,
   addYearsToIsoDate,
   buildRetirementIncomeItems,
+  clonePensionSettings,
   createBridgeChartLimits,
   createBridgeChartParameters,
   createRetirementIncomeSeries,
@@ -56,6 +56,11 @@ import {
   type ComparisonResultCache,
   type ComparisonScenario,
 } from "../app-domains";
+import {
+  JOURNEY_DEFINITIONS,
+  applySimpleJourneyAssumptions,
+  applySimpleJourneyDefaults,
+} from "../app-domains/journeys";
 import { useMobileDateDropdowns as useMobileDateDropdownsHook } from "./form-fields";
 import type { JourneyStepViewModel } from "./journey-step-content";
 import type { JourneyMode } from "./journey-mode-screen";
@@ -73,10 +78,19 @@ const JOURNEY_DEFINITION_BY_MODE = {
 } satisfies Record<JourneyMode, (typeof JOURNEY_DEFINITIONS)[number]>;
 
 export function useAppController() {
+  const initialAppMode = loadStoredAppMode();
   const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
+  const [simpleJourneySettings, setSimpleJourneySettings] =
+    useState<PensionSettings | null>(() => {
+      if (initialAppMode !== "simple") {
+        return null;
+      }
+
+      return applySimpleJourneyDefaults(loadStoredSettings());
+    });
   const [chartUndoStack, setChartUndoStack] = useState<PensionSettings[]>([]);
   const [settingsFormVersion, setSettingsFormVersion] = useState(0);
-  const [appMode, setAppMode] = useState<AppMode | null>(loadStoredAppMode);
+  const [appMode, setAppMode] = useState<AppMode | null>(initialAppMode);
   const [showGuidanceNotes, setShowGuidanceNotes] = useState(
     loadStoredGuidanceNotes
   );
@@ -109,8 +123,29 @@ export function useAppController() {
       }
     });
   }, []);
+  const activeJourneyMode = appMode;
+  const activeJourneyDefinition = activeJourneyMode
+    ? JOURNEY_DEFINITION_BY_MODE[activeJourneyMode]
+    : null;
   const useDropdownDates = useMobileDateDropdownsHook();
-  const deferredSettings = useDeferredValue(settings);
+  const simpleJourneyEffectiveSettings = useMemo(() => {
+    if (activeJourneyMode !== "simple") {
+      return null;
+    }
+
+    return applySimpleJourneyAssumptions(
+      simpleJourneySettings ?? applySimpleJourneyDefaults(settings)
+    );
+  }, [activeJourneyMode, settings, simpleJourneySettings]);
+  const effectiveSettings = useMemo(
+    () =>
+      activeJourneyMode === "simple"
+        ? (simpleJourneyEffectiveSettings ??
+          applySimpleJourneyDefaults(settings))
+        : settings,
+    [activeJourneyMode, settings, simpleJourneyEffectiveSettings]
+  );
+  const deferredSettings = useDeferredValue(effectiveSettings);
   const validationIssues = useMemo(
     () => validateSettings(deferredSettings),
     [deferredSettings]
@@ -128,19 +163,19 @@ export function useAppController() {
     [projectionRows, deferredSettings]
   );
   const bridgeChartParameters = useMemo(
-    () => createBridgeChartParameters(settings),
-    [settings]
+    () => createBridgeChartParameters(effectiveSettings),
+    [effectiveSettings]
   );
   const bridgeChartLimits = useMemo(
-    () => createBridgeChartLimits(settings),
-    [settings]
+    () => createBridgeChartLimits(effectiveSettings),
+    [effectiveSettings]
   );
   const derivedInflationAssumptions = useMemo(
     () => deriveInflationAssumptions(deferredSettings),
     [deferredSettings]
   );
   const retirementIncomeTitle = getRetirementIncomeTitle(
-    settings.taxationEnabled,
+    effectiveSettings.taxationEnabled,
     retirementIncomeDisplay
   );
   const retirementIncomeItems = pensionSummary
@@ -155,18 +190,17 @@ export function useAppController() {
     retirementIncomeDisplay
   );
   const annualRetirementIncomeTarget = calculateRetirementIncomeTargetAtDate(
-    settings,
-    addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge)
+    effectiveSettings,
+    addYearsToIsoDate(
+      effectiveSettings.dateOfBirth,
+      effectiveSettings.requirementAge
+    )
   );
   const retirementIncomeTarget = formatCurrencyDetailed(
     retirementIncomeDisplay === "monthly"
       ? annualRetirementIncomeTarget / 12
       : annualRetirementIncomeTarget
   );
-  const activeJourneyMode = appMode;
-  const activeJourneyDefinition = activeJourneyMode
-    ? JOURNEY_DEFINITION_BY_MODE[activeJourneyMode]
-    : null;
 
   useEffect(() => {
     saveSettings(settings);
@@ -219,7 +253,12 @@ export function useAppController() {
           return current;
         }
 
-        setSettings(previousSettings);
+        if (activeJourneyMode === "simple") {
+          setSimpleJourneySettings(clonePensionSettings(previousSettings));
+        } else {
+          setSettings(previousSettings);
+        }
+
         return current.slice(0, -1);
       });
     };
@@ -227,7 +266,7 @@ export function useAppController() {
     window.addEventListener("keydown", handleUndoShortcut);
 
     return () => window.removeEventListener("keydown", handleUndoShortcut);
-  }, [chartUndoStack.length]);
+  }, [activeJourneyMode, chartUndoStack.length]);
 
   function showSavedLabel() {
     showSavedLabelAction({
@@ -235,6 +274,31 @@ export function useAppController() {
       setShowSavedFeedback,
     });
   }
+
+  const setActiveJourneySettings = useCallback(
+    (
+      value: PensionSettings | ((current: PensionSettings) => PensionSettings)
+    ) => {
+      if (activeJourneyMode === "simple") {
+        setSimpleJourneySettings((current) => {
+          const baseSettings = current ?? applySimpleJourneyDefaults(settings);
+          const nextSettings =
+            typeof value === "function" ? value(baseSettings) : value;
+
+          return applySimpleJourneyAssumptions(nextSettings);
+        });
+        return;
+      }
+
+      if (typeof value === "function") {
+        setSettings((current) => value(current));
+        return;
+      }
+
+      setSettings(value);
+    },
+    [activeJourneyMode, settings]
+  );
 
   function updateSetting<K extends SettingsKey>(
     key: K,
@@ -246,7 +310,7 @@ export function useAppController() {
       showSavedLabel,
       startTransition,
       setChartUndoStack,
-      setSettings,
+      setSettings: setActiveJourneySettings,
     });
   }
 
@@ -255,10 +319,10 @@ export function useAppController() {
   ) {
     updateBridgeChartParametersAction({
       patch,
-      settings,
+      settings: effectiveSettings,
       showSavedLabel,
       setChartUndoStack,
-      setSettings,
+      setSettings: setActiveJourneySettings,
     });
   }
 
@@ -268,7 +332,7 @@ export function useAppController() {
       setShowSavedFeedback,
       setChartUndoStack,
       setSettingsFormVersion,
-      setSettings,
+      setSettings: setActiveJourneySettings,
     });
   }
 
@@ -279,12 +343,12 @@ export function useAppController() {
       scenarioSettings,
       setChartUndoStack,
       setSettingsFormVersion,
-      setSettings,
+      setSettings: setActiveJourneySettings,
     });
   }
 
   function exportParameters() {
-    const snapshot = getStoredSettingsSnapshot(settings);
+    const snapshot = getStoredSettingsSnapshot(effectiveSettings);
     const fileDate = new Date().toISOString().slice(0, 10);
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -305,7 +369,7 @@ export function useAppController() {
   }, []);
 
   const journeyStepViewModel: JourneyStepViewModel = {
-    settings,
+    settings: effectiveSettings,
     validationIssues,
     pensionSummary,
     retirementIncomeSeries,
@@ -340,6 +404,12 @@ export function useAppController() {
   }
 
   function selectAppMode(mode: AppMode) {
+    if (mode === "simple") {
+      setSimpleJourneySettings(
+        (current) => current ?? applySimpleJourneyDefaults(settings)
+      );
+    }
+
     selectAppModeAction({
       mode,
       currentMode: appMode,
@@ -391,7 +461,7 @@ export function useAppController() {
     updateSetting,
     useDropdownDates,
     validationIssues,
-    visibleSettings: settings,
+    visibleSettings: effectiveSettings,
   };
 }
 

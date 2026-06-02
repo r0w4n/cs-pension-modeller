@@ -71,6 +71,7 @@ export type JourneyStepDefinition =
       title: string;
       description: string;
       kind: "optional-sections" | "answer" | "bridge-answer" | "expert-answer";
+      hideInactiveLegendItems?: boolean;
       showProjectionTable?: boolean;
       toggleKeys?: readonly OptionalSectionToggleKey[];
       visible?: (settings: PensionSettings) => boolean;
@@ -239,12 +240,11 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 1",
         title: "About you and your target",
         description:
-          "Start with your date of birth, the age you want to retire, and the income you want the plan to support.",
+          "Start with your date of birth and the income you want the plan to support. The simplified journey assumes retirement at your Normal Pension Age.",
         kind: "fields",
-        fieldIds: ["dateOfBirth", "requirementAge", "desiredRetirementIncome"],
+        fieldIds: ["dateOfBirth", "desiredRetirementIncome"],
         fieldLabels: {
           dateOfBirth: "Date of birth",
-          requirementAge: "Retirement age",
           desiredRetirementIncome: "Target retirement income (£ per year)",
         },
       },
@@ -253,40 +253,29 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 2",
         title: "Your Alpha pension",
         description:
-          "Enter the main figures from your latest statement together with the age you expect to leave and draw Alpha.",
+          "Enter the main figures from your latest statement. The simplified journey assumes you leave and draw Alpha at your Normal Pension Age.",
         kind: "fields",
         fieldIds: [
           "alphaPensionAbsDate",
           "accruedPensionAtLastAbs",
           "pensionableEarnings",
-          "alphaPensionLeaveAge",
-          "alphaPensionDrawAge",
         ],
         fieldLabels: {
           alphaPensionAbsDate: "Annual Benefits Statement year",
           accruedPensionAtLastAbs: "Accrued pension to date (£ per year)",
           pensionableEarnings: "Pensionable earnings (£ per year)",
-          alphaPensionLeaveAge: "Age you leave Alpha",
-          alphaPensionDrawAge: "Alpha pension draw age",
         },
       },
       {
         id: "alpha-options",
         eyebrow: "Step 3",
-        title: "Added pension and EPA",
+        title: "Added pension",
         description:
-          "Add any monthly added pension and EPA choices you want reflected in the plan.",
+          "Add any monthly added pension contributions you want reflected in the plan. EPA and lump sum purchases are not included in the simplified journey.",
         kind: "fields",
-        groupId: "alpha",
-        fieldIds: [
-          "alphaAddedPensionMonthly",
-          "alphaAddedPensionFactorType",
-          "alphaEpaEnabled",
-          "alphaEpaYearsBeforeNpa",
-        ],
+        fieldIds: ["alphaAddedPensionMonthly"],
         fieldLabels: {
           alphaAddedPensionMonthly: "Monthly added pension payments (£)",
-          alphaAddedPensionFactorType: "Added pension type",
         },
       },
       {
@@ -358,6 +347,7 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "Review your projected income, bridge funding, key dates, and assumptions.",
         kind: "bridge-answer",
+        hideInactiveLegendItems: true,
         showProjectionTable: false,
       },
     ],
@@ -441,16 +431,45 @@ export function applyBridgeJourneyDefaults(
 export function applySimpleJourneyDefaults(
   settings: PensionSettings
 ): PensionSettings {
+  const normalPensionAge = settings.normalPensionAge;
+
+  return {
+    ...settings,
+    requirementAge: normalPensionAge,
+    alphaPensionLeaveAge: normalPensionAge,
+    alphaPensionDrawAge: normalPensionAge,
+    showStatePension: true,
+    showSipp: false,
+    showIsa: false,
+    showNuvos: false,
+    isaDrawAge: normalPensionAge,
+    alphaAddedPensionFactorType: "self",
+    statePensionApplyFutureGrowth: false,
+    applyPensionIncreases: true,
+    assumedCpiPercent: 0,
+    taxationEnabled: false,
+    partialRetirementEnabled: false,
+    alphaEpaEnabled: false,
+    alphaAddedPensionLumpSums: [],
+  };
+}
+
+export function applySimpleJourneyAssumptions(
+  settings: PensionSettings
+): PensionSettings {
   return {
     ...settings,
     showStatePension: true,
     showSipp: false,
     showIsa: false,
     showNuvos: false,
+    alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     applyPensionIncreases: true,
     assumedCpiPercent: 0,
     taxationEnabled: false,
     partialRetirementEnabled: false,
+    alphaEpaEnabled: false,
+    alphaAddedPensionLumpSums: [],
   };
 }

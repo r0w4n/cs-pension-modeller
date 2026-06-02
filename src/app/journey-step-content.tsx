@@ -249,6 +249,7 @@ function renderAnswerStep(
       <RetirementIncomeBridgeChart
         data={retirementIncomeSeries}
         alphaLabel="Alpha pension"
+        hideInactiveLegendItems
         limits={bridgeChartLimits}
         statePensionEditable
         validationIssues={validationIssues}
@@ -271,6 +272,7 @@ function renderAnswerStep(
         retirementIncomeSeries={retirementIncomeSeries}
         bridgeChartParameters={bridgeChartParameters}
         bridgeChartLimits={bridgeChartLimits}
+        hideInactiveLegendItems
         onChangeChartParameters={onChangeChartParameters}
       />
     </>
@@ -426,6 +428,7 @@ function renderBridgeAnswerStep(
         retirementIncomeSeries={retirementIncomeSeries}
         bridgeChartParameters={bridgeChartParameters}
         bridgeChartLimits={bridgeChartLimits}
+        hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
         validationIssues={validationIssues}
         onChangeChartParameters={onChangeChartParameters}
       />
@@ -438,6 +441,7 @@ function renderBridgeAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
+          hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
         />
       </ComparisonSection>
 

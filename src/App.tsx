@@ -19,7 +19,7 @@ function App() {
     settingsFormVersion,
     showGuidanceNotes,
     showSavedFeedback,
-    settings,
+    visibleSettings,
   } = useAppController();
 
   return (
@@ -86,7 +86,7 @@ function App() {
             activeModeRef={activeModeRef}
             mode={activeJourneyMode}
             journey={activeJourneyDefinition}
-            settings={settings}
+            settings={visibleSettings}
             settingsFormVersion={settingsFormVersion}
             showGuidanceNotes={showGuidanceNotes}
             onShowGuidanceNotesChange={setShowGuidanceNotes}

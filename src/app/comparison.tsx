@@ -51,6 +51,7 @@ export type ComparisonPanelProps = {
   retirementIncomeSeries?: RetirementIncomePoint[];
   bridgeChartParameters?: RetirementIncomeBridgeParameters;
   bridgeChartLimits?: RetirementIncomeBridgeLimits;
+  hideInactiveLegendItems?: boolean;
   onChangeChartParameters?: (
     patch: Partial<RetirementIncomeBridgeParameters>
   ) => void;
@@ -158,6 +159,7 @@ export function ComparisonPanel({
   retirementIncomeSeries,
   bridgeChartParameters,
   bridgeChartLimits,
+  hideInactiveLegendItems,
   onChangeChartParameters,
 }: ComparisonPanelProps) {
   const [scenarioNameDraft, setScenarioNameDraft] = useState("");
@@ -291,6 +293,7 @@ export function ComparisonPanel({
           retirementIncomeSeries={retirementIncomeSeries}
           bridgeChartParameters={bridgeChartParameters}
           bridgeChartLimits={bridgeChartLimits}
+          hideInactiveLegendItems={hideInactiveLegendItems}
           validationIssues={validationIssues}
           onChangeChartParameters={onChangeChartParameters}
         />

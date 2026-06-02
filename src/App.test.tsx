@@ -263,6 +263,7 @@ import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
   SETTINGS_STORAGE_KEY,
+  calculateDateAge,
   defaultSettings,
   getTodayIsoDate,
 } from "./settings";
@@ -519,51 +520,173 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Your Alpha pension/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Added pension and EPA/i })
+      screen.getByRole("button", { name: /Added pension/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Your results/i })
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth month")).toHaveValue("06");
     expect(screen.getByLabelText("Date of birth year")).toHaveValue("1987");
-    expect(screen.getByLabelText("Retirement age")).toHaveValue(
-      defaultSettings.requirementAge.toString()
-    );
     expect(
       screen.getByLabelText("Target retirement income (£ per year)")
     ).toHaveValue(defaultSettings.desiredRetirementIncome);
+    expect(screen.queryByLabelText("Retirement age")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Age you leave Alpha")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Alpha pension draw age")
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("What else should we include?")
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "State Pension" })
     ).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("simple");
+  });
+
+  it("hides EPA and lump sum controls in the simple journey added pension step", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
+
+    expect(screen.queryByLabelText("Add EPA")).not.toBeInTheDocument();
     expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+      screen.queryByLabelText("EPA years before NPA")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Lump sum purchases" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add lump sum purchase" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Added pension type")
+    ).not.toBeInTheDocument();
+  });
+
+  it("reapplies simple-mode NPA assumptions from saved settings", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          requirementAge: 60,
+          alphaPensionLeaveAge: 61,
+          alphaPensionDrawAge: 62,
+          alphaEpaEnabled: true,
+          alphaAddedPensionLumpSums: [
+            {
+              amount: 5000,
+              startDate: "2026-05-01",
+              cadence: "once",
+              factorType: "self",
+            },
+          ],
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+
+    const storedSettings = JSON.parse(
+      window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
+    ) as Record<string, unknown>;
+    expect(storedSettings).toEqual(
       expect.objectContaining({
-        showStatePension: true,
-        applyPensionIncreases: true,
-        assumedCpiPercent: 0,
-        showSipp: false,
-        showIsa: false,
+        requirementAge: 60,
+        alphaPensionLeaveAge: 61,
+        alphaPensionDrawAge: 62,
+        alphaEpaEnabled: true,
+        alphaAddedPensionLumpSums: [
+          expect.objectContaining({
+            amount: 5000,
+            startDate: "2026-05-01",
+            cadence: "once",
+            factorType: "self",
+          }),
+        ],
       })
     );
   });
 
-  it("shows added pension lump sums in the simple journey added pension step", () => {
+  it("keeps bridge journey values after visiting the simple journey", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          requirementAge: 60,
+          alphaPensionDrawAge: 61,
+          alphaAddedPensionFactorType: "self_plus_beneficiaries",
+        })
+      )
+    );
+
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Added pension and EPA/i })
+      screen.getByRole("button", {
+        name: /Work out what I need to retire early/i,
+      })
     );
 
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+
+    openJourneyStep(/Your Alpha pension/i);
+
+    expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
+      "61"
+    );
     expect(
-      screen.getByRole("heading", { name: "Lump sum purchases" })
-    ).toBeInTheDocument();
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
+    ).toEqual(
+      expect.objectContaining({
+        alphaAddedPensionFactorType: "self_plus_beneficiaries",
+      })
+    );
+  });
+
+  it("lets simple-mode chart markers move without changing the bridge journey settings", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          requirementAge: 60,
+          alphaPensionLeaveAge: 61,
+          alphaPensionDrawAge: 62,
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+    advanceJourneyToResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+      key: "ArrowLeft",
+    });
+    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 68"), {
+      key: "ArrowLeft",
+    });
+    fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
+      key: "ArrowLeft",
+    });
+    fireEvent.keyDown(screen.getByLabelText("Start State, age 68"), {
+      key: "ArrowRight",
+    });
+
+    expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
+    expect(screen.getByLabelText("Leave Alpha, age 67.75")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Alpha, age 67.75")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start State, age 68.25")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Add lump sum purchase" })
-    ).toBeInTheDocument();
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
+    ).toEqual(
+      expect.objectContaining({
+        requirementAge: 60,
+        alphaPensionLeaveAge: 61,
+        alphaPensionDrawAge: 62,
+      })
+    );
   });
 
   it("restores the original early retirement journey as a separate route", () => {
@@ -615,6 +738,18 @@ describe("App settings form", () => {
     ).toHaveTextContent(
       "Results depend on your inputs, so check important decisions against your official pension statement"
     );
+    expect(
+      screen.queryByLabelText("Toggle chart ISA bridge source")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Toggle chart SIPP bridge source")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Toggle chart nuvos pension source")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Toggle chart partial retirement source")
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Assumptions version/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", {
@@ -1816,11 +1951,6 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    fireEvent.change(screen.getByLabelText("Build-up shown"), {
-      target: { value: "15" },
-    });
-    fireEvent.mouseUp(screen.getByLabelText("Build-up shown"));
-
     expect(screen.getByLabelText("Start partial, age 55")).toBeInTheDocument();
     expect(
       screen.getAllByText("Partial retirement income").length
@@ -1841,6 +1971,12 @@ describe("App settings form", () => {
         partialRetirementWorkPercent: 50,
       })
     );
+  });
+
+  it("does not show a build-up slider in the chart controls", () => {
+    renderAcknowledgedExpertResult();
+
+    expect(screen.queryByLabelText("Build-up shown")).not.toBeInTheDocument();
   });
 
   it("can disable partial retirement from the chart controls", () => {
@@ -2419,6 +2555,10 @@ describe("App settings form", () => {
   });
 
   it("normalizes unexpected stored values back to allowed settings", () => {
+    const currentPlanningAge = Math.ceil(
+      calculateDateAge(defaultSettings.dateOfBirth, getTodayIsoDate())
+    ).toString();
+
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify({
@@ -2451,7 +2591,7 @@ describe("App settings form", () => {
       screen.getByLabelText("Added Alpha Pension (£ per month)")
     ).toHaveValue("233");
     expect(screen.getByLabelText("Age You Leave Alpha Scheme")).toHaveValue(
-      "39"
+      currentPlanningAge
     );
     expect(
       screen.getByLabelText(
@@ -2490,15 +2630,21 @@ describe("App settings form", () => {
   });
 
   it("shows inline validation when date of birth is not before the calculation start date", async () => {
+    const [startYear, startMonth] = getTodayIsoDate().split("-").map(Number);
+    const invalidBirthMonth =
+      startMonth === 12 ? "12" : `${startMonth + 1}`.padStart(2, "0");
+    const invalidBirthYear =
+      startMonth === 12 ? `${startYear + 1}` : `${startYear}`;
+
     renderAcknowledgedApp();
 
     openJourneyStep(/Personal details/i);
 
     fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
-      target: { value: "06" },
+      target: { value: invalidBirthMonth },
     });
     fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
-      target: { value: "2026" },
+      target: { value: invalidBirthYear },
     });
 
     expect(

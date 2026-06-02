@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import {
   RetirementIncomeBridgeChart,
   type RetirementIncomeBridgeChartProps,
@@ -188,19 +188,11 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(getShortfallFillPath()).toContain(alphaStartX);
   });
 
-  it("defaults long build-up periods to two and a half years and lets the user extend them", () => {
+  it("starts with a 2.5-year build-up window and expands for earlier milestones", () => {
     renderChart();
 
-    expect(screen.getByLabelText("Build-up shown")).toHaveValue("2.5");
-    const defaultBuildUpWidth = getBuildUpBandWidth();
-
-    fireEvent.change(screen.getByLabelText("Build-up shown"), {
-      target: { value: "10" },
-    });
-    fireEvent.mouseUp(screen.getByLabelText("Build-up shown"));
-
-    expect(screen.getByLabelText("Build-up shown")).toHaveValue("10");
-    expect(getXAxisLabels()[0]).toBe("50");
-    expect(getBuildUpBandWidth()).toBeGreaterThan(defaultBuildUpWidth);
+    expect(screen.queryByLabelText("Build-up shown")).not.toBeInTheDocument();
+    expect(getXAxisLabels()[0]).toBe("56");
+    expect(getBuildUpBandWidth()).toBeGreaterThan(0);
   });
 });

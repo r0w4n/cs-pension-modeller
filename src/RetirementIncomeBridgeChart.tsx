@@ -61,6 +61,7 @@ export type RetirementIncomeBridgeChartProps =
   RetirementIncomeBridgeParameters & {
     data: RetirementIncomePoint[];
     alphaLabel?: string;
+    hideInactiveLegendItems?: boolean;
     limits: RetirementIncomeBridgeLimits;
     statePensionEditable?: boolean;
     validationIssues?: PensionValidationIssue[];
@@ -219,6 +220,7 @@ export function RetirementIncomeBridgeChart({
   isaUseByAgeEnabled,
   showStatePension,
   alphaLabel = "Alpha pension",
+  hideInactiveLegendItems = false,
   limits,
   statePensionEditable = false,
   validationIssues = [],
@@ -244,9 +246,6 @@ export function RetirementIncomeBridgeChart({
     useState<MilestoneKey | null>(null);
   const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
     useState<MilestoneKey>("retirementAge");
-  const [buildUpWindowYears, setBuildUpWindowYears] = useState(
-    DEFAULT_BUILD_UP_WINDOW_YEARS
-  );
   const dataSourceTargetIncomeAnnual =
     data[0]?.targetIncomeAnnual ?? targetIncomeAnnual;
   const displayedTargetIncomeAnnual =
@@ -318,6 +317,10 @@ export function RetirementIncomeBridgeChart({
       }),
     [partialRetirementEnabled, showIsa, showNuvos, showSipp, showStatePension]
   );
+  const legendIncomeKeys = useMemo(
+    () => (hideInactiveLegendItems ? visibleIncomeKeys : incomeKeys),
+    [hideInactiveLegendItems, visibleIncomeKeys]
+  );
 
   useEffect(() => {
     if (!shellRef.current || typeof ResizeObserver === "undefined") {
@@ -374,11 +377,14 @@ export function RetirementIncomeBridgeChart({
     sippUseByAgeEnabled,
     statePensionAge,
   });
-  const minAge = createChartMinAge({
-    dataMinAge: ageExtent[0],
-    fallbackMinAge: retirementAge - 5,
-    milestoneAges: activeMilestoneAges,
-  });
+  const earliestVisibleMilestoneAge = Math.min(
+    ...filterFiniteAges([
+      ...activeMilestoneAges,
+      ...Object.values(draftMarkerAges).map(
+        (draftAge) => draftAge?.age ?? null
+      ),
+    ])
+  );
   const chartMaxAge = createChartMaxAge({
     dataMaxAge: ageExtent[1],
     fallbackMaxAge: statePensionAge + 20,
@@ -386,17 +392,13 @@ export function RetirementIncomeBridgeChart({
   });
   const buildUpWindow = createBuildUpWindow({
     chartMaxAge,
-    minAge,
-    requestedYears: buildUpWindowYears,
+    dataMinAge: ageExtent[0],
+    earliestMilestoneAge: Number.isFinite(earliestVisibleMilestoneAge)
+      ? earliestVisibleMilestoneAge
+      : undefined,
     retirementAge,
   });
-  const {
-    effectiveYears: effectiveBuildUpWindowYears,
-    fullYears: fullBuildUpWindowYears,
-    showControl: showBuildUpWindowControl,
-    xDomainMax,
-    xDomainMin,
-  } = buildUpWindow;
+  const { xDomainMax, xDomainMin } = buildUpWindow;
   const visibleData = useMemo(
     () =>
       createVisibleChartData(
@@ -1221,7 +1223,7 @@ export function RetirementIncomeBridgeChart({
             <span className="bridge-build-up-key" />
             {BUILD_UP_META.label}
           </span>
-          {incomeKeys.map((key) => {
+          {legendIncomeKeys.map((key) => {
             const label =
               key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
             const enabled = isIncomeSourceEnabled(key, {
@@ -1375,21 +1377,6 @@ export function RetirementIncomeBridgeChart({
             onChange={(value) =>
               onChangeParameters({ partialRetirementWorkPercent: value })
             }
-          />
-        ) : null}
-        {showBuildUpWindowControl ? (
-          <BridgeMetricControl
-            label="Build-up shown"
-            value={effectiveBuildUpWindowYears}
-            suffix="before retirement"
-            limit={{
-              min: DEFAULT_BUILD_UP_WINDOW_YEARS,
-              max: fullBuildUpWindowYears,
-              step: 0.25,
-            }}
-            colour="#8a5a0a"
-            formatValue={(value) => `${Math.round(value)} years`}
-            onChange={setBuildUpWindowYears}
           />
         ) : null}
         <BridgeMetricControl
@@ -1563,20 +1550,6 @@ function createActiveMilestoneAges({
   ];
 }
 
-function createChartMinAge({
-  dataMinAge,
-  fallbackMinAge,
-  milestoneAges,
-}: {
-  dataMinAge: number | undefined;
-  fallbackMinAge: number;
-  milestoneAges: Array<number | null>;
-}) {
-  return Math.floor(
-    Math.min(dataMinAge ?? fallbackMinAge, ...filterFiniteAges(milestoneAges))
-  );
-}
-
 function createChartMaxAge({
   dataMaxAge,
   fallbackMaxAge,
@@ -1599,30 +1572,27 @@ function filterFiniteAges(ages: Array<number | null>) {
 
 function createBuildUpWindow({
   chartMaxAge,
-  minAge,
-  requestedYears,
+  dataMinAge,
+  earliestMilestoneAge,
   retirementAge,
 }: {
   chartMaxAge: number;
-  minAge: number;
-  requestedYears: number;
+  dataMinAge: number | undefined;
+  earliestMilestoneAge: number | undefined;
   retirementAge: number;
 }) {
-  const fullYears = Math.max(0, retirementAge - minAge);
-  const showControl = fullYears > DEFAULT_BUILD_UP_WINDOW_YEARS + 0.001;
-  const effectiveYears = showControl
-    ? clampNumber(requestedYears, DEFAULT_BUILD_UP_WINDOW_YEARS, fullYears)
-    : fullYears;
-  const visibleMinAge = showControl
-    ? Math.max(minAge, retirementAge - effectiveYears)
-    : minAge;
-  const xDomainMin = Math.min(visibleMinAge, chartMaxAge - 1);
+  const defaultVisibleMinAge = Math.max(
+    dataMinAge ?? retirementAge - DEFAULT_BUILD_UP_WINDOW_YEARS,
+    retirementAge - DEFAULT_BUILD_UP_WINDOW_YEARS
+  );
+  const xDomainMin = Math.min(
+    earliestMilestoneAge ?? defaultVisibleMinAge,
+    defaultVisibleMinAge,
+    chartMaxAge - 1
+  );
   const xDomainMax = Math.max(chartMaxAge, xDomainMin + 1);
 
   return {
-    effectiveYears,
-    fullYears,
-    showControl,
     xDomainMax,
     xDomainMin,
   };

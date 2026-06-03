@@ -8,3 +8,4 @@ dist
 .pnp.*
 coverage
 test-results/.last-run.json
+/test-results

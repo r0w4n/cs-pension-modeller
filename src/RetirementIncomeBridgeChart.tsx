@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -44,6 +45,7 @@ export type RetirementIncomeBridgeParameters = {
   sippUseByAge: number;
   isaAccessAge: number;
   alphaStartAge: number;
+  nuvosStartAge: number;
   isaUseByAge: number;
   partialRetirementStartAge: number;
   partialRetirementWorkPercent: number;
@@ -81,6 +83,7 @@ export type RetirementIncomeBridgeLimits = {
   sippUseByAge: NumberLimit;
   isaAccessAge: NumberLimit;
   alphaStartAge: NumberLimit;
+  nuvosStartAge: NumberLimit;
   isaUseByAge: NumberLimit;
   partialRetirementStartAge: NumberLimit;
   partialRetirementWorkPercent: NumberLimit;
@@ -108,6 +111,7 @@ type MilestoneKey =
   | "sippUseByAge"
   | "isaAccessAge"
   | "alphaStartAge"
+  | "nuvosStartAge"
   | "isaUseByAge"
   | "partialRetirementStartAge"
   | "statePensionAge";
@@ -208,6 +212,7 @@ export function RetirementIncomeBridgeChart({
   sippUseByAge,
   isaAccessAge,
   alphaStartAge,
+  nuvosStartAge,
   isaUseByAge,
   partialRetirementStartAge,
   partialRetirementWorkPercent,
@@ -227,6 +232,7 @@ export function RetirementIncomeBridgeChart({
   onChangeParameters,
 }: RetirementIncomeBridgeChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
   const activeTargetDragPointerIdRef = useRef<number | null>(null);
   const [width, setWidth] = useState(960);
@@ -236,6 +242,7 @@ export function RetirementIncomeBridgeChart({
   const [draftTargetIncomeAnnual, setDraftTargetIncomeAnnual] = useState<
     number | null
   >(null);
+  const [isTargetDragging, setIsTargetDragging] = useState(false);
   const [pendingTargetIncomeAnnual, setPendingTargetIncomeAnnual] = useState<
     number | null
   >(null);
@@ -363,6 +370,7 @@ export function RetirementIncomeBridgeChart({
   const activeMilestoneAges = createActiveMilestoneAges({
     alphaLeaveAge,
     alphaStartAge,
+    nuvosStartAge,
     isaAccessAge,
     isaUseByAge,
     isaUseByAgeEnabled,
@@ -370,6 +378,26 @@ export function RetirementIncomeBridgeChart({
     partialRetirementStartAge,
     retirementAge,
     showIsa,
+    showNuvos,
+    showSipp,
+    showStatePension,
+    sippAccessAge,
+    sippUseByAge,
+    sippUseByAgeEnabled,
+    statePensionAge,
+  });
+  const activeMilestoneBoundaries = createActiveMilestoneBoundaries({
+    alphaLeaveAge,
+    alphaStartAge,
+    isaAccessAge,
+    isaUseByAge,
+    isaUseByAgeEnabled,
+    nuvosStartAge,
+    partialRetirementEnabled,
+    partialRetirementStartAge,
+    retirementAge,
+    showIsa,
+    showNuvos,
     showSipp,
     showStatePension,
     sippAccessAge,
@@ -390,13 +418,19 @@ export function RetirementIncomeBridgeChart({
     fallbackMaxAge: statePensionAge + 20,
     milestoneAges: activeMilestoneAges,
   });
+  const buildUpEndAge = createBuildUpEndAge({
+    alphaLeaveAge,
+    partialRetirementEnabled,
+    partialRetirementStartAge,
+    retirementAge,
+  });
   const buildUpWindow = createBuildUpWindow({
+    buildUpEndAge,
     chartMaxAge,
     dataMinAge: ageExtent[0],
     earliestMilestoneAge: Number.isFinite(earliestVisibleMilestoneAge)
       ? earliestVisibleMilestoneAge
       : undefined,
-    retirementAge,
   });
   const { xDomainMax, xDomainMin } = buildUpWindow;
   const visibleData = useMemo(
@@ -404,9 +438,15 @@ export function RetirementIncomeBridgeChart({
       createVisibleChartData(
         displayedData,
         buildUpWindow.xDomainMin,
-        buildUpWindow.xDomainMax
+        buildUpWindow.xDomainMax,
+        activeMilestoneBoundaries
       ),
-    [buildUpWindow.xDomainMax, buildUpWindow.xDomainMin, displayedData]
+    [
+      activeMilestoneBoundaries,
+      buildUpWindow.xDomainMax,
+      buildUpWindow.xDomainMin,
+      displayedData,
+    ]
   );
   const maxIncome =
     d3.max(
@@ -538,6 +578,18 @@ export function RetirementIncomeBridgeChart({
         colour: "#7353bf",
         editable: true,
       },
+      ...(showNuvos
+        ? [
+            {
+              key: "nuvosStartAge" as const,
+              label: "Start Nuvos",
+              shortLabel: "Start Nuvos",
+              age: nuvosStartAge,
+              colour: "#b45309",
+              editable: true,
+            },
+          ]
+        : []),
       ...(showIsa && isaUseByAgeEnabled
         ? [
             {
@@ -572,8 +624,10 @@ export function RetirementIncomeBridgeChart({
       partialRetirementEnabled,
       partialRetirementStartAge,
       retirementAge,
+      showNuvos,
       showSipp,
       showIsa,
+      nuvosStartAge,
       sippUseByAge,
       sippUseByAgeEnabled,
       showStatePension,
@@ -647,7 +701,11 @@ export function RetirementIncomeBridgeChart({
       statePensionAge,
     ]
   );
-  const buildUpWidth = Math.max(0, xScale(retirementAge) - xScale(xDomainMin));
+  const buildUpWidth = Math.max(
+    0,
+    xScale(clampNumber(retirementAge, xDomainMin, xDomainMax)) -
+      xScale(xDomainMin)
+  );
 
   const handleMarkerKeyDown = (
     event: KeyboardEvent<SVGGElement>,
@@ -698,33 +756,42 @@ export function RetirementIncomeBridgeChart({
     );
   };
 
-  const getPlotPointerPosition = (
-    event: PointerEvent<SVGElement>
-  ): { x: number; y: number } | null => {
-    const svg = event.currentTarget.ownerSVGElement;
+  const getPlotPointerPositionFromClient = useCallback(
+    (clientX: number, clientY: number): { x: number; y: number } | null => {
+      const svg = svgRef.current;
 
-    if (!svg) {
-      return null;
-    }
+      if (!svg) {
+        return null;
+      }
 
-    const rect = svg.getBoundingClientRect();
+      const rect = svg.getBoundingClientRect();
 
-    if (rect.width === 0 || rect.height === 0) {
-      return null;
-    }
+      if (rect.width === 0 || rect.height === 0) {
+        return null;
+      }
 
-    const viewBoxWidth = svg.viewBox.baseVal.width || dimensions.width;
-    const viewBoxHeight = svg.viewBox.baseVal.height || dimensions.height;
+      const viewBoxWidth = svg.viewBox.baseVal.width || dimensions.width;
+      const viewBoxHeight = svg.viewBox.baseVal.height || dimensions.height;
 
-    return {
-      x:
-        ((event.clientX - rect.left) * viewBoxWidth) / rect.width -
-        dimensions.marginLeft,
-      y:
-        ((event.clientY - rect.top) * viewBoxHeight) / rect.height -
-        dimensions.marginTop,
-    };
-  };
+      return {
+        x:
+          ((clientX - rect.left) * viewBoxWidth) / rect.width -
+          dimensions.marginLeft,
+        y:
+          ((clientY - rect.top) * viewBoxHeight) / rect.height -
+          dimensions.marginTop,
+      };
+    },
+    [
+      dimensions.height,
+      dimensions.marginLeft,
+      dimensions.marginTop,
+      dimensions.width,
+    ]
+  );
+
+  const getPlotPointerPosition = (event: PointerEvent<SVGElement>) =>
+    getPlotPointerPositionFromClient(event.clientX, event.clientY);
 
   const isPrimaryPointerDragStart = (
     event: PointerEvent<SVGElement>
@@ -748,6 +815,32 @@ export function RetirementIncomeBridgeChart({
     );
   };
 
+  const getMarkerAgeFromClient = useCallback(
+    (clientX: number, clientY: number, markerKey: MilestoneKey) => {
+      const pointerPosition = getPlotPointerPositionFromClient(
+        clientX,
+        clientY
+      );
+      const marker = milestoneMarkerLookup.get(markerKey);
+
+      if (!pointerPosition || !marker) {
+        return marker?.age ?? limits[markerKey].min;
+      }
+
+      return snapToLimit(
+        xScale.invert(clampNumber(pointerPosition.x, 0, plotWidth)),
+        limits[markerKey]
+      );
+    },
+    [
+      getPlotPointerPositionFromClient,
+      limits,
+      milestoneMarkerLookup,
+      plotWidth,
+      xScale,
+    ]
+  );
+
   const updateDraftMarkerAge = (
     event: PointerEvent<SVGGElement>,
     markerKey: MilestoneKey
@@ -769,6 +862,27 @@ export function RetirementIncomeBridgeChart({
     }));
   };
 
+  const updateDraftMarkerAgeFromClient = useCallback(
+    (clientX: number, clientY: number, markerKey: MilestoneKey) => {
+      const marker = milestoneMarkerLookup.get(markerKey);
+
+      if (!marker) {
+        return;
+      }
+
+      const nextAge = getMarkerAgeFromClient(clientX, clientY, markerKey);
+
+      setDraftMarkerAges((current) => ({
+        ...current,
+        [markerKey]: {
+          age: nextAge,
+          baseAge: current[markerKey]?.baseAge ?? marker.age,
+        },
+      }));
+    },
+    [getMarkerAgeFromClient, milestoneMarkerLookup]
+  );
+
   const clearMarkerDraft = (markerKey: MilestoneKey) => {
     setDraftMarkerAges((current) => {
       const nextDraftMarkerAges = { ...current };
@@ -789,7 +903,9 @@ export function RetirementIncomeBridgeChart({
 
     event.preventDefault();
     event.currentTarget.focus();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    if (typeof event.currentTarget.setPointerCapture === "function") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     activeMarkerDragPointerIdRef.current = event.pointerId;
     setSelectedMobileMarkerKey(markerKey);
     setActiveMarkerDragKey(markerKey);
@@ -826,7 +942,10 @@ export function RetirementIncomeBridgeChart({
 
     activeMarkerDragPointerIdRef.current = null;
 
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+    if (
+      typeof event.currentTarget.hasPointerCapture === "function" &&
+      event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
@@ -855,6 +974,39 @@ export function RetirementIncomeBridgeChart({
     setDraftTargetIncomeAnnual(getTargetIncomeFromPointer(event));
   };
 
+  const getTargetIncomeFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      const pointerPosition = getPlotPointerPositionFromClient(
+        clientX,
+        clientY
+      );
+
+      if (!pointerPosition) {
+        return displayedTargetIncomeAnnual;
+      }
+
+      return snapToLimit(
+        yScale.invert(clampNumber(pointerPosition.y, 0, plotHeight)) * divisor,
+        limits.targetIncomeAnnual
+      );
+    },
+    [
+      displayedTargetIncomeAnnual,
+      divisor,
+      getPlotPointerPositionFromClient,
+      limits.targetIncomeAnnual,
+      plotHeight,
+      yScale,
+    ]
+  );
+
+  const updateDraftTargetIncomeFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      setDraftTargetIncomeAnnual(getTargetIncomeFromClient(clientX, clientY));
+    },
+    [getTargetIncomeFromClient]
+  );
+
   const handleTargetPointerDown = (event: PointerEvent<SVGPathElement>) => {
     if (!isPrimaryPointerDragStart(event)) {
       return;
@@ -862,8 +1014,11 @@ export function RetirementIncomeBridgeChart({
 
     event.preventDefault();
     event.currentTarget.focus();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    if (typeof event.currentTarget.setPointerCapture === "function") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     activeTargetDragPointerIdRef.current = event.pointerId;
+    setIsTargetDragging(true);
     updateDraftTargetIncome(event);
   };
 
@@ -886,8 +1041,12 @@ export function RetirementIncomeBridgeChart({
     const committedValue = getTargetIncomeFromPointer(event);
 
     activeTargetDragPointerIdRef.current = null;
+    setIsTargetDragging(false);
 
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+    if (
+      typeof event.currentTarget.hasPointerCapture === "function" &&
+      event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
@@ -898,6 +1057,121 @@ export function RetirementIncomeBridgeChart({
       onChangeParameters({ targetIncomeAnnual: committedValue });
     }
   };
+
+  useEffect(() => {
+    if (activeMarkerDragKey === null) {
+      return;
+    }
+
+    const handlePointerMove = (event: globalThis.PointerEvent) => {
+      if (activeMarkerDragPointerIdRef.current !== event.pointerId) {
+        return;
+      }
+
+      updateDraftMarkerAgeFromClient(
+        event.clientX,
+        event.clientY,
+        activeMarkerDragKey
+      );
+    };
+
+    const finishDrag = (event: globalThis.PointerEvent, commit: boolean) => {
+      if (
+        activeMarkerDragPointerIdRef.current !== event.pointerId ||
+        activeMarkerDragKey === null
+      ) {
+        return;
+      }
+
+      const committedAge = getMarkerAgeFromClient(
+        event.clientX,
+        event.clientY,
+        activeMarkerDragKey
+      );
+
+      activeMarkerDragPointerIdRef.current = null;
+      clearMarkerDraft(activeMarkerDragKey);
+      setActiveMarkerDragKey(null);
+
+      if (commit) {
+        onChangeParameters({ [activeMarkerDragKey]: committedAge });
+      }
+    };
+
+    const handlePointerUp = (event: globalThis.PointerEvent) =>
+      finishDrag(event, true);
+    const handlePointerCancel = (event: globalThis.PointerEvent) =>
+      finishDrag(event, false);
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerCancel);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerCancel);
+    };
+  }, [
+    activeMarkerDragKey,
+    getMarkerAgeFromClient,
+    onChangeParameters,
+    updateDraftMarkerAgeFromClient,
+  ]);
+
+  useEffect(() => {
+    if (!isTargetDragging) {
+      return;
+    }
+
+    const handlePointerMove = (event: globalThis.PointerEvent) => {
+      if (activeTargetDragPointerIdRef.current !== event.pointerId) {
+        return;
+      }
+
+      updateDraftTargetIncomeFromClient(event.clientX, event.clientY);
+    };
+
+    const finishDrag = (event: globalThis.PointerEvent, commit: boolean) => {
+      if (activeTargetDragPointerIdRef.current !== event.pointerId) {
+        return;
+      }
+
+      const committedValue = getTargetIncomeFromClient(
+        event.clientX,
+        event.clientY
+      );
+
+      activeTargetDragPointerIdRef.current = null;
+      setIsTargetDragging(false);
+      setDraftTargetIncomeAnnual(null);
+
+      if (commit) {
+        setPendingTargetIncomeAnnual(committedValue);
+        onChangeParameters({ targetIncomeAnnual: committedValue });
+      }
+    };
+
+    const handlePointerUp = (event: globalThis.PointerEvent) =>
+      finishDrag(event, true);
+    const handlePointerCancel = (event: globalThis.PointerEvent) =>
+      finishDrag(event, false);
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerCancel);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerCancel);
+    };
+  }, [
+    getTargetIncomeFromClient,
+    isTargetDragging,
+    onChangeParameters,
+    updateDraftTargetIncomeFromClient,
+  ]);
 
   return (
     <section
@@ -978,11 +1252,13 @@ export function RetirementIncomeBridgeChart({
 
       <div className="bridge-chart-shell" ref={shellRef}>
         <svg
+          ref={svgRef}
           className="bridge-chart-svg"
           width={dimensions.width}
           height={dimensions.height}
           viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
           focusable="false"
+          onContextMenu={(event) => event.preventDefault()}
         >
           <defs>
             <pattern
@@ -1134,6 +1410,14 @@ export function RetirementIncomeBridgeChart({
                     finishMarkerPointerDrag(event, marker.key, false)
                   }
                 >
+                  <rect
+                    x={x - 22}
+                    y={marker.handleY - HANDLE_LABEL_HEIGHT / 2 - 10}
+                    width={44}
+                    height={HANDLE_LABEL_HEIGHT + 20}
+                    fill="transparent"
+                    aria-hidden="true"
+                  />
                   <line
                     x1={x}
                     x2={x}
@@ -1476,7 +1760,8 @@ function BridgeMetricControl({
 function createVisibleChartData(
   data: RetirementIncomePoint[],
   minAge: number,
-  maxAge: number
+  maxAge: number,
+  milestoneBoundaries: Array<{ age: number; key: MilestoneKey }>
 ) {
   if (data.length === 0) {
     return [];
@@ -1488,6 +1773,23 @@ function createVisibleChartData(
   const startPoint = createChartBoundaryPoint(data, minAge);
   const endPoint = createChartBoundaryPoint(data, maxAge);
   const nextData = [...visiblePoints];
+  const visibleMilestoneBoundaries = milestoneBoundaries.filter(
+    (boundary) => boundary.age >= minAge && boundary.age <= maxAge
+  );
+
+  visibleMilestoneBoundaries.forEach((boundary) => {
+    const boundaryPoint = createMilestoneBoundaryPoint(data, boundary);
+    const existingPointIndex = nextData.findIndex((point) =>
+      areAgesEquivalent(point.age, boundary.age)
+    );
+
+    if (existingPointIndex === -1) {
+      nextData.push(boundaryPoint);
+      return;
+    }
+
+    nextData[existingPointIndex] = boundaryPoint;
+  });
 
   if (!nextData.some((point) => areAgesEquivalent(point.age, minAge))) {
     nextData.unshift(startPoint);
@@ -1509,9 +1811,11 @@ function createActiveMilestoneAges({
   isaAccessAge,
   isaUseByAge,
   isaUseByAgeEnabled,
+  nuvosStartAge,
   partialRetirementEnabled,
   partialRetirementStartAge,
   retirementAge,
+  showNuvos,
   showIsa,
   showSipp,
   showStatePension,
@@ -1526,9 +1830,11 @@ function createActiveMilestoneAges({
   | "isaAccessAge"
   | "isaUseByAge"
   | "isaUseByAgeEnabled"
+  | "nuvosStartAge"
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
   | "retirementAge"
+  | "showNuvos"
   | "showIsa"
   | "showSipp"
   | "showStatePension"
@@ -1546,7 +1852,81 @@ function createActiveMilestoneAges({
     showIsa && isaUseByAgeEnabled ? isaUseByAge : null,
     partialRetirementEnabled ? partialRetirementStartAge : null,
     alphaStartAge,
+    showNuvos ? nuvosStartAge : null,
     showStatePension ? statePensionAge : null,
+  ];
+}
+
+function createActiveMilestoneBoundaries(
+  input: Pick<
+    RetirementIncomeBridgeParameters,
+    | "alphaLeaveAge"
+    | "alphaStartAge"
+    | "isaAccessAge"
+    | "isaUseByAge"
+    | "isaUseByAgeEnabled"
+    | "nuvosStartAge"
+    | "partialRetirementEnabled"
+    | "partialRetirementStartAge"
+    | "retirementAge"
+    | "showNuvos"
+    | "showIsa"
+    | "showSipp"
+    | "showStatePension"
+    | "sippAccessAge"
+    | "sippUseByAge"
+    | "sippUseByAgeEnabled"
+    | "statePensionAge"
+  >
+) {
+  const {
+    alphaLeaveAge,
+    alphaStartAge,
+    isaAccessAge,
+    isaUseByAge,
+    isaUseByAgeEnabled,
+    nuvosStartAge,
+    partialRetirementEnabled,
+    partialRetirementStartAge,
+    retirementAge,
+    showNuvos,
+    showIsa,
+    showSipp,
+    showStatePension,
+    sippAccessAge,
+    sippUseByAge,
+    sippUseByAgeEnabled,
+    statePensionAge,
+  } = input;
+
+  return [
+    { key: "retirementAge" as const, age: retirementAge },
+    { key: "alphaLeaveAge" as const, age: alphaLeaveAge },
+    ...(showSipp
+      ? [{ key: "sippAccessAge" as const, age: sippAccessAge }]
+      : []),
+    ...(showSipp && sippUseByAgeEnabled
+      ? [{ key: "sippUseByAge" as const, age: sippUseByAge }]
+      : []),
+    ...(showIsa ? [{ key: "isaAccessAge" as const, age: isaAccessAge }] : []),
+    ...(showIsa && isaUseByAgeEnabled
+      ? [{ key: "isaUseByAge" as const, age: isaUseByAge }]
+      : []),
+    ...(partialRetirementEnabled
+      ? [
+          {
+            key: "partialRetirementStartAge" as const,
+            age: partialRetirementStartAge,
+          },
+        ]
+      : []),
+    { key: "alphaStartAge" as const, age: alphaStartAge },
+    ...(showNuvos
+      ? [{ key: "nuvosStartAge" as const, age: nuvosStartAge }]
+      : []),
+    ...(showStatePension
+      ? [{ key: "statePensionAge" as const, age: statePensionAge }]
+      : []),
   ];
 }
 
@@ -1571,19 +1951,19 @@ function filterFiniteAges(ages: Array<number | null>) {
 }
 
 function createBuildUpWindow({
+  buildUpEndAge,
   chartMaxAge,
   dataMinAge,
   earliestMilestoneAge,
-  retirementAge,
 }: {
+  buildUpEndAge: number;
   chartMaxAge: number;
   dataMinAge: number | undefined;
   earliestMilestoneAge: number | undefined;
-  retirementAge: number;
 }) {
   const defaultVisibleMinAge = Math.max(
-    dataMinAge ?? retirementAge - DEFAULT_BUILD_UP_WINDOW_YEARS,
-    retirementAge - DEFAULT_BUILD_UP_WINDOW_YEARS
+    dataMinAge ?? buildUpEndAge - DEFAULT_BUILD_UP_WINDOW_YEARS,
+    buildUpEndAge - DEFAULT_BUILD_UP_WINDOW_YEARS
   );
   const xDomainMin = Math.min(
     earliestMilestoneAge ?? defaultVisibleMinAge,
@@ -1598,6 +1978,25 @@ function createBuildUpWindow({
   };
 }
 
+function createBuildUpEndAge({
+  alphaLeaveAge,
+  partialRetirementEnabled,
+  partialRetirementStartAge,
+  retirementAge,
+}: Pick<
+  RetirementIncomeBridgeParameters,
+  | "alphaLeaveAge"
+  | "partialRetirementEnabled"
+  | "partialRetirementStartAge"
+  | "retirementAge"
+>) {
+  return Math.min(
+    retirementAge,
+    alphaLeaveAge,
+    partialRetirementEnabled ? partialRetirementStartAge : retirementAge
+  );
+}
+
 function createChartBoundaryPoint(data: RetirementIncomePoint[], age: number) {
   const previousPoint = findPreviousChartPoint(data, age);
   const nextPoint = data.find((point) => point.age >= age);
@@ -1606,6 +2005,74 @@ function createChartBoundaryPoint(data: RetirementIncomePoint[], age: number) {
     ...(previousPoint ?? nextPoint ?? data[0]),
     age,
   };
+}
+
+function createMilestoneBoundaryPoint(
+  data: RetirementIncomePoint[],
+  boundary: { age: number; key: MilestoneKey }
+) {
+  const { age } = boundary;
+  const fallbackNextPoint = data.find((point) => point.age > age);
+  const nextPoint =
+    findBoundaryTransitionPoint(data, boundary) ??
+    fallbackNextPoint ??
+    data.find((point) => point.age >= age);
+  const previousPoint = findPreviousChartPoint(data, age);
+
+  return {
+    ...(nextPoint ?? previousPoint ?? data[0]),
+    age,
+  };
+}
+
+function findBoundaryTransitionPoint(
+  data: RetirementIncomePoint[],
+  boundary: { age: number; key: MilestoneKey }
+) {
+  const matcher = getMilestoneTransitionMatcher(boundary.key);
+
+  if (!matcher) {
+    return undefined;
+  }
+
+  return data.find((point) => point.age > boundary.age && matcher(point));
+}
+
+function getMilestoneTransitionMatcher(key: MilestoneKey) {
+  if (key === "isaAccessAge") {
+    return (point: RetirementIncomePoint) => point.isaIncomeAnnual > 0;
+  }
+
+  if (key === "isaUseByAge") {
+    return (point: RetirementIncomePoint) => point.isaIncomeAnnual <= 0;
+  }
+
+  if (key === "sippAccessAge") {
+    return (point: RetirementIncomePoint) => point.sippIncomeAnnual > 0;
+  }
+
+  if (key === "sippUseByAge") {
+    return (point: RetirementIncomePoint) => point.sippIncomeAnnual <= 0;
+  }
+
+  if (key === "alphaStartAge") {
+    return (point: RetirementIncomePoint) => point.alphaIncomeAnnual > 0;
+  }
+
+  if (key === "nuvosStartAge") {
+    return (point: RetirementIncomePoint) => point.nuvosIncomeAnnual > 0;
+  }
+
+  if (key === "statePensionAge") {
+    return (point: RetirementIncomePoint) => point.statePensionIncomeAnnual > 0;
+  }
+
+  if (key === "partialRetirementStartAge") {
+    return (point: RetirementIncomePoint) =>
+      point.partialRetirementIncomeAnnual > 0;
+  }
+
+  return undefined;
 }
 
 function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {

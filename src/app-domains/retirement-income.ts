@@ -181,42 +181,92 @@ function insertChartTransitionPoints(
   points: RetirementIncomePoint[],
   settings: PensionSettings
 ) {
-  const transitionDates = [
-    addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge),
-    addYearsToIsoDate(settings.dateOfBirth, settings.isaDrawAge),
+  type TransitionBoundary = {
+    date: string;
+    age: number;
+  };
+
+  const transitionPoints: TransitionBoundary[] = [
+    {
+      date: addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge),
+      age: settings.requirementAge,
+    },
+    settings.showIsa
+      ? {
+          date: addYearsToIsoDate(settings.dateOfBirth, settings.isaDrawAge),
+          age: settings.isaDrawAge,
+        }
+      : null,
     settings.showIsa && settings.isaWithdrawalStrategy === "use_by_age"
-      ? addYearsToIsoDate(settings.dateOfBirth, settings.isaWithdrawalTargetAge)
-      : "",
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.isaWithdrawalTargetAge
+          ),
+          age: settings.isaWithdrawalTargetAge,
+        }
+      : null,
     settings.showSipp
-      ? addYearsToIsoDate(settings.dateOfBirth, settings.sippDrawAge)
-      : "",
+      ? {
+          date: addYearsToIsoDate(settings.dateOfBirth, settings.sippDrawAge),
+          age: settings.sippDrawAge,
+        }
+      : null,
     settings.showSipp && settings.sippWithdrawalStrategy === "use_by_age"
-      ? addYearsToIsoDate(
-          settings.dateOfBirth,
-          settings.sippWithdrawalTargetAge
-        )
-      : "",
-    addYearsToIsoDate(settings.dateOfBirth, settings.alphaPensionDrawAge),
-    settings.showStatePension ? settings.statePensionDrawDate : "",
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.sippWithdrawalTargetAge
+          ),
+          age: settings.sippWithdrawalTargetAge,
+        }
+      : null,
+    {
+      date: addYearsToIsoDate(
+        settings.dateOfBirth,
+        settings.alphaPensionDrawAge
+      ),
+      age: settings.alphaPensionDrawAge,
+    },
+    settings.showNuvos
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.nuvosPensionDrawAge
+          ),
+          age: settings.nuvosPensionDrawAge,
+        }
+      : null,
+    settings.showStatePension
+      ? {
+          date: settings.statePensionDrawDate,
+          age: calculateStatePensionDrawAge(
+            settings.dateOfBirth,
+            settings.statePensionDrawDate
+          ),
+        }
+      : null,
     settings.partialRetirementEnabled
-      ? addYearsToIsoDate(
-          settings.dateOfBirth,
-          settings.partialRetirementStartAge
-        )
-      : "",
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.partialRetirementStartAge
+          ),
+          age: settings.partialRetirementStartAge,
+        }
+      : null,
   ]
-    .filter(Boolean)
-    .filter((date, index, dates) => dates.indexOf(date) === index)
-    .sort();
+    .filter((point): point is TransitionBoundary => Boolean(point))
+    .filter(
+      (point, index, points) =>
+        points.findIndex((candidate) => candidate.date === point.date) === index
+    )
+    .sort((left, right) => left.date.localeCompare(right.date));
 
   let nextPoints = [...points];
 
-  transitionDates.forEach((transitionDate) => {
-    nextPoints = insertChartTransitionPoint(
-      nextPoints,
-      settings,
-      transitionDate
-    );
+  transitionPoints.forEach((transitionPoint) => {
+    nextPoints = insertChartTransitionPoint(nextPoints, transitionPoint);
   });
 
   return nextPoints;
@@ -224,19 +274,15 @@ function insertChartTransitionPoints(
 
 function insertChartTransitionPoint(
   points: RetirementIncomePoint[],
-  settings: PensionSettings,
-  transitionDate: string
+  transitionBoundary: { date: string; age: number }
 ) {
-  if (
-    points.length === 0 ||
-    points.some((point) => point.date === transitionDate)
-  ) {
+  const { date, age } = transitionBoundary;
+
+  if (points.length === 0 || points.some((point) => point.date === date)) {
     return points;
   }
 
-  const insertionIndex = points.findIndex(
-    (point) => point.date > transitionDate
-  );
+  const insertionIndex = points.findIndex((point) => point.date > date);
 
   if (insertionIndex <= 0) {
     return points;
@@ -248,15 +294,15 @@ function insertChartTransitionPoint(
     return points;
   }
 
-  const transitionPoint: RetirementIncomePoint = {
+  const insertedPoint: RetirementIncomePoint = {
     ...nextPoint,
-    date: transitionDate,
-    age: calculateDateAge(settings.dateOfBirth, transitionDate),
+    date,
+    age,
   };
 
   return [
     ...points.slice(0, insertionIndex),
-    transitionPoint,
+    insertedPoint,
     ...points.slice(insertionIndex),
   ];
 }
@@ -296,6 +342,7 @@ export function createBridgeChartParameters(
     sippUseByAge: settings.sippWithdrawalTargetAge,
     isaAccessAge: settings.isaDrawAge,
     alphaStartAge: settings.alphaPensionDrawAge,
+    nuvosStartAge: settings.nuvosPensionDrawAge,
     isaUseByAge: settings.isaWithdrawalTargetAge,
     partialRetirementStartAge: settings.partialRetirementStartAge,
     partialRetirementWorkPercent: settings.partialRetirementWorkPercent,
@@ -357,7 +404,14 @@ export function createBridgeChartLimits(
       ),
       step: 0.25,
     },
-    alphaLeaveAge: { min: currentPlanningAge, max: ageUpperLimit, step: 0.25 },
+    alphaLeaveAge: {
+      min: currentPlanningAge,
+      max: Math.max(
+        currentPlanningAge,
+        Math.min(ageUpperLimit, settings.requirementAge)
+      ),
+      step: 0.25,
+    },
     sippAccessAge: {
       min: Math.max(settings.requirementAge, minimumSippAccessAge),
       max: ageUpperLimit,
@@ -380,7 +434,33 @@ export function createBridgeChartLimits(
         settings.alphaPensionLeaveAge,
         minimumAlphaAccessAge
       ),
-      max: ageUpperLimit,
+      max: Math.max(
+        Math.max(
+          currentPlanningAge,
+          settings.requirementAge,
+          settings.alphaPensionLeaveAge,
+          minimumAlphaAccessAge
+        ),
+        70
+      ),
+      step: 0.25,
+    },
+    nuvosStartAge: {
+      min: Math.max(
+        currentPlanningAge,
+        settings.requirementAge,
+        settings.nuvosPensionLeaveAge,
+        minimumAlphaAccessAge
+      ),
+      max: Math.max(
+        Math.max(
+          currentPlanningAge,
+          settings.requirementAge,
+          settings.nuvosPensionLeaveAge,
+          minimumAlphaAccessAge
+        ),
+        70
+      ),
       step: 0.25,
     },
     isaUseByAge: {

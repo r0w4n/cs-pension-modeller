@@ -47,7 +47,7 @@ export function applyBridgeChartParameterPatch(
   applyAlphaLeaveAgePatch(next, patch, context, statePensionAge);
   applyAccessAgePatch(next, patch, context, statePensionAge);
   applyUseByAgePatch(next, patch);
-  reconcileChartState(next, context, statePensionAge);
+  reconcileChartState(next, context);
 
   return next;
 }
@@ -180,6 +180,13 @@ function applyRetirementAgePatch(
   next.requirementAge = normalizeSetting("requirementAge", retirementAge);
   next.isaDrawAge = normalizeSetting("isaDrawAge", retirementAge);
 
+  if (next.alphaPensionLeaveAge > next.requirementAge) {
+    next.alphaPensionLeaveAge = normalizeSetting(
+      "alphaPensionLeaveAge",
+      next.requirementAge
+    );
+  }
+
   if (
     next.partialRetirementEnabled &&
     next.partialRetirementStartAge >= next.requirementAge
@@ -218,7 +225,7 @@ function applyAlphaLeaveAgePatch(
   const alphaLeaveAge = clampNumber(
     patch.alphaLeaveAge,
     context.currentPlanningAge,
-    Math.min(70, statePensionAge)
+    Math.min(70, statePensionAge, next.requirementAge)
   );
   next.alphaPensionLeaveAge = normalizeSetting(
     "alphaPensionLeaveAge",
@@ -255,18 +262,36 @@ function applyAccessAgePatch(
   }
 
   if (patch.alphaStartAge !== undefined) {
+    const alphaStartAgeMin = Math.max(
+      next.alphaPensionLeaveAge,
+      context.minimumAlphaAccessAge,
+      next.requirementAge
+    );
     const alphaStartAge = clampNumber(
       patch.alphaStartAge,
-      Math.max(
-        next.alphaPensionLeaveAge,
-        context.minimumAlphaAccessAge,
-        next.requirementAge
-      ),
-      Math.min(70, statePensionAge)
+      alphaStartAgeMin,
+      Math.max(alphaStartAgeMin, 70)
     );
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
       alphaStartAge,
       next.dateOfBirth
+    );
+  }
+
+  if (patch.nuvosStartAge !== undefined) {
+    const nuvosStartAgeMin = Math.max(
+      next.nuvosPensionLeaveAge,
+      context.minimumAlphaAccessAge,
+      next.requirementAge
+    );
+    const nuvosStartAge = clampNumber(
+      patch.nuvosStartAge,
+      nuvosStartAgeMin,
+      Math.max(nuvosStartAgeMin, 70)
+    );
+    next.nuvosPensionDrawAge = normalizeSetting(
+      "nuvosPensionDrawAge",
+      nuvosStartAge
     );
   }
 }
@@ -300,8 +325,7 @@ function applyUseByAgePatch(
 
 function reconcileChartState(
   next: PensionSettings,
-  context: ChartStateContext,
-  statePensionAge: number
+  context: ChartStateContext
 ) {
   if (
     next.showSipp &&
@@ -320,13 +344,6 @@ function reconcileChartState(
   if (next.alphaPensionLeaveAge > next.alphaPensionDrawAge) {
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
       next.alphaPensionLeaveAge,
-      next.dateOfBirth
-    );
-  }
-
-  if (next.alphaPensionDrawAge > statePensionAge) {
-    next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
-      Math.min(70, statePensionAge),
       next.dateOfBirth
     );
   }

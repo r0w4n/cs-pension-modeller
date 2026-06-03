@@ -802,6 +802,9 @@ h3 {
   width: 100%;
   height: auto;
   overflow: visible;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .bridge-build-up-band {
@@ -845,6 +848,7 @@ h3 {
   cursor: ns-resize;
   outline: none;
   touch-action: none;
+  -webkit-touch-callout: none;
 }
 
 .bridge-target-line-hitbox:focus-visible {
@@ -861,6 +865,9 @@ h3 {
   cursor: ew-resize;
   outline: none;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .bridge-milestone--invalid line {

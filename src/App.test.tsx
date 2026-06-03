@@ -664,7 +664,7 @@ describe("App settings form", () => {
     fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
       key: "ArrowLeft",
     });
-    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 68"), {
+    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 67.75"), {
       key: "ArrowLeft",
     });
     fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
@@ -675,7 +675,9 @@ describe("App settings form", () => {
     });
 
     expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
-    expect(screen.getByLabelText("Leave Alpha, age 67.75")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/Leave Alpha, age 67\.(5|75)/)
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Start Alpha, age 67.75")).toBeInTheDocument();
     expect(screen.getByLabelText("Start State, age 68.25")).toBeInTheDocument();
     expect(
@@ -1754,6 +1756,22 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows a Start Nuvos chart marker when nuvos is enabled", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          showNuvos: true,
+          nuvosPensionDrawAge: 68,
+        })
+      )
+    );
+
+    renderAcknowledgedExpertResult();
+
+    expect(screen.getByLabelText(/Start Nuvos, age \d+/)).toBeInTheDocument();
+  });
+
   it("can apply projected State Pension future growth", () => {
     renderAcknowledgedApp();
 
@@ -1835,6 +1853,69 @@ describe("App settings form", () => {
     ).toEqual(
       expect.objectContaining({
         requirementAge: 68,
+      })
+    );
+  });
+
+  it("keeps the leave alpha marker from moving past retirement", () => {
+    renderAcknowledgedExpertResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 68"), {
+      key: "ArrowRight",
+    });
+
+    expect(
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
+    ).toEqual(
+      expect.objectContaining({
+        alphaPensionLeaveAge: 68,
+      })
+    );
+  });
+
+  it("lets the start alpha marker move beyond state pension age", () => {
+    renderAcknowledgedExpertResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
+      key: "ArrowRight",
+    });
+
+    expect(screen.getByLabelText("Start Alpha, age 68.25")).toBeInTheDocument();
+    expect(
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
+    ).toEqual(
+      expect.objectContaining({
+        alphaPensionDrawAge: 68.25,
+      })
+    );
+  });
+
+  it("pulls leave alpha with retirement when retirement moves earlier", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          requirementAge: 68,
+          alphaPensionLeaveAge: 69,
+          alphaPensionDrawAge: 69,
+        })
+      )
+    );
+
+    renderAcknowledgedExpertResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+      key: "ArrowLeft",
+    });
+
+    expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
+    expect(screen.getByLabelText("Leave Alpha, age 67.75")).toBeInTheDocument();
+    expect(
+      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
+    ).toEqual(
+      expect.objectContaining({
+        requirementAge: 67.75,
+        alphaPensionLeaveAge: 67.75,
       })
     );
   });

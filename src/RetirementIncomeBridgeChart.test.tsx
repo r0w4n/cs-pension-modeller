@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import {
   RetirementIncomeBridgeChart,
   type RetirementIncomeBridgeChartProps,
@@ -56,6 +56,7 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   sippUseByAge: 60,
   isaAccessAge: 60,
   alphaStartAge: 60,
+  nuvosStartAge: 60,
   isaUseByAge: 60,
   partialRetirementStartAge: 55,
   partialRetirementWorkPercent: 50,
@@ -78,6 +79,7 @@ const baseProps: RetirementIncomeBridgeChartProps = {
     sippUseByAge: { min: 57.25, max: 80, step: 0.25 },
     isaAccessAge: { min: 40, max: 67, step: 0.25 },
     alphaStartAge: { min: 60, max: 67, step: 0.25 },
+    nuvosStartAge: { min: 60, max: 67, step: 0.25 },
     isaUseByAge: { min: 60.25, max: 80, step: 0.25 },
     partialRetirementStartAge: { min: 40, max: 59.75, step: 0.25 },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
@@ -88,6 +90,47 @@ const baseProps: RetirementIncomeBridgeChartProps = {
 
 function renderChart(props: Partial<RetirementIncomeBridgeChartProps> = {}) {
   return render(<RetirementIncomeBridgeChart {...baseProps} {...props} />);
+}
+
+function mockChartResize(width: number, height = 420) {
+  class MockResizeObserver implements ResizeObserver {
+    constructor(private readonly callback: ResizeObserverCallback) {}
+
+    observe() {
+      this.callback(
+        [
+          {
+            borderBoxSize: [],
+            contentBoxSize: [],
+            contentRect: {
+              bottom: height,
+              height,
+              left: 0,
+              right: width,
+              top: 0,
+              width,
+              x: 0,
+              y: 0,
+              toJSON: () => "",
+            },
+            devicePixelContentBoxSize: [],
+            target: document.body,
+          },
+        ],
+        this
+      );
+    }
+
+    disconnect() {}
+
+    unobserve() {}
+
+    takeRecords() {
+      return [];
+    }
+  }
+
+  vi.stubGlobal("ResizeObserver", MockResizeObserver);
 }
 
 function getTargetLinePath() {
@@ -114,7 +157,67 @@ function getBuildUpBandWidth() {
   return Number(width);
 }
 
+function getMilestoneHitAreas() {
+  return [
+    ...document.querySelectorAll(
+      ".bridge-milestone > rect[aria-hidden='true']"
+    ),
+  ].map((node) => ({
+    height: Number(node.getAttribute("height")),
+    y: Number(node.getAttribute("y")),
+  }));
+}
+
+function getMilestoneLineX(label: RegExp | string) {
+  return Number(
+    screen
+      .getByRole("slider", { name: label })
+      .querySelector("line")
+      ?.getAttribute("x1")
+  );
+}
+
+function getIncomeAreaPath(strokeColour: string) {
+  return (
+    [...document.querySelectorAll("path")]
+      .find((node) => node.getAttribute("stroke") === strokeColour)
+      ?.getAttribute("d") ?? ""
+  );
+}
+
+function expectPathToContainX(path: string, x: number) {
+  const xCoordinates = [...path.matchAll(/-?\d+(?:\.\d+)?/g)]
+    .map((match, index) => ({ index, value: Number(match[0]) }))
+    .filter(({ index }) => index % 2 === 0)
+    .map(({ value }) => value);
+
+  expect(xCoordinates.some((value) => Math.abs(value - x) < 0.01)).toBe(true);
+}
+
+function getAreaActiveXRange(path: string) {
+  const coordinates = [...path.matchAll(/-?\d+(?:\.\d+)?/g)].map((match) =>
+    Number(match[0])
+  );
+  const points = [];
+
+  for (let index = 0; index < coordinates.length; index += 2) {
+    points.push({ x: coordinates[index], y: coordinates[index + 1] });
+  }
+
+  const baselineY = Math.max(...points.map((point) => point.y));
+  const activePoints = points.filter((point) => point.y < baselineY - 0.01);
+
+  return {
+    startX: activePoints[0]?.x ?? 0,
+    endX: activePoints.at(-1)?.x ?? 0,
+  };
+}
+
 describe("RetirementIncomeBridgeChart", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("starts the target income line at the y axis", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 
@@ -192,7 +295,267 @@ describe("RetirementIncomeBridgeChart", () => {
     renderChart();
 
     expect(screen.queryByLabelText("Build-up shown")).not.toBeInTheDocument();
-    expect(getXAxisLabels()[0]).toBe("56");
+    expect(getXAxisLabels()[0]).toBe("55");
     expect(getBuildUpBandWidth()).toBeGreaterThan(0);
+  });
+
+  it("moves the build-up window earlier when leave alpha is dragged earlier", () => {
+    const view = renderChart({
+      alphaLeaveAge: 59,
+      retirementAge: 60,
+    });
+    const laterFirstLabel = Number(getXAxisLabels()[0]);
+
+    view.unmount();
+
+    renderChart({
+      alphaLeaveAge: 55,
+      retirementAge: 60,
+    });
+
+    expect(Number(getXAxisLabels()[0])).toBeLessThan(laterFirstLabel);
+    expect(getBuildUpBandWidth()).toBeGreaterThan(0);
+  });
+
+  it("keeps the build-up shading running to retirement even when leave alpha is earlier", () => {
+    renderChart({
+      alphaLeaveAge: 55,
+      retirementAge: 60,
+    });
+
+    expect(getBuildUpBandWidth()).toBeCloseTo(
+      getMilestoneLineX(/Retire, age 60/i),
+      5
+    );
+  });
+
+  it("updates a milestone from window pointer events after touch drag starts", () => {
+    mockChartResize(360);
+
+    const onChangeParameters = vi.fn();
+    renderChart({ onChangeParameters });
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 420,
+        height: 420,
+        left: 0,
+        right: 360,
+        top: 0,
+        width: 360,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const retirementMarker = screen.getByRole("slider", {
+      name: /Retire, age 60/i,
+    });
+
+    fireEvent.pointerDown(retirementMarker, {
+      button: 0,
+      clientX: 109,
+      clientY: 150,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "touch",
+    });
+    fireEvent.pointerMove(window, {
+      clientX: 97,
+      clientY: 150,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(window, {
+      clientX: 97,
+      clientY: 150,
+      pointerId: 1,
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
+  });
+
+  it("does not let leave alpha move past retirement during chart interaction", () => {
+    const onChangeParameters = vi.fn();
+
+    renderChart({
+      alphaLeaveAge: 60,
+      retirementAge: 60,
+      limits: {
+        ...baseProps.limits,
+        alphaLeaveAge: { min: 40, max: 60, step: 0.25 },
+      },
+      onChangeParameters,
+    });
+
+    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 60"), {
+      key: "ArrowRight",
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ alphaLeaveAge: 60 });
+  });
+
+  it("gives aligned milestones separate hit areas around each handle", () => {
+    renderChart({
+      alphaLeaveAge: 60,
+      alphaStartAge: 60,
+      nuvosStartAge: 60,
+      retirementAge: 60,
+      statePensionAge: 60,
+      showNuvos: true,
+    });
+
+    const hitAreas = getMilestoneHitAreas();
+
+    expect(hitAreas).toHaveLength(5);
+    expect(new Set(hitAreas.map((area) => area.y)).size).toBeGreaterThan(1);
+    expect(hitAreas.every((area) => area.height < 200)).toBe(true);
+  });
+
+  it("renders a Start Nuvos milestone when nuvos is enabled", () => {
+    renderChart({
+      showNuvos: true,
+      nuvosStartAge: 66,
+    });
+
+    expect(
+      screen.getByRole("slider", { name: "Start Nuvos, age 66" })
+    ).toBeInTheDocument();
+  });
+
+  it("aligns the ISA area boundaries with the ISA markers", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2045-06-01",
+          age: 58,
+        },
+        {
+          ...basePoint,
+          date: "2046-09-01",
+          age: 59.25,
+        },
+        {
+          ...basePoint,
+          date: "2046-10-01",
+          age: 59 + 4 / 12,
+          isaIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "isa-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2052-01-01",
+          age: 64 + 7 / 12,
+          isaIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "isa-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2053-03-01",
+          age: 65.75,
+          isaIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "isa-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2053-06-01",
+          age: 66,
+          phase: "alpha-only",
+        },
+      ],
+      showIsa: true,
+      isaAccessAge: 59.25,
+      isaUseByAge: 65.75,
+      isaUseByAgeEnabled: true,
+      showStatePension: false,
+    });
+
+    const isaPath = getIncomeAreaPath("#1f8ee6");
+    const isaStartX = getMilestoneLineX(/ISA start, age 59.25/i);
+    const isaUseByX = getMilestoneLineX(/ISA stop, age 65.75/i);
+    const isaActiveRange = getAreaActiveXRange(isaPath);
+
+    expectPathToContainX(isaPath, isaStartX);
+    expectPathToContainX(isaPath, isaUseByX);
+    expect(isaActiveRange.startX).toBeCloseTo(isaStartX, 2);
+    expect(isaActiveRange.endX).toBeCloseTo(isaUseByX, 2);
+  });
+
+  it("aligns the SIPP area boundaries with the SIPP markers", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2045-06-01",
+          age: 58,
+        },
+        {
+          ...basePoint,
+          date: "2046-09-01",
+          age: 59.25,
+        },
+        {
+          ...basePoint,
+          date: "2046-10-01",
+          age: 59 + 4 / 12,
+          sippIncomeAnnual: 15000,
+          totalIncomeAnnual: 15000,
+          assessedIncomeAnnual: 15000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2053-01-01",
+          age: 65 + 7 / 12,
+          sippIncomeAnnual: 15000,
+          totalIncomeAnnual: 15000,
+          assessedIncomeAnnual: 15000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2054-03-01",
+          age: 66.75,
+          sippIncomeAnnual: 15000,
+          totalIncomeAnnual: 15000,
+          assessedIncomeAnnual: 15000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2054-06-01",
+          age: 67,
+          phase: "alpha-only",
+        },
+      ],
+      showSipp: true,
+      sippAccessAge: 59.25,
+      sippUseByAge: 66.75,
+      sippUseByAgeEnabled: true,
+      showStatePension: false,
+    });
+
+    const sippPath = getIncomeAreaPath("#148c55");
+    const sippStartX = getMilestoneLineX(/SIPP start, age 59.25/i);
+    const sippUseByX = getMilestoneLineX(/SIPP stop, age 66.75/i);
+    const sippActiveRange = getAreaActiveXRange(sippPath);
+
+    expectPathToContainX(sippPath, sippStartX);
+    expectPathToContainX(sippPath, sippUseByX);
+    expect(sippActiveRange.startX).toBeCloseTo(sippStartX, 2);
+    expect(sippActiveRange.endX).toBeCloseTo(sippUseByX, 2);
   });
 });

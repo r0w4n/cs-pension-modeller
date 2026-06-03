@@ -2663,6 +2663,57 @@ describe("App settings form", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("does not flag monthly added pension at age 68 when only the birth month and year are known", async () => {
+    renderAcknowledgedApp();
+
+    openJourneyStep(/Personal details/i);
+
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
+      target: { value: "06" },
+    });
+    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
+      target: { value: "1987" },
+    });
+
+    openJourneyStep(/Alpha pension details/i);
+
+    fireEvent.change(
+      screen.getByLabelText("Added Alpha Pension (£ per month)"),
+      {
+        target: { value: "150" },
+      }
+    );
+    fireEvent.blur(screen.getByLabelText("Added Alpha Pension (£ per month)"));
+
+    fireEvent.change(
+      screen.getByLabelText("Planned Alpha Pension Draw Age exact value"),
+      {
+        target: { value: "68" },
+      }
+    );
+    fireEvent.blur(
+      screen.getByLabelText("Planned Alpha Pension Draw Age exact value")
+    );
+
+    fireEvent.change(
+      screen.getByLabelText("Age You Leave Alpha Scheme exact value"),
+      {
+        target: { value: "68" },
+      }
+    );
+    fireEvent.blur(
+      screen.getByLabelText("Age You Leave Alpha Scheme exact value")
+    );
+
+    await screen.findByLabelText("Added Alpha Pension (£ per month)");
+
+    expect(
+      screen.queryByText(
+        "Monthly added pension purchases must stop before age 68 because the factor table does not include age 68 or later."
+      )
+    ).not.toBeInTheDocument();
+  });
+
   it("shows inline validation when the ABS year is after the calculation start date", async () => {
     renderAcknowledgedApp();
 

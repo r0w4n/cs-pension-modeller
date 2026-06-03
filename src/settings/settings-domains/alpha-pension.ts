@@ -8,6 +8,7 @@ import {
   type PensionValidationIssue,
 } from "../settings-types";
 import {
+  addMonthsToIsoDate,
   addDaysToIsoDate,
   addYearsToIsoDate,
   getTodayIsoDate,
@@ -58,13 +59,22 @@ export function normalizeAlphaAbsYearValue(value: string, fallback: string) {
 }
 
 export function getLatestAlphaAddedPensionPurchaseDate(dateOfBirth: string) {
-  return addDaysToIsoDate(
-    addYearsToIsoDate(
-      dateOfBirth,
-      FIRST_UNSUPPORTED_ADDED_PENSION_PURCHASE_AGE
-    ),
-    -1
+  const firstUnsupportedPurchaseDate = addYearsToIsoDate(
+    dateOfBirth,
+    FIRST_UNSUPPORTED_ADDED_PENSION_PURCHASE_AGE
   );
+
+  // Birth month/year entries are stored as the first of the month. For this
+  // upper-age boundary, keep the whole selected month available so we do not
+  // reject valid scenarios just because the exact birthday is unknown.
+  if (dateOfBirth.endsWith("-01")) {
+    return addDaysToIsoDate(
+      addMonthsToIsoDate(firstUnsupportedPurchaseDate, 1),
+      -1
+    );
+  }
+
+  return addDaysToIsoDate(firstUnsupportedPurchaseDate, -1);
 }
 
 function createAddedPensionLumpSumId() {

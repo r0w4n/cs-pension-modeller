@@ -450,6 +450,9 @@ describe("settings unit tests", () => {
     expect(getLatestAlphaAddedPensionPurchaseDate("1987-06-15")).toBe(
       "2055-06-14"
     );
+    expect(getLatestAlphaAddedPensionPurchaseDate("1987-06-01")).toBe(
+      "2055-06-30"
+    );
 
     const issues = validateSettings({
       ...defaultSettings,
@@ -481,6 +484,24 @@ describe("settings unit tests", () => {
           field: "alphaAddedPensionLumpSums",
           message:
             "Alpha lump sums must fall between the last Annual Benefits Statement and the supported added pension factor ages.",
+        }),
+      ])
+    );
+  });
+
+  it("does not reject monthly added pension at age 68 when only birth month is known", () => {
+    const issues = validateSettings({
+      ...defaultSettings,
+      dateOfBirth: "1987-06-01",
+      alphaAddedPensionMonthly: 150,
+      alphaPensionDrawAge: 68,
+      alphaPensionLeaveAge: 68,
+    });
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "alphaAddedPensionMonthly",
         }),
       ])
     );

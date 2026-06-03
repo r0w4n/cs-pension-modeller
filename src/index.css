@@ -6,6 +6,7 @@
   background:
     radial-gradient(circle at top, rgba(17, 138, 178, 0.2), transparent 36%),
     linear-gradient(180deg, #f6fbff 0%, #eef2ea 100%);
+  background-attachment: fixed;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

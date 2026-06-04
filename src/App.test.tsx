@@ -691,6 +691,24 @@ describe("App settings form", () => {
     );
   });
 
+  it("re-derives simple-mode retirement markers when the birth date changes to an NPA of 67", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.change(screen.getByLabelText("Date of birth month"), {
+      target: { value: "03" },
+    });
+    fireEvent.change(screen.getByLabelText("Date of birth year"), {
+      target: { value: "1977" },
+    });
+
+    advanceJourneyToResult();
+
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start State, age 67")).toBeInTheDocument();
+  });
+
   it("restores the original early retirement journey as a separate route", () => {
     renderAcknowledgedApp({ mode: "bridge" });
 

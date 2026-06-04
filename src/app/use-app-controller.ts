@@ -285,7 +285,9 @@ export function useAppController() {
           const nextSettings =
             typeof value === "function" ? value(baseSettings) : value;
 
-          return applySimpleJourneyAssumptions(nextSettings);
+          return nextSettings.dateOfBirth !== baseSettings.dateOfBirth
+            ? applySimpleJourneyDefaults(nextSettings)
+            : applySimpleJourneyAssumptions(nextSettings);
         });
         return;
       }

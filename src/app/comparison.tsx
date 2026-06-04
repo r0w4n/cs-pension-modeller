@@ -52,6 +52,8 @@ export type ComparisonPanelProps = {
   bridgeChartParameters?: RetirementIncomeBridgeParameters;
   bridgeChartLimits?: RetirementIncomeBridgeLimits;
   hideInactiveLegendItems?: boolean;
+  hideBridgeFundingSection?: boolean;
+  hideFlexibleAssetsSection?: boolean;
   onChangeChartParameters?: (
     patch: Partial<RetirementIncomeBridgeParameters>
   ) => void;
@@ -160,6 +162,8 @@ export function ComparisonPanel({
   bridgeChartParameters,
   bridgeChartLimits,
   hideInactiveLegendItems,
+  hideBridgeFundingSection,
+  hideFlexibleAssetsSection,
   onChangeChartParameters,
 }: ComparisonPanelProps) {
   const [scenarioNameDraft, setScenarioNameDraft] = useState("");
@@ -313,7 +317,12 @@ export function ComparisonPanel({
       </DeferredBelowFold>
 
       <DeferredBelowFold estimatedHeight={420}>
-        <ComparisonResults results={results} insights={insights} />
+        <ComparisonResults
+          results={results}
+          insights={insights}
+          hideBridgeFundingSection={hideBridgeFundingSection}
+          hideFlexibleAssetsSection={hideFlexibleAssetsSection}
+        />
       </DeferredBelowFold>
 
       <DeferredBelowFold estimatedHeight={260}>

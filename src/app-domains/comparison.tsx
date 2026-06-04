@@ -337,8 +337,17 @@ export function calculateComparisonInsights(
 }
 
 export function buildComparisonTableRows(
-  results: ComparisonResult[]
+  results: ComparisonResult[],
+  options: {
+    hideBridgeFundingSection?: boolean;
+    hideFlexibleAssetsSection?: boolean;
+  } = {}
 ): ComparisonTableRow[] {
+  const {
+    hideBridgeFundingSection = false,
+    hideFlexibleAssetsSection = false,
+  } = options;
+
   return [
     createComparisonSection("Headline outcome", results, [
       ["Status", (result) => renderComparisonStatusCell(result)],
@@ -396,10 +405,6 @@ export function buildComparisonTableRows(
         (result) => formatDecimalAge(result.scenario.settings.requirementAge),
       ],
       [
-        "Final exit age",
-        (result) => formatDecimalAge(result.scenario.settings.requirementAge),
-      ],
-      [
         "Alpha age",
         (result) =>
           formatDecimalAge(result.scenario.settings.alphaPensionDrawAge),
@@ -442,6 +447,18 @@ export function buildComparisonTableRows(
             : "n/a",
       ],
       [
+        "Total secure income",
+        (result) =>
+          result.scenario.settings.showStatePension
+            ? formatAnnualCurrency(getCombinedSecurePensionAtStateAge(result))
+            : formatAnnualCurrency(
+                result.summary.alphaPension.annualAtDraw +
+                  (result.scenario.settings.showNuvos
+                    ? result.summary.nuvosPension.annualAtDraw
+                    : 0)
+              ),
+      ],
+      [
         "Secure income coverage",
         (result) =>
           result.scenario.settings.showStatePension
@@ -455,69 +472,62 @@ export function buildComparisonTableRows(
             : "n/a",
       ],
     ]),
-    createComparisonSection("Bridge funding", results, [
-      [
-        "Plan status",
-        (result) =>
-          result.bridgeAnalysis.planWorks
-            ? "Works on these assumptions"
-            : "Shortfall remains",
-      ],
-      [
-        "ISA-only gap before SIPP access",
-        (result) =>
-          formatCurrencyDetailed(result.bridgeAnalysis.requiredIsaAtRetirement),
-      ],
-      [
-        "Later top-up gap after SIPP access",
-        (result) =>
-          formatCurrencyDetailed(result.bridgeAnalysis.requiredSippAtAccess),
-      ],
-      [
-        "Bridge still unfunded",
-        (result) =>
-          renderComparisonToneCell(
-            formatCurrencyDetailed(
-              result.bridgeAnalysis.totalUnfundedShortfall
-            ),
-            result.bridgeAnalysis.totalUnfundedShortfall > 0
-              ? "caution"
-              : "good"
-          ),
-      ],
-      [
-        "Extra monthly saving",
-        (result) =>
-          formatMonthlyCurrency(
-            result.bridgeAnalysis.additionalMonthlyContributionRequired
-          ),
-      ],
-    ]),
-    createComparisonSection("Later secure income", results, [
-      [
-        "All secure income",
-        (result) =>
-          result.bridgeAnalysis.fullSecureIncomeStartDate === null
-            ? "Not available"
-            : formatAnnualCurrency(
-                result.bridgeAnalysis.fullSecureAnnualGuaranteedIncome
-              ),
-      ],
-      [
-        "Later secure position",
-        (result) =>
-          renderComparisonToneCell(
-            formatBridgeSecurePosition(result.bridgeAnalysis),
-            getBridgeSecurePositionTone(result.bridgeAnalysis)
-          ),
-      ],
-    ]),
-    createComparisonSection("Flexible assets", results, [
-      [
-        "Assets exhausted",
-        (result) => renderFlexibleAssetsExhaustedCell(result),
-      ],
-    ]),
+    ...(!hideBridgeFundingSection
+      ? [
+          createComparisonSection("Bridge funding", results, [
+            [
+              "Plan status",
+              (result) =>
+                result.bridgeAnalysis.planWorks
+                  ? "Works on these assumptions"
+                  : "Shortfall remains",
+            ],
+            [
+              "ISA-only gap before SIPP access",
+              (result) =>
+                formatCurrencyDetailed(
+                  result.bridgeAnalysis.requiredIsaAtRetirement
+                ),
+            ],
+            [
+              "Later top-up gap after SIPP access",
+              (result) =>
+                formatCurrencyDetailed(
+                  result.bridgeAnalysis.requiredSippAtAccess
+                ),
+            ],
+            [
+              "Bridge still unfunded",
+              (result) =>
+                renderComparisonToneCell(
+                  formatCurrencyDetailed(
+                    result.bridgeAnalysis.totalUnfundedShortfall
+                  ),
+                  result.bridgeAnalysis.totalUnfundedShortfall > 0
+                    ? "caution"
+                    : "good"
+                ),
+            ],
+            [
+              "Extra monthly saving",
+              (result) =>
+                formatMonthlyCurrency(
+                  result.bridgeAnalysis.additionalMonthlyContributionRequired
+                ),
+            ],
+          ]),
+        ]
+      : []),
+    ...(!hideFlexibleAssetsSection
+      ? [
+          createComparisonSection("Flexible assets", results, [
+            [
+              "Assets exhausted",
+              (result) => renderFlexibleAssetsExhaustedCell(result),
+            ],
+          ]),
+        ]
+      : []),
     createComparisonSection("Assumptions", results, [
       [
         "Projection basis",
@@ -1176,34 +1186,6 @@ function formatAnnualPosition(value: number) {
   return value >= 0
     ? `${formatCurrencyDetailed(value)} surplus per year`
     : `${formatCurrencyDetailed(Math.abs(value))} shortfall per year`;
-}
-
-function formatBridgeSecurePosition(analysis: RetirementBridgeAnalysis) {
-  if (analysis.fullSecureIncomeStartDate === null) {
-    return "Not reached within this model";
-  }
-
-  const amount = Math.abs(analysis.fullSecureAnnualGuaranteedSurplus);
-  const annualLabel =
-    analysis.fullSecureAnnualGuaranteedSurplus >= 0 ? "overshoot" : "shortfall";
-
-  return `${formatCurrencyDetailed(amount)} ${annualLabel} per year (${formatCurrencyDetailed(
-    amount / 12
-  )} per month)`;
-}
-
-function getBridgeSecurePositionTone(
-  analysis: RetirementBridgeAnalysis
-): "good" | "caution" | "problem" {
-  if (analysis.fullSecureIncomeStartDate === null) {
-    return "caution";
-  }
-
-  if (analysis.fullSecureAnnualGuaranteedSurplus >= 0) {
-    return "good";
-  }
-
-  return "caution";
 }
 
 function formatWholePercent(value: number) {

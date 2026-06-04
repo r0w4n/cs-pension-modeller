@@ -1433,12 +1433,6 @@ h3 {
   margin-bottom: 0;
 }
 
-.summary-section--feature h2 {
-  margin-bottom: 0.85rem;
-  font-size: clamp(2rem, 4vw, 3rem);
-  letter-spacing: -0.04em;
-}
-
 .summary-section--feature > .section-copy {
   margin-bottom: 1.75rem;
   font-size: clamp(1rem, 1.8vw, 1.15rem);

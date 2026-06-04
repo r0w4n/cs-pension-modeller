@@ -716,8 +716,10 @@ describe("App settings form", () => {
       await screen.findByRole("region", { name: "Comparison results" })
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "Scenario comparison" })
+      await screen.findByRole("heading", { name: "Comparison" })
     ).toBeInTheDocument();
+    expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
+    expect(screen.queryByText("Flexible assets")).not.toBeInTheDocument();
     expect(
       screen.getAllByRole("columnheader", { name: "Current model" }).length
     ).toBeGreaterThan(0);
@@ -772,8 +774,11 @@ describe("App settings form", () => {
       await screen.findByRole("region", { name: "Comparison results" })
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "Scenario comparison" })
+      await screen.findByRole("heading", { name: "Comparison" })
     ).toBeInTheDocument();
+    expect(screen.getByText("Bridge funding")).toBeInTheDocument();
+    expect(screen.getByText("Flexible assets")).toBeInTheDocument();
+    expect(screen.getByText("Total secure income")).toBeInTheDocument();
     expect(
       screen.getAllByRole("columnheader", { name: "Current model" }).length
     ).toBeGreaterThan(0);
@@ -786,6 +791,8 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("heading", { name: "Later secure income check" })
     ).not.toBeInTheDocument();
+    expect(screen.queryByText("Later secure income")).not.toBeInTheDocument();
+    expect(screen.queryByText("Later secure position")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Scenario recap" })
     ).not.toBeInTheDocument();

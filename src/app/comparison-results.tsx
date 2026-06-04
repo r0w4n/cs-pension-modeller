@@ -14,9 +14,13 @@ import { SummarySection } from "./results-summary";
 export function ComparisonResults({
   results,
   insights,
+  hideBridgeFundingSection = false,
+  hideFlexibleAssetsSection = false,
 }: {
   results: ComparisonResult[];
   insights: ComparisonInsights;
+  hideBridgeFundingSection?: boolean;
+  hideFlexibleAssetsSection?: boolean;
 }) {
   if (results.length === 0) {
     return (
@@ -37,7 +41,11 @@ export function ComparisonResults({
       {results.length >= 2 ? (
         <ComparisonInsightsGrid insights={insights} />
       ) : null}
-      <ComparisonSummaryTable results={results} />
+      <ComparisonSummaryTable
+        results={results}
+        hideBridgeFundingSection={hideBridgeFundingSection}
+        hideFlexibleAssetsSection={hideFlexibleAssetsSection}
+      />
     </>
   );
 }
@@ -125,7 +133,15 @@ function ComparisonInsightsGrid({
   );
 }
 
-function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
+function ComparisonSummaryTable({
+  results,
+  hideBridgeFundingSection = false,
+  hideFlexibleAssetsSection = false,
+}: {
+  results: ComparisonResult[];
+  hideBridgeFundingSection?: boolean;
+  hideFlexibleAssetsSection?: boolean;
+}) {
   const columns: TableColumn[] = [
     { key: "metric", label: "Metric", width: "16rem" },
     ...results.map((result, index) => ({
@@ -134,33 +150,44 @@ function ComparisonSummaryTable({ results }: { results: ComparisonResult[] }) {
       width: "13rem",
     })),
   ];
-  const rows = buildComparisonTableRows(results);
+  const rows = buildComparisonTableRows(results, {
+    hideBridgeFundingSection,
+    hideFlexibleAssetsSection,
+  });
   const minWidth = `${16 + results.length * 13}rem`;
 
   return (
-    <section className="bridge-table-section">
+    <section className="summary-section summary-section--compact">
       <div className="summary-section-header">
-        <h3>Scenario comparison</h3>
+        <h2>Comparison</h2>
       </div>
-      <p className="section-copy">
-        Compare the key decision metrics across scenarios.
-      </p>
-      <ProjectionTableFrame
-        columns={columns}
-        rows={rows}
-        emptyMessage="No comparison rows are available."
-        getRowKey={(row) => row.key}
-        getRowClassName={(row) =>
-          row.isSectionDivider
-            ? "comparison-summary-row comparison-summary-row--divider"
-            : "comparison-summary-row"
-        }
-        minWidth={minWidth}
-        renderCells={(row) => [
-          row.isSectionDivider ? <strong>{row.section}</strong> : row.metric,
-          ...row.values,
-        ]}
-      />
+      <div className="summary-section-inner">
+        <section className="bridge-table-section">
+          <p className="section-copy">
+            Compare the key decision metrics across scenarios.
+          </p>
+          <ProjectionTableFrame
+            columns={columns}
+            rows={rows}
+            emptyMessage="No comparison rows are available."
+            getRowKey={(row) => row.key}
+            getRowClassName={(row) =>
+              row.isSectionDivider
+                ? "comparison-summary-row comparison-summary-row--divider"
+                : "comparison-summary-row"
+            }
+            minWidth={minWidth}
+            renderCells={(row) => [
+              row.isSectionDivider ? (
+                <strong>{row.section}</strong>
+              ) : (
+                row.metric
+              ),
+              ...row.values,
+            ]}
+          />
+        </section>
+      </div>
     </section>
   );
 }

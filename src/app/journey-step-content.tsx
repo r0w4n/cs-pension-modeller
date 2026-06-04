@@ -442,6 +442,8 @@ function renderBridgeAnswerStep(
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
           hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
+          hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
+          hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}
         />
       </ComparisonSection>
 

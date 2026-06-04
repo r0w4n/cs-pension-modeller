@@ -6,6 +6,7 @@ import {
   useState,
   type KeyboardEvent,
   type PointerEvent,
+  type TouchEvent,
 } from "react";
 import * as d3 from "d3";
 import type { PensionValidationIssue } from "./settings";
@@ -125,6 +126,18 @@ type MilestoneMarker = {
   editable: boolean;
 };
 
+type TouchPoint = {
+  clientX: number;
+  clientY: number;
+  identifier: number;
+};
+
+type TouchListLike = {
+  length: number;
+  item?: (index: number) => TouchPoint | null;
+  [index: number]: TouchPoint;
+};
+
 type ChartDimensions = {
   width: number;
   height: number;
@@ -235,6 +248,9 @@ export function RetirementIncomeBridgeChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
   const activeTargetDragPointerIdRef = useRef<number | null>(null);
+  const activeMarkerTouchIdentifierRef = useRef<number | null>(null);
+  const activeTargetTouchIdentifierRef = useRef<number | null>(null);
+  const lastTouchStartTimeRef = useRef<number>(0);
   const [width, setWidth] = useState(960);
   const [displayMode, setDisplayMode] = useState<"annual" | "monthly">(
     "annual"
@@ -796,7 +812,33 @@ export function RetirementIncomeBridgeChart({
   const isPrimaryPointerDragStart = (
     event: PointerEvent<SVGElement>
   ): boolean =>
-    event.isPrimary && (event.pointerType !== "mouse" || event.button === 0);
+    event.isPrimary &&
+    (event.pointerType !== "touch" ||
+      event.timeStamp - lastTouchStartTimeRef.current > 1_000) &&
+    (event.pointerType !== "mouse" || event.button === 0);
+
+  const getTrackedTouch = (touchList: TouchListLike, identifier: number) => {
+    for (let index = 0; index < touchList.length; index += 1) {
+      const touch =
+        typeof touchList.item === "function"
+          ? touchList.item(index)
+          : touchList[index];
+
+      if (touch?.identifier === identifier) {
+        return touch;
+      }
+    }
+
+    return null;
+  };
+
+  const getFirstChangedTouch = (touchList: TouchListLike) => {
+    if (typeof touchList.item === "function") {
+      return touchList.item(0);
+    }
+
+    return touchList[0] ?? null;
+  };
 
   const getMarkerAgeFromPointer = (
     event: PointerEvent<SVGGElement>,
@@ -926,6 +968,89 @@ export function RetirementIncomeBridgeChart({
     updateDraftMarkerAge(event, markerKey);
   };
 
+  const handleMarkerTouchStart = (
+    event: TouchEvent<SVGGElement>,
+    markerKey: MilestoneKey
+  ) => {
+    const marker = milestoneMarkerLookup.get(markerKey);
+    const touch = getFirstChangedTouch(event.changedTouches);
+
+    if (!marker?.editable || !touch) {
+      return;
+    }
+
+    lastTouchStartTimeRef.current = event.timeStamp;
+    event.currentTarget.focus();
+    activeMarkerTouchIdentifierRef.current = touch.identifier;
+    activeMarkerDragPointerIdRef.current = null;
+    setSelectedMobileMarkerKey(markerKey);
+    setActiveMarkerDragKey(markerKey);
+    updateDraftMarkerAgeFromClient(touch.clientX, touch.clientY, markerKey);
+  };
+
+  const handleMarkerTouchMove = (
+    event: TouchEvent<SVGGElement>,
+    markerKey: MilestoneKey
+  ) => {
+    if (activeMarkerDragKey !== markerKey) {
+      return;
+    }
+
+    const identifier = activeMarkerTouchIdentifierRef.current;
+
+    if (identifier === null) {
+      return;
+    }
+
+    const touch = getTrackedTouch(event.touches, identifier);
+
+    if (!touch) {
+      return;
+    }
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    updateDraftMarkerAgeFromClient(touch.clientX, touch.clientY, markerKey);
+  };
+
+  const finishMarkerTouchDrag = (
+    event: TouchEvent<SVGGElement>,
+    markerKey: MilestoneKey,
+    commit: boolean
+  ) => {
+    if (activeMarkerDragKey !== markerKey) {
+      return;
+    }
+
+    const identifier = activeMarkerTouchIdentifierRef.current;
+
+    if (identifier === null) {
+      return;
+    }
+
+    const touch =
+      getTrackedTouch(event.changedTouches, identifier) ??
+      getTrackedTouch(event.touches, identifier);
+
+    activeMarkerTouchIdentifierRef.current = null;
+    clearMarkerDraft(markerKey);
+    setActiveMarkerDragKey(null);
+
+    if (!touch || !commit) {
+      return;
+    }
+
+    const committedAge = getMarkerAgeFromClient(
+      touch.clientX,
+      touch.clientY,
+      markerKey
+    );
+
+    onChangeParameters({ [markerKey]: committedAge });
+  };
+
   const finishMarkerPointerDrag = (
     event: PointerEvent<SVGGElement>,
     markerKey: MilestoneKey,
@@ -1030,6 +1155,72 @@ export function RetirementIncomeBridgeChart({
     updateDraftTargetIncome(event);
   };
 
+  const handleTargetTouchStart = (event: TouchEvent<SVGPathElement>) => {
+    const touch = getFirstChangedTouch(event.changedTouches);
+
+    if (!touch) {
+      return;
+    }
+
+    lastTouchStartTimeRef.current = event.timeStamp;
+    event.currentTarget.focus();
+    activeTargetTouchIdentifierRef.current = touch.identifier;
+    activeTargetDragPointerIdRef.current = null;
+    setIsTargetDragging(true);
+    updateDraftTargetIncomeFromClient(touch.clientX, touch.clientY);
+  };
+
+  const handleTargetTouchMove = (event: TouchEvent<SVGPathElement>) => {
+    const identifier = activeTargetTouchIdentifierRef.current;
+
+    if (identifier === null) {
+      return;
+    }
+
+    const touch = getTrackedTouch(event.touches, identifier);
+
+    if (!touch) {
+      return;
+    }
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    updateDraftTargetIncomeFromClient(touch.clientX, touch.clientY);
+  };
+
+  const finishTargetTouchDrag = (
+    event: TouchEvent<SVGPathElement>,
+    commit: boolean
+  ) => {
+    const identifier = activeTargetTouchIdentifierRef.current;
+
+    if (identifier === null) {
+      return;
+    }
+
+    const touch =
+      getTrackedTouch(event.changedTouches, identifier) ??
+      getTrackedTouch(event.touches, identifier);
+
+    activeTargetTouchIdentifierRef.current = null;
+    setIsTargetDragging(false);
+    setDraftTargetIncomeAnnual(null);
+
+    if (!touch || !commit) {
+      return;
+    }
+
+    const committedValue = getTargetIncomeFromClient(
+      touch.clientX,
+      touch.clientY
+    );
+
+    setPendingTargetIncomeAnnual(committedValue);
+    onChangeParameters({ targetIncomeAnnual: committedValue });
+  };
+
   const finishTargetPointerDrag = (
     event: PointerEvent<SVGPathElement>,
     commit: boolean
@@ -1120,6 +1311,88 @@ export function RetirementIncomeBridgeChart({
   ]);
 
   useEffect(() => {
+    if (
+      activeMarkerDragKey === null ||
+      activeMarkerTouchIdentifierRef.current === null
+    ) {
+      return;
+    }
+
+    const handleTouchMove = (event: globalThis.TouchEvent) => {
+      const touch = getTrackedTouch(
+        event.touches,
+        activeMarkerTouchIdentifierRef.current ?? -1
+      );
+
+      if (!touch) {
+        return;
+      }
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      updateDraftMarkerAgeFromClient(
+        touch.clientX,
+        touch.clientY,
+        activeMarkerDragKey
+      );
+    };
+
+    const finishDrag = (event: globalThis.TouchEvent, commit: boolean) => {
+      const identifier = activeMarkerTouchIdentifierRef.current;
+
+      if (identifier === null || activeMarkerDragKey === null) {
+        return;
+      }
+
+      const touch =
+        getTrackedTouch(event.changedTouches, identifier) ??
+        getTrackedTouch(event.touches, identifier);
+
+      if (!touch) {
+        activeMarkerTouchIdentifierRef.current = null;
+        clearMarkerDraft(activeMarkerDragKey);
+        setActiveMarkerDragKey(null);
+        return;
+      }
+
+      const committedAge = getMarkerAgeFromClient(
+        touch.clientX,
+        touch.clientY,
+        activeMarkerDragKey
+      );
+
+      activeMarkerTouchIdentifierRef.current = null;
+      clearMarkerDraft(activeMarkerDragKey);
+      setActiveMarkerDragKey(null);
+
+      if (commit) {
+        onChangeParameters({ [activeMarkerDragKey]: committedAge });
+      }
+    };
+
+    const handleTouchEnd = (event: globalThis.TouchEvent) =>
+      finishDrag(event, true);
+    const handleTouchCancel = (event: globalThis.TouchEvent) =>
+      finishDrag(event, false);
+
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener("touchcancel", handleTouchCancel);
+
+    return () => {
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchCancel);
+    };
+  }, [
+    activeMarkerDragKey,
+    getMarkerAgeFromClient,
+    onChangeParameters,
+    updateDraftMarkerAgeFromClient,
+  ]);
+
+  useEffect(() => {
     if (!isTargetDragging) {
       return;
     }
@@ -1165,6 +1438,81 @@ export function RetirementIncomeBridgeChart({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerCancel);
+    };
+  }, [
+    getTargetIncomeFromClient,
+    isTargetDragging,
+    onChangeParameters,
+    updateDraftTargetIncomeFromClient,
+  ]);
+
+  useEffect(() => {
+    if (!isTargetDragging || activeTargetTouchIdentifierRef.current === null) {
+      return;
+    }
+
+    const handleTouchMove = (event: globalThis.TouchEvent) => {
+      const touch = getTrackedTouch(
+        event.touches,
+        activeTargetTouchIdentifierRef.current ?? -1
+      );
+
+      if (!touch) {
+        return;
+      }
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      updateDraftTargetIncomeFromClient(touch.clientX, touch.clientY);
+    };
+
+    const finishDrag = (event: globalThis.TouchEvent, commit: boolean) => {
+      const identifier = activeTargetTouchIdentifierRef.current;
+
+      if (identifier === null) {
+        return;
+      }
+
+      const touch =
+        getTrackedTouch(event.changedTouches, identifier) ??
+        getTrackedTouch(event.touches, identifier);
+
+      if (!touch) {
+        activeTargetTouchIdentifierRef.current = null;
+        setIsTargetDragging(false);
+        setDraftTargetIncomeAnnual(null);
+        return;
+      }
+
+      const committedValue = getTargetIncomeFromClient(
+        touch.clientX,
+        touch.clientY
+      );
+
+      activeTargetTouchIdentifierRef.current = null;
+      setIsTargetDragging(false);
+      setDraftTargetIncomeAnnual(null);
+
+      if (commit) {
+        setPendingTargetIncomeAnnual(committedValue);
+        onChangeParameters({ targetIncomeAnnual: committedValue });
+      }
+    };
+
+    const handleTouchEnd = (event: globalThis.TouchEvent) =>
+      finishDrag(event, true);
+    const handleTouchCancel = (event: globalThis.TouchEvent) =>
+      finishDrag(event, false);
+
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener("touchcancel", handleTouchCancel);
+
+    return () => {
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchCancel);
     };
   }, [
     getTargetIncomeFromClient,
@@ -1369,6 +1717,10 @@ export function RetirementIncomeBridgeChart({
               onPointerMove={handleTargetPointerMove}
               onPointerUp={(event) => finishTargetPointerDrag(event, true)}
               onPointerCancel={(event) => finishTargetPointerDrag(event, false)}
+              onTouchStart={handleTargetTouchStart}
+              onTouchMove={handleTargetTouchMove}
+              onTouchEnd={(event) => finishTargetTouchDrag(event, true)}
+              onTouchCancel={(event) => finishTargetTouchDrag(event, false)}
             />
 
             {markerLayouts.map((marker) => {
@@ -1408,6 +1760,18 @@ export function RetirementIncomeBridgeChart({
                   }
                   onPointerCancel={(event) =>
                     finishMarkerPointerDrag(event, marker.key, false)
+                  }
+                  onTouchStart={(event) =>
+                    handleMarkerTouchStart(event, marker.key)
+                  }
+                  onTouchMove={(event) =>
+                    handleMarkerTouchMove(event, marker.key)
+                  }
+                  onTouchEnd={(event) =>
+                    finishMarkerTouchDrag(event, marker.key, true)
+                  }
+                  onTouchCancel={(event) =>
+                    finishMarkerTouchDrag(event, marker.key, false)
                   }
                 >
                   <rect

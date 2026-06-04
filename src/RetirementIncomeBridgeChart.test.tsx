@@ -381,6 +381,130 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
   });
 
+  it("updates a milestone from window touch events after touch drag starts", () => {
+    mockChartResize(360);
+
+    const onChangeParameters = vi.fn();
+    renderChart({ onChangeParameters });
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 420,
+        height: 420,
+        left: 0,
+        right: 360,
+        top: 0,
+        width: 360,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const retirementMarker = screen.getByRole("slider", {
+      name: /Retire, age 60/i,
+    });
+
+    fireEvent.touchStart(retirementMarker, {
+      changedTouches: [
+        {
+          identifier: 1,
+          clientX: 109,
+          clientY: 150,
+        },
+      ],
+      touches: [
+        {
+          identifier: 1,
+          clientX: 109,
+          clientY: 150,
+        },
+      ],
+    });
+    fireEvent.touchMove(window, {
+      changedTouches: [
+        {
+          identifier: 1,
+          clientX: 97,
+          clientY: 150,
+        },
+      ],
+      touches: [
+        {
+          identifier: 1,
+          clientX: 97,
+          clientY: 150,
+        },
+      ],
+    });
+    fireEvent.touchEnd(window, {
+      changedTouches: [
+        {
+          identifier: 1,
+          clientX: 97,
+          clientY: 150,
+        },
+      ],
+      touches: [],
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
+  });
+
+  it("updates a milestone from element touch events on the first drag", () => {
+    mockChartResize(360);
+
+    const onChangeParameters = vi.fn();
+    renderChart({ onChangeParameters });
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 420,
+        height: 420,
+        left: 0,
+        right: 360,
+        top: 0,
+        width: 360,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const retirementMarker = screen.getByRole("slider", {
+      name: /Retire, age 60/i,
+    });
+
+    fireEvent.touchStart(retirementMarker, {
+      timeStamp: 100,
+      changedTouches: [{ identifier: 1, clientX: 109, clientY: 150 }],
+      touches: [{ identifier: 1, clientX: 109, clientY: 150 }],
+    });
+    fireEvent.touchMove(retirementMarker, {
+      changedTouches: [{ identifier: 1, clientX: 97, clientY: 150 }],
+      touches: [{ identifier: 1, clientX: 97, clientY: 150 }],
+      cancelable: true,
+    });
+    fireEvent.touchEnd(retirementMarker, {
+      changedTouches: [{ identifier: 1, clientX: 97, clientY: 150 }],
+      touches: [],
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
+  });
+
   it("does not let leave alpha move past retirement during chart interaction", () => {
     const onChangeParameters = vi.fn();
 

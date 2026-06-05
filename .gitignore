@@ -9,3 +9,4 @@ dist
 coverage
 test-results/.last-run.json
 /test-results
+AGENTS.md

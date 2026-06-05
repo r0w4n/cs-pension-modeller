@@ -155,7 +155,7 @@ To remove all stored data, clear this site’s storage in your browser settings.
 Requirements:
 
 - Node `20.19.0` or newer
-- npm `11.12.1`, as recorded in `package.json`
+- npm, using the committed `package-lock.json`
 
 Install dependencies:
 

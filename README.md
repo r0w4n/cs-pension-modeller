@@ -155,6 +155,7 @@ To remove all stored data, clear this site’s storage in your browser settings.
 Requirements:
 
 - Node `20.19.0` or newer
+- npm `11.12.1`, as recorded in `package.json`
 
 Install dependencies:
 
@@ -194,16 +195,24 @@ Run the full local quality gate:
 npm run check
 ```
 
+Run the extended verification suite, including Playwright browser checks,
+accessibility checks, and dependency audit:
+
+```bash
+npm run check:full
+```
+
 Static analysis is performed with type-aware `eslint` backed by
 `typescript-eslint` and `eslint-plugin-sonarjs`, so `npm run lint` checks for
 TypeScript misuse and common bug patterns in addition to normal lint rules.
 
 This repository also includes a Git `pre-commit` hook in `.githooks/pre-commit`
-that runs `npm run lint:hook`. Publish-time checks run through
-`.githooks/pre-publish`, which npm calls from its `prepublishOnly` hook before
-publish. GitHub Desktop uses normal Git hooks, so once `core.hooksPath` is set
-to `.githooks` for the clone, commits made in GitHub Desktop will run the same
-lint gate before they are created.
+that runs formatting, linting, and type checks. The `pre-push` hook runs unit
+tests, Playwright journey tests, Playwright accessibility tests, and a build.
+Publish-time checks run through `.githooks/pre-publish`, which npm calls from
+its `prepublishOnly` hook before publish. GitHub Desktop uses normal Git hooks,
+so once `core.hooksPath` is set to `.githooks` for the clone, commits made in
+GitHub Desktop will run the same local hooks.
 
 Run tests with coverage:
 
@@ -215,6 +224,12 @@ Run tests in watch mode:
 
 ```bash
 npm run test:watch
+```
+
+Run the Playwright journey checks:
+
+```bash
+npm run test:e2e
 ```
 
 Run the Playwright accessibility checks:

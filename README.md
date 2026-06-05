@@ -202,9 +202,17 @@ accessibility checks, and dependency audit:
 npm run check:full
 ```
 
+Run the broad TypeScript check for app, Vite, Playwright, and E2E files:
+
+```bash
+npm run typecheck:all
+```
+
 Static analysis is performed with type-aware `eslint` backed by
 `typescript-eslint` and `eslint-plugin-sonarjs`, so `npm run lint` checks for
 TypeScript misuse and common bug patterns in addition to normal lint rules.
+GitHub Actions workflow files are linted in CI with `actionlint`; if you have
+the `actionlint` binary installed locally, run `npm run lint:actions`.
 
 This repository also includes a Git `pre-commit` hook in `.githooks/pre-commit`
 that runs formatting, linting, and type checks. The `pre-push` hook runs unit
@@ -258,7 +266,9 @@ checks are still needed before release.
 
 Dependency updates are managed by Dependabot for npm packages and GitHub
 Actions. Pull requests also run GitHub's Dependency Review action so dependency
-changes are checked before merge.
+changes are checked before merge. `npm audit` runs in `npm run check:full` for
+local verification and in a scheduled/manual GitHub Actions workflow, rather
+than blocking every pull request on transient advisory noise.
 
 ## Purpose
 

@@ -232,6 +232,12 @@ Run the Playwright journey checks:
 npm run test:e2e
 ```
 
+Run the Playwright production build smoke checks:
+
+```bash
+npm run test:smoke:prod
+```
+
 Run the Playwright accessibility checks:
 
 ```bash
@@ -249,6 +255,10 @@ The accessibility checks use `@axe-core/playwright` against key app states:
 These automated axe checks help catch regressions in CI, but they do not prove
 full WCAG compliance. Manual keyboard, focus-management, zoom, and screen-reader
 checks are still needed before release.
+
+Dependency updates are managed by Dependabot for npm packages and GitHub
+Actions. Pull requests also run GitHub's Dependency Review action so dependency
+changes are checked before merge.
 
 ## Purpose
 

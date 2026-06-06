@@ -664,7 +664,7 @@ describe("App settings form", () => {
     fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
       key: "ArrowLeft",
     });
-    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 67.75"), {
+    fireEvent.keyDown(screen.getByLabelText(/^Leave Alpha, age /), {
       key: "ArrowLeft",
     });
     fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
@@ -674,12 +674,10 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(/Leave Alpha, age 67\.(5|75)/)
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText("Start Alpha, age 67.75")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start State, age 68.25")).toBeInTheDocument();
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Leave Alpha, age /)).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start State, age 69")).toBeInTheDocument();
     expect(
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
@@ -875,6 +873,9 @@ describe("App settings form", () => {
       screen.getByLabelText("Target retirement age exact value")
     ).toHaveValue(55);
     expect(
+      screen.getByLabelText("Target retirement age exact value")
+    ).toHaveAttribute("step", "1");
+    expect(
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expect.objectContaining({
@@ -916,7 +917,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString()
     );
-    expect(screen.getByLabelText("Requirement age")).toHaveValue(
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
     expect(
@@ -1060,11 +1061,9 @@ describe("App settings form", () => {
       screen.getByLabelText("SIPP expected nominal return (%) exact value")
     ).toBeEnabled();
     expect(screen.getByLabelText("SIPP withdrawal strategy")).toHaveValue(
-      "zero_at_death"
+      "use_by_age"
     );
-    expect(
-      screen.queryByLabelText("SIPP withdrawal rate (%)")
-    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("SIPP use-by age")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Check pension tax relief" })
     ).toHaveAttribute(
@@ -1905,12 +1904,12 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(screen.getByLabelText("Start Alpha, age 68.25")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Alpha, age 69")).toBeInTheDocument();
     expect(
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expect.objectContaining({
-        alphaPensionDrawAge: 68.25,
+        alphaPensionDrawAge: 69,
       })
     );
   });
@@ -1933,14 +1932,14 @@ describe("App settings form", () => {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
-    expect(screen.getByLabelText("Leave Alpha, age 67.75")).toBeInTheDocument();
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
     expect(
       JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
     ).toEqual(
       expect.objectContaining({
-        requirementAge: 67.75,
-        alphaPensionLeaveAge: 67.75,
+        requirementAge: 67,
+        alphaPensionLeaveAge: 67,
       })
     );
   });

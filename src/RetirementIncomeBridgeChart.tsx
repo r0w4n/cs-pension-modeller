@@ -161,12 +161,12 @@ const sourceMeta: Record<
   { label: string; shortLabel: string; colour: string }
 > = {
   isaIncomeAnnual: {
-    label: "ISA bridge",
+    label: "ISA",
     shortLabel: "ISA",
     colour: "#1f8ee6",
   },
   sippIncomeAnnual: {
-    label: "SIPP bridge",
+    label: "SIPP",
     shortLabel: "SIPP",
     colour: "#148c55",
   },

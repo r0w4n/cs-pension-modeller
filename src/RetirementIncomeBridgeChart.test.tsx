@@ -73,17 +73,17 @@ const baseProps: RetirementIncomeBridgeChartProps = {
     alphaMonthlyAddedPension: { min: 0, max: 1000, step: 25 },
     isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
-    retirementAge: { min: 40, max: 67, step: 0.25 },
-    alphaLeaveAge: { min: 40, max: 67, step: 0.25 },
-    sippAccessAge: { min: 57, max: 67, step: 0.25 },
-    sippUseByAge: { min: 57.25, max: 80, step: 0.25 },
-    isaAccessAge: { min: 40, max: 67, step: 0.25 },
-    alphaStartAge: { min: 60, max: 67, step: 0.25 },
-    nuvosStartAge: { min: 60, max: 67, step: 0.25 },
-    isaUseByAge: { min: 60.25, max: 80, step: 0.25 },
-    partialRetirementStartAge: { min: 40, max: 59.75, step: 0.25 },
+    retirementAge: { min: 40, max: 67, step: 1 },
+    alphaLeaveAge: { min: 40, max: 67, step: 1 },
+    sippAccessAge: { min: 57, max: 67, step: 1 },
+    sippUseByAge: { min: 57.25, max: 80, step: 1 },
+    isaAccessAge: { min: 40, max: 67, step: 1 },
+    alphaStartAge: { min: 60, max: 67, step: 1 },
+    nuvosStartAge: { min: 60, max: 67, step: 1 },
+    isaUseByAge: { min: 60.25, max: 80, step: 1 },
+    partialRetirementStartAge: { min: 40, max: 59.75, step: 1 },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
-    statePensionAge: { min: 67, max: 80, step: 0.25 },
+    statePensionAge: { min: 67, max: 80, step: 1 },
   },
   onChangeParameters: vi.fn(),
 };
@@ -299,6 +299,17 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(getBuildUpBandWidth()).toBeGreaterThan(0);
   });
 
+  it("labels the bridge series as ISA and SIPP in the chart legend", () => {
+    renderChart();
+
+    expect(
+      screen.getByRole("button", { name: "Toggle chart ISA source" })
+    ).toHaveTextContent("ISA");
+    expect(
+      screen.getByRole("button", { name: "Toggle chart SIPP source" })
+    ).toHaveTextContent("SIPP");
+  });
+
   it("moves the build-up window earlier when leave alpha is dragged earlier", () => {
     const view = renderChart({
       alphaLeaveAge: 59,
@@ -379,6 +390,17 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
+  });
+
+  it("uses whole-year steps for the mobile age input", () => {
+    mockChartResize(360);
+
+    renderChart();
+
+    expect(screen.getByRole("spinbutton", { name: "Age" })).toHaveAttribute(
+      "step",
+      "1"
+    );
   });
 
   it("updates a milestone from window touch events after touch drag starts", () => {
@@ -513,7 +535,7 @@ describe("RetirementIncomeBridgeChart", () => {
       retirementAge: 60,
       limits: {
         ...baseProps.limits,
-        alphaLeaveAge: { min: 40, max: 60, step: 0.25 },
+        alphaLeaveAge: { min: 40, max: 60, step: 1 },
       },
       onChangeParameters,
     });

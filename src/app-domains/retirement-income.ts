@@ -403,7 +403,7 @@ export function createBridgeChartLimits(
         currentPlanningAge,
         Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
       ),
-      step: 0.25,
+      step: 1,
     },
     alphaLeaveAge: {
       min: currentPlanningAge,
@@ -411,22 +411,22 @@ export function createBridgeChartLimits(
         currentPlanningAge,
         Math.min(ageUpperLimit, settings.requirementAge)
       ),
-      step: 0.25,
+      step: 1,
     },
     sippAccessAge: {
       min: minimumSippAccessAge,
       max: ageUpperLimit,
-      step: 0.25,
+      step: 1,
     },
     sippUseByAge: {
       min: sippUseByMin,
       max: Math.max(sippUseByMin, useByMax),
-      step: 0.25,
+      step: 1,
     },
     isaAccessAge: {
       min: currentPlanningAge,
       max: isaAccessAgeMax,
-      step: 0.25,
+      step: 1,
     },
     alphaStartAge: {
       min: Math.max(
@@ -444,7 +444,7 @@ export function createBridgeChartLimits(
         ),
         70
       ),
-      step: 0.25,
+      step: 1,
     },
     nuvosStartAge: {
       min: Math.max(
@@ -462,23 +462,23 @@ export function createBridgeChartLimits(
         ),
         70
       ),
-      step: 0.25,
+      step: 1,
     },
     isaUseByAge: {
       min: isaUseByMin,
       max: Math.max(isaUseByMin, useByMax),
-      step: 0.25,
+      step: 1,
     },
     partialRetirementStartAge: {
       min: currentPlanningAge,
       max: partialRetirementMaxAge,
-      step: 0.25,
+      step: 1,
     },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
     statePensionAge: {
       min: defaultStatePensionAge,
       max: Math.max(defaultStatePensionAge, settings.lifeExpectancy),
-      step: 0.25,
+      step: 1,
     },
   };
 }

@@ -184,7 +184,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 75,
         max: 100,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age the projection runs to. This is a planning horizon rather than a prediction: a longer horizon usually asks more from ISA and SIPP pots, while defined benefit income keeps paying for as long as modelled.",
         infoUrl: knowledgeLinks.lifeExpectancy,
@@ -192,12 +192,12 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "requirementAge",
-        label: "Requirement age",
+        label: "Target retirement age",
         type: "range",
         min: 0,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age from which you want the modeller to assess whether your retirement income target is being met. In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
       },
@@ -297,7 +297,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 40,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age at which the modeller switches future regular accruals and contributions to a reduced work pattern.",
       },
@@ -419,7 +419,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age you stop active Alpha service. New 2.32% accrual stops here, and the extra 1.5% yearly increase on your accrued Alpha pension stops when you leave the scheme.",
       },
@@ -449,7 +449,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 55,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age you plan to start taking Alpha. Alpha Normal Pension Age is linked to State Pension age or 65 if later, so draw age changes both when income starts and whether early-payment reductions apply. If you draw Alpha before Normal Pension Age, the model applies reduction factors.",
         infoUrl: knowledgeLinks.alphaEarlyRetirementFactors,
@@ -575,7 +575,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 40,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age nuvos pensionable service stops in the projection. Future nuvos accrual stops here, even if benefits are drawn later.",
       },
@@ -586,7 +586,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 55,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age you plan to start taking nuvos benefits. Taking benefits before the scheme pension age may reduce the annual amount.",
         infoUrl: knowledgeLinks.nuvosBenefits,
@@ -640,7 +640,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 55,
         max: 70,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age SIPP withdrawals can start in the model. This is constrained by private pension access rules based on your date of birth, so a SIPP may not be available at the first retirement age you want.",
         infoUrl: knowledgeLinks.pensionAccessAge,
@@ -699,7 +699,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 55,
         max: 100,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age by which the SIPP pot is intended to be used up when the use-by-age strategy is selected.",
       },
@@ -742,7 +742,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 100,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age ISA drawdown starts. ISA money can usually be accessed earlier than pension money, which makes it useful for an early-retirement bridge.",
         infoUrl: knowledgeLinks.isaAllowance,
@@ -787,7 +787,7 @@ export const fieldGroups: FieldGroup[] = [
         min: 0,
         max: 100,
         step: 1,
-        inputStep: 0.1,
+        inputStep: 1,
         description:
           "The age by which the ISA balance is intended to be used up when the use-by-age strategy is selected.",
       },

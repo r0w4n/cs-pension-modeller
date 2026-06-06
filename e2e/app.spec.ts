@@ -49,7 +49,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Next" }).click();
-    await fillExactNumber(page, "Requirement age exact value", "60");
+    await fillExactNumber(page, "Target retirement age exact value", "60");
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();

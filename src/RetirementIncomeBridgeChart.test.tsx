@@ -185,6 +185,19 @@ function getIncomeAreaPath(strokeColour: string) {
   );
 }
 
+function getIncomeAreaStrokeColours() {
+  return [...document.querySelectorAll("path[stroke]")]
+    .map((node) => node.getAttribute("stroke"))
+    .filter((stroke): stroke is string => Boolean(stroke));
+}
+
+function getMilestoneHandleFill(label: RegExp | string) {
+  return screen
+    .getByRole("slider", { name: label })
+    .querySelector(".bridge-milestone-handle")
+    ?.getAttribute("fill");
+}
+
 function expectPathToContainX(path: string, x: number) {
   const xCoordinates = [...path.matchAll(/-?\d+(?:\.\d+)?/g)]
     .map((match, index) => ({ index, value: Number(match[0]) }))
@@ -308,6 +321,119 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(
       screen.getByRole("button", { name: "Toggle chart SIPP source" })
     ).toHaveTextContent("SIPP");
+  });
+
+  it("matches ISA and SIPP start and stop handles to the legend colours", () => {
+    renderChart({
+      showIsa: true,
+      showSipp: true,
+      isaUseByAgeEnabled: true,
+      sippUseByAgeEnabled: true,
+    });
+
+    expect(getMilestoneHandleFill(/ISA start/i)).toBe("#1f8ee6");
+    expect(getMilestoneHandleFill(/ISA stop/i)).toBe("#1f8ee6");
+    expect(getMilestoneHandleFill(/SIPP start/i)).toBe("#148c55");
+    expect(getMilestoneHandleFill(/SIPP stop/i)).toBe("#148c55");
+  });
+
+  it("uses the legend order for stacked income areas that start together", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2045-01-01",
+          age: 60,
+          isaIncomeAnnual: 4000,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 16000,
+          assessedIncomeAnnual: 16000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2046-01-01",
+          age: 61,
+          isaIncomeAnnual: 16000,
+          sippIncomeAnnual: 3000,
+          totalIncomeAnnual: 19000,
+          assessedIncomeAnnual: 19000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2047-01-01",
+          age: 62,
+          sippIncomeAnnual: 15000,
+          totalIncomeAnnual: 15000,
+          assessedIncomeAnnual: 15000,
+          phase: "sipp-bridge",
+        },
+      ],
+      showIsa: true,
+      showSipp: true,
+      showStatePension: false,
+    });
+
+    expect(getIncomeAreaStrokeColours().slice(0, 2)).toEqual([
+      "#1f8ee6",
+      "#148c55",
+    ]);
+  });
+
+  it("keeps the first active bridge area at the bottom when a later source starts", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2043-01-01",
+          age: 58,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2044-01-01",
+          age: 59,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2045-01-01",
+          age: 60,
+          isaIncomeAnnual: 8000,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 20000,
+          assessedIncomeAnnual: 20000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2046-01-01",
+          age: 61,
+          isaIncomeAnnual: 15000,
+          sippIncomeAnnual: 3000,
+          totalIncomeAnnual: 18000,
+          assessedIncomeAnnual: 18000,
+          phase: "sipp-bridge",
+        },
+      ],
+      showIsa: true,
+      showSipp: true,
+      sippAccessAge: 58,
+      isaAccessAge: 60,
+      showStatePension: false,
+    });
+
+    expect(getIncomeAreaStrokeColours().slice(0, 2)).toEqual([
+      "#148c55",
+      "#1f8ee6",
+    ]);
   });
 
   it("moves the build-up window earlier when leave alpha is dragged earlier", () => {

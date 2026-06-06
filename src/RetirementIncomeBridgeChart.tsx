@@ -484,9 +484,14 @@ export function RetirementIncomeBridgeChart({
     () => d3.scaleLinear().domain([0, yMax]).nice().range([plotHeight, 0]),
     [plotHeight, yMax]
   );
+  const stackedIncomeKeys = useMemo(
+    () => createStackedIncomeKeys(visibleIncomeKeys, visibleData),
+    [visibleData, visibleIncomeKeys]
+  );
   const stack = d3
     .stack<RetirementIncomePoint>()
-    .keys(visibleIncomeKeys)
+    .keys(stackedIncomeKeys)
+    .order(d3.stackOrderNone)
     .value((point, key) => Number(point[key as IncomeKey]) / divisor);
   const stackedSeries = stack(visibleData);
   const area = d3
@@ -545,7 +550,7 @@ export function RetirementIncomeBridgeChart({
               label: "SIPP start",
               shortLabel: "SIPP start",
               age: sippAccessAge,
-              colour: "#148c55",
+              colour: sourceMeta.sippIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -557,7 +562,7 @@ export function RetirementIncomeBridgeChart({
               label: "SIPP stop",
               shortLabel: "SIPP stop",
               age: sippUseByAge,
-              colour: "#0d6b40",
+              colour: sourceMeta.sippIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -569,7 +574,7 @@ export function RetirementIncomeBridgeChart({
               label: "ISA start",
               shortLabel: "ISA start",
               age: isaAccessAge,
-              colour: "#1f8ee6",
+              colour: sourceMeta.isaIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -613,7 +618,7 @@ export function RetirementIncomeBridgeChart({
               label: "ISA stop",
               shortLabel: "ISA stop",
               age: isaUseByAge,
-              colour: "#155ea8",
+              colour: sourceMeta.isaIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -2449,6 +2454,33 @@ function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {
   }
 
   return undefined;
+}
+
+function createStackedIncomeKeys(
+  keys: IncomeKey[],
+  data: RetirementIncomePoint[]
+) {
+  const keyIndex = new Map(keys.map((key, index) => [key, index]));
+
+  return [...keys].sort((leftKey, rightKey) => {
+    const leftFirstActiveAge = findFirstActiveIncomeAge(data, leftKey);
+    const rightFirstActiveAge = findFirstActiveIncomeAge(data, rightKey);
+
+    if (leftFirstActiveAge !== rightFirstActiveAge) {
+      return leftFirstActiveAge - rightFirstActiveAge;
+    }
+
+    return (keyIndex.get(leftKey) ?? 0) - (keyIndex.get(rightKey) ?? 0);
+  });
+}
+
+function findFirstActiveIncomeAge(
+  data: RetirementIncomePoint[],
+  key: IncomeKey
+) {
+  const firstActivePoint = data.find((point) => point[key] > 0);
+
+  return firstActivePoint?.age ?? Number.POSITIVE_INFINITY;
 }
 
 function createMarkerLayouts<

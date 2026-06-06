@@ -1490,6 +1490,8 @@ describe("projection calculations", () => {
       isaCurrentPot: 60000,
       sippDrawAge: 61,
       isaDrawAge: 62,
+      sippWithdrawalTargetAge: 66,
+      isaWithdrawalTargetAge: 66,
     };
 
     const rows = createProjectionTable(settings);
@@ -1758,6 +1760,8 @@ describe("projection calculations", () => {
       alphaPensionLeaveAge: 57,
       alphaPensionDrawAge: 57,
       lifeExpectancy: 70,
+      showSipp: false,
+      showIsa: false,
     };
 
     const rows = createProjectionTable(settings);
@@ -1778,6 +1782,8 @@ describe("projection calculations", () => {
       alphaPensionLeaveAge: 57,
       alphaPensionDrawAge: 57,
       lifeExpectancy: 70,
+      showSipp: false,
+      showIsa: false,
     };
 
     const rows = createProjectionTable(settings);
@@ -1992,6 +1998,8 @@ describe("projection calculations", () => {
       alphaPensionLeaveAge: 68,
       sippDrawAge: 68,
       isaDrawAge: 68,
+      sippWithdrawalStrategy: "zero_at_death",
+      isaWithdrawalStrategy: "zero_at_death",
       statePensionDrawDate: "2047-06-15",
       lifeExpectancy: 69,
     };

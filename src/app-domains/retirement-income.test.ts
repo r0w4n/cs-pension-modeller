@@ -1,6 +1,9 @@
 import { createDefaultSettings } from "../settings";
 import type { ProjectionRow } from "../projection";
-import { createRetirementIncomeSeries } from "./retirement-income";
+import {
+  createBridgeChartLimits,
+  createRetirementIncomeSeries,
+} from "./retirement-income";
 
 const baseRow: ProjectionRow = {
   date: "2026-06-01",
@@ -138,5 +141,37 @@ describe("retirement-income transition points", () => {
     expect(series.find((point) => point.date === "2054-03-01")?.age).toBe(
       66.75
     );
+  });
+});
+
+describe("retirement-income chart limits", () => {
+  it("does not require SIPP draw age to be after retirement age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      requirementAge: 65,
+      sippDrawAge: 65,
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.sippAccessAge.min).toBe(57);
+  });
+
+  it("does not cap ISA draw age at State Pension age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      lifeExpectancy: 85,
+      statePensionDrawDate: "2055-06-01",
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.statePensionAge.max).toBe(85);
+    expect(limits.sippAccessAge.max).toBe(68);
+    expect(limits.isaAccessAge.max).toBe(85);
   });
 });

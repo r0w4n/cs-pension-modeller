@@ -1396,11 +1396,11 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
 
     expect(findRowByDate(rows, "2047-06-15")?.monthlySippPension).toBeCloseTo(
-      100 / 12,
+      100 / 13,
       6
     );
     expect(findRowByDate(rows, "2047-06-15")?.monthlyIsaPension).toBeCloseTo(
-      100 / 12,
+      100 / 13,
       6
     );
   });
@@ -1442,6 +1442,38 @@ describe("projection calculations", () => {
     expect(findRowByDate(rowsWithGrowth, "2026-06-01")?.isaPot).toBeGreaterThan(
       findRowByDate(rowsWithoutGrowth, "2026-06-01")?.isaPot ?? 0
     );
+  });
+
+  it("keeps zero-at-death SIPP and ISA withdrawals active through life expectancy", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2025-01-01",
+      dateOfBirth: "1968-01-01",
+      lifeExpectancy: 58,
+      requirementAge: 57.1,
+      alphaPensionDrawAge: 57.1,
+      alphaPensionLeaveAge: 57.1,
+      showAlpha: false,
+      showStatePension: false,
+      sippCurrentPot: 1200,
+      sippMonthlyContribution: 0,
+      sippRealInterestPercent: 0,
+      sippDrawAge: 57.1,
+      sippWithdrawalStrategy: "zero_at_death",
+      sippTaxReliefRate: "none",
+      isaCurrentPot: 600,
+      isaMonthlyContribution: 0,
+      isaRealInterestPercent: 0,
+      isaDrawAge: 57.1,
+      isaWithdrawalStrategy: "zero_at_death",
+    };
+
+    const rows = createProjectionTable(settings);
+    const lifeExpectancyRow = findRowByDate(rows, "2026-01-01");
+
+    expect(lifeExpectancyRow?.monthlySippPension).toBeGreaterThan(0);
+    expect(lifeExpectancyRow?.monthlyIsaPension).toBeGreaterThan(0);
   });
 
   it("uses independent SIPP and ISA draw dates for income start", () => {

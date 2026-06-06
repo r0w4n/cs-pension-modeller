@@ -68,7 +68,7 @@ const numericSettingRules = {
   sippWithdrawalTargetAge: { min: 55, max: 100, step: 1 },
   isaCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
-  isaDrawAge: { min: 0, max: 70, step: 1 },
+  isaDrawAge: { min: 0, max: 100, step: 1 },
   isaRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   isaWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
   isaWithdrawalTargetAge: { min: 0, max: 100, step: 1 },
@@ -417,7 +417,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "isaMonthlyContribution",
       settings.isaMonthlyContribution
     ),
-    isaDrawAge: normalizeSetting("isaDrawAge", requirementAge),
+    isaDrawAge: normalizeSetting("isaDrawAge", settings.isaDrawAge),
     isaLumpSums: normalizeSetting("isaLumpSums", settings.isaLumpSums),
     isaRealInterestPercent: normalizeSetting(
       "isaRealInterestPercent",

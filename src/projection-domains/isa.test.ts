@@ -42,7 +42,7 @@ describe("projection isa domain", () => {
         strategy: "zero_at_death",
         withdrawalPercent: 4,
       })
-    ).toBeCloseTo(500, 6);
+    ).toBeCloseTo(60000 / 121, 6);
     expect(
       calculateMonthlyIsaPension({
         potAtDraw: 60000,

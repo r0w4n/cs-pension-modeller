@@ -178,7 +178,6 @@ function applyRetirementAgePatch(
     Math.min(70, statePensionAge, next.alphaPensionDrawAge)
   );
   next.requirementAge = normalizeSetting("requirementAge", retirementAge);
-  next.isaDrawAge = normalizeSetting("isaDrawAge", retirementAge);
 
   if (next.alphaPensionLeaveAge > next.requirementAge) {
     next.alphaPensionLeaveAge = normalizeSetting(
@@ -201,12 +200,9 @@ function applyRetirementAgePatch(
     );
   }
 
-  if (
-    next.showSipp &&
-    next.sippDrawAge < Math.max(retirementAge, context.minimumSippAccessAge)
-  ) {
+  if (next.showSipp && next.sippDrawAge < context.minimumSippAccessAge) {
     next.sippDrawAge = normalizeSippDrawAge(
-      Math.max(retirementAge, context.minimumSippAccessAge),
+      context.minimumSippAccessAge,
       next.dateOfBirth
     );
   }
@@ -242,7 +238,7 @@ function applyAccessAgePatch(
   if (patch.sippAccessAge !== undefined) {
     const sippAccessAge = clampNumber(
       patch.sippAccessAge,
-      Math.max(next.requirementAge, context.minimumSippAccessAge),
+      context.minimumSippAccessAge,
       Math.min(70, statePensionAge)
     );
     next.sippDrawAge = normalizeSippDrawAge(sippAccessAge, next.dateOfBirth);
@@ -255,7 +251,7 @@ function applyAccessAgePatch(
       clampNumber(
         patch.isaAccessAge,
         context.currentPlanningAge,
-        Math.min(70, statePensionAge)
+        Math.max(context.currentPlanningAge, next.lifeExpectancy)
       )
     );
     reconcileIsaWithdrawalTarget(next);
@@ -327,13 +323,9 @@ function reconcileChartState(
   next: PensionSettings,
   context: ChartStateContext
 ) {
-  if (
-    next.showSipp &&
-    next.sippDrawAge <
-      Math.max(next.requirementAge, context.minimumSippAccessAge)
-  ) {
+  if (next.showSipp && next.sippDrawAge < context.minimumSippAccessAge) {
     next.sippDrawAge = normalizeSippDrawAge(
-      Math.max(next.requirementAge, context.minimumSippAccessAge),
+      context.minimumSippAccessAge,
       next.dateOfBirth
     );
   }

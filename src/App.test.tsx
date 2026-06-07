@@ -1282,36 +1282,16 @@ describe("App settings form", () => {
     ]);
   });
 
-  it("shows concise modeller limitations on request", () => {
+  it("does not show expandable modeller limitations on the results page", () => {
     renderAcknowledgedExpertResult();
-    const summarySection = screen
-      .getByRole("heading", { name: "Pension Summary" })
-      .closest("section");
-
-    expect(screen.queryByText(/Scottish tax bands/i)).not.toBeInTheDocument();
-
-    expect(summarySection).not.toBeNull();
-
-    fireEvent.click(
-      within(summarySection as HTMLElement).getByRole("button", {
-        name: "Show limitations",
-      })
-    );
 
     expect(
-      screen.getByRole("button", { name: "Hide limitations" })
-    ).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(/Scottish tax bands/i)).toBeInTheDocument();
-    expect(screen.getByText(/pre-2016 deferral rules/i)).toBeInTheDocument();
-    expect(screen.getByText(/Scheme-specific edge cases/i)).toBeInTheDocument();
-
-    fireEvent.click(
-      within(summarySection as HTMLElement).getByRole("button", {
-        name: "Hide limitations",
-      })
-    );
-
-    expect(screen.queryByText(/Scottish tax bands/i)).not.toBeInTheDocument();
+      screen.queryByRole("button", { name: "Show limitations" })
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Hide limitations" })
+    ).toBeNull();
+    expect(document.querySelector(".summary-limitations")).toBeNull();
   });
 
   it("toggles the pension summary between monthly and annual values", () => {

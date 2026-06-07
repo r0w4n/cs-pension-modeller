@@ -96,7 +96,7 @@ function FormulaBlock({ children }: { children: string }) {
   return <pre className="section-copy">{children}</pre>;
 }
 
-function MethodologyPage() {
+export function MethodologyPage() {
   return (
     <StaticPageLayout
       eyebrow="Civil Service"
@@ -159,6 +159,33 @@ function MethodologyPage() {
           nominal terms, the target increases over time with the inflation
           assumption.
         </p>
+      </section>
+
+      <section>
+        <h2>Important assumptions and omissions</h2>
+        <p className="section-copy">
+          The modeller intentionally simplifies some areas so that results
+          remain understandable and configurable. These simplifications mean the
+          figures should be treated as planning estimates, not exact forecasts.
+        </p>
+        <ul className="section-copy">
+          <li>
+            Income Tax is estimated from configurable standard assumptions. It
+            does not cover Scottish tax bands, benefit interactions, tax code
+            changes, or other personal reliefs.
+          </li>
+          <li>
+            Inflation is only modelled where explicit CPI or growth assumptions
+            are enabled.
+          </li>
+          <li>
+            State Pension modelling does not cover benefit interactions,
+            overseas rules, lump-sum arrears choices, or pre-2016 deferral
+            rules.
+          </li>
+          <li>Added pension purchase revaluation is simplified.</li>
+          <li>Scheme-specific edge cases are not exhaustively represented.</li>
+        </ul>
       </section>
 
       <section>
@@ -472,8 +499,12 @@ function MethodologyPage() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <MethodologyPage />
-  </StrictMode>
-);
+const methodologyRoot = document.getElementById("root");
+
+if (methodologyRoot) {
+  createRoot(methodologyRoot).render(
+    <StrictMode>
+      <MethodologyPage />
+    </StrictMode>
+  );
+}

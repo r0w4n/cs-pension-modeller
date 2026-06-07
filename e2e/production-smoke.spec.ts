@@ -44,5 +44,11 @@ test.describe("production build smoke checks", () => {
         name: "What the model projects",
       })
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "Important assumptions and omissions",
+      })
+    ).toBeVisible();
   });
 });

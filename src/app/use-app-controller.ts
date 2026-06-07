@@ -106,7 +106,6 @@ export function useAppController() {
   const [comparisonScenarios, setComparisonScenarios] = useState<
     ComparisonScenario[]
   >(loadStoredComparisonScenarios);
-  const [showLimitations, setShowLimitations] = useState(false);
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
@@ -418,10 +417,6 @@ export function useAppController() {
     }
   }
 
-  const toggleLimitations = useCallback(() => {
-    setShowLimitations((current) => !current);
-  }, []);
-
   const journeyStepViewModel: JourneyStepViewModel = {
     settings: effectiveSettings,
     validationIssues,
@@ -446,8 +441,6 @@ export function useAppController() {
     onScenariosChange: setComparisonScenarios,
     onLoadScenario: loadComparisonScenario,
     onRetirementIncomeDisplayChange: setRetirementIncomeDisplay,
-    showLimitations,
-    onToggleLimitations: toggleLimitations,
   };
 
   function acknowledgeNotice() {
@@ -509,9 +502,7 @@ export function useAppController() {
     settings,
     settingsFormVersion,
     showGuidanceNotes,
-    showLimitations,
     showSavedFeedback,
-    toggleLimitations,
     updateBridgeChartParameters,
     updateSetting,
     useDropdownDates,

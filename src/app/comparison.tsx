@@ -24,7 +24,6 @@ import { buildComparisonPanelData } from "./comparison-state";
 import {
   AssumptionsVersionStrip,
   InflationBasisPanel,
-  ModellerLimitations,
   RetirementIncomeDisplayToggle,
   RetirementIncomeSummaryFooter,
   SummarySection,
@@ -45,8 +44,6 @@ export type ComparisonPanelProps = {
   onLoadScenario: (settings: PensionSettings) => void;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
   onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
-  showLimitations?: boolean;
-  onToggleLimitations?: () => void;
   derivedInflationAssumptions?: ReturnType<typeof deriveInflationAssumptions>;
   retirementIncomeSeries?: RetirementIncomePoint[];
   bridgeChartParameters?: RetirementIncomeBridgeParameters;
@@ -79,8 +76,6 @@ type PensionSummarySectionProps = {
   retirementIncomeTarget: string;
   statusItems: SummaryItem[];
   headingLevel?: 2 | 3;
-  showLimitations?: boolean;
-  onToggleLimitations?: () => void;
 };
 
 export function ComparisonSection({ children }: ComparisonSectionProps) {
@@ -155,8 +150,6 @@ export function ComparisonPanel({
   onLoadScenario,
   retirementIncomeDisplay,
   onRetirementIncomeDisplayChange,
-  showLimitations,
-  onToggleLimitations,
   derivedInflationAssumptions,
   retirementIncomeSeries,
   bridgeChartParameters,
@@ -285,8 +278,6 @@ export function ComparisonPanel({
         retirementIncomeTargetTitle={retirementIncomeTargetTitle}
         retirementIncomeTarget={retirementIncomeTarget}
         statusItems={resultStatusItems}
-        showLimitations={showLimitations}
-        onToggleLimitations={onToggleLimitations}
       />
 
       <div className="comparison-panel-header">
@@ -367,8 +358,6 @@ export function PensionSummarySection({
   retirementIncomeTarget,
   statusItems,
   headingLevel = 3,
-  showLimitations,
-  onToggleLimitations,
 }: PensionSummarySectionProps) {
   if (!activeResult || !retirementIncomeDisplay) {
     return null;
@@ -426,12 +415,6 @@ export function PensionSummarySection({
               ))}
             </dl>
           </div>
-          {showLimitations !== undefined && onToggleLimitations ? (
-            <ModellerLimitations
-              showLimitations={showLimitations}
-              onToggleLimitations={onToggleLimitations}
-            />
-          ) : null}
           <AssumptionsVersionStrip />
         </>
       }
@@ -449,8 +432,6 @@ function ComparisonPensionSummary({
   retirementIncomeTargetTitle,
   retirementIncomeTarget,
   statusItems,
-  showLimitations,
-  onToggleLimitations,
 }: {
   activeResult: ComparisonResult | null;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
@@ -461,8 +442,6 @@ function ComparisonPensionSummary({
   retirementIncomeTargetTitle: string;
   retirementIncomeTarget: string;
   statusItems: SummaryItem[];
-  showLimitations?: boolean;
-  onToggleLimitations?: () => void;
 }) {
   if (!activeResult || !retirementIncomeDisplay) {
     return null;
@@ -480,8 +459,6 @@ function ComparisonPensionSummary({
       retirementIncomeTargetTitle={retirementIncomeTargetTitle}
       retirementIncomeTarget={retirementIncomeTarget}
       statusItems={statusItems}
-      showLimitations={showLimitations}
-      onToggleLimitations={onToggleLimitations}
     />
   );
 }

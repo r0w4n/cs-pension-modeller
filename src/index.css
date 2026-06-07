@@ -1366,31 +1366,6 @@ h3 {
   gap: 1.5rem;
 }
 
-.limitations-toggle {
-  justify-self: start;
-}
-
-.limitations-content {
-  width: 100%;
-  max-width: 48rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-}
-
-.limitations-list {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0.85rem 0 0;
-  padding-left: 1.25rem;
-  color: var(--text-muted);
-  font-size: var(--font-size-body-sm);
-  line-height: var(--line-height-body);
-}
-
-.limitations-list li::marker {
-  color: var(--accent);
-}
-
 .settings-sections {
   display: grid;
   gap: 1.5rem;
@@ -1686,15 +1661,6 @@ h3 {
 .summary-target strong {
   font-size: 1.05rem;
   color: var(--text);
-}
-
-.summary-limitations {
-  display: grid;
-  justify-items: start;
-  gap: 0.85rem;
-  margin-top: 1.1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
 }
 
 .table-shell {

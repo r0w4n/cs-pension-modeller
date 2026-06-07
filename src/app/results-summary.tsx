@@ -11,14 +11,6 @@ import {
 } from "../assumptions-registry";
 import { resolveAppBaseHref } from "./app-base";
 
-const MODELLER_LIMITATIONS = [
-  "Income Tax is estimated from configurable standard assumptions. It does not cover Scottish tax bands, benefit interactions, tax code changes, or other personal reliefs.",
-  "Inflation is only modelled where explicit CPI or growth assumptions are enabled.",
-  "State Pension modelling does not cover benefit interactions, overseas rules, lump-sum arrears choices, or pre-2016 deferral rules.",
-  "Added pension purchase revaluation is simplified.",
-  "Scheme-specific edge cases are not exhaustively represented.",
-] as const;
-
 type ResultsSummarySectionProps = {
   children: ReactNode;
 };
@@ -191,48 +183,6 @@ export function ValidationIssuesSection({
         ))}
       </ul>
     </section>
-  );
-}
-
-export function ModellerLimitations({
-  showLimitations,
-  onToggleLimitations,
-}: {
-  showLimitations: boolean;
-  onToggleLimitations: () => void;
-}) {
-  return (
-    <div className="summary-limitations" aria-label="Modeller limitations">
-      <p className="section-copy">
-        This modeller supports planning decisions, not scheme statements, HMRC
-        calculations, or regulated advice.
-      </p>
-      <button
-        type="button"
-        className="secondary-button limitations-toggle"
-        aria-expanded={showLimitations}
-        aria-controls="pension-summary-limitations-list"
-        onClick={onToggleLimitations}
-      >
-        {showLimitations ? "Hide limitations" : "Show limitations"}
-      </button>
-
-      {showLimitations ? (
-        <div
-          id="pension-summary-limitations-list"
-          className="limitations-content"
-        >
-          <p className="section-copy">
-            Important assumptions and omissions to keep in mind:
-          </p>
-          <ul className="limitations-list">
-            {MODELLER_LIMITATIONS.map((limitation) => (
-              <li key={limitation}>{limitation}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </div>
   );
 }
 

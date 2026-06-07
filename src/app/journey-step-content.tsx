@@ -76,8 +76,6 @@ export type JourneyStepViewModel = {
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (scenarioSettings: PensionSettings) => void;
   onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
-  showLimitations: boolean;
-  onToggleLimitations: () => void;
 };
 
 export type JourneyStepContentProps = {
@@ -189,8 +187,6 @@ function renderAnswerStep(
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
-    showLimitations,
-    onToggleLimitations,
     onChangeChartParameters,
   } = viewModel;
 
@@ -214,8 +210,6 @@ function renderAnswerStep(
         retirementIncomeTargetTitle={retirementIncomeTargetTitle}
         retirementIncomeTarget={retirementIncomeTarget}
         statusItems={buildStatusItems(currentComparisonResult)}
-        showLimitations={showLimitations}
-        onToggleLimitations={onToggleLimitations}
       />
 
       <InflationBasisPanelFeature
@@ -248,8 +242,6 @@ function renderAnswerStep(
         onLoadScenario={onLoadScenario}
         retirementIncomeDisplay={retirementIncomeDisplay}
         onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-        showLimitations={showLimitations}
-        onToggleLimitations={onToggleLimitations}
         derivedInflationAssumptions={derivedInflationAssumptions}
         retirementIncomeSeries={retirementIncomeSeries}
         bridgeChartParameters={bridgeChartParameters}
@@ -284,8 +276,6 @@ function renderExpertAnswerStep(
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
-    showLimitations,
-    onToggleLimitations,
     onChangeChartParameters,
   } = viewModel;
 
@@ -306,8 +296,6 @@ function renderExpertAnswerStep(
           retirementIncomeTargetTitle={retirementIncomeTargetTitle}
           retirementIncomeTarget={retirementIncomeTarget}
           statusItems={buildStatusItems(currentComparisonResult)}
-          showLimitations={showLimitations}
-          onToggleLimitations={onToggleLimitations}
         />
       </ResultsSummarySection>
 
@@ -374,8 +362,6 @@ function renderBridgeAnswerStep(
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
-    showLimitations,
-    onToggleLimitations,
     onChangeChartParameters,
   } = viewModel;
 
@@ -396,8 +382,6 @@ function renderBridgeAnswerStep(
           retirementIncomeTargetTitle={retirementIncomeTargetTitle}
           retirementIncomeTarget={retirementIncomeTarget}
           statusItems={buildStatusItems(currentComparisonResult)}
-          showLimitations={showLimitations}
-          onToggleLimitations={onToggleLimitations}
         />
       </ResultsSummarySection>
 

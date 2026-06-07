@@ -126,6 +126,11 @@ type MilestoneMarker = {
   editable: boolean;
 };
 
+type VisibleMilestoneMarker = MilestoneMarker & {
+  plotAge: number;
+  layoutAge: number;
+};
+
 type TouchPoint = {
   clientX: number;
   clientY: number;
@@ -269,6 +274,8 @@ export function RetirementIncomeBridgeChart({
     useState<MilestoneKey | null>(null);
   const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
     useState<MilestoneKey>("retirementAge");
+  const [isMobileNavigationVisible, setIsMobileNavigationVisible] =
+    useState(false);
   const dataSourceTargetIncomeAnnual =
     data[0]?.targetIncomeAnnual ?? targetIncomeAnnual;
   const displayedTargetIncomeAnnual =
@@ -315,29 +322,15 @@ export function RetirementIncomeBridgeChart({
   ]);
   const visibleIncomeKeys = useMemo(
     () =>
-      incomeKeys.filter((key) => {
-        if (key === "isaIncomeAnnual") {
-          return showIsa;
-        }
-
-        if (key === "sippIncomeAnnual") {
-          return showSipp;
-        }
-
-        if (key === "nuvosIncomeAnnual") {
-          return showNuvos;
-        }
-
-        if (key === "partialRetirementIncomeAnnual") {
-          return partialRetirementEnabled;
-        }
-
-        if (key === "statePensionIncomeAnnual") {
-          return showStatePension;
-        }
-
-        return true;
-      }),
+      incomeKeys.filter((key) =>
+        isIncomeSourceEnabled(key, {
+          partialRetirementEnabled,
+          showIsa,
+          showNuvos,
+          showSipp,
+          showStatePension,
+        })
+      ),
     [partialRetirementEnabled, showIsa, showNuvos, showSipp, showStatePension]
   );
   const legendIncomeKeys = useMemo(
@@ -360,9 +353,9 @@ export function RetirementIncomeBridgeChart({
 
     return () => observer.disconnect();
   }, []);
+  const isCompact = width < 640;
 
   const dimensions = useMemo<ChartDimensions>(() => {
-    const isCompact = width < 640;
     const height = isCompact ? 420 : 460;
 
     return {
@@ -373,7 +366,7 @@ export function RetirementIncomeBridgeChart({
       marginBottom: isCompact ? 34 : 38,
       marginLeft: isCompact ? 48 : 78,
     };
-  }, [width]);
+  }, [isCompact, width]);
   const plotWidth = Math.max(
     1,
     dimensions.width - dimensions.marginLeft - dimensions.marginRight
@@ -670,7 +663,7 @@ export function RetirementIncomeBridgeChart({
       })),
     [draftMarkerAges, milestoneMarkers]
   );
-  const visibleMilestoneMarkers = useMemo(
+  const visibleMilestoneMarkers = useMemo<VisibleMilestoneMarker[]>(
     () =>
       displayedMilestoneMarkers.map((marker) => ({
         ...marker,
@@ -1918,63 +1911,18 @@ export function RetirementIncomeBridgeChart({
         </div>
       </div>
 
-      {selectedMobileMarker ? (
-        <div className="bridge-mobile-navigation">
-          <label>
-            <span>Chart section</span>
-            <select
-              className="select-input"
-              value={selectedMobileMarker.key}
-              onChange={(event) =>
-                setSelectedMobileMarkerKey(event.target.value as MilestoneKey)
-              }
-            >
-              {visibleMilestoneMarkers.map((marker) => (
-                <option key={marker.key} value={marker.key}>
-                  {marker.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Age</span>
-            <input
-              className="number-input"
-              type="number"
-              min={limits[selectedMobileMarker.key].min}
-              max={limits[selectedMobileMarker.key].max}
-              step={limits[selectedMobileMarker.key].step}
-              value={formatAgeValue(selectedMobileMarker.age)}
-              disabled={!selectedMobileMarker.editable}
-              onChange={(event) =>
-                onChangeParameters({
-                  [selectedMobileMarker.key]: snapToLimit(
-                    Number(event.target.value),
-                    limits[selectedMobileMarker.key]
-                  ),
-                })
-              }
-            />
-          </label>
-          <input
-            aria-label={`Chart ${selectedMobileMarker.label} age`}
-            type="range"
-            min={limits[selectedMobileMarker.key].min}
-            max={limits[selectedMobileMarker.key].max}
-            step={limits[selectedMobileMarker.key].step}
-            value={selectedMobileMarker.age}
-            disabled={!selectedMobileMarker.editable}
-            onChange={(event) =>
-              onChangeParameters({
-                [selectedMobileMarker.key]: snapToLimit(
-                  Number(event.target.value),
-                  limits[selectedMobileMarker.key]
-                ),
-              })
-            }
-          />
-        </div>
-      ) : null}
+      <BridgeMobileNavigation
+        isCompact={isCompact}
+        isVisible={isMobileNavigationVisible}
+        limits={limits}
+        selectedMobileMarker={selectedMobileMarker}
+        visibleMilestoneMarkers={visibleMilestoneMarkers}
+        onChangeParameters={onChangeParameters}
+        onSelectMobileMarker={(key) => setSelectedMobileMarkerKey(key)}
+        onToggleVisibility={() =>
+          setIsMobileNavigationVisible((currentValue) => !currentValue)
+        }
+      />
 
       <div className="bridge-control-grid">
         <BridgeMetricControl
@@ -2657,6 +2605,106 @@ function createMobileBridgeSummary({
       )}`,
     },
   ];
+}
+
+type BridgeMobileNavigationProps = {
+  isCompact: boolean;
+  isVisible: boolean;
+  limits: RetirementIncomeBridgeLimits;
+  selectedMobileMarker: VisibleMilestoneMarker | undefined;
+  visibleMilestoneMarkers: VisibleMilestoneMarker[];
+  onChangeParameters: (
+    patch: Partial<RetirementIncomeBridgeParameters>
+  ) => void;
+  onSelectMobileMarker: (key: MilestoneKey) => void;
+  onToggleVisibility: () => void;
+};
+
+function BridgeMobileNavigation({
+  isCompact,
+  isVisible,
+  limits,
+  selectedMobileMarker,
+  visibleMilestoneMarkers,
+  onChangeParameters,
+  onSelectMobileMarker,
+  onToggleVisibility,
+}: BridgeMobileNavigationProps) {
+  if (!selectedMobileMarker || !isCompact) {
+    return null;
+  }
+
+  const markerLimit = limits[selectedMobileMarker.key];
+
+  return (
+    <>
+      <button
+        type="button"
+        className="bridge-mobile-navigation-toggle"
+        aria-expanded={isVisible}
+        onClick={onToggleVisibility}
+      >
+        {isVisible ? "Hide chart controls" : "Show chart controls"}
+      </button>
+      {isVisible ? (
+        <div className="bridge-mobile-navigation">
+          <label>
+            <span>Chart section</span>
+            <select
+              className="select-input"
+              value={selectedMobileMarker.key}
+              onChange={(event) =>
+                onSelectMobileMarker(event.target.value as MilestoneKey)
+              }
+            >
+              {visibleMilestoneMarkers.map((marker) => (
+                <option key={marker.key} value={marker.key}>
+                  {marker.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Age</span>
+            <input
+              className="number-input"
+              type="number"
+              min={markerLimit.min}
+              max={markerLimit.max}
+              step={markerLimit.step}
+              value={formatAgeValue(selectedMobileMarker.age)}
+              disabled={!selectedMobileMarker.editable}
+              onChange={(event) =>
+                onChangeParameters({
+                  [selectedMobileMarker.key]: snapToLimit(
+                    Number(event.target.value),
+                    markerLimit
+                  ),
+                })
+              }
+            />
+          </label>
+          <input
+            aria-label={`Chart ${selectedMobileMarker.label} age`}
+            type="range"
+            min={markerLimit.min}
+            max={markerLimit.max}
+            step={markerLimit.step}
+            value={selectedMobileMarker.age}
+            disabled={!selectedMobileMarker.editable}
+            onChange={(event) =>
+              onChangeParameters({
+                [selectedMobileMarker.key]: snapToLimit(
+                  Number(event.target.value),
+                  markerLimit
+                ),
+              })
+            }
+          />
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 function isIncomeSourceEnabled(

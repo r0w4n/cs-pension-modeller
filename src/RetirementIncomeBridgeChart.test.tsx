@@ -523,10 +523,33 @@ describe("RetirementIncomeBridgeChart", () => {
 
     renderChart();
 
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show chart controls" })
+    );
+
     expect(screen.getByRole("spinbutton", { name: "Age" })).toHaveAttribute(
       "step",
       "1"
     );
+  });
+
+  it("hides mobile chart controls until requested", () => {
+    mockChartResize(360);
+
+    renderChart();
+
+    expect(
+      screen.queryByRole("spinbutton", { name: "Age" })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show chart controls" })
+    );
+
+    expect(screen.getByRole("spinbutton", { name: "Age" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Hide chart controls" })
+    ).toHaveAttribute("aria-expanded", "true");
   });
 
   it("does not show the selected milestone label in the mobile marker summary", () => {

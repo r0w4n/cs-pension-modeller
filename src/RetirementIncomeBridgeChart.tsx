@@ -1919,13 +1919,6 @@ export function RetirementIncomeBridgeChart({
       </div>
 
       {selectedMobileMarker ? (
-        <div className="bridge-mobile-marker-summary">
-          <strong>{selectedMobileMarker.label}</strong>
-          <span>Age {formatAgeValue(selectedMobileMarker.age)}</span>
-        </div>
-      ) : null}
-
-      {selectedMobileMarker ? (
         <div className="bridge-mobile-navigation">
           <label>
             <span>Chart section</span>

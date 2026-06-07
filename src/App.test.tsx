@@ -734,6 +734,51 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("heading", { name: "Comparison" })
     ).toBeInTheDocument();
+    const comparisonResultsRegion = screen.getByRole("region", {
+      name: "Comparison results",
+    });
+    expect(
+      screen.getByRole("heading", { name: "Comparison" }).closest("section")
+    ).toBe(comparisonResultsRegion);
+    expect(comparisonResultsRegion).toContainElement(
+      screen.getByRole("heading", { name: "Save this result as a scenario" })
+    );
+    const comparisonCardSection = comparisonResultsRegion.querySelector(
+      ".summary-section.summary-section--compact"
+    );
+    expect(comparisonCardSection).not.toBeNull();
+    const comparisonBuilderSection = screen
+      .getByRole("heading", { name: "Save this result as a scenario" })
+      .closest("section");
+    expect(comparisonBuilderSection).not.toBeNull();
+    const comparisonBuilderNode = comparisonBuilderSection as HTMLElement;
+    expect(comparisonCardSection).not.toContainElement(
+      screen.getByRole("heading", { name: "Save this result as a scenario" })
+    );
+    expect(
+      comparisonBuilderNode.compareDocumentPosition(
+        comparisonCardSection as Node
+      ) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).not.toBe(0);
+    expect(comparisonResultsRegion).toContainElement(
+      screen.getByText("Compare the key decision metrics across scenarios.")
+    );
+    expect(
+      screen.getByRole("heading", { name: "Saved scenarios" })
+    ).toBeInTheDocument();
+    const comparisonHeading = within(comparisonResultsRegion).getByRole(
+      "heading",
+      { name: "Comparison" }
+    );
+    const comparisonChartNode =
+      within(comparisonResultsRegion).queryByRole("heading", {
+        name: "Retirement income bridge",
+      }) ?? comparisonResultsRegion.querySelector('[aria-hidden="true"]');
+    expect(comparisonChartNode).not.toBeNull();
+    expect(
+      comparisonHeading.compareDocumentPosition(comparisonChartNode as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).not.toBe(0);
     expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
     expect(screen.queryByText("Flexible assets")).not.toBeInTheDocument();
     expect(

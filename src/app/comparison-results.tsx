@@ -158,14 +158,8 @@ function ComparisonSummaryTable({
 
   return (
     <section className="summary-section summary-section--compact">
-      <div className="summary-section-header">
-        <h2>Comparison</h2>
-      </div>
       <div className="summary-section-inner">
         <section className="bridge-table-section">
-          <p className="section-copy">
-            Compare the key decision metrics across scenarios.
-          </p>
           <ProjectionTableFrame
             columns={columns}
             rows={rows}

@@ -289,19 +289,12 @@ export function ComparisonPanel({
         onToggleLimitations={onToggleLimitations}
       />
 
-      <DeferredBelowFold
-        estimatedHeight={420}
-        forceRender={validationIssues.length > 0}
-      >
-        <ComparisonBridgeChart
-          retirementIncomeSeries={retirementIncomeSeries}
-          bridgeChartParameters={bridgeChartParameters}
-          bridgeChartLimits={bridgeChartLimits}
-          hideInactiveLegendItems={hideInactiveLegendItems}
-          validationIssues={validationIssues}
-          onChangeChartParameters={onChangeChartParameters}
-        />
-      </DeferredBelowFold>
+      <div className="comparison-panel-header">
+        <h2>Comparison</h2>
+        <p className="section-copy">
+          Compare the key decision metrics across scenarios.
+        </p>
+      </div>
 
       <DeferredBelowFold estimatedHeight={180}>
         <ComparisonBuilder
@@ -316,7 +309,7 @@ export function ComparisonPanel({
         />
       </DeferredBelowFold>
 
-      <DeferredBelowFold estimatedHeight={420}>
+      <DeferredBelowFold estimatedHeight={860}>
         <ComparisonResults
           results={results}
           insights={insights}
@@ -333,6 +326,20 @@ export function ComparisonPanel({
           onLoadScenario={onLoadScenario}
           renameScenario={renameScenario}
           removeScenario={removeScenario}
+        />
+      </DeferredBelowFold>
+
+      <DeferredBelowFold
+        estimatedHeight={420}
+        forceRender={validationIssues.length > 0}
+      >
+        <ComparisonBridgeChart
+          retirementIncomeSeries={retirementIncomeSeries}
+          bridgeChartParameters={bridgeChartParameters}
+          bridgeChartLimits={bridgeChartLimits}
+          hideInactiveLegendItems={hideInactiveLegendItems}
+          validationIssues={validationIssues}
+          onChangeChartParameters={onChangeChartParameters}
         />
       </DeferredBelowFold>
 

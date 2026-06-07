@@ -91,6 +91,7 @@ test.describe("accessibility", () => {
   });
 
   for (const staticPage of [
+    { path: "/settings/", heading: "Settings" },
     { path: "/about/", heading: "About" },
     { path: "/methodology/", heading: "Methodology" },
     { path: "/privacy/", heading: "Privacy" },

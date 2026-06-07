@@ -167,9 +167,10 @@ test.describe("app end-to-end journeys", () => {
       )
     ).toBeVisible();
 
-    await assertStaticPage(page, "About", "What it is");
-    await assertStaticPage(page, "Methodology", "What the model projects");
-    await assertStaticPage(page, "Privacy", "What we collect");
+    await assertFooterPage(page, "Settings", "Export parameters");
+    await assertFooterPage(page, "Privacy", "What we collect");
+    await assertFooterPage(page, "Methodology", "What the model projects");
+    await assertFooterPage(page, "About", "What it is");
   });
 });
 
@@ -230,9 +231,9 @@ async function fillExactNumber(page: Page, label: string, value: string) {
   await expect(input).toHaveValue(value);
 }
 
-async function assertStaticPage(
+async function assertFooterPage(
   page: Page,
-  pageName: "About" | "Methodology" | "Privacy",
+  pageName: "About" | "Methodology" | "Privacy" | "Settings",
   sectionHeading: string
 ) {
   const path = `/${pageName.toLowerCase()}/`;
@@ -252,13 +253,86 @@ async function assertStaticPage(
   await expect(
     page.getByRole("heading", { level: 1, name: pageName })
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", {
-      level: 2,
-      name: sectionHeading,
-      exact: true,
-    })
-  ).toBeVisible();
+  if (pageName === "Settings") {
+    await expect(
+      page.locator(".field-label", { hasText: sectionHeading })
+    ).toBeVisible();
+  } else {
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: sectionHeading,
+        exact: true,
+      })
+    ).toBeVisible();
+  }
+
+  if (pageName === "Settings") {
+    const exportButton = page.getByRole("button", {
+      name: "Export parameters",
+    });
+    const resetButton = page.getByRole("button", {
+      name: "Reset parameters",
+    });
+
+    await expect(exportButton).toBeVisible();
+    await expect(resetButton).toBeVisible();
+    await expect(page.getByLabel("Choose JSON parameter file")).toBeVisible();
+    await expect(page.getByLabel("Save inputs on this device")).toBeChecked();
+
+    const downloadPromise = page.waitForEvent("download");
+    await exportButton.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(
+      /^cs-pension-parameters-\d{4}-\d{2}-\d{2}\.json$/
+    );
+    await expect(page.getByRole("status")).toHaveText("Parameters exported.");
+
+    await resetButton.click();
+    await expect(page.getByRole("status")).toHaveText("Parameters reset.");
+
+    await page.getByLabel("Choose JSON parameter file").evaluate((element) => {
+      const input = element as HTMLInputElement;
+      const file = new File(
+        [
+          JSON.stringify({
+            desiredRetirementIncome: 45678,
+          }),
+        ],
+        "parameters.json",
+        { type: "application/json" }
+      );
+      const dataTransfer = new DataTransfer();
+
+      dataTransfer.items.add(file);
+      input.files = dataTransfer.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await expect(page.getByRole("status")).toHaveText("Parameters loaded.");
+    await expect(page.getByLabel("Choose JSON parameter file")).toHaveValue("");
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.localStorage.getItem("cs-pension-modeller.settings")
+        )
+      )
+      .toContain('"desiredRetirementIncome":45678');
+
+    await page.getByLabel("Save inputs on this device").uncheck();
+    await expect(
+      page.getByLabel("Save inputs on this device")
+    ).not.toBeChecked();
+    await expect(page.getByRole("status")).toHaveText(
+      "Local saving turned off. Saved parameters were removed from this browser."
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.localStorage.getItem("cs-pension-modeller.settings")
+        )
+      )
+      .toBeNull();
+  }
 }
 
 async function renderDeferredComparisonContent(page: Page) {

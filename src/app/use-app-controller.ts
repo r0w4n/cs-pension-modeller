@@ -17,8 +17,13 @@ import {
 } from "../projection";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
+  createDefaultSettings,
+  clearStoredSettings,
   getStoredSettingsSnapshot,
+  isLocalStorageEnabled as loadLocalStorageEnabled,
   loadStoredSettings,
+  parseStoredSettings,
+  saveLocalStoragePreference,
   saveSettings,
   validateSettings,
   type PensionSettings,
@@ -28,12 +33,13 @@ import {
   loadStoredAppMode,
   loadStoredGuidanceNotes,
   saveAcknowledgementState,
+  clearStoredAppPreferences,
+  saveStoredAppMode,
   saveStoredGuidanceNotes,
   type AppMode,
 } from "./app-persistence";
 import {
   loadComparisonScenario as loadComparisonScenarioAction,
-  resetSettings as resetSettingsAction,
   selectAppMode as selectAppModeAction,
   showSavedLabel as showSavedLabelAction,
 } from "./app-actions";
@@ -51,6 +57,7 @@ import {
   formatCurrencyDetailed,
   getRetirementIncomeTargetTitle,
   getRetirementIncomeTitle,
+  clearStoredComparisonScenarios,
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
   type ComparisonResultCache,
@@ -102,6 +109,9 @@ export function useAppController() {
   const [showLimitations, setShowLimitations] = useState(false);
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
+  );
+  const [localStorageEnabled, setLocalStorageEnabledState] = useState(
+    loadLocalStorageEnabled
   );
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
   const savedFeedbackTimer = useRef<ReturnType<
@@ -328,16 +338,6 @@ export function useAppController() {
     });
   }
 
-  function resetSettings() {
-    resetSettingsAction({
-      savedFeedbackTimerRef: savedFeedbackTimer,
-      setShowSavedFeedback,
-      setChartUndoStack,
-      setSettingsFormVersion,
-      setSettings: setActiveJourneySettings,
-    });
-  }
-
   function loadComparisonScenario(scenarioSettings: PensionSettings) {
     loadComparisonScenarioAction({
       savedFeedbackTimerRef: savedFeedbackTimer,
@@ -347,6 +347,34 @@ export function useAppController() {
       setSettingsFormVersion,
       setSettings: setActiveJourneySettings,
     });
+  }
+
+  function resetSettings() {
+    const defaultSettings = createDefaultSettings();
+
+    saveSettings(defaultSettings);
+    showSavedLabel();
+    setChartUndoStack([]);
+    setSettingsFormVersion((current) => current + 1);
+    setSimpleJourneySettings(null);
+    setSettings(defaultSettings);
+  }
+
+  function loadParameters(input: unknown) {
+    const importedSettings = parseStoredSettings(input);
+
+    if (!importedSettings) {
+      return false;
+    }
+
+    saveSettings(importedSettings);
+    showSavedLabel();
+    setChartUndoStack([]);
+    setSettingsFormVersion((current) => current + 1);
+    setSimpleJourneySettings(null);
+    setSettings(importedSettings);
+
+    return true;
   }
 
   function exportParameters() {
@@ -364,6 +392,30 @@ export function useAppController() {
     link.remove();
     window.URL.revokeObjectURL(objectUrl);
     showSavedLabel();
+  }
+
+  function setLocalStorageEnabled(enabled: boolean) {
+    saveLocalStoragePreference(enabled);
+    setLocalStorageEnabledState(enabled);
+
+    if (!enabled) {
+      clearStoredSettings();
+      clearStoredAppPreferences();
+      clearStoredComparisonScenarios();
+      return;
+    }
+
+    saveSettings(settings);
+    saveStoredComparisonScenarios(comparisonScenarios);
+    saveStoredGuidanceNotes(showGuidanceNotes);
+
+    if (hasAcknowledgedNotice) {
+      saveAcknowledgementState();
+    }
+
+    if (appMode) {
+      saveStoredAppMode(appMode);
+    }
   }
 
   const toggleLimitations = useCallback(() => {
@@ -389,8 +441,6 @@ export function useAppController() {
     useDropdownDates,
     onChange: updateSetting,
     onChangeChartParameters: updateBridgeChartParameters,
-    onReset: resetSettings,
-    onExport: exportParameters,
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange: setComparisonScenarios,
@@ -438,6 +488,8 @@ export function useAppController() {
     exportParameters,
     hasAcknowledgedNotice,
     journeyStepViewModel,
+    loadParameters,
+    localStorageEnabled,
     loadComparisonScenario,
     pensionSummary,
     projectionRows,
@@ -450,6 +502,7 @@ export function useAppController() {
     retirementIncomeTitle,
     retirementIncomeTotal,
     selectAppMode,
+    setLocalStorageEnabled,
     setComparisonScenarios,
     setRetirementIncomeDisplay,
     setShowGuidanceNotes,

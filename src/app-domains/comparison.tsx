@@ -18,7 +18,9 @@ import type {
 } from "../RetirementIncomeBridgeChart";
 import {
   calculateStatePensionDrawAge,
+  isLocalStorageEnabled,
   readStorageItem,
+  removeStorageItem,
   writeStorageItem,
   type PensionSettings,
 } from "../settings";
@@ -106,6 +108,10 @@ type SummaryItemLike = {
 };
 
 export function loadStoredComparisonScenarios(): ComparisonScenario[] {
+  if (!isLocalStorageEnabled()) {
+    return [];
+  }
+
   const storedScenarios = readStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
 
   if (!storedScenarios) {
@@ -131,10 +137,18 @@ export function loadStoredComparisonScenarios(): ComparisonScenario[] {
 }
 
 export function saveStoredComparisonScenarios(scenarios: ComparisonScenario[]) {
+  if (!isLocalStorageEnabled()) {
+    return;
+  }
+
   writeStorageItem(
     COMPARISON_SCENARIOS_STORAGE_KEY,
     JSON.stringify(scenarios.slice(0, MAX_COMPARISON_SCENARIOS))
   );
+}
+
+export function clearStoredComparisonScenarios() {
+  removeStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
 }
 
 export function createComparisonScenarioId() {

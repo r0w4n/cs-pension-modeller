@@ -260,6 +260,46 @@ h3 {
   margin-top: 0;
 }
 
+.settings-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.settings-action-grid .field-card {
+  align-content: start;
+}
+
+.settings-file-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(17, 100, 102, 0.18);
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: #f9fcfb;
+  color: inherit;
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+}
+
+.settings-file-input::file-selector-button {
+  border: 0;
+  border-radius: 999px;
+  margin-right: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  background: #d8ece9;
+  color: #11333c;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-file-input::file-selector-button:hover {
+  background: #c8e3de;
+}
+
 .mode-panel {
   display: grid;
   gap: 1.25rem;

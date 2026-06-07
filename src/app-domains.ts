@@ -22,6 +22,7 @@ export {
   buildComparisonTableRows,
   buildRetirementIncomeItems,
   calculateComparisonInsights,
+  clearStoredComparisonScenarios,
   clonePensionSettings,
   createBridgeAnswerResult,
   createComparisonResult,

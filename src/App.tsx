@@ -2,8 +2,13 @@ import { createRetirementIncomeSeries } from "./app-domains";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
 import { ModeSelection } from "./app/mode-selection";
 import { JourneyModeScreen } from "./app/journey-mode-screen";
+import { SettingsPage } from "./app/settings-page";
 import { useAppController } from "./app/use-app-controller";
 import { SiteFooter } from "./app/site-footer";
+
+function isSettingsRoute() {
+  return window.location.pathname.endsWith("/settings/");
+}
 
 function App() {
   const {
@@ -12,15 +17,32 @@ function App() {
     activeModeRef,
     acknowledgeNotice,
     appMode,
+    exportParameters,
     hasAcknowledgedNotice,
     journeyStepViewModel,
+    loadParameters,
+    localStorageEnabled,
+    resetSettings,
     selectAppMode,
+    setLocalStorageEnabled,
     setShowGuidanceNotes,
     settingsFormVersion,
     showGuidanceNotes,
     showSavedFeedback,
     visibleSettings,
   } = useAppController();
+
+  if (isSettingsRoute()) {
+    return (
+      <SettingsPage
+        localStorageEnabled={localStorageEnabled}
+        onExportParameters={exportParameters}
+        onLoadParameters={loadParameters}
+        onLocalStorageEnabledChange={setLocalStorageEnabled}
+        onResetParameters={resetSettings}
+      />
+    );
+  }
 
   return (
     <>

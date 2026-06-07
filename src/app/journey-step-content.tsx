@@ -71,8 +71,6 @@ export type JourneyStepViewModel = {
   onChangeChartParameters: (
     patch: Partial<RetirementIncomeBridgeParameters>
   ) => void;
-  onReset: () => void;
-  onExport: () => void;
   comparisonScenarios: ComparisonScenario[];
   comparisonResultCache: ComparisonResultCache;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
@@ -152,27 +150,11 @@ function renderOptionalSectionsStep(
   },
   viewModel: JourneyStepViewModel
 ) {
-  const { settings, validationIssues, onChange, onReset, onExport } = viewModel;
+  const { settings, validationIssues, onChange } = viewModel;
   const toggleKeys = step.toggleKeys;
 
   return (
     <>
-      {step.id === "optional-sections" ? (
-        <div className="settings-panel-actions">
-          <button type="button" className="secondary-button" onClick={onExport}>
-            Export parameters
-          </button>
-          <button
-            type="button"
-            className="secondary-button settings-reset-button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={onReset}
-          >
-            Reset parameters
-          </button>
-        </div>
-      ) : null}
-
       <ValidationSummary validationIssues={validationIssues} />
 
       <OptionalSectionToggleGrid

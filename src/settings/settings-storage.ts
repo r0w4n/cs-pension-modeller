@@ -9,6 +9,7 @@ import { coerceTaxSettings } from "./settings-domains/tax";
 import { createDefaultSettings } from "./settings-defaults";
 import { normalizeSettings } from "./settings-normalize";
 import {
+  LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
   type AddedPensionFactorType,
   type IsaWithdrawalStrategy,
@@ -43,6 +44,27 @@ export function writeStorageItem(key: string, value: string) {
   }
 }
 
+export function removeStorageItem(key: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    window.localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isLocalStorageEnabled() {
+  return readStorageItem(LOCAL_STORAGE_ENABLED_KEY) !== "false";
+}
+
+export function saveLocalStoragePreference(enabled: boolean) {
+  writeStorageItem(LOCAL_STORAGE_ENABLED_KEY, enabled ? "true" : "false");
+}
+
 function coerceNumber(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -60,6 +82,12 @@ function removeUndefinedValues<T extends object>(input: T) {
   return Object.fromEntries(
     Object.entries(input).filter(([, value]) => value !== undefined)
   ) as Partial<T>;
+}
+
+function isSettingsObject(
+  input: unknown
+): input is Partial<StoredPensionSettings> {
+  return Boolean(input) && typeof input === "object" && !Array.isArray(input);
 }
 
 function coerceSettings(
@@ -146,29 +174,48 @@ function coerceSettings(
 }
 
 export function loadStoredSettings(): PensionSettings {
-  const defaults = createDefaultSettings();
+  if (!isLocalStorageEnabled()) {
+    return createDefaultSettings();
+  }
+
   const stored = readStorageItem(SETTINGS_STORAGE_KEY);
 
   if (!stored) {
-    return defaults;
+    return createDefaultSettings();
   }
 
   try {
-    const parsed = JSON.parse(stored) as Partial<StoredPensionSettings>;
-
-    return normalizeSettings({
-      ...defaults,
-      ...removeUndefinedValues(coerceSettings(parsed)),
-    });
+    return parseStoredSettings(JSON.parse(stored)) ?? createDefaultSettings();
   } catch {
-    return defaults;
+    return createDefaultSettings();
   }
 }
 
+export function parseStoredSettings(input: unknown): PensionSettings | null {
+  if (!isSettingsObject(input)) {
+    return null;
+  }
+
+  const defaults = createDefaultSettings();
+
+  return normalizeSettings({
+    ...defaults,
+    ...removeUndefinedValues(coerceSettings(input)),
+  });
+}
+
 export function saveSettings(settings: PensionSettings) {
+  if (!isLocalStorageEnabled()) {
+    return false;
+  }
+
   const storedSettings = getStoredSettingsSnapshot(settings);
 
-  writeStorageItem(SETTINGS_STORAGE_KEY, JSON.stringify(storedSettings));
+  return writeStorageItem(SETTINGS_STORAGE_KEY, JSON.stringify(storedSettings));
+}
+
+export function clearStoredSettings() {
+  return removeStorageItem(SETTINGS_STORAGE_KEY);
 }
 
 export function getStoredSettingsSnapshot(

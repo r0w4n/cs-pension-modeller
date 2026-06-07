@@ -1213,32 +1213,6 @@ describe("App settings form", () => {
     );
   });
 
-  it("exports parameters as a JSON download", () => {
-    const createObjectURL = vi.fn(() => "blob:mock-export-url");
-    const revokeObjectURL = vi.fn();
-    const anchorClick = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(() => {});
-    Object.defineProperty(window.URL, "createObjectURL", {
-      configurable: true,
-      writable: true,
-      value: createObjectURL,
-    });
-    Object.defineProperty(window.URL, "revokeObjectURL", {
-      configurable: true,
-      writable: true,
-      value: revokeObjectURL,
-    });
-
-    renderAcknowledgedApp();
-    fireEvent.click(screen.getByRole("button", { name: "Export parameters" }));
-
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-export-url");
-    expect(anchorClick).toHaveBeenCalledTimes(1);
-    anchorClick.mockRestore();
-  });
-
   it("orders optional section toggles like the assumptions sections", () => {
     renderAcknowledgedApp();
 
@@ -2185,81 +2159,17 @@ describe("App settings form", () => {
     );
   });
 
-  it("resets all parameters back to their defaults", () => {
+  it("keeps parameter management actions out of the optional sections step", () => {
     renderAcknowledgedApp();
-
-    openJourneyStep(/Personal details/i);
-
-    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
-      target: { value: "02" },
-    });
-    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
-      target: { value: "1990" },
-    });
-
-    openJourneyStep(/State pension details/i);
-
-    fireEvent.change(
-      screen.getByLabelText("Current Full State Pension (£ per year)"),
-      {
-        target: { value: "13000" },
-      }
-    );
-    fireEvent.blur(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
-    );
-
-    openJourneyStep(/Alpha pension details/i);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add lump sum purchase" })
-    );
-
-    expect(screen.getByText("Lump sum #1")).toBeInTheDocument();
-
-    openJourneyStep(/Personal details/i);
-
-    expect(
-      screen.getByLabelText("Your Birth Month and Year month")
-    ).toHaveValue("02");
-    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
-      "1990"
-    );
-
-    openJourneyStep(/State pension details/i);
-
-    expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
-    ).toHaveValue(13000);
 
     openJourneyStep(/Optional sections/i);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset parameters" }));
-
-    openJourneyStep(/Personal details/i);
-
-    expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(
-      getTodayIsoDate()
-    );
     expect(
-      screen.getByLabelText("Your Birth Month and Year month")
-    ).toHaveValue("06");
-    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
-      "1987"
-    );
-
-    openJourneyStep(/State pension details/i);
-
+      screen.queryByRole("button", { name: "Export parameters" })
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
-    ).toHaveValue(defaultSettings.currentStatePension);
-
-    openJourneyStep(/Alpha pension details/i);
-
-    expect(screen.queryByText("Lump sum #1")).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(expectedStoredSettings());
+      screen.queryByRole("button", { name: "Reset parameters" })
+    ).not.toBeInTheDocument();
   });
 
   it("supports exact numeric entry alongside sliders", () => {

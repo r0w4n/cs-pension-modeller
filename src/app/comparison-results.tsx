@@ -5,9 +5,11 @@ import {
   formatDecimalAge,
   formatShortfallOrSurplus,
   formatTargetMissDuration,
+  type ComparisonTableRow,
   type ComparisonInsights,
   type ComparisonResult,
 } from "../app-domains";
+import { useMobileDateDropdowns } from "./form-fields";
 import { ProjectionTableFrame, type TableColumn } from "./projection-table";
 import { SummarySection } from "./results-summary";
 
@@ -154,7 +156,30 @@ function ComparisonSummaryTable({
     hideBridgeFundingSection,
     hideFlexibleAssetsSection,
   });
+  const showMobileCards = useMobileDateDropdowns("(max-width: 640px)");
   const minWidth = `${16 + results.length * 13}rem`;
+
+  if (showMobileCards) {
+    return (
+      <section className="summary-section summary-section--compact">
+        <div className="summary-section-inner">
+          <section className="bridge-table-section">
+            <div className="projection-mobile-cards projection-mobile-cards--active">
+              {rows
+                .filter((row) => !row.isSectionDivider)
+                .map((row) => (
+                  <ComparisonMobileCard
+                    key={row.key}
+                    row={row}
+                    results={results}
+                  />
+                ))}
+            </div>
+          </section>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="summary-section summary-section--compact">
@@ -183,5 +208,33 @@ function ComparisonSummaryTable({
         </section>
       </div>
     </section>
+  );
+}
+
+function ComparisonMobileCard({
+  row,
+  results,
+}: {
+  row: ComparisonTableRow;
+  results: ComparisonResult[];
+}) {
+  return (
+    <article className="projection-mobile-card comparison-mobile-card">
+      <div className="projection-mobile-card-row">
+        <span>Metric</span>
+        <div className="projection-mobile-card-value">{row.metric}</div>
+      </div>
+      {results.map((result, index) => (
+        <div
+          key={`${row.key}-${result.scenario.id}`}
+          className="projection-mobile-card-row"
+        >
+          <span>{result.scenario.name || `Scenario ${index + 1}`}</span>
+          <div className="projection-mobile-card-value">
+            {row.values[index]}
+          </div>
+        </div>
+      ))}
+    </article>
   );
 }

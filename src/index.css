@@ -1440,7 +1440,7 @@ h3 {
 }
 
 .summary-section {
-  padding: 1rem 1rem 0.25rem;
+  padding: 0.25rem;
   border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--surface-strong);
@@ -2091,7 +2091,7 @@ h3 {
   .projection-mobile-cards {
     display: grid;
     gap: 0.85rem;
-    padding: 1rem;
+    padding: 0;
   }
 
   .projection-mobile-card {

@@ -529,6 +529,14 @@ describe("RetirementIncomeBridgeChart", () => {
     );
   });
 
+  it("does not show the selected milestone label in the mobile marker summary", () => {
+    mockChartResize(360);
+
+    renderChart();
+
+    expect(screen.queryByText("Selected milestone")).not.toBeInTheDocument();
+  });
+
   it("updates a milestone from window touch events after touch drag starts", () => {
     mockChartResize(360);
 

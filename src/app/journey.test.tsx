@@ -1,9 +1,28 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { createDefaultSettings } from "../settings";
 import { GuidanceNotesToggle, JourneyFlow, JourneySection } from "./journey";
 
 describe("journey module", () => {
+  const originalMatchMedia = window.matchMedia;
+
+  const mockMatchMedia = (matches: boolean) => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+  };
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
   it("renders journey section wrapper", () => {
     const ref = createRef<HTMLDivElement>();
 
@@ -60,5 +79,40 @@ describe("journey module", () => {
     expect(screen.getByText("one-content")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show my answer" }));
     expect(screen.getByText("two-content")).toBeInTheDocument();
+  });
+
+  it("renders the mobile journey steps when the viewport is mobile", () => {
+    mockMatchMedia(true);
+    const settings = createDefaultSettings();
+
+    render(
+      <JourneyFlow
+        journey={{
+          id: "test",
+          title: "Test journey",
+          description: "Journey description",
+          steps: [
+            {
+              id: "one",
+              eyebrow: "Step 1",
+              title: "First step",
+              description: "First description",
+              kind: "answer",
+            },
+          ],
+        }}
+        settings={settings}
+        renderStepContent={(step) => <p>{step.id}-content</p>}
+      />
+    );
+
+    const mobileStepList = document.querySelector(".journey-mobile-step-list");
+
+    expect(mobileStepList).toBeInTheDocument();
+    expect(
+      within(mobileStepList as HTMLElement).getByRole("button", {
+        name: /First step/,
+      })
+    ).toBeInTheDocument();
   });
 });

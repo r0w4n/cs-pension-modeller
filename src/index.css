@@ -1939,6 +1939,10 @@ h3 {
 }
 
 @media (max-width: 640px) {
+  .app-shell {
+    padding: 0.5rem;
+  }
+
   .journey-progress {
     display: none;
   }
@@ -1954,13 +1958,13 @@ h3 {
   }
 
   .journey-panel {
-    margin-inline: -1.25rem;
+    margin-inline: 0;
     padding: 1rem;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
   }
 
   .journey-step > .summary-section,

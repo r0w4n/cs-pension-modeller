@@ -15,8 +15,6 @@ type JourneyModeScreenProps = {
   journey: JourneyDefinition;
   settings: PensionSettings;
   settingsFormVersion: number;
-  showGuidanceNotes: boolean;
-  onShowGuidanceNotesChange: (checked: boolean) => void;
   journeyStepViewModel: JourneyStepViewModel;
 };
 
@@ -26,8 +24,6 @@ export function JourneyModeScreen({
   journey,
   settings,
   settingsFormVersion,
-  showGuidanceNotes,
-  onShowGuidanceNotesChange,
   journeyStepViewModel,
 }: JourneyModeScreenProps) {
   return (
@@ -36,8 +32,6 @@ export function JourneyModeScreen({
         key={`${mode}-${settingsFormVersion}`}
         journey={journey}
         settings={settings}
-        showGuidanceNotes={showGuidanceNotes}
-        onShowGuidanceNotesChange={onShowGuidanceNotesChange}
         renderStepContent={(step) => (
           <JourneyStepContent step={step} viewModel={journeyStepViewModel} />
         )}

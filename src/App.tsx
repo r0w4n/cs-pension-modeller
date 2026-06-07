@@ -2,6 +2,7 @@ import { createRetirementIncomeSeries } from "./app-domains";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
 import { ModeSelection } from "./app/mode-selection";
 import { JourneyModeScreen } from "./app/journey-mode-screen";
+import { SavedLocalFeedback } from "./app/saved-local-feedback";
 import { SettingsPage } from "./app/settings-page";
 import { useAppController } from "./app/use-app-controller";
 import { SiteFooter } from "./app/site-footer";
@@ -40,6 +41,8 @@ function App() {
         onLoadParameters={loadParameters}
         onLocalStorageEnabledChange={setLocalStorageEnabled}
         onResetParameters={resetSettings}
+        showGuidanceNotes={showGuidanceNotes}
+        onShowGuidanceNotesChange={setShowGuidanceNotes}
       />
     );
   }
@@ -84,11 +87,7 @@ function App() {
       ) : null}
 
       <main className="app-shell" aria-hidden={!hasAcknowledgedNotice}>
-        {showSavedFeedback ? (
-          <span className="saved-feedback" role="status" aria-live="polite">
-            Saved Locally
-          </span>
-        ) : null}
+        <SavedLocalFeedback show={showSavedFeedback} />
 
         <section className="hero">
           <div className="hero-copy">
@@ -110,8 +109,6 @@ function App() {
             journey={activeJourneyDefinition}
             settings={visibleSettings}
             settingsFormVersion={settingsFormVersion}
-            showGuidanceNotes={showGuidanceNotes}
-            onShowGuidanceNotesChange={setShowGuidanceNotes}
             journeyStepViewModel={journeyStepViewModel}
           />
         ) : null}

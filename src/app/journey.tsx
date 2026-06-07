@@ -48,16 +48,12 @@ export function GuidanceNotesToggle({
 type JourneyFlowProps = {
   journey: JourneyDefinition;
   settings: PensionSettings;
-  showGuidanceNotes: boolean;
-  onShowGuidanceNotesChange: (checked: boolean) => void;
   renderStepContent: (step: JourneyStepDefinition) => ReactNode;
 };
 
 export function JourneyFlow({
   journey,
   settings,
-  showGuidanceNotes,
-  onShowGuidanceNotesChange,
   renderStepContent,
 }: JourneyFlowProps) {
   const visibleSteps = journey.steps.filter(
@@ -125,10 +121,6 @@ export function JourneyFlow({
           <div className="journey-progress" aria-label="Journey progress">
             Step {activeStepIndex + 1} of {visibleSteps.length}
           </div>
-          <GuidanceNotesToggle
-            checked={showGuidanceNotes}
-            onChange={onShowGuidanceNotesChange}
-          />
         </div>
       </div>
 

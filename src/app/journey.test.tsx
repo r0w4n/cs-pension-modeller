@@ -53,8 +53,6 @@ describe("journey module", () => {
           ],
         }}
         settings={settings}
-        showGuidanceNotes
-        onShowGuidanceNotesChange={vi.fn()}
         renderStepContent={(step) => <p>{step.id}-content</p>}
       />
     );

@@ -1,5 +1,7 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { resolveAppBaseHref } from "./app-base";
+import { GuidanceNotesToggle } from "./journey";
+import { SavedLocalFeedback } from "./saved-local-feedback";
 import { SiteFooter } from "./site-footer";
 
 type SettingsPageProps = {
@@ -8,9 +10,9 @@ type SettingsPageProps = {
   onLoadParameters: (input: unknown) => boolean;
   onLocalStorageEnabledChange: (enabled: boolean) => void;
   onResetParameters: () => void;
+  showGuidanceNotes: boolean;
+  onShowGuidanceNotesChange: (checked: boolean) => void;
 };
-
-type SettingsStatusSection = "export" | "load" | "reset" | "saving";
 
 export function SettingsPage({
   localStorageEnabled,
@@ -18,26 +20,45 @@ export function SettingsPage({
   onLoadParameters,
   onLocalStorageEnabledChange,
   onResetParameters,
+  showGuidanceNotes,
+  onShowGuidanceNotesChange,
 }: SettingsPageProps) {
-  const [status, setStatus] = useState<{
-    message: string;
-    section: SettingsStatusSection;
-  } | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
+    null
+  );
+  const [actionFeedback, setActionFeedback] = useState("");
   const [fileInputVersion, setFileInputVersion] = useState(0);
+  const [loadError, setLoadError] = useState("");
   const appBaseHref = resolveAppBaseHref();
 
-  function showStatus(section: SettingsStatusSection, message: string) {
-    setStatus({ section, message });
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        window.clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showActionFeedback(message: string) {
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current);
+    }
+
+    setActionFeedback(message);
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setActionFeedback("");
+      feedbackTimerRef.current = null;
+    }, 1400);
   }
 
   function exportParameters() {
     onExportParameters();
-    showStatus("export", "Parameters exported.");
+    showActionFeedback("Parameters exported");
   }
 
   function resetParameters() {
     onResetParameters();
-    showStatus("reset", "Parameters reset.");
+    showActionFeedback("Parameters reset");
   }
 
   async function loadParameters(event: ChangeEvent<HTMLInputElement>) {
@@ -52,17 +73,16 @@ export function SettingsPage({
       const parsed = JSON.parse(await file.text()) as unknown;
       const loaded = onLoadParameters(parsed);
 
-      showStatus(
-        "load",
-        loaded
-          ? "Parameters loaded."
-          : "Could not load that file. Choose a JSON parameter export."
-      );
+      if (loaded) {
+        setLoadError("");
+        showActionFeedback("Parameters loaded");
+      } else {
+        setLoadError(
+          "Could not load that file. Choose a JSON parameter export."
+        );
+      }
     } catch {
-      showStatus(
-        "load",
-        "Could not load that file. Choose a JSON parameter export."
-      );
+      setLoadError("Could not load that file. Choose a JSON parameter export.");
     } finally {
       input.value = "";
       setFileInputVersion((current) => current + 1);
@@ -73,16 +93,18 @@ export function SettingsPage({
     const enabled = event.currentTarget.checked;
 
     onLocalStorageEnabledChange(enabled);
-    showStatus(
-      "saving",
-      enabled
-        ? "Local saving turned on."
-        : "Local saving turned off. Saved parameters were removed from this browser."
+    showActionFeedback(
+      enabled ? "Local saving turned on" : "Local saving turned off"
     );
   }
 
   return (
     <main className="app-shell">
+      <SavedLocalFeedback
+        message={actionFeedback}
+        show={actionFeedback.length > 0}
+      />
+
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Civil Service</p>
@@ -94,108 +116,106 @@ export function SettingsPage({
         </div>
       </section>
 
-      <section className="settings-action-grid">
-        <section className="field-card">
-          <span className="field-label">Export parameters</span>
-          <p className="field-help">
-            Download the current assumptions as a JSON file. This is useful if
-            you want a backup or want to move the same scenario to another
-            browser.
-          </p>
+      <section className="panel settings-panel">
+        <div className="settings-action-grid">
+          <section className="field-card">
+            <span className="field-label">Export parameters</span>
+            <p className="field-help">
+              Download the current assumptions as a JSON file. This is useful if
+              you want a backup or want to move the same scenario to another
+              browser.
+            </p>
 
-          <div className="settings-panel-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={exportParameters}
-            >
-              Export parameters
-            </button>
-          </div>
-          <SettingsStatus status={status} section="export" />
-        </section>
+            <div className="settings-panel-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={exportParameters}
+              >
+                Export parameters
+              </button>
+            </div>
+          </section>
 
-        <section className="field-card">
-          <span className="field-label">Load parameters</span>
-          <p className="field-help">
-            Load a JSON parameter export from this modeller. Imported
-            assumptions replace the current scenario in the app.
-          </p>
+          <section className="field-card">
+            <span className="field-label">Load parameters</span>
+            <p className="field-help">
+              Load a JSON parameter export from this modeller. Imported
+              assumptions replace the current scenario in the app.
+            </p>
 
-          <label className="date-select-label" htmlFor="parameter-file">
-            Choose JSON parameter file
-          </label>
-          <input
-            key={fileInputVersion}
-            className="settings-file-input"
-            id="parameter-file"
-            type="file"
-            accept="application/json,.json"
-            onChange={(event) => {
-              void loadParameters(event);
-            }}
-          />
-          <SettingsStatus status={status} section="load" />
-        </section>
-
-        <section className="field-card">
-          <span className="field-label">Reset parameters</span>
-          <p className="field-help">
-            Reset pension, savings, tax, and inflation assumptions to the
-            modeller defaults.
-          </p>
-
-          <div className="settings-panel-actions">
-            <button
-              type="button"
-              className="secondary-button settings-reset-button"
-              onClick={resetParameters}
-            >
-              Reset parameters
-            </button>
-          </div>
-          <SettingsStatus status={status} section="reset" />
-        </section>
-
-        <section className="field-card checkbox-field-card">
-          <span className="field-label">Local saving</span>
-          <p className="field-help">
-            Choose whether the app saves inputs and preferences in this browser.
-            Turning this off removes saved parameters from local storage and
-            stops future automatic saves.
-          </p>
-
-          <label className="checkbox-row">
+            <label className="date-select-label" htmlFor="parameter-file">
+              Choose JSON parameter file
+            </label>
             <input
-              type="checkbox"
-              checked={localStorageEnabled}
-              onChange={updateLocalStoragePreference}
+              key={fileInputVersion}
+              className="settings-file-input"
+              id="parameter-file"
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => {
+                void loadParameters(event);
+              }}
             />
-            <span>Save inputs on this device</span>
-          </label>
-          <SettingsStatus status={status} section="saving" />
-        </section>
+            {loadError ? (
+              <p className="field-help" role="alert">
+                {loadError}
+              </p>
+            ) : null}
+          </section>
+
+          <section className="field-card">
+            <span className="field-label">Reset parameters</span>
+            <p className="field-help">
+              Reset pension, savings, tax, and inflation assumptions to the
+              modeller defaults.
+            </p>
+
+            <div className="settings-panel-actions">
+              <button
+                type="button"
+                className="secondary-button settings-reset-button"
+                onClick={resetParameters}
+              >
+                Reset parameters
+              </button>
+            </div>
+          </section>
+
+          <section className="field-card checkbox-field-card">
+            <span className="field-label">Local saving</span>
+            <p className="field-help">
+              Choose whether the app saves inputs and preferences in this
+              browser. Turning this off removes saved parameters from local
+              storage and stops future automatic saves.
+            </p>
+
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={localStorageEnabled}
+                onChange={updateLocalStoragePreference}
+              />
+              <span>Save inputs on this device</span>
+            </label>
+          </section>
+
+          <section className="field-card checkbox-field-card">
+            <span className="field-label">Guidance notes</span>
+            <p className="field-help">
+              Show the inline guidance text on journey steps and form fields.
+              Turn this off if you want a more compact view.
+            </p>
+
+            <GuidanceNotesToggle
+              checked={showGuidanceNotes}
+              onChange={onShowGuidanceNotesChange}
+            />
+          </section>
+        </div>
       </section>
 
       <SiteFooter />
     </main>
-  );
-}
-
-function SettingsStatus({
-  section,
-  status,
-}: {
-  section: SettingsStatusSection;
-  status: { message: string; section: SettingsStatusSection } | null;
-}) {
-  if (!status || status.section !== section) {
-    return null;
-  }
-
-  return (
-    <p className="field-help" role="status">
-      {status.message}
-    </p>
   );
 }

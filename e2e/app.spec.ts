@@ -279,6 +279,7 @@ async function assertFooterPage(
     await expect(resetButton).toBeVisible();
     await expect(page.getByLabel("Choose JSON parameter file")).toBeVisible();
     await expect(page.getByLabel("Save inputs on this device")).toBeChecked();
+    await expect(page.getByLabel("Show guidance notes")).toBeChecked();
 
     const downloadPromise = page.waitForEvent("download");
     await exportButton.click();
@@ -286,10 +287,10 @@ async function assertFooterPage(
     expect(download.suggestedFilename()).toMatch(
       /^cs-pension-parameters-\d{4}-\d{2}-\d{2}\.json$/
     );
-    await expect(page.getByRole("status")).toHaveText("Parameters exported.");
+    await expect(page.getByRole("status")).toHaveText("Parameters exported");
 
     await resetButton.click();
-    await expect(page.getByRole("status")).toHaveText("Parameters reset.");
+    await expect(page.getByRole("status")).toHaveText("Parameters reset");
 
     await page.getByLabel("Choose JSON parameter file").evaluate((element) => {
       const input = element as HTMLInputElement;
@@ -308,7 +309,7 @@ async function assertFooterPage(
       input.files = dataTransfer.files;
       input.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    await expect(page.getByRole("status")).toHaveText("Parameters loaded.");
+    await expect(page.getByRole("status")).toHaveText("Parameters loaded");
     await expect(page.getByLabel("Choose JSON parameter file")).toHaveValue("");
     await expect
       .poll(() =>
@@ -323,7 +324,7 @@ async function assertFooterPage(
       page.getByLabel("Save inputs on this device")
     ).not.toBeChecked();
     await expect(page.getByRole("status")).toHaveText(
-      "Local saving turned off. Saved parameters were removed from this browser."
+      "Local saving turned off"
     );
     await expect
       .poll(() =>
@@ -332,6 +333,31 @@ async function assertFooterPage(
         )
       )
       .toBeNull();
+
+    await page.getByLabel("Save inputs on this device").check();
+    await expect(page.getByLabel("Save inputs on this device")).toBeChecked();
+    await expect(page.getByRole("status")).toHaveText("Local saving turned on");
+
+    const guidanceToggle = page.getByLabel("Show guidance notes");
+    await guidanceToggle.uncheck();
+    await expect(guidanceToggle).not.toBeChecked();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
+        )
+      )
+      .toBe("false");
+
+    await guidanceToggle.check();
+    await expect(guidanceToggle).toBeChecked();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
+        )
+      )
+      .toBe("true");
   }
 }
 

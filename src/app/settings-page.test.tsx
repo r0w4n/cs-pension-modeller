@@ -17,6 +17,12 @@ describe("settings-page", () => {
       />
     );
 
+    expect(document.title).toBe("Settings | Civil Service Pension Modeller");
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Manage saved assumptions, local storage, and guidance notes for this browser."
+    );
+
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Show guidance notes" })
     );

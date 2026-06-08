@@ -6,6 +6,7 @@ import { SavedLocalFeedback } from "./app/saved-local-feedback";
 import { SettingsPage } from "./app/settings-page";
 import { useAppController } from "./app/use-app-controller";
 import { SiteFooter } from "./app/site-footer";
+import { Helmet } from "./helmet";
 
 function isSettingsRoute() {
   return window.location.pathname.endsWith("/settings/");
@@ -49,6 +50,14 @@ function App() {
 
   return (
     <>
+      <Helmet>
+        <title>Civil Service Pension Modeller</title>
+        <meta
+          name="description"
+          content="Estimate your Civil Service pension and retirement income with a local-only planning tool."
+        />
+      </Helmet>
+
       {!hasAcknowledgedNotice ? (
         <div
           className="acknowledgement-overlay"

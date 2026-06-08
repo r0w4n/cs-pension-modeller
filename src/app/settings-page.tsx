@@ -3,6 +3,7 @@ import { resolveAppBaseHref } from "./app-base";
 import { GuidanceNotesToggle } from "./journey";
 import { SavedLocalFeedback } from "./saved-local-feedback";
 import { SiteFooter } from "./site-footer";
+import { Helmet } from "../helmet";
 
 type SettingsPageProps = {
   localStorageEnabled: boolean;
@@ -100,6 +101,14 @@ export function SettingsPage({
 
   return (
     <main className="app-shell">
+      <Helmet>
+        <title>Settings | Civil Service Pension Modeller</title>
+        <meta
+          name="description"
+          content="Manage saved assumptions, local storage, and guidance notes for this browser."
+        />
+      </Helmet>
+
       <SavedLocalFeedback
         message={actionFeedback}
         show={actionFeedback.length > 0}

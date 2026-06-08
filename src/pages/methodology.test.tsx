@@ -5,6 +5,11 @@ describe("MethodologyPage", () => {
   it("includes the assumptions and omissions section", () => {
     render(<MethodologyPage />);
 
+    expect(document.title).toBe("Methodology | Civil Service Pension Modeller");
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."
+    );
     expect(
       screen.getByRole("heading", { name: "Methodology" })
     ).toBeInTheDocument();

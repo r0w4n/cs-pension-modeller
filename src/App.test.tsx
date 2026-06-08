@@ -418,6 +418,11 @@ describe("App settings form", () => {
   it("shows the journey chooser without opening a journey after the notice", () => {
     renderAcknowledgedApp({ mode: null });
 
+    expect(document.title).toBe("Civil Service Pension Modeller");
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Estimate your Civil Service pension and retirement income with a local-only planning tool."
+    );
     expect(
       screen.getByRole("heading", { name: "Choose the level of detail" })
     ).toBeInTheDocument();
@@ -510,6 +515,13 @@ describe("App settings form", () => {
   it("uses the simplified early retirement journey by default", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
+    expect(document.title).toBe(
+      "Simplified retirement journey | Civil Service Pension Modeller"
+    );
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, funding gaps, and assumptions."
+    );
     expect(
       screen.getByRole("heading", { name: "About you and your target" })
     ).toBeInTheDocument();

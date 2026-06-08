@@ -8,10 +8,10 @@ describe("settings-page", () => {
     render(
       <SettingsPage
         localStorageEnabled
+        onClearAllData={vi.fn()}
         onExportParameters={vi.fn()}
         onLoadParameters={vi.fn(() => true)}
         onLocalStorageEnabledChange={vi.fn()}
-        onResetParameters={vi.fn()}
         showGuidanceNotes
         onShowGuidanceNotesChange={onShowGuidanceNotesChange}
       />
@@ -27,5 +27,6 @@ describe("settings-page", () => {
       screen.getByRole("checkbox", { name: "Show guidance notes" })
     );
     expect(onShowGuidanceNotesChange).toHaveBeenCalledWith(false);
+    expect(screen.getByRole("status")).toHaveTextContent("Settings saved");
   });
 });

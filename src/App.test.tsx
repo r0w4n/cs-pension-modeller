@@ -408,6 +408,7 @@ function openJourneyStep(name: string | RegExp) {
 describe("App settings form", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.history.replaceState({}, "", "/");
   });
 
   afterEach(() => {
@@ -504,6 +505,25 @@ describe("App settings form", () => {
     expect(
       screen.getAllByRole("heading", { name: "Optional sections" }).length
     ).toBeGreaterThan(0);
+  });
+
+  it("clears all local storage data from the settings page and shows feedback", () => {
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ foo: 1 })
+    );
+    window.localStorage.setItem("custom-key", "custom-value");
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Data Cleared");
+    expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem("custom-key")).toBeNull();
   });
 
   it("does not show the retired third mode option", () => {
@@ -2205,7 +2225,7 @@ describe("App settings form", () => {
       screen.queryByRole("button", { name: "Export parameters" })
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Reset parameters" })
+      screen.queryByRole("button", { name: "Clear all data" })
     ).not.toBeInTheDocument();
   });
 

@@ -28,7 +28,7 @@ test.describe("production build smoke checks", () => {
       page.getByRole("button", { name: "Export parameters" })
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Reset parameters" })
+      page.getByRole("button", { name: "Clear all data" })
     ).toBeVisible();
     await expect(page.getByLabel("Choose JSON parameter file")).toBeVisible();
     await expect(page.getByLabel("Save inputs on this device")).toBeVisible();

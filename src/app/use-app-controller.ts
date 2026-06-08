@@ -17,7 +17,7 @@ import {
 } from "../projection";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
-  createDefaultSettings,
+  clearAllLocalStorageData,
   clearStoredSettings,
   getStoredSettingsSnapshot,
   isLocalStorageEnabled as loadLocalStorageEnabled,
@@ -348,15 +348,8 @@ export function useAppController() {
     });
   }
 
-  function resetSettings() {
-    const defaultSettings = createDefaultSettings();
-
-    saveSettings(defaultSettings);
-    showSavedLabel();
-    setChartUndoStack([]);
-    setSettingsFormVersion((current) => current + 1);
-    setSimpleJourneySettings(null);
-    setSettings(defaultSettings);
+  function clearAllData() {
+    clearAllLocalStorageData();
   }
 
   function loadParameters(input: unknown) {
@@ -486,7 +479,7 @@ export function useAppController() {
     loadComparisonScenario,
     pensionSummary,
     projectionRows,
-    resetSettings,
+    clearAllData,
     retirementIncomeDisplay,
     retirementIncomeItems,
     retirementIncomeSeries,

@@ -24,7 +24,7 @@ function App() {
     journeyStepViewModel,
     loadParameters,
     localStorageEnabled,
-    resetSettings,
+    clearAllData,
     selectAppMode,
     setLocalStorageEnabled,
     setShowGuidanceNotes,
@@ -41,7 +41,7 @@ function App() {
         onExportParameters={exportParameters}
         onLoadParameters={loadParameters}
         onLocalStorageEnabledChange={setLocalStorageEnabled}
-        onResetParameters={resetSettings}
+        onClearAllData={clearAllData}
         showGuidanceNotes={showGuidanceNotes}
         onShowGuidanceNotesChange={setShowGuidanceNotes}
       />

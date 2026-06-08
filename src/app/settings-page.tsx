@@ -7,20 +7,20 @@ import { Helmet } from "../helmet";
 
 type SettingsPageProps = {
   localStorageEnabled: boolean;
+  onClearAllData: () => void;
   onExportParameters: () => void;
   onLoadParameters: (input: unknown) => boolean;
   onLocalStorageEnabledChange: (enabled: boolean) => void;
-  onResetParameters: () => void;
   showGuidanceNotes: boolean;
   onShowGuidanceNotesChange: (checked: boolean) => void;
 };
 
 export function SettingsPage({
   localStorageEnabled,
+  onClearAllData,
   onExportParameters,
   onLoadParameters,
   onLocalStorageEnabledChange,
-  onResetParameters,
   showGuidanceNotes,
   onShowGuidanceNotesChange,
 }: SettingsPageProps) {
@@ -57,9 +57,9 @@ export function SettingsPage({
     showActionFeedback("Parameters exported");
   }
 
-  function resetParameters() {
-    onResetParameters();
-    showActionFeedback("Parameters reset");
+  function clearAllData() {
+    onClearAllData();
+    showActionFeedback("Data Cleared");
   }
 
   async function loadParameters(event: ChangeEvent<HTMLInputElement>) {
@@ -97,6 +97,11 @@ export function SettingsPage({
     showActionFeedback(
       enabled ? "Local saving turned on" : "Local saving turned off"
     );
+  }
+
+  function updateGuidanceNotesPreference(checked: boolean) {
+    onShowGuidanceNotesChange(checked);
+    showActionFeedback("Settings saved");
   }
 
   return (
@@ -174,19 +179,20 @@ export function SettingsPage({
           </section>
 
           <section className="field-card">
-            <span className="field-label">Reset parameters</span>
+            <span className="field-label">Clear all data</span>
             <p className="field-help">
-              Reset pension, savings, tax, and inflation assumptions to the
-              modeller defaults.
+              This will delete all data from this device for this site,
+              including pension, savings, tax, inflation, and preference
+              settings.
             </p>
 
             <div className="settings-panel-actions">
               <button
                 type="button"
                 className="secondary-button settings-reset-button"
-                onClick={resetParameters}
+                onClick={clearAllData}
               >
-                Reset parameters
+                Clear all data
               </button>
             </div>
           </section>
@@ -218,7 +224,7 @@ export function SettingsPage({
 
             <GuidanceNotesToggle
               checked={showGuidanceNotes}
-              onChange={onShowGuidanceNotesChange}
+              onChange={updateGuidanceNotesPreference}
             />
           </section>
         </div>

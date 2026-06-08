@@ -57,6 +57,19 @@ export function removeStorageItem(key: string) {
   }
 }
 
+export function clearAllLocalStorageData() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    window.localStorage.clear();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function isLocalStorageEnabled() {
   return readStorageItem(LOCAL_STORAGE_ENABLED_KEY) !== "false";
 }

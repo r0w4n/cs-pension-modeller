@@ -39,6 +39,7 @@ export {
 export { validateSettings } from "./settings/settings-validate";
 
 export {
+  clearAllLocalStorageData,
   clearStoredSettings,
   isLocalStorageEnabled,
   loadStoredSettings,

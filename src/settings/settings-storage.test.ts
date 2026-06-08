@@ -1,4 +1,5 @@
 import {
+  clearAllLocalStorageData,
   clearStoredSettings,
   isLocalStorageEnabled,
   loadStoredSettings,
@@ -91,5 +92,17 @@ describe("settings-storage", () => {
     expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
       "false"
     );
+  });
+
+  it("can clear all local storage data for the site", () => {
+    window.localStorage.setItem("test-key", "value");
+    saveLocalStoragePreference(false);
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, "{}");
+
+    clearAllLocalStorageData();
+
+    expect(window.localStorage.getItem("test-key")).toBeNull();
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBeNull();
   });
 });

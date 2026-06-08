@@ -272,7 +272,7 @@ async function assertFooterPage(
       name: "Export parameters",
     });
     const resetButton = page.getByRole("button", {
-      name: "Reset parameters",
+      name: "Clear all data",
     });
 
     await expect(exportButton).toBeVisible();
@@ -290,7 +290,7 @@ async function assertFooterPage(
     await expect(page.getByRole("status")).toHaveText("Parameters exported");
 
     await resetButton.click();
-    await expect(page.getByRole("status")).toHaveText("Parameters reset");
+    await expect(page.getByRole("status")).toHaveText("Data Cleared");
 
     await page.getByLabel("Choose JSON parameter file").evaluate((element) => {
       const input = element as HTMLInputElement;
@@ -341,6 +341,7 @@ async function assertFooterPage(
     const guidanceToggle = page.getByLabel("Show guidance notes");
     await guidanceToggle.uncheck();
     await expect(guidanceToggle).not.toBeChecked();
+    await expect(page.getByRole("status")).toHaveText("Settings saved");
     await expect
       .poll(() =>
         page.evaluate(() =>
@@ -351,6 +352,7 @@ async function assertFooterPage(
 
     await guidanceToggle.check();
     await expect(guidanceToggle).toBeChecked();
+    await expect(page.getByRole("status")).toHaveText("Settings saved");
     await expect
       .poll(() =>
         page.evaluate(() =>

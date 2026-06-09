@@ -39,6 +39,7 @@ import {
 } from "./projection-table";
 import {
   SettingsFields as SettingsFieldsFeature,
+  useMobileDateDropdowns,
   type SettingsFieldOnChange,
 } from "./form-fields";
 import {
@@ -88,6 +89,8 @@ export function JourneyStepContent({
   viewModel,
 }: JourneyStepContentProps) {
   const { settings, comparisonResultCache } = viewModel;
+  const shouldRenderProjectionTable =
+    !useMobileDateDropdowns("(max-width: 640px)");
 
   const currentComparisonResult = useMemo(
     () =>
@@ -120,7 +123,11 @@ export function JourneyStepContent({
   }
 
   if (step.kind === "expert-answer") {
-    return renderExpertAnswerStep(viewModel, currentComparisonResult);
+    return renderExpertAnswerStep(
+      viewModel,
+      currentComparisonResult,
+      shouldRenderProjectionTable
+    );
   }
 
   if (step.kind === "bridge-answer") {
@@ -130,7 +137,8 @@ export function JourneyStepContent({
         showProjectionTable?: boolean;
       },
       viewModel,
-      currentComparisonResult
+      currentComparisonResult,
+      shouldRenderProjectionTable
     );
   }
 
@@ -255,7 +263,8 @@ function renderAnswerStep(
 
 function renderExpertAnswerStep(
   viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
+  currentComparisonResult: ReturnType<typeof createComparisonResult>,
+  shouldRenderProjectionTable: boolean
 ) {
   const {
     settings,
@@ -325,12 +334,14 @@ function renderExpertAnswerStep(
         />
       </ComparisonSection>
 
-      <ProjectionTableSectionContainer>
-        <ProjectionTableSectionFeature
-          rows={projectionRows}
-          settings={settings}
-        />
-      </ProjectionTableSectionContainer>
+      {shouldRenderProjectionTable ? (
+        <ProjectionTableSectionContainer>
+          <ProjectionTableSectionFeature
+            rows={projectionRows}
+            settings={settings}
+          />
+        </ProjectionTableSectionContainer>
+      ) : null}
     </>
   );
 }
@@ -341,7 +352,8 @@ function renderBridgeAnswerStep(
     showProjectionTable?: boolean;
   },
   viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
+  currentComparisonResult: ReturnType<typeof createComparisonResult>,
+  shouldRenderProjectionTable: boolean
 ) {
   const {
     settings,
@@ -413,7 +425,7 @@ function renderBridgeAnswerStep(
         />
       </ComparisonSection>
 
-      {step.showProjectionTable !== false ? (
+      {step.showProjectionTable !== false && shouldRenderProjectionTable ? (
         <ProjectionTableSectionContainer>
           <ProjectionTableSectionFeature
             rows={projectionRows}

@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 test.describe("app end-to-end journeys", () => {
   test("acknowledges first run, switches modes, and keeps expert mode usable", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await startFirstRun(page);
 
     const acknowledgement = page.getByRole("dialog", {
@@ -63,9 +63,7 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("region", { name: "Comparison results" })
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Monthly pension projection table" })
-    ).toBeVisible();
+    await expectProjectionTableForViewport(page, testInfo.project.name);
 
     const horizontalOverflow = await page.evaluate(() => {
       const root = document.documentElement;
@@ -112,7 +110,7 @@ test.describe("app end-to-end journeys", () => {
 
   test("completes the bridge journey and opens the footer information pages", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await acknowledgeAndOpenMode(page, "bridge");
 
     await fillExactNumber(page, "Target retirement age exact value", "58");
@@ -149,9 +147,7 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("region", { name: "Comparison results" })
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Monthly pension projection table" })
-    ).toBeVisible();
+    await expectProjectionTableForViewport(page, testInfo.project.name);
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })
     ).toBeVisible();
@@ -229,6 +225,22 @@ async function fillExactNumber(page: Page, label: string, value: string) {
   await input.fill(value);
   await input.press("Enter");
   await expect(input).toHaveValue(value);
+}
+
+async function expectProjectionTableForViewport(
+  page: Page,
+  projectName: string
+) {
+  const projectionTableHeading = page.getByRole("heading", {
+    name: "Monthly pension projection table",
+  });
+
+  if (projectName.startsWith("mobile")) {
+    await expect(projectionTableHeading).toHaveCount(0);
+    return;
+  }
+
+  await expect(projectionTableHeading).toBeVisible();
 }
 
 async function assertFooterPage(

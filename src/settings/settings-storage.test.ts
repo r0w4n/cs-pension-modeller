@@ -13,6 +13,7 @@ import {
   SETTINGS_STORAGE_KEY,
 } from "./settings-types";
 import { createDefaultSettings } from "./settings-defaults";
+import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
 
 describe("settings-storage", () => {
   beforeEach(() => {
@@ -52,12 +53,60 @@ describe("settings-storage", () => {
 
     const stored = JSON.parse(
       window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
-    ) as Record<string, unknown>;
-    expect(stored.startDate).toBeUndefined();
+    ) as { version?: unknown; data?: Record<string, unknown> };
+    expect(stored.version).toBe(SETTINGS_SCHEMA_VERSION);
+    expect(stored.data?.startDate).toBeUndefined();
 
     const loaded = loadStoredSettings();
     expect(loaded.desiredRetirementIncome).toBe(60000);
     expect(loaded.startDate).toBe("2026-04-25");
+  });
+
+  it("migrates legacy unversioned settings when loading", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        targetRetirementAge: 61,
+        desiredRetirementIncome: 60000,
+      })
+    );
+
+    const loaded = loadStoredSettings();
+
+    expect(loaded.requirementAge).toBe(61);
+    expect(loaded.desiredRetirementIncome).toBe(60000);
+  });
+
+  it("loads current versioned settings envelopes", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: SETTINGS_SCHEMA_VERSION,
+        data: {
+          requirementAge: 62,
+          desiredRetirementIncome: 61000,
+        },
+      })
+    );
+
+    const loaded = loadStoredSettings();
+
+    expect(loaded.requirementAge).toBe(62);
+    expect(loaded.desiredRetirementIncome).toBe(61000);
+  });
+
+  it("falls back to defaults for settings from a newer schema version", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: SETTINGS_SCHEMA_VERSION + 1,
+        data: {
+          requirementAge: 62,
+        },
+      })
+    );
+
+    expect(loadStoredSettings()).toEqual(createDefaultSettings());
   });
 
   it("skips loading and saving settings when local storage is disabled", () => {

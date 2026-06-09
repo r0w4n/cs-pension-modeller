@@ -147,16 +147,21 @@ saving preference so the browser can remember that saving is off.
 
 Keys currently used:
 
-| Key                                       | Purpose                                                                                            | Stored value                                                            |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                  |
-| `cs-pension-modeller.settings`            | Pension inputs and assumptions, when local saving is enabled.                                      | JSON object (settings payload).                                         |
-| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                    |
-| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                  |
-| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`. |
-| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string (currently `"v1"`).                                      |
+| Key                                       | Purpose                                                                                            | Stored value                                                                    |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                          |
+| `cs-pension-modeller.settings`            | Pension inputs and assumptions, when local saving is enabled.                                      | JSON object envelope `{ version, data }`, where `data` is the settings payload. |
+| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                            |
+| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                          |
+| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.         |
+| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string (currently `"v1"`).                                              |
 
 To remove all stored data, clear this site’s storage in your browser settings.
+
+Settings storage is schema-versioned. Current saves use a versioned envelope so
+older browser data can be migrated safely when fields are renamed or
+restructured. The current migration history is documented in
+[docs/settings-schema-version-history.md](/Users/rowan/Documents/github/cs-pension-calculator/docs/settings-schema-version-history.md).
 
 ## Development
 

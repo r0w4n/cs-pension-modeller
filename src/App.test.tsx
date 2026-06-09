@@ -345,6 +345,24 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function readStoredSettingsPayload() {
+  const stored = JSON.parse(
+    window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
+  ) as { data?: Record<string, unknown> };
+
+  if (
+    typeof stored === "object" &&
+    stored !== null &&
+    "data" in stored &&
+    typeof stored.data === "object" &&
+    stored.data !== null
+  ) {
+    return stored.data;
+  }
+
+  return stored as Record<string, unknown>;
+}
+
 function renderAcknowledgedApp(
   options: { mode?: "expert" | "bridge" | "simple" | null } = {}
 ) {
@@ -621,9 +639,7 @@ describe("App settings form", () => {
 
     renderAcknowledgedApp({ mode: "simple" });
 
-    const storedSettings = JSON.parse(
-      window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
-    ) as Record<string, unknown>;
+    const storedSettings = readStoredSettingsPayload();
     expect(storedSettings).toEqual(
       expect.objectContaining({
         requirementAge: 60,
@@ -669,9 +685,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
       "61"
     );
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionFactorType: "self_plus_beneficiaries",
       })
@@ -710,9 +724,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText(/^Leave Alpha, age /)).toBeInTheDocument();
     expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
     expect(screen.getByLabelText("Start State, age 69")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 60,
         alphaPensionLeaveAge: 61,
@@ -952,9 +964,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Target retirement age exact value")
     ).toHaveAttribute("step", "1");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 55,
       })
@@ -1371,9 +1381,7 @@ describe("App settings form", () => {
     fireEvent.blur(
       screen.getByLabelText("Current Full State Pension (£ per year)")
     );
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         dateOfBirth: "1990-02-01",
         currentStatePension: 11800,
@@ -1398,9 +1406,7 @@ describe("App settings form", () => {
     fireEvent.blur(targetInput);
 
     expect(targetInput).toHaveValue(50000);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         desiredRetirementIncome: 50000,
       })
@@ -1432,9 +1438,7 @@ describe("App settings form", () => {
       screen.getByLabelText("Age You Leave Alpha Scheme exact value")
     );
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaPensionDrawAge: 70,
         alphaPensionLeaveAge: 70,
@@ -1457,9 +1461,7 @@ describe("App settings form", () => {
     fireEvent.blur(taxReliefSelect);
 
     expect(taxReliefSelect).toHaveValue("40");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippTaxReliefRate: "40",
       })
@@ -1481,9 +1483,7 @@ describe("App settings form", () => {
     fireEvent.blur(factorTypeSelect);
 
     expect(factorTypeSelect).toHaveValue("self_plus_beneficiaries");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionFactorType: "self_plus_beneficiaries",
       })
@@ -1508,9 +1508,7 @@ describe("App settings form", () => {
     });
 
     expect(factorTypeSelect).toHaveValue("self_plus_beneficiaries");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
@@ -1561,9 +1559,7 @@ describe("App settings form", () => {
     });
     fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual({
+    expect(readStoredSettingsPayload()).toEqual({
       ...expectedStoredSettings({
         alphaPensionAbsDate: "2024",
       }),
@@ -1579,9 +1575,7 @@ describe("App settings form", () => {
       target: { value: "11" },
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1987-11-01",
         statePensionDrawDate: "2055-11-01",
@@ -1592,9 +1586,7 @@ describe("App settings form", () => {
       target: { value: "1977" },
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-11-01",
         statePensionDrawDate: "2045-08-01",
@@ -1671,9 +1663,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("State Pension start age exact value")
     ).toHaveValue(69);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         statePensionDrawDate: "2056-06-01",
       })
@@ -1740,9 +1730,7 @@ describe("App settings form", () => {
 
     expect(applyIncreasesToggle).toBeChecked();
     expect(inflationInput).toHaveValue(3.4);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         applyPensionIncreases: true,
         inflationRateAnnual: 3.4,
@@ -1775,9 +1763,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Long-term inflation assumption exact value")
     ).toHaveValue(2.5);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         inflationRateAnnual: 2.5,
       })
@@ -1847,9 +1833,7 @@ describe("App settings form", () => {
 
     expect(applyStateGrowthToggle).toBeChecked();
     expect(wageGrowthInput).toHaveValue(4.2);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         statePensionApplyFutureGrowth: true,
         statePensionWageGrowthPercent: 4.2,
@@ -1903,9 +1887,7 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 68,
       })
@@ -1919,9 +1901,7 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaPensionLeaveAge: 68,
       })
@@ -1936,9 +1916,7 @@ describe("App settings form", () => {
     });
 
     expect(screen.getByLabelText("Start Alpha, age 69")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaPensionDrawAge: 69,
       })
@@ -1965,9 +1943,7 @@ describe("App settings form", () => {
 
     expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
     expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 67,
         alphaPensionLeaveAge: 67,
@@ -2071,9 +2047,7 @@ describe("App settings form", () => {
       key: "ArrowUp",
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         desiredRetirementIncome: 32400,
       })
@@ -2099,9 +2073,7 @@ describe("App settings form", () => {
     });
     fireEvent.mouseUp(partialWorkSlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         partialRetirementEnabled: true,
         partialRetirementWorkPercent: 50,
@@ -2130,9 +2102,7 @@ describe("App settings form", () => {
 
     fireEvent.click(partialRetirementKey);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         partialRetirementEnabled: false,
       })
@@ -2151,9 +2121,7 @@ describe("App settings form", () => {
       target: { value: "275" },
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 0,
       })
@@ -2161,9 +2129,7 @@ describe("App settings form", () => {
 
     fireEvent.mouseUp(alphaAddedPensionSlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 275,
       })
@@ -2187,9 +2153,7 @@ describe("App settings form", () => {
     });
     fireEvent.mouseUp(alphaAddedPensionSlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 275,
       })
@@ -2197,9 +2161,7 @@ describe("App settings form", () => {
 
     fireEvent.keyDown(scenarioNameInput, { key: "z", metaKey: true });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 275,
       })
@@ -2207,9 +2169,7 @@ describe("App settings form", () => {
 
     fireEvent.keyDown(window, { key: "z", metaKey: true });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
       })
@@ -2251,9 +2211,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Current Pensionable Earnings (£ per year)")
     ).toHaveValue("10001");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         pensionableEarnings: 10001,
       })
@@ -2272,9 +2230,7 @@ describe("App settings form", () => {
     });
 
     expect(lifeExpectancySlider).toHaveValue("90");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.not.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2282,9 +2238,7 @@ describe("App settings form", () => {
 
     fireEvent.blur(lifeExpectancySlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2321,9 +2275,7 @@ describe("App settings form", () => {
 
     expect(exactLifeExpectancyInput).toHaveValue(90);
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("90");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.not.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2331,9 +2283,7 @@ describe("App settings form", () => {
 
     fireEvent.blur(exactLifeExpectancyInput);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2353,9 +2303,7 @@ describe("App settings form", () => {
     });
 
     expect(screen.getByText("Lump sum #1")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
@@ -2368,9 +2316,7 @@ describe("App settings form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove lump sum" }));
 
     expect(screen.queryByText("Lump sum #1")).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionLumpSums: [],
       })
@@ -2422,9 +2368,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("SIPP lump sum end date 1")
     ).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippLumpSums: [
           expect.objectContaining({
@@ -2440,9 +2384,7 @@ describe("App settings form", () => {
     );
 
     expect(screen.queryByText("SIPP lump sum #1")).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippLumpSums: [],
       })
@@ -2474,9 +2416,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("SIPP withdrawal rate (%) exact value")
     ).toHaveValue(5.2);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippWithdrawalStrategy: "percentage",
         sippWithdrawalPercent: 5.2,
@@ -2504,9 +2444,7 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("columnheader", { name: "ISA" })
     ).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         isaCurrentPot: 20000,
         isaLumpSums: [
@@ -2564,9 +2502,7 @@ describe("App settings form", () => {
     expect(
       screen.queryByLabelText("Current ISA pot (£)")
     ).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         showStatePension: false,
         showSipp: false,

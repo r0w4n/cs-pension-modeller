@@ -7,6 +7,7 @@ import { coerceStatePensionSettings } from "./settings-domains/state-pension";
 import { coerceSippTaxReliefRate } from "./settings-domains/sipp";
 import { coerceTaxSettings } from "./settings-domains/tax";
 import { createDefaultSettings } from "./settings-defaults";
+import { migrateSettingsToLatest } from "./settings-migrations";
 import { normalizeSettings } from "./settings-normalize";
 import {
   LOCAL_STORAGE_ENABLED_KEY,
@@ -18,6 +19,11 @@ import {
   type StoredPensionSettings,
   type PensionSettings,
 } from "./settings-types";
+import {
+  LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
+  SETTINGS_SCHEMA_VERSION,
+  type StoredSettingsEnvelope,
+} from "./settings-versions";
 
 export function readStorageItem(key: string) {
   if (typeof window === "undefined") {
@@ -103,6 +109,18 @@ function isSettingsObject(
   return Boolean(input) && typeof input === "object" && !Array.isArray(input);
 }
 
+function isStoredSettingsEnvelope(
+  input: unknown
+): input is StoredSettingsEnvelope<unknown> {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return false;
+  }
+
+  const candidate = input as Partial<StoredSettingsEnvelope<unknown>>;
+
+  return typeof candidate.version === "number" && "data" in candidate;
+}
+
 function coerceSettings(
   input: Partial<StoredPensionSettings>
 ): Partial<StoredPensionSettings> {
@@ -113,12 +131,7 @@ function coerceSettings(
   return {
     dateOfBirth: coerceString(input.dateOfBirth),
     lifeExpectancy: coerceNumber(input.lifeExpectancy),
-    requirementAge:
-      coerceNumber(input.requirementAge) ??
-      coerceNumber(
-        (input as { targetRetirementAge?: unknown }).targetRetirementAge
-      ) ??
-      coerceNumber(input.isaDrawAge),
+    requirementAge: coerceNumber(input.requirementAge),
     showAlpha: coerceBoolean(input.showAlpha),
     projectionBasis: coerceString(input.projectionBasis) as
       | ProjectionBasis
@@ -198,7 +211,20 @@ export function loadStoredSettings(): PensionSettings {
   }
 
   try {
-    return parseStoredSettings(JSON.parse(stored)) ?? createDefaultSettings();
+    const parsed: unknown = JSON.parse(stored);
+    const envelope: StoredSettingsEnvelope<unknown> = isStoredSettingsEnvelope(
+      parsed
+    )
+      ? parsed
+      : {
+          version: LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
+          data: parsed,
+        };
+
+    return (
+      parseStoredSettings(migrateSettingsToLatest(envelope)) ??
+      createDefaultSettings()
+    );
   } catch {
     return createDefaultSettings();
   }
@@ -223,8 +249,12 @@ export function saveSettings(settings: PensionSettings) {
   }
 
   const storedSettings = getStoredSettingsSnapshot(settings);
+  const envelope: StoredSettingsEnvelope = {
+    version: SETTINGS_SCHEMA_VERSION,
+    data: storedSettings,
+  };
 
-  return writeStorageItem(SETTINGS_STORAGE_KEY, JSON.stringify(storedSettings));
+  return writeStorageItem(SETTINGS_STORAGE_KEY, JSON.stringify(envelope));
 }
 
 export function clearStoredSettings() {

@@ -454,7 +454,6 @@ export function applySimpleJourneyDefaults(
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
     nuvosPensionLeaveAge: normalPensionAge,
-    nuvosPensionDrawAge: normalPensionAge,
     sippDrawAge: normalPensionAge,
     showStatePension: true,
     showSipp: false,
@@ -475,14 +474,9 @@ export function applySimpleJourneyDefaults(
 export function applySimpleJourneyAssumptions(
   settings: PensionSettings
 ): PensionSettings {
-  const normalPensionAge = settings.normalPensionAge;
-
   return {
     ...settings,
-    nuvosPensionLeaveAge: normalPensionAge,
-    nuvosPensionDrawAge: settings.showNuvos
-      ? settings.nuvosPensionDrawAge
-      : normalPensionAge,
+    nuvosPensionLeaveAge: settings.requirementAge,
     showStatePension: true,
     showSipp: false,
     showIsa: false,

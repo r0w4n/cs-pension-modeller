@@ -704,6 +704,51 @@ describe("App settings form", () => {
     );
   });
 
+  it("does not let the simple journey move the nuvos chart marker before retirement age", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos" }));
+
+    advanceJourneyToResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 68"), {
+      key: "ArrowLeft",
+    });
+
+    expect(screen.getByLabelText("Start Nuvos, age 68")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Start Nuvos, age 67")
+    ).not.toBeInTheDocument();
+  });
+
+  it("lets the simple journey move the nuvos chart marker down to the retirement age", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          showNuvos: true,
+          nuvosPensionDrawAge: 68,
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+    advanceJourneyToResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+      key: "ArrowLeft",
+    });
+    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 68"), {
+      key: "ArrowLeft",
+    });
+
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Nuvos, age 67")).toBeInTheDocument();
+  });
+
   it("hides Alpha from the simple journey result chart when Alpha is disabled", async () => {
     renderAcknowledgedApp({ mode: "simple" });
 

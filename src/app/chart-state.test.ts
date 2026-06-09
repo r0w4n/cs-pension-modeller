@@ -86,6 +86,25 @@ describe("chart-state", () => {
     expect(next.sippDrawAge).toBe(58);
   });
 
+  it("does not let nuvos draw age move before retirement age", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      requirementAge: 68,
+      nuvosPensionLeaveAge: 60,
+      nuvosPensionDrawAge: 68,
+      showNuvos: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      nuvosStartAge: 60,
+    });
+
+    expect(next.requirementAge).toBe(68);
+    expect(next.nuvosPensionDrawAge).toBe(68);
+  });
+
   it("allows alpha draw age to move beyond state pension age", () => {
     const current = {
       ...createDefaultSettings(),

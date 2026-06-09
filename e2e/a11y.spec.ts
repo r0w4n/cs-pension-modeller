@@ -46,7 +46,7 @@ test.describe("accessibility", () => {
 
   test("bridge journey results have no detectable axe violations", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await acknowledgeAndOpenMode(page, "bridge");
 
     await fillExactNumber(page, "Target retirement age exact value", "58");
@@ -55,10 +55,10 @@ test.describe("accessibility", () => {
       "Income you want in retirement (£ per year)",
       "34000"
     );
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your personal details");
 
-    await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your Civil Service pensions");
+    await clickNextAndExpectStep(page, "Your Alpha pension");
 
     await fillCurrency(
       page,
@@ -70,22 +70,23 @@ test.describe("accessibility", () => {
       "Planned Alpha Pension Draw Age exact value",
       "60"
     );
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "State Pension");
 
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your bridging pots");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
+    await expect(
+      page.getByRole("button", { name: "Show my answer" })
+    ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Monthly pension projection table" })
-    ).toBeVisible();
+    await expectProjectionTableForViewport(page, testInfo.project.name);
 
     await expectNoAxeViolations(page, "bridge journey results");
   });
@@ -206,6 +207,27 @@ async function fillExactNumber(page: Page, label: string, value: string) {
   await input.fill(value);
   await input.press("Enter");
   await expect(input).toHaveValue(value);
+}
+
+async function clickNextAndExpectStep(page: Page, heading: string) {
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+}
+
+async function expectProjectionTableForViewport(
+  page: Page,
+  projectName: string
+) {
+  const projectionTableHeading = page.getByRole("heading", {
+    name: "Monthly pension projection table",
+  });
+
+  if (projectName.startsWith("mobile")) {
+    await expect(projectionTableHeading).toHaveCount(0);
+    return;
+  }
+
+  await expect(projectionTableHeading).toBeVisible();
 }
 
 async function renderDeferredComparisonContent(page: Page) {

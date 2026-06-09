@@ -65,7 +65,7 @@ export const defaultSettings: PensionSettings = {
   nuvosAssumedCpiPercent: nuvosDefaults.nuvosAssumedCpiPercent,
   sippCurrentPot: 0,
   sippMonthlyContribution: 0,
-  sippDrawAge: 58,
+  sippDrawAge: personalDetailsDefaults.requirementAge,
   sippLumpSums: [],
   sippRealInterestPercent: 5,
   sippTaxReliefRate: "20",
@@ -104,7 +104,7 @@ export function createDefaultSettings(): PensionSettings {
     normalPensionAge,
     startDate: getTodayIsoDate(),
     sippDrawAge: normalizeSippDrawAge(
-      defaultSettings.sippDrawAge,
+      normalPensionAge,
       defaultSettings.dateOfBirth
     ),
     statePensionDrawDate: calculateStatePensionDrawDateFromAge(

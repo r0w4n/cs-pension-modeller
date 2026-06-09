@@ -442,6 +442,7 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
+    sippDrawAge: normalPensionAge,
     showStatePension: true,
     showSipp: false,
     showIsa: false,

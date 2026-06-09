@@ -31,6 +31,20 @@ export function saveAcknowledgementState() {
 }
 
 export function loadStoredAppMode(): AppMode | null {
+  if (!isLocalStorageEnabled()) {
+    return null;
+  }
+
+  const storedMode = readStorageItem(APP_MODE_STORAGE_KEY);
+
+  if (
+    storedMode === "bridge" ||
+    storedMode === "simple" ||
+    storedMode === "expert"
+  ) {
+    return storedMode;
+  }
+
   return null;
 }
 

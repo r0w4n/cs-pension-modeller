@@ -470,7 +470,7 @@ describe("App settings form", () => {
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("expert");
   });
 
-  it("does not restore a previously selected mode on reload", () => {
+  it("restores a previously selected mode on reload", () => {
     window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
 
     renderAcknowledgedApp({ mode: null });
@@ -479,9 +479,9 @@ describe("App settings form", () => {
       screen.getByRole("button", {
         name: /Work through every setting with full control/i,
       })
-    ).toHaveAttribute("aria-pressed", "false");
+    ).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByRole("heading", { name: "Choose the level of detail" })
+      screen.getByRole("heading", { name: "Optional sections" })
     ).toBeInTheDocument();
   });
 

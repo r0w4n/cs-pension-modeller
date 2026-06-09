@@ -119,10 +119,10 @@ test.describe("app end-to-end journeys", () => {
       "Income you want in retirement (£ per year)",
       "34000"
     );
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your personal details");
 
-    await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your Civil Service pensions");
+    await clickNextAndExpectStep(page, "Your Alpha pension");
 
     await fillCurrency(
       page,
@@ -134,13 +134,16 @@ test.describe("app end-to-end journeys", () => {
       "Planned Alpha Pension Draw Age exact value",
       "60"
     );
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "State Pension");
 
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your bridging pots");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
+    await expect(
+      page.getByRole("button", { name: "Show my answer" })
+    ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
 
@@ -225,6 +228,11 @@ async function fillExactNumber(page: Page, label: string, value: string) {
   await input.fill(value);
   await input.press("Enter");
   await expect(input).toHaveValue(value);
+}
+
+async function clickNextAndExpectStep(page: Page, heading: string) {
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: heading })).toBeVisible();
 }
 
 async function expectProjectionTableForViewport(
@@ -324,11 +332,7 @@ async function assertFooterPage(
     await expect(page.getByRole("status")).toHaveText("Parameters loaded");
     await expect(page.getByLabel("Choose JSON parameter file")).toHaveValue("");
     await expect
-      .poll(() =>
-        page.evaluate(() =>
-          window.localStorage.getItem("cs-pension-modeller.settings")
-        )
-      )
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
       .toContain('"desiredRetirementIncome":45678');
 
     await page.getByLabel("Save inputs on this device").uncheck();
@@ -339,11 +343,7 @@ async function assertFooterPage(
       "Local saving turned off"
     );
     await expect
-      .poll(() =>
-        page.evaluate(() =>
-          window.localStorage.getItem("cs-pension-modeller.settings")
-        )
-      )
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
       .toBeNull();
 
     await page.getByLabel("Save inputs on this device").check();
@@ -356,9 +356,7 @@ async function assertFooterPage(
     await expect(page.getByRole("status")).toHaveText("Settings saved");
     await expect
       .poll(() =>
-        page.evaluate(() =>
-          window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
-        )
+        readLocalStorageItem(page, "cs-pension-modeller.guidanceNotes")
       )
       .toBe("false");
 
@@ -367,11 +365,26 @@ async function assertFooterPage(
     await expect(page.getByRole("status")).toHaveText("Settings saved");
     await expect
       .poll(() =>
-        page.evaluate(() =>
-          window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
-        )
+        readLocalStorageItem(page, "cs-pension-modeller.guidanceNotes")
       )
       .toBe("true");
+  }
+}
+
+async function readLocalStorageItem(page: Page, key: string) {
+  try {
+    return await page.evaluate((storageKey) => {
+      return window.localStorage.getItem(storageKey);
+    }, key);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes("Execution context was destroyed")
+    ) {
+      return "__navigation_in_progress__";
+    }
+
+    throw error;
   }
 }
 

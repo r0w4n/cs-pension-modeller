@@ -544,6 +544,30 @@ describe("App settings form", () => {
     expect(window.localStorage.getItem("custom-key")).toBeNull();
   });
 
+  it("persists guidance note changes from the settings page", () => {
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    const guidanceToggle = screen.getByRole("checkbox", {
+      name: "Show guidance notes",
+    });
+
+    fireEvent.click(guidanceToggle);
+
+    expect(guidanceToggle).not.toBeChecked();
+    expect(
+      window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
+    ).toBe("false");
+
+    fireEvent.click(guidanceToggle);
+
+    expect(guidanceToggle).toBeChecked();
+    expect(
+      window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
+    ).toBe("true");
+  });
+
   it("does not show the retired third mode option", () => {
     renderAcknowledgedApp({ mode: null });
 

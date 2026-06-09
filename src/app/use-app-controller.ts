@@ -1,4 +1,4 @@
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
@@ -115,6 +115,10 @@ export function useAppController() {
     setSettings,
     setSimpleJourneySettings,
   });
+
+  useEffect(() => {
+    saveStoredGuidanceNotes(showGuidanceNotes);
+  }, [showGuidanceNotes]);
 
   function updateSetting<K extends SettingsKey>(
     key: K,

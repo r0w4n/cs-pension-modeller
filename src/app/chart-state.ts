@@ -121,6 +121,10 @@ function applyVisibilityPatch(
   next: PensionSettings,
   patch: Partial<RetirementIncomeBridgeParameters>
 ) {
+  if (patch.showAlpha !== undefined) {
+    next.showAlpha = patch.showAlpha;
+  }
+
   if (patch.showIsa !== undefined) {
     next.showIsa = patch.showIsa;
   }
@@ -175,7 +179,9 @@ function applyRetirementAgePatch(
   const retirementAge = clampNumber(
     patch.retirementAge,
     context.currentPlanningAge,
-    Math.min(70, statePensionAge, next.alphaPensionDrawAge)
+    next.showAlpha
+      ? Math.min(70, statePensionAge, next.alphaPensionDrawAge)
+      : Math.min(70, statePensionAge)
   );
   next.requirementAge = normalizeSetting("requirementAge", retirementAge);
 

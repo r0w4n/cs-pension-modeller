@@ -62,6 +62,7 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   partialRetirementWorkPercent: 50,
   partialRetirementEnabled: false,
   statePensionAge: 67,
+  showAlpha: true,
   showIsa: false,
   showSipp: false,
   sippUseByAgeEnabled: false,

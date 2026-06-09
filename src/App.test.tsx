@@ -108,13 +108,30 @@ vi.mock("./projection", async () => {
           milestones:
             index === 2
               ? [
-                  "Starts Drawing Alpha Pension",
+                  ...(settings.showAlpha
+                    ? ["Starts Drawing Alpha Pension"]
+                    : []),
                   ...(settings.showStatePension
                     ? ["Starts Drawing State Pension"]
                     : []),
                   "Life expectancy",
                 ]
               : row.milestones,
+          annualStandardAlphaPension: settings.showAlpha
+            ? row.annualStandardAlphaPension
+            : 0,
+          annualEpaAlphaPension: settings.showAlpha
+            ? row.annualEpaAlphaPension
+            : 0,
+          annualAccruedAlphaPension: settings.showAlpha
+            ? row.annualAccruedAlphaPension
+            : 0,
+          annualAlphaPensionIncludingReduction: settings.showAlpha
+            ? row.annualAlphaPensionIncludingReduction
+            : 0,
+          monthlyAlphaPensionGross: settings.showAlpha
+            ? row.monthlyAlphaPensionGross
+            : 0,
           monthlyStatePension: settings.showStatePension
             ? row.monthlyStatePension
             : 0,
@@ -124,14 +141,14 @@ vi.mock("./projection", async () => {
           monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
           monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
           totalMonthlyIncomeBeforeTax:
-            row.monthlyAlphaPensionGross +
+            (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0),
           monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
           totalMonthlyNetIncome:
-            row.monthlyAlphaPensionGross +
+            (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
@@ -193,12 +210,17 @@ vi.mock("./projection", async () => {
         },
         retirementIncome: {
           sources: [
-            {
-              key: "alpha",
-              label: "Alpha pension",
-              monthlyIncome: rows.at(-1)?.monthlyAlphaPensionGross ?? 0,
-              annualIncome: (rows.at(-1)?.monthlyAlphaPensionGross ?? 0) * 12,
-            },
+            ...(settings.showAlpha
+              ? [
+                  {
+                    key: "alpha" as const,
+                    label: "Alpha pension",
+                    monthlyIncome: rows.at(-1)?.monthlyAlphaPensionGross ?? 0,
+                    annualIncome:
+                      (rows.at(-1)?.monthlyAlphaPensionGross ?? 0) * 12,
+                  },
+                ]
+              : []),
             ...(settings.showNuvos
               ? [
                   {
@@ -597,6 +619,9 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Added pension/i })
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: /Your results/i })
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Date of birth month")).toHaveValue("06");
@@ -612,12 +637,90 @@ describe("App settings form", () => {
       screen.queryByLabelText("Alpha pension draw age")
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText("What else should we include?")
-    ).not.toBeInTheDocument();
-    expect(
       screen.queryByRole("heading", { name: "State Pension" })
     ).not.toBeInTheDocument();
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("simple");
+  });
+
+  it("lets the simple journey include a nuvos pension step", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+
+    const includeNuvosToggle = screen.getByRole("checkbox", { name: "nuvos" });
+
+    expect(includeNuvosToggle).not.toBeChecked();
+
+    fireEvent.click(includeNuvosToggle);
+
+    expect(includeNuvosToggle).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /nuvos pension/i })
+    ).toBeInTheDocument();
+
+    openJourneyStep(/nuvos pension/i);
+
+    expect(
+      screen.getByLabelText("Planned nuvos Pension Draw Age")
+    ).toBeInTheDocument();
+  });
+
+  it("lets the simple journey hide Alpha-specific steps from the Civil Service pensions step", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+
+    const includeAlphaToggle = screen.getByRole("checkbox", { name: "Alpha" });
+
+    expect(includeAlphaToggle).toBeChecked();
+
+    fireEvent.click(includeAlphaToggle);
+
+    expect(includeAlphaToggle).not.toBeChecked();
+    expect(
+      screen.queryByRole("button", { name: /Your Alpha pension/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Added pension/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("defaults the simple journey nuvos draw age to normal pension age", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos" }));
+
+    openJourneyStep(/nuvos pension/i);
+
+    expect(screen.getByLabelText("Planned nuvos Pension Draw Age")).toHaveValue(
+      String(defaultSettings.normalPensionAge)
+    );
+  });
+
+  it("hides Alpha from the simple journey result chart when Alpha is disabled", async () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "Alpha" }));
+
+    advanceJourneyToResult();
+
+    expect(
+      screen.queryByLabelText(/Start Alpha, age \d+/)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Monthly Alpha pension")).not.toBeInTheDocument();
+    expect(
+      await screen.findByLabelText("Monthly retirement income before tax")
+    ).toBeInTheDocument();
   });
 
   it("hides EPA and lump sum controls in the simple journey added pension step", () => {

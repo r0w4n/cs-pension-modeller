@@ -89,7 +89,9 @@ export function createRetirementIncomeSeries(
           })
         : 0;
       const alphaIncomeAnnual =
-        row.date >= alphaDrawDate ? row.monthlyAlphaPensionGross * 12 : 0;
+        settings.showAlpha && row.date >= alphaDrawDate
+          ? row.monthlyAlphaPensionGross * 12
+          : 0;
       const nuvosIncomeAnnual =
         settings.showNuvos && row.date >= nuvosDrawDate
           ? row.monthlyNuvosPensionGross * 12
@@ -221,13 +223,15 @@ function insertChartTransitionPoints(
           age: settings.sippWithdrawalTargetAge,
         }
       : null,
-    {
-      date: addYearsToIsoDate(
-        settings.dateOfBirth,
-        settings.alphaPensionDrawAge
-      ),
-      age: settings.alphaPensionDrawAge,
-    },
+    settings.showAlpha
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.alphaPensionDrawAge
+          ),
+          age: settings.alphaPensionDrawAge,
+        }
+      : null,
     settings.showNuvos
       ? {
           date: addYearsToIsoDate(
@@ -351,6 +355,7 @@ export function createBridgeChartParameters(
       settings.dateOfBirth,
       settings.statePensionDrawDate
     ),
+    showAlpha: settings.showAlpha,
     showIsa: settings.showIsa,
     showSipp: settings.showSipp,
     sippUseByAgeEnabled:
@@ -401,7 +406,9 @@ export function createBridgeChartLimits(
       min: currentPlanningAge,
       max: Math.max(
         currentPlanningAge,
-        Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
+        settings.showAlpha
+          ? Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
+          : ageUpperLimit
       ),
       step: 1,
     },

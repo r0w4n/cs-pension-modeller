@@ -32,6 +32,39 @@ const baseRow: ProjectionRow = {
 };
 
 describe("retirement-income transition points", () => {
+  it("removes Alpha income from the chart series when Alpha is hidden", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      showAlpha: false,
+      alphaPensionDrawAge: 68,
+    };
+
+    const series = createRetirementIncomeSeries(
+      [
+        {
+          ...baseRow,
+          date: "2055-06-01",
+          age: 68,
+          ageMonths: 0,
+          monthlyAlphaPensionGross: 1200,
+        },
+        {
+          ...baseRow,
+          date: "2056-06-01",
+          age: 69,
+          ageMonths: 0,
+          monthlyAlphaPensionGross: 1200,
+        },
+      ],
+      settings
+    );
+
+    expect(series.every((point) => point.alphaIncomeAnnual === 0)).toBe(true);
+    expect(series.some((point) => point.date === "2055-06-01")).toBe(true);
+  });
+
   it("preserves exact ISA draw and use-by ages in the chart series", () => {
     const settings = {
       ...createDefaultSettings(),

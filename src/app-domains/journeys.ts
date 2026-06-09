@@ -251,8 +251,17 @@ export const JOURNEY_DEFINITIONS = [
         },
       },
       {
-        id: "alpha",
+        id: "include",
         eyebrow: "Step 2",
+        title: "Your Civil Service pensions",
+        description:
+          "Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
+        kind: "optional-sections",
+        toggleKeys: ["showAlpha", "showNuvos"],
+      },
+      {
+        id: "alpha",
+        eyebrow: "Step 3",
         title: "Your Alpha pension",
         description:
           "Enter the main figures from your latest statement. The simplified journey assumes you leave and draw Alpha at your Normal Pension Age.",
@@ -267,10 +276,11 @@ export const JOURNEY_DEFINITIONS = [
           accruedPensionAtLastAbs: "Accrued pension to date (£ per year)",
           pensionableEarnings: "Pensionable earnings (£ per year)",
         },
+        visible: (settings) => settings.showAlpha,
       },
       {
         id: "alpha-options",
-        eyebrow: "Step 3",
+        eyebrow: "Step 4",
         title: "Added pension",
         description:
           "Add any monthly added pension contributions you want reflected in the plan. EPA and lump sum purchases are not included in the simplified journey.",
@@ -279,6 +289,7 @@ export const JOURNEY_DEFINITIONS = [
         fieldLabels: {
           alphaAddedPensionMonthly: "Monthly added pension payments (£)",
         },
+        visible: (settings) => settings.showAlpha,
       },
       {
         id: "partial-retirement",
@@ -442,11 +453,13 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
+    nuvosPensionLeaveAge: normalPensionAge,
+    nuvosPensionDrawAge: normalPensionAge,
     sippDrawAge: normalPensionAge,
     showStatePension: true,
     showSipp: false,
     showIsa: false,
-    showNuvos: false,
+    showNuvos: settings.showNuvos,
     isaDrawAge: normalPensionAge,
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
@@ -462,12 +475,18 @@ export function applySimpleJourneyDefaults(
 export function applySimpleJourneyAssumptions(
   settings: PensionSettings
 ): PensionSettings {
+  const normalPensionAge = settings.normalPensionAge;
+
   return {
     ...settings,
+    nuvosPensionLeaveAge: normalPensionAge,
+    nuvosPensionDrawAge: settings.showNuvos
+      ? settings.nuvosPensionDrawAge
+      : normalPensionAge,
     showStatePension: true,
     showSipp: false,
     showIsa: false,
-    showNuvos: false,
+    showNuvos: settings.showNuvos,
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     applyPensionIncreases: true,

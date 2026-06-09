@@ -78,10 +78,11 @@ test.describe("app end-to-end journeys", () => {
     await acknowledgeAndOpenMode(page, "simple");
 
     await fillCurrency(page, "Target retirement income (£ per year)", "32000");
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Your Civil Service pensions");
+    await clickNextAndExpectStep(page, "Your Alpha pension");
 
     await fillCurrency(page, "Accrued pension to date (£ per year)", "17500");
-    await page.getByRole("button", { name: "Next" }).click();
+    await clickNextAndExpectStep(page, "Added pension");
 
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);

@@ -52,6 +52,7 @@ export type RetirementIncomeBridgeParameters = {
   partialRetirementWorkPercent: number;
   partialRetirementEnabled: boolean;
   statePensionAge: number;
+  showAlpha: boolean;
   showIsa: boolean;
   showSipp: boolean;
   sippUseByAgeEnabled: boolean;
@@ -236,6 +237,7 @@ export function RetirementIncomeBridgeChart({
   partialRetirementWorkPercent,
   partialRetirementEnabled,
   statePensionAge,
+  showAlpha,
   showIsa,
   showSipp,
   sippUseByAgeEnabled,
@@ -324,6 +326,7 @@ export function RetirementIncomeBridgeChart({
     () =>
       incomeKeys.filter((key) =>
         isIncomeSourceEnabled(key, {
+          showAlpha,
           partialRetirementEnabled,
           showIsa,
           showNuvos,
@@ -331,7 +334,14 @@ export function RetirementIncomeBridgeChart({
           showStatePension,
         })
       ),
-    [partialRetirementEnabled, showIsa, showNuvos, showSipp, showStatePension]
+    [
+      partialRetirementEnabled,
+      showAlpha,
+      showIsa,
+      showNuvos,
+      showSipp,
+      showStatePension,
+    ]
   );
   const legendIncomeKeys = useMemo(
     () => (hideInactiveLegendItems ? visibleIncomeKeys : incomeKeys),
@@ -386,6 +396,7 @@ export function RetirementIncomeBridgeChart({
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
     showIsa,
     showNuvos,
     showSipp,
@@ -405,6 +416,7 @@ export function RetirementIncomeBridgeChart({
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
     showIsa,
     showNuvos,
     showSipp,
@@ -432,6 +444,7 @@ export function RetirementIncomeBridgeChart({
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
   });
   const buildUpWindow = createBuildUpWindow({
     buildUpEndAge,
@@ -528,14 +541,18 @@ export function RetirementIncomeBridgeChart({
         colour: "#0f6f72",
         editable: true,
       },
-      {
-        key: "alphaLeaveAge",
-        label: "Leave Alpha",
-        shortLabel: "Leave alpha",
-        age: alphaLeaveAge,
-        colour: "#b45309",
-        editable: true,
-      },
+      ...(showAlpha
+        ? [
+            {
+              key: "alphaLeaveAge" as const,
+              label: "Leave Alpha",
+              shortLabel: "Leave alpha",
+              age: alphaLeaveAge,
+              colour: "#b45309",
+              editable: true,
+            },
+          ]
+        : []),
       ...(showSipp
         ? [
             {
@@ -584,14 +601,18 @@ export function RetirementIncomeBridgeChart({
             },
           ]
         : []),
-      {
-        key: "alphaStartAge",
-        label: "Start Alpha",
-        shortLabel: "Start Alpha",
-        age: alphaStartAge,
-        colour: "#7353bf",
-        editable: true,
-      },
+      ...(showAlpha
+        ? [
+            {
+              key: "alphaStartAge" as const,
+              label: "Start Alpha",
+              shortLabel: "Start Alpha",
+              age: alphaStartAge,
+              colour: "#7353bf",
+              editable: true,
+            },
+          ]
+        : []),
       ...(showNuvos
         ? [
             {
@@ -638,6 +659,7 @@ export function RetirementIncomeBridgeChart({
       partialRetirementEnabled,
       partialRetirementStartAge,
       retirementAge,
+      showAlpha,
       showNuvos,
       showSipp,
       showIsa,
@@ -1873,6 +1895,7 @@ export function RetirementIncomeBridgeChart({
             const label =
               key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
             const enabled = isIncomeSourceEnabled(key, {
+              showAlpha,
               partialRetirementEnabled,
               showIsa,
               showNuvos,
@@ -1925,16 +1948,18 @@ export function RetirementIncomeBridgeChart({
       />
 
       <div className="bridge-control-grid">
-        <BridgeMetricControl
-          label="Added Alpha pension"
-          value={alphaMonthlyAddedPension}
-          suffix="/ month"
-          limit={limits.alphaMonthlyAddedPension}
-          colour="#7353bf"
-          onChange={(value) =>
-            onChangeParameters({ alphaMonthlyAddedPension: value })
-          }
-        />
+        {showAlpha ? (
+          <BridgeMetricControl
+            label="Added Alpha pension"
+            value={alphaMonthlyAddedPension}
+            suffix="/ month"
+            limit={limits.alphaMonthlyAddedPension}
+            colour="#7353bf"
+            onChange={(value) =>
+              onChangeParameters({ alphaMonthlyAddedPension: value })
+            }
+          />
+        ) : null}
         {showIsa ? (
           <BridgeMetricControl
             label="ISA contribution"
@@ -2124,6 +2149,7 @@ function createActiveMilestoneAges({
   partialRetirementEnabled,
   partialRetirementStartAge,
   retirementAge,
+  showAlpha,
   showNuvos,
   showIsa,
   showSipp,
@@ -2143,6 +2169,7 @@ function createActiveMilestoneAges({
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
   | "retirementAge"
+  | "showAlpha"
   | "showNuvos"
   | "showIsa"
   | "showSipp"
@@ -2154,13 +2181,13 @@ function createActiveMilestoneAges({
 >) {
   return [
     retirementAge,
-    alphaLeaveAge,
+    showAlpha ? alphaLeaveAge : null,
     showSipp ? sippAccessAge : null,
     showSipp && sippUseByAgeEnabled ? sippUseByAge : null,
     showIsa ? isaAccessAge : null,
     showIsa && isaUseByAgeEnabled ? isaUseByAge : null,
     partialRetirementEnabled ? partialRetirementStartAge : null,
-    alphaStartAge,
+    showAlpha ? alphaStartAge : null,
     showNuvos ? nuvosStartAge : null,
     showStatePension ? statePensionAge : null,
   ];
@@ -2178,6 +2205,7 @@ function createActiveMilestoneBoundaries(
     | "partialRetirementEnabled"
     | "partialRetirementStartAge"
     | "retirementAge"
+    | "showAlpha"
     | "showNuvos"
     | "showIsa"
     | "showSipp"
@@ -2198,6 +2226,7 @@ function createActiveMilestoneBoundaries(
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
     showNuvos,
     showIsa,
     showSipp,
@@ -2210,7 +2239,9 @@ function createActiveMilestoneBoundaries(
 
   return [
     { key: "retirementAge" as const, age: retirementAge },
-    { key: "alphaLeaveAge" as const, age: alphaLeaveAge },
+    ...(showAlpha
+      ? [{ key: "alphaLeaveAge" as const, age: alphaLeaveAge }]
+      : []),
     ...(showSipp
       ? [{ key: "sippAccessAge" as const, age: sippAccessAge }]
       : []),
@@ -2229,7 +2260,9 @@ function createActiveMilestoneBoundaries(
           },
         ]
       : []),
-    { key: "alphaStartAge" as const, age: alphaStartAge },
+    ...(showAlpha
+      ? [{ key: "alphaStartAge" as const, age: alphaStartAge }]
+      : []),
     ...(showNuvos
       ? [{ key: "nuvosStartAge" as const, age: nuvosStartAge }]
       : []),
@@ -2292,16 +2325,18 @@ function createBuildUpEndAge({
   partialRetirementEnabled,
   partialRetirementStartAge,
   retirementAge,
+  showAlpha,
 }: Pick<
   RetirementIncomeBridgeParameters,
   | "alphaLeaveAge"
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
   | "retirementAge"
+  | "showAlpha"
 >) {
   return Math.min(
     retirementAge,
-    alphaLeaveAge,
+    showAlpha ? alphaLeaveAge : retirementAge,
     partialRetirementEnabled ? partialRetirementStartAge : retirementAge
   );
 }
@@ -2711,6 +2746,7 @@ function isIncomeSourceEnabled(
   key: IncomeKey,
   state: Pick<
     RetirementIncomeBridgeParameters,
+    | "showAlpha"
     | "partialRetirementEnabled"
     | "showIsa"
     | "showNuvos"
@@ -2718,6 +2754,10 @@ function isIncomeSourceEnabled(
     | "showStatePension"
   >
 ) {
+  if (key === "alphaIncomeAnnual") {
+    return state.showAlpha;
+  }
+
   if (key === "isaIncomeAnnual") {
     return state.showIsa;
   }
@@ -2745,6 +2785,10 @@ function getIncomeSourceTogglePatch(
   key: IncomeKey,
   enabled: boolean
 ): Partial<RetirementIncomeBridgeParameters> | null {
+  if (key === "alphaIncomeAnnual") {
+    return { showAlpha: enabled };
+  }
+
   if (key === "isaIncomeAnnual") {
     return { showIsa: enabled };
   }

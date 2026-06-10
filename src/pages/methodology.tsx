@@ -253,7 +253,7 @@ export function MethodologyPage() {
         <h3>Alpha draw age and early retirement</h3>
         <p className="section-copy">
           If Alpha is drawn before its normal pension age, the model applies
-          early-retirement reduction factors from the relevant factor table.
+          Alpha early-retirement reduction factors from the Alpha factor table.
         </p>
         <p className="section-copy">
           The model uses the selected Alpha draw date to determine whether a
@@ -296,10 +296,21 @@ export function MethodologyPage() {
           retirement income and tax calculations.
         </p>
         <p className="section-copy">
-          The methodology page should make clear that nuvos is a distinct
-          pension stream with its own draw age and increase assumptions. It
-          should not be described as part of Alpha.
+          If nuvos is drawn before age 65, the model applies the nuvos
+          early-payment formula rather than the Alpha factor table. The formula
+          reduces the pension by 5% a year for the first 3 years early, 4% a
+          year for the next 3 years early, and 3% a year for any further early
+          period.
         </p>
+        <p className="section-copy">
+          For example, if nuvos is drawn 4 years and 10 months before age 65,
+          the model estimates the reduction as:
+        </p>
+        <FormulaBlock>
+          {
+            "3 years × 5% + 22 months × 4% / 12 = 22.33%\nfactor = 1 - 22.33% = 0.7767"
+          }
+        </FormulaBlock>
       </section>
 
       <section>

@@ -9,7 +9,8 @@ import {
   getModelledAnnualGrowthRate,
   getModelledPensionInflationPercent,
 } from "./projection-domains/inflation";
-import { getEarlyRetirementReductionFactor } from "./projection-domains/alpha";
+import { getAlphaEarlyRetirementFactor } from "./projection-domains/alpha";
+import { calculateNuvosEarlyRetirementFactor } from "./projection-domains/nuvos";
 import { getStatePensionNominalIncreaseRate } from "./projection-domains/state-pension";
 
 export const NUVOS_NORMAL_PENSION_AGE = 65;
@@ -127,13 +128,14 @@ export function deriveProjectionInputs(
     addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge)
   );
   const nuvosNpaDate = addYears(settings.dateOfBirth, NUVOS_NORMAL_PENSION_AGE);
-  const nuvosReductionFactor =
-    nuvosDrawDate > nuvosNpaDate
-      ? 1
-      : getEarlyRetirementReductionFactor(
-          NUVOS_NORMAL_PENSION_AGE,
-          settings.nuvosPensionDrawAge
-        );
+  const nuvosMonthsEarly =
+    nuvosDrawDate >= nuvosNpaDate
+      ? 0
+      : calculateWholeMonthDifference(nuvosDrawDate, nuvosNpaDate);
+  const nuvosReductionFactor = calculateNuvosEarlyRetirementFactor(
+    Math.floor(nuvosMonthsEarly / 12),
+    nuvosMonthsEarly % 12
+  );
   const addedPensionStopDate = accrualStopDate;
   const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
   const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
@@ -141,7 +143,7 @@ export function deriveProjectionInputs(
   const reductionFactor =
     drawDate > npaDate
       ? 1
-      : getEarlyRetirementReductionFactor(
+      : getAlphaEarlyRetirementFactor(
           normalPensionAge,
           settings.alphaPensionDrawAge
         );
@@ -149,10 +151,7 @@ export function deriveProjectionInputs(
   const epaReductionFactor =
     !settings.alphaEpaEnabled || drawDate >= epaDate
       ? 1
-      : getEarlyRetirementReductionFactor(
-          epaDrawAge,
-          settings.alphaPensionDrawAge
-        );
+      : getAlphaEarlyRetirementFactor(epaDrawAge, settings.alphaPensionDrawAge);
 
   return {
     endDate,

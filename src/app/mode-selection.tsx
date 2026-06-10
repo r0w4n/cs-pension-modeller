@@ -32,7 +32,7 @@ export function ModeSelection({
           <span>
             Answer a smaller set of questions to see what your retirement could
             look like financially. This journey keeps the main assumptions
-            simple and shows your projected income, key dates, and funding gaps
+            simple and shows your projected income, key dates, and assumptions
             at the end.
           </span>
         </button>

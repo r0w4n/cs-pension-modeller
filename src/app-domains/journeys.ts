@@ -235,7 +235,7 @@ export const JOURNEY_DEFINITIONS = [
     id: "simple-early-retirement",
     title: "Simplified retirement journey",
     description:
-      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, funding gaps, and assumptions.",
+      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, and assumptions.",
     steps: [
       {
         id: "basics",
@@ -358,7 +358,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Result",
         title: "Your results",
         description:
-          "Review your projected income, bridge funding, key dates, and assumptions.",
+          "Review your projected income, key dates, and assumptions.",
         kind: "bridge-answer",
         hideInactiveLegendItems: true,
         hideBridgeFundingSection: true,

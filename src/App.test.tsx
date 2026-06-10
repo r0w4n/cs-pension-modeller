@@ -604,7 +604,7 @@ describe("App settings form", () => {
     );
     expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
       "content",
-      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, funding gaps, and assumptions."
+      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, and assumptions."
     );
     expect(
       screen.getByRole("heading", { name: "About you and your target" })

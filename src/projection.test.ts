@@ -24,7 +24,7 @@ import {
   generateMonthlyDateRange,
   generateMilestoneDefinitions,
   getAddedPensionFactorForAge,
-  getEarlyRetirementReductionFactor,
+  getAlphaEarlyRetirementFactor,
   getLifeExpectancyDate,
   prepareBridgeProjectionSettings,
 } from "./projection";
@@ -319,7 +319,7 @@ describe("projection calculations", () => {
     ).toBeCloseTo((12000 * 0.023) / 12 / 2, 6);
   });
 
-  it("uses age 65 as the nuvos pension age for early payment reductions", () => {
+  it("uses the nuvos formula from age 65 for early payment reductions", () => {
     const derivedInputs = deriveProjectionInputs({
       ...defaultSettings,
       showNuvos: true,
@@ -331,7 +331,7 @@ describe("projection calculations", () => {
       nuvosNpaDate: "2052-06-01",
       nuvosDrawDate: "2047-06-01",
       nuvosAccrualStopDate: "2047-06-01",
-      nuvosReductionFactor: 0.771,
+      nuvosReductionFactor: 0.77,
     });
   });
 
@@ -363,7 +363,7 @@ describe("projection calculations", () => {
     expect(summary.nuvosPension.monthlyAtDraw).toBeCloseTo(1000, 6);
   });
 
-  it("actuarially reduces nuvos pension drawn before age 65", () => {
+  it("formula-reduces nuvos pension drawn before age 65", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       requirementAge: 60,
@@ -387,9 +387,9 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
     const summary = generatePensionSummary(rows, settings);
 
-    expect(summary.nuvosPension.annualAtDraw).toBeCloseTo(12000 * 0.771, 6);
+    expect(summary.nuvosPension.annualAtDraw).toBeCloseTo(12000 * 0.77, 6);
     expect(summary.nuvosPension.monthlyAtDraw).toBeCloseTo(
-      (12000 * 0.771) / 12,
+      (12000 * 0.77) / 12,
       6
     );
   });
@@ -727,26 +727,26 @@ describe("projection calculations", () => {
     ).toBeCloseTo(12820 / getAddedPensionFactorForAge(62), 6);
   });
 
-  it("loads early retirement reduction factors from JSON", () => {
-    expect(getEarlyRetirementReductionFactor(68, 60)).toBe(0.648);
+  it("loads Alpha early retirement reduction factors from JSON", () => {
+    expect(getAlphaEarlyRetirementFactor(68, 60)).toBe(0.648);
   });
 
-  it("interpolates early retirement reduction factors for decimal ages", () => {
-    expect(getEarlyRetirementReductionFactor(68, 60.5)).toBeCloseTo(
+  it("interpolates Alpha early retirement reduction factors for decimal ages", () => {
+    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBeCloseTo(
       (0.648 + 0.68) / 2,
       6
     );
   });
 
-  it("interpolates early retirement reduction factors for decimal normal pension ages", () => {
-    expect(getEarlyRetirementReductionFactor(66 + 1 / 12, 60)).toBeCloseTo(
+  it("interpolates Alpha early retirement reduction factors for decimal normal pension ages", () => {
+    expect(getAlphaEarlyRetirementFactor(66 + 1 / 12, 60)).toBeCloseTo(
       0.729 + (0.687 - 0.729) / 12,
       6
     );
   });
 
   it("does not reduce pension when a decimal draw age is at or after decimal NPA", () => {
-    expect(getEarlyRetirementReductionFactor(66 + 1 / 12, 66.1)).toBe(1);
+    expect(getAlphaEarlyRetirementFactor(66 + 1 / 12, 66.1)).toBe(1);
   });
 
   it("applies early retirement reduction when draw date is on or before NPA", () => {

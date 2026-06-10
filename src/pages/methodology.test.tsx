@@ -43,4 +43,21 @@ describe("MethodologyPage", () => {
       screen.queryByRole("heading", { name: "Planning tool only" })
     ).not.toBeInTheDocument();
   });
+
+  it("includes the nuvos early-payment worked example", () => {
+    render(<MethodologyPage />);
+
+    const nuvosHeading = screen.getByRole("heading", {
+      name: "nuvos pension methodology",
+    });
+    const nuvosSection = nuvosHeading.closest("section");
+
+    expect(nuvosSection).not.toBeNull();
+    expect(nuvosSection as HTMLElement).toHaveTextContent(
+      "if nuvos is drawn 4 years and 10 months before age 65"
+    );
+    expect(nuvosSection as HTMLElement).toHaveTextContent(
+      "factor = 1 - 22.33% = 0.7767"
+    );
+  });
 });

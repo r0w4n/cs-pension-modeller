@@ -178,7 +178,7 @@ describe("retirement-income transition points", () => {
 });
 
 describe("retirement-income chart limits", () => {
-  it("does not require SIPP draw age to be after retirement age", () => {
+  it("requires SIPP draw age to stay at or after Normal Pension Age", () => {
     const settings = {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
@@ -189,7 +189,7 @@ describe("retirement-income chart limits", () => {
 
     const limits = createBridgeChartLimits(settings);
 
-    expect(limits.sippAccessAge.min).toBe(57);
+    expect(limits.sippAccessAge.min).toBe(68);
   });
 
   it("requires nuvos draw age to stay at or after retirement age", () => {
@@ -207,7 +207,7 @@ describe("retirement-income chart limits", () => {
     expect(limits.nuvosStartAge.min).toBe(68);
   });
 
-  it("does not cap ISA draw age at State Pension age", () => {
+  it("does not cap ISA or SIPP draw age at State Pension age", () => {
     const settings = {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
@@ -219,7 +219,7 @@ describe("retirement-income chart limits", () => {
     const limits = createBridgeChartLimits(settings);
 
     expect(limits.statePensionAge.max).toBe(85);
-    expect(limits.sippAccessAge.max).toBe(68);
+    expect(limits.sippAccessAge.max).toBe(85);
     expect(limits.isaAccessAge.max).toBe(85);
   });
 });

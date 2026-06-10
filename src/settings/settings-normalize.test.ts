@@ -22,6 +22,7 @@ describe("settings-normalize", () => {
       /^\d{4}-\d{2}-\d{2}$/
     );
     expect(normalizeSippDrawAge(55, "1987-06-15")).toBe(57);
+    expect(normalizeSippDrawAge(72, "1987-06-15")).toBe(72);
   });
 
   it("preserves an ISA draw age that differs from retirement age", () => {

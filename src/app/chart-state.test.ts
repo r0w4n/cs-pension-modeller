@@ -55,7 +55,7 @@ describe("chart-state", () => {
       dateOfBirth: "1987-06-01",
       startDate: "2026-06-01",
       requirementAge: 65,
-      sippDrawAge: 58,
+      sippDrawAge: 68,
       alphaPensionDrawAge: 68,
       showSipp: true,
     };
@@ -65,16 +65,16 @@ describe("chart-state", () => {
     });
 
     expect(next.requirementAge).toBe(64);
-    expect(next.sippDrawAge).toBe(58);
+    expect(next.sippDrawAge).toBe(68);
   });
 
-  it("allows SIPP draw age to move before retirement age", () => {
+  it("does not let SIPP draw age move before Normal Pension Age", () => {
     const current = {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
       startDate: "2026-06-01",
-      requirementAge: 65,
-      sippDrawAge: 65,
+      requirementAge: 70,
+      sippDrawAge: 68,
       showSipp: true,
     };
 
@@ -82,8 +82,44 @@ describe("chart-state", () => {
       sippAccessAge: 58,
     });
 
-    expect(next.requirementAge).toBe(65);
-    expect(next.sippDrawAge).toBe(58);
+    expect(next.requirementAge).toBe(70);
+    expect(next.sippDrawAge).toBe(68);
+  });
+
+  it("allows SIPP draw age to move beyond State Pension age", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      lifeExpectancy: 85,
+      requirementAge: 65,
+      sippDrawAge: 65,
+      statePensionDrawDate: "2055-06-01",
+      showSipp: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      sippAccessAge: 72,
+    });
+
+    expect(next.sippDrawAge).toBe(72);
+  });
+
+  it("caps chart SIPP draw age at life expectancy", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      lifeExpectancy: 85,
+      sippDrawAge: 65,
+      showSipp: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      sippAccessAge: 90,
+    });
+
+    expect(next.sippDrawAge).toBe(85);
   });
 
   it("does not let nuvos draw age move before retirement age", () => {

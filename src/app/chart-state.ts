@@ -45,7 +45,7 @@ export function applyBridgeChartParameterPatch(
 
   applyRetirementAgePatch(next, patch, context, statePensionAge);
   applyAlphaLeaveAgePatch(next, patch, context, statePensionAge);
-  applyAccessAgePatch(next, patch, context, statePensionAge);
+  applyAccessAgePatch(next, patch, context);
   applyUseByAgePatch(next, patch);
   reconcileChartState(next, context);
 
@@ -238,14 +238,17 @@ function applyAlphaLeaveAgePatch(
 function applyAccessAgePatch(
   next: PensionSettings,
   patch: Partial<RetirementIncomeBridgeParameters>,
-  context: ChartStateContext,
-  statePensionAge: number
+  context: ChartStateContext
 ) {
   if (patch.sippAccessAge !== undefined) {
+    const earliestSippChartStartAge = Math.max(
+      context.minimumSippAccessAge,
+      context.defaultStatePensionAge
+    );
     const sippAccessAge = clampNumber(
       patch.sippAccessAge,
-      context.minimumSippAccessAge,
-      Math.min(70, statePensionAge)
+      earliestSippChartStartAge,
+      Math.max(earliestSippChartStartAge, next.lifeExpectancy)
     );
     next.sippDrawAge = normalizeSippDrawAge(sippAccessAge, next.dateOfBirth);
     reconcileSippWithdrawalTarget(next);
@@ -329,9 +332,14 @@ function reconcileChartState(
   next: PensionSettings,
   context: ChartStateContext
 ) {
-  if (next.showSipp && next.sippDrawAge < context.minimumSippAccessAge) {
+  const earliestSippChartStartAge = Math.max(
+    context.minimumSippAccessAge,
+    context.defaultStatePensionAge
+  );
+
+  if (next.showSipp && next.sippDrawAge < earliestSippChartStartAge) {
     next.sippDrawAge = normalizeSippDrawAge(
-      context.minimumSippAccessAge,
+      earliestSippChartStartAge,
       next.dateOfBirth
     );
   }

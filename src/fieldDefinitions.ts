@@ -638,7 +638,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "SIPP draw start age",
         type: "range",
         min: 55,
-        max: 70,
+        max: 100,
         step: 1,
         inputStep: 1,
         description:

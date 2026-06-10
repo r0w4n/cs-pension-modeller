@@ -388,6 +388,14 @@ export function createBridgeChartLimits(
     currentPlanningAge,
     Math.min(70, statePensionAge)
   );
+  const sippAccessAgeMax = Math.max(
+    minimumSippAccessAge,
+    settings.lifeExpectancy
+  );
+  const earliestSippChartStartAge = Math.max(
+    minimumSippAccessAge,
+    defaultStatePensionAge
+  );
   const isaAccessAgeMax = Math.max(currentPlanningAge, settings.lifeExpectancy);
   const partialRetirementMaxAge = Math.max(
     currentPlanningAge,
@@ -421,8 +429,8 @@ export function createBridgeChartLimits(
       step: 1,
     },
     sippAccessAge: {
-      min: minimumSippAccessAge,
-      max: ageUpperLimit,
+      min: earliestSippChartStartAge,
+      max: Math.max(earliestSippChartStartAge, sippAccessAgeMax),
       step: 1,
     },
     sippUseByAge: {

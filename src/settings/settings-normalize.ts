@@ -62,7 +62,7 @@ const numericSettingRules = {
   ...nuvosNumericSettingRules,
   sippCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
-  sippDrawAge: { min: 55, max: 70, step: 1 },
+  sippDrawAge: { min: 55, max: 100, step: 1 },
   sippRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   sippWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
   sippWithdrawalTargetAge: { min: 55, max: 100, step: 1 },

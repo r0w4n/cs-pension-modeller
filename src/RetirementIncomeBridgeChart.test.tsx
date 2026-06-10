@@ -169,6 +169,12 @@ function getMilestoneHitAreas() {
   }));
 }
 
+function getMilestoneLabelsInRenderOrder() {
+  return [...document.querySelectorAll(".bridge-milestone")].map((node) =>
+    node.getAttribute("aria-label")
+  );
+}
+
 function getMilestoneLineX(label: RegExp | string) {
   return Number(
     screen
@@ -551,6 +557,28 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(
       screen.getByRole("button", { name: "Hide chart controls" })
     ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("brings the active dragged milestone to the front", () => {
+    renderChart({
+      showSipp: true,
+      sippAccessAge: 60,
+    });
+
+    expect(getMilestoneLabelsInRenderOrder().at(-1)).toMatch(
+      /Start State, age 67/i
+    );
+
+    fireEvent.pointerDown(screen.getByRole("slider", { name: /Retire/i }), {
+      button: 0,
+      clientX: 120,
+      clientY: 150,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(getMilestoneLabelsInRenderOrder().at(-1)).toMatch(/Retire, age 60/i);
   });
 
   it("does not show the selected milestone label in the mobile marker summary", () => {

@@ -703,6 +703,10 @@ export function RetirementIncomeBridgeChart({
     xScale,
     plotHeight
   );
+  const renderedMarkerLayouts = useMemo(
+    () => bringActiveMarkerToFront(markerLayouts, activeMarkerDragKey),
+    [activeMarkerDragKey, markerLayouts]
+  );
   const draggingMobileMarker =
     activeMarkerDragKey === null
       ? undefined
@@ -1743,7 +1747,7 @@ export function RetirementIncomeBridgeChart({
               onTouchCancel={(event) => finishTargetTouchDrag(event, false)}
             />
 
-            {markerLayouts.map((marker) => {
+            {renderedMarkerLayouts.map((marker) => {
               const x = xScale(marker.plotAge);
               const handleLabel = getMarkerHandleLabel(marker);
 
@@ -2498,6 +2502,26 @@ function createMarkerLayouts<
       handleY,
     };
   });
+}
+
+function bringActiveMarkerToFront<T extends MilestoneMarker>(
+  markers: T[],
+  activeMarkerKey: MilestoneKey | null
+) {
+  if (activeMarkerKey === null) {
+    return markers;
+  }
+
+  const activeMarker = markers.find((marker) => marker.key === activeMarkerKey);
+
+  if (!activeMarker) {
+    return markers;
+  }
+
+  return [
+    ...markers.filter((marker) => marker.key !== activeMarkerKey),
+    activeMarker,
+  ];
 }
 
 function getTargetIncomeControlLimit(

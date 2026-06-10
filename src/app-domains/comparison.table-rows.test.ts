@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildComparisonTableRows, createComparisonResult } from "./comparison";
+import {
+  buildComparisonStatusItems,
+  buildComparisonTableRows,
+  createComparisonResult,
+} from "./comparison";
 import { createDefaultSettings } from "../settings";
 
 describe("comparison table rows", () => {
@@ -79,5 +83,41 @@ describe("comparison table rows", () => {
       )
     ).toBe(false);
     expect(rows.some((row) => row.metric === "Total secure income")).toBe(true);
+  });
+
+  it("keeps bridge wording for normal status items but hides it when bridge funding is hidden", () => {
+    const settings = createDefaultSettings();
+    const baseResult = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+    const result = {
+      ...baseResult,
+      targetMissMonths: 0,
+      bridgeAnalysis: {
+        ...baseResult.bridgeAnalysis,
+        planWorks: false,
+        additionalMonthlyContributionRequired: 250,
+        totalUnfundedShortfall: 10_000,
+        fullSecureAnnualGuaranteedSurplus: 0,
+      },
+    };
+
+    expect(
+      buildComparisonStatusItems(result).find(
+        (item) => item.label === "Main issue"
+      )?.value as string
+    ).toContain("Bridge still unfunded");
+    expect(
+      buildComparisonStatusItems(result, {
+        hideBridgeFundingSection: true,
+      }).find((item) => item.label === "Main issue")?.value as string
+    ).not.toContain("Bridge");
   });
 });

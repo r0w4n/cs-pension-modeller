@@ -43,6 +43,7 @@ export function useComparisonState({
   comparisonResultCache,
   retirementIncomeSeries,
   retirementIncomeDisplay,
+  hideBridgeFundingSection = false,
 }: {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
@@ -50,6 +51,7 @@ export function useComparisonState({
   comparisonResultCache?: ComparisonResultCache;
   retirementIncomeSeries?: RetirementIncomePoint[];
   retirementIncomeDisplay?: RetirementIncomeDisplay;
+  hideBridgeFundingSection?: boolean;
 }) {
   const currentSettingsSignature = useMemo(
     () => getSettingsSignature(settings),
@@ -92,6 +94,7 @@ export function useComparisonState({
         retirementIncomeSeries,
         scenarios,
         taxationEnabled: settings.taxationEnabled,
+        hideBridgeFundingSection,
       }),
     [
       comparisonResultCache,
@@ -101,6 +104,7 @@ export function useComparisonState({
       retirementIncomeSeries,
       scenarios,
       settings.taxationEnabled,
+      hideBridgeFundingSection,
     ]
   );
 
@@ -200,6 +204,7 @@ export function buildComparisonPanelData({
   retirementIncomeSeries,
   scenarios,
   taxationEnabled,
+  hideBridgeFundingSection = false,
 }: {
   comparisonResultCache: ComparisonResultCache | undefined;
   currentResult: ComparisonResult | null;
@@ -208,6 +213,7 @@ export function buildComparisonPanelData({
   retirementIncomeSeries?: RetirementIncomePoint[];
   scenarios: ComparisonScenario[];
   taxationEnabled: boolean;
+  hideBridgeFundingSection?: boolean;
 }): ComparisonPanelData {
   const savedBaseResults = scenarios.map((scenario) =>
     createComparisonResult(scenario, "", comparisonResultCache)
@@ -235,7 +241,7 @@ export function buildComparisonPanelData({
     hasVisibleShortfall,
     insights: calculateComparisonInsights(results),
     resultStatusItems: activeResult
-      ? buildComparisonStatusItems(activeResult)
+      ? buildComparisonStatusItems(activeResult, { hideBridgeFundingSection })
       : [],
     results,
     savedResults,

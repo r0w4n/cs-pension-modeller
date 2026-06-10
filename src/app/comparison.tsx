@@ -81,6 +81,7 @@ export function ComparisonPanel({
     comparisonResultCache,
     retirementIncomeSeries,
     retirementIncomeDisplay,
+    hideBridgeFundingSection,
   });
   const scenarioActions = useScenarioActions({
     scenarios,

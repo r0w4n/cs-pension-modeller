@@ -393,7 +393,9 @@ function renderBridgeAnswerStep(
           retirementIncomeTotal={retirementIncomeTotal}
           retirementIncomeTargetTitle={retirementIncomeTargetTitle}
           retirementIncomeTarget={retirementIncomeTarget}
-          statusItems={buildStatusItems(currentComparisonResult)}
+          statusItems={buildStatusItems(currentComparisonResult, {
+            hideBridgeFundingSection: Boolean(step.hideBridgeFundingSection),
+          })}
         />
       </ResultsSummarySection>
 
@@ -491,10 +493,11 @@ function ValidationSummary({
 }
 
 function buildStatusItems(
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
+  currentComparisonResult: ReturnType<typeof createComparisonResult>,
+  options: { hideBridgeFundingSection?: boolean } = {}
 ) {
   return currentComparisonResult
-    ? buildComparisonStatusItems(currentComparisonResult)
+    ? buildComparisonStatusItems(currentComparisonResult, options)
     : [];
 }
 

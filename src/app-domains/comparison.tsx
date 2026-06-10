@@ -851,11 +851,13 @@ export function buildComparisonDetailedRows(
 }
 
 export function buildComparisonStatusItems(
-  result: ComparisonResult
+  result: ComparisonResult,
+  options: { hideBridgeFundingSection?: boolean } = {}
 ): SummaryItemLike[] {
+  const { hideBridgeFundingSection = false } = options;
   const overallWorks =
     result.targetMissMonths === 0 &&
-    result.bridgeAnalysis.planWorks &&
+    (hideBridgeFundingSection || result.bridgeAnalysis.planWorks) &&
     result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus >= 0;
 
   const targetShortfall =
@@ -865,7 +867,7 @@ export function buildComparisonStatusItems(
 
   let mainIssue = "No shortfall identified from the current assumptions.";
 
-  if (!result.bridgeAnalysis.planWorks) {
+  if (!hideBridgeFundingSection && !result.bridgeAnalysis.planWorks) {
     mainIssue =
       result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
         ? `Bridge still unfunded; estimated extra monthly saving ${formatMonthlyCurrency(
@@ -873,12 +875,17 @@ export function buildComparisonStatusItems(
           )}`
         : "Bridge still unfunded";
   } else if (result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus < 0) {
-    mainIssue = `Secure pension income is ${formatAnnualCurrency(
-      Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
-    )} below target once the bridge ends`;
+    mainIssue = hideBridgeFundingSection
+      ? `Secure pension income is ${formatAnnualCurrency(
+          Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
+        )} below target once all selected secure pension income is in payment`
+      : `Secure pension income is ${formatAnnualCurrency(
+          Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
+        )} below target once the bridge ends`;
   } else if (result.targetMissMonths > 0) {
-    mainIssue =
-      "Income drops below target before secure pension income is fully in place";
+    mainIssue = hideBridgeFundingSection
+      ? "Income drops below target before all selected secure pension income is in place"
+      : "Income drops below target before secure pension income is fully in place";
   }
 
   return [

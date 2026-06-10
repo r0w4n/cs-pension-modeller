@@ -1007,6 +1007,10 @@ describe("App settings form", () => {
       screen.getByRole("heading", { name: "Plan status" })
     ).toBeInTheDocument();
     expect(
+      screen.queryByText(/Bridge still unfunded/i)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/once the bridge ends/i)).not.toBeInTheDocument();
+    expect(
       screen.getByText(
         "This summary uses your current journey assumptions and shows your projected annual income before tax."
       )

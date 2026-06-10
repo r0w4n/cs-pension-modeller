@@ -102,7 +102,7 @@ export const JOURNEY_DEFINITIONS = [
     id: "early-retirement-bridge",
     title: "Work out what I need to retire early",
     description:
-      "Test whether your chosen retirement age works, then see the ISA and SIPP bridge needed before secure pension income is fully in place.",
+      "Build a retirement income plan using your Civil Service pension, State Pension, SIPP, ISA and other savings. See how your bridging pots could support you before your main pensions start.",
     steps: [
       {
         id: "target",

@@ -46,8 +46,9 @@ export function ModeSelection({
           <span className="card-label">Early retirement</span>
           <strong>Work out what I need to retire early</strong>
           <span>
-            Follow a statement-led flow that closely matches the main Civil
-            Service calculator inputs, then review the full results breakdown.
+            Build a retirement income plan using your Civil Service pension,
+            State Pension, SIPP, ISA and other savings. See how your bridging
+            pots could support you before your main pensions start.
           </span>
         </button>
 

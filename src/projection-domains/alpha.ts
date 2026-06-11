@@ -1,5 +1,5 @@
 import addedPensionFactors from "../data/alpha_pension_added_pension_factors.json";
-import reductionFactors from "../data/alpha_pension_reduction_factors.json";
+import alphaEarlyRetirementFactors from "../data/alpha_pension_reduction_factors.json";
 import {
   getPartialRetirementContributionMultiplier,
   type AddedPensionFactorType,
@@ -13,7 +13,7 @@ type AddedPensionFactorRecord = {
   self_plus_beneficiaries: number | null;
 };
 
-type ReductionFactorRecord = {
+type AlphaEarlyRetirementFactorRecord = {
   normal_pension_age: number;
   retirement_age: number;
   reduction_factor: number;
@@ -215,7 +215,7 @@ export function getAddedPensionRevaluationFactor(
   return 1;
 }
 
-export function getEarlyRetirementReductionFactor(
+export function getAlphaEarlyRetirementFactor(
   normalPensionAge: number,
   retirementAge: number
 ) {
@@ -223,7 +223,8 @@ export function getEarlyRetirementReductionFactor(
     return 1;
   }
 
-  const records = reductionFactors as ReductionFactorRecord[];
+  const records =
+    alphaEarlyRetirementFactors as AlphaEarlyRetirementFactorRecord[];
   const normalPensionAges = Array.from(
     new Set(records.map((record) => record.normal_pension_age))
   ).sort((first, second) => first - second);
@@ -232,7 +233,7 @@ export function getEarlyRetirementReductionFactor(
   );
 
   if (exactNormalPensionAge !== undefined) {
-    return getReductionFactorForNormalPensionAge(
+    return getAlphaEarlyRetirementFactorForNormalPensionAge(
       records,
       exactNormalPensionAge,
       retirementAge
@@ -253,12 +254,12 @@ export function getEarlyRetirementReductionFactor(
     return 1;
   }
 
-  const lowerReductionFactor = getReductionFactorForNormalPensionAge(
+  const lowerReductionFactor = getAlphaEarlyRetirementFactorForNormalPensionAge(
     records,
     lowerNormalPensionAge,
     retirementAge
   );
-  const upperReductionFactor = getReductionFactorForNormalPensionAge(
+  const upperReductionFactor = getAlphaEarlyRetirementFactorForNormalPensionAge(
     records,
     upperNormalPensionAge,
     retirementAge
@@ -348,8 +349,8 @@ function isEpaAccrualDate(settings: PensionSettings, rowDate: string) {
   );
 }
 
-function getReductionFactorForNormalPensionAge(
-  records: ReductionFactorRecord[],
+function getAlphaEarlyRetirementFactorForNormalPensionAge(
+  records: AlphaEarlyRetirementFactorRecord[],
   normalPensionAge: number,
   retirementAge: number
 ) {

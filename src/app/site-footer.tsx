@@ -6,6 +6,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer" role="contentinfo">
       <nav className="site-footer-links" aria-label="Site links">
+        <a href={`${appBaseHref}settings/`}>Settings</a>
         <a href={`${appBaseHref}privacy/`}>Privacy</a>
         <a href={`${appBaseHref}methodology/`}>Methodology</a>
         <a href={`${appBaseHref}about/`}>About</a>

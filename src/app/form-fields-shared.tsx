@@ -16,16 +16,29 @@ export function getFieldCardClassName(
     .join(" ");
 }
 
-export function FieldLabel({ field }: { field: FieldDefinition }) {
+export function FieldLabel({
+  field,
+  showInfoLinks = true,
+}: {
+  field: FieldDefinition;
+  showInfoLinks?: boolean;
+}) {
   const infoUrl = "infoUrl" in field ? field.infoUrl : undefined;
   const infoLinkText = "infoLinkText" in field ? field.infoLinkText : undefined;
   const extraInfoLinks = "infoLinks" in field ? (field.infoLinks ?? []) : [];
-  const infoLinks = [
-    ...(infoUrl
-      ? [{ href: infoUrl, text: infoLinkText ?? `More about ${field.label}` }]
-      : []),
-    ...extraInfoLinks,
-  ];
+  const infoLinks = showInfoLinks
+    ? [
+        ...(infoUrl
+          ? [
+              {
+                href: infoUrl,
+                text: infoLinkText ?? `More about ${field.label}`,
+              },
+            ]
+          : []),
+        ...extraInfoLinks,
+      ]
+    : [];
 
   return (
     <span className="field-label-group">

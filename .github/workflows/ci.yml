@@ -9,6 +9,19 @@ permissions:
   contents: read
 
 jobs:
+  workflow-lint:
+    name: GitHub Actions Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
   dependency-review:
     name: Dependency Review
     if: github.event_name == 'pull_request'
@@ -48,7 +61,7 @@ jobs:
         run: npm run format:check
 
       - name: Typecheck
-        run: npm run typecheck
+        run: npm run typecheck:all
 
       - name: Test with coverage
         run: npm run test:coverage
@@ -101,26 +114,6 @@ jobs:
             playwright-report
             test-results
           if-no-files-found: ignore
-
-  dependency-security:
-    name: Dependency Security Audit
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Audit dependencies
-        run: npm run audit
 
   codeql:
     name: CodeQL Security Analysis

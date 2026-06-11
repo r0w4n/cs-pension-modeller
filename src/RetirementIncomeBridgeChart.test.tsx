@@ -62,6 +62,7 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   partialRetirementWorkPercent: 50,
   partialRetirementEnabled: false,
   statePensionAge: 67,
+  showAlpha: true,
   showIsa: false,
   showSipp: false,
   sippUseByAgeEnabled: false,
@@ -73,17 +74,17 @@ const baseProps: RetirementIncomeBridgeChartProps = {
     alphaMonthlyAddedPension: { min: 0, max: 1000, step: 25 },
     isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
-    retirementAge: { min: 40, max: 67, step: 0.25 },
-    alphaLeaveAge: { min: 40, max: 67, step: 0.25 },
-    sippAccessAge: { min: 57, max: 67, step: 0.25 },
-    sippUseByAge: { min: 57.25, max: 80, step: 0.25 },
-    isaAccessAge: { min: 40, max: 67, step: 0.25 },
-    alphaStartAge: { min: 60, max: 67, step: 0.25 },
-    nuvosStartAge: { min: 60, max: 67, step: 0.25 },
-    isaUseByAge: { min: 60.25, max: 80, step: 0.25 },
-    partialRetirementStartAge: { min: 40, max: 59.75, step: 0.25 },
+    retirementAge: { min: 40, max: 67, step: 1 },
+    alphaLeaveAge: { min: 40, max: 67, step: 1 },
+    sippAccessAge: { min: 57, max: 67, step: 1 },
+    sippUseByAge: { min: 57.25, max: 80, step: 1 },
+    isaAccessAge: { min: 40, max: 67, step: 1 },
+    alphaStartAge: { min: 60, max: 67, step: 1 },
+    nuvosStartAge: { min: 60, max: 67, step: 1 },
+    isaUseByAge: { min: 60.25, max: 80, step: 1 },
+    partialRetirementStartAge: { min: 40, max: 59.75, step: 1 },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
-    statePensionAge: { min: 67, max: 80, step: 0.25 },
+    statePensionAge: { min: 67, max: 80, step: 1 },
   },
   onChangeParameters: vi.fn(),
 };
@@ -168,6 +169,12 @@ function getMilestoneHitAreas() {
   }));
 }
 
+function getMilestoneLabelsInRenderOrder() {
+  return [...document.querySelectorAll(".bridge-milestone")].map((node) =>
+    node.getAttribute("aria-label")
+  );
+}
+
 function getMilestoneLineX(label: RegExp | string) {
   return Number(
     screen
@@ -183,6 +190,19 @@ function getIncomeAreaPath(strokeColour: string) {
       .find((node) => node.getAttribute("stroke") === strokeColour)
       ?.getAttribute("d") ?? ""
   );
+}
+
+function getIncomeAreaStrokeColours() {
+  return [...document.querySelectorAll("path[stroke]")]
+    .map((node) => node.getAttribute("stroke"))
+    .filter((stroke): stroke is string => Boolean(stroke));
+}
+
+function getMilestoneHandleFill(label: RegExp | string) {
+  return screen
+    .getByRole("slider", { name: label })
+    .querySelector(".bridge-milestone-handle")
+    ?.getAttribute("fill");
 }
 
 function expectPathToContainX(path: string, x: number) {
@@ -299,6 +319,130 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(getBuildUpBandWidth()).toBeGreaterThan(0);
   });
 
+  it("labels the bridge series as ISA and SIPP in the chart legend", () => {
+    renderChart();
+
+    expect(
+      screen.getByRole("button", { name: "Toggle chart ISA source" })
+    ).toHaveTextContent("ISA");
+    expect(
+      screen.getByRole("button", { name: "Toggle chart SIPP source" })
+    ).toHaveTextContent("SIPP");
+  });
+
+  it("matches ISA and SIPP start and stop handles to the legend colours", () => {
+    renderChart({
+      showIsa: true,
+      showSipp: true,
+      isaUseByAgeEnabled: true,
+      sippUseByAgeEnabled: true,
+    });
+
+    expect(getMilestoneHandleFill(/ISA start/i)).toBe("#1f8ee6");
+    expect(getMilestoneHandleFill(/ISA stop/i)).toBe("#1f8ee6");
+    expect(getMilestoneHandleFill(/SIPP start/i)).toBe("#148c55");
+    expect(getMilestoneHandleFill(/SIPP stop/i)).toBe("#148c55");
+  });
+
+  it("uses the legend order for stacked income areas that start together", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2045-01-01",
+          age: 60,
+          isaIncomeAnnual: 4000,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 16000,
+          assessedIncomeAnnual: 16000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2046-01-01",
+          age: 61,
+          isaIncomeAnnual: 16000,
+          sippIncomeAnnual: 3000,
+          totalIncomeAnnual: 19000,
+          assessedIncomeAnnual: 19000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2047-01-01",
+          age: 62,
+          sippIncomeAnnual: 15000,
+          totalIncomeAnnual: 15000,
+          assessedIncomeAnnual: 15000,
+          phase: "sipp-bridge",
+        },
+      ],
+      showIsa: true,
+      showSipp: true,
+      showStatePension: false,
+    });
+
+    expect(getIncomeAreaStrokeColours().slice(0, 2)).toEqual([
+      "#1f8ee6",
+      "#148c55",
+    ]);
+  });
+
+  it("keeps the first active bridge area at the bottom when a later source starts", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2043-01-01",
+          age: 58,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2044-01-01",
+          age: 59,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 12000,
+          assessedIncomeAnnual: 12000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2045-01-01",
+          age: 60,
+          isaIncomeAnnual: 8000,
+          sippIncomeAnnual: 12000,
+          totalIncomeAnnual: 20000,
+          assessedIncomeAnnual: 20000,
+          phase: "sipp-bridge",
+        },
+        {
+          ...basePoint,
+          date: "2046-01-01",
+          age: 61,
+          isaIncomeAnnual: 15000,
+          sippIncomeAnnual: 3000,
+          totalIncomeAnnual: 18000,
+          assessedIncomeAnnual: 18000,
+          phase: "sipp-bridge",
+        },
+      ],
+      showIsa: true,
+      showSipp: true,
+      sippAccessAge: 58,
+      isaAccessAge: 60,
+      showStatePension: false,
+    });
+
+    expect(getIncomeAreaStrokeColours().slice(0, 2)).toEqual([
+      "#148c55",
+      "#1f8ee6",
+    ]);
+  });
+
   it("moves the build-up window earlier when leave alpha is dragged earlier", () => {
     const view = renderChart({
       alphaLeaveAge: 59,
@@ -379,6 +523,70 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
+  });
+
+  it("uses whole-year steps for the mobile age input", () => {
+    mockChartResize(360);
+
+    renderChart();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show chart controls" })
+    );
+
+    expect(screen.getByRole("spinbutton", { name: "Age" })).toHaveAttribute(
+      "step",
+      "1"
+    );
+  });
+
+  it("hides mobile chart controls until requested", () => {
+    mockChartResize(360);
+
+    renderChart();
+
+    expect(
+      screen.queryByRole("spinbutton", { name: "Age" })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show chart controls" })
+    );
+
+    expect(screen.getByRole("spinbutton", { name: "Age" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Hide chart controls" })
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("brings the active dragged milestone to the front", () => {
+    renderChart({
+      showSipp: true,
+      sippAccessAge: 60,
+    });
+
+    expect(getMilestoneLabelsInRenderOrder().at(-1)).toMatch(
+      /Start State, age 67/i
+    );
+
+    fireEvent.pointerDown(screen.getByRole("slider", { name: /Retire/i }), {
+      button: 0,
+      clientX: 120,
+      clientY: 150,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(getMilestoneLabelsInRenderOrder().at(-1)).toMatch(/Retire, age 60/i);
+  });
+
+  it("does not show the selected milestone label in the mobile marker summary", () => {
+    mockChartResize(360);
+
+    renderChart();
+
+    expect(screen.queryByText("Selected milestone")).not.toBeInTheDocument();
   });
 
   it("updates a milestone from window touch events after touch drag starts", () => {
@@ -513,7 +721,7 @@ describe("RetirementIncomeBridgeChart", () => {
       retirementAge: 60,
       limits: {
         ...baseProps.limits,
-        alphaLeaveAge: { min: 40, max: 60, step: 0.25 },
+        alphaLeaveAge: { min: 40, max: 60, step: 1 },
       },
       onChangeParameters,
     });

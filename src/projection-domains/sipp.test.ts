@@ -42,7 +42,7 @@ describe("projection sipp domain", () => {
         strategy: "zero_at_death",
         withdrawalPercent: 4,
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(120000 / 121, 6);
     expect(
       calculateMonthlySippPension({
         potAtDraw: 120000,

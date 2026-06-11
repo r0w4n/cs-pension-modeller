@@ -590,6 +590,17 @@ describe("App settings form", () => {
     ).toBe("true");
   });
 
+  it("hides input support links when guidance notes are turned off", () => {
+    window.localStorage.setItem("cs-pension-modeller.guidanceNotes", "false");
+
+    renderAcknowledgedApp();
+    openJourneyStep(/Inflation and projection basis/i);
+
+    expect(
+      screen.queryByRole("link", { name: "Inflation and the 2% target" })
+    ).not.toBeInTheDocument();
+  });
+
   it("does not show the retired third mode option", () => {
     renderAcknowledgedApp({ mode: null });
 

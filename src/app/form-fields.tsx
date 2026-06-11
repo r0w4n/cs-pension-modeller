@@ -233,7 +233,7 @@ function Field({
         className={`${getFieldCardClassName(false, false, Boolean(validationIssue))} checkbox-field-card`}
       >
         <span className="field-header">
-          <FieldLabel field={field} />
+          <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
         </span>
         <span className="checkbox-row">
           <input

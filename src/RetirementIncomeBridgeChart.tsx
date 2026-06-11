@@ -10,6 +10,12 @@ import {
 } from "react";
 import * as d3 from "d3";
 import type { PensionValidationIssue } from "./settings";
+import {
+  clampNumber,
+  clampToLimit,
+  snapToLimit,
+  type ChartNumberLimit,
+} from "./app/chart-drag-constraints";
 
 export type RetirementIncomePoint = {
   date: string;
@@ -92,11 +98,7 @@ export type RetirementIncomeBridgeLimits = {
   statePensionAge: NumberLimit;
 };
 
-type NumberLimit = {
-  min: number;
-  max: number;
-  step: number;
-};
+type NumberLimit = ChartNumberLimit;
 
 type IncomeKey =
   | "isaIncomeAnnual"
@@ -779,21 +781,15 @@ export function RetirementIncomeBridgeChart({
     event.preventDefault();
     const direction =
       event.key === "ArrowDown" || event.key === "ArrowLeft" ? -1 : 1;
+    const nextTargetIncomeAnnual = snapToLimit(
+      displayedTargetIncomeAnnual + direction * limits.targetIncomeAnnual.step,
+      limits.targetIncomeAnnual
+    );
 
     onChangeParameters({
-      targetIncomeAnnual: snapToLimit(
-        displayedTargetIncomeAnnual +
-          direction * limits.targetIncomeAnnual.step,
-        limits.targetIncomeAnnual
-      ),
+      targetIncomeAnnual: nextTargetIncomeAnnual,
     });
-    setPendingTargetIncomeAnnual(
-      snapToLimit(
-        displayedTargetIncomeAnnual +
-          direction * limits.targetIncomeAnnual.step,
-        limits.targetIncomeAnnual
-      )
-    );
+    setPendingTargetIncomeAnnual(nextTargetIncomeAnnual);
   };
 
   const getPlotPointerPositionFromClient = useCallback(
@@ -2876,24 +2872,4 @@ function getDisplayMarkerAge(
 
 function areAgesEquivalent(firstAge: number, secondAge: number) {
   return Math.abs(firstAge - secondAge) < 0.001;
-}
-
-function clampNumber(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function clampToLimit(value: number, limit: NumberLimit) {
-  return clampNumber(value, limit.min, limit.max);
-}
-
-function snapToLimit(value: number, limit: NumberLimit) {
-  const clamped = clampToLimit(value, limit);
-  const steps = Math.round((clamped - limit.min) / limit.step);
-  const snapped = limit.min + steps * limit.step;
-  return Number(snapToLimitPrecision(snapped, limit.step));
-}
-
-function snapToLimitPrecision(value: number, step: number) {
-  const precision = Math.max(0, (step.toString().split(".")[1] ?? "").length);
-  return value.toFixed(precision);
 }

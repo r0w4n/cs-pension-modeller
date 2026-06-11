@@ -67,6 +67,7 @@ export type JourneyStepViewModel = {
   retirementIncomeTotal: string;
   retirementIncomeTargetTitle: string;
   retirementIncomeTarget: string;
+  comparisonRetirementIncomeDisplay: RetirementIncomeDisplay;
   showGuidanceNotes: boolean;
   useDropdownDates: boolean;
   onChange: SettingsFieldOnChange;
@@ -78,6 +79,9 @@ export type JourneyStepViewModel = {
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (scenarioSettings: PensionSettings) => void;
   onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
+  onComparisonRetirementIncomeDisplayChange: (
+    display: RetirementIncomeDisplay
+  ) => void;
 };
 
 export type JourneyStepContentProps = {
@@ -191,11 +195,13 @@ function renderAnswerStep(
     retirementIncomeTotal,
     retirementIncomeTargetTitle,
     retirementIncomeTarget,
+    comparisonRetirementIncomeDisplay,
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
+    onComparisonRetirementIncomeDisplayChange,
     onChangeChartParameters,
   } = viewModel;
 
@@ -249,8 +255,10 @@ function renderAnswerStep(
         comparisonResultCache={comparisonResultCache}
         onScenariosChange={onScenariosChange}
         onLoadScenario={onLoadScenario}
-        retirementIncomeDisplay={retirementIncomeDisplay}
-        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+        retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+        onRetirementIncomeDisplayChange={
+          onComparisonRetirementIncomeDisplayChange
+        }
         derivedInflationAssumptions={derivedInflationAssumptions}
         retirementIncomeSeries={retirementIncomeSeries}
         bridgeChartParameters={bridgeChartParameters}
@@ -282,11 +290,13 @@ function renderExpertAnswerStep(
     retirementIncomeTotal,
     retirementIncomeTargetTitle,
     retirementIncomeTarget,
+    comparisonRetirementIncomeDisplay,
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
+    onComparisonRetirementIncomeDisplayChange,
     onChangeChartParameters,
   } = viewModel;
 
@@ -333,8 +343,10 @@ function renderExpertAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
-          retirementIncomeDisplay={retirementIncomeDisplay}
-          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={
+            onComparisonRetirementIncomeDisplayChange
+          }
           showPensionSummary={false}
         />
       </ComparisonSection>
@@ -374,11 +386,13 @@ function renderBridgeAnswerStep(
     retirementIncomeTotal,
     retirementIncomeTargetTitle,
     retirementIncomeTarget,
+    comparisonRetirementIncomeDisplay,
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
+    onComparisonRetirementIncomeDisplayChange,
     onChangeChartParameters,
   } = viewModel;
 
@@ -426,8 +440,10 @@ function renderBridgeAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
-          retirementIncomeDisplay={retirementIncomeDisplay}
-          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={
+            onComparisonRetirementIncomeDisplayChange
+          }
           hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
           hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
           hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}

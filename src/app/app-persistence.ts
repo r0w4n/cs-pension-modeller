@@ -9,8 +9,15 @@ const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
 export const APP_MODE_STORAGE_KEY = "cs-pension-modeller.appMode";
 const GUIDANCE_NOTES_STORAGE_KEY = "cs-pension-modeller.guidanceNotes";
+const LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
+  "cs-pension-modeller.retirementIncomeDisplay";
+const JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
+  "cs-pension-modeller.journeyRetirementIncomeDisplay";
+const COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
+  "cs-pension-modeller.comparisonRetirementIncomeDisplay";
 
 export type AppMode = "bridge" | "simple" | "expert";
+export type RetirementIncomeDisplay = "monthly" | "annual";
 
 export function loadAcknowledgementState() {
   if (!isLocalStorageEnabled()) {
@@ -77,8 +84,68 @@ export function saveStoredGuidanceNotes(showGuidanceNotes: boolean) {
   );
 }
 
+export function loadStoredJourneyRetirementIncomeDisplay(): RetirementIncomeDisplay {
+  return loadRetirementIncomeDisplayPreference(
+    JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY
+  );
+}
+
+export function saveStoredJourneyRetirementIncomeDisplay(
+  retirementIncomeDisplay: RetirementIncomeDisplay
+) {
+  saveRetirementIncomeDisplayPreference(
+    JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
+    retirementIncomeDisplay
+  );
+}
+
+export function loadStoredComparisonRetirementIncomeDisplay(): RetirementIncomeDisplay {
+  return loadRetirementIncomeDisplayPreference(
+    COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY
+  );
+}
+
+export function saveStoredComparisonRetirementIncomeDisplay(
+  retirementIncomeDisplay: RetirementIncomeDisplay
+) {
+  saveRetirementIncomeDisplayPreference(
+    COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
+    retirementIncomeDisplay
+  );
+}
+
 export function clearStoredAppPreferences() {
   removeStorageItem(ACKNOWLEDGEMENT_STORAGE_KEY);
   removeStorageItem(APP_MODE_STORAGE_KEY);
   removeStorageItem(GUIDANCE_NOTES_STORAGE_KEY);
+  removeStorageItem(JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
+  removeStorageItem(COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
+  removeStorageItem(LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
+}
+
+function loadRetirementIncomeDisplayPreference(storageKey: string) {
+  if (!isLocalStorageEnabled()) {
+    return "monthly";
+  }
+
+  const storedDisplay =
+    readStorageItem(storageKey) ??
+    readStorageItem(LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
+
+  if (storedDisplay === "annual" || storedDisplay === "monthly") {
+    return storedDisplay;
+  }
+
+  return "monthly";
+}
+
+function saveRetirementIncomeDisplayPreference(
+  storageKey: string,
+  retirementIncomeDisplay: RetirementIncomeDisplay
+) {
+  if (!isLocalStorageEnabled()) {
+    return;
+  }
+
+  writeStorageItem(storageKey, retirementIncomeDisplay);
 }

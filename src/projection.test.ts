@@ -1617,6 +1617,56 @@ describe("projection calculations", () => {
     ).toBeCloseTo(10150, 6);
   });
 
+  it("does not duplicate Alpha accrual on an inserted mid-month start checkpoint with pension increases", () => {
+    const baseSettings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-06-11",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 67,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      applyPensionIncreases: true,
+      assumedCpiPercent: 0,
+      alphaPensionAbsDate: "2025",
+      accruedPensionAtLastAbs: 16000,
+      pensionableEarnings: 70000,
+      alphaPensionLeaveAge: 67,
+      alphaPensionDrawAge: 67,
+      alphaAddedPensionMonthly: 0,
+    };
+
+    const rows = createProjectionTable(baseSettings);
+    const summary = generatePensionSummary(rows, baseSettings);
+    const alignedStartSettings = {
+      ...baseSettings,
+      startDate: "2026-06-01",
+    };
+    const alignedStartSummary = generatePensionSummary(
+      createProjectionTable(alignedStartSettings),
+      alignedStartSettings
+    );
+    const simpleAccrualSettings = {
+      ...baseSettings,
+      applyPensionIncreases: false,
+    };
+    const simpleAccrualSummary = generatePensionSummary(
+      createProjectionTable(simpleAccrualSettings),
+      simpleAccrualSettings
+    );
+
+    expect(summary.alphaPension.annualAtDraw).toBeCloseTo(
+      alignedStartSummary.alphaPension.annualAtDraw,
+      6
+    );
+    expect(summary.alphaPension.annualAtDraw).toBeCloseTo(56629.07929125147, 6);
+    expect(simpleAccrualSummary.alphaPension.annualAtDraw).toBeCloseTo(
+      46856,
+      6
+    );
+  });
+
   it("splits EPA accrual into an unreduced EPA portion", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

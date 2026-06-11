@@ -68,11 +68,10 @@ export function createProjectionTableWithPensionIncreases(
   });
   let previousRowDate: string | undefined;
 
+  const monthlyRowDates = generateMonthlyDateRange(firstRowDate, endDate);
+  const monthlyRowDateSet = new Set(monthlyRowDates);
   const allRowDates = Array.from(
-    new Set([
-      ...generateMonthlyDateRange(firstRowDate, endDate),
-      settings.startDate,
-    ])
+    new Set([...monthlyRowDates, settings.startDate])
   ).sort();
 
   const allRows = allRowDates.map((rowDate) => {
@@ -87,12 +86,16 @@ export function createProjectionTableWithPensionIncreases(
       });
     const shouldShowAbsStatementOnly =
       rowDate === alphaAbsDate && rowDate < settings.startDate;
+    const isInsertedStartDateCheckpoint =
+      rowDate === settings.startDate && !monthlyRowDateSet.has(rowDate);
+    const shouldSuppressMonthlyAlphaAccrual =
+      shouldShowAbsStatementOnly || isInsertedStartDateCheckpoint;
     const monthlyStandardAlphaAccrual =
-      rowDate <= accrualStopDate && !shouldShowAbsStatementOnly
+      rowDate <= accrualStopDate && !shouldSuppressMonthlyAlphaAccrual
         ? calculateMonthlyStandardAlphaAccrual(settings, rowDate)
         : 0;
     const monthlyEpaAlphaAccrual =
-      rowDate <= accrualStopDate && !shouldShowAbsStatementOnly
+      rowDate <= accrualStopDate && !shouldSuppressMonthlyAlphaAccrual
         ? calculateMonthlyEpaAlphaAccrual(settings, rowDate)
         : 0;
 
@@ -118,7 +121,7 @@ export function createProjectionTableWithPensionIncreases(
         rowDate,
         previousRowDate,
         addedPensionStopDate,
-        suppressAddedPension: shouldShowAbsStatementOnly,
+        suppressAddedPension: shouldSuppressMonthlyAlphaAccrual,
       });
 
     if (monthlyAddedPension > 0) {

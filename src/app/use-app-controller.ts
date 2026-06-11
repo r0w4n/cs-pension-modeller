@@ -16,11 +16,16 @@ import {
 import {
   loadAcknowledgementState,
   loadStoredGuidanceNotes,
+  loadStoredComparisonRetirementIncomeDisplay,
+  loadStoredJourneyRetirementIncomeDisplay,
   saveAcknowledgementState,
   clearStoredAppPreferences,
   saveStoredAppMode,
   saveStoredGuidanceNotes,
+  saveStoredComparisonRetirementIncomeDisplay,
+  saveStoredJourneyRetirementIncomeDisplay,
   type AppMode,
+  type RetirementIncomeDisplay,
 } from "./app-persistence";
 import {
   loadComparisonScenario as loadComparisonScenarioAction,
@@ -39,7 +44,6 @@ import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
 import { applySimpleJourneyDefaults } from "../app-domains/journeys";
-import type { RetirementIncomeDisplay } from "../projection";
 
 export function useAppController() {
   const {
@@ -77,8 +81,14 @@ export function useAppController() {
   const [showGuidanceNotes, setShowGuidanceNotes] = useState(
     loadStoredGuidanceNotes
   );
-  const [retirementIncomeDisplay, setRetirementIncomeDisplay] =
-    useState<RetirementIncomeDisplay>("monthly");
+  const [journeyRetirementIncomeDisplay, setJourneyRetirementIncomeDisplay] =
+    useState<RetirementIncomeDisplay>(loadStoredJourneyRetirementIncomeDisplay);
+  const [
+    comparisonRetirementIncomeDisplay,
+    setComparisonRetirementIncomeDisplay,
+  ] = useState<RetirementIncomeDisplay>(
+    loadStoredComparisonRetirementIncomeDisplay
+  );
   const { comparisonResultCache, comparisonScenarios, setComparisonScenarios } =
     useComparisonState();
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
@@ -104,7 +114,7 @@ export function useAppController() {
     validationIssues,
   } = useProjectionCalculations({
     effectiveSettings,
-    retirementIncomeDisplay,
+    retirementIncomeDisplay: journeyRetirementIncomeDisplay,
   });
 
   useUndoShortcut({
@@ -116,6 +126,16 @@ export function useAppController() {
   useEffect(() => {
     saveStoredGuidanceNotes(showGuidanceNotes);
   }, [showGuidanceNotes]);
+
+  useEffect(() => {
+    saveStoredJourneyRetirementIncomeDisplay(journeyRetirementIncomeDisplay);
+  }, [journeyRetirementIncomeDisplay]);
+
+  useEffect(() => {
+    saveStoredComparisonRetirementIncomeDisplay(
+      comparisonRetirementIncomeDisplay
+    );
+  }, [comparisonRetirementIncomeDisplay]);
 
   function updateSetting<K extends SettingsKey>(
     key: K,
@@ -176,6 +196,10 @@ export function useAppController() {
     saveSettings(settings);
     saveStoredComparisonScenarios(comparisonScenarios);
     saveStoredGuidanceNotes(showGuidanceNotes);
+    saveStoredJourneyRetirementIncomeDisplay(journeyRetirementIncomeDisplay);
+    saveStoredComparisonRetirementIncomeDisplay(
+      comparisonRetirementIncomeDisplay
+    );
 
     if (hasAcknowledgedNotice) {
       saveAcknowledgementState();
@@ -191,12 +215,13 @@ export function useAppController() {
     bridgeChartLimits,
     derivedInflationAssumptions,
     projectionRows,
-    retirementIncomeDisplay,
+    retirementIncomeDisplay: journeyRetirementIncomeDisplay,
     retirementIncomeItems,
     retirementIncomeTitle,
     retirementIncomeTotal,
     retirementIncomeTargetTitle,
     retirementIncomeTarget,
+    comparisonRetirementIncomeDisplay,
     showGuidanceNotes,
     useDropdownDates,
     onChange: updateSetting,
@@ -205,7 +230,9 @@ export function useAppController() {
     comparisonResultCache,
     onScenariosChange: setComparisonScenarios,
     onLoadScenario: loadComparisonScenario,
-    onRetirementIncomeDisplayChange: setRetirementIncomeDisplay,
+    onRetirementIncomeDisplayChange: setJourneyRetirementIncomeDisplay,
+    onComparisonRetirementIncomeDisplayChange:
+      setComparisonRetirementIncomeDisplay,
   };
 
   function acknowledgeNotice() {
@@ -250,7 +277,7 @@ export function useAppController() {
     pensionSummary,
     projectionRows,
     clearAllData,
-    retirementIncomeDisplay,
+    retirementIncomeDisplay: journeyRetirementIncomeDisplay,
     retirementIncomeItems,
     retirementIncomeSeries,
     retirementIncomeTarget,
@@ -260,7 +287,8 @@ export function useAppController() {
     selectAppMode,
     setLocalStorageEnabled,
     setComparisonScenarios,
-    setRetirementIncomeDisplay,
+    setJourneyRetirementIncomeDisplay,
+    setComparisonRetirementIncomeDisplay,
     setShowGuidanceNotes,
     settings,
     settingsFormVersion,

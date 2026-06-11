@@ -157,6 +157,7 @@ function createViewModel(): JourneyStepViewModel {
     retirementIncomeTotal: "£0",
     retirementIncomeTargetTitle: "Target",
     retirementIncomeTarget: "£0",
+    comparisonRetirementIncomeDisplay: "annual",
     showGuidanceNotes: true,
     useDropdownDates: false,
     onChange: vi.fn(),
@@ -166,5 +167,6 @@ function createViewModel(): JourneyStepViewModel {
     onScenariosChange: vi.fn(),
     onLoadScenario: vi.fn(),
     onRetirementIncomeDisplayChange: vi.fn(),
+    onComparisonRetirementIncomeDisplayChange: vi.fn(),
   };
 }

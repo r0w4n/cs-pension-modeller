@@ -104,6 +104,24 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function readStoredSettingsPayload() {
+  const stored = JSON.parse(
+    window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
+  ) as { data?: Record<string, unknown> };
+
+  if (
+    typeof stored === "object" &&
+    stored !== null &&
+    "data" in stored &&
+    typeof stored.data === "object" &&
+    stored.data !== null
+  ) {
+    return stored.data;
+  }
+
+  return stored as Record<string, unknown>;
+}
+
 describe("settings unit tests", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -203,9 +221,7 @@ describe("settings unit tests", () => {
 
     saveSettings(settings);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         alphaAddedPensionMonthly: 233,
         alphaAddedPensionFactorType: "self_plus_beneficiaries",
@@ -382,9 +398,7 @@ describe("settings unit tests", () => {
 
     saveSettings(settings);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         statePensionDrawDate: "2056-06-01",
       })

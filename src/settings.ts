@@ -1,4 +1,5 @@
 export {
+  LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
   FIRST_UNSUPPORTED_ADDED_PENSION_PURCHASE_AGE,
   MAX_ADDED_PENSION_PURCHASE_INPUT_AGE,
@@ -38,7 +39,13 @@ export {
 export { validateSettings } from "./settings/settings-validate";
 
 export {
+  clearAllLocalStorageData,
+  clearStoredSettings,
+  isLocalStorageEnabled,
   loadStoredSettings,
+  parseStoredSettings,
+  removeStorageItem,
+  saveLocalStoragePreference,
   saveSettings,
   getStoredSettingsSnapshot,
   readStorageItem,

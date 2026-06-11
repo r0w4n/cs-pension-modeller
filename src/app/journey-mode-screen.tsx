@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import type { PensionSettings } from "../settings";
 import type { JourneyDefinition } from "../app-domains";
+import { Helmet } from "../helmet";
 import {
   JourneyStepContent,
   type JourneyStepViewModel,
@@ -15,8 +16,6 @@ type JourneyModeScreenProps = {
   journey: JourneyDefinition;
   settings: PensionSettings;
   settingsFormVersion: number;
-  showGuidanceNotes: boolean;
-  onShowGuidanceNotesChange: (checked: boolean) => void;
   journeyStepViewModel: JourneyStepViewModel;
 };
 
@@ -26,18 +25,19 @@ export function JourneyModeScreen({
   journey,
   settings,
   settingsFormVersion,
-  showGuidanceNotes,
-  onShowGuidanceNotesChange,
   journeyStepViewModel,
 }: JourneyModeScreenProps) {
   return (
     <JourneySection activeModeRef={activeModeRef}>
+      <Helmet>
+        <title>{`${journey.title} | Civil Service Pension Modeller`}</title>
+        <meta name="description" content={journey.description} />
+      </Helmet>
+
       <JourneyFlowFeature
         key={`${mode}-${settingsFormVersion}`}
         journey={journey}
         settings={settings}
-        showGuidanceNotes={showGuidanceNotes}
-        onShowGuidanceNotesChange={onShowGuidanceNotesChange}
         renderStepContent={(step) => (
           <JourneyStepContent step={step} viewModel={journeyStepViewModel} />
         )}

@@ -2,22 +2,24 @@ import {
   formatCapitalPreservation,
   formatCurrencyDetailed,
   formatDecimalAge,
-  formatShortfallOrSurplus,
   formatTargetMissDuration,
   type ComparisonInsights,
   type ComparisonResult,
 } from "../app-domains";
+import type { RetirementIncomeDisplay } from "../projection";
 import { ComparisonSummaryTable } from "./comparison-summary-table";
 import { SummarySection } from "./results-summary";
 
 export function ComparisonResults({
   results,
   insights,
+  retirementIncomeDisplay = "annual",
   hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: {
   results: ComparisonResult[];
   insights: ComparisonInsights;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
   hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 }) {
@@ -38,10 +40,14 @@ export function ComparisonResults({
   return (
     <>
       {results.length >= 2 ? (
-        <ComparisonInsightsGrid insights={insights} />
+        <ComparisonInsightsGrid
+          insights={insights}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+        />
       ) : null}
       <ComparisonSummaryTable
         results={results}
+        retirementIncomeDisplay={retirementIncomeDisplay}
         hideBridgeFundingSection={hideBridgeFundingSection}
         hideFlexibleAssetsSection={hideFlexibleAssetsSection}
       />
@@ -51,8 +57,10 @@ export function ComparisonResults({
 
 function ComparisonInsightsGrid({
   insights,
+  retirementIncomeDisplay,
 }: {
   insights: ComparisonInsights;
+  retirementIncomeDisplay: RetirementIncomeDisplay;
 }) {
   return (
     <div className="comparison-insight-grid">
@@ -93,9 +101,10 @@ function ComparisonInsightsGrid({
               insights.lowestShortfallRiskResult?.scenario.name ??
               "Not available",
             value: insights.lowestShortfallRiskResult
-              ? formatShortfallOrSurplus(
+              ? formatRecurringShortfallOrSurplus(
                   Math.max(0, -insights.lowestShortfallRiskResult.annualGap),
-                  Math.max(0, insights.lowestShortfallRiskResult.annualGap)
+                  Math.max(0, insights.lowestShortfallRiskResult.annualGap),
+                  retirementIncomeDisplay
                 )
               : "Not available",
           },
@@ -121,13 +130,44 @@ function ComparisonInsightsGrid({
               insights.highestLaterIncomeResult?.scenario.name ??
               "Not available",
             value: insights.highestLaterIncomeResult
-              ? `${formatCurrencyDetailed(
-                  insights.highestLaterIncomeResult.lifeExpectancyAnnualIncome
-                )} per year`
+              ? formatRecurringCurrency(
+                  insights.highestLaterIncomeResult.lifeExpectancyAnnualIncome,
+                  retirementIncomeDisplay
+                )
               : "Not available",
           },
         ]}
       />
     </div>
   );
+}
+
+function formatRecurringCurrency(
+  annualValue: number,
+  display: RetirementIncomeDisplay
+) {
+  return display === "monthly"
+    ? `${formatCurrencyDetailed(annualValue / 12)} per month`
+    : `${formatCurrencyDetailed(annualValue)} per year`;
+}
+
+function formatRecurringShortfallOrSurplus(
+  annualShortfall: number,
+  annualSurplus: number,
+  display: RetirementIncomeDisplay
+) {
+  const shortfall =
+    display === "monthly" ? annualShortfall / 12 : annualShortfall;
+  const surplus = display === "monthly" ? annualSurplus / 12 : annualSurplus;
+  const period = display === "monthly" ? "per month" : "per year";
+
+  if (shortfall > 0) {
+    return `${formatCurrencyDetailed(shortfall)} shortfall ${period}`;
+  }
+
+  if (surplus > 0) {
+    return `${formatCurrencyDetailed(surplus)} surplus ${period}`;
+  }
+
+  return `${formatCurrencyDetailed(0)} ${period}`;
 }

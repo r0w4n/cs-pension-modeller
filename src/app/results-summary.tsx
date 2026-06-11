@@ -87,18 +87,20 @@ export function SummarySection({
 type RetirementIncomeDisplayToggleProps = {
   value: RetirementIncomeDisplay;
   onChange: (display: RetirementIncomeDisplay) => void;
+  ariaLabel?: string;
+  monthlyAriaLabel?: string;
+  annualAriaLabel?: string;
 };
 
 export function RetirementIncomeDisplayToggle({
   value,
   onChange,
+  ariaLabel = "Pension Summary display",
+  monthlyAriaLabel,
+  annualAriaLabel,
 }: RetirementIncomeDisplayToggleProps) {
   return (
-    <div
-      className="summary-toggle"
-      role="group"
-      aria-label="Pension Summary display"
-    >
+    <div className="summary-toggle" role="group" aria-label={ariaLabel}>
       <button
         type="button"
         className={
@@ -107,6 +109,7 @@ export function RetirementIncomeDisplayToggle({
             : "summary-toggle-button"
         }
         aria-pressed={value === "monthly"}
+        aria-label={monthlyAriaLabel}
         onClick={() => onChange("monthly")}
       >
         Monthly
@@ -119,6 +122,7 @@ export function RetirementIncomeDisplayToggle({
             : "summary-toggle-button"
         }
         aria-pressed={value === "annual"}
+        aria-label={annualAriaLabel}
         onClick={() => onChange("annual")}
       >
         Annual

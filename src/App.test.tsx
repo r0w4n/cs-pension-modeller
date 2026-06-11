@@ -980,6 +980,16 @@ describe("App settings form", () => {
       screen.getByText("Compare the key decision metrics across scenarios.")
     );
     expect(
+      within(comparisonResultsRegion).getByRole("group", {
+        name: "Comparison display",
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(comparisonResultsRegion).getByRole("button", {
+        name: "Show annual comparison values",
+      })
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("heading", { name: "Saved scenarios" })
     ).toBeInTheDocument();
     const comparisonHeading = within(comparisonResultsRegion).getByRole(
@@ -1012,7 +1022,7 @@ describe("App settings form", () => {
     expect(screen.queryByText(/once the bridge ends/i)).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "This summary uses your current journey assumptions and shows your projected annual income before tax."
+        "This summary uses your current journey assumptions and shows your projected retirement income before tax."
       )
     ).toBeInTheDocument();
     expect(

@@ -128,7 +128,7 @@ export function ComparisonPensionSummary({
   return (
     <PensionSummarySection
       activeResult={activeResult}
-      description="This summary uses your current journey assumptions and shows your projected annual income before tax."
+      description="This summary uses your current journey assumptions and shows your projected retirement income before tax."
       retirementIncomeDisplay={retirementIncomeDisplay}
       onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
       retirementIncomeItems={retirementIncomeItems}

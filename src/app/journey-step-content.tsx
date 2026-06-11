@@ -255,6 +255,7 @@ function renderAnswerStep(
         bridgeChartParameters={bridgeChartParameters}
         bridgeChartLimits={bridgeChartLimits}
         hideInactiveLegendItems
+        showPensionSummary={false}
         onChangeChartParameters={onChangeChartParameters}
       />
     </>
@@ -331,6 +332,9 @@ function renderExpertAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          showPensionSummary={false}
         />
       </ComparisonSection>
 
@@ -385,7 +389,7 @@ function renderBridgeAnswerStep(
         <PensionSummarySectionFeature
           activeResult={currentComparisonResult}
           headingLevel={2}
-          description="This summary uses your current journey assumptions and shows your projected annual income before tax."
+          description="This summary uses your current journey assumptions and shows your projected retirement income before tax."
           retirementIncomeDisplay={retirementIncomeDisplay}
           onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
           retirementIncomeItems={retirementIncomeItems}
@@ -421,9 +425,12 @@ function renderBridgeAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
           hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
           hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
           hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}
+          showPensionSummary={false}
         />
       </ComparisonSection>
 

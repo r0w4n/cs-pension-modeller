@@ -43,7 +43,7 @@ export function ModeSelection({
           aria-pressed={selectedMode === "bridge"}
           onClick={() => onSelectMode("bridge")}
         >
-          <span className="card-label">Early retirement</span>
+          <span className="card-label">Early retirement journey</span>
           <strong>Work out what I need to retire early</strong>
           <span>
             Build a retirement income plan using your Civil Service pension,
@@ -61,8 +61,9 @@ export function ModeSelection({
           <span className="card-label">Expert journey</span>
           <strong>Work through every setting with full control.</strong>
           <span>
-            Use the full assumption set, then review the detailed chart,
-            scenarios, and projection table in the final step.
+            This journey gives you more control over your retirement projection,
+            including detailed assumptions for pensions, savings, tax,
+            inflation, investment growth and partial retirement.
           </span>
         </button>
       </div>

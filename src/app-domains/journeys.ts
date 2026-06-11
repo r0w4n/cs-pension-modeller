@@ -371,7 +371,7 @@ export const JOURNEY_DEFINITIONS = [
     id: "expert-journey",
     title: "Expert journey",
     description:
-      "Work through the full set of retirement assumptions, then review the detailed chart, comparison tools, and projection table.",
+      "This journey gives you more control over your retirement projection, including detailed assumptions for pensions, savings, tax, inflation, investment growth and partial retirement.",
     steps: createExpertJourneySteps(),
   },
 ] as const satisfies readonly JourneyDefinition[];

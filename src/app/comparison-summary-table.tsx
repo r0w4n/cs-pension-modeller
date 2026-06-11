@@ -3,17 +3,20 @@ import {
   type ComparisonResult,
   type ComparisonTableRow,
 } from "../app-domains";
+import type { RetirementIncomeDisplay } from "../projection";
 import { useMobileDateDropdowns } from "./form-fields";
 import { ProjectionTableFrame, type TableColumn } from "./projection-table";
 
 export type ComparisonSummaryTableProps = {
   results: ComparisonResult[];
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
   hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 };
 
 export function ComparisonSummaryTable({
   results,
+  retirementIncomeDisplay = "annual",
   hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: ComparisonSummaryTableProps) {
@@ -26,6 +29,7 @@ export function ComparisonSummaryTable({
     })),
   ];
   const rows = buildComparisonTableRows(results, {
+    retirementIncomeDisplay,
     hideBridgeFundingSection,
     hideFlexibleAssetsSection,
   });

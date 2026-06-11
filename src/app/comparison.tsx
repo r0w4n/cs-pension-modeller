@@ -22,7 +22,10 @@ import {
   useScenarioActions,
 } from "./comparison-state";
 import { ScenarioBuilder } from "./scenario-builder";
-import { InflationBasisPanel } from "./results-summary";
+import {
+  InflationBasisPanel,
+  RetirementIncomeDisplayToggle,
+} from "./results-summary";
 import { SavedScenariosSection } from "./saved-scenarios";
 
 export { PensionSummarySection } from "./comparison-pension-summary";
@@ -47,6 +50,7 @@ export type ComparisonPanelProps = {
   hideInactiveLegendItems?: boolean;
   hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
+  showPensionSummary?: boolean;
   onChangeChartParameters?: (
     patch: Partial<RetirementIncomeBridgeParameters>
   ) => void;
@@ -72,6 +76,7 @@ export function ComparisonPanel({
   hideInactiveLegendItems,
   hideBridgeFundingSection,
   hideFlexibleAssetsSection,
+  showPensionSummary = true,
   onChangeChartParameters,
 }: ComparisonPanelProps) {
   const { currentScenarioIsValid, comparisonPanelData } = useComparisonState({
@@ -104,23 +109,36 @@ export function ComparisonPanel({
 
   return (
     <section className="panel comparison-panel" aria-label="Comparison results">
-      <ComparisonPensionSummary
-        activeResult={activeResult}
-        retirementIncomeDisplay={retirementIncomeDisplay}
-        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-        retirementIncomeItems={retirementIncomeItems}
-        retirementIncomeTitle={retirementIncomeTitle}
-        retirementIncomeTotal={retirementIncomeTotal}
-        retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-        retirementIncomeTarget={retirementIncomeTarget}
-        statusItems={resultStatusItems}
-      />
+      {showPensionSummary ? (
+        <ComparisonPensionSummary
+          activeResult={activeResult}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          retirementIncomeItems={retirementIncomeItems}
+          retirementIncomeTitle={retirementIncomeTitle}
+          retirementIncomeTotal={retirementIncomeTotal}
+          retirementIncomeTargetTitle={retirementIncomeTargetTitle}
+          retirementIncomeTarget={retirementIncomeTarget}
+          statusItems={resultStatusItems}
+        />
+      ) : null}
 
       <div className="comparison-panel-header">
-        <h2>Comparison</h2>
-        <p className="section-copy">
-          Compare the key decision metrics across scenarios.
-        </p>
+        <div>
+          <h2>Comparison</h2>
+          <p className="section-copy">
+            Compare the key decision metrics across scenarios.
+          </p>
+        </div>
+        {retirementIncomeDisplay && onRetirementIncomeDisplayChange ? (
+          <RetirementIncomeDisplayToggle
+            value={retirementIncomeDisplay}
+            onChange={onRetirementIncomeDisplayChange}
+            ariaLabel="Comparison display"
+            monthlyAriaLabel="Show monthly comparison values"
+            annualAriaLabel="Show annual comparison values"
+          />
+        ) : null}
       </div>
 
       <DeferredBelowFold estimatedHeight={180}>
@@ -138,6 +156,7 @@ export function ComparisonPanel({
         <ComparisonResults
           results={results}
           insights={insights}
+          retirementIncomeDisplay={retirementIncomeDisplay}
           hideBridgeFundingSection={hideBridgeFundingSection}
           hideFlexibleAssetsSection={hideFlexibleAssetsSection}
         />

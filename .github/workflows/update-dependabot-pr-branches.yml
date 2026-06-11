@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: "43 7 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -17,13 +19,25 @@ concurrency:
 jobs:
   update-dependabot-prs:
     runs-on: ubuntu-latest
+    env:
+      DEPENDABOT_PAT: ${{ secrets.dependabot_pat }}
 
     steps:
+      - name: Report token mode
+        run: |
+          if [ -z "$DEPENDABOT_PAT" ]; then
+            echo "::notice::dependabot_pat is not set, so this workflow will use GITHUB_TOKEN. Dependabot PRs that change workflow files will be skipped because updating those branches needs workflow-writing permission."
+          else
+            echo "Using dependabot_pat for Dependabot branch updates."
+          fi
+
       - name: Update open Dependabot PR branches
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
+          github-token: ${{ secrets.dependabot_pat || github.token }}
           script: |
             const { owner, repo } = context.repo;
+            const hasDependabotPat = Boolean(process.env.DEPENDABOT_PAT);
 
             const pulls = await github.paginate(github.rest.pulls.list, {
               owner,
@@ -38,17 +52,50 @@ jobs:
                 continue;
               }
 
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: pr.number,
+                per_page: 100
+              });
+              const changesWorkflow = files.some((file) =>
+                file.filename.startsWith('.github/workflows/')
+              );
+
+              if (changesWorkflow && !hasDependabotPat) {
+                core.notice(
+                  `Skipped PR #${pr.number}: it changes workflow files, and GITHUB_TOKEN cannot update those branches.`
+                );
+                continue;
+              }
+
               console.log(`Updating Dependabot PR #${pr.number}: ${pr.title}`);
 
               try {
                 await github.rest.pulls.updateBranch({
                   owner,
                   repo,
-                  pull_number: pr.number
+                  pull_number: pr.number,
+                  expected_head_sha: pr.head.sha
                 });
               } catch (error) {
-                console.log(
-                  `Could not update PR #${pr.number}: ${error.status} ${error.message}`
-                );
+                if (
+                  error.status === 403 &&
+                  /workflow/i.test(error.message)
+                ) {
+                  core.notice(
+                    `Skipped PR #${pr.number}: updating workflow files needs a token with workflow-writing permission.`
+                  );
+                  continue;
+                }
+
+                if (error.status === 422) {
+                  core.notice(
+                    `Skipped PR #${pr.number}: ${error.message}`
+                  );
+                  continue;
+                }
+
+                throw error;
               }
             }

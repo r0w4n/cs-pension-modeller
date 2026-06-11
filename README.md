@@ -2,7 +2,7 @@
 
 A small React and TypeScript app for exploring a projected Civil Service Alpha pension over time.
 
-The modeller models:
+The modeller models: 
 
 - current accrued Alpha pension from the latest Annual Benefit Statement
 - ongoing Alpha accrual from pensionable earnings

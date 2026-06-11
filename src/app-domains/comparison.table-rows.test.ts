@@ -125,6 +125,66 @@ describe("comparison table rows", () => {
     expect(rows.some((row) => row.metric === "Total secure income")).toBe(true);
   });
 
+  it("shows nuvos comparison rows when a saved scenario includes nuvos", () => {
+    const currentSettings = createDefaultSettings();
+    const savedSettings = {
+      ...createDefaultSettings(),
+      showNuvos: true,
+      nuvosAccruedPensionAtLastAbs: 12000,
+      nuvosPensionableEarnings: 12000,
+      nuvosPensionDrawAge: 65,
+      nuvosPensionLeaveAge: 65,
+    };
+    const currentResult = createComparisonResult(
+      {
+        id: "current-model",
+        name: "Current model",
+        settings: currentSettings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(currentSettings)
+    );
+    const savedResult = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Saved with nuvos",
+        settings: savedSettings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(currentSettings)
+    );
+
+    const rows = buildComparisonTableRows([currentResult, savedResult]);
+    const nuvosStartRow = getComparisonRow(rows, "nuvos start");
+    const nuvosIncomeRow = getComparisonRow(rows, "nuvos income");
+
+    expect(nuvosStartRow.values[0]).toBe("n/a");
+    expect(nuvosStartRow.values[1]).toBe("65");
+    expect(nuvosIncomeRow.values[0]).toBe("n/a");
+    expect(nuvosIncomeRow.values[1]).toContain("/year");
+  });
+
+  it("hides nuvos comparison rows when no compared scenario includes nuvos", () => {
+    const settings = createDefaultSettings();
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    const rows = buildComparisonTableRows([result]);
+
+    expect(rows.some((row) => row.metric === "nuvos start")).toBe(false);
+    expect(rows.some((row) => row.metric === "nuvos income")).toBe(false);
+  });
+
   it("keeps bridge wording for normal status items but hides it when bridge funding is hidden", () => {
     const settings = createDefaultSettings();
     const baseResult = createComparisonResult(
@@ -173,4 +233,17 @@ function getFirstComparisonValue(
   }
 
   return value;
+}
+
+function getComparisonRow(
+  rows: ReturnType<typeof buildComparisonTableRows>,
+  metric: string
+) {
+  const row = rows.find((candidate) => candidate.metric === metric);
+
+  if (!row) {
+    throw new Error(`Expected ${metric} comparison row.`);
+  }
+
+  return row;
 }

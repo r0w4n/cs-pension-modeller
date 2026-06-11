@@ -363,6 +363,38 @@ export function buildComparisonTableRows(
     hideBridgeFundingSection = false,
     hideFlexibleAssetsSection = false,
   } = options;
+  const anyScenarioUsesNuvos = results.some(
+    (result) => result.scenario.settings.showNuvos
+  );
+  const nuvosTimingRows: Array<
+    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+  > = anyScenarioUsesNuvos
+    ? [
+        [
+          "nuvos start",
+          (result) =>
+            result.scenario.settings.showNuvos
+              ? formatDecimalAge(result.scenario.settings.nuvosPensionDrawAge)
+              : "n/a",
+        ],
+      ]
+    : [];
+  const nuvosIncomeRows: Array<
+    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+  > = anyScenarioUsesNuvos
+    ? [
+        [
+          "nuvos income",
+          (result) =>
+            result.scenario.settings.showNuvos
+              ? formatRecurringAnnualCurrency(
+                  result.summary.nuvosPension.annualAtDraw,
+                  retirementIncomeDisplay
+                )
+              : "n/a",
+        ],
+      ]
+    : [];
 
   return [
     createComparisonSection("Headline outcome", results, [
@@ -434,6 +466,7 @@ export function buildComparisonTableRows(
         (result) =>
           formatDecimalAge(result.scenario.settings.alphaPensionDrawAge),
       ],
+      ...nuvosTimingRows,
       [
         "ISA start",
         (result) =>
@@ -465,6 +498,7 @@ export function buildComparisonTableRows(
             retirementIncomeDisplay
           ),
       ],
+      ...nuvosIncomeRows,
       [
         "State Pension income",
         (result) =>
@@ -590,6 +624,22 @@ export function buildComparisonDetailedRows(
   const anyScenarioUsesSipp = results.some(
     (result) => result.scenario.settings.showSipp
   );
+  const anyScenarioUsesNuvos = results.some(
+    (result) => result.scenario.settings.showNuvos
+  );
+  const nuvosSecurePensionRows: Array<
+    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+  > = anyScenarioUsesNuvos
+    ? [
+        [
+          "nuvos income at draw age",
+          (result) =>
+            result.scenario.settings.showNuvos
+              ? formatAnnualCurrency(result.summary.nuvosPension.annualAtDraw)
+              : "n/a",
+        ],
+      ]
+    : [];
 
   return [
     createComparisonSection("Retirement timing details", results, [
@@ -630,13 +680,7 @@ export function buildComparisonDetailedRows(
             result.summary.calculated.earlyRetirementReductionPercent > 0
           ),
       ],
-      [
-        "nuvos income at draw age",
-        (result) =>
-          result.scenario.settings.showNuvos
-            ? formatAnnualCurrency(result.summary.nuvosPension.annualAtDraw)
-            : "n/a",
-      ],
+      ...nuvosSecurePensionRows,
       [
         "Combined secure pension at State Pension age",
         (result) =>

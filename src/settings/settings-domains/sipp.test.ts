@@ -11,7 +11,7 @@ describe("sipp settings module", () => {
     expect(normalizeSippTaxReliefRate("40")).toBe("40");
     expect(normalizeSippTaxReliefRate("bad")).toBe("20");
     expect(normalizeSippWithdrawalStrategy("percentage")).toBe("percentage");
-    expect(normalizeSippWithdrawalStrategy("bad")).toBe("zero_at_death");
+    expect(normalizeSippWithdrawalStrategy("bad")).toBe("use_by_age");
   });
 
   it("coerces legacy tax relief setting", () => {

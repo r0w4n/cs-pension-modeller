@@ -13,6 +13,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolveInputPath("./index.html"),
+        "settings/index": resolveInputPath("./settings/index.html"),
         "privacy/index": resolveInputPath("./privacy/index.html"),
         "methodology/index": resolveInputPath("./methodology/index.html"),
         "about/index": resolveInputPath("./about/index.html"),

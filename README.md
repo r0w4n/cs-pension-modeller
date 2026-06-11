@@ -19,7 +19,7 @@ It presents the result as both a summary and a month-by-month projection table, 
 The app is organised around a small set of layers:
 
 - `src/main.tsx` boots the React app and renders `App`.
-- `src/App.tsx` composes the main screens and feature sections for journey, expert, comparison, chart, and projection-table views.
+- `src/App.tsx` composes the main screens and feature sections for journey, expert, Settings, comparison, chart, and projection-table views.
 - `src/app/use-app-controller.ts` is the main orchestration layer. It owns UI state, persistence hooks, derived view models, and the connection between settings and projection results.
 - `src/settings/` contains defaults, normalization, validation, and browser-storage compatibility logic.
 - `src/projection-core.ts`, `src/row-assembly.ts`, and `src/projection-domains/` contain the pension modelling engine.
@@ -136,26 +136,39 @@ Tests are colocated with the code in `src/*.test.ts` and `src/*.test.tsx`.
 
 ## Browser Storage
 
-The modeller persists inputs and a few UI preferences using `window.localStorage` on the same device/browser.
+By default, the modeller persists inputs and a few UI preferences using
+`window.localStorage` on the same device/browser. The Settings page lets users
+turn local saving off, export parameters to JSON, load a parameter JSON file, or
+reset parameters to defaults.
+
+When local saving is turned off, saved modeller data is removed from browser
+storage and future automatic saves are skipped. The app keeps only the local
+saving preference so the browser can remember that saving is off.
 
 Keys currently used:
 
-| Key                                       | Purpose                                                              | Stored value                                                            |
-| ----------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `cs-pension-modeller.settings`            | Pension inputs and assumptions.                                      | JSON object (settings payload).                                         |
-| `cs-pension-modeller.appMode`             | Remembers the selected mode.                                         | One of `bridge`, `simple`, `expert`.                                    |
-| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown.                          | `"true"` or `"false"`.                                                  |
-| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`. |
-| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged. | Version string (currently `"v1"`).                                      |
+| Key                                       | Purpose                                                                                            | Stored value                                                                    |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                          |
+| `cs-pension-modeller.settings`            | Pension inputs and assumptions, when local saving is enabled.                                      | JSON object envelope `{ version, data }`, where `data` is the settings payload. |
+| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                            |
+| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                          |
+| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.         |
+| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string (currently `"v1"`).                                              |
 
 To remove all stored data, clear this site’s storage in your browser settings.
+
+Settings storage is schema-versioned. Current saves use a versioned envelope so
+older browser data can be migrated safely when fields are renamed or
+restructured. The current migration history is documented in
+[docs/settings-schema-version-history.md](/Users/rowan/Documents/github/cs-pension-calculator/docs/settings-schema-version-history.md).
 
 ## Development
 
 Requirements:
 
 - Node `20.19.0` or newer
-- npm `11.12.1`, as recorded in `package.json`
+- npm, using the committed `package-lock.json`
 
 Install dependencies:
 
@@ -258,7 +271,7 @@ The accessibility checks use `@axe-core/playwright` against key app states:
 - the main mode-selection screen
 - the simple and expert journey entry screens
 - the bridge journey results screen
-- the static About, Methodology, and Privacy pages
+- the footer pages: Settings, About, Methodology, and Privacy
 
 These automated axe checks help catch regressions in CI, but they do not prove
 full WCAG compliance. Manual keyboard, focus-management, zoom, and screen-reader

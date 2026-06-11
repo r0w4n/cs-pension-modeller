@@ -3,16 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "packageManager": "npm@11.12.1",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "check": "npm run format:check && npm run lint && npm run typecheck:all && npm run test:coverage && npm run build",
     "check:full": "npm run check && npm run test:e2e && npm run test:a11y && npm run test:smoke:prod && npm run audit",
     "audit": "npm audit --audit-level=moderate",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "npm run lint:eslint && npm run lint:knip",
+    "lint:actions": "actionlint",
     "lint:eslint": "eslint . --max-warnings=0",
     "lint:knip": "knip --dependencies --files",
     "lint:hook": "npm run lint",
@@ -24,7 +24,8 @@
     "test:a11y": "playwright test e2e/a11y.spec.ts",
     "test:e2e": "playwright test e2e/app.spec.ts",
     "test:smoke:prod": "npm run build && playwright test e2e/production-smoke.spec.ts --config playwright.prod.config.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:all": "tsc -p tsconfig.typecheck.json --noEmit"
   },
   "engines": {
     "node": ">=20.19.0"

@@ -1,24 +1,25 @@
 import {
-  buildComparisonTableRows,
   formatCapitalPreservation,
   formatCurrencyDetailed,
   formatDecimalAge,
-  formatShortfallOrSurplus,
   formatTargetMissDuration,
   type ComparisonInsights,
   type ComparisonResult,
 } from "../app-domains";
-import { ProjectionTableFrame, type TableColumn } from "./projection-table";
+import type { RetirementIncomeDisplay } from "../projection";
+import { ComparisonSummaryTable } from "./comparison-summary-table";
 import { SummarySection } from "./results-summary";
 
 export function ComparisonResults({
   results,
   insights,
+  retirementIncomeDisplay = "annual",
   hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: {
   results: ComparisonResult[];
   insights: ComparisonInsights;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
   hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 }) {
@@ -39,10 +40,14 @@ export function ComparisonResults({
   return (
     <>
       {results.length >= 2 ? (
-        <ComparisonInsightsGrid insights={insights} />
+        <ComparisonInsightsGrid
+          insights={insights}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+        />
       ) : null}
       <ComparisonSummaryTable
         results={results}
+        retirementIncomeDisplay={retirementIncomeDisplay}
         hideBridgeFundingSection={hideBridgeFundingSection}
         hideFlexibleAssetsSection={hideFlexibleAssetsSection}
       />
@@ -52,8 +57,10 @@ export function ComparisonResults({
 
 function ComparisonInsightsGrid({
   insights,
+  retirementIncomeDisplay,
 }: {
   insights: ComparisonInsights;
+  retirementIncomeDisplay: RetirementIncomeDisplay;
 }) {
   return (
     <div className="comparison-insight-grid">
@@ -94,9 +101,10 @@ function ComparisonInsightsGrid({
               insights.lowestShortfallRiskResult?.scenario.name ??
               "Not available",
             value: insights.lowestShortfallRiskResult
-              ? formatShortfallOrSurplus(
+              ? formatRecurringShortfallOrSurplus(
                   Math.max(0, -insights.lowestShortfallRiskResult.annualGap),
-                  Math.max(0, insights.lowestShortfallRiskResult.annualGap)
+                  Math.max(0, insights.lowestShortfallRiskResult.annualGap),
+                  retirementIncomeDisplay
                 )
               : "Not available",
           },
@@ -122,9 +130,10 @@ function ComparisonInsightsGrid({
               insights.highestLaterIncomeResult?.scenario.name ??
               "Not available",
             value: insights.highestLaterIncomeResult
-              ? `${formatCurrencyDetailed(
-                  insights.highestLaterIncomeResult.lifeExpectancyAnnualIncome
-                )} per year`
+              ? formatRecurringCurrency(
+                  insights.highestLaterIncomeResult.lifeExpectancyAnnualIncome,
+                  retirementIncomeDisplay
+                )
               : "Not available",
           },
         ]}
@@ -133,61 +142,32 @@ function ComparisonInsightsGrid({
   );
 }
 
-function ComparisonSummaryTable({
-  results,
-  hideBridgeFundingSection = false,
-  hideFlexibleAssetsSection = false,
-}: {
-  results: ComparisonResult[];
-  hideBridgeFundingSection?: boolean;
-  hideFlexibleAssetsSection?: boolean;
-}) {
-  const columns: TableColumn[] = [
-    { key: "metric", label: "Metric", width: "16rem" },
-    ...results.map((result, index) => ({
-      key: result.scenario.id,
-      label: result.scenario.name || `Scenario ${index + 1}`,
-      width: "13rem",
-    })),
-  ];
-  const rows = buildComparisonTableRows(results, {
-    hideBridgeFundingSection,
-    hideFlexibleAssetsSection,
-  });
-  const minWidth = `${16 + results.length * 13}rem`;
+function formatRecurringCurrency(
+  annualValue: number,
+  display: RetirementIncomeDisplay
+) {
+  return display === "monthly"
+    ? `${formatCurrencyDetailed(annualValue / 12)} per month`
+    : `${formatCurrencyDetailed(annualValue)} per year`;
+}
 
-  return (
-    <section className="summary-section summary-section--compact">
-      <div className="summary-section-header">
-        <h2>Comparison</h2>
-      </div>
-      <div className="summary-section-inner">
-        <section className="bridge-table-section">
-          <p className="section-copy">
-            Compare the key decision metrics across scenarios.
-          </p>
-          <ProjectionTableFrame
-            columns={columns}
-            rows={rows}
-            emptyMessage="No comparison rows are available."
-            getRowKey={(row) => row.key}
-            getRowClassName={(row) =>
-              row.isSectionDivider
-                ? "comparison-summary-row comparison-summary-row--divider"
-                : "comparison-summary-row"
-            }
-            minWidth={minWidth}
-            renderCells={(row) => [
-              row.isSectionDivider ? (
-                <strong>{row.section}</strong>
-              ) : (
-                row.metric
-              ),
-              ...row.values,
-            ]}
-          />
-        </section>
-      </div>
-    </section>
-  );
+function formatRecurringShortfallOrSurplus(
+  annualShortfall: number,
+  annualSurplus: number,
+  display: RetirementIncomeDisplay
+) {
+  const shortfall =
+    display === "monthly" ? annualShortfall / 12 : annualShortfall;
+  const surplus = display === "monthly" ? annualSurplus / 12 : annualSurplus;
+  const period = display === "monthly" ? "per month" : "per year";
+
+  if (shortfall > 0) {
+    return `${formatCurrencyDetailed(shortfall)} shortfall ${period}`;
+  }
+
+  if (surplus > 0) {
+    return `${formatCurrencyDetailed(surplus)} surplus ${period}`;
+  }
+
+  return `${formatCurrencyDetailed(0)} ${period}`;
 }

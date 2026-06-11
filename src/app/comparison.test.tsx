@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ComparisonBuilder, ComparisonSection } from "./comparison";
+import { ComparisonSection } from "./comparison";
+import { ScenarioBuilder } from "./scenario-builder";
 
 describe("comparison module", () => {
   it("renders comparison section children", () => {
@@ -17,15 +18,13 @@ describe("comparison module", () => {
     const addCurrentScenario = vi.fn();
 
     render(
-      <ComparisonBuilder
+      <ScenarioBuilder
         scenarioCount={1}
-        actions={{
-          currentScenarioIsValid: true,
-          comparisonLimitReached: false,
-          scenarioNameDraft: "",
-          setScenarioNameDraft,
-          addCurrentScenario,
-        }}
+        isValid
+        limitReached={false}
+        nameValue=""
+        onNameChange={setScenarioNameDraft}
+        onAdd={addCurrentScenario}
       />
     );
 

@@ -23,17 +23,18 @@ jobs:
       DEPENDABOT_AUTOMATION_TOKEN: ${{ secrets.DEPENDABOT_AUTOMATION_TOKEN }}
 
     steps:
-      - name: Check automation token
+      - name: Report token mode
         run: |
           if [ -z "$DEPENDABOT_AUTOMATION_TOKEN" ]; then
-            echo "::error::Set DEPENDABOT_AUTOMATION_TOKEN to a fine-grained PAT or GitHub App token with Contents and Pull requests write access. Using GITHUB_TOKEN here can leave PR workflow runs waiting for manual approval."
-            exit 1
+            echo "::notice::DEPENDABOT_AUTOMATION_TOKEN is not set, so this workflow will use GITHUB_TOKEN. Add a fine-grained PAT or GitHub App token with Contents and Pull requests write access if branch updates need to trigger follow-up workflows without approval prompts."
+          else
+            echo "Using DEPENDABOT_AUTOMATION_TOKEN for Dependabot branch updates."
           fi
 
       - name: Update open Dependabot PR branches
         uses: actions/github-script@v7
         with:
-          github-token: ${{ env.DEPENDABOT_AUTOMATION_TOKEN }}
+          github-token: ${{ secrets.DEPENDABOT_AUTOMATION_TOKEN || github.token }}
           script: |
             const { owner, repo } = context.repo;
 

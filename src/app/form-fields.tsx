@@ -37,6 +37,7 @@ type SettingsFieldsProps = {
   onChange: SettingsFieldOnChange;
   showGuidanceNotes: boolean;
   useDropdownDates: boolean;
+  alphaPensionIncreaseDescription?: string;
 };
 
 export {
@@ -54,6 +55,7 @@ export function SettingsFields({
   onChange,
   showGuidanceNotes,
   useDropdownDates,
+  alphaPensionIncreaseDescription,
 }: SettingsFieldsProps) {
   const { baseFields, alphaPensionIncreaseFields } =
     splitSettingsFields(fields);
@@ -88,9 +90,8 @@ export function SettingsFields({
           <div className="settings-subsection-heading">
             <h4>Pension increases</h4>
             <p className="section-copy">
-              Revalue Alpha benefits annually by CPI + 1.5% while active, and
-              CPI after leaving Alpha service, using the selected projection
-              basis.
+              {alphaPensionIncreaseDescription ??
+                "Revalue Alpha benefits annually by CPI + 1.5% while active, and CPI after leaving Alpha service, using the selected projection basis."}
             </p>
           </div>
           <div className="field-grid">
@@ -232,7 +233,7 @@ function Field({
         className={`${getFieldCardClassName(false, false, Boolean(validationIssue))} checkbox-field-card`}
       >
         <span className="field-header">
-          <FieldLabel field={field} />
+          <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
         </span>
         <span className="checkbox-row">
           <input

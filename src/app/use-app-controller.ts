@@ -1,306 +1,121 @@
-import {
-  startTransition,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { startTransition, useEffect, useState } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
-import {
-  calculateRetirementIncomeTargetAtDate,
-  createProjectionTable,
-  deriveInflationAssumptions,
-  generatePensionSummary,
-  type RetirementIncomeDisplay,
-} from "../projection";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
-  getStoredSettingsSnapshot,
-  loadStoredSettings,
+  clearAllLocalStorageData,
+  clearStoredSettings,
+  isLocalStorageEnabled as loadLocalStorageEnabled,
+  saveLocalStoragePreference,
   saveSettings,
-  validateSettings,
   type PensionSettings,
 } from "../settings";
 import {
+  clearStoredComparisonScenarios,
+  saveStoredComparisonScenarios,
+} from "../app-domains";
+import {
   loadAcknowledgementState,
-  loadStoredAppMode,
   loadStoredGuidanceNotes,
   saveAcknowledgementState,
+  clearStoredAppPreferences,
+  saveStoredAppMode,
   saveStoredGuidanceNotes,
   type AppMode,
 } from "./app-persistence";
 import {
   loadComparisonScenario as loadComparisonScenarioAction,
-  resetSettings as resetSettingsAction,
   selectAppMode as selectAppModeAction,
-  showSavedLabel as showSavedLabelAction,
 } from "./app-actions";
 import {
   updateBridgeChartParameters as updateBridgeChartParametersAction,
   updateSetting as updateSettingAction,
 } from "./chart-state";
-import {
-  addYearsToIsoDate,
-  buildRetirementIncomeItems,
-  clonePensionSettings,
-  createBridgeChartLimits,
-  createBridgeChartParameters,
-  createRetirementIncomeSeries,
-  formatCurrencyDetailed,
-  getRetirementIncomeTargetTitle,
-  getRetirementIncomeTitle,
-  loadStoredComparisonScenarios,
-  saveStoredComparisonScenarios,
-  type ComparisonResultCache,
-  type ComparisonScenario,
-} from "../app-domains";
-import {
-  JOURNEY_DEFINITIONS,
-  applySimpleJourneyAssumptions,
-  applySimpleJourneyDefaults,
-} from "../app-domains/journeys";
 import { useMobileDateDropdowns as useMobileDateDropdownsHook } from "./form-fields";
 import type { JourneyStepViewModel } from "./journey-step-content";
-import type { JourneyMode } from "./journey-mode-screen";
-
-const [
-  bridgeJourneyDefinition,
-  simpleJourneyDefinition,
-  expertJourneyDefinition,
-] = JOURNEY_DEFINITIONS;
-
-const JOURNEY_DEFINITION_BY_MODE = {
-  bridge: bridgeJourneyDefinition,
-  simple: simpleJourneyDefinition,
-  expert: expertJourneyDefinition,
-} satisfies Record<JourneyMode, (typeof JOURNEY_DEFINITIONS)[number]>;
+import { useAppModeState } from "./use-app-mode-state";
+import { useComparisonState } from "./use-comparison-state";
+import { useJourneySettings } from "./use-journey-settings";
+import { useProjectionCalculations } from "./use-projection-calculations";
+import { useSavedFeedback } from "./use-saved-feedback";
+import { useUndoShortcut } from "./use-undo-shortcut";
+import { applySimpleJourneyDefaults } from "../app-domains/journeys";
+import type { RetirementIncomeDisplay } from "../projection";
 
 export function useAppController() {
-  const initialAppMode = loadStoredAppMode();
-  const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
-  const [simpleJourneySettings, setSimpleJourneySettings] =
-    useState<PensionSettings | null>(() => {
-      if (initialAppMode !== "simple") {
-        return null;
-      }
-
-      return applySimpleJourneyDefaults(loadStoredSettings());
-    });
+  const {
+    activeJourneyDefinition,
+    activeJourneyMode,
+    activeModeRef,
+    appMode,
+    initialAppMode,
+    scrollActiveModeIntoView,
+    setAppMode,
+    shouldFocusActiveMode,
+  } = useAppModeState();
+  const {
+    savedFeedbackTimerRef,
+    setShowSavedFeedback,
+    showSavedFeedback,
+    showSavedLabel,
+  } = useSavedFeedback();
   const [chartUndoStack, setChartUndoStack] = useState<PensionSettings[]>([]);
-  const [settingsFormVersion, setSettingsFormVersion] = useState(0);
-  const [appMode, setAppMode] = useState<AppMode | null>(initialAppMode);
+  const {
+    effectiveSettings,
+    exportParameters,
+    loadParameters,
+    setActiveJourneySettings,
+    setSettings,
+    setSettingsFormVersion,
+    settings,
+    settingsFormVersion,
+  } = useJourneySettings({
+    activeJourneyMode,
+    initialAppMode,
+    setChartUndoStack,
+    showSavedLabel,
+  });
   const [showGuidanceNotes, setShowGuidanceNotes] = useState(
     loadStoredGuidanceNotes
   );
   const [retirementIncomeDisplay, setRetirementIncomeDisplay] =
     useState<RetirementIncomeDisplay>("monthly");
-  const [comparisonScenarios, setComparisonScenarios] = useState<
-    ComparisonScenario[]
-  >(loadStoredComparisonScenarios);
-  const [showLimitations, setShowLimitations] = useState(false);
+  const { comparisonResultCache, comparisonScenarios, setComparisonScenarios } =
+    useComparisonState();
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
-  const [showSavedFeedback, setShowSavedFeedback] = useState(false);
-  const savedFeedbackTimer = useRef<ReturnType<
-    typeof window.setTimeout
-  > | null>(null);
-  const [comparisonResultCache] = useState<ComparisonResultCache>(
-    () => new Map()
+  const [localStorageEnabled, setLocalStorageEnabledState] = useState(
+    loadLocalStorageEnabled
   );
-  const activeModeRef = useRef<HTMLDivElement | null>(null);
-  const shouldFocusActiveMode = useRef(false);
-  const scrollActiveModeIntoView = useCallback(() => {
-    window.requestAnimationFrame(() => {
-      activeModeRef.current?.focus({ preventScroll: true });
-      if (typeof activeModeRef.current?.scrollIntoView === "function") {
-        activeModeRef.current.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
-    });
-  }, []);
-  const activeJourneyMode = appMode;
-  const activeJourneyDefinition = activeJourneyMode
-    ? JOURNEY_DEFINITION_BY_MODE[activeJourneyMode]
-    : null;
   const useDropdownDates = useMobileDateDropdownsHook();
-  const simpleJourneyEffectiveSettings = useMemo(() => {
-    if (activeJourneyMode !== "simple") {
-      return null;
-    }
-
-    return applySimpleJourneyAssumptions(
-      simpleJourneySettings ?? applySimpleJourneyDefaults(settings)
-    );
-  }, [activeJourneyMode, settings, simpleJourneySettings]);
-  const effectiveSettings = useMemo(
-    () =>
-      activeJourneyMode === "simple"
-        ? (simpleJourneyEffectiveSettings ??
-          applySimpleJourneyDefaults(settings))
-        : settings,
-    [activeJourneyMode, settings, simpleJourneyEffectiveSettings]
-  );
-  const deferredSettings = useDeferredValue(effectiveSettings);
-  const validationIssues = useMemo(
-    () => validateSettings(deferredSettings),
-    [deferredSettings]
-  );
-  const projectionRows = useMemo(
-    () => createProjectionTable(deferredSettings),
-    [deferredSettings]
-  );
-  const pensionSummary = useMemo(
-    () => generatePensionSummary(projectionRows, deferredSettings),
-    [projectionRows, deferredSettings]
-  );
-  const retirementIncomeSeries = useMemo(
-    () => createRetirementIncomeSeries(projectionRows, deferredSettings),
-    [projectionRows, deferredSettings]
-  );
-  const bridgeChartParameters = useMemo(
-    () => createBridgeChartParameters(effectiveSettings),
-    [effectiveSettings]
-  );
-  const bridgeChartLimits = useMemo(
-    () => createBridgeChartLimits(effectiveSettings),
-    [effectiveSettings]
-  );
-  const derivedInflationAssumptions = useMemo(
-    () => deriveInflationAssumptions(deferredSettings),
-    [deferredSettings]
-  );
-  const retirementIncomeTitle = getRetirementIncomeTitle(
-    effectiveSettings.taxationEnabled,
-    retirementIncomeDisplay
-  );
-  const retirementIncomeItems = pensionSummary
-    ? buildRetirementIncomeItems(pensionSummary, retirementIncomeDisplay)
-    : [];
-  const retirementIncomeTotal = formatCurrencyDetailed(
-    retirementIncomeDisplay === "monthly"
-      ? (pensionSummary?.retirementIncome.totalMonthlyIncome ?? 0)
-      : (pensionSummary?.retirementIncome.totalAnnualIncome ?? 0)
-  );
-  const retirementIncomeTargetTitle = getRetirementIncomeTargetTitle(
-    retirementIncomeDisplay
-  );
-  const annualRetirementIncomeTarget = calculateRetirementIncomeTargetAtDate(
+  const {
+    bridgeChartLimits,
+    bridgeChartParameters,
+    deferredSettings,
+    derivedInflationAssumptions,
+    pensionSummary,
+    projectionRows,
+    retirementIncomeItems,
+    retirementIncomeSeries,
+    retirementIncomeTarget,
+    retirementIncomeTargetTitle,
+    retirementIncomeTitle,
+    retirementIncomeTotal,
+    validationIssues,
+  } = useProjectionCalculations({
     effectiveSettings,
-    addYearsToIsoDate(
-      effectiveSettings.dateOfBirth,
-      effectiveSettings.requirementAge
-    )
-  );
-  const retirementIncomeTarget = formatCurrencyDetailed(
-    retirementIncomeDisplay === "monthly"
-      ? annualRetirementIncomeTarget / 12
-      : annualRetirementIncomeTarget
-  );
+    retirementIncomeDisplay,
+  });
 
-  useEffect(() => {
-    saveSettings(settings);
-  }, [settings]);
-
-  useEffect(() => {
-    saveStoredComparisonScenarios(comparisonScenarios);
-  }, [comparisonScenarios]);
+  useUndoShortcut({
+    chartUndoStack,
+    setChartUndoStack,
+    setSettings,
+  });
 
   useEffect(() => {
     saveStoredGuidanceNotes(showGuidanceNotes);
   }, [showGuidanceNotes]);
-
-  useEffect(() => {
-    if (!appMode || !shouldFocusActiveMode.current) {
-      return;
-    }
-
-    shouldFocusActiveMode.current = false;
-    scrollActiveModeIntoView();
-  }, [appMode, scrollActiveModeIntoView]);
-
-  useEffect(() => {
-    const savedFeedbackTimeout = savedFeedbackTimer.current;
-    return () => {
-      if (savedFeedbackTimeout) {
-        window.clearTimeout(savedFeedbackTimeout);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleUndoShortcut = (event: globalThis.KeyboardEvent) => {
-      if (
-        event.key.toLowerCase() !== "z" ||
-        event.shiftKey ||
-        event.altKey ||
-        (!event.metaKey && !event.ctrlKey) ||
-        chartUndoStack.length === 0 ||
-        isEditableShortcutTarget(event.target)
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-      setChartUndoStack((current) => {
-        const previousSettings = current.at(-1);
-
-        if (!previousSettings) {
-          return current;
-        }
-
-        if (activeJourneyMode === "simple") {
-          setSimpleJourneySettings(clonePensionSettings(previousSettings));
-        } else {
-          setSettings(previousSettings);
-        }
-
-        return current.slice(0, -1);
-      });
-    };
-
-    window.addEventListener("keydown", handleUndoShortcut);
-
-    return () => window.removeEventListener("keydown", handleUndoShortcut);
-  }, [activeJourneyMode, chartUndoStack.length]);
-
-  function showSavedLabel() {
-    showSavedLabelAction({
-      savedFeedbackTimerRef: savedFeedbackTimer,
-      setShowSavedFeedback,
-    });
-  }
-
-  const setActiveJourneySettings = useCallback(
-    (
-      value: PensionSettings | ((current: PensionSettings) => PensionSettings)
-    ) => {
-      if (activeJourneyMode === "simple") {
-        setSimpleJourneySettings((current) => {
-          const baseSettings = current ?? applySimpleJourneyDefaults(settings);
-          const nextSettings =
-            typeof value === "function" ? value(baseSettings) : value;
-
-          return nextSettings.dateOfBirth !== baseSettings.dateOfBirth
-            ? applySimpleJourneyDefaults(nextSettings)
-            : applySimpleJourneyAssumptions(nextSettings);
-        });
-        return;
-      }
-
-      if (typeof value === "function") {
-        setSettings((current) => value(current));
-        return;
-      }
-
-      setSettings(value);
-    },
-    [activeJourneyMode, settings]
-  );
 
   function updateSetting<K extends SettingsKey>(
     key: K,
@@ -328,19 +143,9 @@ export function useAppController() {
     });
   }
 
-  function resetSettings() {
-    resetSettingsAction({
-      savedFeedbackTimerRef: savedFeedbackTimer,
-      setShowSavedFeedback,
-      setChartUndoStack,
-      setSettingsFormVersion,
-      setSettings: setActiveJourneySettings,
-    });
-  }
-
   function loadComparisonScenario(scenarioSettings: PensionSettings) {
     loadComparisonScenarioAction({
-      savedFeedbackTimerRef: savedFeedbackTimer,
+      savedFeedbackTimerRef,
       setShowSavedFeedback,
       scenarioSettings,
       setChartUndoStack,
@@ -349,26 +154,33 @@ export function useAppController() {
     });
   }
 
-  function exportParameters() {
-    const snapshot = getStoredSettingsSnapshot(effectiveSettings);
-    const fileDate = new Date().toISOString().slice(0, 10);
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
-      type: "application/json",
-    });
-    const objectUrl = window.URL.createObjectURL(blob);
-    const link = window.document.createElement("a");
-    link.href = objectUrl;
-    link.download = `cs-pension-parameters-${fileDate}.json`;
-    window.document.body.append(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(objectUrl);
-    showSavedLabel();
+  function clearAllData() {
+    clearAllLocalStorageData();
   }
 
-  const toggleLimitations = useCallback(() => {
-    setShowLimitations((current) => !current);
-  }, []);
+  function setLocalStorageEnabled(enabled: boolean) {
+    saveLocalStoragePreference(enabled);
+    setLocalStorageEnabledState(enabled);
+
+    if (!enabled) {
+      clearStoredSettings();
+      clearStoredAppPreferences();
+      clearStoredComparisonScenarios();
+      return;
+    }
+
+    if (appMode) {
+      saveStoredAppMode(appMode);
+    }
+
+    saveSettings(settings);
+    saveStoredComparisonScenarios(comparisonScenarios);
+    saveStoredGuidanceNotes(showGuidanceNotes);
+
+    if (hasAcknowledgedNotice) {
+      saveAcknowledgementState();
+    }
+  }
 
   const journeyStepViewModel: JourneyStepViewModel = {
     settings: effectiveSettings,
@@ -389,15 +201,11 @@ export function useAppController() {
     useDropdownDates,
     onChange: updateSetting,
     onChangeChartParameters: updateBridgeChartParameters,
-    onReset: resetSettings,
-    onExport: exportParameters,
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange: setComparisonScenarios,
     onLoadScenario: loadComparisonScenario,
     onRetirementIncomeDisplayChange: setRetirementIncomeDisplay,
-    showLimitations,
-    onToggleLimitations: toggleLimitations,
   };
 
   function acknowledgeNotice() {
@@ -407,9 +215,7 @@ export function useAppController() {
 
   function selectAppMode(mode: AppMode) {
     if (mode === "simple") {
-      setSimpleJourneySettings(
-        (current) => current ?? applySimpleJourneyDefaults(settings)
-      );
+      setSettings((current) => applySimpleJourneyDefaults(current));
     }
 
     selectAppModeAction({
@@ -438,10 +244,12 @@ export function useAppController() {
     exportParameters,
     hasAcknowledgedNotice,
     journeyStepViewModel,
+    loadParameters,
+    localStorageEnabled,
     loadComparisonScenario,
     pensionSummary,
     projectionRows,
-    resetSettings,
+    clearAllData,
     retirementIncomeDisplay,
     retirementIncomeItems,
     retirementIncomeSeries,
@@ -450,34 +258,18 @@ export function useAppController() {
     retirementIncomeTitle,
     retirementIncomeTotal,
     selectAppMode,
+    setLocalStorageEnabled,
     setComparisonScenarios,
     setRetirementIncomeDisplay,
     setShowGuidanceNotes,
     settings,
     settingsFormVersion,
     showGuidanceNotes,
-    showLimitations,
     showSavedFeedback,
-    toggleLimitations,
     updateBridgeChartParameters,
     updateSetting,
     useDropdownDates,
     validationIssues,
     visibleSettings: effectiveSettings,
   };
-}
-
-function isEditableShortcutTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  const tagName = target.tagName.toLowerCase();
-
-  return (
-    target.isContentEditable ||
-    tagName === "input" ||
-    tagName === "textarea" ||
-    tagName === "select"
-  );
 }

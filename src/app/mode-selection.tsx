@@ -32,7 +32,7 @@ export function ModeSelection({
           <span>
             Answer a smaller set of questions to see what your retirement could
             look like financially. This journey keeps the main assumptions
-            simple and shows your projected income, key dates, and funding gaps
+            simple and shows your projected income, key dates, and assumptions
             at the end.
           </span>
         </button>
@@ -43,11 +43,12 @@ export function ModeSelection({
           aria-pressed={selectedMode === "bridge"}
           onClick={() => onSelectMode("bridge")}
         >
-          <span className="card-label">Early retirement</span>
+          <span className="card-label">Early retirement journey</span>
           <strong>Work out what I need to retire early</strong>
           <span>
-            Follow a statement-led flow that closely matches the main Civil
-            Service calculator inputs, then review the full results breakdown.
+            Build a retirement income plan using your Civil Service pension,
+            State Pension, SIPP, ISA and other savings. See how your bridging
+            pots could support you before your main pensions start.
           </span>
         </button>
 
@@ -60,8 +61,9 @@ export function ModeSelection({
           <span className="card-label">Expert journey</span>
           <strong>Work through every setting with full control.</strong>
           <span>
-            Use the full assumption set, then review the detailed chart,
-            scenarios, and projection table in the final step.
+            This journey gives you more control over your retirement projection,
+            including detailed assumptions for pensions, savings, tax,
+            inflation, investment growth and partial retirement.
           </span>
         </button>
       </div>

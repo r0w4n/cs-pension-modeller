@@ -18,7 +18,9 @@ import type {
 } from "../RetirementIncomeBridgeChart";
 import {
   calculateStatePensionDrawAge,
+  isLocalStorageEnabled,
   readStorageItem,
+  removeStorageItem,
   writeStorageItem,
   type PensionSettings,
 } from "../settings";
@@ -106,6 +108,10 @@ type SummaryItemLike = {
 };
 
 export function loadStoredComparisonScenarios(): ComparisonScenario[] {
+  if (!isLocalStorageEnabled()) {
+    return [];
+  }
+
   const storedScenarios = readStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
 
   if (!storedScenarios) {
@@ -131,10 +137,18 @@ export function loadStoredComparisonScenarios(): ComparisonScenario[] {
 }
 
 export function saveStoredComparisonScenarios(scenarios: ComparisonScenario[]) {
+  if (!isLocalStorageEnabled()) {
+    return;
+  }
+
   writeStorageItem(
     COMPARISON_SCENARIOS_STORAGE_KEY,
     JSON.stringify(scenarios.slice(0, MAX_COMPARISON_SCENARIOS))
   );
+}
+
+export function clearStoredComparisonScenarios() {
+  removeStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
 }
 
 export function createComparisonScenarioId() {
@@ -339,11 +353,13 @@ export function calculateComparisonInsights(
 export function buildComparisonTableRows(
   results: ComparisonResult[],
   options: {
+    retirementIncomeDisplay?: RetirementIncomeDisplay;
     hideBridgeFundingSection?: boolean;
     hideFlexibleAssetsSection?: boolean;
   } = {}
 ): ComparisonTableRow[] {
   const {
+    retirementIncomeDisplay = "annual",
     hideBridgeFundingSection = false,
     hideFlexibleAssetsSection = false,
   } = options;
@@ -358,12 +374,20 @@ export function buildComparisonTableRows(
             ? "Partial retirement"
             : "Full retirement",
       ],
-      ["Target income", (result) => formatAnnualCurrency(result.annualTarget)],
+      [
+        "Target income",
+        (result) =>
+          formatRecurringAnnualCurrency(
+            result.annualTarget,
+            retirementIncomeDisplay
+          ),
+      ],
       [
         "Lowest income",
         (result) =>
-          formatAnnualCurrency(
-            getLowestAnnualIncome(result.rows, result.scenario.settings)
+          formatRecurringAnnualCurrency(
+            getLowestAnnualIncome(result.rows, result.scenario.settings),
+            retirementIncomeDisplay
           ),
       ],
       [
@@ -378,8 +402,9 @@ export function buildComparisonTableRows(
         "Largest shortfall",
         (result) =>
           renderComparisonToneCell(
-            formatAnnualCurrency(
-              getLargestAnnualShortfall(result.rows, result.scenario.settings)
+            formatRecurringAnnualCurrency(
+              getLargestAnnualShortfall(result.rows, result.scenario.settings),
+              retirementIncomeDisplay
             ),
             getLargestAnnualShortfall(result.rows, result.scenario.settings) > 0
               ? "caution"
@@ -435,14 +460,18 @@ export function buildComparisonTableRows(
       [
         "Alpha income",
         (result) =>
-          formatAnnualCurrency(result.summary.alphaPension.annualAtDraw),
+          formatRecurringAnnualCurrency(
+            result.summary.alphaPension.annualAtDraw,
+            retirementIncomeDisplay
+          ),
       ],
       [
         "State Pension income",
         (result) =>
           result.scenario.settings.showStatePension
-            ? formatAnnualCurrency(
-                result.summary.incomeOverTime.monthlyStatePension * 12
+            ? formatRecurringAnnualCurrency(
+                result.summary.incomeOverTime.monthlyStatePension * 12,
+                retirementIncomeDisplay
               )
             : "n/a",
       ],
@@ -450,12 +479,16 @@ export function buildComparisonTableRows(
         "Total secure income",
         (result) =>
           result.scenario.settings.showStatePension
-            ? formatAnnualCurrency(getCombinedSecurePensionAtStateAge(result))
-            : formatAnnualCurrency(
+            ? formatRecurringAnnualCurrency(
+                getCombinedSecurePensionAtStateAge(result),
+                retirementIncomeDisplay
+              )
+            : formatRecurringAnnualCurrency(
                 result.summary.alphaPension.annualAtDraw +
                   (result.scenario.settings.showNuvos
                     ? result.summary.nuvosPension.annualAtDraw
-                    : 0)
+                    : 0),
+                retirementIncomeDisplay
               ),
       ],
       [
@@ -509,10 +542,11 @@ export function buildComparisonTableRows(
                 ),
             ],
             [
-              "Extra monthly saving",
+              "Extra saving",
               (result) =>
-                formatMonthlyCurrency(
-                  result.bridgeAnalysis.additionalMonthlyContributionRequired
+                formatRecurringMonthlyCurrency(
+                  result.bridgeAnalysis.additionalMonthlyContributionRequired,
+                  retirementIncomeDisplay
                 ),
             ],
           ]),
@@ -837,11 +871,13 @@ export function buildComparisonDetailedRows(
 }
 
 export function buildComparisonStatusItems(
-  result: ComparisonResult
+  result: ComparisonResult,
+  options: { hideBridgeFundingSection?: boolean } = {}
 ): SummaryItemLike[] {
+  const { hideBridgeFundingSection = false } = options;
   const overallWorks =
     result.targetMissMonths === 0 &&
-    result.bridgeAnalysis.planWorks &&
+    (hideBridgeFundingSection || result.bridgeAnalysis.planWorks) &&
     result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus >= 0;
 
   const targetShortfall =
@@ -851,7 +887,7 @@ export function buildComparisonStatusItems(
 
   let mainIssue = "No shortfall identified from the current assumptions.";
 
-  if (!result.bridgeAnalysis.planWorks) {
+  if (!hideBridgeFundingSection && !result.bridgeAnalysis.planWorks) {
     mainIssue =
       result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
         ? `Bridge still unfunded; estimated extra monthly saving ${formatMonthlyCurrency(
@@ -859,12 +895,17 @@ export function buildComparisonStatusItems(
           )}`
         : "Bridge still unfunded";
   } else if (result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus < 0) {
-    mainIssue = `Secure pension income is ${formatAnnualCurrency(
-      Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
-    )} below target once the bridge ends`;
+    mainIssue = hideBridgeFundingSection
+      ? `Secure pension income is ${formatAnnualCurrency(
+          Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
+        )} below target once all selected secure pension income is in payment`
+      : `Secure pension income is ${formatAnnualCurrency(
+          Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
+        )} below target once the bridge ends`;
   } else if (result.targetMissMonths > 0) {
-    mainIssue =
-      "Income drops below target before secure pension income is fully in place";
+    mainIssue = hideBridgeFundingSection
+      ? "Income drops below target before all selected secure pension income is in place"
+      : "Income drops below target before secure pension income is fully in place";
   }
 
   return [
@@ -1180,6 +1221,24 @@ function formatAnnualCurrency(value: number) {
 
 function formatMonthlyCurrency(value: number) {
   return `${formatCurrencyDetailed(value)}/month`;
+}
+
+function formatRecurringAnnualCurrency(
+  annualValue: number,
+  display: RetirementIncomeDisplay
+) {
+  return display === "monthly"
+    ? formatMonthlyCurrency(annualValue / 12)
+    : formatAnnualCurrency(annualValue);
+}
+
+function formatRecurringMonthlyCurrency(
+  monthlyValue: number,
+  display: RetirementIncomeDisplay
+) {
+  return display === "monthly"
+    ? formatMonthlyCurrency(monthlyValue)
+    : formatAnnualCurrency(monthlyValue * 12);
 }
 
 function formatAnnualPosition(value: number) {

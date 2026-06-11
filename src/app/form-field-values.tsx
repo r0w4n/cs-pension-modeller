@@ -47,7 +47,7 @@ export function SelectSettingField({
       )}
     >
       <span className="field-header">
-        <FieldLabel field={field} />
+        <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
       </span>
       <SelectSettingFieldEditor
         field={field}
@@ -128,7 +128,7 @@ export function CurrencySettingField({
       )}
     >
       <span className="field-header">
-        <FieldLabel field={field} />
+        <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
       </span>
       <CurrencySettingFieldEditor
         field={field}
@@ -313,7 +313,7 @@ export function RangeSettingField({
       )}
     >
       <span className="field-header">
-        <FieldLabel field={effectiveField} />
+        <FieldLabel field={effectiveField} showInfoLinks={showGuidanceNotes} />
       </span>
       <div className="range-control-grid">
         <div className="range-slider-group">

@@ -11,7 +11,7 @@ export function normalizeIsaWithdrawalStrategy(
     value === "zero_at_death" ||
     value === "use_by_age"
     ? value
-    : "zero_at_death";
+    : "use_by_age";
 }
 
 export function normalizeIsaBooleanSetting(value: unknown) {

@@ -22,6 +22,7 @@ import {
   getSettingsSignature,
   type ComparisonResultCache,
   type ComparisonScenario,
+  type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
@@ -39,6 +40,7 @@ import {
 } from "./projection-table";
 import {
   SettingsFields as SettingsFieldsFeature,
+  useMobileDateDropdowns,
   type SettingsFieldOnChange,
 } from "./form-fields";
 import {
@@ -71,15 +73,11 @@ export type JourneyStepViewModel = {
   onChangeChartParameters: (
     patch: Partial<RetirementIncomeBridgeParameters>
   ) => void;
-  onReset: () => void;
-  onExport: () => void;
   comparisonScenarios: ComparisonScenario[];
   comparisonResultCache: ComparisonResultCache;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (scenarioSettings: PensionSettings) => void;
   onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
-  showLimitations: boolean;
-  onToggleLimitations: () => void;
 };
 
 export type JourneyStepContentProps = {
@@ -92,6 +90,8 @@ export function JourneyStepContent({
   viewModel,
 }: JourneyStepContentProps) {
   const { settings, comparisonResultCache } = viewModel;
+  const shouldRenderProjectionTable =
+    !useMobileDateDropdowns("(max-width: 640px)");
 
   const currentComparisonResult = useMemo(
     () =>
@@ -124,7 +124,11 @@ export function JourneyStepContent({
   }
 
   if (step.kind === "expert-answer") {
-    return renderExpertAnswerStep(viewModel, currentComparisonResult);
+    return renderExpertAnswerStep(
+      viewModel,
+      currentComparisonResult,
+      shouldRenderProjectionTable
+    );
   }
 
   if (step.kind === "bridge-answer") {
@@ -134,7 +138,8 @@ export function JourneyStepContent({
         showProjectionTable?: boolean;
       },
       viewModel,
-      currentComparisonResult
+      currentComparisonResult,
+      shouldRenderProjectionTable
     );
   }
 
@@ -152,27 +157,11 @@ function renderOptionalSectionsStep(
   },
   viewModel: JourneyStepViewModel
 ) {
-  const { settings, validationIssues, onChange, onReset, onExport } = viewModel;
+  const { settings, validationIssues, onChange } = viewModel;
   const toggleKeys = step.toggleKeys;
 
   return (
     <>
-      {step.id === "optional-sections" ? (
-        <div className="settings-panel-actions">
-          <button type="button" className="secondary-button" onClick={onExport}>
-            Export parameters
-          </button>
-          <button
-            type="button"
-            className="secondary-button settings-reset-button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={onReset}
-          >
-            Reset parameters
-          </button>
-        </div>
-      ) : null}
-
       <ValidationSummary validationIssues={validationIssues} />
 
       <OptionalSectionToggleGrid
@@ -207,8 +196,6 @@ function renderAnswerStep(
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
-    showLimitations,
-    onToggleLimitations,
     onChangeChartParameters,
   } = viewModel;
 
@@ -232,8 +219,6 @@ function renderAnswerStep(
         retirementIncomeTargetTitle={retirementIncomeTargetTitle}
         retirementIncomeTarget={retirementIncomeTarget}
         statusItems={buildStatusItems(currentComparisonResult)}
-        showLimitations={showLimitations}
-        onToggleLimitations={onToggleLimitations}
       />
 
       <InflationBasisPanelFeature
@@ -266,13 +251,12 @@ function renderAnswerStep(
         onLoadScenario={onLoadScenario}
         retirementIncomeDisplay={retirementIncomeDisplay}
         onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-        showLimitations={showLimitations}
-        onToggleLimitations={onToggleLimitations}
         derivedInflationAssumptions={derivedInflationAssumptions}
         retirementIncomeSeries={retirementIncomeSeries}
         bridgeChartParameters={bridgeChartParameters}
         bridgeChartLimits={bridgeChartLimits}
         hideInactiveLegendItems
+        showPensionSummary={false}
         onChangeChartParameters={onChangeChartParameters}
       />
     </>
@@ -281,7 +265,8 @@ function renderAnswerStep(
 
 function renderExpertAnswerStep(
   viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
+  currentComparisonResult: ReturnType<typeof createComparisonResult>,
+  shouldRenderProjectionTable: boolean
 ) {
   const {
     settings,
@@ -302,8 +287,6 @@ function renderExpertAnswerStep(
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
-    showLimitations,
-    onToggleLimitations,
     onChangeChartParameters,
   } = viewModel;
 
@@ -324,8 +307,6 @@ function renderExpertAnswerStep(
           retirementIncomeTargetTitle={retirementIncomeTargetTitle}
           retirementIncomeTarget={retirementIncomeTarget}
           statusItems={buildStatusItems(currentComparisonResult)}
-          showLimitations={showLimitations}
-          onToggleLimitations={onToggleLimitations}
         />
       </ResultsSummarySection>
 
@@ -352,15 +333,20 @@ function renderExpertAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          showPensionSummary={false}
         />
       </ComparisonSection>
 
-      <ProjectionTableSectionContainer>
-        <ProjectionTableSectionFeature
-          rows={projectionRows}
-          settings={settings}
-        />
-      </ProjectionTableSectionContainer>
+      {shouldRenderProjectionTable ? (
+        <ProjectionTableSectionContainer>
+          <ProjectionTableSectionFeature
+            rows={projectionRows}
+            settings={settings}
+          />
+        </ProjectionTableSectionContainer>
+      ) : null}
     </>
   );
 }
@@ -371,7 +357,8 @@ function renderBridgeAnswerStep(
     showProjectionTable?: boolean;
   },
   viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
+  currentComparisonResult: ReturnType<typeof createComparisonResult>,
+  shouldRenderProjectionTable: boolean
 ) {
   const {
     settings,
@@ -392,8 +379,6 @@ function renderBridgeAnswerStep(
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
-    showLimitations,
-    onToggleLimitations,
     onChangeChartParameters,
   } = viewModel;
 
@@ -405,7 +390,7 @@ function renderBridgeAnswerStep(
         <PensionSummarySectionFeature
           activeResult={currentComparisonResult}
           headingLevel={2}
-          description="This summary uses your current journey assumptions and shows your projected annual income before tax."
+          description="This summary uses your current journey assumptions and shows your projected retirement income before tax."
           retirementIncomeDisplay={retirementIncomeDisplay}
           onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
           retirementIncomeItems={retirementIncomeItems}
@@ -413,9 +398,9 @@ function renderBridgeAnswerStep(
           retirementIncomeTotal={retirementIncomeTotal}
           retirementIncomeTargetTitle={retirementIncomeTargetTitle}
           retirementIncomeTarget={retirementIncomeTarget}
-          statusItems={buildStatusItems(currentComparisonResult)}
-          showLimitations={showLimitations}
-          onToggleLimitations={onToggleLimitations}
+          statusItems={buildStatusItems(currentComparisonResult, {
+            hideBridgeFundingSection: Boolean(step.hideBridgeFundingSection),
+          })}
         />
       </ResultsSummarySection>
 
@@ -441,13 +426,16 @@ function renderBridgeAnswerStep(
           comparisonResultCache={comparisonResultCache}
           onScenariosChange={onScenariosChange}
           onLoadScenario={onLoadScenario}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
           hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
           hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
           hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}
+          showPensionSummary={false}
         />
       </ComparisonSection>
 
-      {step.showProjectionTable !== false ? (
+      {step.showProjectionTable !== false && shouldRenderProjectionTable ? (
         <ProjectionTableSectionContainer>
           <ProjectionTableSectionFeature
             rows={projectionRows}
@@ -464,7 +452,9 @@ function renderFieldsStep(
     kind: "fields";
     fieldIds: readonly FieldDefinition["id"][];
     fieldLabels?: JourneyFieldLabels;
+    fieldDescriptions?: JourneyFieldDescriptions;
     groupId?: string;
+    alphaPensionIncreaseDescription?: string;
   },
   viewModel: JourneyStepViewModel
 ) {
@@ -481,12 +471,17 @@ function renderFieldsStep(
       <ValidationSummary validationIssues={validationIssues} />
 
       <SettingsFieldsFeature
-        fields={getFieldsByIds(step.fieldIds, step.fieldLabels)}
+        fields={getFieldsByIds(
+          step.fieldIds,
+          step.fieldLabels,
+          step.fieldDescriptions
+        )}
         settings={settings}
         validationIssues={validationIssues}
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
+        alphaPensionIncreaseDescription={step.alphaPensionIncreaseDescription}
       />
 
       {step.groupId ? (
@@ -513,10 +508,11 @@ function ValidationSummary({
 }
 
 function buildStatusItems(
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
+  currentComparisonResult: ReturnType<typeof createComparisonResult>,
+  options: { hideBridgeFundingSection?: boolean } = {}
 ) {
   return currentComparisonResult
-    ? buildComparisonStatusItems(currentComparisonResult)
+    ? buildComparisonStatusItems(currentComparisonResult, options)
     : [];
 }
 
@@ -550,7 +546,8 @@ function buildKeyDateItems(
 
 function getFieldsByIds(
   fieldIds: readonly FieldDefinition["id"][],
-  fieldLabels: JourneyFieldLabels = {}
+  fieldLabels: JourneyFieldLabels = {},
+  fieldDescriptions: JourneyFieldDescriptions = {}
 ) {
   return fieldIds
     .map((fieldId) => {
@@ -562,9 +559,13 @@ function getFieldsByIds(
         return undefined;
       }
 
-      return fieldLabels[fieldId]
-        ? { ...field, label: fieldLabels[fieldId] }
-        : field;
+      return {
+        ...field,
+        ...(fieldLabels[fieldId] ? { label: fieldLabels[fieldId] } : {}),
+        ...(fieldDescriptions[fieldId]
+          ? { description: fieldDescriptions[fieldId] }
+          : {}),
+      };
     })
     .filter((field): field is FieldDefinition => Boolean(field));
 }

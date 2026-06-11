@@ -1,6 +1,9 @@
 import { createDefaultSettings } from "../settings";
 import type { ProjectionRow } from "../projection";
-import { createRetirementIncomeSeries } from "./retirement-income";
+import {
+  createBridgeChartLimits,
+  createRetirementIncomeSeries,
+} from "./retirement-income";
 
 const baseRow: ProjectionRow = {
   date: "2026-06-01",
@@ -29,6 +32,39 @@ const baseRow: ProjectionRow = {
 };
 
 describe("retirement-income transition points", () => {
+  it("removes Alpha income from the chart series when Alpha is hidden", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      showAlpha: false,
+      alphaPensionDrawAge: 68,
+    };
+
+    const series = createRetirementIncomeSeries(
+      [
+        {
+          ...baseRow,
+          date: "2055-06-01",
+          age: 68,
+          ageMonths: 0,
+          monthlyAlphaPensionGross: 1200,
+        },
+        {
+          ...baseRow,
+          date: "2056-06-01",
+          age: 69,
+          ageMonths: 0,
+          monthlyAlphaPensionGross: 1200,
+        },
+      ],
+      settings
+    );
+
+    expect(series.every((point) => point.alphaIncomeAnnual === 0)).toBe(true);
+    expect(series.some((point) => point.date === "2055-06-01")).toBe(true);
+  });
+
   it("preserves exact ISA draw and use-by ages in the chart series", () => {
     const settings = {
       ...createDefaultSettings(),
@@ -138,5 +174,52 @@ describe("retirement-income transition points", () => {
     expect(series.find((point) => point.date === "2054-03-01")?.age).toBe(
       66.75
     );
+  });
+});
+
+describe("retirement-income chart limits", () => {
+  it("requires SIPP draw age to stay at or after Normal Pension Age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      requirementAge: 65,
+      sippDrawAge: 65,
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.sippAccessAge.min).toBe(68);
+  });
+
+  it("requires nuvos draw age to stay at or after retirement age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      requirementAge: 68,
+      nuvosPensionLeaveAge: 60,
+      showNuvos: true,
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.nuvosStartAge.min).toBe(68);
+  });
+
+  it("does not cap ISA or SIPP draw age at State Pension age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      lifeExpectancy: 85,
+      statePensionDrawDate: "2055-06-01",
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.statePensionAge.max).toBe(85);
+    expect(limits.sippAccessAge.max).toBe(85);
+    expect(limits.isaAccessAge.max).toBe(85);
   });
 });

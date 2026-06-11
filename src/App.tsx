@@ -2,8 +2,15 @@ import { createRetirementIncomeSeries } from "./app-domains";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
 import { ModeSelection } from "./app/mode-selection";
 import { JourneyModeScreen } from "./app/journey-mode-screen";
+import { SavedLocalFeedback } from "./app/saved-local-feedback";
+import { SettingsPage } from "./app/settings-page";
 import { useAppController } from "./app/use-app-controller";
 import { SiteFooter } from "./app/site-footer";
+import { Helmet } from "./helmet";
+
+function isSettingsRoute() {
+  return window.location.pathname.endsWith("/settings/");
+}
 
 function App() {
   const {
@@ -12,9 +19,14 @@ function App() {
     activeModeRef,
     acknowledgeNotice,
     appMode,
+    exportParameters,
     hasAcknowledgedNotice,
     journeyStepViewModel,
+    loadParameters,
+    localStorageEnabled,
+    clearAllData,
     selectAppMode,
+    setLocalStorageEnabled,
     setShowGuidanceNotes,
     settingsFormVersion,
     showGuidanceNotes,
@@ -22,8 +34,30 @@ function App() {
     visibleSettings,
   } = useAppController();
 
+  if (isSettingsRoute()) {
+    return (
+      <SettingsPage
+        localStorageEnabled={localStorageEnabled}
+        onExportParameters={exportParameters}
+        onLoadParameters={loadParameters}
+        onLocalStorageEnabledChange={setLocalStorageEnabled}
+        onClearAllData={clearAllData}
+        showGuidanceNotes={showGuidanceNotes}
+        onShowGuidanceNotesChange={setShowGuidanceNotes}
+      />
+    );
+  }
+
   return (
     <>
+      <Helmet>
+        <title>Civil Service Pension Modeller</title>
+        <meta
+          name="description"
+          content="Estimate your Civil Service pension and retirement income with a local-only planning tool."
+        />
+      </Helmet>
+
       {!hasAcknowledgedNotice ? (
         <div
           className="acknowledgement-overlay"
@@ -62,11 +96,7 @@ function App() {
       ) : null}
 
       <main className="app-shell" aria-hidden={!hasAcknowledgedNotice}>
-        {showSavedFeedback ? (
-          <span className="saved-feedback" role="status" aria-live="polite">
-            Saved Locally
-          </span>
-        ) : null}
+        <SavedLocalFeedback show={showSavedFeedback} />
 
         <section className="hero">
           <div className="hero-copy">
@@ -88,8 +118,6 @@ function App() {
             journey={activeJourneyDefinition}
             settings={visibleSettings}
             settingsFormVersion={settingsFormVersion}
-            showGuidanceNotes={showGuidanceNotes}
-            onShowGuidanceNotesChange={setShowGuidanceNotes}
             journeyStepViewModel={journeyStepViewModel}
           />
         ) : null}

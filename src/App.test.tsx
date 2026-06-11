@@ -108,13 +108,30 @@ vi.mock("./projection", async () => {
           milestones:
             index === 2
               ? [
-                  "Starts Drawing Alpha Pension",
+                  ...(settings.showAlpha
+                    ? ["Starts Drawing Alpha Pension"]
+                    : []),
                   ...(settings.showStatePension
                     ? ["Starts Drawing State Pension"]
                     : []),
                   "Life expectancy",
                 ]
               : row.milestones,
+          annualStandardAlphaPension: settings.showAlpha
+            ? row.annualStandardAlphaPension
+            : 0,
+          annualEpaAlphaPension: settings.showAlpha
+            ? row.annualEpaAlphaPension
+            : 0,
+          annualAccruedAlphaPension: settings.showAlpha
+            ? row.annualAccruedAlphaPension
+            : 0,
+          annualAlphaPensionIncludingReduction: settings.showAlpha
+            ? row.annualAlphaPensionIncludingReduction
+            : 0,
+          monthlyAlphaPensionGross: settings.showAlpha
+            ? row.monthlyAlphaPensionGross
+            : 0,
           monthlyStatePension: settings.showStatePension
             ? row.monthlyStatePension
             : 0,
@@ -124,14 +141,14 @@ vi.mock("./projection", async () => {
           monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
           monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
           totalMonthlyIncomeBeforeTax:
-            row.monthlyAlphaPensionGross +
+            (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0),
           monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
           totalMonthlyNetIncome:
-            row.monthlyAlphaPensionGross +
+            (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
@@ -193,12 +210,17 @@ vi.mock("./projection", async () => {
         },
         retirementIncome: {
           sources: [
-            {
-              key: "alpha",
-              label: "Alpha pension",
-              monthlyIncome: rows.at(-1)?.monthlyAlphaPensionGross ?? 0,
-              annualIncome: (rows.at(-1)?.monthlyAlphaPensionGross ?? 0) * 12,
-            },
+            ...(settings.showAlpha
+              ? [
+                  {
+                    key: "alpha" as const,
+                    label: "Alpha pension",
+                    monthlyIncome: rows.at(-1)?.monthlyAlphaPensionGross ?? 0,
+                    annualIncome:
+                      (rows.at(-1)?.monthlyAlphaPensionGross ?? 0) * 12,
+                  },
+                ]
+              : []),
             ...(settings.showNuvos
               ? [
                   {
@@ -345,6 +367,24 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function readStoredSettingsPayload() {
+  const stored = JSON.parse(
+    window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
+  ) as { data?: Record<string, unknown> };
+
+  if (
+    typeof stored === "object" &&
+    stored !== null &&
+    "data" in stored &&
+    typeof stored.data === "object" &&
+    stored.data !== null
+  ) {
+    return stored.data;
+  }
+
+  return stored as Record<string, unknown>;
+}
+
 function renderAcknowledgedApp(
   options: { mode?: "expert" | "bridge" | "simple" | null } = {}
 ) {
@@ -408,6 +448,7 @@ function openJourneyStep(name: string | RegExp) {
 describe("App settings form", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.history.replaceState({}, "", "/");
   });
 
   afterEach(() => {
@@ -418,6 +459,11 @@ describe("App settings form", () => {
   it("shows the journey chooser without opening a journey after the notice", () => {
     renderAcknowledgedApp({ mode: null });
 
+    expect(document.title).toBe("Civil Service Pension Modeller");
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Estimate your Civil Service pension and retirement income with a local-only planning tool."
+    );
     expect(
       screen.getByRole("heading", { name: "Choose the level of detail" })
     ).toBeInTheDocument();
@@ -446,7 +492,7 @@ describe("App settings form", () => {
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("expert");
   });
 
-  it("does not restore a previously selected mode on reload", () => {
+  it("restores a previously selected mode on reload", () => {
     window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
 
     renderAcknowledgedApp({ mode: null });
@@ -455,9 +501,9 @@ describe("App settings form", () => {
       screen.getByRole("button", {
         name: /Work through every setting with full control/i,
       })
-    ).toHaveAttribute("aria-pressed", "false");
+    ).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByRole("heading", { name: "Choose the level of detail" })
+      screen.getByRole("heading", { name: "Optional sections" })
     ).toBeInTheDocument();
   });
 
@@ -501,6 +547,60 @@ describe("App settings form", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("clears all local storage data from the settings page and shows feedback", () => {
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ foo: 1 })
+    );
+    window.localStorage.setItem("custom-key", "custom-value");
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Data Cleared");
+    expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem("custom-key")).toBeNull();
+  });
+
+  it("persists guidance note changes from the settings page", () => {
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    const guidanceToggle = screen.getByRole("checkbox", {
+      name: "Show guidance notes",
+    });
+
+    fireEvent.click(guidanceToggle);
+
+    expect(guidanceToggle).not.toBeChecked();
+    expect(
+      window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
+    ).toBe("false");
+
+    fireEvent.click(guidanceToggle);
+
+    expect(guidanceToggle).toBeChecked();
+    expect(
+      window.localStorage.getItem("cs-pension-modeller.guidanceNotes")
+    ).toBe("true");
+  });
+
+  it("hides input support links when guidance notes are turned off", () => {
+    window.localStorage.setItem("cs-pension-modeller.guidanceNotes", "false");
+
+    renderAcknowledgedApp();
+    openJourneyStep(/Inflation and projection basis/i);
+
+    expect(
+      screen.queryByRole("link", { name: "Inflation and the 2% target" })
+    ).not.toBeInTheDocument();
+  });
+
   it("does not show the retired third mode option", () => {
     renderAcknowledgedApp({ mode: null });
 
@@ -510,6 +610,13 @@ describe("App settings form", () => {
   it("uses the simplified early retirement journey by default", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
+    expect(document.title).toBe(
+      "Simplified retirement journey | Civil Service Pension Modeller"
+    );
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, and assumptions."
+    );
     expect(
       screen.getByRole("heading", { name: "About you and your target" })
     ).toBeInTheDocument();
@@ -521,6 +628,9 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Added pension/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Your results/i })
@@ -538,12 +648,165 @@ describe("App settings form", () => {
       screen.queryByLabelText("Alpha pension draw age")
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText("What else should we include?")
-    ).not.toBeInTheDocument();
-    expect(
       screen.queryByRole("heading", { name: "State Pension" })
     ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Alpha pension/i })
+    );
+
+    const alphaIncreasesCheckbox = screen.getByRole("checkbox", {
+      name: "Apply Alpha pension increases",
+    });
+
+    expect(alphaIncreasesCheckbox).not.toBeChecked();
+    expect(
+      screen.getByText(
+        "Increase Alpha benefits annually by 1.5% while you are still in active Alpha service. The simplified journey does not add a separate inflation assumption."
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/CPI/)).not.toBeInTheDocument();
+
+    fireEvent.click(alphaIncreasesCheckbox);
+
+    expect(alphaIncreasesCheckbox).toBeChecked();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({ applyPensionIncreases: true })
+    );
+
+    fireEvent.click(alphaIncreasesCheckbox);
+
+    expect(alphaIncreasesCheckbox).not.toBeChecked();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({ applyPensionIncreases: false })
+    );
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("simple");
+  });
+
+  it("lets the simple journey include a nuvos pension step", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+
+    const includeNuvosToggle = screen.getByRole("checkbox", { name: "nuvos" });
+
+    expect(includeNuvosToggle).not.toBeChecked();
+
+    fireEvent.click(includeNuvosToggle);
+
+    expect(includeNuvosToggle).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /nuvos pension/i })
+    ).toBeInTheDocument();
+
+    openJourneyStep(/nuvos pension/i);
+
+    expect(
+      screen.getByLabelText("Planned nuvos Pension Draw Age")
+    ).toBeInTheDocument();
+  });
+
+  it("lets the simple journey hide Alpha-specific steps from the Civil Service pensions step", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+
+    const includeAlphaToggle = screen.getByRole("checkbox", { name: "Alpha" });
+
+    expect(includeAlphaToggle).toBeChecked();
+
+    fireEvent.click(includeAlphaToggle);
+
+    expect(includeAlphaToggle).not.toBeChecked();
+    expect(
+      screen.queryByRole("button", { name: /Your Alpha pension/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Added pension/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("defaults the simple journey nuvos draw age to normal pension age", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos" }));
+
+    openJourneyStep(/nuvos pension/i);
+
+    expect(screen.getByLabelText("Planned nuvos Pension Draw Age")).toHaveValue(
+      String(defaultSettings.normalPensionAge)
+    );
+  });
+
+  it("does not let the simple journey move the nuvos chart marker before retirement age", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos" }));
+
+    advanceJourneyToResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 68"), {
+      key: "ArrowLeft",
+    });
+
+    expect(screen.getByLabelText("Start Nuvos, age 68")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Start Nuvos, age 67")
+    ).not.toBeInTheDocument();
+  });
+
+  it("lets the simple journey move the nuvos chart marker down to the retirement age", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          showNuvos: true,
+          nuvosPensionDrawAge: 68,
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+    advanceJourneyToResult();
+
+    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+      key: "ArrowLeft",
+    });
+    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 68"), {
+      key: "ArrowLeft",
+    });
+
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Nuvos, age 67")).toBeInTheDocument();
+  });
+
+  it("hides Alpha from the simple journey result chart when Alpha is disabled", async () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "Alpha" }));
+
+    advanceJourneyToResult();
+
+    expect(
+      screen.queryByLabelText(/Start Alpha, age \d+/)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Monthly Alpha pension")).not.toBeInTheDocument();
+    expect(
+      await screen.findByLabelText("Monthly retirement income before tax")
+    ).toBeInTheDocument();
   });
 
   it("hides EPA and lump sum controls in the simple journey added pension step", () => {
@@ -566,7 +829,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reapplies simple-mode NPA assumptions from saved settings", () => {
+  it("applies simple-mode NPA defaults to the shared settings", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -589,14 +852,12 @@ describe("App settings form", () => {
 
     renderAcknowledgedApp({ mode: "simple" });
 
-    const storedSettings = JSON.parse(
-      window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
-    ) as Record<string, unknown>;
+    const storedSettings = readStoredSettingsPayload();
     expect(storedSettings).toEqual(
       expect.objectContaining({
-        requirementAge: 60,
-        alphaPensionLeaveAge: 61,
-        alphaPensionDrawAge: 62,
+        requirementAge: defaultSettings.normalPensionAge,
+        alphaPensionLeaveAge: defaultSettings.normalPensionAge,
+        alphaPensionDrawAge: defaultSettings.normalPensionAge,
         alphaEpaEnabled: true,
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
@@ -610,7 +871,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("keeps bridge journey values after visiting the simple journey", () => {
+  it("shares simple journey defaults with the bridge journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -630,23 +891,23 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
+      String(defaultSettings.normalPensionAge)
+    );
 
     openJourneyStep(/Your Alpha pension/i);
 
     expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
-      "61"
+      String(defaultSettings.normalPensionAge)
     );
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionFactorType: "self_plus_beneficiaries",
       })
     );
   });
 
-  it("lets simple-mode chart markers move without changing the bridge journey settings", () => {
+  it("shares simple-mode chart marker changes with the bridge journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -664,7 +925,7 @@ describe("App settings form", () => {
     fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
       key: "ArrowLeft",
     });
-    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 67.75"), {
+    fireEvent.keyDown(screen.getByLabelText(/^Leave Alpha, age /), {
       key: "ArrowLeft",
     });
     fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
@@ -674,19 +935,63 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(/Leave Alpha, age 67\.(5|75)/)
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText("Start Alpha, age 67.75")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start State, age 68.25")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Leave Alpha, age /)).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start State, age 69")).toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        requirementAge: 60,
-        alphaPensionLeaveAge: 61,
-        alphaPensionDrawAge: 62,
+        requirementAge: 67,
+        alphaPensionDrawAge: 67,
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Work out what I need to retire early/i,
+      })
+    );
+
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue("67");
+  });
+
+  it("keeps hidden advanced settings when visiting the simple journey", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          alphaEpaEnabled: true,
+          alphaAddedPensionLumpSums: [
+            {
+              amount: 5000,
+              startDate: "2026-05-01",
+              cadence: "once",
+              factorType: "self",
+            },
+          ],
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+
+    expect(
+      screen.queryByLabelText("EPA years before NPA")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add lump sum purchase" })
+    ).not.toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        alphaEpaEnabled: true,
+        alphaAddedPensionLumpSums: [
+          expect.objectContaining({
+            amount: 5000,
+            startDate: "2026-05-01",
+            cadence: "once",
+            factorType: "self",
+          }),
+        ],
       })
     );
   });
@@ -736,6 +1041,61 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("heading", { name: "Comparison" })
     ).toBeInTheDocument();
+    const comparisonResultsRegion = screen.getByRole("region", {
+      name: "Comparison results",
+    });
+    expect(
+      screen.getByRole("heading", { name: "Comparison" }).closest("section")
+    ).toBe(comparisonResultsRegion);
+    expect(comparisonResultsRegion).toContainElement(
+      screen.getByRole("heading", { name: "Save this result as a scenario" })
+    );
+    const comparisonCardSection = comparisonResultsRegion.querySelector(
+      ".summary-section.summary-section--compact"
+    );
+    expect(comparisonCardSection).not.toBeNull();
+    const comparisonBuilderSection = screen
+      .getByRole("heading", { name: "Save this result as a scenario" })
+      .closest("section");
+    expect(comparisonBuilderSection).not.toBeNull();
+    const comparisonBuilderNode = comparisonBuilderSection as HTMLElement;
+    expect(comparisonCardSection).not.toContainElement(
+      screen.getByRole("heading", { name: "Save this result as a scenario" })
+    );
+    expect(
+      comparisonBuilderNode.compareDocumentPosition(
+        comparisonCardSection as Node
+      ) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).not.toBe(0);
+    expect(comparisonResultsRegion).toContainElement(
+      screen.getByText("Compare the key decision metrics across scenarios.")
+    );
+    expect(
+      within(comparisonResultsRegion).getByRole("group", {
+        name: "Comparison display",
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(comparisonResultsRegion).getByRole("button", {
+        name: "Show annual comparison values",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Saved scenarios" })
+    ).toBeInTheDocument();
+    const comparisonHeading = within(comparisonResultsRegion).getByRole(
+      "heading",
+      { name: "Comparison" }
+    );
+    const comparisonChartNode =
+      within(comparisonResultsRegion).queryByRole("heading", {
+        name: "Retirement income bridge",
+      }) ?? comparisonResultsRegion.querySelector('[aria-hidden="true"]');
+    expect(comparisonChartNode).not.toBeNull();
+    expect(
+      comparisonHeading.compareDocumentPosition(comparisonChartNode as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).not.toBe(0);
     expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
     expect(screen.queryByText("Flexible assets")).not.toBeInTheDocument();
     expect(
@@ -748,8 +1108,12 @@ describe("App settings form", () => {
       screen.getByRole("heading", { name: "Plan status" })
     ).toBeInTheDocument();
     expect(
+      screen.queryByText(/Bridge still unfunded/i)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/once the bridge ends/i)).not.toBeInTheDocument();
+    expect(
       screen.getByText(
-        "This summary uses your current journey assumptions and shows your projected annual income before tax."
+        "This summary uses your current journey assumptions and shows your projected retirement income before tax."
       )
     ).toBeInTheDocument();
     expect(
@@ -875,8 +1239,9 @@ describe("App settings form", () => {
       screen.getByLabelText("Target retirement age exact value")
     ).toHaveValue(55);
     expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+      screen.getByLabelText("Target retirement age exact value")
+    ).toHaveAttribute("step", "1");
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 55,
       })
@@ -916,7 +1281,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString()
     );
-    expect(screen.getByLabelText("Requirement age")).toHaveValue(
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
     expect(
@@ -1060,11 +1425,9 @@ describe("App settings form", () => {
       screen.getByLabelText("SIPP expected nominal return (%) exact value")
     ).toBeEnabled();
     expect(screen.getByLabelText("SIPP withdrawal strategy")).toHaveValue(
-      "zero_at_death"
+      "use_by_age"
     );
-    expect(
-      screen.queryByLabelText("SIPP withdrawal rate (%)")
-    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("SIPP use-by age")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Check pension tax relief" })
     ).toHaveAttribute(
@@ -1214,32 +1577,6 @@ describe("App settings form", () => {
     );
   });
 
-  it("exports parameters as a JSON download", () => {
-    const createObjectURL = vi.fn(() => "blob:mock-export-url");
-    const revokeObjectURL = vi.fn();
-    const anchorClick = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(() => {});
-    Object.defineProperty(window.URL, "createObjectURL", {
-      configurable: true,
-      writable: true,
-      value: createObjectURL,
-    });
-    Object.defineProperty(window.URL, "revokeObjectURL", {
-      configurable: true,
-      writable: true,
-      value: revokeObjectURL,
-    });
-
-    renderAcknowledgedApp();
-    fireEvent.click(screen.getByRole("button", { name: "Export parameters" }));
-
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-export-url");
-    expect(anchorClick).toHaveBeenCalledTimes(1);
-    anchorClick.mockRestore();
-  });
-
   it("orders optional section toggles like the assumptions sections", () => {
     renderAcknowledgedApp();
 
@@ -1264,36 +1601,16 @@ describe("App settings form", () => {
     ]);
   });
 
-  it("shows concise modeller limitations on request", () => {
+  it("does not show expandable modeller limitations on the results page", () => {
     renderAcknowledgedExpertResult();
-    const summarySection = screen
-      .getByRole("heading", { name: "Pension Summary" })
-      .closest("section");
-
-    expect(screen.queryByText(/Scottish tax bands/i)).not.toBeInTheDocument();
-
-    expect(summarySection).not.toBeNull();
-
-    fireEvent.click(
-      within(summarySection as HTMLElement).getByRole("button", {
-        name: "Show limitations",
-      })
-    );
 
     expect(
-      screen.getByRole("button", { name: "Hide limitations" })
-    ).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(/Scottish tax bands/i)).toBeInTheDocument();
-    expect(screen.getByText(/pre-2016 deferral rules/i)).toBeInTheDocument();
-    expect(screen.getByText(/Scheme-specific edge cases/i)).toBeInTheDocument();
-
-    fireEvent.click(
-      within(summarySection as HTMLElement).getByRole("button", {
-        name: "Hide limitations",
-      })
-    );
-
-    expect(screen.queryByText(/Scottish tax bands/i)).not.toBeInTheDocument();
+      screen.queryByRole("button", { name: "Show limitations" })
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Hide limitations" })
+    ).toBeNull();
+    expect(document.querySelector(".summary-limitations")).toBeNull();
   });
 
   it("toggles the pension summary between monthly and annual values", () => {
@@ -1341,9 +1658,7 @@ describe("App settings form", () => {
     fireEvent.blur(
       screen.getByLabelText("Current Full State Pension (£ per year)")
     );
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         dateOfBirth: "1990-02-01",
         currentStatePension: 11800,
@@ -1368,9 +1683,7 @@ describe("App settings form", () => {
     fireEvent.blur(targetInput);
 
     expect(targetInput).toHaveValue(50000);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         desiredRetirementIncome: 50000,
       })
@@ -1402,9 +1715,7 @@ describe("App settings form", () => {
       screen.getByLabelText("Age You Leave Alpha Scheme exact value")
     );
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaPensionDrawAge: 70,
         alphaPensionLeaveAge: 70,
@@ -1427,9 +1738,7 @@ describe("App settings form", () => {
     fireEvent.blur(taxReliefSelect);
 
     expect(taxReliefSelect).toHaveValue("40");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippTaxReliefRate: "40",
       })
@@ -1451,9 +1760,7 @@ describe("App settings form", () => {
     fireEvent.blur(factorTypeSelect);
 
     expect(factorTypeSelect).toHaveValue("self_plus_beneficiaries");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionFactorType: "self_plus_beneficiaries",
       })
@@ -1478,9 +1785,7 @@ describe("App settings form", () => {
     });
 
     expect(factorTypeSelect).toHaveValue("self_plus_beneficiaries");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
@@ -1531,9 +1836,7 @@ describe("App settings form", () => {
     });
     fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual({
+    expect(readStoredSettingsPayload()).toEqual({
       ...expectedStoredSettings({
         alphaPensionAbsDate: "2024",
       }),
@@ -1549,9 +1852,7 @@ describe("App settings form", () => {
       target: { value: "11" },
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1987-11-01",
         statePensionDrawDate: "2055-11-01",
@@ -1562,9 +1863,7 @@ describe("App settings form", () => {
       target: { value: "1977" },
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-11-01",
         statePensionDrawDate: "2045-08-01",
@@ -1641,9 +1940,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("State Pension start age exact value")
     ).toHaveValue(69);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         statePensionDrawDate: "2056-06-01",
       })
@@ -1710,9 +2007,7 @@ describe("App settings form", () => {
 
     expect(applyIncreasesToggle).toBeChecked();
     expect(inflationInput).toHaveValue(3.4);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         applyPensionIncreases: true,
         inflationRateAnnual: 3.4,
@@ -1745,9 +2040,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Long-term inflation assumption exact value")
     ).toHaveValue(2.5);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         inflationRateAnnual: 2.5,
       })
@@ -1817,9 +2110,7 @@ describe("App settings form", () => {
 
     expect(applyStateGrowthToggle).toBeChecked();
     expect(wageGrowthInput).toHaveValue(4.2);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         statePensionApplyFutureGrowth: true,
         statePensionWageGrowthPercent: 4.2,
@@ -1873,9 +2164,7 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 68,
       })
@@ -1889,9 +2178,7 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaPensionLeaveAge: 68,
       })
@@ -1905,12 +2192,10 @@ describe("App settings form", () => {
       key: "ArrowRight",
     });
 
-    expect(screen.getByLabelText("Start Alpha, age 68.25")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(screen.getByLabelText("Start Alpha, age 69")).toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        alphaPensionDrawAge: 68.25,
+        alphaPensionDrawAge: 69,
       })
     );
   });
@@ -1933,14 +2218,12 @@ describe("App settings form", () => {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Retire, age 67.75")).toBeInTheDocument();
-    expect(screen.getByLabelText("Leave Alpha, age 67.75")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        requirementAge: 67.75,
-        alphaPensionLeaveAge: 67.75,
+        requirementAge: 67,
+        alphaPensionLeaveAge: 67,
       })
     );
   });
@@ -2041,9 +2324,7 @@ describe("App settings form", () => {
       key: "ArrowUp",
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         desiredRetirementIncome: 32400,
       })
@@ -2069,9 +2350,7 @@ describe("App settings form", () => {
     });
     fireEvent.mouseUp(partialWorkSlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         partialRetirementEnabled: true,
         partialRetirementWorkPercent: 50,
@@ -2100,9 +2379,7 @@ describe("App settings form", () => {
 
     fireEvent.click(partialRetirementKey);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         partialRetirementEnabled: false,
       })
@@ -2121,9 +2398,7 @@ describe("App settings form", () => {
       target: { value: "275" },
     });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 0,
       })
@@ -2131,9 +2406,7 @@ describe("App settings form", () => {
 
     fireEvent.mouseUp(alphaAddedPensionSlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 275,
       })
@@ -2157,9 +2430,7 @@ describe("App settings form", () => {
     });
     fireEvent.mouseUp(alphaAddedPensionSlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 275,
       })
@@ -2167,9 +2438,7 @@ describe("App settings form", () => {
 
     fireEvent.keyDown(scenarioNameInput, { key: "z", metaKey: true });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: 275,
       })
@@ -2177,90 +2446,24 @@ describe("App settings form", () => {
 
     fireEvent.keyDown(window, { key: "z", metaKey: true });
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionMonthly: defaultSettings.alphaAddedPensionMonthly,
       })
     );
   });
 
-  it("resets all parameters back to their defaults", () => {
+  it("keeps parameter management actions out of the optional sections step", () => {
     renderAcknowledgedApp();
-
-    openJourneyStep(/Personal details/i);
-
-    fireEvent.change(screen.getByLabelText("Your Birth Month and Year month"), {
-      target: { value: "02" },
-    });
-    fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
-      target: { value: "1990" },
-    });
-
-    openJourneyStep(/State pension details/i);
-
-    fireEvent.change(
-      screen.getByLabelText("Current Full State Pension (£ per year)"),
-      {
-        target: { value: "13000" },
-      }
-    );
-    fireEvent.blur(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
-    );
-
-    openJourneyStep(/Alpha pension details/i);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add lump sum purchase" })
-    );
-
-    expect(screen.getByText("Lump sum #1")).toBeInTheDocument();
-
-    openJourneyStep(/Personal details/i);
-
-    expect(
-      screen.getByLabelText("Your Birth Month and Year month")
-    ).toHaveValue("02");
-    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
-      "1990"
-    );
-
-    openJourneyStep(/State pension details/i);
-
-    expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
-    ).toHaveValue(13000);
 
     openJourneyStep(/Optional sections/i);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset parameters" }));
-
-    openJourneyStep(/Personal details/i);
-
-    expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(
-      getTodayIsoDate()
-    );
     expect(
-      screen.getByLabelText("Your Birth Month and Year month")
-    ).toHaveValue("06");
-    expect(screen.getByLabelText("Your Birth Month and Year year")).toHaveValue(
-      "1987"
-    );
-
-    openJourneyStep(/State pension details/i);
-
+      screen.queryByRole("button", { name: "Export parameters" })
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
-    ).toHaveValue(defaultSettings.currentStatePension);
-
-    openJourneyStep(/Alpha pension details/i);
-
-    expect(screen.queryByText("Lump sum #1")).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(expectedStoredSettings());
+      screen.queryByRole("button", { name: "Clear all data" })
+    ).not.toBeInTheDocument();
   });
 
   it("supports exact numeric entry alongside sliders", () => {
@@ -2285,9 +2488,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Current Pensionable Earnings (£ per year)")
     ).toHaveValue("10001");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         pensionableEarnings: 10001,
       })
@@ -2306,9 +2507,7 @@ describe("App settings form", () => {
     });
 
     expect(lifeExpectancySlider).toHaveValue("90");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.not.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2316,9 +2515,7 @@ describe("App settings form", () => {
 
     fireEvent.blur(lifeExpectancySlider);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2355,9 +2552,7 @@ describe("App settings form", () => {
 
     expect(exactLifeExpectancyInput).toHaveValue(90);
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue("90");
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.not.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2365,9 +2560,7 @@ describe("App settings form", () => {
 
     fireEvent.blur(exactLifeExpectancyInput);
 
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         lifeExpectancy: 90,
       })
@@ -2387,9 +2580,7 @@ describe("App settings form", () => {
     });
 
     expect(screen.getByText("Lump sum #1")).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
@@ -2402,9 +2593,7 @@ describe("App settings form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove lump sum" }));
 
     expect(screen.queryByText("Lump sum #1")).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaAddedPensionLumpSums: [],
       })
@@ -2456,9 +2645,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("SIPP lump sum end date 1")
     ).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippLumpSums: [
           expect.objectContaining({
@@ -2474,9 +2661,7 @@ describe("App settings form", () => {
     );
 
     expect(screen.queryByText("SIPP lump sum #1")).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippLumpSums: [],
       })
@@ -2508,9 +2693,7 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("SIPP withdrawal rate (%) exact value")
     ).toHaveValue(5.2);
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         sippWithdrawalStrategy: "percentage",
         sippWithdrawalPercent: 5.2,
@@ -2538,9 +2721,7 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("columnheader", { name: "ISA" })
     ).toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         isaCurrentPot: 20000,
         isaLumpSums: [
@@ -2598,9 +2779,7 @@ describe("App settings form", () => {
     expect(
       screen.queryByLabelText("Current ISA pot (£)")
     ).not.toBeInTheDocument();
-    expect(
-      JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}")
-    ).toEqual(
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         showStatePension: false,
         showSipp: false,

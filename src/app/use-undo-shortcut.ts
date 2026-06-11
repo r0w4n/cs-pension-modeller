@@ -1,26 +1,17 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
-import { clonePensionSettings } from "../app-domains";
 import type { PensionSettings } from "../settings";
-import type { AppMode } from "./app-persistence";
 
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;
-type SetSimpleJourneySettings = Dispatch<
-  SetStateAction<PensionSettings | null>
->;
 
 export function useUndoShortcut({
-  activeJourneyMode,
   chartUndoStack,
   setChartUndoStack,
   setSettings,
-  setSimpleJourneySettings,
 }: {
-  activeJourneyMode: AppMode | null;
   chartUndoStack: PensionSettings[];
   setChartUndoStack: SetChartUndoStack;
   setSettings: SetSettings;
-  setSimpleJourneySettings: SetSimpleJourneySettings;
 }) {
   useEffect(() => {
     const handleUndoShortcut = (event: KeyboardEvent) => {
@@ -43,11 +34,7 @@ export function useUndoShortcut({
           return current;
         }
 
-        if (activeJourneyMode === "simple") {
-          setSimpleJourneySettings(clonePensionSettings(previousSettings));
-        } else {
-          setSettings(previousSettings);
-        }
+        setSettings(previousSettings);
 
         return current.slice(0, -1);
       });
@@ -56,13 +43,7 @@ export function useUndoShortcut({
     window.addEventListener("keydown", handleUndoShortcut);
 
     return () => window.removeEventListener("keydown", handleUndoShortcut);
-  }, [
-    activeJourneyMode,
-    chartUndoStack.length,
-    setChartUndoStack,
-    setSettings,
-    setSimpleJourneySettings,
-  ]);
+  }, [chartUndoStack.length, setChartUndoStack, setSettings]);
 }
 
 export function isEditableShortcutTarget(target: EventTarget | null) {

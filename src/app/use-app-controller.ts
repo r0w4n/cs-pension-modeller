@@ -66,7 +66,6 @@ export function useAppController() {
     setActiveJourneySettings,
     setSettings,
     setSettingsFormVersion,
-    setSimpleJourneySettings,
     settings,
     settingsFormVersion,
   } = useJourneySettings({
@@ -109,11 +108,9 @@ export function useAppController() {
   });
 
   useUndoShortcut({
-    activeJourneyMode,
     chartUndoStack,
     setChartUndoStack,
     setSettings,
-    setSimpleJourneySettings,
   });
 
   useEffect(() => {
@@ -218,9 +215,7 @@ export function useAppController() {
 
   function selectAppMode(mode: AppMode) {
     if (mode === "simple") {
-      setSimpleJourneySettings(
-        (current) => current ?? applySimpleJourneyDefaults(settings)
-      );
+      setSettings((current) => applySimpleJourneyDefaults(current));
     }
 
     selectAppModeAction({

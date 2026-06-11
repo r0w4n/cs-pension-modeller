@@ -16,6 +16,7 @@ import {
 import {
   applySimpleJourneyAssumptions,
   applySimpleJourneyDefaults,
+  mergeSimpleJourneySettings,
 } from "../app-domains/journeys";
 import type { AppMode } from "./app-persistence";
 
@@ -32,38 +33,25 @@ export function useJourneySettings({
   setChartUndoStack: SetChartUndoStack;
   showSavedLabel: () => void;
 }) {
-  const [settings, setSettings] = useState<PensionSettings>(loadStoredSettings);
-  const [simpleJourneySettings, setSimpleJourneySettings] =
-    useState<PensionSettings | null>(() => {
-      if (initialAppMode !== "simple") {
-        return null;
-      }
+  const [settings, setSettings] = useState<PensionSettings>(() => {
+    const storedSettings = loadStoredSettings();
 
-      return applySimpleJourneyDefaults(loadStoredSettings());
-    });
+    return initialAppMode === "simple"
+      ? applySimpleJourneyDefaults(storedSettings)
+      : storedSettings;
+  });
   const [settingsFormVersion, setSettingsFormVersion] = useState(0);
 
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
 
-  const simpleJourneyEffectiveSettings = useMemo(() => {
-    if (activeJourneyMode !== "simple") {
-      return null;
-    }
-
-    return applySimpleJourneyAssumptions(
-      simpleJourneySettings ?? applySimpleJourneyDefaults(settings)
-    );
-  }, [activeJourneyMode, settings, simpleJourneySettings]);
-
   const effectiveSettings = useMemo(
     () =>
       activeJourneyMode === "simple"
-        ? (simpleJourneyEffectiveSettings ??
-          applySimpleJourneyDefaults(settings))
+        ? applySimpleJourneyAssumptions(settings)
         : settings,
-    [activeJourneyMode, settings, simpleJourneyEffectiveSettings]
+    [activeJourneyMode, settings]
   );
 
   const setActiveJourneySettings = useCallback(
@@ -71,14 +59,16 @@ export function useJourneySettings({
       value: PensionSettings | ((current: PensionSettings) => PensionSettings)
     ) => {
       if (activeJourneyMode === "simple") {
-        setSimpleJourneySettings((current) => {
-          const baseSettings = current ?? applySimpleJourneyDefaults(settings);
+        setSettings((current) => {
+          const baseSettings = applySimpleJourneyAssumptions(current);
           const nextSettings =
             typeof value === "function" ? value(baseSettings) : value;
+          const sharedSettings =
+            nextSettings.dateOfBirth !== current.dateOfBirth
+              ? applySimpleJourneyDefaults(nextSettings)
+              : nextSettings;
 
-          return nextSettings.dateOfBirth !== baseSettings.dateOfBirth
-            ? applySimpleJourneyDefaults(nextSettings)
-            : applySimpleJourneyAssumptions(nextSettings);
+          return mergeSimpleJourneySettings(current, sharedSettings);
         });
         return;
       }
@@ -90,7 +80,7 @@ export function useJourneySettings({
 
       setSettings(value);
     },
-    [activeJourneyMode, settings]
+    [activeJourneyMode]
   );
 
   function loadParameters(input: unknown) {
@@ -104,8 +94,11 @@ export function useJourneySettings({
     showSavedLabel();
     setChartUndoStack([]);
     setSettingsFormVersion((current) => current + 1);
-    setSimpleJourneySettings(null);
-    setSettings(importedSettings);
+    setSettings(
+      activeJourneyMode === "simple"
+        ? applySimpleJourneyDefaults(importedSettings)
+        : importedSettings
+    );
 
     return true;
   }
@@ -134,9 +127,7 @@ export function useJourneySettings({
     setActiveJourneySettings,
     setSettings,
     setSettingsFormVersion,
-    setSimpleJourneySettings,
     settings,
     settingsFormVersion,
-    simpleJourneySettings,
   };
 }

@@ -788,7 +788,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reapplies simple-mode NPA assumptions from saved settings", () => {
+  it("applies simple-mode NPA defaults to the shared settings", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -814,9 +814,9 @@ describe("App settings form", () => {
     const storedSettings = readStoredSettingsPayload();
     expect(storedSettings).toEqual(
       expect.objectContaining({
-        requirementAge: 60,
-        alphaPensionLeaveAge: 61,
-        alphaPensionDrawAge: 62,
+        requirementAge: defaultSettings.normalPensionAge,
+        alphaPensionLeaveAge: defaultSettings.normalPensionAge,
+        alphaPensionDrawAge: defaultSettings.normalPensionAge,
         alphaEpaEnabled: true,
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
@@ -830,7 +830,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("keeps bridge journey values after visiting the simple journey", () => {
+  it("shares simple journey defaults with the bridge journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -850,12 +850,14 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
+      String(defaultSettings.normalPensionAge)
+    );
 
     openJourneyStep(/Your Alpha pension/i);
 
     expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
-      "61"
+      String(defaultSettings.normalPensionAge)
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
@@ -864,7 +866,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("lets simple-mode chart markers move without changing the bridge journey settings", () => {
+  it("shares simple-mode chart marker changes with the bridge journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -898,9 +900,57 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Start State, age 69")).toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        requirementAge: 60,
-        alphaPensionLeaveAge: 61,
-        alphaPensionDrawAge: 62,
+        requirementAge: 67,
+        alphaPensionDrawAge: 67,
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Work out what I need to retire early/i,
+      })
+    );
+
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue("67");
+  });
+
+  it("keeps hidden advanced settings when visiting the simple journey", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          alphaEpaEnabled: true,
+          alphaAddedPensionLumpSums: [
+            {
+              amount: 5000,
+              startDate: "2026-05-01",
+              cadence: "once",
+              factorType: "self",
+            },
+          ],
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+
+    expect(
+      screen.queryByLabelText("EPA years before NPA")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add lump sum purchase" })
+    ).not.toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        alphaEpaEnabled: true,
+        alphaAddedPensionLumpSums: [
+          expect.objectContaining({
+            amount: 5000,
+            startDate: "2026-05-01",
+            cadence: "once",
+            factorType: "self",
+          }),
+        ],
       })
     );
   });

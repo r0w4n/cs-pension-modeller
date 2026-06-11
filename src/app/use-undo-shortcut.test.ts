@@ -23,26 +23,21 @@ describe("useUndoShortcut", () => {
 
     const { result } = renderHook(() => {
       const [settings, setSettings] = useState(createSettings());
-      const [simpleJourneySettings, setSimpleJourneySettings] =
-        useState<PensionSettings | null>(null);
       const [chartUndoStack, setChartUndoStack] = useState([previousSettings]);
 
       useUndoShortcut({
-        activeJourneyMode: "expert",
         chartUndoStack,
         setChartUndoStack,
         setSettings,
-        setSimpleJourneySettings,
       });
 
-      return { chartUndoStack, settings, simpleJourneySettings };
+      return { chartUndoStack, settings };
     });
 
     fireEvent.keyDown(window, { ctrlKey: true, key: "z" });
 
     expect(result.current.settings.desiredRetirementIncome).toBe(42000);
     expect(result.current.chartUndoStack).toHaveLength(0);
-    expect(result.current.simpleJourneySettings).toBeNull();
   });
 
   it("ignores the shortcut when focus is inside an editable field", () => {
@@ -52,17 +47,12 @@ describe("useUndoShortcut", () => {
 
     const { result } = renderHook(() => {
       const [settings, setSettings] = useState(createSettings());
-      const [, setSimpleJourneySettings] = useState<PensionSettings | null>(
-        null
-      );
       const [chartUndoStack, setChartUndoStack] = useState([previousSettings]);
 
       useUndoShortcut({
-        activeJourneyMode: "expert",
         chartUndoStack,
         setChartUndoStack,
         setSettings,
-        setSimpleJourneySettings,
       });
 
       return { chartUndoStack, settings };
@@ -76,36 +66,27 @@ describe("useUndoShortcut", () => {
     expect(result.current.chartUndoStack).toHaveLength(1);
   });
 
-  it("restores simple-journey settings without overwriting base settings", () => {
+  it("restores simple-journey undo state through the shared settings", () => {
     const previousSettings = createSettings({ dateOfBirth: "1988-03-14" });
 
     const { result } = renderHook(() => {
       const [settings, setSettings] = useState(
         createSettings({ dateOfBirth: "1990-01-01" })
       );
-      const [simpleJourneySettings, setSimpleJourneySettings] =
-        useState<PensionSettings | null>(
-          createSettings({ dateOfBirth: "1992-02-02" })
-        );
       const [chartUndoStack, setChartUndoStack] = useState([previousSettings]);
 
       useUndoShortcut({
-        activeJourneyMode: "simple",
         chartUndoStack,
         setChartUndoStack,
         setSettings,
-        setSimpleJourneySettings,
       });
 
-      return { chartUndoStack, settings, simpleJourneySettings };
+      return { chartUndoStack, settings };
     });
 
     fireEvent.keyDown(window, { ctrlKey: true, key: "z" });
 
-    expect(result.current.settings.dateOfBirth).toBe("1990-01-01");
-    expect(result.current.simpleJourneySettings?.dateOfBirth).toBe(
-      "1988-03-14"
-    );
+    expect(result.current.settings.dateOfBirth).toBe("1988-03-14");
     expect(result.current.chartUndoStack).toHaveLength(0);
   });
 });

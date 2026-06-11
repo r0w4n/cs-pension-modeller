@@ -454,20 +454,9 @@ export function applySimpleJourneyDefaults(
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
     nuvosPensionLeaveAge: normalPensionAge,
-    sippDrawAge: normalPensionAge,
+    nuvosPensionDrawAge: normalPensionAge,
     showStatePension: true,
-    showSipp: false,
-    showIsa: false,
     showNuvos: settings.showNuvos,
-    isaDrawAge: normalPensionAge,
-    alphaAddedPensionFactorType: "self",
-    statePensionApplyFutureGrowth: false,
-    applyPensionIncreases: true,
-    assumedCpiPercent: 0,
-    taxationEnabled: false,
-    partialRetirementEnabled: false,
-    alphaEpaEnabled: false,
-    alphaAddedPensionLumpSums: [],
   };
 }
 
@@ -489,5 +478,25 @@ export function applySimpleJourneyAssumptions(
     partialRetirementEnabled: false,
     alphaEpaEnabled: false,
     alphaAddedPensionLumpSums: [],
+  };
+}
+
+export function mergeSimpleJourneySettings(
+  currentSettings: PensionSettings,
+  nextSettings: PensionSettings
+): PensionSettings {
+  return {
+    ...nextSettings,
+    showSipp: currentSettings.showSipp,
+    showIsa: currentSettings.showIsa,
+    alphaAddedPensionFactorType: currentSettings.alphaAddedPensionFactorType,
+    statePensionApplyFutureGrowth:
+      currentSettings.statePensionApplyFutureGrowth,
+    applyPensionIncreases: currentSettings.applyPensionIncreases,
+    assumedCpiPercent: currentSettings.assumedCpiPercent,
+    taxationEnabled: currentSettings.taxationEnabled,
+    partialRetirementEnabled: currentSettings.partialRetirementEnabled,
+    alphaEpaEnabled: currentSettings.alphaEpaEnabled,
+    alphaAddedPensionLumpSums: currentSettings.alphaAddedPensionLumpSums,
   };
 }

@@ -15,9 +15,24 @@ test.describe("production build smoke checks", () => {
     ).toBeVisible();
   });
 
-  test("serves static content pages from the built artifact", async ({
-    page,
-  }) => {
+  test("serves footer pages from the built artifact", async ({ page }) => {
+    await page.goto("/settings/");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Settings" })
+    ).toBeVisible();
+    await expect(
+      page.locator(".field-label", { hasText: "Export parameters" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Export parameters" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Clear all data" })
+    ).toBeVisible();
+    await expect(page.getByLabel("Choose JSON parameter file")).toBeVisible();
+    await expect(page.getByLabel("Save inputs on this device")).toBeVisible();
+
     await page.goto("/methodology/");
 
     await expect(
@@ -27,6 +42,12 @@ test.describe("production build smoke checks", () => {
       page.getByRole("heading", {
         level: 2,
         name: "What the model projects",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "Important assumptions and omissions",
       })
     ).toBeVisible();
   });

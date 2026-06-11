@@ -49,7 +49,7 @@ export function calculateMonthlyIsaPension(input: {
 
   const drawdownMonths = Math.max(
     1,
-    calculateWholeMonthDifference(
+    countScheduledWithdrawalDatesRemaining(
       drawDate,
       strategy === "use_by_age" ? (targetDate ?? endDate) : endDate
     )
@@ -260,7 +260,7 @@ function calculateMonthlyWithdrawalFromPot(input: {
   }
 
   const drawdownMonthsRemaining =
-    strategy === "use_by_age"
+    strategy === "use_by_age" || strategy === "zero_at_death"
       ? countScheduledWithdrawalDatesRemaining(rowDate, endDate)
       : Math.max(1, calculateWholeMonthDifference(rowDate, endDate));
 

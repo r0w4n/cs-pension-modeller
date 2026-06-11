@@ -34,9 +34,14 @@ export function getSippEffectiveRangeField(
   settings: PensionSettings
 ): RangeField {
   if (field.id === "sippDrawAge") {
+    const minimumSippAccessAge = calculateMinimumSippAccessAge(
+      settings.dateOfBirth
+    );
+
     return {
       ...field,
-      min: calculateMinimumSippAccessAge(settings.dateOfBirth),
+      min: minimumSippAccessAge,
+      max: Math.max(minimumSippAccessAge, settings.lifeExpectancy),
     };
   }
 

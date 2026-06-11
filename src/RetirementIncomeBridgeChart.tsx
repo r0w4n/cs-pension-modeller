@@ -10,6 +10,12 @@ import {
 } from "react";
 import * as d3 from "d3";
 import type { PensionValidationIssue } from "./settings";
+import {
+  clampNumber,
+  clampToLimit,
+  snapToLimit,
+  type ChartNumberLimit,
+} from "./app/chart-drag-constraints";
 
 export type RetirementIncomePoint = {
   date: string;
@@ -52,6 +58,7 @@ export type RetirementIncomeBridgeParameters = {
   partialRetirementWorkPercent: number;
   partialRetirementEnabled: boolean;
   statePensionAge: number;
+  showAlpha: boolean;
   showIsa: boolean;
   showSipp: boolean;
   sippUseByAgeEnabled: boolean;
@@ -91,11 +98,7 @@ export type RetirementIncomeBridgeLimits = {
   statePensionAge: NumberLimit;
 };
 
-type NumberLimit = {
-  min: number;
-  max: number;
-  step: number;
-};
+type NumberLimit = ChartNumberLimit;
 
 type IncomeKey =
   | "isaIncomeAnnual"
@@ -124,6 +127,11 @@ type MilestoneMarker = {
   age: number;
   colour: string;
   editable: boolean;
+};
+
+type VisibleMilestoneMarker = MilestoneMarker & {
+  plotAge: number;
+  layoutAge: number;
 };
 
 type TouchPoint = {
@@ -161,12 +169,12 @@ const sourceMeta: Record<
   { label: string; shortLabel: string; colour: string }
 > = {
   isaIncomeAnnual: {
-    label: "ISA bridge",
+    label: "ISA",
     shortLabel: "ISA",
     colour: "#1f8ee6",
   },
   sippIncomeAnnual: {
-    label: "SIPP bridge",
+    label: "SIPP",
     shortLabel: "SIPP",
     colour: "#148c55",
   },
@@ -231,6 +239,7 @@ export function RetirementIncomeBridgeChart({
   partialRetirementWorkPercent,
   partialRetirementEnabled,
   statePensionAge,
+  showAlpha,
   showIsa,
   showSipp,
   sippUseByAgeEnabled,
@@ -269,6 +278,8 @@ export function RetirementIncomeBridgeChart({
     useState<MilestoneKey | null>(null);
   const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
     useState<MilestoneKey>("retirementAge");
+  const [isMobileNavigationVisible, setIsMobileNavigationVisible] =
+    useState(false);
   const dataSourceTargetIncomeAnnual =
     data[0]?.targetIncomeAnnual ?? targetIncomeAnnual;
   const displayedTargetIncomeAnnual =
@@ -315,30 +326,24 @@ export function RetirementIncomeBridgeChart({
   ]);
   const visibleIncomeKeys = useMemo(
     () =>
-      incomeKeys.filter((key) => {
-        if (key === "isaIncomeAnnual") {
-          return showIsa;
-        }
-
-        if (key === "sippIncomeAnnual") {
-          return showSipp;
-        }
-
-        if (key === "nuvosIncomeAnnual") {
-          return showNuvos;
-        }
-
-        if (key === "partialRetirementIncomeAnnual") {
-          return partialRetirementEnabled;
-        }
-
-        if (key === "statePensionIncomeAnnual") {
-          return showStatePension;
-        }
-
-        return true;
-      }),
-    [partialRetirementEnabled, showIsa, showNuvos, showSipp, showStatePension]
+      incomeKeys.filter((key) =>
+        isIncomeSourceEnabled(key, {
+          showAlpha,
+          partialRetirementEnabled,
+          showIsa,
+          showNuvos,
+          showSipp,
+          showStatePension,
+        })
+      ),
+    [
+      partialRetirementEnabled,
+      showAlpha,
+      showIsa,
+      showNuvos,
+      showSipp,
+      showStatePension,
+    ]
   );
   const legendIncomeKeys = useMemo(
     () => (hideInactiveLegendItems ? visibleIncomeKeys : incomeKeys),
@@ -360,9 +365,9 @@ export function RetirementIncomeBridgeChart({
 
     return () => observer.disconnect();
   }, []);
+  const isCompact = width < 640;
 
   const dimensions = useMemo<ChartDimensions>(() => {
-    const isCompact = width < 640;
     const height = isCompact ? 420 : 460;
 
     return {
@@ -373,7 +378,7 @@ export function RetirementIncomeBridgeChart({
       marginBottom: isCompact ? 34 : 38,
       marginLeft: isCompact ? 48 : 78,
     };
-  }, [width]);
+  }, [isCompact, width]);
   const plotWidth = Math.max(
     1,
     dimensions.width - dimensions.marginLeft - dimensions.marginRight
@@ -393,6 +398,7 @@ export function RetirementIncomeBridgeChart({
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
     showIsa,
     showNuvos,
     showSipp,
@@ -412,6 +418,7 @@ export function RetirementIncomeBridgeChart({
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
     showIsa,
     showNuvos,
     showSipp,
@@ -439,6 +446,7 @@ export function RetirementIncomeBridgeChart({
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
   });
   const buildUpWindow = createBuildUpWindow({
     buildUpEndAge,
@@ -484,9 +492,14 @@ export function RetirementIncomeBridgeChart({
     () => d3.scaleLinear().domain([0, yMax]).nice().range([plotHeight, 0]),
     [plotHeight, yMax]
   );
+  const stackedIncomeKeys = useMemo(
+    () => createStackedIncomeKeys(visibleIncomeKeys, visibleData),
+    [visibleData, visibleIncomeKeys]
+  );
   const stack = d3
     .stack<RetirementIncomePoint>()
-    .keys(visibleIncomeKeys)
+    .keys(stackedIncomeKeys)
+    .order(d3.stackOrderNone)
     .value((point, key) => Number(point[key as IncomeKey]) / divisor);
   const stackedSeries = stack(visibleData);
   const area = d3
@@ -530,14 +543,18 @@ export function RetirementIncomeBridgeChart({
         colour: "#0f6f72",
         editable: true,
       },
-      {
-        key: "alphaLeaveAge",
-        label: "Leave Alpha",
-        shortLabel: "Leave alpha",
-        age: alphaLeaveAge,
-        colour: "#b45309",
-        editable: true,
-      },
+      ...(showAlpha
+        ? [
+            {
+              key: "alphaLeaveAge" as const,
+              label: "Leave Alpha",
+              shortLabel: "Leave alpha",
+              age: alphaLeaveAge,
+              colour: "#b45309",
+              editable: true,
+            },
+          ]
+        : []),
       ...(showSipp
         ? [
             {
@@ -545,7 +562,7 @@ export function RetirementIncomeBridgeChart({
               label: "SIPP start",
               shortLabel: "SIPP start",
               age: sippAccessAge,
-              colour: "#148c55",
+              colour: sourceMeta.sippIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -557,7 +574,7 @@ export function RetirementIncomeBridgeChart({
               label: "SIPP stop",
               shortLabel: "SIPP stop",
               age: sippUseByAge,
-              colour: "#0d6b40",
+              colour: sourceMeta.sippIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -569,7 +586,7 @@ export function RetirementIncomeBridgeChart({
               label: "ISA start",
               shortLabel: "ISA start",
               age: isaAccessAge,
-              colour: "#1f8ee6",
+              colour: sourceMeta.isaIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -586,14 +603,18 @@ export function RetirementIncomeBridgeChart({
             },
           ]
         : []),
-      {
-        key: "alphaStartAge",
-        label: "Start Alpha",
-        shortLabel: "Start Alpha",
-        age: alphaStartAge,
-        colour: "#7353bf",
-        editable: true,
-      },
+      ...(showAlpha
+        ? [
+            {
+              key: "alphaStartAge" as const,
+              label: "Start Alpha",
+              shortLabel: "Start Alpha",
+              age: alphaStartAge,
+              colour: "#7353bf",
+              editable: true,
+            },
+          ]
+        : []),
       ...(showNuvos
         ? [
             {
@@ -613,7 +634,7 @@ export function RetirementIncomeBridgeChart({
               label: "ISA stop",
               shortLabel: "ISA stop",
               age: isaUseByAge,
-              colour: "#155ea8",
+              colour: sourceMeta.isaIncomeAnnual.colour,
               editable: true,
             },
           ]
@@ -640,6 +661,7 @@ export function RetirementIncomeBridgeChart({
       partialRetirementEnabled,
       partialRetirementStartAge,
       retirementAge,
+      showAlpha,
       showNuvos,
       showSipp,
       showIsa,
@@ -665,7 +687,7 @@ export function RetirementIncomeBridgeChart({
       })),
     [draftMarkerAges, milestoneMarkers]
   );
-  const visibleMilestoneMarkers = useMemo(
+  const visibleMilestoneMarkers = useMemo<VisibleMilestoneMarker[]>(
     () =>
       displayedMilestoneMarkers.map((marker) => ({
         ...marker,
@@ -682,6 +704,10 @@ export function RetirementIncomeBridgeChart({
     visibleMilestoneMarkers,
     xScale,
     plotHeight
+  );
+  const renderedMarkerLayouts = useMemo(
+    () => bringActiveMarkerToFront(markerLayouts, activeMarkerDragKey),
+    [activeMarkerDragKey, markerLayouts]
   );
   const draggingMobileMarker =
     activeMarkerDragKey === null
@@ -755,21 +781,15 @@ export function RetirementIncomeBridgeChart({
     event.preventDefault();
     const direction =
       event.key === "ArrowDown" || event.key === "ArrowLeft" ? -1 : 1;
+    const nextTargetIncomeAnnual = snapToLimit(
+      displayedTargetIncomeAnnual + direction * limits.targetIncomeAnnual.step,
+      limits.targetIncomeAnnual
+    );
 
     onChangeParameters({
-      targetIncomeAnnual: snapToLimit(
-        displayedTargetIncomeAnnual +
-          direction * limits.targetIncomeAnnual.step,
-        limits.targetIncomeAnnual
-      ),
+      targetIncomeAnnual: nextTargetIncomeAnnual,
     });
-    setPendingTargetIncomeAnnual(
-      snapToLimit(
-        displayedTargetIncomeAnnual +
-          direction * limits.targetIncomeAnnual.step,
-        limits.targetIncomeAnnual
-      )
-    );
+    setPendingTargetIncomeAnnual(nextTargetIncomeAnnual);
   };
 
   const getPlotPointerPositionFromClient = useCallback(
@@ -1723,7 +1743,7 @@ export function RetirementIncomeBridgeChart({
               onTouchCancel={(event) => finishTargetTouchDrag(event, false)}
             />
 
-            {markerLayouts.map((marker) => {
+            {renderedMarkerLayouts.map((marker) => {
               const x = xScale(marker.plotAge);
               const handleLabel = getMarkerHandleLabel(marker);
 
@@ -1875,6 +1895,7 @@ export function RetirementIncomeBridgeChart({
             const label =
               key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
             const enabled = isIncomeSourceEnabled(key, {
+              showAlpha,
               partialRetirementEnabled,
               showIsa,
               showNuvos,
@@ -1913,83 +1934,32 @@ export function RetirementIncomeBridgeChart({
         </div>
       </div>
 
-      {selectedMobileMarker ? (
-        <div className="bridge-mobile-marker-summary">
-          <span>Selected milestone</span>
-          <strong>{selectedMobileMarker.label}</strong>
-          <span>Age {formatAgeValue(selectedMobileMarker.age)}</span>
-        </div>
-      ) : null}
-
-      {selectedMobileMarker ? (
-        <div className="bridge-mobile-navigation">
-          <label>
-            <span>Chart section</span>
-            <select
-              className="select-input"
-              value={selectedMobileMarker.key}
-              onChange={(event) =>
-                setSelectedMobileMarkerKey(event.target.value as MilestoneKey)
-              }
-            >
-              {visibleMilestoneMarkers.map((marker) => (
-                <option key={marker.key} value={marker.key}>
-                  {marker.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Age</span>
-            <input
-              className="number-input"
-              type="number"
-              min={limits[selectedMobileMarker.key].min}
-              max={limits[selectedMobileMarker.key].max}
-              step={limits[selectedMobileMarker.key].step}
-              value={formatAgeValue(selectedMobileMarker.age)}
-              disabled={!selectedMobileMarker.editable}
-              onChange={(event) =>
-                onChangeParameters({
-                  [selectedMobileMarker.key]: snapToLimit(
-                    Number(event.target.value),
-                    limits[selectedMobileMarker.key]
-                  ),
-                })
-              }
-            />
-          </label>
-          <input
-            aria-label={`Chart ${selectedMobileMarker.label} age`}
-            type="range"
-            min={limits[selectedMobileMarker.key].min}
-            max={limits[selectedMobileMarker.key].max}
-            step={limits[selectedMobileMarker.key].step}
-            value={selectedMobileMarker.age}
-            disabled={!selectedMobileMarker.editable}
-            onChange={(event) =>
-              onChangeParameters({
-                [selectedMobileMarker.key]: snapToLimit(
-                  Number(event.target.value),
-                  limits[selectedMobileMarker.key]
-                ),
-              })
-            }
-          />
-        </div>
-      ) : null}
+      <BridgeMobileNavigation
+        isCompact={isCompact}
+        isVisible={isMobileNavigationVisible}
+        limits={limits}
+        selectedMobileMarker={selectedMobileMarker}
+        visibleMilestoneMarkers={visibleMilestoneMarkers}
+        onChangeParameters={onChangeParameters}
+        onSelectMobileMarker={(key) => setSelectedMobileMarkerKey(key)}
+        onToggleVisibility={() =>
+          setIsMobileNavigationVisible((currentValue) => !currentValue)
+        }
+      />
 
       <div className="bridge-control-grid">
-        <BridgeMetricControl
-          label="Added Alpha pension"
-          value={alphaMonthlyAddedPension}
-          suffix="/ month"
-          limit={limits.alphaMonthlyAddedPension}
-          colour="#7353bf"
-          onChange={(value) =>
-            onChangeParameters({ alphaMonthlyAddedPension: value })
-          }
-        />
+        {showAlpha ? (
+          <BridgeMetricControl
+            label="Added Alpha pension"
+            value={alphaMonthlyAddedPension}
+            suffix="/ month"
+            limit={limits.alphaMonthlyAddedPension}
+            colour="#7353bf"
+            onChange={(value) =>
+              onChangeParameters({ alphaMonthlyAddedPension: value })
+            }
+          />
+        ) : null}
         {showIsa ? (
           <BridgeMetricControl
             label="ISA contribution"
@@ -2179,6 +2149,7 @@ function createActiveMilestoneAges({
   partialRetirementEnabled,
   partialRetirementStartAge,
   retirementAge,
+  showAlpha,
   showNuvos,
   showIsa,
   showSipp,
@@ -2198,6 +2169,7 @@ function createActiveMilestoneAges({
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
   | "retirementAge"
+  | "showAlpha"
   | "showNuvos"
   | "showIsa"
   | "showSipp"
@@ -2209,13 +2181,13 @@ function createActiveMilestoneAges({
 >) {
   return [
     retirementAge,
-    alphaLeaveAge,
+    showAlpha ? alphaLeaveAge : null,
     showSipp ? sippAccessAge : null,
     showSipp && sippUseByAgeEnabled ? sippUseByAge : null,
     showIsa ? isaAccessAge : null,
     showIsa && isaUseByAgeEnabled ? isaUseByAge : null,
     partialRetirementEnabled ? partialRetirementStartAge : null,
-    alphaStartAge,
+    showAlpha ? alphaStartAge : null,
     showNuvos ? nuvosStartAge : null,
     showStatePension ? statePensionAge : null,
   ];
@@ -2233,6 +2205,7 @@ function createActiveMilestoneBoundaries(
     | "partialRetirementEnabled"
     | "partialRetirementStartAge"
     | "retirementAge"
+    | "showAlpha"
     | "showNuvos"
     | "showIsa"
     | "showSipp"
@@ -2253,6 +2226,7 @@ function createActiveMilestoneBoundaries(
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
+    showAlpha,
     showNuvos,
     showIsa,
     showSipp,
@@ -2265,7 +2239,9 @@ function createActiveMilestoneBoundaries(
 
   return [
     { key: "retirementAge" as const, age: retirementAge },
-    { key: "alphaLeaveAge" as const, age: alphaLeaveAge },
+    ...(showAlpha
+      ? [{ key: "alphaLeaveAge" as const, age: alphaLeaveAge }]
+      : []),
     ...(showSipp
       ? [{ key: "sippAccessAge" as const, age: sippAccessAge }]
       : []),
@@ -2284,7 +2260,9 @@ function createActiveMilestoneBoundaries(
           },
         ]
       : []),
-    { key: "alphaStartAge" as const, age: alphaStartAge },
+    ...(showAlpha
+      ? [{ key: "alphaStartAge" as const, age: alphaStartAge }]
+      : []),
     ...(showNuvos
       ? [{ key: "nuvosStartAge" as const, age: nuvosStartAge }]
       : []),
@@ -2347,16 +2325,18 @@ function createBuildUpEndAge({
   partialRetirementEnabled,
   partialRetirementStartAge,
   retirementAge,
+  showAlpha,
 }: Pick<
   RetirementIncomeBridgeParameters,
   | "alphaLeaveAge"
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
   | "retirementAge"
+  | "showAlpha"
 >) {
   return Math.min(
     retirementAge,
-    alphaLeaveAge,
+    showAlpha ? alphaLeaveAge : retirementAge,
     partialRetirementEnabled ? partialRetirementStartAge : retirementAge
   );
 }
@@ -2451,6 +2431,33 @@ function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {
   return undefined;
 }
 
+function createStackedIncomeKeys(
+  keys: IncomeKey[],
+  data: RetirementIncomePoint[]
+) {
+  const keyIndex = new Map(keys.map((key, index) => [key, index]));
+
+  return [...keys].sort((leftKey, rightKey) => {
+    const leftFirstActiveAge = findFirstActiveIncomeAge(data, leftKey);
+    const rightFirstActiveAge = findFirstActiveIncomeAge(data, rightKey);
+
+    if (leftFirstActiveAge !== rightFirstActiveAge) {
+      return leftFirstActiveAge - rightFirstActiveAge;
+    }
+
+    return (keyIndex.get(leftKey) ?? 0) - (keyIndex.get(rightKey) ?? 0);
+  });
+}
+
+function findFirstActiveIncomeAge(
+  data: RetirementIncomePoint[],
+  key: IncomeKey
+) {
+  const firstActivePoint = data.find((point) => point[key] > 0);
+
+  return firstActivePoint?.age ?? Number.POSITIVE_INFINITY;
+}
+
 function createMarkerLayouts<
   T extends MilestoneMarker & { layoutAge?: number },
 >(markers: T[], xScale: d3.ScaleLinear<number, number>, plotHeight: number) {
@@ -2491,6 +2498,26 @@ function createMarkerLayouts<
       handleY,
     };
   });
+}
+
+function bringActiveMarkerToFront<T extends MilestoneMarker>(
+  markers: T[],
+  activeMarkerKey: MilestoneKey | null
+) {
+  if (activeMarkerKey === null) {
+    return markers;
+  }
+
+  const activeMarker = markers.find((marker) => marker.key === activeMarkerKey);
+
+  if (!activeMarker) {
+    return markers;
+  }
+
+  return [
+    ...markers.filter((marker) => marker.key !== activeMarkerKey),
+    activeMarker,
+  ];
 }
 
 function getTargetIncomeControlLimit(
@@ -2635,10 +2662,111 @@ function createMobileBridgeSummary({
   ];
 }
 
+type BridgeMobileNavigationProps = {
+  isCompact: boolean;
+  isVisible: boolean;
+  limits: RetirementIncomeBridgeLimits;
+  selectedMobileMarker: VisibleMilestoneMarker | undefined;
+  visibleMilestoneMarkers: VisibleMilestoneMarker[];
+  onChangeParameters: (
+    patch: Partial<RetirementIncomeBridgeParameters>
+  ) => void;
+  onSelectMobileMarker: (key: MilestoneKey) => void;
+  onToggleVisibility: () => void;
+};
+
+function BridgeMobileNavigation({
+  isCompact,
+  isVisible,
+  limits,
+  selectedMobileMarker,
+  visibleMilestoneMarkers,
+  onChangeParameters,
+  onSelectMobileMarker,
+  onToggleVisibility,
+}: BridgeMobileNavigationProps) {
+  if (!selectedMobileMarker || !isCompact) {
+    return null;
+  }
+
+  const markerLimit = limits[selectedMobileMarker.key];
+
+  return (
+    <>
+      <button
+        type="button"
+        className="bridge-mobile-navigation-toggle"
+        aria-expanded={isVisible}
+        onClick={onToggleVisibility}
+      >
+        {isVisible ? "Hide chart controls" : "Show chart controls"}
+      </button>
+      {isVisible ? (
+        <div className="bridge-mobile-navigation">
+          <label>
+            <span>Chart section</span>
+            <select
+              className="select-input"
+              value={selectedMobileMarker.key}
+              onChange={(event) =>
+                onSelectMobileMarker(event.target.value as MilestoneKey)
+              }
+            >
+              {visibleMilestoneMarkers.map((marker) => (
+                <option key={marker.key} value={marker.key}>
+                  {marker.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Age</span>
+            <input
+              className="number-input"
+              type="number"
+              min={markerLimit.min}
+              max={markerLimit.max}
+              step={markerLimit.step}
+              value={formatAgeValue(selectedMobileMarker.age)}
+              disabled={!selectedMobileMarker.editable}
+              onChange={(event) =>
+                onChangeParameters({
+                  [selectedMobileMarker.key]: snapToLimit(
+                    Number(event.target.value),
+                    markerLimit
+                  ),
+                })
+              }
+            />
+          </label>
+          <input
+            aria-label={`Chart ${selectedMobileMarker.label} age`}
+            type="range"
+            min={markerLimit.min}
+            max={markerLimit.max}
+            step={markerLimit.step}
+            value={selectedMobileMarker.age}
+            disabled={!selectedMobileMarker.editable}
+            onChange={(event) =>
+              onChangeParameters({
+                [selectedMobileMarker.key]: snapToLimit(
+                  Number(event.target.value),
+                  markerLimit
+                ),
+              })
+            }
+          />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function isIncomeSourceEnabled(
   key: IncomeKey,
   state: Pick<
     RetirementIncomeBridgeParameters,
+    | "showAlpha"
     | "partialRetirementEnabled"
     | "showIsa"
     | "showNuvos"
@@ -2646,6 +2774,10 @@ function isIncomeSourceEnabled(
     | "showStatePension"
   >
 ) {
+  if (key === "alphaIncomeAnnual") {
+    return state.showAlpha;
+  }
+
   if (key === "isaIncomeAnnual") {
     return state.showIsa;
   }
@@ -2673,6 +2805,10 @@ function getIncomeSourceTogglePatch(
   key: IncomeKey,
   enabled: boolean
 ): Partial<RetirementIncomeBridgeParameters> | null {
+  if (key === "alphaIncomeAnnual") {
+    return { showAlpha: enabled };
+  }
+
   if (key === "isaIncomeAnnual") {
     return { showIsa: enabled };
   }
@@ -2736,24 +2872,4 @@ function getDisplayMarkerAge(
 
 function areAgesEquivalent(firstAge: number, secondAge: number) {
   return Math.abs(firstAge - secondAge) < 0.001;
-}
-
-function clampNumber(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function clampToLimit(value: number, limit: NumberLimit) {
-  return clampNumber(value, limit.min, limit.max);
-}
-
-function snapToLimit(value: number, limit: NumberLimit) {
-  const clamped = clampToLimit(value, limit);
-  const steps = Math.round((clamped - limit.min) / limit.step);
-  const snapped = limit.min + steps * limit.step;
-  return Number(snapToLimitPrecision(snapped, limit.step));
-}
-
-function snapToLimitPrecision(value: number, step: number) {
-  const precision = Math.max(0, (step.toString().split(".")[1] ?? "").length);
-  return value.toFixed(precision);
 }

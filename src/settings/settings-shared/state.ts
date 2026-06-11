@@ -191,14 +191,18 @@ export function calculateStatePensionDrawDateFromAge(
   return addYearsToIsoDate(normalizedDateOfBirth, normalizedDrawAge);
 }
 
-function normalizeMinimumPensionAccessAge(value: number, dateOfBirth: string) {
+function normalizeMinimumPensionAccessAge(
+  value: number,
+  dateOfBirth: string,
+  maxAge = 70
+) {
   const normalizedDateOfBirth = normalizeIsoDate(
     dateOfBirth,
     DEFAULT_DATE_OF_BIRTH
   );
   const parsed = Number(value);
   const normalizedAge = Number.isFinite(parsed)
-    ? Math.min(70, Math.max(55, parsed))
+    ? Math.min(maxAge, Math.max(55, parsed))
     : 58;
   const sippDrawDate = addYearsToIsoDate(normalizedDateOfBirth, normalizedAge);
 
@@ -235,5 +239,5 @@ export function normalizeAlphaPensionDrawAge(
 }
 
 export function normalizeSippDrawAge(value: number, dateOfBirth: string) {
-  return normalizeMinimumPensionAccessAge(value, dateOfBirth);
+  return normalizeMinimumPensionAccessAge(value, dateOfBirth, 100);
 }

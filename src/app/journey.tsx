@@ -45,26 +45,57 @@ export function GuidanceNotesToggle({
   );
 }
 
+function useIsMobileJourneyView(mobileBreakpoint = "(max-width: 640px)") {
+  const [matches, setMatches] = useState(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return false;
+    }
+
+    return window.matchMedia(mobileBreakpoint).matches;
+  });
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(mobileBreakpoint);
+    const updateMatch = (event: MediaQueryListEvent) => {
+      setMatches(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", updateMatch);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateMatch);
+    };
+  }, [mobileBreakpoint]);
+
+  return matches;
+}
+
 type JourneyFlowProps = {
   journey: JourneyDefinition;
   settings: PensionSettings;
-  showGuidanceNotes: boolean;
-  onShowGuidanceNotesChange: (checked: boolean) => void;
   renderStepContent: (step: JourneyStepDefinition) => ReactNode;
 };
 
 export function JourneyFlow({
   journey,
   settings,
-  showGuidanceNotes,
-  onShowGuidanceNotesChange,
   renderStepContent,
 }: JourneyFlowProps) {
   const visibleSteps = journey.steps.filter(
     (step) => !step.visible || step.visible(settings)
   );
   const [activeStepId, setActiveStepId] = useState(visibleSteps[0]?.id ?? "");
-  const [showMobileSteps, setShowMobileSteps] = useState(false);
+  const isMobileJourneyView = useIsMobileJourneyView();
   const activeStep =
     visibleSteps.find((step) => step.id === activeStepId) ?? visibleSteps[0];
   const activeStepIndex = Math.max(
@@ -107,7 +138,6 @@ export function JourneyFlow({
     const nextStep = visibleSteps[stepIndex];
 
     if (nextStep) {
-      setShowMobileSteps(false);
       setActiveStepId(nextStep.id);
     }
   };
@@ -125,10 +155,6 @@ export function JourneyFlow({
           <div className="journey-progress" aria-label="Journey progress">
             Step {activeStepIndex + 1} of {visibleSteps.length}
           </div>
-          <GuidanceNotesToggle
-            checked={showGuidanceNotes}
-            onChange={onShowGuidanceNotesChange}
-          />
         </div>
       </div>
 
@@ -156,41 +182,31 @@ export function JourneyFlow({
         className="journey-step"
         aria-labelledby={`journey-step-${activeStep.id}`}
       >
-        <div className="journey-mobile-steps">
-          <div className="journey-mobile-step-summary">
-            <div>
-              <span>
-                Step {activeStepIndex + 1} of {visibleSteps.length}
-              </span>
-              <strong>{activeStep.title}</strong>
+        {isMobileJourneyView ? (
+          <div className="journey-mobile-steps">
+            <div className="journey-mobile-step-summary">
+              <div>
+                <span>
+                  Step {activeStepIndex + 1} of {visibleSteps.length}
+                </span>
+                <strong>{activeStep.title}</strong>
+              </div>
             </div>
-            <button
-              type="button"
-              className="secondary-button"
-              aria-expanded={showMobileSteps}
-              aria-controls="journey-mobile-step-list"
-              onClick={() => setShowMobileSteps((current) => !current)}
+            <div
+              className="journey-progress-bar"
+              role="progressbar"
+              aria-label="Journey progress"
+              aria-valuemin={1}
+              aria-valuemax={visibleSteps.length}
+              aria-valuenow={activeStepIndex + 1}
             >
-              {showMobileSteps ? "Hide steps" : "View all steps"}
-            </button>
-          </div>
-          <div
-            className="journey-progress-bar"
-            role="progressbar"
-            aria-label="Journey progress"
-            aria-valuemin={1}
-            aria-valuemax={visibleSteps.length}
-            aria-valuenow={activeStepIndex + 1}
-          >
-            <span
-              style={{
-                width: `${((activeStepIndex + 1) / visibleSteps.length) * 100}%`,
-              }}
-            />
-          </div>
-          {showMobileSteps ? (
+              <span
+                style={{
+                  width: `${((activeStepIndex + 1) / visibleSteps.length) * 100}%`,
+                }}
+              />
+            </div>
             <nav
-              id="journey-mobile-step-list"
               className="journey-mobile-step-list"
               aria-label="Journey steps"
             >
@@ -214,8 +230,8 @@ export function JourneyFlow({
                 );
               })}
             </nav>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         <div className="section-heading">
           <p className="eyebrow">{activeStep.eyebrow}</p>

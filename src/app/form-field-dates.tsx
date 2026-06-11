@@ -205,7 +205,7 @@ export function StatePensionAgeField({
       )}
     >
       <span className="field-header">
-        <FieldLabel field={field} />
+        <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
       </span>
       <div className="range-control-grid">
         <div className="range-slider-group">
@@ -356,7 +356,7 @@ function YearSettingFieldEditor({
       className={getFieldCardClassName(false, false, Boolean(validationIssue))}
     >
       <span className="field-header">
-        <FieldLabel field={field} />
+        <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
       </span>
       <select
         aria-label={field.label}
@@ -632,7 +632,7 @@ export function DateSettingField({
       )}
     >
       <span className="field-header">
-        <FieldLabel field={field} />
+        <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
       </span>
       {field.type === "month" ? (
         <MonthSelectField

@@ -12,6 +12,7 @@ export {
   applySimpleJourneyDefaults,
   isOptionalSectionToggleKey,
   type JourneyDefinition,
+  type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,

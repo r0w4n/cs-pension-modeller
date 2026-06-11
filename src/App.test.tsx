@@ -639,6 +639,36 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("heading", { name: "State Pension" })
     ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Alpha pension/i })
+    );
+
+    const alphaIncreasesCheckbox = screen.getByRole("checkbox", {
+      name: "Apply Alpha pension increases",
+    });
+
+    expect(alphaIncreasesCheckbox).not.toBeChecked();
+    expect(
+      screen.getByText(
+        "Increase Alpha benefits annually by 1.5% while you are still in active Alpha service. The simplified journey does not add a separate inflation assumption."
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/CPI/)).not.toBeInTheDocument();
+
+    fireEvent.click(alphaIncreasesCheckbox);
+
+    expect(alphaIncreasesCheckbox).toBeChecked();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({ applyPensionIncreases: true })
+    );
+
+    fireEvent.click(alphaIncreasesCheckbox);
+
+    expect(alphaIncreasesCheckbox).not.toBeChecked();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({ applyPensionIncreases: false })
+    );
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("simple");
   });
 

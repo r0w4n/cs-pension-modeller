@@ -22,6 +22,7 @@ import {
   getSettingsSignature,
   type ComparisonResultCache,
   type ComparisonScenario,
+  type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
@@ -451,7 +452,9 @@ function renderFieldsStep(
     kind: "fields";
     fieldIds: readonly FieldDefinition["id"][];
     fieldLabels?: JourneyFieldLabels;
+    fieldDescriptions?: JourneyFieldDescriptions;
     groupId?: string;
+    alphaPensionIncreaseDescription?: string;
   },
   viewModel: JourneyStepViewModel
 ) {
@@ -468,12 +471,17 @@ function renderFieldsStep(
       <ValidationSummary validationIssues={validationIssues} />
 
       <SettingsFieldsFeature
-        fields={getFieldsByIds(step.fieldIds, step.fieldLabels)}
+        fields={getFieldsByIds(
+          step.fieldIds,
+          step.fieldLabels,
+          step.fieldDescriptions
+        )}
         settings={settings}
         validationIssues={validationIssues}
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
+        alphaPensionIncreaseDescription={step.alphaPensionIncreaseDescription}
       />
 
       {step.groupId ? (
@@ -538,7 +546,8 @@ function buildKeyDateItems(
 
 function getFieldsByIds(
   fieldIds: readonly FieldDefinition["id"][],
-  fieldLabels: JourneyFieldLabels = {}
+  fieldLabels: JourneyFieldLabels = {},
+  fieldDescriptions: JourneyFieldDescriptions = {}
 ) {
   return fieldIds
     .map((fieldId) => {
@@ -550,9 +559,13 @@ function getFieldsByIds(
         return undefined;
       }
 
-      return fieldLabels[fieldId]
-        ? { ...field, label: fieldLabels[fieldId] }
-        : field;
+      return {
+        ...field,
+        ...(fieldLabels[fieldId] ? { label: fieldLabels[fieldId] } : {}),
+        ...(fieldDescriptions[fieldId]
+          ? { description: fieldDescriptions[fieldId] }
+          : {}),
+      };
     })
     .filter((field): field is FieldDefinition => Boolean(field));
 }

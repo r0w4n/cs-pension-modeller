@@ -20,24 +20,24 @@ jobs:
   update-dependabot-prs:
     runs-on: ubuntu-latest
     env:
-      DEPENDABOT_AUTOMATION_TOKEN: ${{ secrets.DEPENDABOT_AUTOMATION_TOKEN }}
+      DEPENDABOT_PAT: ${{ secrets.dependabot_pat }}
 
     steps:
       - name: Report token mode
         run: |
-          if [ -z "$DEPENDABOT_AUTOMATION_TOKEN" ]; then
-            echo "::notice::DEPENDABOT_AUTOMATION_TOKEN is not set, so this workflow will use GITHUB_TOKEN. Dependabot PRs that change workflow files will be skipped because updating those branches needs workflow-writing permission."
+          if [ -z "$DEPENDABOT_PAT" ]; then
+            echo "::notice::dependabot_pat is not set, so this workflow will use GITHUB_TOKEN. Dependabot PRs that change workflow files will be skipped because updating those branches needs workflow-writing permission."
           else
-            echo "Using DEPENDABOT_AUTOMATION_TOKEN for Dependabot branch updates."
+            echo "Using dependabot_pat for Dependabot branch updates."
           fi
 
       - name: Update open Dependabot PR branches
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.DEPENDABOT_AUTOMATION_TOKEN || github.token }}
+          github-token: ${{ secrets.dependabot_pat || github.token }}
           script: |
             const { owner, repo } = context.repo;
-            const hasAutomationToken = Boolean(process.env.DEPENDABOT_AUTOMATION_TOKEN);
+            const hasDependabotPat = Boolean(process.env.DEPENDABOT_PAT);
 
             const pulls = await github.paginate(github.rest.pulls.list, {
               owner,
@@ -62,7 +62,7 @@ jobs:
                 file.filename.startsWith('.github/workflows/')
               );
 
-              if (changesWorkflow && !hasAutomationToken) {
+              if (changesWorkflow && !hasDependabotPat) {
                 core.notice(
                   `Skipped PR #${pr.number}: it changes workflow files, and GITHUB_TOKEN cannot update those branches.`
                 );

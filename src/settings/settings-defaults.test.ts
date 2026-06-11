@@ -19,6 +19,15 @@ describe("settings-defaults", () => {
     expect(createDefaultSettings().startDate).toBe("2026-04-25");
   });
 
+  it("defaults ISA, SIPP, and nuvos draw ages to Normal Pension Age", () => {
+    const settings = createDefaultSettings();
+
+    expect(settings.normalPensionAge).toBe(68);
+    expect(settings.isaDrawAge).toBe(68);
+    expect(settings.sippDrawAge).toBe(68);
+    expect(settings.nuvosPensionDrawAge).toBe(68);
+  });
+
   it("formats local date parts", () => {
     expect(
       formatLocalIsoDate({

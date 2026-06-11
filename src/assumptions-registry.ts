@@ -77,7 +77,7 @@ export const GOVERNED_ASSUMPTIONS_REGISTRY: GovernedAssumptionsRegistry = {
       id: "nuvos-early-retirement",
       title: "nuvos early-retirement assumptions",
       summary:
-        "nuvos draw age is tested against the scheme pension age assumption so the model can apply early-payment reductions where relevant.",
+        "nuvos draw age is tested against the scheme pension age assumption so the model can apply the nuvos formula-based early-payment reduction where relevant.",
       sourceLabel: "Civil Service Pensions nuvos scheme rules",
       sourceUrl: "https://example.com/source-url-placeholder",
       effectiveDate: "2026-05-30",

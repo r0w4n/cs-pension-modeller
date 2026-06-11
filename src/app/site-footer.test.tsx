@@ -2,9 +2,13 @@ import { render, screen } from "@testing-library/react";
 import { SiteFooter } from "./site-footer";
 
 describe("site-footer", () => {
-  it("links to consolidated static pages", () => {
+  it("links to consolidated footer pages", () => {
     render(<SiteFooter />);
 
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "./settings/"
+    );
     expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute(
       "href",
       "./privacy/"

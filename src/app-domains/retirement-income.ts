@@ -16,6 +16,13 @@ import {
   calculateStatePensionDrawAge,
   type PensionSettings,
 } from "../settings";
+import {
+  getPartialRetirementStartAgeBounds,
+  getPensionStartAgeBounds,
+  getSippChartAccessAgeBounds,
+  getStatePensionAgeBounds,
+  getUseByAgeBounds,
+} from "./bridge-chart-bounds";
 import { addYearsToIsoDate, clampNumber } from "./shared";
 
 export function createRetirementIncomeSeries(
@@ -89,7 +96,9 @@ export function createRetirementIncomeSeries(
           })
         : 0;
       const alphaIncomeAnnual =
-        row.date >= alphaDrawDate ? row.monthlyAlphaPensionGross * 12 : 0;
+        settings.showAlpha && row.date >= alphaDrawDate
+          ? row.monthlyAlphaPensionGross * 12
+          : 0;
       const nuvosIncomeAnnual =
         settings.showNuvos && row.date >= nuvosDrawDate
           ? row.monthlyNuvosPensionGross * 12
@@ -221,13 +230,15 @@ function insertChartTransitionPoints(
           age: settings.sippWithdrawalTargetAge,
         }
       : null,
-    {
-      date: addYearsToIsoDate(
-        settings.dateOfBirth,
-        settings.alphaPensionDrawAge
-      ),
-      age: settings.alphaPensionDrawAge,
-    },
+    settings.showAlpha
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.alphaPensionDrawAge
+          ),
+          age: settings.alphaPensionDrawAge,
+        }
+      : null,
     settings.showNuvos
       ? {
           date: addYearsToIsoDate(
@@ -351,6 +362,7 @@ export function createBridgeChartParameters(
       settings.dateOfBirth,
       settings.statePensionDrawDate
     ),
+    showAlpha: settings.showAlpha,
     showIsa: settings.showIsa,
     showSipp: settings.showSipp,
     sippUseByAgeEnabled:
@@ -383,13 +395,41 @@ export function createBridgeChartLimits(
     currentPlanningAge,
     Math.min(70, statePensionAge)
   );
-  const partialRetirementMaxAge = Math.max(
+  const sippAccessAgeBounds = getSippChartAccessAgeBounds({
+    defaultStatePensionAge,
+    lifeExpectancy: settings.lifeExpectancy,
+    minimumSippAccessAge,
+  });
+  const isaAccessAgeMax = Math.max(currentPlanningAge, settings.lifeExpectancy);
+  const partialRetirementStartAgeBounds = getPartialRetirementStartAgeBounds({
     currentPlanningAge,
-    Math.min(settings.requirementAge - 0.25, 70, settings.lifeExpectancy)
-  );
-  const sippUseByMin = settings.sippDrawAge + 0.25;
-  const isaUseByMin = settings.isaDrawAge + 0.25;
-  const useByMax = Math.min(100, settings.lifeExpectancy);
+    lifeExpectancy: settings.lifeExpectancy,
+    retirementAge: settings.requirementAge,
+  });
+  const sippUseByAgeBounds = getUseByAgeBounds({
+    drawAge: settings.sippDrawAge,
+    lifeExpectancy: settings.lifeExpectancy,
+  });
+  const isaUseByAgeBounds = getUseByAgeBounds({
+    drawAge: settings.isaDrawAge,
+    lifeExpectancy: settings.lifeExpectancy,
+  });
+  const alphaStartAgeBounds = getPensionStartAgeBounds({
+    currentPlanningAge,
+    leaveAge: settings.alphaPensionLeaveAge,
+    minimumPensionAccessAge: minimumAlphaAccessAge,
+    retirementAge: settings.requirementAge,
+  });
+  const nuvosStartAgeBounds = getPensionStartAgeBounds({
+    currentPlanningAge,
+    leaveAge: settings.nuvosPensionLeaveAge,
+    minimumPensionAccessAge: minimumAlphaAccessAge,
+    retirementAge: settings.requirementAge,
+  });
+  const statePensionAgeBounds = getStatePensionAgeBounds({
+    defaultStatePensionAge,
+    lifeExpectancy: settings.lifeExpectancy,
+  });
 
   return {
     targetIncomeAnnual: { min: 0, max: 200000, step: 600 },
@@ -400,9 +440,11 @@ export function createBridgeChartLimits(
       min: currentPlanningAge,
       max: Math.max(
         currentPlanningAge,
-        Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
+        settings.showAlpha
+          ? Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
+          : ageUpperLimit
       ),
-      step: 0.25,
+      step: 1,
     },
     alphaLeaveAge: {
       min: currentPlanningAge,
@@ -410,74 +452,48 @@ export function createBridgeChartLimits(
         currentPlanningAge,
         Math.min(ageUpperLimit, settings.requirementAge)
       ),
-      step: 0.25,
+      step: 1,
     },
     sippAccessAge: {
-      min: Math.max(settings.requirementAge, minimumSippAccessAge),
-      max: ageUpperLimit,
-      step: 0.25,
+      min: sippAccessAgeBounds.min,
+      max: sippAccessAgeBounds.max,
+      step: 1,
     },
     sippUseByAge: {
-      min: sippUseByMin,
-      max: Math.max(sippUseByMin, useByMax),
-      step: 0.25,
+      min: sippUseByAgeBounds.min,
+      max: sippUseByAgeBounds.max,
+      step: 1,
     },
     isaAccessAge: {
       min: currentPlanningAge,
-      max: ageUpperLimit,
-      step: 0.25,
+      max: isaAccessAgeMax,
+      step: 1,
     },
     alphaStartAge: {
-      min: Math.max(
-        currentPlanningAge,
-        settings.requirementAge,
-        settings.alphaPensionLeaveAge,
-        minimumAlphaAccessAge
-      ),
-      max: Math.max(
-        Math.max(
-          currentPlanningAge,
-          settings.requirementAge,
-          settings.alphaPensionLeaveAge,
-          minimumAlphaAccessAge
-        ),
-        70
-      ),
-      step: 0.25,
+      min: alphaStartAgeBounds.min,
+      max: alphaStartAgeBounds.max,
+      step: 1,
     },
     nuvosStartAge: {
-      min: Math.max(
-        currentPlanningAge,
-        settings.requirementAge,
-        settings.nuvosPensionLeaveAge,
-        minimumAlphaAccessAge
-      ),
-      max: Math.max(
-        Math.max(
-          currentPlanningAge,
-          settings.requirementAge,
-          settings.nuvosPensionLeaveAge,
-          minimumAlphaAccessAge
-        ),
-        70
-      ),
-      step: 0.25,
+      min: nuvosStartAgeBounds.min,
+      max: nuvosStartAgeBounds.max,
+      step: 1,
     },
     isaUseByAge: {
-      min: isaUseByMin,
-      max: Math.max(isaUseByMin, useByMax),
-      step: 0.25,
+      min: isaUseByAgeBounds.min,
+      max: isaUseByAgeBounds.max,
+      step: 1,
     },
     partialRetirementStartAge: {
-      min: currentPlanningAge,
-      max: partialRetirementMaxAge,
-      step: 0.25,
+      min: partialRetirementStartAgeBounds.min,
+      max: partialRetirementStartAgeBounds.max,
+      step: 1,
     },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
     statePensionAge: {
-      min: defaultStatePensionAge,
-      max: Math.max(defaultStatePensionAge, settings.lifeExpectancy),
-      step: 0.25,
+      min: statePensionAgeBounds.min,
+      max: statePensionAgeBounds.max,
+      step: 1,
     },
   };
 }

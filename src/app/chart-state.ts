@@ -18,6 +18,11 @@ import {
 import {
   calculateCurrentPlanningAge,
   clampNumber,
+  getPartialRetirementStartAgeBounds,
+  getPensionStartAgeBounds,
+  getSippChartAccessAgeBounds,
+  getStatePensionAgeBounds,
+  getUseByAgeBounds,
   isOptionalSectionToggleKey,
 } from "../app-domains";
 
@@ -92,16 +97,17 @@ function applyIncomeAndContributionPatch(
   );
 
   if (patch.partialRetirementStartAge !== undefined) {
-    const latestPartialRetirementStartAge = Math.max(
-      context.currentPlanningAge,
-      Math.min(next.requirementAge - 0.25, 70, next.lifeExpectancy)
-    );
+    const partialRetirementStartAgeBounds = getPartialRetirementStartAgeBounds({
+      currentPlanningAge: context.currentPlanningAge,
+      lifeExpectancy: next.lifeExpectancy,
+      retirementAge: next.requirementAge,
+    });
     next.partialRetirementStartAge = normalizeSetting(
       "partialRetirementStartAge",
       clampNumber(
         patch.partialRetirementStartAge,
-        context.currentPlanningAge,
-        latestPartialRetirementStartAge
+        partialRetirementStartAgeBounds.min,
+        partialRetirementStartAgeBounds.max
       )
     );
   }
@@ -150,10 +156,14 @@ function applyStatePensionPatch(
   const requestedStateAge =
     patch.statePensionAge ??
     calculateStatePensionDrawAge(next.dateOfBirth, next.statePensionDrawDate);
+  const statePensionAgeBounds = getStatePensionAgeBounds({
+    defaultStatePensionAge: context.defaultStatePensionAge,
+    lifeExpectancy: next.lifeExpectancy,
+  });
   const statePensionAge = clampNumber(
     requestedStateAge,
-    context.defaultStatePensionAge,
-    Math.max(context.defaultStatePensionAge, next.lifeExpectancy)
+    statePensionAgeBounds.min,
+    statePensionAgeBounds.max
   );
 
   if (patch.statePensionAge !== undefined) {
@@ -196,12 +206,17 @@ function applyRetirementAgePatch(
     next.partialRetirementEnabled &&
     next.partialRetirementStartAge >= next.requirementAge
   ) {
+    const partialRetirementStartAgeBounds = getPartialRetirementStartAgeBounds({
+      currentPlanningAge: context.currentPlanningAge,
+      lifeExpectancy: next.lifeExpectancy,
+      retirementAge: next.requirementAge,
+    });
     next.partialRetirementStartAge = normalizeSetting(
       "partialRetirementStartAge",
       clampNumber(
-        next.requirementAge - 0.25,
-        context.currentPlanningAge,
-        Math.min(70, next.lifeExpectancy)
+        partialRetirementStartAgeBounds.max,
+        partialRetirementStartAgeBounds.min,
+        partialRetirementStartAgeBounds.max
       )
     );
   }
@@ -241,14 +256,15 @@ function applyAccessAgePatch(
   context: ChartStateContext
 ) {
   if (patch.sippAccessAge !== undefined) {
-    const earliestSippChartStartAge = Math.max(
-      context.minimumSippAccessAge,
-      context.defaultStatePensionAge
-    );
+    const sippAccessAgeBounds = getSippChartAccessAgeBounds({
+      defaultStatePensionAge: context.defaultStatePensionAge,
+      lifeExpectancy: next.lifeExpectancy,
+      minimumSippAccessAge: context.minimumSippAccessAge,
+    });
     const sippAccessAge = clampNumber(
       patch.sippAccessAge,
-      earliestSippChartStartAge,
-      Math.max(earliestSippChartStartAge, next.lifeExpectancy)
+      sippAccessAgeBounds.min,
+      sippAccessAgeBounds.max
     );
     next.sippDrawAge = normalizeSippDrawAge(sippAccessAge, next.dateOfBirth);
     reconcileSippWithdrawalTarget(next);
@@ -267,15 +283,16 @@ function applyAccessAgePatch(
   }
 
   if (patch.alphaStartAge !== undefined) {
-    const alphaStartAgeMin = Math.max(
-      next.alphaPensionLeaveAge,
-      context.minimumAlphaAccessAge,
-      next.requirementAge
-    );
+    const alphaStartAgeBounds = getPensionStartAgeBounds({
+      currentPlanningAge: context.currentPlanningAge,
+      leaveAge: next.alphaPensionLeaveAge,
+      minimumPensionAccessAge: context.minimumAlphaAccessAge,
+      retirementAge: next.requirementAge,
+    });
     const alphaStartAge = clampNumber(
       patch.alphaStartAge,
-      alphaStartAgeMin,
-      Math.max(alphaStartAgeMin, 70)
+      alphaStartAgeBounds.min,
+      alphaStartAgeBounds.max
     );
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
       alphaStartAge,
@@ -284,15 +301,16 @@ function applyAccessAgePatch(
   }
 
   if (patch.nuvosStartAge !== undefined) {
-    const nuvosStartAgeMin = Math.max(
-      next.nuvosPensionLeaveAge,
-      context.minimumAlphaAccessAge,
-      next.requirementAge
-    );
+    const nuvosStartAgeBounds = getPensionStartAgeBounds({
+      currentPlanningAge: context.currentPlanningAge,
+      leaveAge: next.nuvosPensionLeaveAge,
+      minimumPensionAccessAge: context.minimumAlphaAccessAge,
+      retirementAge: next.requirementAge,
+    });
     const nuvosStartAge = clampNumber(
       patch.nuvosStartAge,
-      nuvosStartAgeMin,
-      Math.max(nuvosStartAgeMin, 70)
+      nuvosStartAgeBounds.min,
+      nuvosStartAgeBounds.max
     );
     next.nuvosPensionDrawAge = normalizeSetting(
       "nuvosPensionDrawAge",
@@ -306,23 +324,31 @@ function applyUseByAgePatch(
   patch: Partial<RetirementIncomeBridgeParameters>
 ) {
   if (patch.sippUseByAge !== undefined) {
+    const sippUseByAgeBounds = getUseByAgeBounds({
+      drawAge: next.sippDrawAge,
+      lifeExpectancy: next.lifeExpectancy,
+    });
     next.sippWithdrawalTargetAge = normalizeSetting(
       "sippWithdrawalTargetAge",
       clampNumber(
         patch.sippUseByAge,
-        next.sippDrawAge + 0.25,
-        Math.min(100, next.lifeExpectancy)
+        sippUseByAgeBounds.min,
+        sippUseByAgeBounds.max
       )
     );
   }
 
   if (patch.isaUseByAge !== undefined) {
+    const isaUseByAgeBounds = getUseByAgeBounds({
+      drawAge: next.isaDrawAge,
+      lifeExpectancy: next.lifeExpectancy,
+    });
     next.isaWithdrawalTargetAge = normalizeSetting(
       "isaWithdrawalTargetAge",
       clampNumber(
         patch.isaUseByAge,
-        next.isaDrawAge + 0.25,
-        Math.min(100, next.lifeExpectancy)
+        isaUseByAgeBounds.min,
+        isaUseByAgeBounds.max
       )
     );
   }
@@ -332,14 +358,15 @@ function reconcileChartState(
   next: PensionSettings,
   context: ChartStateContext
 ) {
-  const earliestSippChartStartAge = Math.max(
-    context.minimumSippAccessAge,
-    context.defaultStatePensionAge
-  );
+  const sippAccessAgeBounds = getSippChartAccessAgeBounds({
+    defaultStatePensionAge: context.defaultStatePensionAge,
+    lifeExpectancy: next.lifeExpectancy,
+    minimumSippAccessAge: context.minimumSippAccessAge,
+  });
 
-  if (next.showSipp && next.sippDrawAge < earliestSippChartStartAge) {
+  if (next.showSipp && next.sippDrawAge < sippAccessAgeBounds.min) {
     next.sippDrawAge = normalizeSippDrawAge(
-      earliestSippChartStartAge,
+      sippAccessAgeBounds.min,
       next.dateOfBirth
     );
   }
@@ -356,27 +383,37 @@ function reconcileChartState(
 }
 
 function reconcileSippWithdrawalTarget(next: PensionSettings) {
+  const sippUseByAgeBounds = getUseByAgeBounds({
+    drawAge: next.sippDrawAge,
+    lifeExpectancy: next.lifeExpectancy,
+  });
+
   if (
     next.showSipp &&
     next.sippWithdrawalStrategy === "use_by_age" &&
-    next.sippWithdrawalTargetAge <= next.sippDrawAge
+    next.sippWithdrawalTargetAge < sippUseByAgeBounds.min
   ) {
     next.sippWithdrawalTargetAge = normalizeSetting(
       "sippWithdrawalTargetAge",
-      next.sippDrawAge + 0.25
+      sippUseByAgeBounds.min
     );
   }
 }
 
 function reconcileIsaWithdrawalTarget(next: PensionSettings) {
+  const isaUseByAgeBounds = getUseByAgeBounds({
+    drawAge: next.isaDrawAge,
+    lifeExpectancy: next.lifeExpectancy,
+  });
+
   if (
     next.showIsa &&
     next.isaWithdrawalStrategy === "use_by_age" &&
-    next.isaWithdrawalTargetAge <= next.isaDrawAge
+    next.isaWithdrawalTargetAge < isaUseByAgeBounds.min
   ) {
     next.isaWithdrawalTargetAge = normalizeSetting(
       "isaWithdrawalTargetAge",
-      next.isaDrawAge + 0.25
+      isaUseByAgeBounds.min
     );
   }
 }

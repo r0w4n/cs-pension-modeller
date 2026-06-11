@@ -18,6 +18,16 @@ export {
 } from "./app-domains/journeys";
 
 export {
+  getEarliestSippChartStartAge,
+  getPartialRetirementStartAgeBounds,
+  getPensionStartAgeBounds,
+  getSippChartAccessAgeBounds,
+  getStatePensionAgeBounds,
+  getUseByAgeBounds,
+  type ChartAgeBounds,
+} from "./app-domains/bridge-chart-bounds";
+
+export {
   buildComparisonStatusItems,
   buildComparisonTableRows,
   buildRetirementIncomeItems,

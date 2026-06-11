@@ -1,4 +1,6 @@
 export const SETTINGS_STORAGE_KEY = "cs-pension-modeller.settings";
+export const LOCAL_STORAGE_ENABLED_KEY =
+  "cs-pension-modeller.localStorageEnabled";
 export const FIRST_UNSUPPORTED_ADDED_PENSION_PURCHASE_AGE = 68;
 export const MAX_ADDED_PENSION_PURCHASE_INPUT_AGE = 67.9;
 export const NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE = "2028-04-06";

@@ -96,12 +96,13 @@ function FormulaBlock({ children }: { children: string }) {
   return <pre className="section-copy">{children}</pre>;
 }
 
-function MethodologyPage() {
+export function MethodologyPage() {
   return (
     <StaticPageLayout
       eyebrow="Civil Service"
       title="Methodology"
       lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, drawdown, tax and bridge funding."
+      description="Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."
     >
       <section>
         <p className="section-copy">
@@ -159,6 +160,33 @@ function MethodologyPage() {
           nominal terms, the target increases over time with the inflation
           assumption.
         </p>
+      </section>
+
+      <section>
+        <h2>Important assumptions and omissions</h2>
+        <p className="section-copy">
+          The modeller intentionally simplifies some areas so that results
+          remain understandable and configurable. These simplifications mean the
+          figures should be treated as planning estimates, not exact forecasts.
+        </p>
+        <ul className="section-copy">
+          <li>
+            Income Tax is estimated from configurable standard assumptions. It
+            does not cover Scottish tax bands, benefit interactions, tax code
+            changes, or other personal reliefs.
+          </li>
+          <li>
+            Inflation is only modelled where explicit CPI or growth assumptions
+            are enabled.
+          </li>
+          <li>
+            State Pension modelling does not cover benefit interactions,
+            overseas rules, lump-sum arrears choices, or pre-2016 deferral
+            rules.
+          </li>
+          <li>Added pension purchase revaluation is simplified.</li>
+          <li>Scheme-specific edge cases are not exhaustively represented.</li>
+        </ul>
       </section>
 
       <section>
@@ -225,7 +253,7 @@ function MethodologyPage() {
         <h3>Alpha draw age and early retirement</h3>
         <p className="section-copy">
           If Alpha is drawn before its normal pension age, the model applies
-          early-retirement reduction factors from the relevant factor table.
+          Alpha early-retirement reduction factors from the Alpha factor table.
         </p>
         <p className="section-copy">
           The model uses the selected Alpha draw date to determine whether a
@@ -268,10 +296,21 @@ function MethodologyPage() {
           retirement income and tax calculations.
         </p>
         <p className="section-copy">
-          The methodology page should make clear that nuvos is a distinct
-          pension stream with its own draw age and increase assumptions. It
-          should not be described as part of Alpha.
+          If nuvos is drawn before age 65, the model applies the nuvos
+          early-payment formula rather than the Alpha factor table. The formula
+          reduces the pension by 5% a year for the first 3 years early, 4% a
+          year for the next 3 years early, and 3% a year for any further early
+          period.
         </p>
+        <p className="section-copy">
+          For example, if nuvos is drawn 4 years and 10 months before age 65,
+          the model estimates the reduction as:
+        </p>
+        <FormulaBlock>
+          {
+            "3 years × 5% + 22 months × 4% / 12 = 22.33%\nfactor = 1 - 22.33% = 0.7767"
+          }
+        </FormulaBlock>
       </section>
 
       <section>
@@ -472,8 +511,12 @@ function MethodologyPage() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <MethodologyPage />
-  </StrictMode>
-);
+const methodologyRoot = document.getElementById("root");
+
+if (methodologyRoot) {
+  createRoot(methodologyRoot).render(
+    <StrictMode>
+      <MethodologyPage />
+    </StrictMode>
+  );
+}

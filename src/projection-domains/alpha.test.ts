@@ -9,7 +9,7 @@ import {
   calculateMonthlyAlphaPensionGross,
   calculateStartingAlphaPensionAtStartDate,
   getAddedPensionFactorForAge,
-  getEarlyRetirementReductionFactor,
+  getAlphaEarlyRetirementFactor,
 } from "./alpha";
 
 describe("projection alpha domain", () => {
@@ -81,11 +81,15 @@ describe("projection alpha domain", () => {
     ).toBeCloseTo(12820 / getAddedPensionFactorForAge(62), 6);
   });
 
-  it("interpolates early retirement reduction factors for decimal ages", () => {
-    expect(getEarlyRetirementReductionFactor(68, 60.5)).toBeCloseTo(
+  it("interpolates Alpha early retirement reduction factors for decimal ages", () => {
+    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBeCloseTo(
       (0.648 + 0.68) / 2,
       6
     );
+  });
+
+  it("uses the Alpha factor table rather than the nuvos formula", () => {
+    expect(getAlphaEarlyRetirementFactor(65, 60)).toBe(0.771);
   });
 
   it("applies early retirement reduction when draw date is on or before NPA", () => {

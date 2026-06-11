@@ -1,6 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { PensionSettings } from "../settings";
-import { createDefaultSettings } from "../settings";
 import {
   applyBridgeJourneyDefaults,
   clonePensionSettings,
@@ -31,27 +30,6 @@ export function showSavedLabel({
     setShowSavedFeedback(false);
     savedFeedbackTimerRef.current = null;
   }, 1400);
-}
-
-export function resetSettings({
-  savedFeedbackTimerRef,
-  setShowSavedFeedback,
-  setChartUndoStack,
-  setSettingsFormVersion,
-  setSettings,
-}: {
-  savedFeedbackTimerRef: MutableRefObject<ReturnType<
-    typeof window.setTimeout
-  > | null>;
-  setShowSavedFeedback: SetBoolean;
-  setChartUndoStack: SetChartUndoStack;
-  setSettingsFormVersion: SetNumber;
-  setSettings: SetSettings;
-}) {
-  showSavedLabel({ savedFeedbackTimerRef, setShowSavedFeedback });
-  setChartUndoStack([]);
-  setSettingsFormVersion((current) => current + 1);
-  setSettings(createDefaultSettings());
 }
 
 export function loadComparisonScenario({

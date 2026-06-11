@@ -9,6 +9,7 @@ function PrivacyPage() {
       eyebrow="Civil Service"
       title="Privacy"
       lead="This modeller runs entirely in your browser."
+      description="See what the modeller stores locally in your browser and what it does not collect or transmit."
     >
       <section>
         <h2>What we collect</h2>

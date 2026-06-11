@@ -9,6 +9,7 @@ function AboutPage() {
       eyebrow="Civil Service"
       title="About"
       lead="A small, local-first modeller for exploring pension timing and retirement income."
+      description="Learn what the Civil Service Pension Modeller does, how it stores data locally, and where it should be used cautiously."
     >
       <section>
         <h2>What it is</h2>

@@ -290,6 +290,11 @@ import {
   getTodayIsoDate,
 } from "./settings";
 
+const JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
+  "cs-pension-modeller.journeyRetirementIncomeDisplay";
+const COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
+  "cs-pension-modeller.comparisonRetirementIncomeDisplay";
+
 function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   return {
     dateOfBirth: defaultSettings.dateOfBirth,
@@ -1628,6 +1633,36 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Annual target retirement income")
     ).toHaveTextContent("£31,700.00");
+  });
+
+  it("restores journey and comparison summary displays independently after a refresh", () => {
+    window.localStorage.setItem(
+      JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
+      "annual"
+    );
+    window.localStorage.setItem(
+      COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
+      "monthly"
+    );
+
+    renderAcknowledgedExpertResult();
+
+    expect(
+      screen.getByLabelText("Annual retirement income before tax")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Annual target retirement income")
+    ).toHaveTextContent("£31,700.00");
+    expect(
+      within(
+        screen.getByRole("region", { name: "Comparison results" })
+      ).getByRole("button", { name: "Show monthly comparison values" })
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(
+        screen.getByRole("region", { name: "Comparison results" })
+      ).getByText("£2,641.67/month")
+    ).toBeInTheDocument();
   });
 
   it("updates settings and saves to local storage", () => {

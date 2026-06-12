@@ -75,7 +75,7 @@ export function ComparisonSummaryTable({
             minWidth={minWidth}
             renderCells={(row) => [
               row.isSectionDivider ? (
-                <strong>{row.section}</strong>
+                <strong key={row.key}>{row.section}</strong>
               ) : (
                 row.metric
               ),

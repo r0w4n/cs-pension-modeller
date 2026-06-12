@@ -1,17 +1,22 @@
 import js from "@eslint/js";
 import { fileURLToPath } from "node:url";
 import globals from "globals";
-import importPlugin from "eslint-plugin-import";
-import jsxA11y from "eslint-plugin-jsx-a11y";
-import react from "eslint-plugin-react";
-import reactHooks from "eslint-plugin-react-hooks";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import reactX from "@eslint-react/eslint-plugin";
+import { createNodeResolver, importX } from "eslint-plugin-import-x";
 import reactRefreshPlugin from "eslint-plugin-react-refresh";
 import sonarjs from "eslint-plugin-sonarjs";
 import testingLibrary from "eslint-plugin-testing-library";
-import vitest from "eslint-plugin-vitest";
+import vitest from "@vitest/eslint-plugin";
 import tseslint from "typescript-eslint";
 
 const tsconfigRootDir = fileURLToPath(new URL(".", import.meta.url));
+const importResolvers = [
+  createTypeScriptImportResolver({
+    project: "./tsconfig.eslint.json",
+  }),
+  createNodeResolver(),
+];
 
 export default tseslint.config(
   {
@@ -20,7 +25,7 @@ export default tseslint.config(
   js.configs.recommended,
   {
     files: ["**/*.{js,mjs,cjs}"],
-    ...importPlugin.flatConfigs.recommended,
+    ...importX.flatConfigs.recommended,
     languageOptions: {
       ecmaVersion: 2022,
       globals: {
@@ -29,19 +34,16 @@ export default tseslint.config(
       },
     },
     settings: {
-      "import/resolver": {
-        node: true,
-        typescript: true,
-      },
+      "import-x/resolver-next": importResolvers,
     },
   },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
       ...tseslint.configs.recommendedTypeChecked,
-      importPlugin.flatConfigs.recommended,
-      importPlugin.flatConfigs.typescript,
-      jsxA11y.flatConfigs.recommended,
+      importX.flatConfigs.recommended,
+      importX.flatConfigs.typescript,
+      reactX.configs["recommended-type-checked"],
     ],
     languageOptions: {
       ecmaVersion: 2022,
@@ -58,19 +60,11 @@ export default tseslint.config(
       },
     },
     plugins: {
-      react,
-      "react-hooks": reactHooks,
       "react-refresh": reactRefreshPlugin,
       sonarjs,
     },
     settings: {
-      react: {
-        version: "19.0",
-      },
-      "import/resolver": {
-        node: true,
-        typescript: true,
-      },
+      "import-x/resolver-next": importResolvers,
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [
@@ -80,22 +74,13 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
-      "react/jsx-key": "error",
-      "react/jsx-no-undef": "error",
-      "react/jsx-no-target-blank": "error",
-      "react/no-children-prop": "error",
-      "react/no-danger-with-children": "error",
-      "react/no-danger": "off",
-      "react/no-deprecated": "error",
-      "react/no-direct-mutation-state": "error",
-      "react/no-find-dom-node": "error",
-      "react/no-is-mounted": "error",
-      "react/no-namespace": "error",
-      "react/no-render-return-value": "error",
-      "react/no-string-refs": "error",
-      "react/no-unescaped-entities": "error",
-      "react/require-render-return": "error",
-      ...reactHooks.configs.recommended.rules,
+      "@eslint-react/jsx-no-children-prop": "error",
+      "@eslint-react/dom-no-unsafe-target-blank": "error",
+      "@eslint-react/purity": "off",
+      "@eslint-react/use-state": "off",
+      "@eslint-react/naming-convention-ref-name": "off",
+      "@eslint-react/no-children-to-array": "off",
+      "@eslint-react/no-children-for-each": "off",
       "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-floating-promises": "error",
       "sonarjs/cognitive-complexity": ["error", 25],

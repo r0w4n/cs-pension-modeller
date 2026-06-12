@@ -351,7 +351,6 @@ export function ProjectionTableFrame<Row>({
 
       <div
         className="table-body-shell"
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Required so keyboard users can focus and scroll this overflow region.
         tabIndex={0}
         aria-label="Scrollable monthly pension projection table"
         onScroll={(event) => syncHeaderScroll(event.currentTarget.scrollLeft)}

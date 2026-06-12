@@ -7,7 +7,8 @@ describe("Helmet", () => {
     const descriptionMeta = document.querySelector<HTMLMetaElement>(
       'meta[name="description"]'
     );
-    const originalDescription = descriptionMeta?.getAttribute("content");
+    const originalDescription =
+      descriptionMeta?.getAttribute("content") ?? null;
 
     const { unmount } = render(
       <Helmet>
@@ -33,11 +34,8 @@ describe("Helmet", () => {
       'meta[name="description"]'
     );
 
-    if (restoredDescriptionMeta && originalDescription !== null) {
-      expect(restoredDescriptionMeta).toHaveAttribute(
-        "content",
-        originalDescription
-      );
-    }
+    expect(restoredDescriptionMeta?.getAttribute("content") ?? null).toBe(
+      originalDescription
+    );
   });
 });

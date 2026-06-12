@@ -27,6 +27,26 @@ export function calculateMonthlyAlphaAccrual(pensionableEarnings: number) {
   return pensionableEarnings * MONTHLY_ALPHA_ACCRUAL_RATE;
 }
 
+export function calculateProjectedAlphaPensionableEarnings(
+  settings: PensionSettings,
+  rowDate: string
+) {
+  if (settings.alphaPayRisePercent <= 0) {
+    return settings.pensionableEarnings;
+  }
+
+  const fullYearsSinceStart = calculateWholeYearDifference(
+    settings.startDate,
+    rowDate
+  );
+  const annualPayRiseRate = settings.alphaPayRisePercent / 100;
+
+  return (
+    settings.pensionableEarnings *
+    (1 + annualPayRiseRate) ** fullYearsSinceStart
+  );
+}
+
 export function calculateMonthlyStandardAlphaAccrual(
   settings: PensionSettings,
   rowDate: string
@@ -37,8 +57,9 @@ export function calculateMonthlyStandardAlphaAccrual(
 
   return isEpaAccrualDate(settings, rowDate)
     ? 0
-    : calculateMonthlyAlphaAccrual(settings.pensionableEarnings) *
-        getPartialRetirementContributionMultiplier(settings, rowDate);
+    : calculateMonthlyAlphaAccrual(
+        calculateProjectedAlphaPensionableEarnings(settings, rowDate)
+      ) * getPartialRetirementContributionMultiplier(settings, rowDate);
 }
 
 export function calculateMonthlyEpaAlphaAccrual(
@@ -50,8 +71,9 @@ export function calculateMonthlyEpaAlphaAccrual(
   }
 
   return isEpaAccrualDate(settings, rowDate)
-    ? calculateMonthlyAlphaAccrual(settings.pensionableEarnings) *
-        getPartialRetirementContributionMultiplier(settings, rowDate)
+    ? calculateMonthlyAlphaAccrual(
+        calculateProjectedAlphaPensionableEarnings(settings, rowDate)
+      ) * getPartialRetirementContributionMultiplier(settings, rowDate)
     : 0;
 }
 

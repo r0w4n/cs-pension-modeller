@@ -156,6 +156,7 @@ function coerceSettings(
     alphaPensionLeaveAge: coerceNumber(input.alphaPensionLeaveAge),
     accruedPensionAtLastAbs: coerceNumber(input.accruedPensionAtLastAbs),
     pensionableEarnings: coerceNumber(input.pensionableEarnings),
+    alphaPayRisePercent: coerceNumber(input.alphaPayRisePercent),
     alphaPensionDrawAge: coerceNumber(input.alphaPensionDrawAge),
     alphaEpaEnabled: coerceBoolean(input.alphaEpaEnabled),
     alphaEpaYearsBeforeNpa: coerceNumber(input.alphaEpaYearsBeforeNpa),

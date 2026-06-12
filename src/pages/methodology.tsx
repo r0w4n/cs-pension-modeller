@@ -231,6 +231,13 @@ export function MethodologyPage() {
           an Annual Benefit Statement. It then projects future accrual from the
           selected start date.
         </p>
+        <p className="section-copy">
+          In the expert journey, an optional expected pay-rise percentage can
+          increase future Alpha pensionable earnings for each full year after
+          the calculation start date. Leaving it at 0% keeps pensionable
+          earnings flat. This affects future Alpha accrual, but does not model
+          payroll contribution deductions.
+        </p>
 
         <h3>Alpha revaluation</h3>
         <p className="section-copy">

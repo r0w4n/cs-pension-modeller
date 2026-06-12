@@ -66,6 +66,7 @@ export type PensionSettings = {
   alphaPensionLeaveAge: number;
   accruedPensionAtLastAbs: number;
   pensionableEarnings: number;
+  alphaPayRisePercent: number;
   alphaPensionDrawAge: number;
   alphaEpaEnabled: boolean;
   alphaEpaYearsBeforeNpa: number;

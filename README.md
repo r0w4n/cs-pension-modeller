@@ -93,6 +93,7 @@ The current version is driven by these inputs:
 - `Monthly added pension contribution`
 - `Age leaving Alpha pensionable service`
 - `Pensionable earnings`
+- optional expected Alpha pensionable earnings pay rise percentage
 - `Alpha pension draw age`
 - optional lump-sum added pension schedules
 
@@ -109,6 +110,7 @@ Some important current assumptions in the projection logic:
 
 - Alpha accrual is calculated monthly using a `2.32%` annual accrual rate.
 - The starting accrued Alpha pension is rolled forward from the ABS date to the chosen calculation start date.
+- When the expected Alpha pay-rise percentage is above 0%, it compounds annually from the calculation start date and feeds future pensionable earnings used for Alpha accrual.
 - Accrual stops at the earlier of:
   `Alpha pension draw age` or `Age leaving Alpha pensionable service`.
 - Lump-sum added pension is converted into extra annual pension using the age-based factor table in `src/data/alpha_pension_added_pension_factors.json`.

@@ -1542,6 +1542,32 @@ describe("projection calculations", () => {
     ).toBeCloseTo(8493.6, 6);
   });
 
+  it("uses expected pay rises for future Alpha pensionable earnings when above zero", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2047-05-15",
+      dateOfBirth: "1987-06-15",
+      requirementAge: 61,
+      alphaPensionDrawAge: 61,
+      alphaPensionLeaveAge: 61,
+      lifeExpectancy: 62,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      accruedPensionAtLastAbs: 8250,
+      alphaPensionAbsDate: "2047",
+      pensionableEarnings: 42000,
+      alphaPayRisePercent: 10,
+      alphaAddedPensionMonthly: 0,
+    };
+
+    const rows = createProjectionTable(settings);
+
+    expect(
+      findRowByDate(rows, "2048-05-15")?.annualAccruedAlphaPension
+    ).toBeCloseTo(9394.92, 6);
+  });
+
   it("creates projection rows through the life expectancy birthday", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

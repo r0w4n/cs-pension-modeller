@@ -328,6 +328,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     alphaPensionLeaveAge: defaultSettings.alphaPensionLeaveAge,
     accruedPensionAtLastAbs: defaultSettings.accruedPensionAtLastAbs,
     pensionableEarnings: defaultSettings.pensionableEarnings,
+    alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
     alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
     alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
     alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,

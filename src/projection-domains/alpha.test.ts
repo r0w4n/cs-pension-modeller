@@ -7,14 +7,49 @@ import {
   calculateMonthlyAddedPension,
   calculateMonthlyAlphaAccrual,
   calculateMonthlyAlphaPensionGross,
+  calculateProjectedAlphaPensionableEarnings,
   calculateStartingAlphaPensionAtStartDate,
   getAddedPensionFactorForAge,
   getAlphaEarlyRetirementFactor,
 } from "./alpha";
+import { defaultSettings } from "../settings";
 
 describe("projection alpha domain", () => {
   it("calculates monthly alpha accrual at 2.32 percent divided by 12", () => {
     expect(calculateMonthlyAlphaAccrual(42000)).toBeCloseTo(81.2, 6);
+  });
+
+  it("projects pensionable earnings from the calculation start date when pay rises are above zero", () => {
+    const settings = {
+      ...defaultSettings,
+      startDate: "2025-04-01",
+      pensionableEarnings: 50000,
+      alphaPayRisePercent: 3,
+    };
+
+    expect(
+      calculateProjectedAlphaPensionableEarnings(settings, "2026-03-31")
+    ).toBe(50000);
+    expect(
+      calculateProjectedAlphaPensionableEarnings(settings, "2026-04-01")
+    ).toBeCloseTo(51500, 6);
+    expect(
+      calculateProjectedAlphaPensionableEarnings(settings, "2027-04-01")
+    ).toBeCloseTo(53045, 6);
+  });
+
+  it("keeps pensionable earnings flat when expected pay rises are zero", () => {
+    expect(
+      calculateProjectedAlphaPensionableEarnings(
+        {
+          ...defaultSettings,
+          startDate: "2025-04-01",
+          pensionableEarnings: 50000,
+          alphaPayRisePercent: 0,
+        },
+        "2027-04-01"
+      )
+    ).toBe(50000);
   });
 
   it("calculates accrued alpha pension cumulatively", () => {

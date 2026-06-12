@@ -36,6 +36,7 @@ export type RangeField = {
     | "alphaAddedPensionMonthly"
     | "alphaPensionLeaveAge"
     | "pensionableEarnings"
+    | "alphaPayRisePercent"
     | "alphaPensionDrawAge"
     | "alphaEpaYearsBeforeNpa"
     | "nuvosPensionableEarnings"
@@ -441,6 +442,16 @@ export const fieldGroups: FieldGroup[] = [
             text: "Contribution rates",
           },
         ],
+      },
+      {
+        id: "alphaPayRisePercent",
+        label: "Expected pensionable earnings rise (% per year)",
+        type: "range",
+        min: 0,
+        max: 15,
+        step: 0.1,
+        description:
+          "The annual pay-rise assumption applied to current pensionable earnings before calculating future Alpha accrual. Set this to 0% to keep current pensionable earnings flat. The model compounds this once for each full year after the calculation start date.",
       },
       {
         id: "alphaPensionDrawAge",

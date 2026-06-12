@@ -3,3 +3,7 @@ name: "CodeQL Config"
 paths-ignore:
   - coverage/**
   - dist/**
+  - e2e/**
+  - src/test/**
+  - "**/*.test.ts"
+  - "**/*.test.tsx"

@@ -8,30 +8,30 @@ import {
 } from "./bridge-chart-bounds";
 
 describe("bridge-chart-bounds", () => {
-  it("uses the later of SIPP access age and State Pension age for chart SIPP starts", () => {
+  it("uses the later of SIPP access age and retirement age for chart SIPP starts", () => {
     expect(
       getEarliestSippChartStartAge({
-        defaultStatePensionAge: 68,
         minimumSippAccessAge: 57,
+        retirementAge: 55,
       })
-    ).toBe(68);
+    ).toBe(57);
 
     expect(
       getEarliestSippChartStartAge({
-        defaultStatePensionAge: 55,
         minimumSippAccessAge: 57,
+        retirementAge: 60,
       })
-    ).toBe(57);
+    ).toBe(60);
   });
 
   it("bounds chart SIPP access age between earliest chart start and life expectancy", () => {
     expect(
       getSippChartAccessAgeBounds({
-        defaultStatePensionAge: 68,
         lifeExpectancy: 85,
         minimumSippAccessAge: 57,
+        retirementAge: 60,
       })
-    ).toEqual({ min: 68, max: 85 });
+    ).toEqual({ min: 60, max: 85 });
   });
 
   it("keeps partial retirement start before full retirement", () => {

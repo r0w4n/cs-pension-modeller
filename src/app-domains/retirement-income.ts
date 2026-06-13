@@ -396,9 +396,9 @@ export function createBridgeChartLimits(
     Math.min(70, statePensionAge)
   );
   const sippAccessAgeBounds = getSippChartAccessAgeBounds({
-    defaultStatePensionAge,
     lifeExpectancy: settings.lifeExpectancy,
     minimumSippAccessAge,
+    retirementAge: settings.requirementAge,
   });
   const isaAccessAgeMax = Math.max(currentPlanningAge, settings.lifeExpectancy);
   const partialRetirementStartAgeBounds = getPartialRetirementStartAgeBounds({

@@ -68,12 +68,48 @@ describe("chart-state", () => {
     expect(next.sippDrawAge).toBe(68);
   });
 
-  it("does not let SIPP draw age move before Normal Pension Age", () => {
+  it("allows SIPP draw age to move to 55 when age 55 is reached before 6 April 2028", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1973-04-05",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      sippDrawAge: 68,
+      showSipp: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      sippAccessAge: 55,
+    });
+
+    expect(next.requirementAge).toBe(55);
+    expect(next.sippDrawAge).toBe(55);
+  });
+
+  it("does not let SIPP draw age move before 57 when age 55 is reached on 6 April 2028", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1973-04-06",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      sippDrawAge: 68,
+      showSipp: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      sippAccessAge: 55,
+    });
+
+    expect(next.requirementAge).toBe(55);
+    expect(next.sippDrawAge).toBe(57);
+  });
+
+  it("does not let SIPP draw age move before retirement age", () => {
     const current = {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
       startDate: "2026-06-01",
-      requirementAge: 70,
+      requirementAge: 62,
       sippDrawAge: 68,
       showSipp: true,
     };
@@ -82,8 +118,8 @@ describe("chart-state", () => {
       sippAccessAge: 58,
     });
 
-    expect(next.requirementAge).toBe(70);
-    expect(next.sippDrawAge).toBe(68);
+    expect(next.requirementAge).toBe(62);
+    expect(next.sippDrawAge).toBe(62);
   });
 
   it("allows SIPP draw age to move beyond State Pension age", () => {

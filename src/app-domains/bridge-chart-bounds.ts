@@ -8,27 +8,27 @@ const MAXIMUM_CHART_PENSION_START_AGE = 70;
 const MAXIMUM_WITHDRAWAL_TARGET_AGE = 100;
 
 export function getEarliestSippChartStartAge({
-  defaultStatePensionAge,
   minimumSippAccessAge,
+  retirementAge,
 }: {
-  defaultStatePensionAge: number;
   minimumSippAccessAge: number;
+  retirementAge: number;
 }) {
-  return Math.max(minimumSippAccessAge, defaultStatePensionAge);
+  return Math.max(minimumSippAccessAge, retirementAge);
 }
 
 export function getSippChartAccessAgeBounds({
-  defaultStatePensionAge,
   lifeExpectancy,
   minimumSippAccessAge,
+  retirementAge,
 }: {
-  defaultStatePensionAge: number;
   lifeExpectancy: number;
   minimumSippAccessAge: number;
+  retirementAge: number;
 }): ChartAgeBounds {
   const min = getEarliestSippChartStartAge({
-    defaultStatePensionAge,
     minimumSippAccessAge,
+    retirementAge,
   });
 
   return {

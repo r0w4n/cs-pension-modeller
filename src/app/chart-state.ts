@@ -257,9 +257,9 @@ function applyAccessAgePatch(
 ) {
   if (patch.sippAccessAge !== undefined) {
     const sippAccessAgeBounds = getSippChartAccessAgeBounds({
-      defaultStatePensionAge: context.defaultStatePensionAge,
       lifeExpectancy: next.lifeExpectancy,
       minimumSippAccessAge: context.minimumSippAccessAge,
+      retirementAge: next.requirementAge,
     });
     const sippAccessAge = clampNumber(
       patch.sippAccessAge,
@@ -359,9 +359,9 @@ function reconcileChartState(
   context: ChartStateContext
 ) {
   const sippAccessAgeBounds = getSippChartAccessAgeBounds({
-    defaultStatePensionAge: context.defaultStatePensionAge,
     lifeExpectancy: next.lifeExpectancy,
     minimumSippAccessAge: context.minimumSippAccessAge,
+    retirementAge: next.requirementAge,
   });
 
   if (next.showSipp && next.sippDrawAge < sippAccessAgeBounds.min) {

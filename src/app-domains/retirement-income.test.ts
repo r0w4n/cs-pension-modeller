@@ -178,18 +178,46 @@ describe("retirement-income transition points", () => {
 });
 
 describe("retirement-income chart limits", () => {
-  it("requires SIPP draw age to stay at or after Normal Pension Age", () => {
+  it("requires SIPP draw age to stay at or after retirement age", () => {
     const settings = {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
       startDate: "2026-06-01",
-      requirementAge: 65,
+      requirementAge: 60,
       sippDrawAge: 65,
     };
 
     const limits = createBridgeChartLimits(settings);
 
-    expect(limits.sippAccessAge.min).toBe(68);
+    expect(limits.sippAccessAge.min).toBe(60);
+  });
+
+  it("uses age 55 as the SIPP chart minimum when age 55 is reached before 6 April 2028", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1973-04-05",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      sippDrawAge: 55,
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.sippAccessAge.min).toBe(55);
+  });
+
+  it("uses age 57 as the SIPP chart minimum when age 55 is reached on 6 April 2028", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1973-04-06",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      sippDrawAge: 57,
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.sippAccessAge.min).toBe(57);
   });
 
   it("requires nuvos draw age to stay at or after retirement age", () => {

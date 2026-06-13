@@ -1076,6 +1076,12 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
+
+    openJourneyStep(/^6Your bridging pots$/);
+
+    expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
+      defaultSettings.isaDrawAge.toString()
+    );
   });
 
   it("finishes the simple journey on the shared comparison result interface", async () => {

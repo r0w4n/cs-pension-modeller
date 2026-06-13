@@ -208,6 +208,7 @@ export const JOURNEY_DEFINITIONS = [
         fieldIds: [
           "isaCurrentPot",
           "isaMonthlyContribution",
+          "isaDrawAge",
           "isaRealInterestPercent",
           "sippCurrentPot",
           "sippMonthlyContribution",

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react";
 import {
   RetirementIncomeBridgeChart,
   type RetirementIncomeBridgeChartProps,
@@ -700,11 +700,21 @@ describe("RetirementIncomeBridgeChart", () => {
       changedTouches: [{ identifier: 1, clientX: 109, clientY: 150 }],
       touches: [{ identifier: 1, clientX: 109, clientY: 150 }],
     });
-    fireEvent.touchMove(retirementMarker, {
+    const touchMoveEvent = createEvent.touchMove(retirementMarker, {
       changedTouches: [{ identifier: 1, clientX: 97, clientY: 150 }],
       touches: [{ identifier: 1, clientX: 97, clientY: 150 }],
+      bubbles: false,
       cancelable: true,
     });
+    Object.defineProperty(touchMoveEvent, "preventDefault", {
+      configurable: true,
+      value: vi.fn(() => {
+        throw new Error(
+          "Touch drag should not call preventDefault from the React touchmove handler"
+        );
+      }),
+    });
+    fireEvent(retirementMarker, touchMoveEvent);
     fireEvent.touchEnd(retirementMarker, {
       changedTouches: [{ identifier: 1, clientX: 97, clientY: 150 }],
       touches: [],

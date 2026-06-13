@@ -1040,10 +1040,6 @@ export function RetirementIncomeBridgeChart({
       return;
     }
 
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-
     updateDraftMarkerAgeFromClient(touch.clientX, touch.clientY, markerKey);
   };
 
@@ -1213,10 +1209,6 @@ export function RetirementIncomeBridgeChart({
 
     if (!touch) {
       return;
-    }
-
-    if (event.cancelable) {
-      event.preventDefault();
     }
 
     updateDraftTargetIncomeFromClient(touch.clientX, touch.clientY);

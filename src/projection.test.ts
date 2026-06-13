@@ -2320,6 +2320,57 @@ describe("projection calculations", () => {
     );
   });
 
+  it("uses active flexible pot income in the summary when draw ages land on month-start rows", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-06-13",
+      dateOfBirth: "1970-01-01",
+      lifeExpectancy: 60,
+      requirementAge: 57,
+      normalPensionAge: 68,
+      showAlpha: false,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: true,
+      showIsa: true,
+      taxationEnabled: false,
+      applyPensionIncreases: true,
+      alphaPensionAbsDate: "2025",
+      alphaPensionLeaveAge: 57,
+      pensionableEarnings: 0,
+      alphaPensionDrawAge: 57,
+      sippCurrentPot: 120000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 57,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 59,
+      sippRealInterestPercent: 0,
+      sippTaxReliefRate: "none",
+      isaCurrentPot: 60000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 57,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 59,
+      isaRealInterestPercent: 0,
+    };
+
+    const rows = createProjectionTable(settings);
+    const summary = generatePensionSummary(rows, settings);
+
+    expect(findRowByDate(rows, "2027-01-01")?.monthlySippPension).toBe(0);
+    expect(findRowByDate(rows, "2027-01-01")?.monthlyIsaPension).toBe(0);
+    expect(summary.sippPension.monthlyAtDraw).toBeGreaterThan(0);
+    expect(summary.isaPension.monthlyAtDraw).toBeGreaterThan(0);
+    expect(
+      summary.retirementIncome.sources.find((source) => source.key === "sipp")
+        ?.monthlyIncome
+    ).toBe(summary.sippPension.monthlyAtDraw);
+    expect(
+      summary.retirementIncome.sources.find((source) => source.key === "isa")
+        ?.monthlyIncome
+    ).toBe(summary.isaPension.monthlyAtDraw);
+  });
+
   it("includes visible nuvos pension in retirement income sources", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

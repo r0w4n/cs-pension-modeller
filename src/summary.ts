@@ -161,13 +161,28 @@ function buildRowSummaryContext(
     sippDrawRow: findFirstRowAtOrAfterDate(tableData, input.sippDrawDate),
     isaDrawRow: findFirstRowAtOrAfterDate(tableData, input.isaDrawDate),
   };
+  const flexibleIncomeRows = {
+    sippIncomeRow: findFirstDrawdownRowAtOrAfterDate(
+      tableData,
+      input.sippDrawDate,
+      "monthlySippPension"
+    ),
+    isaIncomeRow: findFirstDrawdownRowAtOrAfterDate(
+      tableData,
+      input.isaDrawDate,
+      "monthlyIsaPension"
+    ),
+  };
   const maximumAnnualAccrued = Math.max(
     ...tableData.map((row) => row.annualAccruedAlphaPension)
   );
   const maximumAnnualNuvosAccrued = settings.showNuvos
     ? Math.max(...tableData.map((row) => row.annualNuvosPension))
     : 0;
-  const retirementIncome = buildRowRetirementIncomeSummary(settings, drawRows);
+  const retirementIncome = buildRowRetirementIncomeSummary(settings, {
+    ...drawRows,
+    ...flexibleIncomeRows,
+  });
 
   return {
     alphaAtDraw:
@@ -181,14 +196,26 @@ function buildRowSummaryContext(
     nuvosMonthlyAtDraw: drawRows.nuvosDrawRow?.monthlyNuvosPensionGross ?? 0,
     maximumAnnualNuvosAccrued,
     sippPotAtDraw: drawRows.sippDrawRow?.sippPot ?? 0,
-    sippMonthlyAtDraw: drawRows.sippDrawRow?.monthlySippPension ?? 0,
+    sippMonthlyAtDraw:
+      flexibleIncomeRows.sippIncomeRow?.monthlySippPension ?? 0,
     isaPotAtDraw: drawRows.isaDrawRow?.isaPot ?? 0,
-    isaMonthlyAtDraw: drawRows.isaDrawRow?.monthlyIsaPension ?? 0,
+    isaMonthlyAtDraw: flexibleIncomeRows.isaIncomeRow?.monthlyIsaPension ?? 0,
     monthlyAtAlphaStart: drawRows.alphaDrawRow?.totalMonthlyNetIncome ?? 0,
     monthlyAtStateStart: drawRows.statePensionRow?.totalMonthlyNetIncome ?? 0,
     monthlyStatePension: drawRows.statePensionRow?.monthlyStatePension ?? 0,
     retirementIncome,
   };
+}
+
+function findFirstDrawdownRowAtOrAfterDate(
+  tableData: ProjectionRow[],
+  date: string,
+  incomeKey: "monthlySippPension" | "monthlyIsaPension"
+) {
+  return (
+    tableData.find((row) => row.date >= date && row[incomeKey] > 0) ??
+    findFirstRowAtOrAfterDate(tableData, date)
+  );
 }
 
 function buildRowRetirementIncomeSummary(
@@ -199,6 +226,8 @@ function buildRowRetirementIncomeSummary(
     statePensionRow: ProjectionRow | undefined;
     sippDrawRow: ProjectionRow | undefined;
     isaDrawRow: ProjectionRow | undefined;
+    sippIncomeRow: ProjectionRow | undefined;
+    isaIncomeRow: ProjectionRow | undefined;
   }
 ) {
   const alphaMonthlyIncome =
@@ -207,8 +236,8 @@ function buildRowRetirementIncomeSummary(
     drawRows.nuvosDrawRow?.monthlyNuvosPensionGross ?? 0;
   const statePensionMonthlyIncome =
     drawRows.statePensionRow?.monthlyStatePension ?? 0;
-  const sippMonthlyIncome = drawRows.sippDrawRow?.monthlySippPension ?? 0;
-  const isaMonthlyIncome = drawRows.isaDrawRow?.monthlyIsaPension ?? 0;
+  const sippMonthlyIncome = drawRows.sippIncomeRow?.monthlySippPension ?? 0;
+  const isaMonthlyIncome = drawRows.isaIncomeRow?.monthlyIsaPension ?? 0;
 
   return buildRetirementIncomeSummary({
     alphaMonthlyIncome,

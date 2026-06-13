@@ -1354,15 +1354,56 @@ function renderFlexibleAssetsExhaustedCell(result: ComparisonResult) {
     return renderComparisonToneCell("No", "good");
   }
 
-  const tone =
-    exhaustedAge < result.scenario.settings.lifeExpectancy
-      ? "problem"
-      : "caution";
+  const tone = getFlexibleAssetsExhaustionTone(
+    exhaustedAge,
+    result.scenario.settings
+  );
 
   return renderComparisonToneCell(
     `Yes at age ${formatDecimalAge(exhaustedAge)}`,
     tone
   );
+}
+
+function getFlexibleAssetsExhaustionTone(
+  exhaustedAge: number,
+  settings: PensionSettings
+): "caution" | "problem" {
+  const expectedExhaustionAge =
+    getExpectedFlexibleAssetsExhaustionAge(settings);
+
+  return exhaustedAge < expectedExhaustionAge ? "problem" : "caution";
+}
+
+function getExpectedFlexibleAssetsExhaustionAge(settings: PensionSettings) {
+  const expectedAges = [
+    settings.showIsa
+      ? getExpectedPotExhaustionAge(
+          settings.isaWithdrawalStrategy,
+          settings.isaWithdrawalTargetAge,
+          settings.lifeExpectancy
+        )
+      : null,
+    settings.showSipp
+      ? getExpectedPotExhaustionAge(
+          settings.sippWithdrawalStrategy,
+          settings.sippWithdrawalTargetAge,
+          settings.lifeExpectancy
+        )
+      : null,
+  ].filter((age): age is number => age !== null);
+
+  return expectedAges.length
+    ? Math.max(...expectedAges)
+    : settings.lifeExpectancy;
+}
+
+function getExpectedPotExhaustionAge(
+  strategy: "use_by_age" | "zero_at_death" | "percentage",
+  targetAge: number,
+  lifeExpectancy: number
+) {
+  return strategy === "use_by_age" ? targetAge : lifeExpectancy;
 }
 
 function getPotDepletionTone(

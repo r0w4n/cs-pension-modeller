@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { isValidElement } from "react";
+import type { ReactNode } from "react";
 import {
   buildComparisonStatusItems,
   buildComparisonTableRows,
@@ -290,7 +292,96 @@ describe("comparison table rows", () => {
     ).toEqual([]);
     expect(result.targetMissMonths).toBe(0);
   });
+
+  it("shows expected flexible bridge exhaustion as caution rather than a problem", () => {
+    const settings = createFlexibleAssetsScenario({
+      isaCurrentPot: 120000,
+    });
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    const assetsExhaustedValue = getComparisonRow(
+      buildComparisonTableRows([result]),
+      "Assets exhausted"
+    ).values[0];
+
+    expect(getComparisonToneClass(assetsExhaustedValue)).toContain(
+      "comparison-cell--caution"
+    );
+  });
+
+  it("keeps unexpectedly early flexible asset exhaustion marked as a problem", () => {
+    const settings = createFlexibleAssetsScenario({
+      isaCurrentPot: 0,
+    });
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    const assetsExhaustedValue = getComparisonRow(
+      buildComparisonTableRows([result]),
+      "Assets exhausted"
+    ).values[0];
+
+    expect(getComparisonToneClass(assetsExhaustedValue)).toContain(
+      "comparison-cell--problem"
+    );
+  });
 });
+
+function createFlexibleAssetsScenario(input: { isaCurrentPot: number }) {
+  return {
+    ...createDefaultSettings(),
+    startDate: "2026-06-13",
+    dateOfBirth: "1970-01-01",
+    lifeExpectancy: 60,
+    requirementAge: 57,
+    normalPensionAge: 68,
+    showAlpha: false,
+    showNuvos: false,
+    showStatePension: false,
+    showSipp: false,
+    showIsa: true,
+    taxationEnabled: false,
+    applyPensionIncreases: true,
+    alphaPensionAbsDate: "2025",
+    alphaPensionLeaveAge: 57,
+    pensionableEarnings: 0,
+    alphaPensionDrawAge: 57,
+    sippCurrentPot: 0,
+    sippMonthlyContribution: 0,
+    isaCurrentPot: input.isaCurrentPot,
+    isaMonthlyContribution: 0,
+    isaDrawAge: 57,
+    isaLumpSums: [],
+    isaRealInterestPercent: 0,
+    isaWithdrawalStrategy: "use_by_age" as const,
+    isaWithdrawalTargetAge: 59,
+  };
+}
+
+function getComparisonToneClass(value: ReactNode) {
+  if (!isValidElement<{ className?: string }>(value)) {
+    throw new Error("Expected a rendered comparison tone cell.");
+  }
+
+  return value.props.className ?? "";
+}
 
 function getFirstComparisonValue(
   rows: ReturnType<typeof buildComparisonTableRows>,

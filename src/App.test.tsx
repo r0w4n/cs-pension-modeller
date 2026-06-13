@@ -2486,6 +2486,13 @@ describe("App settings form", () => {
     expect(screen.queryByLabelText("Build-up shown")).not.toBeInTheDocument();
   });
 
+  it("does not show target income in the chart controls", () => {
+    renderAcknowledgedExpertResult();
+
+    expect(screen.queryByLabelText("Target income")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Target income line")).toBeInTheDocument();
+  });
+
   it("can disable partial retirement from the chart controls", () => {
     renderAcknowledgedApp();
 

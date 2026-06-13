@@ -2014,26 +2014,6 @@ export function RetirementIncomeBridgeChart({
             }
           />
         ) : null}
-        <BridgeMetricControl
-          label="Target income"
-          value={
-            displayMode === "monthly"
-              ? targetIncomeAnnual / 12
-              : targetIncomeAnnual
-          }
-          suffix={displayMode === "monthly" ? "/ month" : "/ year"}
-          limit={getTargetIncomeControlLimit(
-            limits.targetIncomeAnnual,
-            displayMode
-          )}
-          colour="#0b3c5d"
-          onChange={(value) =>
-            onChangeParameters({
-              targetIncomeAnnual:
-                displayMode === "monthly" ? value * 12 : value,
-            })
-          }
-        />
       </div>
     </section>
   );
@@ -2535,21 +2515,6 @@ function bringActiveMarkerToFront<T extends MilestoneMarker>(
     ...markers.filter((marker) => marker.key !== activeMarkerKey),
     activeMarker,
   ];
-}
-
-function getTargetIncomeControlLimit(
-  limit: NumberLimit,
-  displayMode: "annual" | "monthly"
-) {
-  if (displayMode === "annual") {
-    return limit;
-  }
-
-  return {
-    min: limit.min / 12,
-    max: limit.max / 12,
-    step: limit.step / 12,
-  };
 }
 
 function getInvalidMarkerKeys(validationIssues: PensionValidationIssue[]) {

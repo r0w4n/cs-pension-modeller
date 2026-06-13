@@ -281,6 +281,13 @@ vi.mock("./projection", async () => {
   };
 });
 
+vi.mock("./analytics", () => ({
+  initialiseAnalytics: vi.fn(),
+  trackAnalyticsEvent: vi.fn(),
+  trackPageView: vi.fn(),
+}));
+
+import { trackAnalyticsEvent, trackPageView } from "./analytics";
 import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
@@ -455,6 +462,8 @@ describe("App settings form", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.history.replaceState({}, "", "/");
+    vi.mocked(trackAnalyticsEvent).mockClear();
+    vi.mocked(trackPageView).mockClear();
   });
 
   afterEach(() => {
@@ -468,7 +477,7 @@ describe("App settings form", () => {
     expect(document.title).toBe("Civil Service Pension Modeller");
     expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
       "content",
-      "Estimate your Civil Service pension and retirement income with a local-only planning tool."
+      "Estimate your Civil Service pension and retirement income with a browser-based planning tool."
     );
     expect(
       screen.getByRole("heading", { name: "Choose the level of detail" })
@@ -496,6 +505,39 @@ describe("App settings form", () => {
     );
 
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("expert");
+  });
+
+  it("tracks coarse analytics events without entered financial values", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    expect(trackPageView).toHaveBeenCalledTimes(1);
+    expect(trackAnalyticsEvent).toHaveBeenCalledWith("journey_selected", {
+      journey_mode: "simple",
+      previous_journey_mode: "simple",
+    });
+
+    const targetIncomeInput = screen.getByLabelText(
+      "Target retirement income (£ per year)"
+    );
+
+    fireEvent.change(targetIncomeInput, {
+      target: { value: "50000" },
+    });
+    fireEvent.blur(targetIncomeInput);
+
+    expect(trackAnalyticsEvent).toHaveBeenCalledWith("setting_changed", {
+      field_id: "desiredRetirementIncome",
+      journey_mode: "simple",
+    });
+
+    const trackedParameters = vi
+      .mocked(trackAnalyticsEvent)
+      .mock.calls.map(([, parameters]) => parameters ?? {});
+
+    for (const parameters of trackedParameters) {
+      expect(Object.values(parameters)).not.toContain(50000);
+      expect(Object.values(parameters)).not.toContain("50000");
+    }
   });
 
   it("restores a previously selected mode on reload", () => {

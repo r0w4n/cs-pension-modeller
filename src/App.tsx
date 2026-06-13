@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { trackPageView } from "./analytics";
 import { createRetirementIncomeSeries } from "./app-domains";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
 import { ModeSelection } from "./app/mode-selection";
@@ -34,6 +36,10 @@ function App() {
     visibleSettings,
   } = useAppController();
 
+  useEffect(() => {
+    trackPageView();
+  }, []);
+
   if (isSettingsRoute()) {
     return (
       <SettingsPage
@@ -54,7 +60,7 @@ function App() {
         <title>Civil Service Pension Modeller</title>
         <meta
           name="description"
-          content="Estimate your Civil Service pension and retirement income with a local-only planning tool."
+          content="Estimate your Civil Service pension and retirement income with a browser-based planning tool."
         />
       </Helmet>
 
@@ -81,8 +87,9 @@ function App() {
             </p>
             <p className="section-copy">
               Your inputs are saved locally in your browser so you can come back
-              to the same assumptions later. This site does not use analytics
-              cookies, and no financial or personal information is transmitted.
+              to the same assumptions later. This site uses analytics to record
+              coarse interaction events only; no financial or personal inputs
+              are sent.
             </p>
             <button
               type="button"

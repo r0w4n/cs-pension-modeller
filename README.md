@@ -165,6 +165,17 @@ older browser data can be migrated safely when fields are renamed or
 restructured. The current migration history is documented in
 [docs/settings-schema-version-history.md](/Users/rowan/Documents/github/cs-pension-calculator/docs/settings-schema-version-history.md).
 
+## Analytics
+
+Google Analytics is disabled unless `VITE_GA_MEASUREMENT_ID` is set for the
+Vite build. When configured, the app sends coarse interaction events only:
+page views, notice acknowledgement, selected journey, journey step, changed
+field identifier, comparison actions, and chart control names.
+
+Analytics events must not include entered amounts, dates, ages, scenario names,
+pension identifiers, saved settings payloads, or calculated retirement income
+figures.
+
 ## Development
 
 Requirements:

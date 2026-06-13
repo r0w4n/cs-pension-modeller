@@ -5,6 +5,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { trackAnalyticsEvent } from "../analytics";
 import type { JourneyDefinition, JourneyStepDefinition } from "../app-domains";
 import type { PensionSettings } from "../settings";
 
@@ -106,6 +107,7 @@ export function JourneyFlow({
   const isLastStep = activeStepIndex === visibleSteps.length - 1;
   const topBookmarkRef = useRef<HTMLDivElement | null>(null);
   const hasMountedRef = useRef(false);
+  const trackedStepRef = useRef("");
 
   useEffect(() => {
     if (!activeStep) {
@@ -121,6 +123,27 @@ export function JourneyFlow({
       topBookmarkRef.current.scrollIntoView({ block: "start" });
     }
   }, [activeStep]);
+
+  useEffect(() => {
+    if (!activeStep) {
+      return;
+    }
+
+    const trackingKey = `${journey.id}:${activeStep.id}`;
+
+    if (trackedStepRef.current === trackingKey) {
+      return;
+    }
+
+    trackedStepRef.current = trackingKey;
+    trackAnalyticsEvent("journey_step_viewed", {
+      journey_id: journey.id,
+      step_id: activeStep.id,
+      step_index: activeStepIndex + 1,
+      step_count: visibleSteps.length,
+      step_kind: activeStep.kind,
+    });
+  }, [activeStep, activeStepIndex, journey.id, visibleSteps.length]);
 
   if (!activeStep) {
     return null;

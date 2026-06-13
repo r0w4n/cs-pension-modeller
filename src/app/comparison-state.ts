@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { trackAnalyticsEvent } from "../analytics";
 import type { RetirementIncomeDisplay } from "../projection";
 import type { RetirementIncomePoint } from "../RetirementIncomeBridgeChart";
 import {
@@ -151,6 +152,9 @@ export function useScenarioActions({
         updatedAt: now,
       },
     ]);
+    trackAnalyticsEvent("comparison_scenario_added", {
+      scenario_count: scenarios.length + 1,
+    });
     setScenarioNameDraft("");
   }, [
     comparisonLimitReached,
@@ -181,6 +185,9 @@ export function useScenarioActions({
   const removeScenario = useCallback(
     (id: string) => {
       onScenariosChange(scenarios.filter((scenario) => scenario.id !== id));
+      trackAnalyticsEvent("comparison_scenario_removed", {
+        scenario_count: Math.max(0, scenarios.length - 1),
+      });
     },
     [onScenariosChange, scenarios]
   );

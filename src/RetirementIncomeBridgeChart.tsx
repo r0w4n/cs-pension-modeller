@@ -9,6 +9,7 @@ import {
   type TouchEvent,
 } from "react";
 import * as d3 from "d3";
+import { trackAnalyticsEvent } from "./analytics";
 import type { PensionValidationIssue } from "./settings";
 import {
   clampNumber,
@@ -792,6 +793,17 @@ export function RetirementIncomeBridgeChart({
     setPendingTargetIncomeAnnual(nextTargetIncomeAnnual);
   };
 
+  const changeDisplayMode = (nextDisplayMode: "annual" | "monthly") => {
+    if (nextDisplayMode === displayMode) {
+      return;
+    }
+
+    setDisplayMode(nextDisplayMode);
+    trackAnalyticsEvent("chart_display_changed", {
+      display_mode: nextDisplayMode,
+    });
+  };
+
   const getPlotPointerPositionFromClient = useCallback(
     (clientX: number, clientY: number): { x: number; y: number } | null => {
       const svg = svgRef.current;
@@ -1566,7 +1578,7 @@ export function RetirementIncomeBridgeChart({
             }
             aria-label="Show chart as monthly"
             aria-pressed={displayMode === "monthly"}
-            onClick={() => setDisplayMode("monthly")}
+            onClick={() => changeDisplayMode("monthly")}
           >
             Monthly
           </button>
@@ -1579,7 +1591,7 @@ export function RetirementIncomeBridgeChart({
             }
             aria-label="Show chart as annual"
             aria-pressed={displayMode === "annual"}
-            onClick={() => setDisplayMode("annual")}
+            onClick={() => changeDisplayMode("annual")}
           >
             Annual
           </button>
@@ -1941,10 +1953,23 @@ export function RetirementIncomeBridgeChart({
         selectedMobileMarker={selectedMobileMarker}
         visibleMilestoneMarkers={visibleMilestoneMarkers}
         onChangeParameters={onChangeParameters}
-        onSelectMobileMarker={(key) => setSelectedMobileMarkerKey(key)}
-        onToggleVisibility={() =>
-          setIsMobileNavigationVisible((currentValue) => !currentValue)
-        }
+        onSelectMobileMarker={(key) => {
+          setSelectedMobileMarkerKey(key);
+          trackAnalyticsEvent("chart_mobile_marker_selected", {
+            chart_marker: key,
+          });
+        }}
+        onToggleVisibility={() => {
+          setIsMobileNavigationVisible((currentValue) => {
+            const nextValue = !currentValue;
+
+            trackAnalyticsEvent("chart_mobile_controls_toggled", {
+              expanded: nextValue,
+            });
+
+            return nextValue;
+          });
+        }}
       />
 
       <div className="bridge-control-grid">

@@ -33,7 +33,9 @@ function AboutPage() {
         <h2>Your data</h2>
         <p className="section-copy">
           Settings are saved locally in your browser storage so you can return
-          to the same assumptions later. Nothing is transmitted by the app.
+          to the same assumptions later. This site uses analytics to send only
+          coarse interaction events; your financial and personal inputs are not
+          included.
         </p>
       </section>
     </StaticPageLayout>

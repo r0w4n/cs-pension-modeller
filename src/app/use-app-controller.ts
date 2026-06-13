@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useState } from "react";
+import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
@@ -141,6 +142,10 @@ export function useAppController() {
     key: K,
     value: PensionSettings[K]
   ) {
+    trackAnalyticsEvent("setting_changed", {
+      field_id: key,
+      journey_mode: activeJourneyMode ?? "none",
+    });
     updateSettingAction({
       key,
       value,
@@ -154,6 +159,13 @@ export function useAppController() {
   function updateBridgeChartParameters(
     patch: Partial<RetirementIncomeBridgeParameters>
   ) {
+    const changedKeys = Object.keys(patch);
+
+    trackAnalyticsEvent("chart_parameter_changed", {
+      chart_parameter: changedKeys[0],
+      parameter_count: changedKeys.length,
+      journey_mode: activeJourneyMode ?? "none",
+    });
     updateBridgeChartParametersAction({
       patch,
       settings: effectiveSettings,
@@ -164,6 +176,10 @@ export function useAppController() {
   }
 
   function loadComparisonScenario(scenarioSettings: PensionSettings) {
+    trackAnalyticsEvent("comparison_scenario_loaded", {
+      scenario_count: comparisonScenarios.length,
+      journey_mode: activeJourneyMode ?? "none",
+    });
     loadComparisonScenarioAction({
       savedFeedbackTimerRef,
       setShowSavedFeedback,
@@ -175,10 +191,14 @@ export function useAppController() {
   }
 
   function clearAllData() {
+    trackAnalyticsEvent("local_data_cleared");
     clearAllLocalStorageData();
   }
 
   function setLocalStorageEnabled(enabled: boolean) {
+    trackAnalyticsEvent("local_storage_preference_changed", {
+      enabled,
+    });
     saveLocalStoragePreference(enabled);
     setLocalStorageEnabledState(enabled);
 
@@ -236,11 +256,17 @@ export function useAppController() {
   };
 
   function acknowledgeNotice() {
+    trackAnalyticsEvent("notice_acknowledged");
     setHasAcknowledgedNotice(true);
     saveAcknowledgementState();
   }
 
   function selectAppMode(mode: AppMode) {
+    trackAnalyticsEvent("journey_selected", {
+      journey_mode: mode,
+      previous_journey_mode: appMode ?? "none",
+    });
+
     if (mode === "simple") {
       setSettings((current) => applySimpleJourneyDefaults(current));
     }

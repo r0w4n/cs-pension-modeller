@@ -14,9 +14,9 @@ function PrivacyPage() {
       <section>
         <h2>What we collect</h2>
         <p className="section-copy">
-          Nothing is sent to a server by this app. There is no account system,
-          and the modeller does not collect names, email addresses, or pension
-          identifiers.
+          There is no account system, and the modeller does not collect names,
+          email addresses, pension identifiers, or the financial assumptions you
+          enter.
         </p>
       </section>
 
@@ -36,8 +36,14 @@ function PrivacyPage() {
       <section>
         <h2>Cookies and analytics</h2>
         <p className="section-copy">
-          This site does not set analytics cookies and does not include any
-          analytics scripts.
+          This site uses Google Analytics. Analytics events are limited to
+          coarse interactions, such as selected journey, journey step, changed
+          field identifier, comparison actions, and chart control names.
+        </p>
+        <p className="section-copy">
+          The app does not send entered amounts, dates, ages, scenario names,
+          pension identifiers, or calculated retirement income figures in
+          analytics events.
         </p>
       </section>
     </StaticPageLayout>

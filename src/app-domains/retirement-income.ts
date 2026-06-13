@@ -62,116 +62,128 @@ export function createRetirementIncomeSeries(
     settings.isaWithdrawalTargetAge
   );
 
-  const baseSeries = rows
-    .filter((row) => row.date >= settings.startDate)
-    .map((row, index) => {
-      const age = row.age + row.ageMonths / 12;
-      const previousRow = index > 0 ? rows[index - 1] : undefined;
-      const isaIncomeAnnual = settings.showIsa
-        ? getBridgePotIncomeAnnual({
-            row,
-            previousRow,
-            rowDate: row.date,
-            drawDate: isaDrawDate,
-            stopDate:
-              settings.isaWithdrawalStrategy === "use_by_age"
-                ? isaUseByDate
-                : null,
-            monthlyIncome: row.monthlyIsaPension,
-            previousMonthlyIncome: previousRow?.monthlyIsaPension ?? 0,
-          })
+  const displayedRows = rows.filter((row) => row.date >= settings.startDate);
+  const baseSeries = displayedRows.map((row, index) => {
+    const age = row.age + row.ageMonths / 12;
+    const previousRow = displayedRows[index - 1];
+    const nextRow = displayedRows[index + 1];
+    const isaIncomeAnnual = settings.showIsa
+      ? getBridgePotIncomeAnnual({
+          rowDate: row.date,
+          drawDate: isaDrawDate,
+          stopDate:
+            settings.isaWithdrawalStrategy === "use_by_age"
+              ? isaUseByDate
+              : null,
+          monthlyIncome: row.monthlyIsaPension,
+          previousMonthlyIncome: previousRow?.monthlyIsaPension ?? 0,
+          nextMonthlyIncome: nextRow?.monthlyIsaPension ?? 0,
+        })
+      : 0;
+    const sippIncomeAnnual = settings.showSipp
+      ? getBridgePotIncomeAnnual({
+          rowDate: row.date,
+          drawDate: sippDrawDate,
+          stopDate:
+            settings.sippWithdrawalStrategy === "use_by_age"
+              ? sippUseByDate
+              : null,
+          monthlyIncome: row.monthlySippPension,
+          previousMonthlyIncome: previousRow?.monthlySippPension ?? 0,
+          nextMonthlyIncome: nextRow?.monthlySippPension ?? 0,
+        })
+      : 0;
+    const alphaIncomeAnnual =
+      settings.showAlpha && row.date >= alphaDrawDate
+        ? row.monthlyAlphaPensionGross * 12
         : 0;
-      const sippIncomeAnnual = settings.showSipp
-        ? getBridgePotIncomeAnnual({
-            row,
-            previousRow,
-            rowDate: row.date,
-            drawDate: sippDrawDate,
-            stopDate:
-              settings.sippWithdrawalStrategy === "use_by_age"
-                ? sippUseByDate
-                : null,
-            monthlyIncome: row.monthlySippPension,
-            previousMonthlyIncome: previousRow?.monthlySippPension ?? 0,
-          })
+    const nuvosIncomeAnnual =
+      settings.showNuvos && row.date >= nuvosDrawDate
+        ? row.monthlyNuvosPensionGross * 12
         : 0;
-      const alphaIncomeAnnual =
-        settings.showAlpha && row.date >= alphaDrawDate
-          ? row.monthlyAlphaPensionGross * 12
-          : 0;
-      const nuvosIncomeAnnual =
-        settings.showNuvos && row.date >= nuvosDrawDate
-          ? row.monthlyNuvosPensionGross * 12
-          : 0;
-      const partialRetirementIncomeAnnual =
-        calculatePartialRetirementIncomeAnnual(
-          settings,
-          row.date,
-          requirementDate
-        );
-      const statePensionIncomeAnnual =
-        settings.showStatePension && row.date >= settings.statePensionDrawDate
-          ? row.monthlyStatePension * 12
-          : 0;
-      const targetIncomeAnnual = calculateRetirementIncomeTargetAtDate(
+    const partialRetirementIncomeAnnual =
+      calculatePartialRetirementIncomeAnnual(
         settings,
-        row.date
+        row.date,
+        requirementDate
       );
-      const totalIncomeAnnual =
-        isaIncomeAnnual +
-        sippIncomeAnnual +
-        partialRetirementIncomeAnnual +
-        alphaIncomeAnnual +
-        nuvosIncomeAnnual +
-        statePensionIncomeAnnual;
-      const monthlyIncomeTax = calculateMonthlyIncomeTax({
-        settings,
-        monthlyAlphaPension: alphaIncomeAnnual / 12,
-        monthlyNuvosPension: nuvosIncomeAnnual / 12,
-        monthlyStatePension: statePensionIncomeAnnual / 12,
-        monthlySippPension: sippIncomeAnnual / 12,
-      });
-      const assessedIncomeAnnual = totalIncomeAnnual - monthlyIncomeTax * 12;
-
-      return {
-        date: row.date,
-        age,
-        targetIncomeAnnual,
-        isaIncomeAnnual,
-        sippIncomeAnnual,
-        partialRetirementIncomeAnnual,
-        alphaIncomeAnnual,
-        nuvosIncomeAnnual,
-        statePensionIncomeAnnual,
-        totalIncomeAnnual,
-        assessedIncomeAnnual,
-        shortfallAnnual:
-          row.date >= requirementDate
-            ? Math.max(0, targetIncomeAnnual - assessedIncomeAnnual)
-            : 0,
-        isaBalance: row.isaPot,
-        sippBalance: row.sippPot,
-        phase: getRetirementIncomePhase(age, settings, statePensionAge),
-      };
+    const statePensionIncomeAnnual =
+      settings.showStatePension && row.date >= settings.statePensionDrawDate
+        ? row.monthlyStatePension * 12
+        : 0;
+    const targetIncomeAnnual = calculateRetirementIncomeTargetAtDate(
+      settings,
+      row.date
+    );
+    const totalIncomeAnnual =
+      isaIncomeAnnual +
+      sippIncomeAnnual +
+      partialRetirementIncomeAnnual +
+      alphaIncomeAnnual +
+      nuvosIncomeAnnual +
+      statePensionIncomeAnnual;
+    const monthlyIncomeTax = calculateMonthlyIncomeTax({
+      settings,
+      monthlyAlphaPension: alphaIncomeAnnual / 12,
+      monthlyNuvosPension: nuvosIncomeAnnual / 12,
+      monthlyStatePension: statePensionIncomeAnnual / 12,
+      monthlySippPension: sippIncomeAnnual / 12,
     });
+    const assessedIncomeAnnual = totalIncomeAnnual - monthlyIncomeTax * 12;
+
+    return {
+      date: row.date,
+      age,
+      targetIncomeAnnual,
+      isaIncomeAnnual,
+      sippIncomeAnnual,
+      partialRetirementIncomeAnnual,
+      alphaIncomeAnnual,
+      nuvosIncomeAnnual,
+      statePensionIncomeAnnual,
+      totalIncomeAnnual,
+      assessedIncomeAnnual,
+      shortfallAnnual:
+        row.date >= requirementDate
+          ? Math.max(0, targetIncomeAnnual - assessedIncomeAnnual)
+          : 0,
+      isaBalance: row.isaPot,
+      sippBalance: row.sippPot,
+      phase: getRetirementIncomePhase(age, settings, statePensionAge),
+    };
+  });
 
   return insertChartTransitionPoints(baseSeries, settings);
 }
 
 function getBridgePotIncomeAnnual(input: {
-  row: ProjectionRow;
-  previousRow?: ProjectionRow;
   rowDate: string;
   drawDate: string;
   stopDate: string | null;
   monthlyIncome: number;
   previousMonthlyIncome: number;
+  nextMonthlyIncome: number;
 }) {
-  const { rowDate, drawDate, stopDate, monthlyIncome, previousMonthlyIncome } =
-    input;
+  const {
+    rowDate,
+    drawDate,
+    stopDate,
+    monthlyIncome,
+    previousMonthlyIncome,
+    nextMonthlyIncome,
+  } = input;
 
   if (rowDate < drawDate) {
     return 0;
+  }
+
+  if (
+    rowDate >= drawDate &&
+    (!stopDate || rowDate < stopDate) &&
+    monthlyIncome <= 0 &&
+    nextMonthlyIncome > 0
+  ) {
+    return nextMonthlyIncome * 12;
   }
 
   if (

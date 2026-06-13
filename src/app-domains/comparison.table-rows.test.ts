@@ -5,6 +5,7 @@ import {
   createComparisonResult,
 } from "./comparison";
 import { createDefaultSettings } from "../settings";
+import { createRetirementIncomeSeries } from "./retirement-income";
 
 describe("comparison table rows", () => {
   it("uses section divider rows and simplified default metric labels", () => {
@@ -219,6 +220,75 @@ describe("comparison table rows", () => {
         hideBridgeFundingSection: true,
       }).find((item) => item.label === "Main issue")?.value as string
     ).not.toContain("Bridge");
+  });
+
+  it("does not report a one-month target shortfall when month-based ages meet at a transition", () => {
+    const dateOfBirth = "1980-01-01";
+    const startDate = "2026-06-13";
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth,
+      startDate,
+      lifeExpectancy: 55,
+      requirementAge: 54,
+      normalPensionAge: 68,
+      showAlpha: false,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: true,
+      taxationEnabled: false,
+      partialRetirementEnabled: false,
+      fullSalary: 0,
+      desiredRetirementIncome: 12000,
+      applyPensionIncreases: true,
+      alphaPensionAbsDate: "2025",
+      alphaPensionLeaveAge: 54,
+      pensionableEarnings: 0,
+      alphaPensionDrawAge: 54,
+      currentStatePension: 0,
+      statePensionDrawDate: "2048-01-01",
+      sippCurrentPot: 0,
+      sippMonthlyContribution: 0,
+      isaCurrentPot: 120000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 54,
+      isaLumpSums: [],
+      isaRealInterestPercent: 0,
+      isaWithdrawalStrategy: "use_by_age" as const,
+      isaWithdrawalTargetAge: 56,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    expect(
+      createRetirementIncomeSeries(result.rows, settings)
+        .filter(
+          (point) =>
+            point.age >= settings.requirementAge &&
+            point.age <= settings.lifeExpectancy &&
+            point.shortfallAnnual > 0
+        )
+        .map((point) => ({
+          date: point.date,
+          age: point.age,
+          shortfallAnnual: point.shortfallAnnual,
+          isaIncomeAnnual: point.isaIncomeAnnual,
+          sippIncomeAnnual: point.sippIncomeAnnual,
+          alphaIncomeAnnual: point.alphaIncomeAnnual,
+          targetIncomeAnnual: point.targetIncomeAnnual,
+          assessedIncomeAnnual: point.assessedIncomeAnnual,
+        }))
+    ).toEqual([]);
+    expect(result.targetMissMonths).toBe(0);
   });
 });
 

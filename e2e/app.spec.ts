@@ -370,6 +370,12 @@ async function assertFooterPage(
       )
       .toBe("true");
   }
+
+  if (pageName === "Privacy") {
+    await expect(
+      page.getByRole("link", { name: "Settings page" })
+    ).toHaveAttribute("href", /settings\/$/);
+  }
 }
 
 async function readLocalStorageItem(page: Page, key: string) {

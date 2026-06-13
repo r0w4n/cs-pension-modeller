@@ -1,9 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { resolveAppBaseHref } from "../app/app-base";
 import { StaticPageLayout } from "./static-page-layout";
 import "../index.css";
 
 function PrivacyPage() {
+  const appBaseHref = resolveAppBaseHref();
+
   return (
     <StaticPageLayout
       eyebrow="Civil Service"
@@ -28,8 +31,10 @@ function PrivacyPage() {
           only.
         </p>
         <p className="section-copy">
-          You can remove this at any time by clearing this site&apos;s storage
-          in your browser settings.
+          You can manage this from the{" "}
+          <a href={`${appBaseHref}settings/`}>Settings page</a>. Use Clear all
+          data to remove saved data from this device, or turn off Save inputs on
+          this device if you do not want the app to save anything locally.
         </p>
       </section>
 

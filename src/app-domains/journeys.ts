@@ -451,6 +451,8 @@ export function applyBridgeJourneyDefaults(
     showStatePension: true,
     showSipp: true,
     showIsa: true,
+    sippWithdrawalStrategy: "use_by_age",
+    isaWithdrawalStrategy: "use_by_age",
     taxationEnabled: false,
     partialRetirementEnabled: false,
   };

@@ -1003,6 +1003,44 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target retirement age")).toHaveValue("67");
   });
 
+  it("defaults bridge journey withdrawal strategies to use-by-age after expert changes", () => {
+    renderAcknowledgedApp();
+
+    openJourneyStep(/SIPP details/i);
+
+    fireEvent.change(screen.getByLabelText("SIPP withdrawal strategy"), {
+      target: { value: "percentage" },
+    });
+    fireEvent.blur(screen.getByLabelText("SIPP withdrawal strategy"));
+
+    openJourneyStep(/ISA details/i);
+
+    fireEvent.change(screen.getByLabelText("ISA withdrawal strategy"), {
+      target: { value: "zero_at_death" },
+    });
+    fireEvent.blur(screen.getByLabelText("ISA withdrawal strategy"));
+
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        sippWithdrawalStrategy: "percentage",
+        isaWithdrawalStrategy: "zero_at_death",
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Work out what I need to retire early/i,
+      })
+    );
+
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        sippWithdrawalStrategy: "use_by_age",
+        isaWithdrawalStrategy: "use_by_age",
+      })
+    );
+  });
+
   it("keeps hidden advanced settings when visiting the simple journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
@@ -1727,7 +1765,7 @@ describe("App settings form", () => {
     });
     fireEvent.click(
       screen.getByRole("button", {
-        name: "£43,900: Comfortable standard for one person household",
+        name: "£45,400",
       })
     );
 
@@ -1746,7 +1784,7 @@ describe("App settings form", () => {
       expect.objectContaining({
         dateOfBirth: "1990-02-01",
         currentStatePension: 11800,
-        desiredRetirementIncome: 43900,
+        desiredRetirementIncome: 45400,
         statePensionDrawDate: "2058-02-01",
       })
     );

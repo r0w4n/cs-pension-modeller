@@ -212,29 +212,28 @@ export const fieldGroups: FieldGroup[] = [
         format: "currency",
         presets: [
           {
-            value: 13400,
-            label: "£13,400",
-            description: "Minimum standard for one person household",
+            value: 11250,
+            label: "£11,250",
           },
           {
-            value: 21600,
-            label: "£21,600",
-            description: "Minimum standard for two person household",
+            value: 13900,
+            label: "£13,900",
           },
           {
-            value: 31700,
-            label: "£31,700",
-            description: "Moderate standard for one person household",
+            value: 22700,
+            label: "£22,700",
           },
           {
-            value: 43900,
-            label: "£43,900",
-            description: "Comfortable standard for one person household",
+            value: 31350,
+            label: "£31,350",
           },
           {
-            value: 60600,
-            label: "£60,600",
-            description: "Comfortable standard for two person household",
+            value: 32700,
+            label: "£32,700",
+          },
+          {
+            value: 45400,
+            label: "£45,400",
           },
         ],
         description:

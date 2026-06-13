@@ -1294,10 +1294,15 @@ h3 {
   line-height: var(--line-height-body);
 }
 
-.field-preset-group {
+.field-preset-group,
+.field-preset-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+}
+
+.field-preset-row {
+  margin-top: 0.75rem;
 }
 
 .field-preset-button {

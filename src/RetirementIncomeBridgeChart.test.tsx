@@ -150,6 +150,23 @@ function getXAxisLabels() {
   );
 }
 
+function getXAxisYearTickAges() {
+  return [...document.querySelectorAll(".bridge-x-year-tick")].map((node) =>
+    Number(node.getAttribute("data-age"))
+  );
+}
+
+function getXAxisYearTickLength(age: number) {
+  const line = document.querySelector(
+    `.bridge-x-year-tick[data-age="${age}"] line`
+  );
+
+  return (
+    Number(line?.getAttribute("y2") ?? 0) -
+    Number(line?.getAttribute("y1") ?? 0)
+  );
+}
+
 function getBuildUpBandWidth() {
   const width = document
     .querySelector(".bridge-build-up-band")
@@ -238,10 +255,86 @@ describe("RetirementIncomeBridgeChart", () => {
     vi.unstubAllGlobals();
   });
 
+  it("adds unlabelled x-axis marks for whole years without adding more labels", () => {
+    renderChart();
+
+    const labels = getXAxisLabels();
+    const yearTicks = getXAxisYearTickAges();
+
+    expect(yearTicks.length).toBeGreaterThan(labels.length);
+    expect(yearTicks.every((age) => Number.isInteger(age))).toBe(true);
+    expect(labels.length).toBeLessThan(yearTicks.length);
+    expect(getXAxisYearTickLength(60)).toBeGreaterThan(
+      getXAxisYearTickLength(61)
+    );
+  });
+
   it("starts the target income line at the y axis", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 
     expect(getTargetLinePath()).toMatch(/^M0,/);
+  });
+
+  it("keeps upward target income drags from repeatedly inflating the y scale", () => {
+    mockChartResize(960);
+
+    const onChangeParameters = vi.fn();
+    renderChart({ onChangeParameters });
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 460,
+        height: 460,
+        left: 0,
+        right: 960,
+        top: 0,
+        width: 960,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const targetLine = screen.getByRole("slider", {
+      name: "Target income line",
+    });
+
+    fireEvent.pointerDown(targetLine, {
+      button: 0,
+      clientX: 420,
+      clientY: 86,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    for (let index = 0; index < 6; index += 1) {
+      fireEvent.pointerMove(targetLine, {
+        clientX: 420,
+        clientY: 86,
+        isPrimary: true,
+        pointerId: 1,
+        pointerType: "mouse",
+      });
+    }
+
+    fireEvent.pointerUp(targetLine, {
+      clientX: 420,
+      clientY: 86,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({
+      targetIncomeAnnual: 49200,
+    });
   });
 
   it("extends stepped shortfall shading to the alpha start boundary", () => {

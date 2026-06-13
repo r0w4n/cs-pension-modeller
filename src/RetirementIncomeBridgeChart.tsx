@@ -222,6 +222,8 @@ const HANDLE_LABEL_WIDTH = 24;
 const HANDLE_LABEL_HEIGHT = 84;
 const HANDLE_LABEL_STACK_GAP = 16;
 const HANDLE_LABEL_STACK_SPACING = HANDLE_LABEL_HEIGHT + HANDLE_LABEL_STACK_GAP;
+const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
+const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
 export function RetirementIncomeBridgeChart({
   data,
   targetIncomeAnnual,
@@ -474,13 +476,14 @@ export function RetirementIncomeBridgeChart({
     ]
   );
   const maxIncome =
-    d3.max(
-      visibleData,
-      (point) =>
-        Math.max(point.targetIncomeAnnual, point.totalIncomeAnnual) / divisor
-    ) ?? displayedTargetIncomeAnnual / divisor;
+    d3.max(visibleData, (point) => point.totalIncomeAnnual / divisor) ??
+    displayedTargetIncomeAnnual / divisor;
+  const targetIncomeHeadroom = Math.max(
+    (targetIncomeAnnual / divisor) * TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT,
+    TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL / divisor
+  );
   const yMax = Math.max(
-    (displayedTargetIncomeAnnual / divisor) * 1.18,
+    displayedTargetIncomeAnnual / divisor + targetIncomeHeadroom,
     maxIncome * 1.18,
     10000 / divisor
   );
@@ -528,6 +531,7 @@ export function RetirementIncomeBridgeChart({
     .curve(d3.curveStepAfter);
   const yTicks = yScale.ticks(5);
   const xTicks = xScale.ticks(width < 640 ? 5 : 8);
+  const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
   const invalidMarkerKeys = useMemo(
     () => getInvalidMarkerKeys(validationIssues),
     [validationIssues]
@@ -1850,6 +1854,23 @@ export function RetirementIncomeBridgeChart({
               y1={0}
               y2={plotHeight}
             />
+            {xYearTicks.map((tick) => (
+              <g
+                key={tick}
+                className={`bridge-x-year-tick${
+                  tick % 10 === 0 ? " bridge-x-year-tick--decade" : ""
+                }`}
+                data-age={tick}
+                aria-hidden="true"
+              >
+                <line
+                  x1={xScale(tick)}
+                  x2={xScale(tick)}
+                  y1={plotHeight}
+                  y2={plotHeight + (tick % 10 === 0 ? 9 : 6)}
+                />
+              </g>
+            ))}
             {xTicks.map((tick) => (
               <g key={tick} className="bridge-x-tick">
                 <line
@@ -2515,6 +2536,20 @@ function bringActiveMarkerToFront<T extends MilestoneMarker>(
     ...markers.filter((marker) => marker.key !== activeMarkerKey),
     activeMarker,
   ];
+}
+
+function createWholeYearTicks(minAge: number, maxAge: number) {
+  const firstTick = Math.ceil(minAge);
+  const lastTick = Math.floor(maxAge);
+
+  if (firstTick > lastTick) {
+    return [];
+  }
+
+  return Array.from(
+    { length: lastTick - firstTick + 1 },
+    (_, index) => firstTick + index
+  );
 }
 
 function getInvalidMarkerKeys(validationIssues: PensionValidationIssue[]) {

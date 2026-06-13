@@ -867,6 +867,16 @@ h3 {
   stroke: rgba(18, 32, 51, 0.2);
 }
 
+.bridge-x-year-tick line {
+  stroke: rgba(18, 32, 51, 0.42);
+  stroke-width: 1.5;
+}
+
+.bridge-x-year-tick--decade line {
+  stroke: rgba(18, 32, 51, 0.56);
+  stroke-width: 2;
+}
+
 .bridge-shortfall-fill {
   fill: rgba(191, 44, 44, 0.16);
   stroke: rgba(191, 44, 44, 0.68);

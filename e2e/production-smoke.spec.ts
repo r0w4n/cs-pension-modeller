@@ -50,5 +50,12 @@ test.describe("production build smoke checks", () => {
         name: "Important assumptions and omissions",
       })
     ).toBeVisible();
+
+    const methodologyHorizontalOverflow = await page.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+
+    expect(methodologyHorizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

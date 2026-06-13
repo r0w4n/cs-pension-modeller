@@ -93,7 +93,7 @@ const TAX_ASSUMPTIONS = [
 ] as const;
 
 function FormulaBlock({ children }: { children: string }) {
-  return <pre className="section-copy">{children}</pre>;
+  return <pre className="section-copy formula-block">{children}</pre>;
 }
 
 export function MethodologyPage() {

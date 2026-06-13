@@ -2295,6 +2295,10 @@ h3 {
   gap: 1rem;
 }
 
+.static-panel > * {
+  min-width: 0;
+}
+
 .static-backlink {
   display: inline-flex;
   width: fit-content;
@@ -2312,4 +2316,9 @@ h3 {
 .static-backlink:focus-visible {
   background: rgba(17, 100, 102, 0.12);
   outline: none;
+}
+
+.formula-block {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

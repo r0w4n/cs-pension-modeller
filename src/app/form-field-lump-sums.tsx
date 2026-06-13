@@ -38,8 +38,8 @@ export function AddedPensionLumpSumsEditor({
   }
 
   return (
-    <div className="settings-subsection">
-      <div className="settings-subsection-heading">
+    <div className="settings-subsection lump-sum-editor">
+      <div className="settings-subsection-heading lump-sum-editor-heading">
         <h4>{title}</h4>
         <p className="section-copy">{description}</p>
       </div>

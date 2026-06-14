@@ -224,6 +224,7 @@ const HANDLE_LABEL_STACK_GAP = 16;
 const HANDLE_LABEL_STACK_SPACING = HANDLE_LABEL_HEIGHT + HANDLE_LABEL_STACK_GAP;
 const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
 const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
+const MARKER_DRAG_LEFT_OVERSCAN_RATIO = 0.4;
 export function RetirementIncomeBridgeChart({
   data,
   targetIncomeAnnual,
@@ -259,6 +260,10 @@ export function RetirementIncomeBridgeChart({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
+  const activeMarkerDragScaleRef = useRef<d3.ScaleLinear<
+    number,
+    number
+  > | null>(null);
   const activeTargetDragPointerIdRef = useRef<number | null>(null);
   const activeMarkerTouchIdentifierRef = useRef<number | null>(null);
   const activeTargetTouchIdentifierRef = useRef<number | null>(null);
@@ -842,8 +847,11 @@ export function RetirementIncomeBridgeChart({
     ]
   );
 
-  const getPlotPointerPosition = (event: PointerEvent<SVGElement>) =>
-    getPlotPointerPositionFromClient(event.clientX, event.clientY);
+  const getPlotPointerPosition = useCallback(
+    (event: PointerEvent<SVGElement>) =>
+      getPlotPointerPositionFromClient(event.clientX, event.clientY),
+    [getPlotPointerPositionFromClient]
+  );
 
   const isPrimaryPointerDragStart = (
     event: PointerEvent<SVGElement>
@@ -876,22 +884,43 @@ export function RetirementIncomeBridgeChart({
     return touchList[0] ?? null;
   };
 
-  const getMarkerAgeFromPointer = (
-    event: PointerEvent<SVGGElement>,
-    markerKey: MilestoneKey
-  ) => {
-    const pointerPosition = getPlotPointerPosition(event);
-    const marker = milestoneMarkerLookup.get(markerKey);
+  const getMarkerDragScale = useCallback(
+    () => activeMarkerDragScaleRef.current ?? xScale,
+    [xScale]
+  );
 
-    if (!pointerPosition || !marker) {
-      return marker?.age ?? limits[markerKey].min;
-    }
+  const getMarkerDragPlotX = useCallback(
+    (plotX: number) =>
+      clampNumber(
+        plotX,
+        -plotWidth * MARKER_DRAG_LEFT_OVERSCAN_RATIO,
+        plotWidth
+      ),
+    [plotWidth]
+  );
 
-    return snapToLimit(
-      xScale.invert(clampNumber(pointerPosition.x, 0, plotWidth)),
-      limits[markerKey]
-    );
-  };
+  const getMarkerAgeFromPointer = useCallback(
+    (event: PointerEvent<SVGGElement>, markerKey: MilestoneKey) => {
+      const pointerPosition = getPlotPointerPosition(event);
+      const marker = milestoneMarkerLookup.get(markerKey);
+
+      if (!pointerPosition || !marker) {
+        return marker?.age ?? limits[markerKey].min;
+      }
+
+      return snapToLimit(
+        getMarkerDragScale().invert(getMarkerDragPlotX(pointerPosition.x)),
+        limits[markerKey]
+      );
+    },
+    [
+      getMarkerDragPlotX,
+      getMarkerDragScale,
+      getPlotPointerPosition,
+      limits,
+      milestoneMarkerLookup,
+    ]
+  );
 
   const getMarkerAgeFromClient = useCallback(
     (clientX: number, clientY: number, markerKey: MilestoneKey) => {
@@ -906,16 +935,16 @@ export function RetirementIncomeBridgeChart({
       }
 
       return snapToLimit(
-        xScale.invert(clampNumber(pointerPosition.x, 0, plotWidth)),
+        getMarkerDragScale().invert(getMarkerDragPlotX(pointerPosition.x)),
         limits[markerKey]
       );
     },
     [
+      getMarkerDragPlotX,
+      getMarkerDragScale,
       getPlotPointerPositionFromClient,
       limits,
       milestoneMarkerLookup,
-      plotWidth,
-      xScale,
     ]
   );
 
@@ -985,6 +1014,7 @@ export function RetirementIncomeBridgeChart({
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     activeMarkerDragPointerIdRef.current = event.pointerId;
+    activeMarkerDragScaleRef.current = xScale.copy();
     setSelectedMobileMarkerKey(markerKey);
     setActiveMarkerDragKey(markerKey);
     updateDraftMarkerAge(event, markerKey);
@@ -1019,6 +1049,7 @@ export function RetirementIncomeBridgeChart({
     event.currentTarget.focus();
     activeMarkerTouchIdentifierRef.current = touch.identifier;
     activeMarkerDragPointerIdRef.current = null;
+    activeMarkerDragScaleRef.current = xScale.copy();
     setSelectedMobileMarkerKey(markerKey);
     setActiveMarkerDragKey(markerKey);
     updateDraftMarkerAgeFromClient(touch.clientX, touch.clientY, markerKey);
@@ -1067,6 +1098,7 @@ export function RetirementIncomeBridgeChart({
       getTrackedTouch(event.touches, identifier);
 
     activeMarkerTouchIdentifierRef.current = null;
+    activeMarkerDragScaleRef.current = null;
     clearMarkerDraft(markerKey);
     setActiveMarkerDragKey(null);
 
@@ -1098,6 +1130,7 @@ export function RetirementIncomeBridgeChart({
     const committedAge = getMarkerAgeFromPointer(event, markerKey);
 
     activeMarkerDragPointerIdRef.current = null;
+    activeMarkerDragScaleRef.current = null;
 
     if (
       typeof event.currentTarget.hasPointerCapture === "function" &&
@@ -1309,6 +1342,7 @@ export function RetirementIncomeBridgeChart({
       );
 
       activeMarkerDragPointerIdRef.current = null;
+      activeMarkerDragScaleRef.current = null;
       clearMarkerDraft(activeMarkerDragKey);
       setActiveMarkerDragKey(null);
 
@@ -1379,6 +1413,7 @@ export function RetirementIncomeBridgeChart({
 
       if (!touch) {
         activeMarkerTouchIdentifierRef.current = null;
+        activeMarkerDragScaleRef.current = null;
         clearMarkerDraft(activeMarkerDragKey);
         setActiveMarkerDragKey(null);
         return;
@@ -1391,6 +1426,7 @@ export function RetirementIncomeBridgeChart({
       );
 
       activeMarkerTouchIdentifierRef.current = null;
+      activeMarkerDragScaleRef.current = null;
       clearMarkerDraft(activeMarkerDragKey);
       setActiveMarkerDragKey(null);
 

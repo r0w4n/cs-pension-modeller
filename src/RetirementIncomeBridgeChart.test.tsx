@@ -337,6 +337,59 @@ describe("RetirementIncomeBridgeChart", () => {
     });
   });
 
+  it("extends the x-axis left while a milestone is dragged beyond the plot edge", () => {
+    mockChartResize(960);
+
+    renderChart();
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 460,
+        height: 460,
+        left: 0,
+        right: 960,
+        top: 0,
+        width: 960,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const initialFirstTick = Math.min(...getXAxisYearTickAges());
+    const alphaLeaveMarker = screen.getByRole("slider", {
+      name: /Leave alpha, age 55/i,
+    });
+
+    fireEvent.pointerDown(alphaLeaveMarker, {
+      button: 0,
+      clientX: getMilestoneLineX(/Leave alpha, age 55/i) + 78,
+      clientY: 150,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerMove(window, {
+      clientX: 20,
+      clientY: 150,
+      pointerId: 1,
+    });
+
+    expect(Math.min(...getXAxisYearTickAges())).toBeLessThan(initialFirstTick);
+
+    fireEvent.pointerCancel(window, {
+      clientX: 20,
+      clientY: 150,
+      pointerId: 1,
+    });
+  });
+
   it("extends stepped shortfall shading to the alpha start boundary", () => {
     renderChart({
       data: [

@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import {
   AssumptionsVersionStrip,
-  GovernedAssumptionsTable,
   RetirementIncomeDisplayToggle,
   RetirementIncomeSummaryFooter,
   ResultsSummarySection,
@@ -58,19 +57,5 @@ describe("results-summary module", () => {
       screen.getByRole("link", { name: "View methodology" })
     ).toHaveAttribute("href", "./methodology/index.html");
     expect(screen.queryByText(/Assumptions version/i)).not.toBeInTheDocument();
-  });
-
-  it("renders the governed assumptions table", () => {
-    render(<GovernedAssumptionsTable />);
-
-    expect(
-      screen.getByRole("columnheader", { name: "Affected fields" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("rowheader", { name: /State Pension age/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /GOV.UK State Pension age guidance/i })
-    ).toHaveAttribute("href", "https://example.com/source-url-placeholder");
   });
 });

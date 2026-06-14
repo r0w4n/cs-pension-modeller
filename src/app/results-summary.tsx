@@ -5,10 +5,6 @@ import {
 } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import { formatModelledReturn, formatPercent } from "../app-domains";
-import {
-  GOVERNED_ASSUMPTIONS_REGISTRY,
-  getAffectedFieldLabels,
-} from "../assumptions-registry";
 import { resolveAppBaseHref } from "./app-base";
 
 type ResultsSummarySectionProps = {
@@ -215,51 +211,6 @@ export function AssumptionsVersionStrip() {
         View methodology
       </a>
     </section>
-  );
-}
-
-export function GovernedAssumptionsTable() {
-  return (
-    <div className="assumption-table-shell">
-      <table className="assumption-table">
-        <thead>
-          <tr>
-            <th scope="col">Rule</th>
-            <th scope="col">Source</th>
-            <th scope="col">Effective date</th>
-            <th scope="col">Last reviewed</th>
-            <th scope="col">Affected fields</th>
-          </tr>
-        </thead>
-        <tbody>
-          {GOVERNED_ASSUMPTIONS_REGISTRY.assumptions.map((assumption) => (
-            <tr key={assumption.id}>
-              <th scope="row">
-                <div className="assumption-rule-title">{assumption.title}</div>
-                <div className="assumption-rule-summary">
-                  {assumption.summary}
-                </div>
-              </th>
-              <td data-label="Source">
-                <a
-                  className="field-info-link"
-                  href={assumption.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {assumption.sourceLabel}
-                </a>
-              </td>
-              <td data-label="Effective date">{assumption.effectiveDate}</td>
-              <td data-label="Last reviewed">{assumption.lastReviewedDate}</td>
-              <td data-label="Affected fields">
-                {getAffectedFieldLabels(assumption.affectedFields).join(", ")}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 

@@ -22,7 +22,7 @@ export const knowledgeLinks = {
   alphaAddedPensionFactors:
     "https://gadfactorguidancehub.co.uk/guidance/csps_gb/added-pension/csps_gb__csops__added-pension/tables",
   annualBenefitStatement:
-    "https://www.civilservicepensionscheme.org.uk/memberhub/your-pension/yearly-pension-updates/annual-benefit-statement/",
+    "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/",
   nuvosSchemeGuide:
     "https://www.civilservicepensionscheme.org.uk/memberhub/knowledge-centre/pension-scheme/nuvos-scheme-guide/",
   nuvosBenefits:

@@ -1463,7 +1463,13 @@ describe("App settings form", () => {
       screen.getByRole("link", { name: "Annual Benefit Statement guide" })
     ).toHaveAttribute(
       "href",
-      "https://www.civilservicepensionscheme.org.uk/memberhub/your-pension/yearly-pension-updates/annual-benefit-statement/"
+      "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/"
+    );
+    expect(
+      screen.getByRole("link", { name: "ABS on the pension portal" })
+    ).toHaveAttribute(
+      "href",
+      "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/"
     );
     expect(
       screen.getByRole("link", { name: "Alpha accrual rate" })

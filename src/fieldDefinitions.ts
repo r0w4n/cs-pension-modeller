@@ -409,8 +409,8 @@ export const fieldGroups: FieldGroup[] = [
         format: "currency",
         description:
           "The annual Alpha pension already built up on your ABS. Alpha promises annual pension income worked out from scheme rules: it is a career-average defined benefit pension, not a savings pot or a defined contribution account invested in your name.",
-        infoUrl: knowledgeLinks.alphaNormalPensionAge,
-        infoLinkText: "Alpha overview",
+        infoUrl: knowledgeLinks.annualBenefitStatement,
+        infoLinkText: "ABS on the pension portal",
       },
       {
         id: "alphaPensionLeaveAge",

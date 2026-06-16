@@ -40,6 +40,9 @@ jobs:
   quality:
     name: Format, Typecheck, Test, Coverage, Lint, Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -73,11 +76,19 @@ jobs:
           path: coverage
           if-no-files-found: error
 
+      - name: Publish coverage report
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          json-summary-path: coverage/coverage-summary.json
+          json-final-path: coverage/coverage-final.json
+
       - name: Build
         run: npm run build
 
   e2e:
     name: Playwright End-to-End and Accessibility Tests
+    needs: quality
     runs-on: ubuntu-latest
 
     steps:

@@ -12,40 +12,43 @@ export const OPTIONAL_SECTION_TOGGLES = [
     key: "showAlpha",
     label: "Alpha",
     description:
-      "Show Alpha inputs and include Alpha pension values in the modeller.",
+      "Models Alpha pension accrual, early retirement reductions, and income from the chosen draw date.",
   },
   {
     key: "partialRetirementEnabled",
     label: "Partial retirement",
     description:
-      "Show partial retirement inputs and pro-rate regular accruals and contributions.",
+      "Models reduced working hours before retirement and pro-rates regular accruals and contributions.",
   },
   {
     key: "showStatePension",
     label: "State Pension",
     description:
-      "Show State Pension inputs and include State Pension values in the modeller.",
+      "Adds estimated State Pension income from the selected State Pension start age.",
   },
   {
     key: "showNuvos",
     label: "nuvos",
-    description: "Show nuvos inputs and include nuvos values in the modeller.",
+    description:
+      "Models nuvos pension benefits separately from Alpha, including its own leave and draw dates.",
   },
   {
     key: "showSipp",
     label: "SIPP",
-    description: "Show SIPP inputs and include SIPP values in the modeller.",
+    description:
+      "Models a SIPP pot, contributions, growth, lump sums, and flexible withdrawals.",
   },
   {
     key: "showIsa",
     label: "ISA",
-    description: "Show ISA inputs and include ISA values in the modeller.",
+    description:
+      "Models an ISA pot, contributions, growth, lump sums, and flexible withdrawals.",
   },
   {
     key: "taxationEnabled",
     label: "Taxation",
     description:
-      "Show tax assumptions and estimate take-home income after Income Tax.",
+      "Estimates take-home retirement income after Income Tax using the selected tax assumptions.",
   },
 ] as const;
 

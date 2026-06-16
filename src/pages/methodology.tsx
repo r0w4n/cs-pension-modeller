@@ -5,6 +5,7 @@ import "../index.css";
 
 const PROJECTED_SOURCES = [
   "Civil Service Alpha pension",
+  "Alpha EPA pension where enabled",
   "Civil Service nuvos pension",
   "State Pension",
   "SIPP pension savings",
@@ -16,9 +17,14 @@ const PROJECTED_SOURCES = [
 ] as const;
 
 const KEY_DATES = [
+  "calculation start date",
+  "Alpha and nuvos statement dates",
   "State Pension age",
   "Alpha pension draw age",
+  "Alpha accrual stop age",
+  "Alpha EPA unreduced date where EPA is enabled",
   "nuvos pension draw age",
+  "nuvos accrual stop age",
   "SIPP access age",
   "ISA draw start age",
   "SIPP draw start age",
@@ -35,6 +41,7 @@ const SIPP_PROJECTS = [
   "starting SIPP balance",
   "regular SIPP contributions",
   "lump-sum contributions",
+  "selected tax-relief gross-up on net contributions",
   "investment growth",
   "selected SIPP draw age",
   "selected withdrawal strategy",
@@ -65,7 +72,7 @@ const BRIDGE_SENSITIVITIES = [
   "withdrawal order",
   "investment returns",
   "inflation",
-  "tax settings",
+  "income tax settings",
   "target retirement income",
 ] as const;
 
@@ -90,6 +97,15 @@ const TAX_ASSUMPTIONS = [
   "higher-rate band",
   "additional-rate threshold",
   "taxable share of SIPP withdrawals",
+] as const;
+
+const COMPARISON_OUTPUTS = [
+  "target income and projected gap",
+  "lowest projected income",
+  "years and lifetime amount below target",
+  "secure pension income at key ages",
+  "bridge-funding gaps before and after SIPP access",
+  "ISA and SIPP depletion ages",
 ] as const;
 
 function FormulaBlock({ children }: { children: string }) {
@@ -130,6 +146,19 @@ export function MethodologyPage() {
           expected pension accrual, revaluation, savings growth, contributions,
           withdrawals, gross income, estimated tax and net income.
         </p>
+        <p className="section-copy">
+          Where earlier statement dates are needed, the model can build internal
+          historical rows from those statement dates to the calculation start
+          date. This lets accrued Alpha and nuvos components, added pension, EPA
+          accrual and pension increases line up with the monthly projection.
+        </p>
+        <p className="section-copy">
+          Within each row, investment pots are grown before that month&apos;s
+          contribution and withdrawal calculations are applied. Defined-benefit
+          income starts from the selected draw dates, flexible withdrawals are
+          limited to the available pot balance, and Income Tax is calculated
+          after gross income for the month has been assembled.
+        </p>
       </section>
 
       <section>
@@ -160,6 +189,14 @@ export function MethodologyPage() {
           nominal terms, the target increases over time with the inflation
           assumption.
         </p>
+        <p className="section-copy">
+          In real-terms projections, the model removes the main inflation
+          assumption from investment returns and CPI-linked pension increases.
+          For example, deferred Alpha and nuvos CPI increases become flat in
+          real terms, while active Alpha revaluation is modelled as the
+          additional 1.5% above CPI. In nominal projections, CPI-linked
+          increases and the inflated target are shown as future cash amounts.
+        </p>
       </section>
 
       <section>
@@ -185,6 +222,17 @@ export function MethodologyPage() {
             rules.
           </li>
           <li>Added pension purchase revaluation is simplified.</li>
+          <li>
+            SIPP tax relief is modelled as a simple gross-up of selected
+            contributions. It does not check annual allowance, tapered annual
+            allowance, carry forward, adjusted income, or provider-specific
+            relief-at-source and net-pay timing.
+          </li>
+          <li>
+            Investment growth is deterministic. The model does not simulate
+            market volatility, charges, sequencing risk, or changing asset
+            allocation.
+          </li>
           <li>Scheme-specific edge cases are not exhaustively represented.</li>
         </ul>
       </section>
@@ -257,6 +305,23 @@ export function MethodologyPage() {
           accrual and also stops the additional 1.5% active-member revaluation.
         </p>
 
+        <h3>Alpha EPA</h3>
+        <p className="section-copy">
+          When EPA is enabled, Alpha accrual during the selected EPA date range
+          is tracked as a separate EPA portion rather than standard Alpha
+          accrual. The same 2.32% annual accrual rate is used, but the EPA
+          portion has its own unreduced date.
+        </p>
+        <p className="section-copy">
+          The EPA unreduced date is calculated as Normal Pension Age minus the
+          selected number of EPA years. If Alpha is drawn before that EPA date,
+          the EPA portion is reduced using the Alpha early-retirement factor for
+          the EPA age. If Alpha is drawn on or after the EPA date, the EPA
+          portion is not reduced for early payment. The standard Alpha portion
+          continues to use the normal Alpha reduction test against Normal
+          Pension Age.
+        </p>
+
         <h3>Alpha draw age and early retirement</h3>
         <p className="section-copy">
           If Alpha is drawn before its normal pension age, the model applies
@@ -266,6 +331,10 @@ export function MethodologyPage() {
           The model uses the selected Alpha draw date to determine whether a
           reduction applies. Where the draw date falls between factor-table
           points, the model interpolates between available values.
+        </p>
+        <p className="section-copy">
+          The model does not add a late-retirement enhancement when Alpha is
+          drawn after Normal Pension Age; it treats the reduction factor as 1.
         </p>
 
         <h3>Alpha added pension</h3>
@@ -287,9 +356,13 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           Known simplification: added-pension revaluation is currently
-          simplified. The model does not yet fully project revaluation of
-          added-pension purchases after purchase. This may understate or
-          misstate the final value of added pension in some scenarios.
+          simplified. The purchase revaluation factor used in the added-pension
+          factor calculation is currently 1. When Alpha pension increases are
+          enabled, purchased added pension is then tracked alongside the
+          standard Alpha portion for annual revaluation in the projection.
+          Without pension increases enabled, added pension remains at its
+          purchased annual amount. This may understate or misstate the final
+          value of added pension in some scenarios.
         </p>
       </section>
 
@@ -301,6 +374,23 @@ export function MethodologyPage() {
           assumptions to be included in the projection. nuvos income is treated
           as defined-benefit pension income and can be included in gross
           retirement income and tax calculations.
+        </p>
+        <p className="section-copy">Annual nuvos accrual is calculated as:</p>
+        <FormulaBlock>
+          {"annual accrual = nuvos pensionable earnings × 2.3%"}
+        </FormulaBlock>
+        <p className="section-copy">
+          The projection applies this monthly until the earlier of the selected
+          nuvos leave age and nuvos draw age. If partial retirement applies, the
+          selected work percentage reduces future nuvos accrual from the
+          partial-retirement start date.
+        </p>
+        <p className="section-copy">
+          When nuvos pension increases are enabled, each existing and future
+          nuvos component is revalued annually by the modelled CPI assumption.
+          In real-terms mode this CPI increase is removed, so CPI-linked nuvos
+          revaluation is flat in today&apos;s spending power. In nominal mode it
+          compounds using the main inflation assumption.
         </p>
         <p className="section-copy">
           If nuvos is drawn before age 65, the model applies the nuvos
@@ -349,10 +439,17 @@ export function MethodologyPage() {
         <FormulaBlock>{"£12,000 × 1.0578 = £12,693"}</FormulaBlock>
         <p className="section-copy">
           The model can also apply future State Pension growth assumptions,
-          depending on the selected settings. The base State Pension and the
-          deferred uplift component may be treated differently in the
-          projection, so the assumptions should be reviewed when comparing
-          scenarios.
+          depending on the selected settings. When future growth is enabled, the
+          base forecast is uprated using the highest of the main inflation
+          assumption, the State Pension wage-growth assumption, and 2.5%. In
+          real-terms mode this nominal increase is converted back into
+          today&apos;s spending power.
+        </p>
+        <p className="section-copy">
+          The deferred uplift component is calculated at the draw date. After
+          draw, the base State Pension continues to use the selected future
+          growth setting. The deferred extra grows only with the main inflation
+          assumption in nominal mode, and stays flat in real-terms mode.
         </p>
         <p className="section-copy">
           Known simplification: the model does not represent every possible
@@ -378,6 +475,14 @@ export function MethodologyPage() {
           assumption converted into a monthly rate.
         </p>
         <p className="section-copy">
+          Regular SIPP contributions and scheduled lump sums are included until
+          the earlier of the SIPP draw date and target retirement age. If tax
+          relief is selected, the model grosses up net additions by 1 / 0.8 for
+          basic-rate relief or 1 / 0.6 for higher-rate relief. Partial
+          retirement can reduce future regular contributions from the
+          partial-retirement start date.
+        </p>
+        <p className="section-copy">
           The model supports different withdrawal approaches, including:
         </p>
         <ul className="section-copy">
@@ -389,6 +494,15 @@ export function MethodologyPage() {
           SIPP withdrawals can be split between tax-free and taxable portions
           according to the selected tax-free withdrawal setting. The taxable
           portion is included in the simplified Income Tax calculation.
+        </p>
+        <p className="section-copy">
+          For the use-by-age strategy, the model calculates a level monthly
+          withdrawal at the first draw month intended to use the pot by the
+          selected target age, allowing for the modelled monthly growth rate.
+          For the zero-at-death strategy, the current pot is spread over the
+          remaining scheduled months to life expectancy. For the percentage
+          strategy, the model withdraws the selected annual percentage divided
+          by 12, limited by the pot available.
         </p>
         <p className="section-copy">
           Known simplification: the model does not attempt to reproduce all
@@ -413,6 +527,18 @@ export function MethodologyPage() {
           ISA withdrawals are not treated as taxable income.
         </p>
         <p className="section-copy">
+          Regular ISA saving and scheduled lump sums are included until the
+          earlier of the ISA draw date and target retirement age. ISA
+          contributions are not grossed up for tax relief. Partial retirement
+          can reduce future regular ISA saving from the partial-retirement start
+          date.
+        </p>
+        <p className="section-copy">
+          ISA withdrawal strategies mirror the SIPP strategies: percentage
+          withdrawal, depletion over life expectancy, or a level use-by-age
+          withdrawal that allows for the modelled monthly growth rate.
+        </p>
+        <p className="section-copy">
           The ISA can be used as a bridge before pension income starts. For
           example, a user may choose to draw from ISA savings between early
           retirement and Alpha or State Pension commencement.
@@ -435,6 +561,21 @@ export function MethodologyPage() {
           retirement-income target and whether ISA or SIPP drawdown can cover
           that gap.
         </p>
+        <p className="section-copy">
+          Bridge analysis first prepares a retirement scenario where Alpha and
+          nuvos accrual stop at the target retirement age and ISA drawdown can
+          begin at retirement. It then compares net secure income from Alpha,
+          nuvos and State Pension with the selected target for each month from
+          retirement to life expectancy.
+        </p>
+        <p className="section-copy">
+          Before SIPP access, any shortfall is tracked as an ISA-only bridge
+          requirement. From SIPP access onwards, the bridge calculation draws
+          from SIPP first and then ISA, limited by the balances available. Any
+          remaining gap is recorded as an unfunded shortfall. The comparison
+          view also estimates the extra monthly saving that would be needed to
+          cover any remaining shortfall over the months before retirement.
+        </p>
         <p className="section-copy">A typical bridge scenario might be:</p>
         <FormulaBlock>
           {
@@ -452,6 +593,13 @@ export function MethodologyPage() {
           guarantee. A shortfall shown in the bridge chart may mean that savings
           are exhausted, pension income starts too late, or the income target is
           too high for the selected assumptions.
+        </p>
+        <p className="section-copy">
+          Where requested by the comparison view, the model tests whole-year
+          Alpha and nuvos draw ages from the later of age 55 and the selected
+          retirement age up to the relevant normal pension age. The first age
+          that passes the bridge-plan and stable guaranteed-income checks is
+          shown as the earliest sustainable pension draw age, if one is found.
         </p>
       </section>
 
@@ -480,6 +628,12 @@ export function MethodologyPage() {
         <p className="section-copy">
           Partial retirement can materially affect both future pension accrual
           and bridge-funding capacity.
+        </p>
+        <p className="section-copy">
+          Partial retirement does not directly reduce existing accrued pension,
+          State Pension, or the current ISA and SIPP balances already entered.
+          It changes future accrual and regular saving assumptions from the
+          selected start age.
         </p>
       </section>
 
@@ -512,6 +666,29 @@ export function MethodologyPage() {
           National Insurance, benefit interactions, marriage allowance, salary
           sacrifice, tax-code timing, emergency tax, capital gains tax,
           inheritance tax or all pension tax edge cases.
+        </p>
+      </section>
+
+      <section>
+        <h2>Scenario comparison methodology</h2>
+        <p className="section-copy">
+          Saved comparison scenarios store a snapshot of the current settings in
+          local browser storage when local saving is enabled. Each scenario is
+          recalculated from its saved settings rather than reusing the current
+          on-screen result.
+        </p>
+        <p className="section-copy">
+          The comparison view derives metrics including:
+        </p>
+        <ul className="section-copy">
+          {COMPARISON_OUTPUTS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="section-copy">
+          These metrics are intended to make scenarios easier to compare. They
+          are not a ranking, recommendation, or statement that one option is the
+          best choice.
         </p>
       </section>
     </StaticPageLayout>

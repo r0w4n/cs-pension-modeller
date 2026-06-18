@@ -16,7 +16,7 @@ const JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
 const COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.comparisonRetirementIncomeDisplay";
 
-export type AppMode = "bridge" | "simple" | "expert";
+export type AppMode = "bridge" | "simple" | "expert" | "optimiser";
 export type RetirementIncomeDisplay = "monthly" | "annual";
 
 export function loadAcknowledgementState() {
@@ -47,7 +47,8 @@ export function loadStoredAppMode(): AppMode | null {
   if (
     storedMode === "bridge" ||
     storedMode === "simple" ||
-    storedMode === "expert"
+    storedMode === "expert" ||
+    storedMode === "optimiser"
   ) {
     return storedMode;
   }

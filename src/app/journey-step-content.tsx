@@ -17,6 +17,7 @@ import {
   buildComparisonStatusItems,
   clonePensionSettings,
   createComparisonResult,
+  createComparisonScenarioId,
   formatDate,
   formatDecimalAge,
   getSettingsSignature,
@@ -51,6 +52,10 @@ import {
   ResultsSummarySection,
 } from "./results-summary";
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
+import { OptimiserResults } from "../features/optimiser/OptimiserResults";
+import { OptimiserSearchSettings } from "../features/optimiser/OptimiserSearchSettings";
+import type { OptimiserController } from "../features/optimiser/useOptimiserController";
+import { MAX_COMPARISON_SCENARIOS } from "./comparison-state";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -82,6 +87,7 @@ export type JourneyStepViewModel = {
   onComparisonRetirementIncomeDisplayChange: (
     display: RetirementIncomeDisplay
   ) => void;
+  optimiser: OptimiserController;
 };
 
 export type JourneyStepContentProps = {
@@ -147,11 +153,94 @@ export function JourneyStepContent({
     );
   }
 
+  if (step.kind === "optimiser-answer") {
+    return renderOptimiserAnswerStep(viewModel);
+  }
+
   if (step.kind === "fields") {
     return renderFieldsStep(step, viewModel);
   }
 
   return null;
+}
+
+function renderOptimiserAnswerStep(viewModel: JourneyStepViewModel) {
+  const {
+    settings,
+    validationIssues,
+    optimiser,
+    onChange,
+    comparisonRetirementIncomeDisplay,
+    comparisonScenarios,
+    comparisonResultCache,
+    onScenariosChange,
+    onLoadScenario,
+    onComparisonRetirementIncomeDisplayChange,
+  } = viewModel;
+
+  const addOptimiserScenarioToComparison = (
+    scenarioSettings: PensionSettings,
+    scenarioName: string
+  ) => {
+    if (comparisonScenarios.length >= MAX_COMPARISON_SCENARIOS) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+
+    onScenariosChange([
+      ...comparisonScenarios,
+      {
+        id: createComparisonScenarioId(),
+        name: scenarioName,
+        settings: clonePensionSettings(scenarioSettings),
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+  };
+
+  return (
+    <>
+      <ValidationSummary validationIssues={validationIssues} />
+
+      <OptimiserSearchSettings
+        settings={settings}
+        optimiser={optimiser}
+        onChange={onChange}
+      />
+
+      <OptimiserResults
+        settings={settings}
+        result={optimiser.result}
+        isRunning={optimiser.isRunning}
+        progress={optimiser.progress}
+        comparisonLimitReached={
+          comparisonScenarios.length >= MAX_COMPARISON_SCENARIOS
+        }
+        onAddToComparison={addOptimiserScenarioToComparison}
+      />
+
+      {optimiser.result ? (
+        <ComparisonSection>
+          <ComparisonPanelFeature
+            settings={settings}
+            validationIssues={validationIssues}
+            scenarios={comparisonScenarios}
+            comparisonResultCache={comparisonResultCache}
+            onScenariosChange={onScenariosChange}
+            onLoadScenario={onLoadScenario}
+            retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+            onRetirementIncomeDisplayChange={
+              onComparisonRetirementIncomeDisplayChange
+            }
+            hideInactiveLegendItems
+            showPensionSummary={false}
+          />
+        </ComparisonSection>
+      ) : null}
+    </>
+  );
 }
 
 function renderOptionalSectionsStep(

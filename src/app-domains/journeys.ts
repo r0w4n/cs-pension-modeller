@@ -76,7 +76,12 @@ export type JourneyStepDefinition =
       eyebrow: string;
       title: string;
       description: string;
-      kind: "optional-sections" | "answer" | "bridge-answer" | "expert-answer";
+      kind:
+        | "optional-sections"
+        | "answer"
+        | "bridge-answer"
+        | "expert-answer"
+        | "optimiser-answer";
       hideInactiveLegendItems?: boolean;
       hideBridgeFundingSection?: boolean;
       hideFlexibleAssetsSection?: boolean;
@@ -390,6 +395,13 @@ export const JOURNEY_DEFINITIONS = [
       "This journey gives you more control over your retirement projection, including detailed assumptions for pensions, savings, tax, inflation, investment growth and partial retirement.",
     steps: createExpertJourneySteps(),
   },
+  {
+    id: "optimiser-journey",
+    title: "Optimise my early retirement route",
+    description:
+      "Work through the same detailed assumptions as the expert journey, then ask the optimiser to search contribution levels, draw ages, withdrawal choices and partial-retirement options for modelled routes to your saved retirement target.",
+    steps: createOptimiserJourneySteps(),
+  },
 ] as const satisfies readonly JourneyDefinition[];
 
 function createExpertJourneySteps(): JourneyStepDefinition[] {
@@ -427,6 +439,111 @@ function createExpertJourneyFieldStep(
     fieldIds: group.fields.map((field) => field.id),
     visible: isExpertJourneyGroupVisible(group.id),
   };
+}
+
+function createOptimiserJourneySteps(): JourneyStepDefinition[] {
+  return [
+    {
+      id: "optional-sections",
+      eyebrow: "Step 1",
+      title: "Optional sections",
+      description:
+        "Choose which parts of the modeller are in this scenario. The optimiser searches within the sections you include and keeps hidden section values saved.",
+      kind: "optional-sections",
+    },
+    ...fieldGroups.flatMap(createOptimiserJourneyFieldStep),
+    {
+      id: "optimiser-answer",
+      eyebrow: "Optimiser",
+      title: "Optimiser search and routes",
+      description:
+        "Set the search limits and ranking preference, then review the modelled routes found by the optimiser.",
+      kind: "optimiser-answer",
+    },
+  ];
+}
+
+function createOptimiserJourneyFieldStep(
+  group: FieldGroup
+): JourneyStepDefinition[] {
+  const fieldIds = group.fields
+    .map((field) => field.id)
+    .filter((fieldId) => !isOptimiserManagedField(group.id, fieldId));
+
+  if (fieldIds.length === 0) {
+    return [];
+  }
+
+  return [
+    {
+      id: `optimiser-${group.id}`,
+      eyebrow: group.eyebrow,
+      title: group.title,
+      description: getOptimiserGroupDescription(group),
+      kind: "fields",
+      groupId: group.id,
+      fieldIds,
+      visible: isExpertJourneyGroupVisible(group.id),
+    },
+  ];
+}
+
+function getOptimiserGroupDescription(group: FieldGroup) {
+  if (group.id === "alpha") {
+    return "Enter the Alpha pension facts and assumptions the optimiser needs. Draw age, leave age and monthly added-pension amount are searched later.";
+  }
+
+  if (group.id === "sipp") {
+    return "Enter current SIPP value, tax relief and growth assumptions. Contribution and drawdown settings are searched by the optimiser.";
+  }
+
+  if (group.id === "isa") {
+    return "Enter current ISA value and growth assumptions. Contribution and drawdown settings are searched by the optimiser.";
+  }
+
+  if (group.id === "partial-retirement") {
+    return "Enter the salary basis used if partial retirement is included. Start age and working percentage are searched by the optimiser.";
+  }
+
+  return group.description;
+}
+
+function isOptimiserManagedField(
+  groupId: string,
+  fieldId: FieldDefinition["id"]
+) {
+  const managedFieldsByGroup: Record<string, Set<FieldDefinition["id"]>> = {
+    personal: new Set([
+      "lifeExpectancy",
+      "requirementAge",
+      "desiredRetirementIncome",
+    ]),
+    alpha: new Set([
+      "alphaPensionLeaveAge",
+      "alphaPensionDrawAge",
+      "alphaAddedPensionMonthly",
+    ]),
+    sipp: new Set([
+      "sippMonthlyContribution",
+      "sippDrawAge",
+      "sippWithdrawalStrategy",
+      "sippWithdrawalPercent",
+      "sippWithdrawalTargetAge",
+    ]),
+    isa: new Set([
+      "isaMonthlyContribution",
+      "isaDrawAge",
+      "isaWithdrawalStrategy",
+      "isaWithdrawalPercent",
+      "isaWithdrawalTargetAge",
+    ]),
+    "partial-retirement": new Set([
+      "partialRetirementStartAge",
+      "partialRetirementWorkPercent",
+    ]),
+  };
+
+  return managedFieldsByGroup[groupId]?.has(fieldId) ?? false;
 }
 
 function isExpertJourneyGroupVisible(groupId: string) {

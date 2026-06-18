@@ -6,12 +6,14 @@ const [
   bridgeJourneyDefinition,
   simpleJourneyDefinition,
   expertJourneyDefinition,
+  optimiserJourneyDefinition,
 ] = JOURNEY_DEFINITIONS;
 
 const JOURNEY_DEFINITION_BY_MODE = {
   bridge: bridgeJourneyDefinition,
   simple: simpleJourneyDefinition,
   expert: expertJourneyDefinition,
+  optimiser: optimiserJourneyDefinition,
 } satisfies Record<AppMode, (typeof JOURNEY_DEFINITIONS)[number]>;
 
 export function useAppModeState() {
@@ -42,8 +44,8 @@ export function useAppModeState() {
   }, [appMode, scrollActiveModeIntoView]);
 
   const activeJourneyMode = appMode;
-  const activeJourneyDefinition = activeJourneyMode
-    ? JOURNEY_DEFINITION_BY_MODE[activeJourneyMode]
+  const activeJourneyDefinition = appMode
+    ? JOURNEY_DEFINITION_BY_MODE[appMode]
     : null;
 
   return {

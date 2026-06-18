@@ -649,10 +649,10 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("does not show the retired third mode option", () => {
+  it("shows the active journey and optimiser mode options", () => {
     renderAcknowledgedApp({ mode: null });
 
-    expect(document.querySelectorAll(".mode-card")).toHaveLength(3);
+    expect(document.querySelectorAll(".mode-card")).toHaveLength(4);
   });
 
   it("uses the simplified early retirement journey by default", () => {

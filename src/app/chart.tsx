@@ -66,6 +66,7 @@ export function ComparisonBridgeChart({
   bridgeChartParameters,
   bridgeChartLimits,
   hideInactiveLegendItems = false,
+  readOnly = false,
   validationIssues,
   onChangeChartParameters,
 }: {
@@ -73,6 +74,7 @@ export function ComparisonBridgeChart({
   bridgeChartParameters?: RetirementIncomeBridgeParameters;
   bridgeChartLimits?: RetirementIncomeBridgeLimits;
   hideInactiveLegendItems?: boolean;
+  readOnly?: boolean;
   validationIssues?: PensionValidationIssue[];
   onChangeChartParameters?: (
     patch: Partial<RetirementIncomeBridgeParameters>
@@ -82,7 +84,7 @@ export function ComparisonBridgeChart({
     !retirementIncomeSeries ||
     !bridgeChartParameters ||
     !bridgeChartLimits ||
-    !onChangeChartParameters
+    (!readOnly && !onChangeChartParameters)
   ) {
     return null;
   }
@@ -93,10 +95,13 @@ export function ComparisonBridgeChart({
       alphaLabel="Alpha pension"
       hideInactiveLegendItems={hideInactiveLegendItems}
       limits={bridgeChartLimits}
+      readOnly={readOnly}
       statePensionEditable
       validationIssues={validationIssues}
-      onChangeParameters={onChangeChartParameters}
+      onChangeParameters={onChangeChartParameters ?? noopChangeChartParameters}
       {...bridgeChartParameters}
     />
   );
 }
+
+function noopChangeChartParameters() {}

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -74,6 +75,7 @@ export type RetirementIncomeBridgeChartProps =
     alphaLabel?: string;
     hideInactiveLegendItems?: boolean;
     limits: RetirementIncomeBridgeLimits;
+    readOnly?: boolean;
     statePensionEditable?: boolean;
     validationIssues?: PensionValidationIssue[];
     onChangeParameters: (
@@ -253,10 +255,12 @@ export function RetirementIncomeBridgeChart({
   alphaLabel = "Alpha pension",
   hideInactiveLegendItems = false,
   limits,
+  readOnly = false,
   statePensionEditable = false,
   validationIssues = [],
   onChangeParameters,
 }: RetirementIncomeBridgeChartProps) {
+  const chartInstanceId = useId();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
@@ -300,8 +304,8 @@ export function RetirementIncomeBridgeChart({
   const valueLabel =
     displayMode === "monthly" ? "Monthly income" : "Annual income";
   const axisTargetLabel = formatCurrency(displayedTargetIncomeAnnual / divisor);
-  const chartTitleId = "retirement-income-bridge-chart-title";
-  const chartDescriptionId = "retirement-income-bridge-chart-description";
+  const chartTitleId = `${chartInstanceId}-retirement-income-bridge-chart-title`;
+  const chartDescriptionId = `${chartInstanceId}-retirement-income-bridge-chart-description`;
   const displayedData = useMemo(() => {
     if (dataSourceTargetIncomeAnnual <= 0) {
       return data.map((point) => ({
@@ -551,7 +555,7 @@ export function RetirementIncomeBridgeChart({
         shortLabel: "Retire",
         age: retirementAge,
         colour: "#0f6f72",
-        editable: true,
+        editable: !readOnly,
       },
       ...(showAlpha
         ? [
@@ -561,7 +565,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "Leave alpha",
               age: alphaLeaveAge,
               colour: "#b45309",
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -573,7 +577,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "SIPP start",
               age: sippAccessAge,
               colour: sourceMeta.sippIncomeAnnual.colour,
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -585,7 +589,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "SIPP stop",
               age: sippUseByAge,
               colour: sourceMeta.sippIncomeAnnual.colour,
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -597,7 +601,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "ISA start",
               age: isaAccessAge,
               colour: sourceMeta.isaIncomeAnnual.colour,
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -609,7 +613,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "Start partial",
               age: partialRetirementStartAge,
               colour: "#c2410c",
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -621,7 +625,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "Start Alpha",
               age: alphaStartAge,
               colour: "#7353bf",
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -633,7 +637,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "Start Nuvos",
               age: nuvosStartAge,
               colour: "#b45309",
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -645,7 +649,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "ISA stop",
               age: isaUseByAge,
               colour: sourceMeta.isaIncomeAnnual.colour,
-              editable: true,
+              editable: !readOnly,
             },
           ]
         : []),
@@ -657,7 +661,7 @@ export function RetirementIncomeBridgeChart({
               shortLabel: "Start State",
               age: statePensionAge,
               colour: "#1d62d1",
-              editable: statePensionEditable,
+              editable: statePensionEditable && !readOnly,
             },
           ]
         : []),
@@ -670,6 +674,7 @@ export function RetirementIncomeBridgeChart({
       isaUseByAgeEnabled,
       partialRetirementEnabled,
       partialRetirementStartAge,
+      readOnly,
       retirementAge,
       showAlpha,
       showNuvos,
@@ -1596,38 +1601,11 @@ export function RetirementIncomeBridgeChart({
         <h3 id={chartTitleId} className="bridge-chart-title">
           Retirement income bridge
         </h3>
-        <div
-          className="summary-toggle bridge-display-toggle"
-          role="group"
-          aria-label="Chart income display"
-        >
-          <button
-            type="button"
-            className={
-              displayMode === "monthly"
-                ? "summary-toggle-button summary-toggle-button--active"
-                : "summary-toggle-button"
-            }
-            aria-label="Show chart as monthly"
-            aria-pressed={displayMode === "monthly"}
-            onClick={() => changeDisplayMode("monthly")}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            className={
-              displayMode === "annual"
-                ? "summary-toggle-button summary-toggle-button--active"
-                : "summary-toggle-button"
-            }
-            aria-label="Show chart as annual"
-            aria-pressed={displayMode === "annual"}
-            onClick={() => changeDisplayMode("annual")}
-          >
-            Annual
-          </button>
-        </div>
+        {renderDisplayModeToggle({
+          displayMode,
+          readOnly,
+          onChangeDisplayMode: changeDisplayMode,
+        })}
       </div>
 
       {!projectionReady || hasValidationIssues ? (
@@ -1767,25 +1745,22 @@ export function RetirementIncomeBridgeChart({
               className="bridge-target-line"
               d={targetLine(visibleData) ?? undefined}
             />
-            <path
-              className="bridge-target-line-hitbox"
-              d={targetLine(visibleData) ?? undefined}
-              role="slider"
-              tabIndex={0}
-              aria-label="Target income line"
-              aria-valuemin={limits.targetIncomeAnnual.min / divisor}
-              aria-valuemax={limits.targetIncomeAnnual.max / divisor}
-              aria-valuenow={displayedTargetIncomeAnnual / divisor}
-              onKeyDown={handleTargetLineKeyDown}
-              onPointerDown={handleTargetPointerDown}
-              onPointerMove={handleTargetPointerMove}
-              onPointerUp={(event) => finishTargetPointerDrag(event, true)}
-              onPointerCancel={(event) => finishTargetPointerDrag(event, false)}
-              onTouchStart={handleTargetTouchStart}
-              onTouchMove={handleTargetTouchMove}
-              onTouchEnd={(event) => finishTargetTouchDrag(event, true)}
-              onTouchCancel={(event) => finishTargetTouchDrag(event, false)}
-            />
+            {renderTargetLineHitbox({
+              displayedTargetIncomeAnnual,
+              divisor,
+              limits,
+              path: targetLine(visibleData) ?? undefined,
+              readOnly,
+              onKeyDown: handleTargetLineKeyDown,
+              onPointerCancel: (event) => finishTargetPointerDrag(event, false),
+              onPointerDown: handleTargetPointerDown,
+              onPointerMove: handleTargetPointerMove,
+              onPointerUp: (event) => finishTargetPointerDrag(event, true),
+              onTouchCancel: (event) => finishTargetTouchDrag(event, false),
+              onTouchEnd: (event) => finishTargetTouchDrag(event, true),
+              onTouchMove: handleTargetTouchMove,
+              onTouchStart: handleTargetTouchStart,
+            })}
 
             {renderedMarkerLayouts.map((marker) => {
               const x = xScale(marker.plotAge);
@@ -1807,7 +1782,7 @@ export function RetirementIncomeBridgeChart({
                     .filter(Boolean)
                     .join(" ")}
                   role={marker.editable ? "slider" : "img"}
-                  tabIndex={0}
+                  tabIndex={marker.editable || !readOnly ? 0 : undefined}
                   aria-label={`${marker.label}, age ${formatAgeValue(marker.age)}`}
                   aria-valuemin={limits[marker.key].min}
                   aria-valuemax={limits[marker.key].max}
@@ -1952,42 +1927,20 @@ export function RetirementIncomeBridgeChart({
             <span className="bridge-build-up-key" />
             {BUILD_UP_META.label}
           </span>
-          {legendIncomeKeys.map((key) => {
-            const label =
-              key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
-            const enabled = isIncomeSourceEnabled(key, {
-              showAlpha,
+          {legendIncomeKeys.map((key) =>
+            renderLegendItem({
+              alphaLabel,
+              key,
+              onChangeParameters,
               partialRetirementEnabled,
+              readOnly,
+              showAlpha,
               showIsa,
               showNuvos,
               showSipp,
               showStatePension,
-            });
-            const togglePatch = getIncomeSourceTogglePatch(key, !enabled);
-
-            if (!togglePatch) {
-              return (
-                <span key={key}>
-                  <span style={{ background: sourceMeta[key].colour }} />
-                  {label}
-                </span>
-              );
-            }
-
-            return (
-              <button
-                key={key}
-                type="button"
-                className="bridge-legend-toggle"
-                aria-label={getIncomeSourceToggleLabel(key)}
-                aria-pressed={enabled}
-                onClick={() => onChangeParameters(togglePatch)}
-              >
-                <span style={{ background: sourceMeta[key].colour }} />
-                {label}
-              </button>
-            );
-          })}
+            })
+          )}
           <span>
             <span className="bridge-shortfall-key" />
             Shortfall
@@ -1995,84 +1948,256 @@ export function RetirementIncomeBridgeChart({
         </div>
       </div>
 
-      <BridgeMobileNavigation
-        isCompact={isCompact}
-        isVisible={isMobileNavigationVisible}
-        limits={limits}
-        selectedMobileMarker={selectedMobileMarker}
-        visibleMilestoneMarkers={visibleMilestoneMarkers}
-        onChangeParameters={onChangeParameters}
-        onSelectMobileMarker={(key) => {
-          setSelectedMobileMarkerKey(key);
-          trackAnalyticsEvent("chart_mobile_marker_selected", {
-            chart_marker: key,
-          });
-        }}
-        onToggleVisibility={() => {
-          setIsMobileNavigationVisible((currentValue) => {
-            const nextValue = !currentValue;
+      {!readOnly ? (
+        <>
+          <BridgeMobileNavigation
+            isCompact={isCompact}
+            isVisible={isMobileNavigationVisible}
+            limits={limits}
+            selectedMobileMarker={selectedMobileMarker}
+            visibleMilestoneMarkers={visibleMilestoneMarkers}
+            onChangeParameters={onChangeParameters}
+            onSelectMobileMarker={(key) => {
+              setSelectedMobileMarkerKey(key);
+              trackAnalyticsEvent("chart_mobile_marker_selected", {
+                chart_marker: key,
+              });
+            }}
+            onToggleVisibility={() => {
+              setIsMobileNavigationVisible((currentValue) => {
+                const nextValue = !currentValue;
 
-            trackAnalyticsEvent("chart_mobile_controls_toggled", {
-              expanded: nextValue,
-            });
+                trackAnalyticsEvent("chart_mobile_controls_toggled", {
+                  expanded: nextValue,
+                });
 
-            return nextValue;
-          });
-        }}
-      />
+                return nextValue;
+              });
+            }}
+          />
 
-      <div className="bridge-control-grid">
-        {showAlpha ? (
-          <BridgeMetricControl
-            label="Added Alpha pension"
-            value={alphaMonthlyAddedPension}
-            suffix="/ month"
-            limit={limits.alphaMonthlyAddedPension}
-            colour="#7353bf"
-            onChange={(value) =>
-              onChangeParameters({ alphaMonthlyAddedPension: value })
-            }
-          />
-        ) : null}
-        {showIsa ? (
-          <BridgeMetricControl
-            label="ISA contribution"
-            value={isaMonthlyContribution}
-            suffix="/ month"
-            limit={limits.isaMonthlyContribution}
-            colour="#155ea8"
-            onChange={(value) =>
-              onChangeParameters({ isaMonthlyContribution: value })
-            }
-          />
-        ) : null}
-        {showSipp ? (
-          <BridgeMetricControl
-            label="SIPP contribution"
-            value={sippMonthlyContribution}
-            suffix="/ month"
-            limit={limits.sippMonthlyContribution}
-            colour="#0d6b40"
-            onChange={(value) =>
-              onChangeParameters({ sippMonthlyContribution: value })
-            }
-          />
-        ) : null}
-        {partialRetirementEnabled ? (
-          <BridgeMetricControl
-            label="Partial work"
-            value={partialRetirementWorkPercent}
-            suffix="%"
-            limit={limits.partialRetirementWorkPercent}
-            colour="#c2410c"
-            formatValue={(value) => String(Math.round(value))}
-            onChange={(value) =>
-              onChangeParameters({ partialRetirementWorkPercent: value })
-            }
-          />
-        ) : null}
-      </div>
+          <div className="bridge-control-grid">
+            {showAlpha ? (
+              <BridgeMetricControl
+                label="Added Alpha pension"
+                value={alphaMonthlyAddedPension}
+                suffix="/ month"
+                limit={limits.alphaMonthlyAddedPension}
+                colour="#7353bf"
+                onChange={(value) =>
+                  onChangeParameters({ alphaMonthlyAddedPension: value })
+                }
+              />
+            ) : null}
+            {showIsa ? (
+              <BridgeMetricControl
+                label="ISA contribution"
+                value={isaMonthlyContribution}
+                suffix="/ month"
+                limit={limits.isaMonthlyContribution}
+                colour="#155ea8"
+                onChange={(value) =>
+                  onChangeParameters({ isaMonthlyContribution: value })
+                }
+              />
+            ) : null}
+            {showSipp ? (
+              <BridgeMetricControl
+                label="SIPP contribution"
+                value={sippMonthlyContribution}
+                suffix="/ month"
+                limit={limits.sippMonthlyContribution}
+                colour="#0d6b40"
+                onChange={(value) =>
+                  onChangeParameters({ sippMonthlyContribution: value })
+                }
+              />
+            ) : null}
+            {partialRetirementEnabled ? (
+              <BridgeMetricControl
+                label="Partial work"
+                value={partialRetirementWorkPercent}
+                suffix="%"
+                limit={limits.partialRetirementWorkPercent}
+                colour="#c2410c"
+                formatValue={(value) => String(Math.round(value))}
+                onChange={(value) =>
+                  onChangeParameters({ partialRetirementWorkPercent: value })
+                }
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </section>
+  );
+}
+
+function renderDisplayModeToggle({
+  displayMode,
+  readOnly,
+  onChangeDisplayMode,
+}: {
+  displayMode: "annual" | "monthly";
+  readOnly: boolean;
+  onChangeDisplayMode: (displayMode: "annual" | "monthly") => void;
+}) {
+  if (readOnly) {
+    return null;
+  }
+
+  return (
+    <div
+      className="summary-toggle bridge-display-toggle"
+      role="group"
+      aria-label="Chart income display"
+    >
+      <button
+        type="button"
+        className={
+          displayMode === "monthly"
+            ? "summary-toggle-button summary-toggle-button--active"
+            : "summary-toggle-button"
+        }
+        aria-label="Show chart as monthly"
+        aria-pressed={displayMode === "monthly"}
+        onClick={() => onChangeDisplayMode("monthly")}
+      >
+        Monthly
+      </button>
+      <button
+        type="button"
+        className={
+          displayMode === "annual"
+            ? "summary-toggle-button summary-toggle-button--active"
+            : "summary-toggle-button"
+        }
+        aria-label="Show chart as annual"
+        aria-pressed={displayMode === "annual"}
+        onClick={() => onChangeDisplayMode("annual")}
+      >
+        Annual
+      </button>
+    </div>
+  );
+}
+
+function renderTargetLineHitbox({
+  displayedTargetIncomeAnnual,
+  divisor,
+  limits,
+  path,
+  readOnly,
+  onKeyDown,
+  onPointerCancel,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onTouchCancel,
+  onTouchEnd,
+  onTouchMove,
+  onTouchStart,
+}: {
+  displayedTargetIncomeAnnual: number;
+  divisor: number;
+  limits: RetirementIncomeBridgeLimits;
+  path: string | undefined;
+  readOnly: boolean;
+  onKeyDown: (event: KeyboardEvent<SVGPathElement>) => void;
+  onPointerCancel: (event: PointerEvent<SVGPathElement>) => void;
+  onPointerDown: (event: PointerEvent<SVGPathElement>) => void;
+  onPointerMove: (event: PointerEvent<SVGPathElement>) => void;
+  onPointerUp: (event: PointerEvent<SVGPathElement>) => void;
+  onTouchCancel: (event: TouchEvent<SVGPathElement>) => void;
+  onTouchEnd: (event: TouchEvent<SVGPathElement>) => void;
+  onTouchMove: (event: TouchEvent<SVGPathElement>) => void;
+  onTouchStart: (event: TouchEvent<SVGPathElement>) => void;
+}) {
+  if (readOnly) {
+    return null;
+  }
+
+  return (
+    <path
+      className="bridge-target-line-hitbox"
+      d={path}
+      role="slider"
+      tabIndex={0}
+      aria-label="Target income line"
+      aria-valuemin={limits.targetIncomeAnnual.min / divisor}
+      aria-valuemax={limits.targetIncomeAnnual.max / divisor}
+      aria-valuenow={displayedTargetIncomeAnnual / divisor}
+      onKeyDown={onKeyDown}
+      onPointerCancel={onPointerCancel}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onTouchCancel={onTouchCancel}
+      onTouchEnd={onTouchEnd}
+      onTouchMove={onTouchMove}
+      onTouchStart={onTouchStart}
+    />
+  );
+}
+
+function renderLegendItem({
+  alphaLabel,
+  key,
+  onChangeParameters,
+  partialRetirementEnabled,
+  readOnly,
+  showAlpha,
+  showIsa,
+  showNuvos,
+  showSipp,
+  showStatePension,
+}: {
+  alphaLabel: string;
+  key: IncomeKey;
+  onChangeParameters: (
+    patch: Partial<RetirementIncomeBridgeParameters>
+  ) => void;
+  partialRetirementEnabled: boolean;
+  readOnly: boolean;
+  showAlpha: boolean;
+  showIsa: boolean;
+  showNuvos: boolean;
+  showSipp: boolean;
+  showStatePension: boolean;
+}) {
+  const label =
+    key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
+  const enabled = isIncomeSourceEnabled(key, {
+    showAlpha,
+    partialRetirementEnabled,
+    showIsa,
+    showNuvos,
+    showSipp,
+    showStatePension,
+  });
+  const togglePatch = getIncomeSourceTogglePatch(key, !enabled);
+
+  if (!togglePatch || readOnly) {
+    return (
+      <span key={key}>
+        <span style={{ background: sourceMeta[key].colour }} />
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      key={key}
+      type="button"
+      className="bridge-legend-toggle"
+      aria-label={getIncomeSourceToggleLabel(key)}
+      aria-pressed={enabled}
+      onClick={() => onChangeParameters(togglePatch)}
+    >
+      <span style={{ background: sourceMeta[key].colour }} />
+      {label}
+    </button>
   );
 }
 

@@ -50,6 +50,14 @@ vi.mock("./results-summary", () => ({
   ValidationIssuesSection: () => <div>Validation issues</div>,
 }));
 
+vi.mock("../features/optimiser/OptimiserResults", () => ({
+  OptimiserResults: () => <div>Optimiser results</div>,
+}));
+
+vi.mock("../features/optimiser/OptimiserSearchSettings", () => ({
+  OptimiserSearchSettings: () => <div>Optimiser search settings</div>,
+}));
+
 describe("JourneyStepContent", () => {
   const originalMatchMedia = window.matchMedia;
 
@@ -168,5 +176,18 @@ function createViewModel(): JourneyStepViewModel {
     onLoadScenario: vi.fn(),
     onRetirementIncomeDisplayChange: vi.fn(),
     onComparisonRetirementIncomeDisplayChange: vi.fn(),
+    optimiser: {
+      searchState: {
+        maxMonthlyContribution: 2_000,
+        includeAddedPension: true,
+        includePartialRetirement: false,
+        rankingMode: "earliest-retirement",
+      },
+      result: null,
+      isRunning: false,
+      progress: null,
+      updateSearchState: vi.fn(),
+      runOptimiser: vi.fn(),
+    },
   };
 }

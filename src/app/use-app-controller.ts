@@ -45,6 +45,7 @@ import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
 import { applySimpleJourneyDefaults } from "../app-domains/journeys";
+import { useOptimiserController } from "../features/optimiser/useOptimiserController";
 
 export function useAppController() {
   const {
@@ -117,6 +118,7 @@ export function useAppController() {
     effectiveSettings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
   });
+  const optimiser = useOptimiserController(effectiveSettings);
 
   useUndoShortcut({
     chartUndoStack,
@@ -253,6 +255,7 @@ export function useAppController() {
     onRetirementIncomeDisplayChange: setJourneyRetirementIncomeDisplay,
     onComparisonRetirementIncomeDisplayChange:
       setComparisonRetirementIncomeDisplay,
+    optimiser,
   };
 
   function acknowledgeNotice() {

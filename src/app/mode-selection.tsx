@@ -1,4 +1,4 @@
-export type AppModeOption = "bridge" | "simple" | "expert";
+export type AppModeOption = "bridge" | "simple" | "expert" | "optimiser";
 
 type ModeSelectionProps = {
   selectedMode: AppModeOption | null;
@@ -64,6 +64,21 @@ export function ModeSelection({
             This journey gives you more control over your retirement projection,
             including detailed assumptions for pensions, savings, tax,
             inflation, investment growth and partial retirement.
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={getModeCardClassName(selectedMode === "optimiser")}
+          aria-pressed={selectedMode === "optimiser"}
+          onClick={() => onSelectMode("optimiser")}
+        >
+          <span className="card-label">Optimiser journey</span>
+          <strong>Optimise my early retirement route</strong>
+          <span>
+            Work through the detailed assumptions, then search modelled SIPP,
+            ISA, Alpha top-up, draw-age and partial-retirement choices for
+            potential routes to your retirement target.
           </span>
         </button>
       </div>

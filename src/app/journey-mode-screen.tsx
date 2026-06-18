@@ -8,7 +8,7 @@ import {
 } from "./journey-step-content";
 import { JourneyFlow as JourneyFlowFeature, JourneySection } from "./journey";
 
-export type JourneyMode = "bridge" | "simple" | "expert";
+export type JourneyMode = "bridge" | "simple" | "expert" | "optimiser";
 
 type JourneyModeScreenProps = {
   activeModeRef: RefObject<HTMLDivElement | null>;

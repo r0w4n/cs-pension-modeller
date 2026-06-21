@@ -259,6 +259,7 @@ export function RetirementIncomeBridgeChart({
 }: RetirementIncomeBridgeChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const targetLineHitboxRef = useRef<SVGPathElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
   const activeMarkerDragScaleRef = useRef<d3.ScaleLinear<
     number,
@@ -801,6 +802,32 @@ export function RetirementIncomeBridgeChart({
     });
     setPendingTargetIncomeAnnual(nextTargetIncomeAnnual);
   };
+
+  useEffect(() => {
+    const targetLineHitbox = targetLineHitboxRef.current;
+
+    if (!targetLineHitbox) {
+      return;
+    }
+
+    const preventPageScroll = (event: globalThis.TouchEvent) => {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    targetLineHitbox.addEventListener("touchstart", preventPageScroll, {
+      passive: false,
+    });
+    targetLineHitbox.addEventListener("touchmove", preventPageScroll, {
+      passive: false,
+    });
+
+    return () => {
+      targetLineHitbox.removeEventListener("touchstart", preventPageScroll);
+      targetLineHitbox.removeEventListener("touchmove", preventPageScroll);
+    };
+  }, []);
 
   const changeDisplayMode = (nextDisplayMode: "annual" | "monthly") => {
     if (nextDisplayMode === displayMode) {
@@ -1768,6 +1795,7 @@ export function RetirementIncomeBridgeChart({
               d={targetLine(visibleData) ?? undefined}
             />
             <path
+              ref={targetLineHitboxRef}
               className="bridge-target-line-hitbox"
               d={targetLine(visibleData) ?? undefined}
               role="slider"

@@ -71,7 +71,7 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   showStatePension: true,
   limits: {
     targetIncomeAnnual: { min: 0, max: 200000, step: 600 },
-    alphaMonthlyAddedPension: { min: 0, max: 1000, step: 25 },
+    alphaMonthlyAddedPension: { min: 0, max: 2000, step: 25 },
     isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
     retirementAge: { min: 40, max: 67, step: 1 },
@@ -334,6 +334,72 @@ describe("RetirementIncomeBridgeChart", () => {
 
     expect(onChangeParameters).toHaveBeenCalledWith({
       targetIncomeAnnual: 49200,
+    });
+  });
+
+  it("prevents page scrolling while the target income line is changed by touch", () => {
+    mockChartResize(360);
+
+    const onChangeParameters = vi.fn();
+    renderChart({ onChangeParameters });
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 420,
+        height: 420,
+        left: 0,
+        right: 360,
+        top: 0,
+        width: 360,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const targetLine = screen.getByRole("slider", {
+      name: "Target income line",
+    });
+    const touchStartPreventDefault = vi.fn();
+    const touchMovePreventDefault = vi.fn();
+
+    const touchStartEvent = createEvent.touchStart(targetLine, {
+      changedTouches: [{ identifier: 1, clientX: 180, clientY: 140 }],
+      touches: [{ identifier: 1, clientX: 180, clientY: 140 }],
+      cancelable: true,
+    });
+    Object.defineProperty(touchStartEvent, "preventDefault", {
+      configurable: true,
+      value: touchStartPreventDefault,
+    });
+    fireEvent(targetLine, touchStartEvent);
+
+    const touchMoveEvent = createEvent.touchMove(targetLine, {
+      changedTouches: [{ identifier: 1, clientX: 180, clientY: 110 }],
+      touches: [{ identifier: 1, clientX: 180, clientY: 110 }],
+      cancelable: true,
+    });
+    Object.defineProperty(touchMoveEvent, "preventDefault", {
+      configurable: true,
+      value: touchMovePreventDefault,
+    });
+    fireEvent(targetLine, touchMoveEvent);
+
+    fireEvent.touchEnd(targetLine, {
+      changedTouches: [{ identifier: 1, clientX: 180, clientY: 110 }],
+      touches: [],
+    });
+
+    expect(touchStartPreventDefault).toHaveBeenCalled();
+    expect(touchMovePreventDefault).toHaveBeenCalled();
+    expect(onChangeParameters).toHaveBeenCalledWith({
+      targetIncomeAnnual: 27600,
     });
   });
 

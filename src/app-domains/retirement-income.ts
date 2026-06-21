@@ -14,6 +14,7 @@ import {
   calculateMinimumSippAccessAge,
   calculateMinimumStatePensionDrawAge,
   calculateStatePensionDrawAge,
+  ALPHA_ADDED_PENSION_MONTHLY_MAX,
   type PensionSettings,
 } from "../settings";
 import {
@@ -445,7 +446,11 @@ export function createBridgeChartLimits(
 
   return {
     targetIncomeAnnual: { min: 0, max: 200000, step: 600 },
-    alphaMonthlyAddedPension: { min: 0, max: 1000, step: 25 },
+    alphaMonthlyAddedPension: {
+      min: 0,
+      max: ALPHA_ADDED_PENSION_MONTHLY_MAX,
+      step: 25,
+    },
     isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
     retirementAge: {

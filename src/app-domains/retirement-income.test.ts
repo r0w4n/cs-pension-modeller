@@ -189,6 +189,7 @@ describe("retirement-income chart limits", () => {
 
     const limits = createBridgeChartLimits(settings);
 
+    expect(limits.alphaMonthlyAddedPension.max).toBe(2000);
     expect(limits.sippAccessAge.min).toBe(60);
   });
 

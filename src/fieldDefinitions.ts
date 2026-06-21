@@ -1,4 +1,7 @@
-import type { PensionSettings } from "./settings";
+import {
+  ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  type PensionSettings,
+} from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
 
 export type FieldInfoLink = {
@@ -470,7 +473,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "Added Alpha Pension (£ per month)",
         type: "range",
         min: 0,
-        max: 1000,
+        max: ALPHA_ADDED_PENSION_MONTHLY_MAX,
         step: 25,
         format: "currency",
         valuePrefix: "/mo",

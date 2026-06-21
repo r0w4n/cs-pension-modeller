@@ -13,6 +13,7 @@ import {
   defaultSettings,
   formatLocalIsoDate,
   getTodayIsoDate,
+  ALPHA_ADDED_PENSION_MONTHLY_MAX,
   getPartialRetirementContributionMultiplier,
   getLatestAlphaAddedPensionPurchaseDate,
   isValidIsoDate,
@@ -179,6 +180,9 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("assumedCpiPercent", 2.34)).toBe(2.34);
     expect(normalizeSetting("assumedCpiPercent", 11)).toBe(10);
     expect(normalizeSetting("alphaAddedPensionMonthly", 233)).toBe(233);
+    expect(normalizeSetting("alphaAddedPensionMonthly", 2500)).toBe(
+      ALPHA_ADDED_PENSION_MONTHLY_MAX
+    );
     expect(normalizeSetting("pensionableEarnings", 56321)).toBe(56321);
     expect(normalizeSetting("accruedPensionAtLastAbs", 12444.4)).toBe(12444);
     expect(normalizeSetting("alphaPensionLeaveAge", 20)).toBe(20);

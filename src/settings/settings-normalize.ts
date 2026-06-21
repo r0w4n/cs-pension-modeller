@@ -1,4 +1,8 @@
-import type { AddedPensionLumpSum, PensionSettings } from "./settings-types";
+import {
+  ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  type AddedPensionLumpSum,
+  type PensionSettings,
+} from "./settings-types";
 import { defaultSettings } from "./settings-defaults";
 import {
   inflationNumericSettingRules,
@@ -53,7 +57,11 @@ const numericSettingRules = {
   partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
   fullSalary: { min: 0, max: 300000, step: 1 },
   assumedCpiPercent: { min: 0, max: 10, step: 0.1 },
-  alphaAddedPensionMonthly: { min: 0, max: 1000, step: 25 },
+  alphaAddedPensionMonthly: {
+    min: 0,
+    max: ALPHA_ADDED_PENSION_MONTHLY_MAX,
+    step: 25,
+  },
   alphaPensionLeaveAge: { min: 0, max: 70, step: 1 },
   accruedPensionAtLastAbs: { min: 0, max: 50000, step: 1 },
   pensionableEarnings: { min: 10000, max: 150000, step: 500 },

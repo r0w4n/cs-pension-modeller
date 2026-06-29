@@ -30,7 +30,7 @@ export const OPTIONAL_SECTION_TOGGLES = [
     key: "showNuvos",
     label: "nuvos",
     description:
-      "Models nuvos pension benefits separately from Alpha, including its own leave and draw dates.",
+      "Models existing nuvos pension benefits separately from Alpha, including CPI-linked increases and its own draw date.",
   },
   {
     key: "showSipp",
@@ -176,7 +176,6 @@ export const JOURNEY_DEFINITIONS = [
           "nuvosPensionDrawAge",
           "nuvosPensionAbsDate",
           "nuvosAccruedPensionAtLastAbs",
-          "nuvosPensionableEarnings",
           "nuvosApplyPensionIncreases",
           "nuvosAssumedCpiPercent",
         ],
@@ -337,7 +336,6 @@ export const JOURNEY_DEFINITIONS = [
           "nuvosPensionDrawAge",
           "nuvosPensionAbsDate",
           "nuvosAccruedPensionAtLastAbs",
-          "nuvosPensionableEarnings",
           "nuvosApplyPensionIncreases",
           "nuvosAssumedCpiPercent",
         ],
@@ -471,7 +469,6 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
-    nuvosPensionLeaveAge: normalPensionAge,
     nuvosPensionDrawAge: normalPensionAge,
     assumedCpiPercent: 0,
     showStatePension: true,
@@ -484,7 +481,6 @@ export function applySimpleJourneyAssumptions(
 ): PensionSettings {
   return {
     ...settings,
-    nuvosPensionLeaveAge: settings.requirementAge,
     showStatePension: true,
     showSipp: false,
     showIsa: false,

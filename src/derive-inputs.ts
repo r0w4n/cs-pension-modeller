@@ -10,7 +10,10 @@ import {
   getModelledPensionInflationPercent,
 } from "./projection-domains/inflation";
 import { getAlphaEarlyRetirementFactor } from "./projection-domains/alpha";
-import { calculateNuvosEarlyRetirementFactor } from "./projection-domains/nuvos";
+import {
+  calculateNuvosEarlyRetirementFactor,
+  NUVOS_FINAL_PENSIONABLE_SERVICE_DATE,
+} from "./projection-domains/nuvos";
 import { getStatePensionNominalIncreaseRate } from "./projection-domains/state-pension";
 
 export const NUVOS_NORMAL_PENSION_AGE = 65;
@@ -122,8 +125,11 @@ export function deriveProjectionInputs(
     settings.nuvosPensionDrawAge
   );
   const nuvosAccrualStopDate = minIsoDate(
-    nuvosDrawDate,
-    addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge)
+    minIsoDate(
+      nuvosDrawDate,
+      addYears(settings.dateOfBirth, settings.nuvosPensionLeaveAge)
+    ),
+    NUVOS_FINAL_PENSIONABLE_SERVICE_DATE
   );
   const nuvosNpaDate = addYears(settings.dateOfBirth, NUVOS_NORMAL_PENSION_AGE);
   const nuvosMonthsEarly =

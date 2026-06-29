@@ -1,5 +1,6 @@
 import { calculateNormalPensionAge, type PensionSettings } from "./settings";
 import { calculateTotalIsaContributions } from "./projection-domains/isa";
+import { NUVOS_FINAL_PENSIONABLE_SERVICE_DATE } from "./projection-domains/nuvos";
 import { calculateTotalSippContributionsAfterTaxRelief } from "./projection-domains/sipp";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
 import {
@@ -271,10 +272,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     settings,
     alphaAccrualStopDate,
     alphaPensionDrawDate,
-    nuvosAccrualStopDate: addYears(
-      settings.dateOfBirth,
-      settings.nuvosPensionLeaveAge
-    ),
+    nuvosAccrualStopDate: NUVOS_FINAL_PENSIONABLE_SERVICE_DATE,
     nuvosPensionDrawDate: addYears(
       settings.dateOfBirth,
       settings.nuvosPensionDrawAge

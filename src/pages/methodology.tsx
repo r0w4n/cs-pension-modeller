@@ -24,7 +24,7 @@ const KEY_DATES = [
   "Alpha accrual stop age",
   "Alpha EPA unreduced date where EPA is enabled",
   "nuvos pension draw age",
-  "nuvos accrual stop age",
+  "nuvos final pensionable-service date",
   "SIPP access age",
   "ISA draw start age",
   "SIPP draw start age",
@@ -78,7 +78,6 @@ const BRIDGE_SENSITIVITIES = [
 
 const PARTIAL_RETIREMENT_EFFECTS = [
   "future Alpha accrual",
-  "future nuvos-related accrual assumptions",
   "SIPP contributions",
   "ISA contributions",
 ] as const;
@@ -362,27 +361,21 @@ export function MethodologyPage() {
         <h2>nuvos pension methodology</h2>
         <p className="section-copy">nuvos is modelled separately from Alpha.</p>
         <p className="section-copy">
-          The model allows existing nuvos pension and future nuvos-related
-          assumptions to be included in the projection. nuvos income is treated
-          as defined-benefit pension income and can be included in gross
-          retirement income and tax calculations.
-        </p>
-        <p className="section-copy">Annual nuvos accrual is calculated as:</p>
-        <FormulaBlock>
-          {"annual accrual = nuvos pensionable earnings × 2.3%"}
-        </FormulaBlock>
-        <p className="section-copy">
-          The projection applies this monthly until the earlier of the selected
-          nuvos leave age and nuvos draw age. If partial retirement applies, the
-          selected work percentage reduces future nuvos accrual from the
-          partial-retirement start date.
+          The model allows existing nuvos pension to be included in the
+          projection. nuvos income is treated as defined-benefit pension income
+          and can be included in gross retirement income and tax calculations.
         </p>
         <p className="section-copy">
-          When nuvos pension increases are enabled, each existing and future
-          nuvos component is revalued annually by the modelled CPI assumption.
-          In real-terms mode this CPI increase is removed, so CPI-linked nuvos
-          revaluation is flat in today&apos;s spending power. In nominal mode it
-          compounds using the main inflation assumption.
+          The model does not add earnings-based nuvos accrual after 31 March
+          2015. From then, the statement value is only revalued by pension
+          increases where those increases are enabled.
+        </p>
+        <p className="section-copy">
+          When nuvos pension increases are enabled, the existing nuvos pension
+          is revalued annually by the modelled CPI assumption. In real-terms
+          mode this CPI increase is removed, so CPI-linked nuvos revaluation is
+          flat in today&apos;s spending power. In nominal mode it compounds
+          using the main inflation assumption.
         </p>
         <p className="section-copy">
           If nuvos is drawn before age 65, the model applies the nuvos
@@ -554,10 +547,10 @@ export function MethodologyPage() {
           that gap.
         </p>
         <p className="section-copy">
-          Bridge analysis first prepares a retirement scenario where Alpha and
-          nuvos accrual stop at the target retirement age and ISA drawdown can
-          begin at retirement. It then compares net secure income from Alpha,
-          nuvos and State Pension with the selected target for each month from
+          Bridge analysis first prepares a retirement scenario where Alpha
+          accrual stops at the target retirement age and ISA drawdown can begin
+          at retirement. It then compares net secure income from Alpha, nuvos
+          and State Pension with the selected target for each month from
           retirement to life expectancy.
         </p>
         <p className="section-copy">

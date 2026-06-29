@@ -20,13 +20,11 @@ describe("nuvos domain", () => {
       },
       lifeExpectancyDate: "2050-01-01",
       nuvosDrawDate: "2051-01-01",
-      nuvosLeaveDate: "2052-01-01",
       nuvosAbsDate: "2027-04-01",
     });
 
     expect(issues.map((issue) => issue.field)).toEqual([
       "nuvosPensionDrawAge",
-      "nuvosPensionLeaveAge",
       "nuvosPensionAbsDate",
     ]);
   });

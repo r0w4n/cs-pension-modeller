@@ -90,7 +90,6 @@ export function prepareBridgeProjectionSettings(
   return {
     ...settings,
     alphaPensionLeaveAge: settings.requirementAge,
-    nuvosPensionLeaveAge: settings.requirementAge,
     isaDrawAge: settings.requirementAge,
   };
 }

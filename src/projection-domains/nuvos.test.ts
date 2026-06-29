@@ -7,7 +7,7 @@ import {
 import { defaultSettings, type PensionSettings } from "../settings";
 
 describe("projection nuvos domain", () => {
-  it("calculates nuvos accrual at 2.3 percent of pensionable earnings", () => {
+  it("does not add earnings-based nuvos accrual after 31 March 2015", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       showNuvos: true,
@@ -28,7 +28,31 @@ describe("projection nuvos domain", () => {
         nuvosAbsDate: "2025-04-01",
         accrualStopDate: "2026-04-01",
       })
-    ).toBeCloseTo(1276, 6);
+    ).toBe(1000);
+  });
+
+  it("only adds historical nuvos accrual up to the 31 March 2015 closure date", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      showNuvos: true,
+      startDate: "2015-04-01",
+      dateOfBirth: "1960-04-01",
+      lifeExpectancy: 90,
+      nuvosPensionAbsDate: "2014",
+      nuvosAccruedPensionAtLastAbs: 1000,
+      nuvosPensionableEarnings: 12000,
+      nuvosPensionLeaveAge: 65,
+      nuvosPensionDrawAge: 65,
+    };
+
+    expect(
+      calculateAnnualNuvosPensionAtDate({
+        settings,
+        rowDate: "2015-04-01",
+        nuvosAbsDate: "2014-04-01",
+        accrualStopDate: "2026-04-01",
+      })
+    ).toBeCloseTo(1253, 6);
   });
 
   it("applies nuvos CPI revaluation independently of Alpha revaluation", () => {

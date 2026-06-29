@@ -35,7 +35,6 @@ export type NuvosValidationContext = {
   >;
   lifeExpectancyDate: string;
   nuvosDrawDate: string;
-  nuvosLeaveDate: string;
   nuvosAbsDate: string;
 };
 
@@ -43,7 +42,6 @@ export function validateNuvosRules({
   settings,
   lifeExpectancyDate,
   nuvosDrawDate,
-  nuvosLeaveDate,
   nuvosAbsDate,
 }: NuvosValidationContext): PensionValidationIssue[] {
   const issues: PensionValidationIssue[] = [];
@@ -52,14 +50,6 @@ export function validateNuvosRules({
     issues.push({
       field: "nuvosPensionDrawAge",
       message: "nuvos pension draw age must be within life expectancy.",
-    });
-  }
-
-  if (settings.showNuvos && nuvosLeaveDate > lifeExpectancyDate) {
-    issues.push({
-      field: "nuvosPensionLeaveAge",
-      message:
-        "nuvos pensionable service leave age must be within life expectancy.",
     });
   }
 

@@ -31,7 +31,6 @@ type ValidationContext = {
   alphaEpaAgeDate: string;
   latestAlphaAddedPensionPurchaseDate: string;
   nuvosDrawDate: string;
-  nuvosLeaveDate: string;
   nuvosAbsDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
@@ -56,10 +55,6 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
   const nuvosDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.nuvosPensionDrawAge
-  );
-  const nuvosLeaveDate = addYearsToIsoDate(
-    settings.dateOfBirth,
-    settings.nuvosPensionLeaveAge
   );
   const sippDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
@@ -90,7 +85,6 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
       settings.dateOfBirth
     ),
     nuvosDrawDate,
-    nuvosLeaveDate,
     nuvosAbsDate: resolveAlphaAbsDate(settings.nuvosPensionAbsDate),
     sippDrawDate,
     isaDrawDate,

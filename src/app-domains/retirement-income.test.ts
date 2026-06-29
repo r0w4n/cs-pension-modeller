@@ -236,6 +236,21 @@ describe("retirement-income chart limits", () => {
     expect(limits.nuvosStartAge.min).toBe(68);
   });
 
+  it("does not constrain nuvos draw age by a future nuvos leave age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      nuvosPensionLeaveAge: 65,
+      showNuvos: true,
+    };
+
+    const limits = createBridgeChartLimits(settings);
+
+    expect(limits.nuvosStartAge.min).toBe(57);
+  });
+
   it("does not cap ISA or SIPP draw age at State Pension age", () => {
     const settings = {
       ...createDefaultSettings(),

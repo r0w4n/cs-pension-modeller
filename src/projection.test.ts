@@ -293,7 +293,7 @@ describe("projection calculations", () => {
     );
   });
 
-  it("applies partial retirement to nuvos accrual", () => {
+  it("does not add future nuvos accrual after the scheme closed on 31 March 2015", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       showNuvos: true,
@@ -316,7 +316,7 @@ describe("projection calculations", () => {
         nuvosAbsDate: "2042-04-01",
         accrualStopDate: "2043-06-15",
       })
-    ).toBeCloseTo((12000 * 0.023) / 12 / 2, 6);
+    ).toBe(0);
   });
 
   it("uses the nuvos formula from age 65 for early payment reductions", () => {
@@ -330,7 +330,7 @@ describe("projection calculations", () => {
     expect(derivedInputs).toMatchObject({
       nuvosNpaDate: "2052-06-01",
       nuvosDrawDate: "2047-06-01",
-      nuvosAccrualStopDate: "2047-06-01",
+      nuvosAccrualStopDate: "2015-03-31",
       nuvosReductionFactor: 0.77,
     });
   });

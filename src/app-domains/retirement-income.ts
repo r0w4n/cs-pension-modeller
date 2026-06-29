@@ -435,7 +435,7 @@ export function createBridgeChartLimits(
   });
   const nuvosStartAgeBounds = getPensionStartAgeBounds({
     currentPlanningAge,
-    leaveAge: settings.nuvosPensionLeaveAge,
+    leaveAge: 0,
     minimumPensionAccessAge: minimumAlphaAccessAge,
     retirementAge: settings.requirementAge,
   });

@@ -4,6 +4,7 @@ import {
 } from "../settings";
 
 const MONTHLY_NUVOS_ACCRUAL_RATE = 0.023 / 12;
+export const NUVOS_FINAL_PENSIONABLE_SERVICE_DATE = "2015-03-31";
 const NUVOS_FIRST_EARLY_RETIREMENT_BAND_MONTHS = 36;
 const NUVOS_SECOND_EARLY_RETIREMENT_BAND_MONTHS = 36;
 const NUVOS_FIRST_EARLY_RETIREMENT_BAND_RATE = 0.05 / 12;
@@ -17,6 +18,10 @@ export function calculateAnnualNuvosPensionAtDate(input: {
   accrualStopDate: string;
 }) {
   const { settings, rowDate, nuvosAbsDate, accrualStopDate } = input;
+  const finalAccrualDate = earliestIsoDate(
+    accrualStopDate,
+    NUVOS_FINAL_PENSIONABLE_SERVICE_DATE
+  );
 
   if (!settings.showNuvos || rowDate < nuvosAbsDate) {
     return 0;
@@ -30,7 +35,7 @@ export function calculateAnnualNuvosPensionAtDate(input: {
   ];
   let accrualDate = addMonths(nuvosAbsDate, 1);
 
-  while (accrualDate <= rowDate && accrualDate <= accrualStopDate) {
+  while (accrualDate <= rowDate && accrualDate <= finalAccrualDate) {
     benefitComponents.push({
       amount: calculateMonthlyNuvosAccrual(settings, accrualDate),
       startDate: accrualDate,
@@ -144,4 +149,8 @@ function formatIsoDate(date: Date) {
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+}
+
+function earliestIsoDate(firstDate: string, secondDate: string) {
+  return firstDate <= secondDate ? firstDate : secondDate;
 }

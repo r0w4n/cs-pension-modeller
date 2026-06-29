@@ -303,7 +303,7 @@ function applyAccessAgePatch(
   if (patch.nuvosStartAge !== undefined) {
     const nuvosStartAgeBounds = getPensionStartAgeBounds({
       currentPlanningAge: context.currentPlanningAge,
-      leaveAge: next.nuvosPensionLeaveAge,
+      leaveAge: 0,
       minimumPensionAccessAge: context.minimumAlphaAccessAge,
       retirementAge: next.requirementAge,
     });

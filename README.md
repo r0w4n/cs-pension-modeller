@@ -70,8 +70,8 @@ The current app is driven by inputs grouped around:
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
   draw age, added pension, EPA, and pension increases
-- nuvos pension: statement year, accrued pension, pensionable earnings, leave
-  age, draw age, and pension increases
+- nuvos pension: statement year, accrued pension, draw age, and pension
+  increases
 - State Pension: annual amount, start date, deferral, and future growth
   assumptions
 - SIPP and ISA: current balances, contributions, lump sums, growth, draw ages,
@@ -91,8 +91,10 @@ Some important assumptions and simplifications are:
   rate encoded in the model.
 - The starting Alpha pension is rolled forward from the latest ABS year to the
   calculation start date.
-- Future Alpha and nuvos accrual and pension increases depend on the selected
+- Future Alpha accrual and pension increases depend on the selected
   pension-increase and inflation assumptions.
+- nuvos pensionable-service accrual is capped at 31 March 2015; after then,
+  modelled nuvos changes come from CPI-linked pension increases only.
 - Alpha added pension lump sums are converted using factor data stored in
   [`src/data/alpha_pension_added_pension_factors.json`](src/data/alpha_pension_added_pension_factors.json).
 - Alpha early-payment reduction uses factor data stored in

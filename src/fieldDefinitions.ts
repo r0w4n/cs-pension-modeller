@@ -291,7 +291,7 @@ export const fieldGroups: FieldGroup[] = [
     eyebrow: "Partial Retirement",
     title: "Partial retirement details",
     description:
-      "Reduce regular Alpha and nuvos accruals from pensionable earnings, and SIPP/ISA contributions from full salary, after partial retirement begins.",
+      "Reduce regular Alpha accrual from pensionable earnings, and SIPP/ISA contributions from full salary, after partial retirement begins.",
     fields: [
       {
         id: "partialRetirementStartAge",
@@ -323,7 +323,7 @@ export const fieldGroups: FieldGroup[] = [
         max: 100,
         step: 1,
         description:
-          "The share of full salary used for partial-retirement income and regular SIPP/ISA contribution modelling. Alpha and nuvos accruals are pro-rated from pensionable earnings, so lower actual pensionable earnings reduce future 2.32% Alpha accrual.",
+          "The share of full salary used for partial-retirement income and regular SIPP/ISA contribution modelling. Alpha accrual is pro-rated from pensionable earnings, so lower actual pensionable earnings reduce future 2.32% Alpha accrual.",
       },
     ],
   },
@@ -546,14 +546,14 @@ export const fieldGroups: FieldGroup[] = [
     eyebrow: "nuvos Pension",
     title: "Your nuvos pension",
     description:
-      "nuvos is also a career-average defined benefit scheme, modelled separately because it has its own accrual, statement value, and pension age assumptions.",
+      "nuvos is a legacy Civil Service defined benefit pension. Since pensionable-service accrual stopped after 31 March 2015, the modeller rolls forward your statement value using pension increases only.",
     fields: [
       {
         id: "nuvosPensionAbsDate",
         label: "nuvos Last Annual Benefits Statement",
         type: "year",
         description:
-          "The scheme year shown on your latest nuvos statement. The modeller uses it as the known checkpoint before projecting any future nuvos accrual.",
+          "The scheme year shown on your latest nuvos statement. The modeller uses it as the known checkpoint before applying any later CPI-linked pension increases.",
         infoUrl: knowledgeLinks.annualBenefitStatement,
         infoLinkText: "Annual Benefit Statement guide",
       },
@@ -567,30 +567,6 @@ export const fieldGroups: FieldGroup[] = [
         format: "currency",
         description:
           "The annual nuvos pension already built up on your statement. Like Alpha, this is annual pension income rather than a pot balance.",
-      },
-      {
-        id: "nuvosPensionableEarnings",
-        label: "nuvos Pensionable Earnings (£ per year)",
-        type: "range",
-        min: 10000,
-        max: 150000,
-        step: 500,
-        format: "currency",
-        description:
-          "The pensionable pay used for future nuvos accrual. nuvos is modelled separately from Alpha because it has its own accrual and pension age assumptions.",
-        infoUrl: knowledgeLinks.nuvosBenefits,
-        infoLinkText: "nuvos accrual rate",
-      },
-      {
-        id: "nuvosPensionLeaveAge",
-        label: "Age You Leave nuvos Scheme",
-        type: "range",
-        min: 40,
-        max: 70,
-        step: 1,
-        inputStep: 1,
-        description:
-          "The age nuvos pensionable service stops in the projection. Future nuvos accrual stops here, even if benefits are drawn later.",
       },
       {
         id: "nuvosPensionDrawAge",

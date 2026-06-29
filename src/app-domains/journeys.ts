@@ -288,10 +288,10 @@ export const JOURNEY_DEFINITIONS = [
         },
         fieldDescriptions: {
           applyPensionIncreases:
-            "Include the Alpha in-service 1.5% yearly increase while you remain in active Alpha service. Leave this off for a plain accrual-only estimate.",
+            "Include CPI-linked Alpha pension increases. Leave this off for a plain accrual-only estimate.",
         },
         alphaPensionIncreaseDescription:
-          "Increase Alpha benefits annually by 1.5% while you are still in active Alpha service. The simplified journey does not add a separate inflation assumption.",
+          "Increase Alpha benefits annually by CPI when pension increases are enabled. The simplified journey does not add a separate inflation assumption.",
         visible: (settings) => settings.showAlpha,
       },
       {

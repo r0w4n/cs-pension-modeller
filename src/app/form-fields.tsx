@@ -91,7 +91,7 @@ export function SettingsFields({
             <h4>Pension increases</h4>
             <p className="section-copy">
               {alphaPensionIncreaseDescription ??
-                "Revalue Alpha benefits annually by CPI + 1.5% while active, and CPI after leaving Alpha service, using the selected projection basis."}
+                "Revalue Alpha benefits annually by CPI using the selected projection basis."}
             </p>
           </div>
           <div className="field-grid">

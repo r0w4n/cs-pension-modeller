@@ -14,7 +14,6 @@ import { calculateNuvosEarlyRetirementFactor } from "./projection-domains/nuvos"
 import { getStatePensionNominalIncreaseRate } from "./projection-domains/state-pension";
 
 export const NUVOS_NORMAL_PENSION_AGE = 65;
-export const ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE = 0.015;
 
 export type DerivedProjectionInputs = {
   endDate: string;
@@ -64,8 +63,7 @@ export function deriveInflationAssumptions(
   const inflationRateMonthly = (1 + inflationRateAnnual) ** (1 / 12) - 1;
   const sippNominalReturnAnnual = settings.sippRealInterestPercent / 100;
   const isaNominalReturnAnnual = settings.isaRealInterestPercent / 100;
-  const alphaNominalInServiceRevaluationAnnual =
-    inflationRateAnnual + ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE;
+  const alphaNominalInServiceRevaluationAnnual = inflationRateAnnual;
   const statePensionNominalIncreaseAnnual =
     getStatePensionNominalIncreaseRate(settings);
 
@@ -86,7 +84,7 @@ export function deriveInflationAssumptions(
     alphaNominalInServiceRevaluationAnnual,
     alphaModelledInServiceRevaluationAnnual:
       settings.projectionBasis === "real"
-        ? ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE
+        ? 0
         : alphaNominalInServiceRevaluationAnnual,
     alphaNominalDeferredIncreaseAnnual: inflationRateAnnual,
     alphaModelledDeferredIncreaseAnnual:

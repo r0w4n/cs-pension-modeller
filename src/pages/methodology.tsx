@@ -192,10 +192,9 @@ export function MethodologyPage() {
         <p className="section-copy">
           In real-terms projections, the model removes the main inflation
           assumption from investment returns and CPI-linked pension increases.
-          For example, deferred Alpha and nuvos CPI increases become flat in
-          real terms, while active Alpha revaluation is modelled as the
-          additional 1.5% above CPI. In nominal projections, CPI-linked
-          increases and the inflated target are shown as future cash amounts.
+          For example, Alpha and nuvos CPI increases become flat in real terms.
+          In nominal projections, CPI-linked increases and the inflated target
+          are shown as future cash amounts.
         </p>
       </section>
 
@@ -289,20 +288,13 @@ export function MethodologyPage() {
 
         <h3>Alpha revaluation</h3>
         <p className="section-copy">
-          Where pension increases are enabled, Alpha benefits are revalued
-          differently depending on whether the user is still an active member.
+          Where pension increases are enabled, accrued Alpha pension is revalued
+          annually by:
         </p>
+        <FormulaBlock>{"CPI"}</FormulaBlock>
         <p className="section-copy">
-          While active in the scheme, accrued Alpha pension is revalued by:
-        </p>
-        <FormulaBlock>{"CPI + 1.5%"}</FormulaBlock>
-        <p className="section-copy">
-          After leaving active service, accrued Alpha pension is revalued by CPI
-          only.
-        </p>
-        <p className="section-copy">
-          This distinction matters because leaving the scheme stops future 2.32%
-          accrual and also stops the additional 1.5% active-member revaluation.
+          Leaving the scheme stops future 2.32% accrual. The model applies CPI
+          revaluation to accrued Alpha pension.
         </p>
 
         <h3>Alpha EPA</h3>

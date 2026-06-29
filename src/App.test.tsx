@@ -710,10 +710,9 @@ describe("App settings form", () => {
     expect(alphaIncreasesCheckbox).not.toBeChecked();
     expect(
       screen.getByText(
-        "Increase Alpha benefits annually by 1.5% while you are still in active Alpha service. The simplified journey does not add a separate inflation assumption."
+        "Increase Alpha benefits annually by CPI when pension increases are enabled. The simplified journey does not add a separate inflation assumption."
       )
     ).toBeInTheDocument();
-    expect(screen.queryByText(/CPI/)).not.toBeInTheDocument();
 
     fireEvent.click(alphaIncreasesCheckbox);
 

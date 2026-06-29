@@ -898,7 +898,8 @@ h3 {
   stroke-dasharray: 8 7;
 }
 
-.bridge-target-line-hitbox {
+.bridge-target-line-hitbox,
+.bridge-alpha-added-pension-hitbox {
   fill: none;
   stroke: transparent;
   stroke-width: 18;
@@ -910,6 +911,11 @@ h3 {
 
 .bridge-target-line-hitbox:focus-visible {
   stroke: rgba(11, 77, 194, 0.18);
+  outline: none;
+}
+
+.bridge-alpha-added-pension-hitbox:focus-visible {
+  stroke: rgba(115, 83, 191, 0.22);
   outline: none;
 }
 

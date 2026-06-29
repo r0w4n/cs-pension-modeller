@@ -31,7 +31,7 @@ describe("projection nuvos domain", () => {
     ).toBeCloseTo(1276, 6);
   });
 
-  it("applies nuvos CPI revaluation without the Alpha active-service uplift", () => {
+  it("applies nuvos CPI revaluation independently of Alpha revaluation", () => {
     expect(
       calculateNuvosPensionRevaluationFactor({
         fromDate: "2025-04-01",

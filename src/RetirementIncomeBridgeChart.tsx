@@ -260,14 +260,21 @@ export function RetirementIncomeBridgeChart({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const targetLineHitboxRef = useRef<SVGPathElement | null>(null);
+  const alphaAddedPensionHitboxRef = useRef<SVGPathElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
   const activeMarkerDragScaleRef = useRef<d3.ScaleLinear<
     number,
     number
   > | null>(null);
   const activeTargetDragPointerIdRef = useRef<number | null>(null);
+  const activeAlphaAddedPensionDragPointerIdRef = useRef<number | null>(null);
   const activeMarkerTouchIdentifierRef = useRef<number | null>(null);
   const activeTargetTouchIdentifierRef = useRef<number | null>(null);
+  const activeAlphaAddedPensionTouchIdentifierRef = useRef<number | null>(null);
+  const alphaAddedPensionDragStartRef = useRef<{
+    annualAtPointer: number;
+    monthlyContribution: number;
+  } | null>(null);
   const lastTouchStartTimeRef = useRef<number>(0);
   const [width, setWidth] = useState(960);
   const [displayMode, setDisplayMode] = useState<"annual" | "monthly">(
@@ -280,6 +287,8 @@ export function RetirementIncomeBridgeChart({
   const [pendingTargetIncomeAnnual, setPendingTargetIncomeAnnual] = useState<
     number | null
   >(null);
+  const [draftAlphaMonthlyAddedPension, setDraftAlphaMonthlyAddedPension] =
+    useState<number | null>(null);
   const [draftMarkerAges, setDraftMarkerAges] = useState<
     Partial<Record<MilestoneKey, { age: number; baseAge: number }>>
   >({});
@@ -297,6 +306,8 @@ export function RetirementIncomeBridgeChart({
     Math.abs(dataSourceTargetIncomeAnnual - pendingTargetIncomeAnnual) >= 0.001
       ? pendingTargetIncomeAnnual
       : targetIncomeAnnual);
+  const displayedAlphaMonthlyAddedPension =
+    draftAlphaMonthlyAddedPension ?? alphaMonthlyAddedPension;
   const divisor = displayMode === "monthly" ? 12 : 1;
   const valueLabel =
     displayMode === "monthly" ? "Monthly income" : "Annual income";
@@ -512,6 +523,9 @@ export function RetirementIncomeBridgeChart({
     .order(d3.stackOrderNone)
     .value((point, key) => Number(point[key as IncomeKey]) / divisor);
   const stackedSeries = stack(visibleData);
+  const alphaStackedSeries = stackedSeries.find(
+    (series) => series.key === "alphaIncomeAnnual"
+  );
   const area = d3
     .area<d3.SeriesPoint<RetirementIncomePoint>>()
     .x((point) => xScale(point.data.age))
@@ -535,6 +549,15 @@ export function RetirementIncomeBridgeChart({
     .x((point) => xScale(point.age))
     .y((point) => yScale(point.targetIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
+  const alphaTopLine = d3
+    .line<d3.SeriesPoint<RetirementIncomePoint>>()
+    .defined((point) => point.data.alphaIncomeAnnual > 0)
+    .x((point) => xScale(point.data.age))
+    .y((point) => yScale(point[1]))
+    .curve(d3.curveStepAfter);
+  const alphaTopLinePath = alphaStackedSeries
+    ? alphaTopLine(alphaStackedSeries)
+    : undefined;
   const yTicks = yScale.ticks(5);
   const xTicks = xScale.ticks(width < 640 ? 5 : 8);
   const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
@@ -803,10 +826,43 @@ export function RetirementIncomeBridgeChart({
     setPendingTargetIncomeAnnual(nextTargetIncomeAnnual);
   };
 
-  useEffect(() => {
-    const targetLineHitbox = targetLineHitboxRef.current;
+  const commitAlphaMonthlyAddedPension = (nextValue: number) => {
+    const nextContribution = snapToLimit(
+      nextValue,
+      limits.alphaMonthlyAddedPension
+    );
 
-    if (!targetLineHitbox) {
+    setDraftAlphaMonthlyAddedPension(nextContribution);
+    onChangeParameters({
+      alphaMonthlyAddedPension: nextContribution,
+    });
+  };
+
+  const handleAlphaAddedPensionKeyDown = (
+    event: KeyboardEvent<SVGPathElement>
+  ) => {
+    if (
+      !["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight"].includes(event.key)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const direction =
+      event.key === "ArrowDown" || event.key === "ArrowLeft" ? -1 : 1;
+    commitAlphaMonthlyAddedPension(
+      alphaMonthlyAddedPension +
+        direction * limits.alphaMonthlyAddedPension.step
+    );
+  };
+
+  useEffect(() => {
+    const touchDragHitboxes = [
+      targetLineHitboxRef.current,
+      alphaAddedPensionHitboxRef.current,
+    ].filter((element): element is SVGPathElement => element !== null);
+
+    if (touchDragHitboxes.length === 0) {
       return;
     }
 
@@ -816,18 +872,22 @@ export function RetirementIncomeBridgeChart({
       }
     };
 
-    targetLineHitbox.addEventListener("touchstart", preventPageScroll, {
-      passive: false,
-    });
-    targetLineHitbox.addEventListener("touchmove", preventPageScroll, {
-      passive: false,
+    touchDragHitboxes.forEach((hitbox) => {
+      hitbox.addEventListener("touchstart", preventPageScroll, {
+        passive: false,
+      });
+      hitbox.addEventListener("touchmove", preventPageScroll, {
+        passive: false,
+      });
     });
 
     return () => {
-      targetLineHitbox.removeEventListener("touchstart", preventPageScroll);
-      targetLineHitbox.removeEventListener("touchmove", preventPageScroll);
+      touchDragHitboxes.forEach((hitbox) => {
+        hitbox.removeEventListener("touchstart", preventPageScroll);
+        hitbox.removeEventListener("touchmove", preventPageScroll);
+      });
     };
-  }, []);
+  }, [alphaTopLinePath, showAlpha]);
 
   const changeDisplayMode = (nextDisplayMode: "annual" | "monthly") => {
     if (nextDisplayMode === displayMode) {
@@ -1224,6 +1284,75 @@ export function RetirementIncomeBridgeChart({
     [getTargetIncomeFromClient]
   );
 
+  const getAnnualIncomeFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      const pointerPosition = getPlotPointerPositionFromClient(
+        clientX,
+        clientY
+      );
+
+      if (!pointerPosition) {
+        return null;
+      }
+
+      return (
+        yScale.invert(clampNumber(pointerPosition.y, 0, plotHeight)) * divisor
+      );
+    },
+    [divisor, getPlotPointerPositionFromClient, plotHeight, yScale]
+  );
+
+  const getAlphaMonthlyAddedPensionFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      const dragStart = alphaAddedPensionDragStartRef.current;
+      const annualAtPointer = getAnnualIncomeFromClient(clientX, clientY);
+
+      if (!dragStart || annualAtPointer === null) {
+        return alphaMonthlyAddedPension;
+      }
+
+      return snapToLimit(
+        dragStart.monthlyContribution +
+          (annualAtPointer - dragStart.annualAtPointer) / 12,
+        limits.alphaMonthlyAddedPension
+      );
+    },
+    [
+      alphaMonthlyAddedPension,
+      getAnnualIncomeFromClient,
+      limits.alphaMonthlyAddedPension,
+    ]
+  );
+
+  const startAlphaAddedPensionDrag = (
+    clientX: number,
+    clientY: number,
+    touchTimeStamp: number
+  ) => {
+    const annualAtPointer = getAnnualIncomeFromClient(clientX, clientY);
+
+    if (annualAtPointer === null) {
+      return false;
+    }
+
+    lastTouchStartTimeRef.current = touchTimeStamp;
+    alphaAddedPensionDragStartRef.current = {
+      annualAtPointer,
+      monthlyContribution: alphaMonthlyAddedPension,
+    };
+    setDraftAlphaMonthlyAddedPension(alphaMonthlyAddedPension);
+    return true;
+  };
+
+  const updateDraftAlphaAddedPensionFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      setDraftAlphaMonthlyAddedPension(
+        getAlphaMonthlyAddedPensionFromClient(clientX, clientY)
+      );
+    },
+    [getAlphaMonthlyAddedPensionFromClient]
+  );
+
   const handleTargetPointerDown = (event: PointerEvent<SVGPathElement>) => {
     if (!isPrimaryPointerDragStart(event)) {
       return;
@@ -1334,6 +1463,137 @@ export function RetirementIncomeBridgeChart({
     if (commit) {
       setPendingTargetIncomeAnnual(committedValue);
       onChangeParameters({ targetIncomeAnnual: committedValue });
+    }
+  };
+
+  const handleAlphaAddedPensionPointerDown = (
+    event: PointerEvent<SVGPathElement>
+  ) => {
+    if (!showAlpha || !isPrimaryPointerDragStart(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+
+    if (
+      !startAlphaAddedPensionDrag(event.clientX, event.clientY, event.timeStamp)
+    ) {
+      return;
+    }
+
+    if (typeof event.currentTarget.setPointerCapture === "function") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    activeAlphaAddedPensionDragPointerIdRef.current = event.pointerId;
+  };
+
+  const handleAlphaAddedPensionPointerMove = (
+    event: PointerEvent<SVGPathElement>
+  ) => {
+    if (activeAlphaAddedPensionDragPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    updateDraftAlphaAddedPensionFromClient(event.clientX, event.clientY);
+  };
+
+  const finishAlphaAddedPensionPointerDrag = (
+    event: PointerEvent<SVGPathElement>,
+    commit: boolean
+  ) => {
+    if (activeAlphaAddedPensionDragPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const committedValue = getAlphaMonthlyAddedPensionFromClient(
+      event.clientX,
+      event.clientY
+    );
+
+    activeAlphaAddedPensionDragPointerIdRef.current = null;
+    alphaAddedPensionDragStartRef.current = null;
+    setDraftAlphaMonthlyAddedPension(null);
+
+    if (
+      typeof event.currentTarget.hasPointerCapture === "function" &&
+      event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (commit) {
+      onChangeParameters({ alphaMonthlyAddedPension: committedValue });
+    }
+  };
+
+  const handleAlphaAddedPensionTouchStart = (
+    event: TouchEvent<SVGPathElement>
+  ) => {
+    if (!showAlpha) {
+      return;
+    }
+
+    const touch = getFirstChangedTouch(event.changedTouches);
+
+    if (!touch) {
+      return;
+    }
+
+    event.currentTarget.focus();
+
+    if (
+      !startAlphaAddedPensionDrag(touch.clientX, touch.clientY, event.timeStamp)
+    ) {
+      return;
+    }
+
+    activeAlphaAddedPensionTouchIdentifierRef.current = touch.identifier;
+    activeAlphaAddedPensionDragPointerIdRef.current = null;
+  };
+
+  const handleAlphaAddedPensionTouchMove = (
+    event: TouchEvent<SVGPathElement>
+  ) => {
+    const identifier = activeAlphaAddedPensionTouchIdentifierRef.current;
+
+    if (identifier === null) {
+      return;
+    }
+
+    const touch = getTrackedTouch(event.touches, identifier);
+
+    if (!touch) {
+      return;
+    }
+
+    updateDraftAlphaAddedPensionFromClient(touch.clientX, touch.clientY);
+  };
+
+  const finishAlphaAddedPensionTouchDrag = (
+    event: TouchEvent<SVGPathElement>,
+    commit: boolean
+  ) => {
+    const identifier = activeAlphaAddedPensionTouchIdentifierRef.current;
+
+    if (identifier === null) {
+      return;
+    }
+
+    const touch =
+      getTrackedTouch(event.changedTouches, identifier) ??
+      getTrackedTouch(event.touches, identifier);
+
+    const committedValue = touch
+      ? getAlphaMonthlyAddedPensionFromClient(touch.clientX, touch.clientY)
+      : alphaMonthlyAddedPension;
+
+    activeAlphaAddedPensionTouchIdentifierRef.current = null;
+    alphaAddedPensionDragStartRef.current = null;
+    setDraftAlphaMonthlyAddedPension(null);
+
+    if (touch && commit) {
+      onChangeParameters({ alphaMonthlyAddedPension: committedValue });
     }
   };
 
@@ -1790,6 +2050,37 @@ export function RetirementIncomeBridgeChart({
               opacity="0.55"
             />
 
+            {showAlpha && alphaTopLinePath ? (
+              <path
+                ref={alphaAddedPensionHitboxRef}
+                className="bridge-alpha-added-pension-hitbox"
+                d={alphaTopLinePath}
+                role="slider"
+                tabIndex={0}
+                aria-label="Alpha added pension top edge"
+                aria-valuemin={limits.alphaMonthlyAddedPension.min}
+                aria-valuemax={limits.alphaMonthlyAddedPension.max}
+                aria-valuenow={displayedAlphaMonthlyAddedPension}
+                onKeyDown={handleAlphaAddedPensionKeyDown}
+                onPointerDown={handleAlphaAddedPensionPointerDown}
+                onPointerMove={handleAlphaAddedPensionPointerMove}
+                onPointerUp={(event) =>
+                  finishAlphaAddedPensionPointerDrag(event, true)
+                }
+                onPointerCancel={(event) =>
+                  finishAlphaAddedPensionPointerDrag(event, false)
+                }
+                onTouchStart={handleAlphaAddedPensionTouchStart}
+                onTouchMove={handleAlphaAddedPensionTouchMove}
+                onTouchEnd={(event) =>
+                  finishAlphaAddedPensionTouchDrag(event, true)
+                }
+                onTouchCancel={(event) =>
+                  finishAlphaAddedPensionTouchDrag(event, false)
+                }
+              />
+            ) : null}
+
             <path
               className="bridge-target-line"
               d={targetLine(visibleData) ?? undefined}
@@ -2053,7 +2344,7 @@ export function RetirementIncomeBridgeChart({
         {showAlpha ? (
           <BridgeMetricControl
             label="Added Alpha pension"
-            value={alphaMonthlyAddedPension}
+            value={displayedAlphaMonthlyAddedPension}
             suffix="/ month"
             limit={limits.alphaMonthlyAddedPension}
             colour="#7353bf"

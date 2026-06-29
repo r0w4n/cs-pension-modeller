@@ -141,7 +141,7 @@ const isaToAlphaBoundaryScenario: PensionSettings = {
   partialRetirementWorkPercent: 76,
   fullSalary: 42000,
   currentStatePension: 12547.6,
-  desiredRetirementIncome: 24000,
+  desiredRetirementIncome: 22000,
   statePensionDrawDate: "2045-08-23",
   statePensionApplyFutureGrowth: false,
   statePensionCpiPercent: 0,
@@ -404,7 +404,7 @@ describe("projection calculations", () => {
     expect(calculateAccruedAlphaPension(8250, 243.6)).toBeCloseTo(8493.6, 6);
   });
 
-  it("revalues Alpha benefits by CPI plus 1.5 percent while active and CPI after leaving", () => {
+  it("revalues Alpha benefits by CPI", () => {
     expect(
       calculateAlphaPensionRevaluationFactor({
         fromDate: "2025-04-01",
@@ -412,7 +412,7 @@ describe("projection calculations", () => {
         activeUntilDate: "2026-04-01",
         cpiPercent: 2,
       })
-    ).toBeCloseTo(1.035 * 1.02 * 1.02, 6);
+    ).toBeCloseTo(1.02 * 1.02 * 1.02, 6);
   });
 
   it("returns no additional accrual when start date matches the ABS date", () => {
@@ -1617,7 +1617,8 @@ describe("projection calculations", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       applyPensionIncreases: true,
-      assumedCpiPercent: 2,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 2,
       startDate: "2025-04-01",
       dateOfBirth: "1987-04-01",
       requirementAge: 39,
@@ -1637,10 +1638,10 @@ describe("projection calculations", () => {
 
     expect(
       findRowByDate(rows, "2026-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10150, 6);
+    ).toBeCloseTo(10200, 6);
     expect(
       findRowByDate(rows, "2027-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10150, 6);
+    ).toBeCloseTo(10404, 6);
   });
 
   it("does not duplicate Alpha accrual on an inserted mid-month start checkpoint with pension increases", () => {
@@ -1686,7 +1687,7 @@ describe("projection calculations", () => {
       alignedStartSummary.alphaPension.annualAtDraw,
       6
     );
-    expect(summary.alphaPension.annualAtDraw).toBeCloseTo(56629.07929125147, 6);
+    expect(summary.alphaPension.annualAtDraw).toBeCloseTo(46856, 6);
     expect(simpleAccrualSummary.alphaPension.annualAtDraw).toBeCloseTo(
       46856,
       6

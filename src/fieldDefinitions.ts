@@ -424,7 +424,7 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         inputStep: 1,
         description:
-          "The age you stop active Alpha service. New 2.32% accrual stops here, and the extra 1.5% yearly increase on your accrued Alpha pension stops when you leave the scheme.",
+          "The age you stop active Alpha service. New 2.32% accrual stops here. Existing accrued Alpha pension continues to be revalued by CPI.",
       },
       {
         id: "pensionableEarnings",
@@ -535,7 +535,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "Apply Alpha pension increases",
         type: "checkbox",
         description:
-          "Benefits increase annually by CPI + 1.5% while active, then by CPI after leaving Alpha service. The modeller uses the inflation basis section to show this in real or nominal terms.",
+          "Benefits increase annually by CPI. The modeller uses the inflation basis section to show this in real or nominal terms.",
         infoUrl: knowledgeLinks.civilServicePensionIncreases,
         infoLinkText: "Alpha pension increases",
       },

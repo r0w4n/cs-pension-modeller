@@ -278,7 +278,8 @@ describe("RetirementIncomeBridgeChart", () => {
   it("keeps upward target income drags from repeatedly inflating the y scale", () => {
     mockChartResize(960);
 
-    const onChangeParameters = vi.fn();
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
     renderChart({ onChangeParameters });
     const svg = document.querySelector(".bridge-chart-svg");
 
@@ -340,7 +341,8 @@ describe("RetirementIncomeBridgeChart", () => {
   it("prevents page scrolling while the target income line is changed by touch", () => {
     mockChartResize(360);
 
-    const onChangeParameters = vi.fn();
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
     renderChart({ onChangeParameters });
     const svg = document.querySelector(".bridge-chart-svg");
 
@@ -401,6 +403,66 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(onChangeParameters).toHaveBeenCalledWith({
       targetIncomeAnnual: 27600,
     });
+  });
+
+  it("updates monthly added pension when the Alpha pension top edge is dragged", () => {
+    mockChartResize(960);
+
+    const onChangeParameters = vi.fn();
+    renderChart({ onChangeParameters });
+    const svg = document.querySelector(".bridge-chart-svg");
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 460,
+        height: 460,
+        left: 0,
+        right: 960,
+        top: 0,
+        width: 960,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const alphaEdge = screen.getByRole("slider", {
+      name: "Alpha added pension top edge",
+    });
+
+    fireEvent.pointerDown(alphaEdge, {
+      button: 0,
+      clientX: 500,
+      clientY: 260,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerMove(alphaEdge, {
+      clientX: 500,
+      clientY: 230,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerUp(alphaEdge, {
+      clientX: 500,
+      clientY: 230,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(onChangeParameters).toHaveBeenCalled();
+    const patch = onChangeParameters.mock.calls[0]?.[0];
+    expect(patch).toBeDefined();
+    expect(patch.alphaMonthlyAddedPension).toBeGreaterThan(0);
+    expect(patch.alphaMonthlyAddedPension! % 25).toBe(0);
   });
 
   it("extends the x-axis left while a milestone is dragged beyond the plot edge", () => {

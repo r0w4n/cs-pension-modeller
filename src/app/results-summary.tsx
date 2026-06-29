@@ -277,10 +277,10 @@ function buildInflationRows(
     },
     {
       assumption: "Alpha in-service revaluation",
-      userValue: "CPI + 1.5%",
+      userValue: "CPI",
       modelledValue: settings.applyPensionIncreases
         ? isRealTerms
-          ? "1.5% real"
+          ? "0% real"
           : formatPercent(assumptions.alphaModelledInServiceRevaluationAnnual)
         : "Not applied",
     },

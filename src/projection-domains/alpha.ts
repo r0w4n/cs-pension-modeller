@@ -21,7 +21,6 @@ type AlphaEarlyRetirementFactorRecord = {
 
 const MONTHLY_ALPHA_ACCRUAL_RATE = 0.0232 / 12;
 const DEFAULT_ALPHA_ACCRUAL_RATE = 0.0232;
-const ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE = 0.015;
 
 export function calculateMonthlyAlphaAccrual(pensionableEarnings: number) {
   return pensionableEarnings * MONTHLY_ALPHA_ACCRUAL_RATE;
@@ -116,7 +115,6 @@ export function calculateAlphaPensionRevaluationFactor(input: {
 }) {
   const { fromDate, rowDate, activeUntilDate, cpiPercent } = input;
   const cpiRate = cpiPercent / 100;
-  const activeRate = cpiRate + ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE;
   const totalYears = calculateWholeYearDifference(fromDate, rowDate);
   const activeYears = Math.min(
     totalYears,
@@ -124,7 +122,7 @@ export function calculateAlphaPensionRevaluationFactor(input: {
   );
   const deferredYears = totalYears - activeYears;
 
-  return (1 + activeRate) ** activeYears * (1 + cpiRate) ** deferredYears;
+  return (1 + cpiRate) ** activeYears * (1 + cpiRate) ** deferredYears;
 }
 
 export function calculateMonthlyAddedPension(input: {

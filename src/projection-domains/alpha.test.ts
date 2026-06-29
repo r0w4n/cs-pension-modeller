@@ -56,7 +56,7 @@ describe("projection alpha domain", () => {
     expect(calculateAccruedAlphaPension(8250, 243.6)).toBeCloseTo(8493.6, 6);
   });
 
-  it("revalues Alpha benefits by CPI plus 1.5 percent while active and CPI after leaving", () => {
+  it("revalues Alpha benefits by CPI", () => {
     expect(
       calculateAlphaPensionRevaluationFactor({
         fromDate: "2025-04-01",
@@ -64,7 +64,7 @@ describe("projection alpha domain", () => {
         activeUntilDate: "2026-04-01",
         cpiPercent: 2,
       })
-    ).toBeCloseTo(1.035 * 1.02 * 1.02, 6);
+    ).toBeCloseTo(1.02 * 1.02 * 1.02, 6);
   });
 
   it("uses the 2.32 percent accrual rate when deriving the starting Alpha pension", () => {

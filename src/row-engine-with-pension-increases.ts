@@ -4,7 +4,6 @@ import {
   calculateMonthlyStandardAlphaAccrual,
 } from "./projection-domains/alpha";
 import {
-  ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE,
   addYears,
   generateMonthlyDateRange,
   getModelledPensionInflationPercent,
@@ -194,7 +193,7 @@ function createAlphaRevaluationTracker(input: {
 }) {
   const { activeUntilDate, cpiPercent, endDate } = input;
   const cpiRate = cpiPercent / 100;
-  const activeRate = cpiRate + ALPHA_IN_SERVICE_REVALUATION_UPLIFT_RATE;
+  const activeRate = cpiRate;
   const events: AlphaRevaluationEvent[] = [];
   const totals = {
     standardAlphaPension: 0,

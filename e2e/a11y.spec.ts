@@ -70,6 +70,7 @@ test.describe("accessibility", () => {
       "Planned Alpha Pension Draw Age exact value",
       "60"
     );
+    await clickNextAndExpectStep(page, "Alpha EPA");
     await clickNextAndExpectStep(page, "State Pension");
 
     await clickNextAndExpectStep(page, "Your bridging pots");

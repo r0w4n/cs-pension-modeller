@@ -166,6 +166,21 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showAlpha,
       },
       {
+        id: "alpha-epa",
+        eyebrow: "Optional",
+        title: "Alpha EPA",
+        description:
+          "Set the EPA period and the number of years before Normal Pension Age that the EPA portion is intended to be available without early-payment reduction.",
+        kind: "fields",
+        fieldIds: [
+          "alphaEpaEnabled",
+          "alphaEpaYearsBeforeNpa",
+          "alphaEpaStartDate",
+          "alphaEpaEndDate",
+        ],
+        visible: (settings) => settings.showAlpha,
+      },
+      {
         id: "nuvos",
         eyebrow: "Optional",
         title: "Your nuvos pension",
@@ -298,18 +313,27 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 4",
         title: "Added pension",
         description:
-          "Add monthly added pension or EPA purchases you want reflected in the plan. Lump sum purchases are not included in the simplified journey.",
+          "Add monthly added pension purchases you want reflected in the plan. Lump sum purchases are not included in the simplified journey.",
+        kind: "fields",
+        fieldIds: ["alphaAddedPensionMonthly"],
+        fieldLabels: {
+          alphaAddedPensionMonthly: "Monthly added pension payments (£)",
+        },
+        visible: (settings) => settings.showAlpha,
+      },
+      {
+        id: "alpha-epa",
+        eyebrow: "Optional",
+        title: "Alpha EPA",
+        description:
+          "Set the EPA period and the number of years before Normal Pension Age that the EPA portion is intended to be available without early-payment reduction.",
         kind: "fields",
         fieldIds: [
-          "alphaAddedPensionMonthly",
           "alphaEpaEnabled",
           "alphaEpaYearsBeforeNpa",
           "alphaEpaStartDate",
           "alphaEpaEndDate",
         ],
-        fieldLabels: {
-          alphaAddedPensionMonthly: "Monthly added pension payments (£)",
-        },
         visible: (settings) => settings.showAlpha,
       },
       {
@@ -436,6 +460,7 @@ function createExpertJourneyFieldStep(
 function isExpertJourneyGroupVisible(groupId: string) {
   if (
     groupId === "alpha" ||
+    groupId === "alpha-epa" ||
     groupId === "nuvos" ||
     groupId === "state" ||
     groupId === "sipp" ||

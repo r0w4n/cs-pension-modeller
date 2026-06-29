@@ -500,6 +500,24 @@ export const fieldGroups: FieldGroup[] = [
           "Controls which factor table is used for added pension purchases. It does not change standard Alpha accrual.",
       },
       {
+        id: "applyPensionIncreases",
+        label: "Apply Alpha pension increases",
+        type: "checkbox",
+        description:
+          "Benefits increase annually by CPI. The modeller uses the inflation basis section to show this in real or nominal terms.",
+        infoUrl: knowledgeLinks.civilServicePensionIncreases,
+        infoLinkText: "Alpha pension increases",
+      },
+    ],
+  },
+  {
+    id: "alpha-epa",
+    eyebrow: "EPA",
+    title: "Alpha EPA",
+    description:
+      "EPA is modelled as a separate Alpha portion with its own unreduced date before Normal Pension Age.",
+    fields: [
+      {
         id: "alphaEpaEnabled",
         label: "Add EPA",
         type: "checkbox",
@@ -529,15 +547,6 @@ export const fieldGroups: FieldGroup[] = [
         type: "date",
         description:
           "The date EPA purchases stop in the model. This should not run beyond the Alpha service period you are modelling.",
-      },
-      {
-        id: "applyPensionIncreases",
-        label: "Apply Alpha pension increases",
-        type: "checkbox",
-        description:
-          "Benefits increase annually by CPI. The modeller uses the inflation basis section to show this in real or nominal terms.",
-        infoUrl: knowledgeLinks.civilServicePensionIncreases,
-        infoLinkText: "Alpha pension increases",
       },
     ],
   },

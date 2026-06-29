@@ -69,7 +69,9 @@ The current app is driven by inputs grouped around:
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
-  draw age, added pension, EPA, and pension increases
+  draw age, added pension, and pension increases
+- EPA: selected EPA years before Normal Pension Age and the EPA purchase date
+  range
 - nuvos pension: statement year, accrued pension, draw age, and pension
   increases
 - State Pension: annual amount, start date, deferral, and future growth

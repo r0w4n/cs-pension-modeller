@@ -678,6 +678,9 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Added pension/i })
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: /Alpha EPA/i })
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: /Your Civil Service pensions/i })
     ).toBeInTheDocument();
     expect(
@@ -765,16 +768,37 @@ describe("App settings form", () => {
     const includeAlphaToggle = screen.getByRole("checkbox", { name: "Alpha" });
 
     expect(includeAlphaToggle).toBeChecked();
+    expect(
+      screen.queryByRole("checkbox", { name: "EPA" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Alpha EPA/i })
+    ).toBeInTheDocument();
 
     fireEvent.click(includeAlphaToggle);
 
     expect(includeAlphaToggle).not.toBeChecked();
+    expect(
+      screen.queryByRole("checkbox", { name: "EPA" })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Your Alpha pension/i })
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Added pension/i })
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(includeAlphaToggle);
+
+    expect(
+      screen.queryByRole("checkbox", { name: "EPA" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Alpha EPA/i })
+    ).toBeInTheDocument();
   });
 
   it("defaults the simple journey nuvos draw age to normal pension age", () => {
@@ -856,17 +880,20 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows EPA controls in the simple journey added pension step", () => {
+  it("shows EPA controls in a separate simple journey EPA step", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
+
+    expect(
+      screen.getByRole("heading", { name: "Alpha EPA" })
+    ).toBeInTheDocument();
 
     const addEpaCheckbox = screen.getByLabelText("Add EPA");
     const epaYearsInput = screen.getByLabelText("EPA years before NPA");
     const epaStartDateInput = screen.getByLabelText("EPA Start Date");
     const epaEndDateInput = screen.getByLabelText("EPA End Date");
 
-    expect(addEpaCheckbox).toBeInTheDocument();
     expect(addEpaCheckbox).not.toBeChecked();
     expect(epaYearsInput).toBeDisabled();
     expect(epaStartDateInput).toBeDisabled();
@@ -884,6 +911,9 @@ describe("App settings form", () => {
         alphaEpaEnabled: true,
       })
     );
+    expect(
+      screen.queryByLabelText("Monthly added pension payments (£)")
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Lump sum purchases" })
     ).not.toBeInTheDocument();
@@ -1081,11 +1111,16 @@ describe("App settings form", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
 
-    expect(screen.getByLabelText("Add EPA")).toBeChecked();
-    expect(screen.getByLabelText("EPA years before NPA")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("EPA years before NPA")
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Add lump sum purchase" })
     ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
+
+    expect(screen.getByLabelText("EPA years before NPA")).toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
@@ -1134,11 +1169,48 @@ describe("App settings form", () => {
       defaultSettings.requirementAge.toString()
     );
 
-    openJourneyStep(/^6Your bridging pots$/);
+    openJourneyStep(/Your bridging pots/);
 
     expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
       defaultSettings.isaDrawAge.toString()
     );
+  });
+
+  it("lets the early retirement journey hide EPA when Alpha is disabled", () => {
+    renderAcknowledgedApp({ mode: "bridge" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+    );
+
+    const includeAlphaToggle = screen.getByRole("checkbox", { name: "Alpha" });
+
+    expect(includeAlphaToggle).toBeChecked();
+    expect(
+      screen.queryByRole("checkbox", { name: "EPA" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Alpha EPA/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(includeAlphaToggle);
+
+    expect(includeAlphaToggle).not.toBeChecked();
+    expect(
+      screen.queryByRole("checkbox", { name: "EPA" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(includeAlphaToggle);
+
+    expect(
+      screen.queryByRole("checkbox", { name: "EPA" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Alpha EPA/i })
+    ).toBeInTheDocument();
   });
 
   it("finishes the simple journey on the shared comparison result interface", async () => {

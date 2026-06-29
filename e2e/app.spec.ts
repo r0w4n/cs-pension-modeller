@@ -54,6 +54,7 @@ test.describe("app end-to-end journeys", () => {
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current SIPP pot (£)", "125000");
     await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current ISA pot (£)", "40000");
@@ -83,6 +84,7 @@ test.describe("app end-to-end journeys", () => {
 
     await fillCurrency(page, "Accrued pension to date (£ per year)", "17500");
     await clickNextAndExpectStep(page, "Added pension");
+    await clickNextAndExpectStep(page, "Alpha EPA");
 
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
@@ -135,6 +137,7 @@ test.describe("app end-to-end journeys", () => {
       "Planned Alpha Pension Draw Age exact value",
       "60"
     );
+    await clickNextAndExpectStep(page, "Alpha EPA");
     await clickNextAndExpectStep(page, "State Pension");
 
     await clickNextAndExpectStep(page, "Your bridging pots");

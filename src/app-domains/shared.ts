@@ -95,6 +95,10 @@ export function isSettingsGroupVisible(
     return settings.showAlpha;
   }
 
+  if (groupId === "alpha-epa") {
+    return settings.showAlpha;
+  }
+
   if (groupId === "nuvos") {
     return settings.showNuvos;
   }

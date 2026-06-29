@@ -1,4 +1,8 @@
-import { JOURNEY_DEFINITIONS, applySimpleJourneyAssumptions } from "./journeys";
+import {
+  JOURNEY_DEFINITIONS,
+  OPTIONAL_SECTION_TOGGLES,
+  applySimpleJourneyAssumptions,
+} from "./journeys";
 import type { FieldDefinition } from "../fieldDefinitions";
 import { defaultSettings } from "../settings";
 
@@ -10,6 +14,13 @@ function getJourneyFieldIds(journeyId: string) {
       step.kind === "fields" ? step.fieldIds : []
     ) ?? []
   );
+}
+
+function getJourneyStepFieldIds(journeyId: string, stepId: string) {
+  const journey = JOURNEY_DEFINITIONS.find((entry) => entry.id === journeyId);
+  const step = journey?.steps.find((entry) => entry.id === stepId);
+
+  return new Set(step?.kind === "fields" ? step.fieldIds : []);
 }
 
 describe("journey definitions", () => {
@@ -29,7 +40,7 @@ describe("journey definitions", () => {
     }
   });
 
-  it("includes Alpha EPA controls in the simple journey", () => {
+  it("includes Alpha EPA controls in separate EPA sections", () => {
     const alphaEpaFieldIds = [
       "alphaEpaEnabled",
       "alphaEpaYearsBeforeNpa",
@@ -37,9 +48,27 @@ describe("journey definitions", () => {
       "alphaEpaEndDate",
     ] satisfies FieldDefinition["id"][];
 
-    for (const fieldId of alphaEpaFieldIds) {
-      expect(getJourneyFieldIds("simple-early-retirement")).toContain(fieldId);
+    for (const [journeyId, stepId] of [
+      ["early-retirement-bridge", "alpha-epa"],
+      ["simple-early-retirement", "alpha-epa"],
+      ["expert-journey", "expert-alpha-epa"],
+    ] as const) {
+      const epaFields = getJourneyStepFieldIds(journeyId, stepId);
+
+      for (const fieldId of alphaEpaFieldIds) {
+        expect(epaFields).toContain(fieldId);
+      }
     }
+
+    expect(
+      getJourneyStepFieldIds("simple-early-retirement", "alpha-options")
+    ).not.toContain("alphaEpaYearsBeforeNpa");
+  });
+
+  it("keeps EPA out of the optional sections page", () => {
+    expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).not.toContain(
+      "alphaEpaEnabled"
+    );
   });
 
   it("keeps EPA enabled when applying simple journey assumptions", () => {

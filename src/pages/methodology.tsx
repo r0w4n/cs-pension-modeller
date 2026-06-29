@@ -298,6 +298,11 @@ export function MethodologyPage() {
 
         <h3>Alpha EPA</h3>
         <p className="section-copy">
+          EPA is configured separately from added pension because it changes the
+          unreduced date for a distinct portion of Alpha accrual, rather than
+          buying extra annual pension through added-pension factors.
+        </p>
+        <p className="section-copy">
           When EPA is enabled, Alpha accrual during the selected EPA date range
           is tracked as a separate EPA portion rather than standard Alpha
           accrual. The same 2.32% annual accrual rate is used, but the EPA

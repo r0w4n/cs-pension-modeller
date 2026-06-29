@@ -298,9 +298,15 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 4",
         title: "Added pension",
         description:
-          "Add any monthly added pension contributions you want reflected in the plan. EPA and lump sum purchases are not included in the simplified journey.",
+          "Add monthly added pension or EPA purchases you want reflected in the plan. Lump sum purchases are not included in the simplified journey.",
         kind: "fields",
-        fieldIds: ["alphaAddedPensionMonthly"],
+        fieldIds: [
+          "alphaAddedPensionMonthly",
+          "alphaEpaEnabled",
+          "alphaEpaYearsBeforeNpa",
+          "alphaEpaStartDate",
+          "alphaEpaEndDate",
+        ],
         fieldLabels: {
           alphaAddedPensionMonthly: "Monthly added pension payments (£)",
         },
@@ -490,7 +496,6 @@ export function applySimpleJourneyAssumptions(
     assumedCpiPercent: 0,
     taxationEnabled: false,
     partialRetirementEnabled: false,
-    alphaEpaEnabled: false,
     alphaAddedPensionLumpSums: [],
   };
 }
@@ -510,7 +515,7 @@ export function mergeSimpleJourneySettings(
     assumedCpiPercent: 0,
     taxationEnabled: currentSettings.taxationEnabled,
     partialRetirementEnabled: currentSettings.partialRetirementEnabled,
-    alphaEpaEnabled: currentSettings.alphaEpaEnabled,
+    alphaEpaEnabled: nextSettings.alphaEpaEnabled,
     alphaAddedPensionLumpSums: currentSettings.alphaAddedPensionLumpSums,
   };
 }

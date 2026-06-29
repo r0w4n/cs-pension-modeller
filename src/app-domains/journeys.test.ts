@@ -1,5 +1,6 @@
-import { JOURNEY_DEFINITIONS } from "./journeys";
+import { JOURNEY_DEFINITIONS, applySimpleJourneyAssumptions } from "./journeys";
 import type { FieldDefinition } from "../fieldDefinitions";
+import { defaultSettings } from "../settings";
 
 function getJourneyFieldIds(journeyId: string) {
   const journey = JOURNEY_DEFINITIONS.find((entry) => entry.id === journeyId);
@@ -26,5 +27,31 @@ describe("journey definitions", () => {
         fieldId
       );
     }
+  });
+
+  it("includes Alpha EPA controls in the simple journey", () => {
+    const alphaEpaFieldIds = [
+      "alphaEpaEnabled",
+      "alphaEpaYearsBeforeNpa",
+      "alphaEpaStartDate",
+      "alphaEpaEndDate",
+    ] satisfies FieldDefinition["id"][];
+
+    for (const fieldId of alphaEpaFieldIds) {
+      expect(getJourneyFieldIds("simple-early-retirement")).toContain(fieldId);
+    }
+  });
+
+  it("keeps EPA enabled when applying simple journey assumptions", () => {
+    expect(
+      applySimpleJourneyAssumptions({
+        ...defaultSettings,
+        alphaEpaEnabled: true,
+      })
+    ).toEqual(
+      expect.objectContaining({
+        alphaEpaEnabled: true,
+      })
+    );
   });
 });

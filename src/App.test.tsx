@@ -856,15 +856,34 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
-  it("hides EPA and lump sum controls in the simple journey added pension step", () => {
+  it("shows EPA controls in the simple journey added pension step", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
 
-    expect(screen.queryByLabelText("Add EPA")).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("EPA years before NPA")
-    ).not.toBeInTheDocument();
+    const addEpaCheckbox = screen.getByLabelText("Add EPA");
+    const epaYearsInput = screen.getByLabelText("EPA years before NPA");
+    const epaStartDateInput = screen.getByLabelText("EPA Start Date");
+    const epaEndDateInput = screen.getByLabelText("EPA End Date");
+
+    expect(addEpaCheckbox).toBeInTheDocument();
+    expect(addEpaCheckbox).not.toBeChecked();
+    expect(epaYearsInput).toBeDisabled();
+    expect(epaStartDateInput).toBeDisabled();
+    expect(epaEndDateInput).toBeDisabled();
+
+    vi.mocked(createProjectionTable).mockClear();
+    fireEvent.click(addEpaCheckbox);
+
+    expect(addEpaCheckbox).toBeChecked();
+    expect(epaYearsInput).not.toBeDisabled();
+    expect(epaStartDateInput).not.toBeDisabled();
+    expect(epaEndDateInput).not.toBeDisabled();
+    expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        alphaEpaEnabled: true,
+      })
+    );
     expect(
       screen.queryByRole("heading", { name: "Lump sum purchases" })
     ).not.toBeInTheDocument();
@@ -1040,7 +1059,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("keeps hidden advanced settings when visiting the simple journey", () => {
+  it("keeps hidden lump sum settings when visiting the simple journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1060,9 +1079,10 @@ describe("App settings form", () => {
 
     renderAcknowledgedApp({ mode: "simple" });
 
-    expect(
-      screen.queryByLabelText("EPA years before NPA")
-    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
+
+    expect(screen.getByLabelText("Add EPA")).toBeChecked();
+    expect(screen.getByLabelText("EPA years before NPA")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Add lump sum purchase" })
     ).not.toBeInTheDocument();

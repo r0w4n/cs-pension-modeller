@@ -408,7 +408,8 @@ describe("RetirementIncomeBridgeChart", () => {
   it("updates monthly added pension when the Alpha pension top edge is dragged", () => {
     mockChartResize(960);
 
-    const onChangeParameters = vi.fn();
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
     renderChart({ onChangeParameters });
     const svg = document.querySelector(".bridge-chart-svg");
 

@@ -209,6 +209,8 @@ Google Analytics is disabled unless `VITE_GA_MEASUREMENT_ID` is set for the
 Vite build. When configured, the app sends coarse interaction events only:
 page views, notice acknowledgement, selected journey, journey step, changed
 field identifier, comparison actions, and chart control names.
+The GitHub Pages deployment workflow reads this value from the
+`VITE_GA_MEASUREMENT_ID` repository secret.
 
 Analytics events must not include entered amounts, dates, ages, scenario names,
 pension identifiers, saved settings payloads, or calculated retirement income

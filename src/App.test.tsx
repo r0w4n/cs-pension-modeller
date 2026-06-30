@@ -1208,6 +1208,15 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
       defaultSettings.isaDrawAge.toString()
     );
+    expect(
+      screen.getByLabelText("Current LISA balance (£)")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Planned monthly LISA contribution before age 50")
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("LISA access age")).toHaveValue(
+      defaultSettings.lisaDrawAge.toString()
+    );
   });
 
   it("keeps EPA inside the early retirement Alpha step", () => {

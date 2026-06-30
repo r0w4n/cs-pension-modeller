@@ -238,7 +238,7 @@ export const JOURNEY_DEFINITIONS = [
             "Planned monthly ISA contribution before retirement",
           lisaCurrentPot: "Current LISA balance (£)",
           lisaMonthlyContribution:
-            "Planned monthly LISA contribution before retirement",
+            "Planned monthly LISA contribution before age 50",
           lisaDrawAge: "LISA access age",
           sippCurrentPot: "Current SIPP balance (£)",
           sippMonthlyContribution:

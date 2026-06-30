@@ -819,7 +819,7 @@ export const fieldGroups: FieldGroup[] = [
         format: "currency",
         valuePrefix: "/mo",
         description:
-          "The regular Lifetime ISA saving you plan to make before retirement. The model caps accepted additions at the LISA annual allowance and applies the government bonus to eligible additions until age 50.",
+          "The regular Lifetime ISA saving you plan to make before age 50. The model caps accepted additions at the LISA annual allowance and applies the government bonus to eligible additions until age 50.",
         infoUrl: knowledgeLinks.lifetimeIsa,
         infoLinkText: "Lifetime ISA rules",
       },

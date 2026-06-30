@@ -143,6 +143,8 @@ test.describe("app end-to-end journeys", () => {
     await clickNextAndExpectStep(page, "Your bridging pots");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
+    await fillCurrency(page, "Current LISA balance (£)", "12000");
+    await fillExactNumber(page, "LISA access age exact value", "60");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
     await expect(

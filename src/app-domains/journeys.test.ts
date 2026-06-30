@@ -65,6 +65,22 @@ describe("journey definitions", () => {
     ).not.toContain("alphaEpaYearsBeforeNpa");
   });
 
+  it("includes LISA controls in the early retirement bridging pots step", () => {
+    const bridgePotFields = getJourneyStepFieldIds(
+      "early-retirement-bridge",
+      "pots"
+    );
+
+    expect([...bridgePotFields]).toEqual(
+      expect.arrayContaining([
+        "lisaCurrentPot",
+        "lisaMonthlyContribution",
+        "lisaDrawAge",
+        "lisaRealInterestPercent",
+      ])
+    );
+  });
+
   it("keeps EPA out of the optional sections page", () => {
     expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).not.toContain(
       "alphaEpaEnabled"

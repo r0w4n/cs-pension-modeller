@@ -573,7 +573,8 @@ export function MethodologyPage() {
           Regular LISA saving and scheduled lump sums are included until the
           earliest of the LISA draw date, target retirement age, or age 50.
           Eligible additions are capped at £4,000 per UK tax year and receive a
-          25% government bonus in the model.
+          25% government bonus in the model. The regular monthly contribution
+          control is capped at one twelfth of the annual LISA allowance.
         </p>
         <p className="section-copy">
           Known simplification: the model does not cover first-home withdrawals,

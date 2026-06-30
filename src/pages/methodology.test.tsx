@@ -101,5 +101,10 @@ describe("MethodologyPage", () => {
     expect(
       screen.getByRole("heading", { name: "Lifetime ISA methodology" })
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Regular LISA saving and scheduled lump sums/)
+    ).toHaveTextContent(
+      "The regular monthly contribution control is capped at one twelfth of the annual LISA allowance."
+    );
   });
 });

@@ -10,6 +10,7 @@ const PROJECTED_SOURCES = [
   "State Pension",
   "SIPP pension savings",
   "ISA savings",
+  "Lifetime ISA (LISA) savings",
   "Optional bridge funding before defined-benefit or State Pension income starts",
   "Simplified UK Income Tax",
   "Partial retirement effects",
@@ -27,6 +28,7 @@ const KEY_DATES = [
   "nuvos final pensionable-service date",
   "SIPP access age",
   "ISA draw start age",
+  "LISA draw start age",
   "SIPP draw start age",
   "planning end age or life expectancy",
 ] as const;
@@ -63,12 +65,23 @@ const ISA_PROJECTS = [
   "selected withdrawal strategy",
 ] as const;
 
+const LISA_PROJECTS = [
+  "starting LISA balance",
+  "regular LISA contributions",
+  "lump-sum LISA contributions",
+  "25% government bonus on eligible additions",
+  "annual eligible-addition cap",
+  "investment growth",
+  "selected LISA draw age from age 60",
+  "selected withdrawal strategy",
+] as const;
+
 const BRIDGE_SENSITIVITIES = [
   "retirement age",
   "Alpha draw age",
   "State Pension age",
   "SIPP access age",
-  "ISA and SIPP balances",
+  "ISA, LISA and SIPP balances",
   "withdrawal order",
   "investment returns",
   "inflation",
@@ -80,6 +93,7 @@ const PARTIAL_RETIREMENT_EFFECTS = [
   "future Alpha accrual",
   "SIPP contributions",
   "ISA contributions",
+  "LISA contributions",
 ] as const;
 
 const TAXABLE_INCOME_SOURCES = [
@@ -103,8 +117,8 @@ const COMPARISON_OUTPUTS = [
   "lowest projected income",
   "years and lifetime amount below target",
   "secure pension income at key ages",
-  "bridge-funding gaps before and after SIPP access",
-  "ISA and SIPP depletion ages",
+  "bridge-funding gaps before and after SIPP and LISA access",
+  "ISA, LISA and SIPP depletion ages",
 ] as const;
 
 function FormulaBlock({ children }: { children: string }) {
@@ -541,6 +555,35 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Lifetime ISA methodology</h2>
+        <p className="section-copy">
+          The Lifetime ISA (LISA) is modelled as a tax-free investment pot for
+          retirement bridge spending from age 60.
+        </p>
+        <p className="section-copy">The model projects:</p>
+        <ul className="section-copy">
+          {LISA_PROJECTS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="section-copy">
+          LISA withdrawals are not treated as taxable income.
+        </p>
+        <p className="section-copy">
+          Regular LISA saving and scheduled lump sums are included until the
+          earliest of the LISA draw date, target retirement age, or age 50.
+          Eligible additions are capped at £4,000 per UK tax year and receive a
+          25% government bonus in the model.
+        </p>
+        <p className="section-copy">
+          Known simplification: the model does not cover first-home withdrawals,
+          early-withdrawal charges, provider-specific mechanics, or interactions
+          with the wider ISA subscription allowance. It treats the LISA as a
+          separate tax-free retirement balance.
+        </p>
+      </section>
+
+      <section>
         <h2>Bridge funding methodology</h2>
         <p className="section-copy">
           Bridge funding is the use of temporary savings or pension withdrawals
@@ -548,8 +591,8 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The model can show where income is below the selected
-          retirement-income target and whether ISA or SIPP drawdown can cover
-          that gap.
+          retirement-income target and whether ISA, LISA or SIPP drawdown can
+          cover that gap.
         </p>
         <p className="section-copy">
           Bridge analysis first prepares a retirement scenario where Alpha
@@ -559,17 +602,18 @@ export function MethodologyPage() {
           retirement to life expectancy.
         </p>
         <p className="section-copy">
-          Before SIPP access, any shortfall is tracked as an ISA-only bridge
-          requirement. From SIPP access onwards, the bridge calculation draws
-          from SIPP first and then ISA, limited by the balances available. Any
-          remaining gap is recorded as an unfunded shortfall. The comparison
-          view also estimates the extra monthly saving that would be needed to
-          cover any remaining shortfall over the months before retirement.
+          Before SIPP and LISA access, any shortfall is tracked as an ISA-only
+          bridge requirement. From SIPP access onwards, the bridge calculation
+          draws from SIPP first. From LISA access onwards, it can then draw from
+          LISA before ISA, limited by the balances available. Any remaining gap
+          is recorded as an unfunded shortfall. The comparison view also
+          estimates the extra monthly saving that would be needed to cover any
+          remaining shortfall over the months before retirement.
         </p>
         <p className="section-copy">A typical bridge scenario might be:</p>
         <FormulaBlock>
           {
-            "Retire early → use ISA → use SIPP → Alpha starts → State Pension starts"
+            "Retire early → use ISA → use SIPP/LISA → Alpha starts → State Pension starts"
           }
         </FormulaBlock>
         <p className="section-copy">The bridge analysis is sensitive to:</p>

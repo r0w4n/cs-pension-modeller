@@ -32,6 +32,10 @@ export type IsaWithdrawalStrategy =
   | "zero_at_death"
   | "percentage"
   | "use_by_age";
+export type LisaWithdrawalStrategy =
+  | "zero_at_death"
+  | "percentage"
+  | "use_by_age";
 export type SippTaxReliefRate = "none" | "20" | "40";
 export type ProjectionBasis = "real" | "nominal";
 
@@ -48,6 +52,7 @@ export type PensionSettings = {
   showStatePension: boolean;
   showSipp: boolean;
   showIsa: boolean;
+  showLisa: boolean;
   taxationEnabled: boolean;
   partialRetirementEnabled: boolean;
   partialRetirementStartAge: number;
@@ -98,6 +103,14 @@ export type PensionSettings = {
   isaWithdrawalStrategy: IsaWithdrawalStrategy;
   isaWithdrawalPercent: number;
   isaWithdrawalTargetAge: number;
+  lisaCurrentPot: number;
+  lisaMonthlyContribution: number;
+  lisaDrawAge: number;
+  lisaLumpSums: AddedPensionLumpSum[];
+  lisaRealInterestPercent: number;
+  lisaWithdrawalStrategy: LisaWithdrawalStrategy;
+  lisaWithdrawalPercent: number;
+  lisaWithdrawalTargetAge: number;
   taxPersonalAllowance: number;
   taxPersonalAllowanceTaperThreshold: number;
   taxBasicRateLimit: number;

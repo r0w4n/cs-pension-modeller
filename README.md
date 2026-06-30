@@ -5,7 +5,8 @@ and retirement-income scenarios.
 
 The modeller helps compare how different assumptions affect projected income
 over time. It can include Civil Service Alpha pension, nuvos pension, State
-Pension, ISA and SIPP bridge funding, partial retirement, inflation, simplified
+Pension, ISA, Lifetime ISA (LISA) and SIPP bridge funding, partial retirement,
+inflation, simplified
 Income Tax, and saved scenario comparisons.
 
 This project is for planning and illustration only. It is not financial advice,
@@ -23,7 +24,7 @@ calculation start date to the selected planning horizon.
 It supports:
 
 - simple, early-retirement bridge, and expert journeys
-- optional Alpha, nuvos, State Pension, SIPP, ISA, taxation, and partial
+- optional Alpha, nuvos, State Pension, SIPP, ISA, LISA, taxation, and partial
   retirement sections
 - Alpha pension accrual from Annual Benefit Statement values and future
   pensionable earnings
@@ -33,8 +34,8 @@ It supports:
 - nuvos pension modelling with separate statement, leave, draw, and increase
   assumptions
 - State Pension age, optional deferral, and optional future uprating assumptions
-- SIPP and ISA balances, regular contributions, lump sums, investment growth,
-  and flexible withdrawal strategies
+- SIPP, ISA and LISA balances, regular contributions, lump sums, investment
+  growth, and flexible withdrawal strategies
 - bridge analysis for the period before secure pension income starts
 - simplified UK Income Tax estimates for gross and take-home income comparison
 - real-terms and nominal-terms projection bases
@@ -54,7 +55,7 @@ For each projection month, the model can calculate values such as:
 - monthly Civil Service pension income once drawn
 - monthly State Pension once it starts
 - State Pension deferral uplift and future uprating where enabled
-- ISA and SIPP balances, withdrawals, and bridge funding
+- ISA, LISA and SIPP balances, withdrawals, and bridge funding
 - gross retirement income by source
 - estimated Income Tax and take-home income where taxation is enabled
 - milestone rows for important dates such as statement dates, pension starts,
@@ -76,8 +77,8 @@ The current app is driven by inputs grouped around:
   increases
 - State Pension: annual amount, start date, deferral, and future growth
   assumptions
-- SIPP and ISA: current balances, contributions, lump sums, growth, draw ages,
-  withdrawal strategies, and use-by ages
+- SIPP, ISA and LISA: current balances, contributions, lump sums, growth, draw
+  ages, withdrawal strategies, and use-by ages
 - partial retirement: start age and working percentage
 - taxation: configurable simplified UK Income Tax assumptions
 - comparison: saved scenario names and settings snapshots
@@ -104,8 +105,11 @@ Some important assumptions and simplifications are:
 - State Pension age is derived from date of birth using the timetable encoded in
   the app and can be deferred.
 - New State Pension deferral uses the post-2016 rule modelled by the app.
-- ISA and SIPP projections depend directly on entered balances, contributions,
-  lump sums, growth assumptions, draw ages, and withdrawal strategy.
+- ISA, LISA and SIPP projections depend directly on entered balances,
+  contributions, lump sums, growth assumptions, draw ages, and withdrawal
+  strategy. LISA additions are capped at the modelled Lifetime ISA annual
+  allowance, receive the modelled government bonus on eligible additions, stop
+  at age 50, and are modelled for retirement withdrawals from age 60.
 - Income Tax is simplified and configurable. It does not cover every personal
   tax circumstance, devolved tax regime, tax code adjustment, or benefit
   interaction.
@@ -128,8 +132,8 @@ The app is organised around a small set of layers:
   [`src/row-assembly.ts`](src/row-assembly.ts), and the row engines contain the
   projection pipeline.
 - [`src/projection-domains/`](src/projection-domains) contains domain-specific
-  calculations for Alpha, nuvos, State Pension, SIPP, ISA, tax, inflation, and
-  bridge analysis.
+  calculations for Alpha, nuvos, State Pension, SIPP, ISA, LISA, tax,
+  inflation, and bridge analysis.
 - [`src/app-domains/`](src/app-domains) adapts raw projection results into
   UI-facing journey, form, chart, comparison, and summary structures.
 - [`src/pages/`](src/pages) contains the static footer pages for Settings,

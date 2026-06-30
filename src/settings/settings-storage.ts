@@ -14,6 +14,7 @@ import {
   SETTINGS_STORAGE_KEY,
   type AddedPensionFactorType,
   type IsaWithdrawalStrategy,
+  type LisaWithdrawalStrategy,
   type ProjectionBasis,
   type SippWithdrawalStrategy,
   type StoredPensionSettings,
@@ -139,6 +140,7 @@ function coerceSettings(
     inflationRateAnnual: coerceNumber(input.inflationRateAnnual),
     showSipp: coerceBoolean(input.showSipp),
     showIsa: coerceBoolean(input.showIsa),
+    showLisa: coerceBoolean(input.showLisa),
     partialRetirementEnabled: coerceBoolean(input.partialRetirementEnabled),
     partialRetirementStartAge: coerceNumber(input.partialRetirementStartAge),
     partialRetirementWorkPercent: coerceNumber(
@@ -194,6 +196,16 @@ function coerceSettings(
       | undefined,
     isaWithdrawalPercent: coerceNumber(input.isaWithdrawalPercent),
     isaWithdrawalTargetAge: coerceNumber(input.isaWithdrawalTargetAge),
+    lisaCurrentPot: coerceNumber(input.lisaCurrentPot),
+    lisaMonthlyContribution: coerceNumber(input.lisaMonthlyContribution),
+    lisaDrawAge: coerceNumber(input.lisaDrawAge),
+    lisaLumpSums: coerceAddedPensionLumpSums(input.lisaLumpSums),
+    lisaRealInterestPercent: coerceNumber(input.lisaRealInterestPercent),
+    lisaWithdrawalStrategy: coerceString(input.lisaWithdrawalStrategy) as
+      | LisaWithdrawalStrategy
+      | undefined,
+    lisaWithdrawalPercent: coerceNumber(input.lisaWithdrawalPercent),
+    lisaWithdrawalTargetAge: coerceNumber(input.lisaWithdrawalTargetAge),
     ...coerceStatePensionSettings(input),
     ...coerceNuvosSettings(input),
     ...coerceTaxSettings(input),

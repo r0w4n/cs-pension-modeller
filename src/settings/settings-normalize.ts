@@ -19,6 +19,12 @@ import {
   normalizeIsaWithdrawalStrategy,
 } from "./settings-domains/isa";
 import {
+  LISA_ACCESS_AGE,
+  LISA_MONTHLY_CONTRIBUTION_MAX,
+  normalizeLisaBooleanSetting,
+  normalizeLisaWithdrawalStrategy,
+} from "./settings-domains/lisa";
+import {
   normalizeNuvosBooleanSetting,
   nuvosNumericSettingRules,
 } from "./settings-domains/nuvos";
@@ -81,6 +87,16 @@ const numericSettingRules = {
   isaRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   isaWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
   isaWithdrawalTargetAge: { min: 0, max: 100, step: 1 },
+  lisaCurrentPot: { min: 0, max: 2_000_000, step: 1 },
+  lisaMonthlyContribution: {
+    min: 0,
+    max: LISA_MONTHLY_CONTRIBUTION_MAX,
+    step: 25,
+  },
+  lisaDrawAge: { min: LISA_ACCESS_AGE, max: 100, step: 1 },
+  lisaRealInterestPercent: { min: -10, max: 10, step: 0.1 },
+  lisaWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
+  lisaWithdrawalTargetAge: { min: LISA_ACCESS_AGE, max: 100, step: 1 },
   ...taxNumericSettingRules,
 } as const;
 
@@ -122,6 +138,12 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   isaRealInterestPercent: defaultSettings.isaRealInterestPercent,
   isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
   isaWithdrawalTargetAge: defaultSettings.isaWithdrawalTargetAge,
+  lisaCurrentPot: defaultSettings.lisaCurrentPot,
+  lisaMonthlyContribution: defaultSettings.lisaMonthlyContribution,
+  lisaDrawAge: defaultSettings.lisaDrawAge,
+  lisaRealInterestPercent: defaultSettings.lisaRealInterestPercent,
+  lisaWithdrawalPercent: defaultSettings.lisaWithdrawalPercent,
+  lisaWithdrawalTargetAge: defaultSettings.lisaWithdrawalTargetAge,
   taxPersonalAllowance: defaultSettings.taxPersonalAllowance,
   taxPersonalAllowanceTaperThreshold:
     defaultSettings.taxPersonalAllowanceTaperThreshold,
@@ -146,6 +168,8 @@ const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
   "sippWithdrawalTargetAge",
   "isaDrawAge",
   "isaWithdrawalTargetAge",
+  "lisaDrawAge",
+  "lisaWithdrawalTargetAge",
 ];
 
 function normalizeNumericSetting(key: NumericSettingKey, value: unknown) {
@@ -203,6 +227,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeSippBooleanSetting(value) as PensionSettings[K];
     case "showIsa":
       return normalizeIsaBooleanSetting(value) as PensionSettings[K];
+    case "showLisa":
+      return normalizeLisaBooleanSetting(value) as PensionSettings[K];
     case "statePensionApplyFutureGrowth":
       return normalizeStatePensionBooleanSetting(value) as PensionSettings[K];
     case "nuvosApplyPensionIncreases":
@@ -227,6 +253,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeSippWithdrawalStrategy(value) as PensionSettings[K];
     case "isaWithdrawalStrategy":
       return normalizeIsaWithdrawalStrategy(value) as PensionSettings[K];
+    case "lisaWithdrawalStrategy":
+      return normalizeLisaWithdrawalStrategy(value) as PensionSettings[K];
     case "alphaEpaStartDate":
     case "alphaEpaEndDate":
       return normalizeIsoDate(
@@ -245,6 +273,7 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       }) as PensionSettings[K];
     case "isaLumpSums":
     case "sippLumpSums":
+    case "lisaLumpSums":
       return normalizeAddedPensionLumpSums(
         value as AddedPensionLumpSum[]
       ) as PensionSettings[K];
@@ -284,6 +313,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     ),
     showSipp: Boolean(settings.showSipp),
     showIsa: Boolean(settings.showIsa),
+    showLisa: Boolean(settings.showLisa),
     taxationEnabled: normalizeTaxationBooleanSetting(settings.taxationEnabled),
     partialRetirementEnabled: Boolean(settings.partialRetirementEnabled),
     partialRetirementStartAge: normalizeSetting(
@@ -448,6 +478,29 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     isaWithdrawalTargetAge: normalizeSetting(
       "isaWithdrawalTargetAge",
       settings.isaWithdrawalTargetAge
+    ),
+    lisaCurrentPot: normalizeSetting("lisaCurrentPot", settings.lisaCurrentPot),
+    lisaMonthlyContribution: normalizeSetting(
+      "lisaMonthlyContribution",
+      settings.lisaMonthlyContribution
+    ),
+    lisaDrawAge: normalizeSetting("lisaDrawAge", settings.lisaDrawAge),
+    lisaLumpSums: normalizeSetting("lisaLumpSums", settings.lisaLumpSums),
+    lisaRealInterestPercent: normalizeSetting(
+      "lisaRealInterestPercent",
+      settings.lisaRealInterestPercent
+    ),
+    lisaWithdrawalStrategy: normalizeSetting(
+      "lisaWithdrawalStrategy",
+      settings.lisaWithdrawalStrategy
+    ),
+    lisaWithdrawalPercent: normalizeSetting(
+      "lisaWithdrawalPercent",
+      settings.lisaWithdrawalPercent
+    ),
+    lisaWithdrawalTargetAge: normalizeSetting(
+      "lisaWithdrawalTargetAge",
+      settings.lisaWithdrawalTargetAge
     ),
     taxPersonalAllowance: normalizeSetting(
       "taxPersonalAllowance",

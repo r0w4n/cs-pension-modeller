@@ -59,6 +59,7 @@ export type ComparisonResult = {
   annualTarget: number;
   annualGap: number;
   isaDepletedAge: number | null;
+  lisaDepletedAge: number | null;
   sippDepletedAge: number | null;
   retirementAnnualIncome: number;
   statePensionAnnualIncome: number;
@@ -222,6 +223,7 @@ export function createComparisonResult(
     ...bridgeSettings,
     showSipp: false,
     showIsa: false,
+    showLisa: false,
   });
   const bridgeAnalysis = generateRetirementBridgeAnalysis(
     bridgePensionRows,
@@ -266,6 +268,15 @@ export function createComparisonResult(
       scenario.settings.showSipp &&
         scenario.settings.sippWithdrawalStrategy === "use_by_age"
         ? scenario.settings.sippWithdrawalTargetAge
+        : null
+    ),
+    lisaDepletedAge: findPotDepletedAge(
+      rows,
+      "lisaPot",
+      scenario.settings.lisaDrawAge,
+      scenario.settings.showLisa &&
+        scenario.settings.lisaWithdrawalStrategy === "use_by_age"
+        ? scenario.settings.lisaWithdrawalTargetAge
         : null
     ),
     retirementAnnualIncome: findAnnualIncomeAtAge(
@@ -475,6 +486,13 @@ export function buildComparisonTableRows(
             : "n/a",
       ],
       [
+        "LISA start",
+        (result) =>
+          result.scenario.settings.showLisa
+            ? formatDecimalAge(result.scenario.settings.lisaDrawAge)
+            : "n/a",
+      ],
+      [
         "SIPP start",
         (result) =>
           result.scenario.settings.showSipp
@@ -620,6 +638,9 @@ export function buildComparisonDetailedRows(
 ): ComparisonTableRow[] {
   const anyScenarioUsesIsa = results.some(
     (result) => result.scenario.settings.showIsa
+  );
+  const anyScenarioUsesLisa = results.some(
+    (result) => result.scenario.settings.showLisa
   );
   const anyScenarioUsesSipp = results.some(
     (result) => result.scenario.settings.showSipp
@@ -843,20 +864,72 @@ export function buildComparisonDetailedRows(
           ]),
         ]
       : []),
+    ...(anyScenarioUsesLisa
+      ? [
+          createComparisonSection("LISA bridge details", results, [
+            [
+              "Current LISA balance",
+              (result) =>
+                result.scenario.settings.showLisa
+                  ? formatCurrencyDetailed(
+                      result.scenario.settings.lisaCurrentPot
+                    )
+                  : "n/a",
+            ],
+            [
+              "LISA use-by age",
+              (result) => formatUseByAge(result.scenario.settings, "lisa"),
+            ],
+            [
+              "Total LISA withdrawals",
+              (result) =>
+                result.scenario.settings.showLisa
+                  ? formatCurrencyDetailed(
+                      getTotalWithdrawals(result.rows, "monthlyLisaPension")
+                    )
+                  : "n/a",
+            ],
+            [
+              "LISA depleted age",
+              (result) =>
+                result.scenario.settings.showLisa
+                  ? renderComparisonToneCell(
+                      formatDepletionAgeOrNa(result.lisaDepletedAge),
+                      getPotDepletionTone(
+                        result.lisaDepletedAge,
+                        result.scenario.settings
+                      )
+                    )
+                  : "n/a",
+            ],
+            [
+              "Final LISA balance",
+              (result) =>
+                result.scenario.settings.showLisa
+                  ? formatCurrencyDetailed(
+                      getFinalPotBalance(result.rows, "lisaPot")
+                    )
+                  : "n/a",
+            ],
+          ]),
+        ]
+      : []),
     createComparisonSection("Flexible assets details", results, [
       [
-        "Total ISA + SIPP withdrawals",
+        "Total ISA + LISA + SIPP withdrawals",
         (result) =>
           formatCurrencyDetailed(
             getTotalWithdrawals(result.rows, "monthlyIsaPension") +
+              getTotalWithdrawals(result.rows, "monthlyLisaPension") +
               getTotalWithdrawals(result.rows, "monthlySippPension")
           ),
       ],
       [
-        "Final ISA + SIPP balance",
+        "Final ISA + LISA + SIPP balance",
         (result) =>
           formatCurrencyDetailed(
             getFinalPotBalance(result.rows, "isaPot") +
+              getFinalPotBalance(result.rows, "lisaPot") +
               getFinalPotBalance(result.rows, "sippPot")
           ),
       ],
@@ -873,6 +946,22 @@ export function buildComparisonDetailedRows(
           formatPercent(
             deriveInflationAssumptions(result.scenario.settings)
               .isaNominalReturnAnnual
+          ),
+      ],
+      [
+        "LISA nominal return",
+        (result) =>
+          formatPercent(
+            deriveInflationAssumptions(result.scenario.settings)
+              .lisaNominalReturnAnnual
+          ),
+      ],
+      [
+        "LISA modelled real return",
+        (result) =>
+          formatPercent(
+            deriveInflationAssumptions(result.scenario.settings)
+              .lisaModelledReturnAnnual
           ),
       ],
       [
@@ -1083,7 +1172,7 @@ function areAllValuesNa(values: ReactNode[]) {
 
 function findPotDepletedAge(
   rows: ProjectionRow[],
-  potKey: "isaPot" | "sippPot",
+  potKey: "isaPot" | "lisaPot" | "sippPot",
   drawAge: number,
   targetAge: number | null = null
 ) {
@@ -1168,13 +1257,16 @@ function getTotalLifetimeShortfall(
   }, 0);
 }
 
-function getFinalPotBalance(rows: ProjectionRow[], key: "isaPot" | "sippPot") {
+function getFinalPotBalance(
+  rows: ProjectionRow[],
+  key: "isaPot" | "lisaPot" | "sippPot"
+) {
   return rows.at(-1)?.[key] ?? 0;
 }
 
 function getTotalWithdrawals(
   rows: ProjectionRow[],
-  key: "monthlyIsaPension" | "monthlySippPension"
+  key: "monthlyIsaPension" | "monthlyLisaPension" | "monthlySippPension"
 ) {
   return rows.reduce((total, row) => total + row[key], 0);
 }
@@ -1198,6 +1290,9 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
     result.scenario.settings.showIsa
       ? result.scenario.settings.isaDrawAge
       : Number.POSITIVE_INFINITY,
+    result.scenario.settings.showLisa
+      ? result.scenario.settings.lisaDrawAge
+      : Number.POSITIVE_INFINITY,
     result.scenario.settings.showSipp
       ? result.scenario.settings.sippDrawAge
       : Number.POSITIVE_INFINITY
@@ -1209,7 +1304,7 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 
   const depletionRow = result.rows.find((row) => {
     const rowAge = row.age + row.ageMonths / 12;
-    return rowAge >= startAge && row.isaPot + row.sippPot <= 0;
+    return rowAge >= startAge && row.isaPot + row.lisaPot + row.sippPot <= 0;
   });
 
   return depletionRow ? depletionRow.age + depletionRow.ageMonths / 12 : null;
@@ -1311,7 +1406,10 @@ function formatYearsBelowTarget(months: number) {
   return `${formattedYears} years`;
 }
 
-function formatUseByAge(settings: PensionSettings, pot: "isa" | "sipp") {
+function formatUseByAge(
+  settings: PensionSettings,
+  pot: "isa" | "lisa" | "sipp"
+) {
   if (pot === "isa") {
     if (!settings.showIsa) {
       return "n/a";
@@ -1319,6 +1417,16 @@ function formatUseByAge(settings: PensionSettings, pot: "isa" | "sipp") {
 
     return settings.isaWithdrawalStrategy === "use_by_age"
       ? formatDecimalAge(settings.isaWithdrawalTargetAge)
+      : "n/a";
+  }
+
+  if (pot === "lisa") {
+    if (!settings.showLisa) {
+      return "n/a";
+    }
+
+    return settings.lisaWithdrawalStrategy === "use_by_age"
+      ? formatDecimalAge(settings.lisaWithdrawalTargetAge)
       : "n/a";
   }
 

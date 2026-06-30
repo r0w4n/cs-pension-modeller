@@ -6,6 +6,7 @@ import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
 import { calculateAnnualNuvosPensionAtDate } from "./projection-domains/nuvos";
 import { calculateSippProjectionRow } from "./projection-domains/sipp";
 import { calculateIsaProjectionRow } from "./projection-domains/isa";
+import { calculateLisaProjectionRow } from "./projection-domains/lisa";
 import {
   calculateAnnualAlphaPensionIncludingEpaReduction,
   calculateAnnualAlphaPensionIncludingReduction,
@@ -37,6 +38,7 @@ export function calculateTotalGrossMonthlyIncome(
   monthlyStatePension: number,
   monthlySippPension = 0,
   monthlyIsaPension = 0,
+  monthlyLisaPension = 0,
   monthlyNuvosPensionIncludingReduction = 0
 ) {
   return (
@@ -44,7 +46,8 @@ export function calculateTotalGrossMonthlyIncome(
     monthlyNuvosPensionIncludingReduction +
     monthlyStatePension +
     monthlySippPension +
-    monthlyIsaPension
+    monthlyIsaPension +
+    monthlyLisaPension
   );
 }
 
@@ -64,15 +67,24 @@ export function calculateInvestmentProjectionValues(input: {
   endDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
+  lisaDrawDate: string;
   active: boolean;
 }) {
-  const { settings, rowDate, endDate, sippDrawDate, isaDrawDate, active } =
-    input;
+  const {
+    settings,
+    rowDate,
+    endDate,
+    sippDrawDate,
+    isaDrawDate,
+    lisaDrawDate,
+    active,
+  } = input;
 
   if (!active) {
     return {
       sippProjection: { sippPot: 0, monthlySippPension: 0 },
       isaProjection: { isaPot: 0, monthlyIsaPension: 0 },
+      lisaProjection: { lisaPot: 0, monthlyLisaPension: 0 },
     };
   }
 
@@ -87,6 +99,12 @@ export function calculateInvestmentProjectionValues(input: {
       settings,
       rowDate,
       drawDate: isaDrawDate,
+      endDate,
+    }),
+    lisaProjection: calculateLisaProjectionRow({
+      settings,
+      rowDate,
+      drawDate: lisaDrawDate,
       endDate,
     }),
   };
@@ -157,6 +175,10 @@ export function buildProjectionRow(input: {
     isaPot: number;
     monthlyIsaPension: number;
   };
+  lisaProjection: {
+    lisaPot: number;
+    monthlyLisaPension: number;
+  };
 }) {
   const {
     settings,
@@ -176,6 +198,7 @@ export function buildProjectionRow(input: {
     lumpSumAddedPension,
     sippProjection,
     isaProjection,
+    lisaProjection,
   } = input;
   const { age, ageMonths } = calculateAgeSnapshot(settings, rowDate);
   const annualAccruedAlphaPension =
@@ -217,6 +240,7 @@ export function buildProjectionRow(input: {
     monthlyStatePension,
     sippProjection.monthlySippPension,
     isaProjection.monthlyIsaPension,
+    lisaProjection.monthlyLisaPension,
     monthlyNuvosPensionGross
   );
   const monthlyIncomeTax = calculateMonthlyIncomeTax({
@@ -246,6 +270,8 @@ export function buildProjectionRow(input: {
     monthlySippPension: sippProjection.monthlySippPension,
     isaPot: isaProjection.isaPot,
     monthlyIsaPension: isaProjection.monthlyIsaPension,
+    lisaPot: lisaProjection.lisaPot,
+    monthlyLisaPension: lisaProjection.monthlyLisaPension,
     totalMonthlyIncomeBeforeTax,
     monthlyIncomeTax,
     totalMonthlyNetIncome: totalMonthlyIncomeBeforeTax - monthlyIncomeTax,
@@ -373,6 +399,7 @@ export function createHistoricalProjectionRows(input: {
         lumpSumAddedPension,
         sippProjection: { sippPot: 0, monthlySippPension: 0 },
         isaProjection: { isaPot: 0, monthlyIsaPension: 0 },
+        lisaProjection: { lisaPot: 0, monthlyLisaPension: 0 },
       })
     );
 
@@ -406,6 +433,7 @@ export function attachMilestonesToRows(input: {
   drawDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
+  lisaDrawDate: string;
   alphaAbsDate: string;
   nuvosAccrualStopDate: string;
   nuvosDrawDate: string;

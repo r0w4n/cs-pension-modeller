@@ -92,6 +92,11 @@ function applyIncomeAndContributionPatch(
   );
   assignNormalizedNumber(
     next,
+    "lisaMonthlyContribution",
+    patch.lisaMonthlyContribution
+  );
+  assignNormalizedNumber(
+    next,
     "sippMonthlyContribution",
     patch.sippMonthlyContribution
   );
@@ -133,6 +138,10 @@ function applyVisibilityPatch(
 
   if (patch.showIsa !== undefined) {
     next.showIsa = patch.showIsa;
+  }
+
+  if (patch.showLisa !== undefined) {
+    next.showLisa = patch.showLisa;
   }
 
   if (patch.showSipp !== undefined) {
@@ -282,6 +291,14 @@ function applyAccessAgePatch(
     reconcileIsaWithdrawalTarget(next);
   }
 
+  if (patch.lisaAccessAge !== undefined) {
+    next.lisaDrawAge = normalizeSetting(
+      "lisaDrawAge",
+      clampNumber(patch.lisaAccessAge, 60, Math.max(60, next.lifeExpectancy))
+    );
+    reconcileLisaWithdrawalTarget(next);
+  }
+
   if (patch.alphaStartAge !== undefined) {
     const alphaStartAgeBounds = getPensionStartAgeBounds({
       currentPlanningAge: context.currentPlanningAge,
@@ -352,6 +369,21 @@ function applyUseByAgePatch(
       )
     );
   }
+
+  if (patch.lisaUseByAge !== undefined) {
+    const lisaUseByAgeBounds = getUseByAgeBounds({
+      drawAge: next.lisaDrawAge,
+      lifeExpectancy: next.lifeExpectancy,
+    });
+    next.lisaWithdrawalTargetAge = normalizeSetting(
+      "lisaWithdrawalTargetAge",
+      clampNumber(
+        patch.lisaUseByAge,
+        lisaUseByAgeBounds.min,
+        lisaUseByAgeBounds.max
+      )
+    );
+  }
 }
 
 function reconcileChartState(
@@ -373,6 +405,7 @@ function reconcileChartState(
 
   reconcileSippWithdrawalTarget(next);
   reconcileIsaWithdrawalTarget(next);
+  reconcileLisaWithdrawalTarget(next);
 
   if (next.alphaPensionLeaveAge > next.alphaPensionDrawAge) {
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
@@ -418,10 +451,29 @@ function reconcileIsaWithdrawalTarget(next: PensionSettings) {
   }
 }
 
+function reconcileLisaWithdrawalTarget(next: PensionSettings) {
+  const lisaUseByAgeBounds = getUseByAgeBounds({
+    drawAge: next.lisaDrawAge,
+    lifeExpectancy: next.lifeExpectancy,
+  });
+
+  if (
+    next.showLisa &&
+    next.lisaWithdrawalStrategy === "use_by_age" &&
+    next.lisaWithdrawalTargetAge < lisaUseByAgeBounds.min
+  ) {
+    next.lisaWithdrawalTargetAge = normalizeSetting(
+      "lisaWithdrawalTargetAge",
+      lisaUseByAgeBounds.min
+    );
+  }
+}
+
 type NormalizedNumberKey =
   | "desiredRetirementIncome"
   | "alphaAddedPensionMonthly"
   | "isaMonthlyContribution"
+  | "lisaMonthlyContribution"
   | "sippMonthlyContribution"
   | "partialRetirementWorkPercent";
 

@@ -45,6 +45,12 @@ export const OPTIONAL_SECTION_TOGGLES = [
       "Models an ISA pot, contributions, growth, lump sums, and flexible withdrawals.",
   },
   {
+    key: "showLisa",
+    label: "LISA",
+    description:
+      "Models a Lifetime ISA pot, capped eligible additions, government bonus, growth, and tax-free retirement withdrawals from age 60.",
+  },
+  {
     key: "taxationEnabled",
     label: "Taxation",
     description:
@@ -110,7 +116,7 @@ export const JOURNEY_DEFINITIONS = [
     id: "early-retirement-bridge",
     title: "Work out what I need to retire early",
     description:
-      "Build a retirement income plan using your Civil Service pension, State Pension, SIPP, ISA and other savings. See how your bridging pots could support you before your main pensions start.",
+      "Build a retirement income plan using your Civil Service pension, State Pension, SIPP, ISA, LISA and other savings. See how your bridging pots could support you before your main pensions start.",
     steps: [
       {
         id: "target",
@@ -142,7 +148,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 3",
         title: "Your Civil Service pensions",
         description:
-          "We include State Pension, ISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
+          "We include State Pension, ISA, LISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
         toggleKeys: ["showAlpha", "showNuvos"],
       },
@@ -220,13 +226,17 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 5",
         title: "Your bridging pots",
         description:
-          "Bridge pots are flexible savings used to cover income gaps before pension income fully starts. Keep ISA and SIPP separate so the model respects tax relief, access ages, and drawdown timing.",
+          "Bridge pots are flexible savings used to cover income gaps before pension income fully starts. Keep ISA, LISA and SIPP separate so the model respects tax relief, access ages, bonuses, and drawdown timing.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
           "isaMonthlyContribution",
           "isaDrawAge",
           "isaRealInterestPercent",
+          "lisaCurrentPot",
+          "lisaMonthlyContribution",
+          "lisaDrawAge",
+          "lisaRealInterestPercent",
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
@@ -237,6 +247,10 @@ export const JOURNEY_DEFINITIONS = [
           isaCurrentPot: "Current ISA balance (£)",
           isaMonthlyContribution:
             "Planned monthly ISA contribution before retirement",
+          lisaCurrentPot: "Current LISA balance (£)",
+          lisaMonthlyContribution:
+            "Planned monthly LISA contribution before retirement",
+          lisaDrawAge: "LISA access age",
           sippCurrentPot: "Current SIPP balance (£)",
           sippMonthlyContribution:
             "Planned monthly SIPP contribution before retirement",
@@ -374,7 +388,7 @@ export const JOURNEY_DEFINITIONS = [
       {
         id: "pots",
         eyebrow: "Optional",
-        title: "ISA and SIPP",
+        title: "ISA, LISA and SIPP",
         description:
           "Add personal pots only if you want the chart to show how they help bridge the gap to secure pension income.",
         kind: "fields",
@@ -382,6 +396,10 @@ export const JOURNEY_DEFINITIONS = [
           "isaCurrentPot",
           "isaMonthlyContribution",
           "isaRealInterestPercent",
+          "lisaCurrentPot",
+          "lisaMonthlyContribution",
+          "lisaDrawAge",
+          "lisaRealInterestPercent",
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
@@ -391,11 +409,15 @@ export const JOURNEY_DEFINITIONS = [
         fieldLabels: {
           isaCurrentPot: "Current ISA balance (£)",
           isaMonthlyContribution: "Monthly ISA contribution (£)",
+          lisaCurrentPot: "Current LISA balance (£)",
+          lisaMonthlyContribution: "Monthly LISA contribution (£)",
+          lisaDrawAge: "LISA access age",
           sippCurrentPot: "Current SIPP balance (£)",
           sippMonthlyContribution: "Monthly SIPP contribution (£)",
           sippDrawAge: "SIPP access age",
         },
-        visible: (settings) => settings.showIsa || settings.showSipp,
+        visible: (settings) =>
+          settings.showIsa || settings.showLisa || settings.showSipp,
       },
       {
         id: "answer",
@@ -465,6 +487,7 @@ function isExpertJourneyGroupVisible(groupId: string) {
     groupId === "state" ||
     groupId === "sipp" ||
     groupId === "isa" ||
+    groupId === "lisa" ||
     groupId === "tax" ||
     groupId === "partial-retirement"
   ) {
@@ -483,8 +506,10 @@ export function applyBridgeJourneyDefaults(
     showStatePension: true,
     showSipp: true,
     showIsa: true,
+    showLisa: true,
     sippWithdrawalStrategy: "use_by_age",
     isaWithdrawalStrategy: "use_by_age",
+    lisaWithdrawalStrategy: "use_by_age",
     taxationEnabled: false,
     partialRetirementEnabled: false,
   };
@@ -515,6 +540,7 @@ export function applySimpleJourneyAssumptions(
     showStatePension: true,
     showSipp: false,
     showIsa: false,
+    showLisa: false,
     showNuvos: settings.showNuvos,
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
@@ -533,6 +559,7 @@ export function mergeSimpleJourneySettings(
     ...nextSettings,
     showSipp: currentSettings.showSipp,
     showIsa: currentSettings.showIsa,
+    showLisa: currentSettings.showLisa,
     alphaAddedPensionFactorType: currentSettings.alphaAddedPensionFactorType,
     statePensionApplyFutureGrowth:
       currentSettings.statePensionApplyFutureGrowth,

@@ -31,6 +31,7 @@ type ProjectionTableColumn = TableColumn & {
     | "showStatePension"
     | "showSipp"
     | "showIsa"
+    | "showLisa"
     | "taxationEnabled";
 };
 
@@ -143,6 +144,18 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     label: "ISA balance",
     width: "7rem",
     setting: "showIsa",
+  },
+  {
+    key: "monthlyLisaPension",
+    label: "Monthly LISA",
+    width: "7rem",
+    setting: "showLisa",
+  },
+  {
+    key: "lisaPot",
+    label: "LISA balance",
+    width: "7rem",
+    setting: "showLisa",
   },
 ] as const;
 
@@ -454,6 +467,10 @@ function renderProjectionTableCell(
       return formatCurrencyDetailed(row.monthlyIsaPension);
     case "isaPot":
       return formatCurrencyDetailed(row.isaPot);
+    case "monthlyLisaPension":
+      return formatCurrencyDetailed(row.monthlyLisaPension);
+    case "lisaPot":
+      return formatCurrencyDetailed(row.lisaPot);
     default:
       return "";
   }

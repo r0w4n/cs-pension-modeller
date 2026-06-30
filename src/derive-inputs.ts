@@ -42,6 +42,8 @@ export type DerivedInflationAssumptions = {
   sippModelledReturnAnnual: number;
   isaNominalReturnAnnual: number;
   isaModelledReturnAnnual: number;
+  lisaNominalReturnAnnual: number;
+  lisaModelledReturnAnnual: number;
   alphaNominalInServiceRevaluationAnnual: number;
   alphaModelledInServiceRevaluationAnnual: number;
   alphaNominalDeferredIncreaseAnnual: number;
@@ -55,6 +57,7 @@ export type DerivedInflationAssumptions = {
 export type ProjectionRuntimeDates = {
   sippDrawDate: string;
   isaDrawDate: string;
+  lisaDrawDate: string;
   alphaAbsDate: string;
   nuvosAbsDate: string;
 };
@@ -66,6 +69,7 @@ export function deriveInflationAssumptions(
   const inflationRateMonthly = (1 + inflationRateAnnual) ** (1 / 12) - 1;
   const sippNominalReturnAnnual = settings.sippRealInterestPercent / 100;
   const isaNominalReturnAnnual = settings.isaRealInterestPercent / 100;
+  const lisaNominalReturnAnnual = settings.lisaRealInterestPercent / 100;
   const alphaNominalInServiceRevaluationAnnual = inflationRateAnnual;
   const statePensionNominalIncreaseAnnual =
     getStatePensionNominalIncreaseRate(settings);
@@ -83,6 +87,11 @@ export function deriveInflationAssumptions(
     isaModelledReturnAnnual: getModelledAnnualGrowthRate(
       settings,
       isaNominalReturnAnnual
+    ),
+    lisaNominalReturnAnnual,
+    lisaModelledReturnAnnual: getModelledAnnualGrowthRate(
+      settings,
+      lisaNominalReturnAnnual
     ),
     alphaNominalInServiceRevaluationAnnual,
     alphaModelledInServiceRevaluationAnnual:
@@ -180,6 +189,7 @@ export function createProjectionRuntimeDates(
   return {
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
+    lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     alphaAbsDate: resolveAlphaAbsDate(settings.alphaPensionAbsDate),
     nuvosAbsDate: resolveAlphaAbsDate(settings.nuvosPensionAbsDate),
   };

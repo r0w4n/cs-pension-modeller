@@ -70,6 +70,12 @@ export {
   shouldRenderIsaField,
 } from "./app-domains/isa";
 
+export {
+  getLisaEffectiveRangeField,
+  isLisaFieldDisabled,
+  shouldRenderLisaField,
+} from "./app-domains/lisa";
+
 export { isNuvosPensionIncreaseField } from "./app-domains/nuvos";
 
 export { isPartialRetirementField } from "./app-domains/partial-retirement";

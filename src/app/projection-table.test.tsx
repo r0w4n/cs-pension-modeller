@@ -28,6 +28,8 @@ const rows: ProjectionRow[] = [
     monthlySippPension: 0,
     isaPot: 0,
     monthlyIsaPension: 0,
+    lisaPot: 0,
+    monthlyLisaPension: 0,
     totalMonthlyIncomeBeforeTax: 80,
     monthlyIncomeTax: 0,
     totalMonthlyNetIncome: 80,

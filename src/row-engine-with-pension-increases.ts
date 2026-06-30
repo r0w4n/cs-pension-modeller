@@ -46,8 +46,13 @@ export function createProjectionTableWithPensionIncreases(
     reductionFactor,
     epaReductionFactor,
   } = derivedInputs;
-  const { sippDrawDate, isaDrawDate, alphaAbsDate, nuvosAbsDate } =
-    runtimeDates;
+  const {
+    sippDrawDate,
+    isaDrawDate,
+    lisaDrawDate,
+    alphaAbsDate,
+    nuvosAbsDate,
+  } = runtimeDates;
   const firstRowDate = minIsoDate(
     minIsoDate(
       alphaAbsDate,
@@ -74,13 +79,14 @@ export function createProjectionTableWithPensionIncreases(
   ).sort();
 
   const allRows = allRowDates.map((rowDate) => {
-    const { sippProjection, isaProjection } =
+    const { sippProjection, isaProjection, lisaProjection } =
       calculateInvestmentProjectionValues({
         settings,
         rowDate,
         endDate,
         sippDrawDate,
         isaDrawDate,
+        lisaDrawDate,
         active: rowDate >= settings.startDate,
       });
     const shouldShowAbsStatementOnly =
@@ -163,6 +169,7 @@ export function createProjectionTableWithPensionIncreases(
       lumpSumAddedPension,
       sippProjection,
       isaProjection,
+      lisaProjection,
     });
 
     previousRowDate = rowDate;
@@ -179,6 +186,7 @@ export function createProjectionTableWithPensionIncreases(
     drawDate,
     sippDrawDate,
     isaDrawDate,
+    lisaDrawDate,
     alphaAbsDate,
     nuvosAccrualStopDate,
     nuvosDrawDate,

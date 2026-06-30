@@ -15,6 +15,7 @@ import {
   calculateMinimumStatePensionDrawAge,
   calculateStatePensionDrawAge,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  LISA_MONTHLY_CONTRIBUTION_MAX,
   type PensionSettings,
 } from "../settings";
 import {
@@ -54,6 +55,10 @@ export function createRetirementIncomeSeries(
     settings.dateOfBirth,
     settings.isaDrawAge
   );
+  const lisaDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.lisaDrawAge
+  );
   const sippUseByDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.sippWithdrawalTargetAge
@@ -61,6 +66,10 @@ export function createRetirementIncomeSeries(
   const isaUseByDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.isaWithdrawalTargetAge
+  );
+  const lisaUseByDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.lisaWithdrawalTargetAge
   );
 
   const displayedRows = rows.filter((row) => row.date >= settings.startDate);
@@ -94,6 +103,19 @@ export function createRetirementIncomeSeries(
           nextMonthlyIncome: nextRow?.monthlySippPension ?? 0,
         })
       : 0;
+    const lisaIncomeAnnual = settings.showLisa
+      ? getBridgePotIncomeAnnual({
+          rowDate: row.date,
+          drawDate: lisaDrawDate,
+          stopDate:
+            settings.lisaWithdrawalStrategy === "use_by_age"
+              ? lisaUseByDate
+              : null,
+          monthlyIncome: row.monthlyLisaPension,
+          previousMonthlyIncome: previousRow?.monthlyLisaPension ?? 0,
+          nextMonthlyIncome: nextRow?.monthlyLisaPension ?? 0,
+        })
+      : 0;
     const alphaIncomeAnnual =
       settings.showAlpha && row.date >= alphaDrawDate
         ? row.monthlyAlphaPensionGross * 12
@@ -118,6 +140,7 @@ export function createRetirementIncomeSeries(
     );
     const totalIncomeAnnual =
       isaIncomeAnnual +
+      lisaIncomeAnnual +
       sippIncomeAnnual +
       partialRetirementIncomeAnnual +
       alphaIncomeAnnual +
@@ -137,6 +160,7 @@ export function createRetirementIncomeSeries(
       age,
       targetIncomeAnnual,
       isaIncomeAnnual,
+      lisaIncomeAnnual,
       sippIncomeAnnual,
       partialRetirementIncomeAnnual,
       alphaIncomeAnnual,
@@ -149,6 +173,7 @@ export function createRetirementIncomeSeries(
           ? Math.max(0, targetIncomeAnnual - assessedIncomeAnnual)
           : 0,
       isaBalance: row.isaPot,
+      lisaBalance: row.lisaPot,
       sippBalance: row.sippPot,
       phase: getRetirementIncomePhase(age, settings, statePensionAge),
     };
@@ -241,6 +266,21 @@ function insertChartTransitionPoints(
             settings.sippWithdrawalTargetAge
           ),
           age: settings.sippWithdrawalTargetAge,
+        }
+      : null,
+    settings.showLisa
+      ? {
+          date: addYearsToIsoDate(settings.dateOfBirth, settings.lisaDrawAge),
+          age: settings.lisaDrawAge,
+        }
+      : null,
+    settings.showLisa && settings.lisaWithdrawalStrategy === "use_by_age"
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.lisaWithdrawalTargetAge
+          ),
+          age: settings.lisaWithdrawalTargetAge,
         }
       : null,
     settings.showAlpha
@@ -359,15 +399,18 @@ export function createBridgeChartParameters(
     targetIncomeAnnual: settings.desiredRetirementIncome,
     alphaMonthlyAddedPension: settings.alphaAddedPensionMonthly,
     isaMonthlyContribution: settings.isaMonthlyContribution,
+    lisaMonthlyContribution: settings.lisaMonthlyContribution,
     sippMonthlyContribution: settings.sippMonthlyContribution,
     retirementAge: settings.requirementAge,
     alphaLeaveAge: settings.alphaPensionLeaveAge,
     sippAccessAge: settings.sippDrawAge,
     sippUseByAge: settings.sippWithdrawalTargetAge,
     isaAccessAge: settings.isaDrawAge,
+    lisaAccessAge: settings.lisaDrawAge,
     alphaStartAge: settings.alphaPensionDrawAge,
     nuvosStartAge: settings.nuvosPensionDrawAge,
     isaUseByAge: settings.isaWithdrawalTargetAge,
+    lisaUseByAge: settings.lisaWithdrawalTargetAge,
     partialRetirementStartAge: settings.partialRetirementStartAge,
     partialRetirementWorkPercent: settings.partialRetirementWorkPercent,
     partialRetirementEnabled: settings.partialRetirementEnabled,
@@ -377,12 +420,15 @@ export function createBridgeChartParameters(
     ),
     showAlpha: settings.showAlpha,
     showIsa: settings.showIsa,
+    showLisa: settings.showLisa,
     showSipp: settings.showSipp,
     sippUseByAgeEnabled:
       settings.showSipp && settings.sippWithdrawalStrategy === "use_by_age",
     showNuvos: settings.showNuvos,
     isaUseByAgeEnabled:
       settings.showIsa && settings.isaWithdrawalStrategy === "use_by_age",
+    lisaUseByAgeEnabled:
+      settings.showLisa && settings.lisaWithdrawalStrategy === "use_by_age",
     showStatePension: settings.showStatePension,
   };
 }
@@ -427,6 +473,10 @@ export function createBridgeChartLimits(
     drawAge: settings.isaDrawAge,
     lifeExpectancy: settings.lifeExpectancy,
   });
+  const lisaUseByAgeBounds = getUseByAgeBounds({
+    drawAge: settings.lisaDrawAge,
+    lifeExpectancy: settings.lifeExpectancy,
+  });
   const alphaStartAgeBounds = getPensionStartAgeBounds({
     currentPlanningAge,
     leaveAge: settings.alphaPensionLeaveAge,
@@ -452,6 +502,11 @@ export function createBridgeChartLimits(
       step: 25,
     },
     isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
+    lisaMonthlyContribution: {
+      min: 0,
+      max: LISA_MONTHLY_CONTRIBUTION_MAX,
+      step: 25,
+    },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
     retirementAge: {
       min: currentPlanningAge,
@@ -486,6 +541,11 @@ export function createBridgeChartLimits(
       max: isaAccessAgeMax,
       step: 1,
     },
+    lisaAccessAge: {
+      min: 60,
+      max: Math.max(60, settings.lifeExpectancy),
+      step: 1,
+    },
     alphaStartAge: {
       min: alphaStartAgeBounds.min,
       max: alphaStartAgeBounds.max,
@@ -499,6 +559,11 @@ export function createBridgeChartLimits(
     isaUseByAge: {
       min: isaUseByAgeBounds.min,
       max: isaUseByAgeBounds.max,
+      step: 1,
+    },
+    lisaUseByAge: {
+      min: lisaUseByAgeBounds.min,
+      max: lisaUseByAgeBounds.max,
       step: 1,
     },
     partialRetirementStartAge: {

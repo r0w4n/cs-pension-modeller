@@ -115,6 +115,10 @@ export function isSettingsGroupVisible(
     return settings.showIsa;
   }
 
+  if (groupId === "lisa") {
+    return settings.showLisa;
+  }
+
   if (groupId === "tax") {
     return settings.taxationEnabled;
   }

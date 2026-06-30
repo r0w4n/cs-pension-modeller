@@ -58,6 +58,8 @@ test.describe("app end-to-end journeys", () => {
     await fillCurrency(page, "Current SIPP pot (£)", "125000");
     await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current ISA pot (£)", "40000");
+    await page.getByRole("button", { name: "Next" }).click();
+    await fillCurrency(page, "Current LISA pot (£)", "10000");
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
 

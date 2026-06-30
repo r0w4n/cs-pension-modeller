@@ -14,6 +14,7 @@ import {
   formatLocalIsoDate,
   getTodayIsoDate,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  LISA_MONTHLY_CONTRIBUTION_MAX,
   getPartialRetirementContributionMultiplier,
   getLatestAlphaAddedPensionPurchaseDate,
   isValidIsoDate,
@@ -40,6 +41,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
+    showLisa: defaultSettings.showLisa,
     taxationEnabled: defaultSettings.taxationEnabled,
     partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
     partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
@@ -92,6 +94,14 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
     isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     isaWithdrawalTargetAge: defaultSettings.isaWithdrawalTargetAge,
+    lisaCurrentPot: defaultSettings.lisaCurrentPot,
+    lisaMonthlyContribution: defaultSettings.lisaMonthlyContribution,
+    lisaDrawAge: defaultSettings.lisaDrawAge,
+    lisaLumpSums: defaultSettings.lisaLumpSums,
+    lisaRealInterestPercent: defaultSettings.lisaRealInterestPercent,
+    lisaWithdrawalStrategy: defaultSettings.lisaWithdrawalStrategy,
+    lisaWithdrawalPercent: defaultSettings.lisaWithdrawalPercent,
+    lisaWithdrawalTargetAge: defaultSettings.lisaWithdrawalTargetAge,
     taxPersonalAllowance: defaultSettings.taxPersonalAllowance,
     taxPersonalAllowanceTaperThreshold:
       defaultSettings.taxPersonalAllowanceTaperThreshold,
@@ -182,6 +192,9 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("alphaAddedPensionMonthly", 233)).toBe(233);
     expect(normalizeSetting("alphaAddedPensionMonthly", 2500)).toBe(
       ALPHA_ADDED_PENSION_MONTHLY_MAX
+    );
+    expect(normalizeSetting("lisaMonthlyContribution", 5000)).toBe(
+      LISA_MONTHLY_CONTRIBUTION_MAX
     );
     expect(normalizeSetting("pensionableEarnings", 56321)).toBe(56321);
     expect(normalizeSetting("accruedPensionAtLastAbs", 12444.4)).toBe(12444);
@@ -278,6 +291,7 @@ describe("settings unit tests", () => {
       showStatePension: defaultSettings.showStatePension,
       showSipp: defaultSettings.showSipp,
       showIsa: defaultSettings.showIsa,
+      showLisa: defaultSettings.showLisa,
       taxationEnabled: defaultSettings.taxationEnabled,
       partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
       partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
@@ -341,6 +355,14 @@ describe("settings unit tests", () => {
       isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
       isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
       isaWithdrawalTargetAge: defaultSettings.isaWithdrawalTargetAge,
+      lisaCurrentPot: defaultSettings.lisaCurrentPot,
+      lisaMonthlyContribution: defaultSettings.lisaMonthlyContribution,
+      lisaDrawAge: defaultSettings.lisaDrawAge,
+      lisaLumpSums: defaultSettings.lisaLumpSums,
+      lisaRealInterestPercent: defaultSettings.lisaRealInterestPercent,
+      lisaWithdrawalStrategy: defaultSettings.lisaWithdrawalStrategy,
+      lisaWithdrawalPercent: defaultSettings.lisaWithdrawalPercent,
+      lisaWithdrawalTargetAge: defaultSettings.lisaWithdrawalTargetAge,
       taxPersonalAllowance: defaultSettings.taxPersonalAllowance,
       taxPersonalAllowanceTaperThreshold:
         defaultSettings.taxPersonalAllowanceTaperThreshold,

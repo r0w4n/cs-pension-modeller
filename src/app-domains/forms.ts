@@ -15,6 +15,11 @@ import {
   isIsaFieldDisabled,
   shouldRenderIsaField,
 } from "./isa";
+import {
+  getLisaEffectiveRangeField,
+  isLisaFieldDisabled,
+  shouldRenderLisaField,
+} from "./lisa";
 import { isNuvosPensionIncreaseField } from "./nuvos";
 import { isPartialRetirementField } from "./partial-retirement";
 import { calculateCurrentPlanningAge } from "./retirement-income";
@@ -35,7 +40,8 @@ export function shouldRenderField(
 ) {
   return (
     shouldRenderSippField(fieldId, settings) &&
-    shouldRenderIsaField(fieldId, settings)
+    shouldRenderIsaField(fieldId, settings) &&
+    shouldRenderLisaField(fieldId, settings)
   );
 }
 
@@ -53,6 +59,7 @@ export function isFieldDisabled(
       !settings.statePensionApplyFutureGrowth) ||
     isSippFieldDisabled(fieldId, settings) ||
     isIsaFieldDisabled(fieldId, settings) ||
+    isLisaFieldDisabled(fieldId, settings) ||
     (isAlphaEpaField(fieldId) && !settings.alphaEpaEnabled)
   );
 }
@@ -73,6 +80,7 @@ export function getEffectiveRangeField(
   effectiveField = getAlphaEffectiveRangeField(effectiveField, settings);
   effectiveField = getSippEffectiveRangeField(effectiveField, settings);
   effectiveField = getIsaEffectiveRangeField(effectiveField, settings);
+  effectiveField = getLisaEffectiveRangeField(effectiveField, settings);
 
   if (field.id === "requirementAge") {
     effectiveField = {

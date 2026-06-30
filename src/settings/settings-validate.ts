@@ -5,6 +5,7 @@ import {
   validateAlphaPensionRules,
 } from "./settings-domains/alpha-pension";
 import { validateIsaRules } from "./settings-domains/isa";
+import { validateLisaRules } from "./settings-domains/lisa";
 import { validateNuvosRules } from "./settings-domains/nuvos";
 import { validateStatePensionRules } from "./settings-domains/state-pension";
 import {
@@ -34,11 +35,14 @@ type ValidationContext = {
   nuvosAbsDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
+  lisaDrawDate: string;
   retirementDate: string;
   sippContributionStopDate: string;
   isaContributionStopDate: string;
+  lisaContributionStopDate: string;
   sippWithdrawalTargetDate: string;
   isaWithdrawalTargetDate: string;
+  lisaWithdrawalTargetDate: string;
   partialRetirementStartDate: string;
   defaultStatePensionDrawDate: string;
 };
@@ -64,6 +68,10 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
     settings.dateOfBirth,
     settings.isaDrawAge
   );
+  const lisaDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.lisaDrawAge
+  );
   const retirementDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.requirementAge
@@ -88,11 +96,14 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
     nuvosAbsDate: resolveAlphaAbsDate(settings.nuvosPensionAbsDate),
     sippDrawDate,
     isaDrawDate,
+    lisaDrawDate,
     retirementDate,
     sippContributionStopDate:
       sippDrawDate <= retirementDate ? sippDrawDate : retirementDate,
     isaContributionStopDate:
       isaDrawDate <= retirementDate ? isaDrawDate : retirementDate,
+    lisaContributionStopDate:
+      lisaDrawDate <= retirementDate ? lisaDrawDate : retirementDate,
     sippWithdrawalTargetDate: addYearsToIsoDate(
       settings.dateOfBirth,
       settings.sippWithdrawalTargetAge
@@ -100,6 +111,10 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
     isaWithdrawalTargetDate: addYearsToIsoDate(
       settings.dateOfBirth,
       settings.isaWithdrawalTargetAge
+    ),
+    lisaWithdrawalTargetDate: addYearsToIsoDate(
+      settings.dateOfBirth,
+      settings.lisaWithdrawalTargetAge
     ),
     partialRetirementStartDate: getPartialRetirementStartDate(settings),
     defaultStatePensionDrawDate: calculateStatePensionDrawDate(
@@ -120,6 +135,7 @@ export function validateSettings(
     ...validateNuvosRules(context),
     ...validateSippRules(context),
     ...validateIsaRules(context),
+    ...validateLisaRules(context),
     ...validatePartialRetirementRules(context),
     ...validateLumpSumRules(context),
   ];
@@ -128,7 +144,11 @@ export function validateSettings(
 function validateLumpSums(
   lumpSums: AddedPensionLumpSum[],
   options: {
-    field: "alphaAddedPensionLumpSums" | "sippLumpSums" | "isaLumpSums";
+    field:
+      | "alphaAddedPensionLumpSums"
+      | "sippLumpSums"
+      | "isaLumpSums"
+      | "lisaLumpSums";
     label: string;
     earliestDate: string;
     latestDate: string;
@@ -234,6 +254,16 @@ function validateLumpSumRules(
           latestDate: context.isaContributionStopDate,
           rangeMessage:
             "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+        })
+      : []),
+    ...(settings.showLisa
+      ? validateLumpSums(settings.lisaLumpSums, {
+          field: "lisaLumpSums",
+          label: "LISA lump sum",
+          earliestDate: settings.startDate,
+          latestDate: context.lisaContributionStopDate,
+          rangeMessage:
+            "LISA lump sums must fall between the calculation start date and the earlier of retirement age and LISA draw start.",
         })
       : []),
   ];

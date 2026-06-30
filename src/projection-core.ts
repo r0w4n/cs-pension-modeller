@@ -33,6 +33,8 @@ export type ProjectionRow = {
   monthlySippPension: number;
   isaPot: number;
   monthlyIsaPension: number;
+  lisaPot: number;
+  monthlyLisaPension: number;
   totalMonthlyIncomeBeforeTax: number;
   monthlyIncomeTax: number;
   totalMonthlyNetIncome: number;
@@ -46,6 +48,7 @@ export type PensionSummary = {
     startsNuvosPension: string;
     startsSippDraw: string;
     startsIsaDraw: string;
+    startsLisaDraw: string;
     startsStatePension: string;
   };
   alphaPension: {
@@ -69,6 +72,11 @@ export type PensionSummary = {
     monthlyAtDraw: number;
     totalContributions: number;
   };
+  lisaPension: {
+    potAtDraw: number;
+    monthlyAtDraw: number;
+    totalContributionsWithBonus: number;
+  };
   incomeOverTime: {
     monthlyAtAlphaStart: number;
     monthlyAtStateStart: number;
@@ -90,7 +98,14 @@ export type PensionSummary = {
 export type RetirementIncomeDisplay = "monthly" | "annual";
 
 export type RetirementIncomeSource = {
-  key: "alpha" | "nuvos" | "sipp" | "isa" | "statePension" | "incomeTax";
+  key:
+    | "alpha"
+    | "nuvos"
+    | "sipp"
+    | "isa"
+    | "lisa"
+    | "statePension"
+    | "incomeTax";
   label: string;
   monthlyIncome: number;
   annualIncome: number;
@@ -117,10 +132,12 @@ export type BridgePhase = {
   annualNuvosPension: number;
   annualStatePension: number;
   annualIsaBridge: number;
+  annualLisaBridge: number;
   annualSippBridge: number;
   annualShortfall: number;
   annualSurplus: number;
   totalIsaBridge: number;
+  totalLisaBridge: number;
   totalSippBridge: number;
   totalBridgeRequired: number;
   unfundedShortfall: number;
@@ -134,8 +151,10 @@ export type BridgePotProjectionRow = {
   monthlyNuvosPension: number;
   monthlyStatePension: number;
   isaBalance: number;
+  lisaBalance: number;
   sippBalance: number;
   isaDrawdown: number;
+  lisaDrawdown: number;
   sippDrawdown: number;
   unfundedShortfall: number;
   growth: number;

@@ -1,5 +1,6 @@
 import { calculateNormalPensionAge, type PensionSettings } from "./settings";
 import { calculateTotalIsaContributions } from "./projection-domains/isa";
+import { calculateTotalLisaContributionsWithBonus } from "./projection-domains/lisa";
 import { NUVOS_FINAL_PENSIONABLE_SERVICE_DATE } from "./projection-domains/nuvos";
 import { calculateTotalSippContributionsAfterTaxRelief } from "./projection-domains/sipp";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
@@ -64,6 +65,8 @@ export function generatePensionSummary(
       sippMonthlyAtDraw: 0,
       isaPotAtDraw: 0,
       isaMonthlyAtDraw: 0,
+      lisaPotAtDraw: 0,
+      lisaMonthlyAtDraw: 0,
       monthlyAtAlphaStart: 0,
       monthlyAtStateStart: 0,
       monthlyStatePension: 0,
@@ -72,6 +75,7 @@ export function generatePensionSummary(
         nuvosMonthlyIncome: 0,
         sippMonthlyIncome: 0,
         isaMonthlyIncome: 0,
+        lisaMonthlyIncome: 0,
         statePensionMonthlyIncome: 0,
         monthlyIncomeTax: 0,
         settings,
@@ -106,6 +110,7 @@ function buildSummaryDates(
     ...dates,
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
+    lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     statePensionStartDate: settings.statePensionDrawDate,
   };
 }
@@ -142,6 +147,7 @@ function buildRowSummaryContext(
     nuvosPensionDrawDate: string;
     sippDrawDate: string;
     isaDrawDate: string;
+    lisaDrawDate: string;
     statePensionStartDate: string;
     startingAlphaPensionAtStartDate: number;
   }
@@ -161,6 +167,7 @@ function buildRowSummaryContext(
     ),
     sippDrawRow: findFirstRowAtOrAfterDate(tableData, input.sippDrawDate),
     isaDrawRow: findFirstRowAtOrAfterDate(tableData, input.isaDrawDate),
+    lisaDrawRow: findFirstRowAtOrAfterDate(tableData, input.lisaDrawDate),
   };
   const flexibleIncomeRows = {
     sippIncomeRow: findFirstDrawdownRowAtOrAfterDate(
@@ -172,6 +179,11 @@ function buildRowSummaryContext(
       tableData,
       input.isaDrawDate,
       "monthlyIsaPension"
+    ),
+    lisaIncomeRow: findFirstDrawdownRowAtOrAfterDate(
+      tableData,
+      input.lisaDrawDate,
+      "monthlyLisaPension"
     ),
   };
   const maximumAnnualAccrued = Math.max(
@@ -201,6 +213,9 @@ function buildRowSummaryContext(
       flexibleIncomeRows.sippIncomeRow?.monthlySippPension ?? 0,
     isaPotAtDraw: drawRows.isaDrawRow?.isaPot ?? 0,
     isaMonthlyAtDraw: flexibleIncomeRows.isaIncomeRow?.monthlyIsaPension ?? 0,
+    lisaPotAtDraw: drawRows.lisaDrawRow?.lisaPot ?? 0,
+    lisaMonthlyAtDraw:
+      flexibleIncomeRows.lisaIncomeRow?.monthlyLisaPension ?? 0,
     monthlyAtAlphaStart: drawRows.alphaDrawRow?.totalMonthlyNetIncome ?? 0,
     monthlyAtStateStart: drawRows.statePensionRow?.totalMonthlyNetIncome ?? 0,
     monthlyStatePension: drawRows.statePensionRow?.monthlyStatePension ?? 0,
@@ -211,7 +226,7 @@ function buildRowSummaryContext(
 function findFirstDrawdownRowAtOrAfterDate(
   tableData: ProjectionRow[],
   date: string,
-  incomeKey: "monthlySippPension" | "monthlyIsaPension"
+  incomeKey: "monthlySippPension" | "monthlyIsaPension" | "monthlyLisaPension"
 ) {
   return (
     tableData.find((row) => row.date >= date && row[incomeKey] > 0) ??
@@ -227,8 +242,10 @@ function buildRowRetirementIncomeSummary(
     statePensionRow: ProjectionRow | undefined;
     sippDrawRow: ProjectionRow | undefined;
     isaDrawRow: ProjectionRow | undefined;
+    lisaDrawRow: ProjectionRow | undefined;
     sippIncomeRow: ProjectionRow | undefined;
     isaIncomeRow: ProjectionRow | undefined;
+    lisaIncomeRow: ProjectionRow | undefined;
   }
 ) {
   const alphaMonthlyIncome =
@@ -239,12 +256,14 @@ function buildRowRetirementIncomeSummary(
     drawRows.statePensionRow?.monthlyStatePension ?? 0;
   const sippMonthlyIncome = drawRows.sippIncomeRow?.monthlySippPension ?? 0;
   const isaMonthlyIncome = drawRows.isaIncomeRow?.monthlyIsaPension ?? 0;
+  const lisaMonthlyIncome = drawRows.lisaIncomeRow?.monthlyLisaPension ?? 0;
 
   return buildRetirementIncomeSummary({
     alphaMonthlyIncome,
     nuvosMonthlyIncome,
     sippMonthlyIncome,
     isaMonthlyIncome,
+    lisaMonthlyIncome,
     statePensionMonthlyIncome,
     monthlyIncomeTax: calculateMonthlyIncomeTax({
       settings,
@@ -279,6 +298,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     ),
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
+    lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     statePensionStartDate: settings.statePensionDrawDate,
     normalPensionAge,
     reductionFactor: 1,
@@ -293,6 +313,8 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     sippMonthlyAtDraw: 0,
     isaPotAtDraw: 0,
     isaMonthlyAtDraw: 0,
+    lisaPotAtDraw: 0,
+    lisaMonthlyAtDraw: 0,
     monthlyAtAlphaStart: 0,
     monthlyAtStateStart: 0,
     monthlyStatePension: 0,
@@ -301,6 +323,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
       nuvosMonthlyIncome: 0,
       sippMonthlyIncome: 0,
       isaMonthlyIncome: 0,
+      lisaMonthlyIncome: 0,
       statePensionMonthlyIncome: 0,
       monthlyIncomeTax: 0,
       settings,
@@ -316,6 +339,7 @@ function createSummaryResponse(input: {
   nuvosPensionDrawDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
+  lisaDrawDate: string;
   statePensionStartDate: string;
   normalPensionAge: number;
   reductionFactor: number;
@@ -330,6 +354,8 @@ function createSummaryResponse(input: {
   sippMonthlyAtDraw: number;
   isaPotAtDraw: number;
   isaMonthlyAtDraw: number;
+  lisaPotAtDraw: number;
+  lisaMonthlyAtDraw: number;
   monthlyAtAlphaStart: number;
   monthlyAtStateStart: number;
   monthlyStatePension: number;
@@ -343,6 +369,7 @@ function createSummaryResponse(input: {
     nuvosPensionDrawDate,
     sippDrawDate,
     isaDrawDate,
+    lisaDrawDate,
     statePensionStartDate,
     normalPensionAge,
     reductionFactor,
@@ -357,6 +384,8 @@ function createSummaryResponse(input: {
     sippMonthlyAtDraw,
     isaPotAtDraw,
     isaMonthlyAtDraw,
+    lisaPotAtDraw,
+    lisaMonthlyAtDraw,
     monthlyAtAlphaStart,
     monthlyAtStateStart,
     monthlyStatePension,
@@ -371,6 +400,7 @@ function createSummaryResponse(input: {
       startsNuvosPension: nuvosPensionDrawDate,
       startsSippDraw: sippDrawDate,
       startsIsaDraw: isaDrawDate,
+      startsLisaDraw: lisaDrawDate,
       startsStatePension: statePensionStartDate,
     },
     alphaPension: {
@@ -394,6 +424,14 @@ function createSummaryResponse(input: {
       potAtDraw: isaPotAtDraw,
       monthlyAtDraw: isaMonthlyAtDraw,
       totalContributions: calculateTotalIsaContributions(settings, isaDrawDate),
+    },
+    lisaPension: {
+      potAtDraw: lisaPotAtDraw,
+      monthlyAtDraw: lisaMonthlyAtDraw,
+      totalContributionsWithBonus: calculateTotalLisaContributionsWithBonus(
+        settings,
+        lisaDrawDate
+      ),
     },
     incomeOverTime: {
       monthlyAtAlphaStart,
@@ -428,6 +466,7 @@ function buildRetirementIncomeSummary({
   nuvosMonthlyIncome,
   sippMonthlyIncome,
   isaMonthlyIncome,
+  lisaMonthlyIncome,
   statePensionMonthlyIncome,
   monthlyIncomeTax,
   settings,
@@ -436,6 +475,7 @@ function buildRetirementIncomeSummary({
   nuvosMonthlyIncome: number;
   sippMonthlyIncome: number;
   isaMonthlyIncome: number;
+  lisaMonthlyIncome: number;
   statePensionMonthlyIncome: number;
   monthlyIncomeTax: number;
   settings: PensionSettings;
@@ -464,6 +504,9 @@ function buildRetirementIncomeSummary({
       : []),
     ...(settings.showIsa
       ? [createRetirementIncomeSource("isa", "ISA", isaMonthlyIncome)]
+      : []),
+    ...(settings.showLisa
+      ? [createRetirementIncomeSource("lisa", "LISA", lisaMonthlyIncome)]
       : []),
     ...(settings.showStatePension
       ? [

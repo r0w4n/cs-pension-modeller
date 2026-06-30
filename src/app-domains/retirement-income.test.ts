@@ -1,4 +1,7 @@
-import { createDefaultSettings } from "../settings";
+import {
+  createDefaultSettings,
+  LISA_MONTHLY_CONTRIBUTION_MAX,
+} from "../settings";
 import type { ProjectionRow } from "../projection";
 import {
   createBridgeChartLimits,
@@ -26,6 +29,8 @@ const baseRow: ProjectionRow = {
   monthlySippPension: 0,
   isaPot: 0,
   monthlyIsaPension: 0,
+  lisaPot: 0,
+  monthlyLisaPension: 0,
   totalMonthlyIncomeBeforeTax: 0,
   monthlyIncomeTax: 0,
   totalMonthlyNetIncome: 0,
@@ -190,6 +195,9 @@ describe("retirement-income chart limits", () => {
     const limits = createBridgeChartLimits(settings);
 
     expect(limits.alphaMonthlyAddedPension.max).toBe(2000);
+    expect(limits.lisaMonthlyContribution.max).toBe(
+      LISA_MONTHLY_CONTRIBUTION_MAX
+    );
     expect(limits.sippAccessAge.min).toBe(60);
   });
 

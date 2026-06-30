@@ -26,6 +26,8 @@ const projectionFixtures = vi.hoisted(() => {
       monthlySippPension: 0,
       isaPot: 15000,
       monthlyIsaPension: 0,
+      lisaPot: 0,
+      monthlyLisaPension: 0,
       totalMonthlyIncomeBeforeTax: 900,
       monthlyIncomeTax: 0,
       totalMonthlyNetIncome: 900,
@@ -51,6 +53,8 @@ const projectionFixtures = vi.hoisted(() => {
       monthlySippPension: 200,
       isaPot: 12000,
       monthlyIsaPension: 100,
+      lisaPot: 0,
+      monthlyLisaPension: 0,
       totalMonthlyIncomeBeforeTax: 1600,
       monthlyIncomeTax: 0,
       totalMonthlyNetIncome: 1600,
@@ -80,6 +84,8 @@ const projectionFixtures = vi.hoisted(() => {
       monthlySippPension: 300,
       isaPot: 0,
       monthlyIsaPension: 150,
+      lisaPot: 0,
+      monthlyLisaPension: 0,
       totalMonthlyIncomeBeforeTax: 2950,
       monthlyIncomeTax: 0,
       totalMonthlyNetIncome: 2950,
@@ -140,19 +146,22 @@ vi.mock("./projection", async () => {
             : 0,
           monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
           monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
+          monthlyLisaPension: settings.showLisa ? row.monthlyLisaPension : 0,
           totalMonthlyIncomeBeforeTax:
             (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
-            (settings.showIsa ? row.monthlyIsaPension : 0),
+            (settings.showIsa ? row.monthlyIsaPension : 0) +
+            (settings.showLisa ? row.monthlyLisaPension : 0),
           monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
           totalMonthlyNetIncome:
             (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
-            (settings.showIsa ? row.monthlyIsaPension : 0) -
+            (settings.showIsa ? row.monthlyIsaPension : 0) +
+            (settings.showLisa ? row.monthlyLisaPension : 0) -
             (settings.taxationEnabled ? 100 : 0),
         }));
       }
@@ -166,6 +175,7 @@ vi.mock("./projection", async () => {
           startsNuvosPension: settings.startDate,
           startsSippDraw: settings.startDate,
           startsIsaDraw: settings.startDate,
+          startsLisaDraw: settings.startDate,
           startsStatePension: settings.statePensionDrawDate,
         },
         alphaPension: {
@@ -192,6 +202,11 @@ vi.mock("./projection", async () => {
           potAtDraw: rows.at(-1)?.isaPot ?? 0,
           monthlyAtDraw: rows.at(-1)?.monthlyIsaPension ?? 0,
           totalContributions: 0,
+        },
+        lisaPension: {
+          potAtDraw: rows.at(-1)?.lisaPot ?? 0,
+          monthlyAtDraw: rows.at(-1)?.monthlyLisaPension ?? 0,
+          totalContributionsWithBonus: 0,
         },
         incomeOverTime: {
           monthlyAtAlphaStart: rows.at(-1)?.monthlyAlphaPensionGross ?? 0,
@@ -249,6 +264,16 @@ vi.mock("./projection", async () => {
                     label: "ISA",
                     monthlyIncome: rows.at(-1)?.monthlyIsaPension ?? 0,
                     annualIncome: (rows.at(-1)?.monthlyIsaPension ?? 0) * 12,
+                  },
+                ]
+              : []),
+            ...(settings.showLisa
+              ? [
+                  {
+                    key: "lisa" as const,
+                    label: "LISA",
+                    monthlyIncome: rows.at(-1)?.monthlyLisaPension ?? 0,
+                    annualIncome: (rows.at(-1)?.monthlyLisaPension ?? 0) * 12,
                   },
                 ]
               : []),
@@ -314,6 +339,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
+    showLisa: defaultSettings.showLisa,
     taxationEnabled: defaultSettings.taxationEnabled,
     partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
     partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
@@ -366,6 +392,14 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     isaWithdrawalStrategy: defaultSettings.isaWithdrawalStrategy,
     isaWithdrawalPercent: defaultSettings.isaWithdrawalPercent,
     isaWithdrawalTargetAge: defaultSettings.isaWithdrawalTargetAge,
+    lisaCurrentPot: defaultSettings.lisaCurrentPot,
+    lisaMonthlyContribution: defaultSettings.lisaMonthlyContribution,
+    lisaDrawAge: defaultSettings.lisaDrawAge,
+    lisaLumpSums: defaultSettings.lisaLumpSums,
+    lisaRealInterestPercent: defaultSettings.lisaRealInterestPercent,
+    lisaWithdrawalStrategy: defaultSettings.lisaWithdrawalStrategy,
+    lisaWithdrawalPercent: defaultSettings.lisaWithdrawalPercent,
+    lisaWithdrawalTargetAge: defaultSettings.lisaWithdrawalTargetAge,
     taxPersonalAllowance: defaultSettings.taxPersonalAllowance,
     taxPersonalAllowanceTaperThreshold:
       defaultSettings.taxPersonalAllowanceTaperThreshold,
@@ -1786,6 +1820,7 @@ describe("App settings form", () => {
       "nuvos",
       "SIPP",
       "ISA",
+      "LISA",
       "Taxation",
     ]);
   });

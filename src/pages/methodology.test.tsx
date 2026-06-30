@@ -81,9 +81,12 @@ describe("MethodologyPage", () => {
     expect(
       screen.getByText(/grosses up net additions by 1 \/ 0.8/)
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Before SIPP access, any shortfall is tracked/)
-    ).toHaveTextContent("draws from SIPP first and then ISA");
+    expect(screen.getByText(/Before SIPP and LISA access/)).toHaveTextContent(
+      "draws from SIPP first"
+    );
+    expect(screen.getByText(/From LISA access onwards/)).toHaveTextContent(
+      "draw from LISA before ISA"
+    );
     expect(
       screen.getByText(/highest of the main inflation assumption/)
     ).toHaveTextContent(
@@ -92,6 +95,11 @@ describe("MethodologyPage", () => {
     expect(
       screen.getByRole("heading", { name: "Scenario comparison methodology" })
     ).toBeInTheDocument();
-    expect(screen.getByText("ISA and SIPP depletion ages")).toBeInTheDocument();
+    expect(
+      screen.getByText("ISA, LISA and SIPP depletion ages")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Lifetime ISA methodology" })
+    ).toBeInTheDocument();
   });
 });

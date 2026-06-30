@@ -1,5 +1,6 @@
 import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  LISA_MONTHLY_CONTRIBUTION_MAX,
   type PensionSettings,
 } from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
@@ -56,6 +57,11 @@ export type RangeField = {
     | "isaRealInterestPercent"
     | "isaWithdrawalPercent"
     | "isaWithdrawalTargetAge"
+    | "lisaDrawAge"
+    | "lisaMonthlyContribution"
+    | "lisaRealInterestPercent"
+    | "lisaWithdrawalPercent"
+    | "lisaWithdrawalTargetAge"
     | "taxBasicRatePercent"
     | "taxHigherRatePercent"
     | "taxAdditionalRatePercent"
@@ -97,6 +103,7 @@ export type CurrencyInputField = {
     | "fullSalary"
     | "sippCurrentPot"
     | "isaCurrentPot"
+    | "lisaCurrentPot"
     | "taxPersonalAllowance"
     | "taxPersonalAllowanceTaperThreshold"
     | "taxBasicRateLimit"
@@ -124,7 +131,8 @@ export type SelectField = {
     | "alphaAddedPensionFactorType"
     | "sippTaxReliefRate"
     | "sippWithdrawalStrategy"
-    | "isaWithdrawalStrategy";
+    | "isaWithdrawalStrategy"
+    | "lisaWithdrawalStrategy";
   label: string;
   type: "select";
   options: {
@@ -133,7 +141,8 @@ export type SelectField = {
       | PensionSettings["projectionBasis"]
       | PensionSettings["alphaAddedPensionFactorType"]
       | PensionSettings["sippWithdrawalStrategy"]
-      | PensionSettings["isaWithdrawalStrategy"];
+      | PensionSettings["isaWithdrawalStrategy"]
+      | PensionSettings["lisaWithdrawalStrategy"];
     label: string;
   }[];
   description?: string;
@@ -788,6 +797,96 @@ export const fieldGroups: FieldGroup[] = [
         inputStep: 1,
         description:
           "The age by which the ISA balance is intended to be used up when the use-by-age strategy is selected.",
+      },
+    ],
+  },
+  {
+    id: "lisa",
+    eyebrow: "LISA",
+    title: "Lifetime ISA (LISA)",
+    description:
+      "Lifetime ISA pot, capped contributions, government bonus, investment return, and drawdown assumptions for later-life bridge spending.",
+    fields: [
+      {
+        id: "lisaCurrentPot",
+        label: "Current LISA pot (£)",
+        type: "currency-input",
+        min: 0,
+        max: 2000000,
+        step: 1,
+        format: "currency",
+        description:
+          "The current Lifetime ISA balance available for later-life tax-free bridge spending. The modeller treats it separately because retirement withdrawals are usually available from age 60.",
+      },
+      {
+        id: "lisaMonthlyContribution",
+        label: "Regular LISA contribution (£ per month)",
+        type: "range",
+        min: 0,
+        max: LISA_MONTHLY_CONTRIBUTION_MAX,
+        step: 25,
+        format: "currency",
+        valuePrefix: "/mo",
+        description:
+          "The regular Lifetime ISA saving you plan to make before retirement. The model caps accepted additions at the LISA annual allowance and applies the government bonus to eligible additions until age 50.",
+        infoUrl: knowledgeLinks.lifetimeIsa,
+        infoLinkText: "Lifetime ISA rules",
+      },
+      {
+        id: "lisaDrawAge",
+        label: "LISA draw start age",
+        type: "range",
+        min: 60,
+        max: 100,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age Lifetime ISA drawdown starts in the retirement model. This modeller assumes later-life withdrawals from age 60 and does not model first-home withdrawals or early-withdrawal charges.",
+        infoUrl: knowledgeLinks.lifetimeIsa,
+        infoLinkText: "Lifetime ISA rules",
+      },
+      {
+        id: "lisaRealInterestPercent",
+        label: "LISA expected nominal return (%)",
+        type: "range",
+        min: -10,
+        max: 10,
+        step: 0.1,
+        description:
+          "Defaults to 5% as a simple long-term planning assumption for a diversified investment pot before inflation. Nominal return means the headline growth rate before removing inflation; in real-terms mode the modeller converts it to a return after inflation.",
+      },
+      {
+        id: "lisaWithdrawalStrategy",
+        label: "LISA withdrawal strategy",
+        type: "select",
+        options: [
+          { value: "zero_at_death", label: "Zero at death" },
+          { value: "percentage", label: "Annual percentage" },
+          { value: "use_by_age", label: "Use by age" },
+        ],
+        description:
+          "Controls how the Lifetime ISA bridge is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+      },
+      {
+        id: "lisaWithdrawalPercent",
+        label: "LISA withdrawal rate (%)",
+        type: "range",
+        min: 0,
+        max: 15,
+        step: 0.1,
+        description:
+          "The annual percentage withdrawn from the LISA balance when the percentage strategy is selected.",
+      },
+      {
+        id: "lisaWithdrawalTargetAge",
+        label: "LISA use-by age",
+        type: "range",
+        min: 60,
+        max: 100,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age by which the LISA balance is intended to be used up when the use-by-age strategy is selected.",
       },
     ],
   },

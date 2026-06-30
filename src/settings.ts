@@ -14,6 +14,7 @@ export type {
   AddedPensionLumpSum,
   SippWithdrawalStrategy,
   IsaWithdrawalStrategy,
+  LisaWithdrawalStrategy,
   SippTaxReliefRate,
   ProjectionBasis,
   PensionSettings,
@@ -79,3 +80,5 @@ export {
   getPartialRetirementContributionMultiplier,
   getPartialRetirementSavingsContributionMultiplier,
 } from "./settings/settings-domains/partial-retirement";
+
+export { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings/settings-domains/lisa";

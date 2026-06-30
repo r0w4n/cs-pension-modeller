@@ -38,8 +38,13 @@ export function createProjectionTableBase(
     reductionFactor,
     epaReductionFactor,
   } = derivedInputs;
-  const { sippDrawDate, isaDrawDate, alphaAbsDate, nuvosAbsDate } =
-    runtimeDates;
+  const {
+    sippDrawDate,
+    isaDrawDate,
+    lisaDrawDate,
+    alphaAbsDate,
+    nuvosAbsDate,
+  } = runtimeDates;
 
   const startingAlphaPortionsAtStartDate =
     calculateStartingAlphaPortionsAtStartDate({
@@ -73,13 +78,14 @@ export function createProjectionTableBase(
     settings.startDate,
     endDate
   ).map((rowDate) => {
-    const { sippProjection, isaProjection } =
+    const { sippProjection, isaProjection, lisaProjection } =
       calculateInvestmentProjectionValues({
         settings,
         rowDate,
         endDate,
         sippDrawDate,
         isaDrawDate,
+        lisaDrawDate,
         active: true,
       });
     const monthlyStandardAlphaAccrual =
@@ -131,6 +137,7 @@ export function createProjectionTableBase(
       lumpSumAddedPension,
       sippProjection,
       isaProjection,
+      lisaProjection,
     });
 
     previousRowDate = rowDate;
@@ -149,6 +156,7 @@ export function createProjectionTableBase(
     drawDate,
     sippDrawDate,
     isaDrawDate,
+    lisaDrawDate,
     alphaAbsDate,
     nuvosAccrualStopDate,
     nuvosDrawDate,

@@ -29,6 +29,7 @@ export const defaultSettings: PensionSettings = {
   showStatePension: statePensionDefaults.showStatePension,
   showSipp: true,
   showIsa: true,
+  showLisa: false,
   taxationEnabled: taxDefaults.taxationEnabled,
   partialRetirementEnabled: false,
   partialRetirementStartAge: 55,
@@ -81,6 +82,14 @@ export const defaultSettings: PensionSettings = {
   isaWithdrawalStrategy: "use_by_age",
   isaWithdrawalPercent: 4,
   isaWithdrawalTargetAge: 75,
+  lisaCurrentPot: 0,
+  lisaMonthlyContribution: 0,
+  lisaDrawAge: personalDetailsDefaults.requirementAge,
+  lisaLumpSums: [],
+  lisaRealInterestPercent: 5,
+  lisaWithdrawalStrategy: "use_by_age",
+  lisaWithdrawalPercent: 4,
+  lisaWithdrawalTargetAge: 75,
   taxPersonalAllowance: taxDefaults.taxPersonalAllowance,
   taxPersonalAllowanceTaperThreshold:
     taxDefaults.taxPersonalAllowanceTaperThreshold,
@@ -109,6 +118,7 @@ export function createDefaultSettings(): PensionSettings {
       normalPensionAge,
       defaultSettings.dateOfBirth
     ),
+    lisaDrawAge: Math.max(60, normalPensionAge),
     statePensionDrawDate: calculateStatePensionDrawDateFromAge(
       defaultSettings.dateOfBirth,
       statePensionDrawAge

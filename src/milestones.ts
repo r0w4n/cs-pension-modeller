@@ -13,12 +13,14 @@ const STOPS_NUVOS_ACCRUAL_LABEL = "Leave nuvos Pension Scheme";
 const STARTS_NUVOS_PENSION_LABEL = "Starts Drawing nuvos Pension";
 const STARTS_SIPP_LABEL = "Starts Drawing SIPP";
 const STARTS_ISA_LABEL = "Starts Drawing ISA";
+const STARTS_LISA_LABEL = "Starts Drawing LISA";
 const STARTS_STATE_PENSION_LABEL = "Starts Drawing State Pension";
 const STARTS_PARTIAL_RETIREMENT_LABEL = "Starts Partial Retirement";
 const LIFE_EXPECTANCY_LABEL = "Life expectancy";
 const LUMP_SUM_ADDED_PENSION_LABEL = "Lump Sum Added Pension";
 const SIPP_LUMP_SUM_LABEL = "SIPP Lump Sum";
 const ISA_LUMP_SUM_LABEL = "ISA Lump Sum";
+const LISA_LUMP_SUM_LABEL = "LISA Lump Sum";
 
 export type MilestoneDefinition = {
   date: string;
@@ -41,7 +43,9 @@ export function generateMilestoneDefinitions(
   nuvosPensionStopDate = "",
   nuvosPensionDrawDate = "",
   nuvosAbsDate = "",
-  partialRetirementStartDate = ""
+  partialRetirementStartDate = "",
+  lisaDrawDate = "",
+  lisaLumpSums: AddedPensionLumpSum[] = []
 ): MilestoneDefinition[] {
   return [
     ...(alphaAbsDate
@@ -63,6 +67,7 @@ export function generateMilestoneDefinitions(
       : []),
     ...(sippDrawDate ? [{ date: sippDrawDate, label: STARTS_SIPP_LABEL }] : []),
     ...(isaDrawDate ? [{ date: isaDrawDate, label: STARTS_ISA_LABEL }] : []),
+    ...(lisaDrawDate ? [{ date: lisaDrawDate, label: STARTS_LISA_LABEL }] : []),
     ...(includeStatePension
       ? [{ date: statePensionStartDate, label: STARTS_STATE_PENSION_LABEL }]
       : []),
@@ -78,6 +83,7 @@ export function generateMilestoneDefinitions(
     ...generateLumpSumMilestoneDefinitions(lumpSums),
     ...generateSippLumpSumMilestoneDefinitions(sippLumpSums),
     ...generateIsaLumpSumMilestoneDefinitions(isaLumpSums),
+    ...generateLisaLumpSumMilestoneDefinitions(lisaLumpSums),
   ];
 }
 
@@ -139,6 +145,7 @@ export function buildProjectionMilestoneDefinitions(input: {
   drawDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
+  lisaDrawDate: string;
   alphaAbsDate: string;
   nuvosAccrualStopDate: string;
   nuvosDrawDate: string;
@@ -151,6 +158,7 @@ export function buildProjectionMilestoneDefinitions(input: {
     drawDate,
     sippDrawDate,
     isaDrawDate,
+    lisaDrawDate,
     alphaAbsDate,
     nuvosAccrualStopDate,
     nuvosDrawDate,
@@ -175,7 +183,9 @@ export function buildProjectionMilestoneDefinitions(input: {
     settings.showNuvos ? nuvosAbsDate : "",
     settings.partialRetirementEnabled
       ? getPartialRetirementStartDate(settings)
-      : ""
+      : "",
+    settings.showLisa ? lisaDrawDate : "",
+    settings.showLisa ? settings.lisaLumpSums : []
   );
 }
 
@@ -227,6 +237,17 @@ function generateIsaLumpSumMilestoneDefinitions(
   );
 }
 
+function generateLisaLumpSumMilestoneDefinitions(
+  lumpSums: AddedPensionLumpSum[]
+) {
+  return lumpSums.flatMap((lumpSum) =>
+    getScheduledPaymentDates(lumpSum).map((date) => ({
+      date,
+      label: formatLisaLumpSumMilestoneLabel(lumpSum.amount),
+    }))
+  );
+}
+
 function formatLumpSumMilestoneLabel(amount: number) {
   return `${LUMP_SUM_ADDED_PENSION_LABEL} (${formatWholeCurrency(amount)})`;
 }
@@ -237,6 +258,10 @@ function formatSippLumpSumMilestoneLabel(amount: number) {
 
 function formatIsaLumpSumMilestoneLabel(amount: number) {
   return `${ISA_LUMP_SUM_LABEL} (${formatWholeCurrency(amount)})`;
+}
+
+function formatLisaLumpSumMilestoneLabel(amount: number) {
+  return `${LISA_LUMP_SUM_LABEL} (${formatWholeCurrency(amount)})`;
 }
 
 function formatWholeCurrency(value: number) {

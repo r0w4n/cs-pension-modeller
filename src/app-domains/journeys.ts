@@ -160,23 +160,12 @@ export const JOURNEY_DEFINITIONS = [
           "accruedPensionAtLastAbs",
           "pensionableEarnings",
           "alphaAddedPensionMonthly",
-          "applyPensionIncreases",
-          "assumedCpiPercent",
-        ],
-        visible: (settings) => settings.showAlpha,
-      },
-      {
-        id: "alpha-epa",
-        eyebrow: "Optional",
-        title: "Alpha EPA",
-        description:
-          "Set the EPA period and the number of years before Normal Pension Age that the EPA portion is intended to be available without early-payment reduction.",
-        kind: "fields",
-        fieldIds: [
           "alphaEpaEnabled",
           "alphaEpaYearsBeforeNpa",
           "alphaEpaStartDate",
           "alphaEpaEndDate",
+          "applyPensionIncreases",
+          "assumedCpiPercent",
         ],
         visible: (settings) => settings.showAlpha,
       },
@@ -460,7 +449,6 @@ function createExpertJourneyFieldStep(
 function isExpertJourneyGroupVisible(groupId: string) {
   if (
     groupId === "alpha" ||
-    groupId === "alpha-epa" ||
     groupId === "nuvos" ||
     groupId === "state" ||
     groupId === "sipp" ||

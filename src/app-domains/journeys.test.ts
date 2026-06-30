@@ -40,7 +40,7 @@ describe("journey definitions", () => {
     }
   });
 
-  it("includes Alpha EPA controls in separate EPA sections", () => {
+  it("includes Alpha EPA controls in journey-specific places", () => {
     const alphaEpaFieldIds = [
       "alphaEpaEnabled",
       "alphaEpaYearsBeforeNpa",
@@ -49,9 +49,9 @@ describe("journey definitions", () => {
     ] satisfies FieldDefinition["id"][];
 
     for (const [journeyId, stepId] of [
-      ["early-retirement-bridge", "alpha-epa"],
+      ["early-retirement-bridge", "alpha"],
       ["simple-early-retirement", "alpha-epa"],
-      ["expert-journey", "expert-alpha-epa"],
+      ["expert-journey", "expert-alpha"],
     ] as const) {
       const epaFields = getJourneyStepFieldIds(journeyId, stepId);
 

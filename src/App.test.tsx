@@ -1176,7 +1176,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("lets the early retirement journey hide EPA when Alpha is disabled", () => {
+  it("keeps EPA inside the early retirement Alpha step", () => {
     renderAcknowledgedApp({ mode: "bridge" });
 
     fireEvent.click(
@@ -1190,26 +1190,40 @@ describe("App settings form", () => {
       screen.queryByRole("checkbox", { name: "EPA" })
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Alpha EPA/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
 
-    fireEvent.click(includeAlphaToggle);
+    openJourneyStep(/Your Alpha pension/i);
 
-    expect(includeAlphaToggle).not.toBeChecked();
+    expect(screen.getByLabelText("Add EPA")).toBeInTheDocument();
+
+    openJourneyStep(/Your Civil Service pensions/i);
+    const restoredIncludeAlphaToggle = screen.getByRole("checkbox", {
+      name: "Alpha",
+    });
+    fireEvent.click(restoredIncludeAlphaToggle);
+
+    expect(restoredIncludeAlphaToggle).not.toBeChecked();
     expect(
       screen.queryByRole("checkbox", { name: "EPA" })
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Alpha EPA/i })
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Your Alpha pension/i })
+    ).not.toBeInTheDocument();
 
-    fireEvent.click(includeAlphaToggle);
+    fireEvent.click(restoredIncludeAlphaToggle);
 
     expect(
       screen.queryByRole("checkbox", { name: "EPA" })
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Alpha EPA/i })
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Your Alpha pension/i })
     ).toBeInTheDocument();
   });
 

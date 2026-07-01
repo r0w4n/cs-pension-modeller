@@ -1601,9 +1601,11 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Planned Alpha Pension Draw Age")
     ).toHaveAttribute("type", "range");
-    expect(screen.getByLabelText("Last Annual Benefits Statement")).toHaveValue(
-      "2025"
+    const alphaAbsSelect = screen.getByLabelText(
+      "Last Annual Benefits Statement"
     );
+    expect(alphaAbsSelect).toHaveValue("2025");
+    expect(alphaAbsSelect).toHaveDisplayValue("2024/2025");
     expect(
       screen.getByLabelText("Apply Alpha pension increases")
     ).not.toBeChecked();
@@ -2103,7 +2105,7 @@ describe("App settings form", () => {
     expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
   });
 
-  it("stores the Alpha ABS date as just the selected year", () => {
+  it("shows the Alpha ABS date as a scheme year while storing the selected year", () => {
     renderAcknowledgedApp();
 
     openJourneyStep(/Alpha pension details/i);
@@ -2113,6 +2115,9 @@ describe("App settings form", () => {
     });
     fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
 
+    expect(
+      screen.getByLabelText("Last Annual Benefits Statement")
+    ).toHaveDisplayValue("2023/2024");
     expect(readStoredSettingsPayload()).toEqual({
       ...expectedStoredSettings({
         alphaPensionAbsDate: "2024",

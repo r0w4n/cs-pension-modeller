@@ -1776,7 +1776,7 @@ describe("App settings form", () => {
     expect(screen.getAllByText("Life expectancy").length).toBeGreaterThan(0);
   });
 
-  it("enforces the same minimum Alpha and SIPP access age of 57 for someone born on 23 November 1977", () => {
+  it("enforces age 57 for Alpha access while allowing SIPP access from age 55", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1805,14 +1805,14 @@ describe("App settings form", () => {
 
     openJourneyStep(/SIPP details/i);
 
-    expect(screen.getByLabelText("SIPP draw start age")).toHaveValue("57");
+    expect(screen.getByLabelText("SIPP draw start age")).toHaveValue("55");
     expect(screen.getByLabelText("SIPP draw start age")).toHaveAttribute(
       "min",
-      "57"
+      "55"
     );
     expect(
       screen.getByLabelText("SIPP draw start age exact value")
-    ).toHaveAttribute("min", "57");
+    ).toHaveAttribute("min", "55");
 
     openJourneyStep(/State pension details/i);
 

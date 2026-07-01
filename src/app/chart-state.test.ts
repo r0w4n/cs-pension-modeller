@@ -86,7 +86,7 @@ describe("chart-state", () => {
     expect(next.sippDrawAge).toBe(55);
   });
 
-  it("does not let SIPP draw age move before 57 when age 55 is reached on 6 April 2028", () => {
+  it("lets SIPP draw age move to 55 when age 55 is reached on 6 April 2028", () => {
     const current = {
       ...createDefaultSettings(),
       dateOfBirth: "1973-04-06",
@@ -101,7 +101,7 @@ describe("chart-state", () => {
     });
 
     expect(next.requirementAge).toBe(55);
-    expect(next.sippDrawAge).toBe(57);
+    expect(next.sippDrawAge).toBe(55);
   });
 
   it("does not let SIPP draw age move before retirement age", () => {

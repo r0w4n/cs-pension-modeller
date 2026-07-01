@@ -2,6 +2,7 @@ import { DEFAULT_ALPHA_ABS_YEAR, type PensionSettings } from "./settings-types";
 import { inflationDefaults } from "./settings-domains/inflation";
 import { personalDetailsDefaults } from "./settings-domains/personal-details";
 import { nuvosDefaults } from "./settings-domains/nuvos";
+import { premiumDefaults } from "./settings-domains/premium";
 import { statePensionDefaults } from "./settings-domains/state-pension";
 import { taxDefaults } from "./settings-domains/tax";
 import {
@@ -26,6 +27,7 @@ export const defaultSettings: PensionSettings = {
   projectionBasis: inflationDefaults.projectionBasis,
   inflationRateAnnual: inflationDefaults.inflationRateAnnual,
   showNuvos: nuvosDefaults.showNuvos,
+  showPremium: premiumDefaults.showPremium,
   showStatePension: statePensionDefaults.showStatePension,
   showSipp: true,
   showIsa: true,
@@ -65,6 +67,13 @@ export const defaultSettings: PensionSettings = {
   nuvosPensionDrawAge: personalDetailsDefaults.requirementAge,
   nuvosApplyPensionIncreases: nuvosDefaults.nuvosApplyPensionIncreases,
   nuvosAssumedCpiPercent: nuvosDefaults.nuvosAssumedCpiPercent,
+  premiumAnnualPensionAtValuationDate:
+    premiumDefaults.premiumAnnualPensionAtValuationDate,
+  premiumValuationDate: premiumDefaults.premiumValuationDate,
+  premiumNormalPensionAge: premiumDefaults.premiumNormalPensionAge,
+  premiumDrawAge: premiumDefaults.premiumDrawAge,
+  premiumEarliestAccessAge: premiumDefaults.premiumEarliestAccessAge,
+  premiumHasNpa65: premiumDefaults.premiumHasNpa65,
   sippCurrentPot: 0,
   sippMonthlyContribution: 0,
   sippDrawAge: personalDetailsDefaults.requirementAge,
@@ -114,6 +123,7 @@ export function createDefaultSettings(): PensionSettings {
     normalPensionAge,
     startDate: getTodayIsoDate(),
     nuvosPensionDrawAge: normalPensionAge,
+    premiumDrawAge: premiumDefaults.premiumNormalPensionAge,
     sippDrawAge: normalizeSippDrawAge(
       normalPensionAge,
       defaultSettings.dateOfBirth

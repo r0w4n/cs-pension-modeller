@@ -55,6 +55,7 @@ export function isFieldDisabled(
     (fieldId === "assumedCpiPercent" && !settings.applyPensionIncreases) ||
     (isNuvosPensionIncreaseField(fieldId) &&
       !settings.nuvosApplyPensionIncreases) ||
+    (fieldId === "premiumNormalPensionAge" && !settings.premiumHasNpa65) ||
     (isStatePensionGrowthField(fieldId) &&
       !settings.statePensionApplyFutureGrowth) ||
     isSippFieldDisabled(fieldId, settings) ||

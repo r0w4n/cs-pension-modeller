@@ -99,6 +99,10 @@ export function isSettingsGroupVisible(
     return settings.showNuvos;
   }
 
+  if (groupId === "premium") {
+    return settings.showPremium;
+  }
+
   if (groupId === "state") {
     return settings.showStatePension;
   }

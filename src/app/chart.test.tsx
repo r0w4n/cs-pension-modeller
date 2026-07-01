@@ -39,6 +39,7 @@ describe("chart module", () => {
             partialRetirementIncomeAnnual: 0,
             alphaIncomeAnnual: 12000,
             nuvosIncomeAnnual: 0,
+            premiumIncomeAnnual: 0,
             statePensionIncomeAnnual: 0,
             totalIncomeAnnual: 12000,
             assessedIncomeAnnual: 12000,

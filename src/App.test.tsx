@@ -21,6 +21,9 @@ const projectionFixtures = vi.hoisted(() => {
       annualNuvosPension: 0,
       annualNuvosPensionIncludingReduction: 0,
       monthlyNuvosPensionGross: 0,
+      annualPremiumPension: 0,
+      annualPremiumPensionIncludingReduction: 0,
+      monthlyPremiumPensionGross: 0,
       monthlyStatePension: 0,
       sippPot: 40000,
       monthlySippPension: 0,
@@ -48,6 +51,9 @@ const projectionFixtures = vi.hoisted(() => {
       annualNuvosPension: 5000,
       annualNuvosPensionIncludingReduction: 5000,
       monthlyNuvosPensionGross: 416.67,
+      annualPremiumPension: 0,
+      annualPremiumPensionIncludingReduction: 0,
+      monthlyPremiumPensionGross: 0,
       monthlyStatePension: 0,
       sippPot: 35000,
       monthlySippPension: 200,
@@ -79,6 +85,9 @@ const projectionFixtures = vi.hoisted(() => {
       annualNuvosPension: 6000,
       annualNuvosPensionIncludingReduction: 6000,
       monthlyNuvosPensionGross: 500,
+      annualPremiumPension: 0,
+      annualPremiumPensionIncludingReduction: 0,
+      monthlyPremiumPensionGross: 0,
       monthlyStatePension: 900,
       sippPot: 0,
       monthlySippPension: 300,
@@ -144,12 +153,16 @@ vi.mock("./projection", async () => {
           monthlyNuvosPensionGross: settings.showNuvos
             ? row.monthlyNuvosPensionGross
             : 0,
+          monthlyPremiumPensionGross: settings.showPremium
+            ? row.monthlyPremiumPensionGross
+            : 0,
           monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
           monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
           monthlyLisaPension: settings.showLisa ? row.monthlyLisaPension : 0,
           totalMonthlyIncomeBeforeTax:
             (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
+            (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0) +
@@ -158,6 +171,7 @@ vi.mock("./projection", async () => {
           totalMonthlyNetIncome:
             (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
+            (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0) +
@@ -173,6 +187,7 @@ vi.mock("./projection", async () => {
           startsAlphaPension: settings.startDate,
           stopsNuvosAccrual: settings.startDate,
           startsNuvosPension: settings.startDate,
+          startsPremiumPension: settings.startDate,
           startsSippDraw: settings.startDate,
           startsIsaDraw: settings.startDate,
           startsLisaDraw: settings.startDate,
@@ -192,6 +207,15 @@ vi.mock("./projection", async () => {
           annualAtDraw: rows.at(-1)?.annualNuvosPensionIncludingReduction ?? 0,
           monthlyAtDraw: rows.at(-1)?.monthlyNuvosPensionGross ?? 0,
           maximumAnnualAccrued: rows.at(-1)?.annualNuvosPension ?? 0,
+        },
+        premiumPension: {
+          annualAtDraw:
+            rows.at(-1)?.annualPremiumPensionIncludingReduction ?? 0,
+          monthlyAtDraw: rows.at(-1)?.monthlyPremiumPensionGross ?? 0,
+          cpiRevaluedAnnualAtDraw: rows.at(-1)?.annualPremiumPension ?? 0,
+          earlyRetirementFactor: 1,
+          isReducedForEarlyPayment: false,
+          factorUnavailable: false,
         },
         sippPension: {
           potAtDraw: rows.at(-1)?.sippPot ?? 0,
@@ -244,6 +268,17 @@ vi.mock("./projection", async () => {
                     monthlyIncome: rows.at(-1)?.monthlyNuvosPensionGross ?? 0,
                     annualIncome:
                       (rows.at(-1)?.monthlyNuvosPensionGross ?? 0) * 12,
+                  },
+                ]
+              : []),
+            ...(settings.showPremium
+              ? [
+                  {
+                    key: "premium" as const,
+                    label: "Premium pension",
+                    monthlyIncome: rows.at(-1)?.monthlyPremiumPensionGross ?? 0,
+                    annualIncome:
+                      (rows.at(-1)?.monthlyPremiumPensionGross ?? 0) * 12,
                   },
                 ]
               : []),
@@ -336,6 +371,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     projectionBasis: defaultSettings.projectionBasis,
     inflationRateAnnual: defaultSettings.inflationRateAnnual,
     showNuvos: defaultSettings.showNuvos,
+    showPremium: defaultSettings.showPremium,
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
@@ -375,6 +411,13 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     nuvosPensionDrawAge: defaultSettings.nuvosPensionDrawAge,
     nuvosApplyPensionIncreases: defaultSettings.nuvosApplyPensionIncreases,
     nuvosAssumedCpiPercent: defaultSettings.nuvosAssumedCpiPercent,
+    premiumAnnualPensionAtValuationDate:
+      defaultSettings.premiumAnnualPensionAtValuationDate,
+    premiumValuationDate: defaultSettings.premiumValuationDate,
+    premiumNormalPensionAge: defaultSettings.premiumNormalPensionAge,
+    premiumDrawAge: defaultSettings.premiumDrawAge,
+    premiumEarliestAccessAge: defaultSettings.premiumEarliestAccessAge,
+    premiumHasNpa65: defaultSettings.premiumHasNpa65,
     sippCurrentPot: defaultSettings.sippCurrentPot,
     sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
     sippDrawAge: defaultSettings.sippDrawAge,
@@ -1841,6 +1884,7 @@ describe("App settings form", () => {
       "Partial retirement",
       "State Pension",
       "nuvos",
+      "Premium",
       "SIPP",
       "ISA",
       "LISA",

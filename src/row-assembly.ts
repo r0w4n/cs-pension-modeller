@@ -4,6 +4,10 @@ import {
 } from "./settings";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
 import { calculateAnnualNuvosPensionAtDate } from "./projection-domains/nuvos";
+import {
+  calculateAnnualPremiumPensionAtDate,
+  calculateAnnualPremiumPensionIncludingReduction,
+} from "./projection-domains/premium";
 import { calculateSippProjectionRow } from "./projection-domains/sipp";
 import { calculateIsaProjectionRow } from "./projection-domains/isa";
 import { calculateLisaProjectionRow } from "./projection-domains/lisa";
@@ -39,11 +43,13 @@ export function calculateTotalGrossMonthlyIncome(
   monthlySippPension = 0,
   monthlyIsaPension = 0,
   monthlyLisaPension = 0,
-  monthlyNuvosPensionIncludingReduction = 0
+  monthlyNuvosPensionIncludingReduction = 0,
+  monthlyPremiumPensionIncludingReduction = 0
 ) {
   return (
     monthlyAlphaPensionIncludingReduction +
     monthlyNuvosPensionIncludingReduction +
+    monthlyPremiumPensionIncludingReduction +
     monthlyStatePension +
     monthlySippPension +
     monthlyIsaPension +
@@ -162,9 +168,12 @@ export function buildProjectionRow(input: {
   nuvosDrawDate: string;
   nuvosNpaDate: string;
   nuvosReductionFactor: number;
+  premiumDrawDate: string;
+  premiumReductionFactor: number | null;
   annualStandardAlphaPension: number;
   annualEpaAlphaPension: number;
   annualNuvosPension: number;
+  annualPremiumPension: number;
   monthlyAddedPension: number;
   lumpSumAddedPension: number;
   sippProjection: {
@@ -191,9 +200,12 @@ export function buildProjectionRow(input: {
     nuvosDrawDate,
     nuvosNpaDate,
     nuvosReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
     annualStandardAlphaPension,
     annualEpaAlphaPension,
     annualNuvosPension,
+    annualPremiumPension,
     monthlyAddedPension,
     lumpSumAddedPension,
     sippProjection,
@@ -230,6 +242,16 @@ export function buildProjectionRow(input: {
     nuvosDrawDate,
     annualNuvosPensionIncludingReduction
   );
+  const annualPremiumPensionIncludingReduction =
+    calculateAnnualPremiumPensionIncludingReduction(
+      annualPremiumPension,
+      premiumReductionFactor
+    );
+  const monthlyPremiumPensionGross = calculateMonthlyAlphaPensionGross(
+    rowDate,
+    premiumDrawDate,
+    annualPremiumPensionIncludingReduction
+  );
   const monthlyStatePension = calculateMonthlyStatePension(
     rowDate,
     settings.statePensionDrawDate,
@@ -241,12 +263,14 @@ export function buildProjectionRow(input: {
     sippProjection.monthlySippPension,
     isaProjection.monthlyIsaPension,
     lisaProjection.monthlyLisaPension,
-    monthlyNuvosPensionGross
+    monthlyNuvosPensionGross,
+    monthlyPremiumPensionGross
   );
   const monthlyIncomeTax = calculateMonthlyIncomeTax({
     settings,
     monthlyAlphaPension: monthlyAlphaPensionGross,
     monthlyNuvosPension: monthlyNuvosPensionGross,
+    monthlyPremiumPension: monthlyPremiumPensionGross,
     monthlyStatePension,
     monthlySippPension: sippProjection.monthlySippPension,
   });
@@ -265,6 +289,9 @@ export function buildProjectionRow(input: {
     annualNuvosPension,
     annualNuvosPensionIncludingReduction,
     monthlyNuvosPensionGross,
+    annualPremiumPension,
+    annualPremiumPensionIncludingReduction,
+    monthlyPremiumPensionGross,
     monthlyStatePension,
     sippPot: sippProjection.sippPot,
     monthlySippPension: sippProjection.monthlySippPension,
@@ -331,6 +358,8 @@ export function createHistoricalProjectionRows(input: {
   nuvosDrawDate: string;
   nuvosNpaDate: string;
   nuvosReductionFactor: number;
+  premiumDrawDate: string;
+  premiumReductionFactor: number | null;
 }) {
   const {
     settings,
@@ -345,6 +374,8 @@ export function createHistoricalProjectionRows(input: {
     nuvosDrawDate,
     nuvosNpaDate,
     nuvosReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
   } = input;
 
   if (alphaAbsDate >= settings.startDate) {
@@ -391,10 +422,17 @@ export function createHistoricalProjectionRows(input: {
         nuvosDrawDate,
         nuvosNpaDate,
         nuvosReductionFactor,
+        premiumDrawDate,
+        premiumReductionFactor,
         annualStandardAlphaPension:
           cumulativeStandardAlphaPension + cumulativeLumpSumAddedPension,
         annualEpaAlphaPension: cumulativeEpaAlphaPension,
         annualNuvosPension: 0,
+        annualPremiumPension: calculatePremiumAnnualPension({
+          settings,
+          rowDate,
+          premiumDrawDate,
+        }),
         monthlyAddedPension,
         lumpSumAddedPension,
         sippProjection: { sippPot: 0, monthlySippPension: 0 },
@@ -408,6 +446,14 @@ export function createHistoricalProjectionRows(input: {
   }
 
   return rows;
+}
+
+export function calculatePremiumAnnualPension(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  premiumDrawDate: string;
+}) {
+  return calculateAnnualPremiumPensionAtDate(input);
 }
 
 export function calculateNuvosAnnualPension(input: {
@@ -438,6 +484,7 @@ export function attachMilestonesToRows(input: {
   nuvosAccrualStopDate: string;
   nuvosDrawDate: string;
   nuvosAbsDate: string;
+  premiumDrawDate: string;
 }) {
   const milestoneDefinitions = buildProjectionMilestoneDefinitions(input);
   const milestoneRows = buildMilestoneMapForRowDates(

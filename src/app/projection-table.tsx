@@ -28,6 +28,7 @@ type ProjectionTableColumn = TableColumn & {
   setting?:
     | "showAlpha"
     | "showNuvos"
+    | "showPremium"
     | "showStatePension"
     | "showSipp"
     | "showIsa"
@@ -114,6 +115,24 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     label: "Monthly nuvos pension before tax",
     width: "7rem",
     setting: "showNuvos",
+  },
+  {
+    key: "annualPremiumPension",
+    label: "Annual Premium pension",
+    width: "8rem",
+    setting: "showPremium",
+  },
+  {
+    key: "annualPremiumPensionIncludingReduction",
+    label: "Annual Premium pension including reduction",
+    width: "9rem",
+    setting: "showPremium",
+  },
+  {
+    key: "monthlyPremiumPensionGross",
+    label: "Monthly Premium pension before tax",
+    width: "7rem",
+    setting: "showPremium",
   },
   {
     key: "monthlyStatePension",

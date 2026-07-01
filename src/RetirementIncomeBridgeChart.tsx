@@ -27,6 +27,7 @@ export type RetirementIncomePoint = {
   sippIncomeAnnual: number;
   alphaIncomeAnnual: number;
   nuvosIncomeAnnual: number;
+  premiumIncomeAnnual: number;
   partialRetirementIncomeAnnual: number;
   statePensionIncomeAnnual: number;
   totalIncomeAnnual: number;
@@ -58,6 +59,7 @@ export type RetirementIncomeBridgeParameters = {
   lisaAccessAge: number;
   alphaStartAge: number;
   nuvosStartAge: number;
+  premiumStartAge: number;
   isaUseByAge: number;
   lisaUseByAge: number;
   partialRetirementStartAge: number;
@@ -70,6 +72,7 @@ export type RetirementIncomeBridgeParameters = {
   showSipp: boolean;
   sippUseByAgeEnabled: boolean;
   showNuvos: boolean;
+  showPremium: boolean;
   isaUseByAgeEnabled: boolean;
   lisaUseByAgeEnabled: boolean;
   showStatePension: boolean;
@@ -102,6 +105,7 @@ export type RetirementIncomeBridgeLimits = {
   lisaAccessAge: NumberLimit;
   alphaStartAge: NumberLimit;
   nuvosStartAge: NumberLimit;
+  premiumStartAge: NumberLimit;
   isaUseByAge: NumberLimit;
   lisaUseByAge: NumberLimit;
   partialRetirementStartAge: NumberLimit;
@@ -117,6 +121,7 @@ type IncomeKey =
   | "sippIncomeAnnual"
   | "alphaIncomeAnnual"
   | "nuvosIncomeAnnual"
+  | "premiumIncomeAnnual"
   | "partialRetirementIncomeAnnual"
   | "statePensionIncomeAnnual";
 
@@ -129,6 +134,7 @@ type MilestoneKey =
   | "lisaAccessAge"
   | "alphaStartAge"
   | "nuvosStartAge"
+  | "premiumStartAge"
   | "isaUseByAge"
   | "lisaUseByAge"
   | "partialRetirementStartAge"
@@ -176,6 +182,7 @@ const incomeKeys: IncomeKey[] = [
   "partialRetirementIncomeAnnual",
   "alphaIncomeAnnual",
   "nuvosIncomeAnnual",
+  "premiumIncomeAnnual",
   "statePensionIncomeAnnual",
 ];
 
@@ -212,6 +219,11 @@ const sourceMeta: Record<
     label: "Nuvos pension",
     shortLabel: "Nuvos",
     colour: "#b45309",
+  },
+  premiumIncomeAnnual: {
+    label: "Premium pension",
+    shortLabel: "Premium",
+    colour: "#0f766e",
   },
   statePensionIncomeAnnual: {
     label: "State Pension",
@@ -259,6 +271,7 @@ export function RetirementIncomeBridgeChart({
   lisaAccessAge,
   alphaStartAge,
   nuvosStartAge,
+  premiumStartAge,
   isaUseByAge,
   lisaUseByAge,
   partialRetirementStartAge,
@@ -271,6 +284,7 @@ export function RetirementIncomeBridgeChart({
   showSipp,
   sippUseByAgeEnabled,
   showNuvos,
+  showPremium,
   isaUseByAgeEnabled,
   lisaUseByAgeEnabled,
   showStatePension,
@@ -377,6 +391,7 @@ export function RetirementIncomeBridgeChart({
           showIsa,
           showLisa,
           showNuvos,
+          showPremium,
           showSipp,
           showStatePension,
         })
@@ -387,6 +402,7 @@ export function RetirementIncomeBridgeChart({
       showIsa,
       showLisa,
       showNuvos,
+      showPremium,
       showSipp,
       showStatePension,
     ]
@@ -438,6 +454,7 @@ export function RetirementIncomeBridgeChart({
     alphaLeaveAge,
     alphaStartAge,
     nuvosStartAge,
+    premiumStartAge,
     isaAccessAge,
     isaUseByAge,
     isaUseByAgeEnabled,
@@ -451,6 +468,7 @@ export function RetirementIncomeBridgeChart({
     showIsa,
     showLisa,
     showNuvos,
+    showPremium,
     showSipp,
     showStatePension,
     sippAccessAge,
@@ -468,6 +486,7 @@ export function RetirementIncomeBridgeChart({
     lisaUseByAge,
     lisaUseByAgeEnabled,
     nuvosStartAge,
+    premiumStartAge,
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
@@ -475,6 +494,7 @@ export function RetirementIncomeBridgeChart({
     showIsa,
     showLisa,
     showNuvos,
+    showPremium,
     showSipp,
     showStatePension,
     sippAccessAge,
@@ -707,6 +727,18 @@ export function RetirementIncomeBridgeChart({
             },
           ]
         : []),
+      ...(showPremium
+        ? [
+            {
+              key: "premiumStartAge" as const,
+              label: "Start Premium",
+              shortLabel: "Start Premium",
+              age: premiumStartAge,
+              colour: "#0f766e",
+              editable: true,
+            },
+          ]
+        : []),
       ...(showIsa && isaUseByAgeEnabled
         ? [
             {
@@ -758,10 +790,12 @@ export function RetirementIncomeBridgeChart({
       retirementAge,
       showAlpha,
       showNuvos,
+      showPremium,
       showSipp,
       showIsa,
       showLisa,
       nuvosStartAge,
+      premiumStartAge,
       sippUseByAge,
       sippUseByAgeEnabled,
       showStatePension,
@@ -2342,6 +2376,7 @@ export function RetirementIncomeBridgeChart({
               showIsa,
               showLisa,
               showNuvos,
+              showPremium,
               showSipp,
               showStatePension,
             });
@@ -2597,11 +2632,13 @@ function createActiveMilestoneAges({
   lisaUseByAge,
   lisaUseByAgeEnabled,
   nuvosStartAge,
+  premiumStartAge,
   partialRetirementEnabled,
   partialRetirementStartAge,
   retirementAge,
   showAlpha,
   showNuvos,
+  showPremium,
   showIsa,
   showLisa,
   showSipp,
@@ -2621,11 +2658,13 @@ function createActiveMilestoneAges({
   | "lisaUseByAge"
   | "lisaUseByAgeEnabled"
   | "nuvosStartAge"
+  | "premiumStartAge"
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
   | "retirementAge"
   | "showAlpha"
   | "showNuvos"
+  | "showPremium"
   | "showIsa"
   | "showLisa"
   | "showSipp"
@@ -2647,6 +2686,7 @@ function createActiveMilestoneAges({
     partialRetirementEnabled ? partialRetirementStartAge : null,
     showAlpha ? alphaStartAge : null,
     showNuvos ? nuvosStartAge : null,
+    showPremium ? premiumStartAge : null,
     showStatePension ? statePensionAge : null,
   ];
 }
@@ -2663,11 +2703,13 @@ function createActiveMilestoneBoundaries(
     | "lisaUseByAge"
     | "lisaUseByAgeEnabled"
     | "nuvosStartAge"
+    | "premiumStartAge"
     | "partialRetirementEnabled"
     | "partialRetirementStartAge"
     | "retirementAge"
     | "showAlpha"
     | "showNuvos"
+    | "showPremium"
     | "showIsa"
     | "showLisa"
     | "showSipp"
@@ -2688,11 +2730,13 @@ function createActiveMilestoneBoundaries(
     lisaUseByAge,
     lisaUseByAgeEnabled,
     nuvosStartAge,
+    premiumStartAge,
     partialRetirementEnabled,
     partialRetirementStartAge,
     retirementAge,
     showAlpha,
     showNuvos,
+    showPremium,
     showIsa,
     showLisa,
     showSipp,
@@ -2737,6 +2781,9 @@ function createActiveMilestoneBoundaries(
       : []),
     ...(showNuvos
       ? [{ key: "nuvosStartAge" as const, age: nuvosStartAge }]
+      : []),
+    ...(showPremium
+      ? [{ key: "premiumStartAge" as const, age: premiumStartAge }]
       : []),
     ...(showStatePension
       ? [{ key: "statePensionAge" as const, age: statePensionAge }]
@@ -2885,6 +2932,10 @@ function getMilestoneTransitionMatcher(key: MilestoneKey) {
 
   if (key === "nuvosStartAge") {
     return (point: RetirementIncomePoint) => point.nuvosIncomeAnnual > 0;
+  }
+
+  if (key === "premiumStartAge") {
+    return (point: RetirementIncomePoint) => point.premiumIncomeAnnual > 0;
   }
 
   if (key === "statePensionAge") {
@@ -3266,6 +3317,7 @@ function isIncomeSourceEnabled(
     | "showIsa"
     | "showLisa"
     | "showNuvos"
+    | "showPremium"
     | "showSipp"
     | "showStatePension"
   >
@@ -3288,6 +3340,10 @@ function isIncomeSourceEnabled(
 
   if (key === "nuvosIncomeAnnual") {
     return state.showNuvos;
+  }
+
+  if (key === "premiumIncomeAnnual") {
+    return state.showPremium;
   }
 
   if (key === "partialRetirementIncomeAnnual") {
@@ -3323,6 +3379,10 @@ function getIncomeSourceTogglePatch(
 
   if (key === "nuvosIncomeAnnual") {
     return { showNuvos: enabled };
+  }
+
+  if (key === "premiumIncomeAnnual") {
+    return { showPremium: enabled };
   }
 
   if (key === "partialRetirementIncomeAnnual") {

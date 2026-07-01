@@ -28,6 +28,9 @@ export type ProjectionRow = {
   annualNuvosPension: number;
   annualNuvosPensionIncludingReduction: number;
   monthlyNuvosPensionGross: number;
+  annualPremiumPension: number;
+  annualPremiumPensionIncludingReduction: number;
+  monthlyPremiumPensionGross: number;
   monthlyStatePension: number;
   sippPot: number;
   monthlySippPension: number;
@@ -46,6 +49,7 @@ export type PensionSummary = {
     startsAlphaPension: string;
     stopsNuvosAccrual: string;
     startsNuvosPension: string;
+    startsPremiumPension: string;
     startsSippDraw: string;
     startsIsaDraw: string;
     startsLisaDraw: string;
@@ -61,6 +65,14 @@ export type PensionSummary = {
     annualAtDraw: number;
     monthlyAtDraw: number;
     maximumAnnualAccrued: number;
+  };
+  premiumPension: {
+    annualAtDraw: number;
+    monthlyAtDraw: number;
+    cpiRevaluedAnnualAtDraw: number;
+    earlyRetirementFactor: number | null;
+    isReducedForEarlyPayment: boolean;
+    factorUnavailable: boolean;
   };
   sippPension: {
     potAtDraw: number;
@@ -101,6 +113,7 @@ export type RetirementIncomeSource = {
   key:
     | "alpha"
     | "nuvos"
+    | "premium"
     | "sipp"
     | "isa"
     | "lisa"
@@ -130,6 +143,7 @@ export type BridgePhase = {
   annualTargetIncome: number;
   annualAlphaPension: number;
   annualNuvosPension: number;
+  annualPremiumPension: number;
   annualStatePension: number;
   annualIsaBridge: number;
   annualLisaBridge: number;
@@ -149,6 +163,7 @@ export type BridgePotProjectionRow = {
   ageMonths: number;
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
+  monthlyPremiumPension: number;
   monthlyStatePension: number;
   isaBalance: number;
   lisaBalance: number;

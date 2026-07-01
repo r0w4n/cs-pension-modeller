@@ -30,7 +30,7 @@ it("does not load Google Analytics without a measurement ID", async () => {
   expect(document.getElementById("google-analytics-script")).toBeNull();
 });
 
-it("loads Google Analytics with privacy-focused defaults when configured", async () => {
+it("loads Google Analytics with reporting enabled and advertising storage denied when configured", async () => {
   vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
 
   const { initialiseAnalytics, trackAnalyticsEvent } =
@@ -58,7 +58,7 @@ it("loads Google Analytics with privacy-focused defaults when configured", async
           ad_personalization: "denied",
           ad_storage: "denied",
           ad_user_data: "denied",
-          analytics_storage: "denied",
+          analytics_storage: "granted",
         }),
       ],
       [

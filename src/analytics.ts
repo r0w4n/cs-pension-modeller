@@ -55,7 +55,7 @@ export function initialiseAnalytics() {
     ad_personalization: "denied",
     ad_storage: "denied",
     ad_user_data: "denied",
-    analytics_storage: "denied",
+    analytics_storage: "granted",
   });
   window.gtag("js", new Date());
   window.gtag("config", measurementId, {

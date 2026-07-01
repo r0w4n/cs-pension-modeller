@@ -3,6 +3,7 @@ import {
   coerceLegacySippLumpSum,
 } from "./settings-domains/alpha-pension";
 import { coerceNuvosSettings } from "./settings-domains/nuvos";
+import { coercePremiumSettings } from "./settings-domains/premium";
 import { coerceStatePensionSettings } from "./settings-domains/state-pension";
 import { coerceSippTaxReliefRate } from "./settings-domains/sipp";
 import { coerceTaxSettings } from "./settings-domains/tax";
@@ -208,6 +209,7 @@ function coerceSettings(
     lisaWithdrawalTargetAge: coerceNumber(input.lisaWithdrawalTargetAge),
     ...coerceStatePensionSettings(input),
     ...coerceNuvosSettings(input),
+    ...coercePremiumSettings(input),
     ...coerceTaxSettings(input),
   };
 }

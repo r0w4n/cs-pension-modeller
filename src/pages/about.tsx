@@ -26,9 +26,9 @@ function AboutPage() {
         <h2>What it can include</h2>
         <p className="section-copy">
           A scenario can include Civil Service Alpha pension, nuvos pension,
-          State Pension, SIPP, ISA and LISA bridge funding, partial retirement,
-          simplified Income Tax, real or nominal projection values, and
-          side-by-side scenario comparison.
+          Premium pension, State Pension, SIPP, ISA and LISA bridge funding,
+          partial retirement, simplified Income Tax, real or nominal projection
+          values, and side-by-side scenario comparison.
         </p>
       </section>
 

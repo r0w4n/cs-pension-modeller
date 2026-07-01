@@ -14,6 +14,7 @@ import {
   calculateNuvosEarlyRetirementFactor,
   NUVOS_FINAL_PENSIONABLE_SERVICE_DATE,
 } from "./projection-domains/nuvos";
+import { getPremiumEarlyRetirementFactor } from "./projection-domains/premium";
 import { getStatePensionNominalIncreaseRate } from "./projection-domains/state-pension";
 
 export const NUVOS_NORMAL_PENSION_AGE = 65;
@@ -27,6 +28,9 @@ export type DerivedProjectionInputs = {
   nuvosAccrualStopDate: string;
   nuvosNpaDate: string;
   nuvosReductionFactor: number;
+  premiumDrawDate: string;
+  premiumNpaDate: string;
+  premiumReductionFactor: number | null;
   addedPensionStopDate: string;
   npaDate: string;
   epaDate: string;
@@ -60,6 +64,7 @@ export type ProjectionRuntimeDates = {
   lisaDrawDate: string;
   alphaAbsDate: string;
   nuvosAbsDate: string;
+  premiumDrawDate: string;
 };
 
 export function deriveInflationAssumptions(
@@ -149,6 +154,21 @@ export function deriveProjectionInputs(
     Math.floor(nuvosMonthsEarly / 12),
     nuvosMonthsEarly % 12
   );
+  const premiumDrawDate = addYears(
+    settings.dateOfBirth,
+    settings.premiumDrawAge
+  );
+  const premiumNpaDate = addYears(
+    settings.dateOfBirth,
+    settings.premiumNormalPensionAge
+  );
+  const premiumReductionFactor =
+    premiumDrawDate >= premiumNpaDate
+      ? 1
+      : getPremiumEarlyRetirementFactor(
+          settings.premiumDrawAge,
+          settings.premiumNormalPensionAge
+        );
   const addedPensionStopDate = accrualStopDate;
   const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
   const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
@@ -175,6 +195,9 @@ export function deriveProjectionInputs(
     nuvosAccrualStopDate,
     nuvosNpaDate,
     nuvosReductionFactor,
+    premiumDrawDate,
+    premiumNpaDate,
+    premiumReductionFactor,
     addedPensionStopDate,
     npaDate,
     epaDate,
@@ -192,6 +215,7 @@ export function createProjectionRuntimeDates(
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     alphaAbsDate: resolveAlphaAbsDate(settings.alphaPensionAbsDate),
     nuvosAbsDate: resolveAlphaAbsDate(settings.nuvosPensionAbsDate),
+    premiumDrawDate: addYears(settings.dateOfBirth, settings.premiumDrawAge),
   };
 }
 

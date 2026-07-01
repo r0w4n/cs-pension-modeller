@@ -17,6 +17,7 @@ export type DateField = {
     | "statePensionDrawDate"
     | "alphaPensionAbsDate"
     | "nuvosPensionAbsDate"
+    | "premiumValuationDate"
     | "alphaEpaStartDate"
     | "alphaEpaEndDate";
   label: string;
@@ -47,6 +48,8 @@ export type RangeField = {
     | "nuvosPensionLeaveAge"
     | "nuvosPensionDrawAge"
     | "nuvosAssumedCpiPercent"
+    | "premiumDrawAge"
+    | "premiumNormalPensionAge"
     | "sippDrawAge"
     | "sippMonthlyContribution"
     | "sippRealInterestPercent"
@@ -85,7 +88,8 @@ export type CheckboxField = {
     | "applyPensionIncreases"
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
-    | "nuvosApplyPensionIncreases";
+    | "nuvosApplyPensionIncreases"
+    | "premiumHasNpa65";
   label: string;
   type: "checkbox";
   description: string;
@@ -99,6 +103,7 @@ export type CurrencyInputField = {
     | "currentStatePension"
     | "accruedPensionAtLastAbs"
     | "nuvosAccruedPensionAtLastAbs"
+    | "premiumAnnualPensionAtValuationDate"
     | "desiredRetirementIncome"
     | "fullSalary"
     | "sippCurrentPot"
@@ -132,7 +137,8 @@ export type SelectField = {
     | "sippTaxReliefRate"
     | "sippWithdrawalStrategy"
     | "isaWithdrawalStrategy"
-    | "lisaWithdrawalStrategy";
+    | "lisaWithdrawalStrategy"
+    | "premiumEarliestAccessAge";
   label: string;
   type: "select";
   options: {
@@ -142,7 +148,8 @@ export type SelectField = {
       | PensionSettings["alphaAddedPensionFactorType"]
       | PensionSettings["sippWithdrawalStrategy"]
       | PensionSettings["isaWithdrawalStrategy"]
-      | PensionSettings["lisaWithdrawalStrategy"];
+      | PensionSettings["lisaWithdrawalStrategy"]
+      | PensionSettings["premiumEarliestAccessAge"];
     label: string;
   }[];
   description?: string;
@@ -598,6 +605,73 @@ export const fieldGroups: FieldGroup[] = [
           "Increase accrued nuvos pension by the selected inflation assumption each year, reflecting cost-of-living revaluation.",
         infoUrl: knowledgeLinks.nuvosBenefits,
         infoLinkText: "nuvos pension increases",
+      },
+    ],
+  },
+  {
+    id: "premium",
+    eyebrow: "Premium Pension",
+    title: "Your Premium pension",
+    description:
+      "Premium is a closed legacy Civil Service defined benefit pension. You cannot build up new Premium pension. Enter the preserved annual Premium pension from your statement or pension portal; the modeller increases it by CPI only until the age you choose to take it.",
+    fields: [
+      {
+        id: "premiumAnnualPensionAtValuationDate",
+        label: "Current preserved Premium pension (£ per year)",
+        type: "currency-input",
+        min: 0,
+        max: 50000,
+        step: 1,
+        format: "currency",
+        description:
+          "The preserved annual Premium pension already built up at the valuation or statement date. This is annual defined benefit pension income, not a pot balance, and no future Premium accrual or contributions are modelled.",
+      },
+      {
+        id: "premiumValuationDate",
+        label: "Premium valuation or statement date",
+        type: "date",
+        description:
+          "The date your preserved Premium pension amount relates to. The modeller applies CPI from this date to the selected Premium draw age only.",
+      },
+      {
+        id: "premiumDrawAge",
+        label: "Age to take Premium",
+        type: "range",
+        min: 50,
+        max: 70,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age you plan to start taking Premium benefits. Premium benefits are usually payable unreduced from age 60; if taken earlier, Premium early-retirement factors are needed.",
+      },
+      {
+        id: "premiumHasNpa65",
+        label: "Premium has NPA 65",
+        type: "checkbox",
+        description:
+          "Allow Premium Normal Pension Age to be modelled as 65 for unusual or personal scheme arrangements. Most Premium benefits should leave this off.",
+      },
+      {
+        id: "premiumNormalPensionAge",
+        label: "Premium Normal Pension Age",
+        type: "range",
+        min: 60,
+        max: 65,
+        step: 1,
+        inputStep: 1,
+        description:
+          "Premium Normal Pension Age normally defaults to 60 and is separate from State Pension age. Only use 65 if your Premium benefits have a personal NPA 65 arrangement.",
+      },
+      {
+        id: "premiumEarliestAccessAge",
+        label: "Earliest Premium access age",
+        type: "select",
+        options: [
+          { value: 55, label: "55" },
+          { value: 50, label: "50 - joined before 6 April 2006" },
+        ],
+        description:
+          "Use age 55 unless your scheme record confirms that age 50 access applies because you joined before 6 April 2006.",
       },
     ],
   },

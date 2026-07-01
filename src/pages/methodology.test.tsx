@@ -67,6 +67,23 @@ describe("MethodologyPage", () => {
     );
   });
 
+  it("documents Premium as a preserved pension with unavailable factors excluded", () => {
+    render(<MethodologyPage />);
+
+    const premiumHeading = screen.getByRole("heading", {
+      name: "Premium pension methodology",
+    });
+    const premiumSection = premiumHeading.closest("section");
+
+    expect(premiumSection).not.toBeNull();
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "no further Premium accrual and no further Premium contributions"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "excludes the reduced Premium income rather than silently estimating it"
+    );
+  });
+
   it("documents currently modelled pension, savings, bridge, and comparison mechanisms", () => {
     render(<MethodologyPage />);
 

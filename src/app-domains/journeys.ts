@@ -33,6 +33,12 @@ export const OPTIONAL_SECTION_TOGGLES = [
       "Models existing nuvos pension benefits separately from Alpha, including CPI-linked increases and its own draw date.",
   },
   {
+    key: "showPremium",
+    label: "Premium",
+    description:
+      "Models preserved Premium pension benefits as a closed legacy pension with CPI-only revaluation and its own draw date.",
+  },
+  {
     key: "showSipp",
     label: "SIPP",
     description:
@@ -150,7 +156,7 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "We include State Pension, ISA, LISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
-        toggleKeys: ["showAlpha", "showNuvos"],
+        toggleKeys: ["showAlpha", "showNuvos", "showPremium"],
       },
       {
         id: "alpha",
@@ -190,6 +196,23 @@ export const JOURNEY_DEFINITIONS = [
           "nuvosAssumedCpiPercent",
         ],
         visible: (settings) => settings.showNuvos,
+      },
+      {
+        id: "premium",
+        eyebrow: "Optional",
+        title: "Your Premium pension",
+        description:
+          "Add preserved Premium benefits if they should be part of the bridge calculation.",
+        kind: "fields",
+        fieldIds: [
+          "premiumAnnualPensionAtValuationDate",
+          "premiumValuationDate",
+          "premiumDrawAge",
+          "premiumNormalPensionAge",
+          "premiumEarliestAccessAge",
+          "premiumHasNpa65",
+        ],
+        visible: (settings) => settings.showPremium,
       },
       {
         id: "state",
@@ -283,7 +306,7 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
-        toggleKeys: ["showAlpha", "showNuvos"],
+        toggleKeys: ["showAlpha", "showNuvos", "showPremium"],
       },
       {
         id: "alpha",
@@ -373,6 +396,23 @@ export const JOURNEY_DEFINITIONS = [
           "nuvosAssumedCpiPercent",
         ],
         visible: (settings) => settings.showNuvos,
+      },
+      {
+        id: "premium",
+        eyebrow: "Optional",
+        title: "Premium pension",
+        description:
+          "Add preserved Premium benefits if they should be part of the projection.",
+        kind: "fields",
+        fieldIds: [
+          "premiumAnnualPensionAtValuationDate",
+          "premiumValuationDate",
+          "premiumDrawAge",
+          "premiumNormalPensionAge",
+          "premiumEarliestAccessAge",
+          "premiumHasNpa65",
+        ],
+        visible: (settings) => settings.showPremium,
       },
       {
         id: "pots",
@@ -472,6 +512,7 @@ function isExpertJourneyGroupVisible(groupId: string) {
   if (
     groupId === "alpha" ||
     groupId === "nuvos" ||
+    groupId === "premium" ||
     groupId === "state" ||
     groupId === "sipp" ||
     groupId === "isa" ||
@@ -517,6 +558,7 @@ export function applySimpleJourneyDefaults(
     assumedCpiPercent: 0,
     showStatePension: true,
     showNuvos: settings.showNuvos,
+    showPremium: settings.showPremium,
   };
 }
 
@@ -530,6 +572,7 @@ export function applySimpleJourneyAssumptions(
     showIsa: false,
     showLisa: false,
     showNuvos: settings.showNuvos,
+    showPremium: settings.showPremium,
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     assumedCpiPercent: 0,

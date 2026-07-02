@@ -224,6 +224,7 @@ vi.mock("./projection", async () => {
           earlyRetirementReductionPercent: 0,
         },
         retirementIncome: {
+          summaryDate: rows.at(-1)?.date ?? settings.startDate,
           sources: [
             ...(settings.showAlpha
               ? [
@@ -297,6 +298,53 @@ vi.mock("./projection", async () => {
                   },
                 ]
               : []),
+          ],
+          bridgeWithdrawals: [],
+          ageRanges: [
+            {
+              startAge: settings.requirementAge,
+              endAge: settings.lifeExpectancy,
+              sourceLabels: [
+                ...(settings.showAlpha &&
+                (rows.at(-1)?.monthlyAlphaPensionGross ?? 0) > 0
+                  ? ["Alpha pension"]
+                  : []),
+                ...(settings.showNuvos &&
+                (rows.at(-1)?.monthlyNuvosPensionGross ?? 0) > 0
+                  ? ["nuvos pension"]
+                  : []),
+                ...(settings.showSipp &&
+                (rows.at(-1)?.monthlySippPension ?? 0) > 0
+                  ? ["SIPP withdrawal"]
+                  : []),
+                ...(settings.showIsa &&
+                (rows.at(-1)?.monthlyIsaPension ?? 0) > 0
+                  ? ["ISA withdrawal"]
+                  : []),
+                ...(settings.showLisa &&
+                (rows.at(-1)?.monthlyLisaPension ?? 0) > 0
+                  ? ["LISA withdrawal"]
+                  : []),
+                ...(settings.showStatePension &&
+                (rows.at(-1)?.monthlyStatePension ?? 0) > 0
+                  ? ["State Pension"]
+                  : []),
+              ],
+              monthlyIncomeBeforeTax:
+                rows.at(-1)?.totalMonthlyIncomeBeforeTax ?? 0,
+              monthlyIncomeAfterTax: rows.at(-1)?.totalMonthlyNetIncome ?? 0,
+              annualIncomeBeforeTax:
+                (rows.at(-1)?.totalMonthlyIncomeBeforeTax ?? 0) * 12,
+              annualIncomeAfterTax:
+                (rows.at(-1)?.totalMonthlyNetIncome ?? 0) * 12,
+              annualTargetIncome: settings.desiredRetirementIncome,
+              annualShortfall: 0,
+              annualSurplus: Math.max(
+                0,
+                (rows.at(-1)?.totalMonthlyNetIncome ?? 0) * 12 -
+                  settings.desiredRetirementIncome
+              ),
+            },
           ],
           totalMonthlyIncome: rows.at(-1)?.totalMonthlyNetIncome ?? 0,
           totalAnnualIncome: (rows.at(-1)?.totalMonthlyNetIncome ?? 0) * 12,
@@ -909,8 +957,14 @@ describe("App settings form", () => {
       screen.queryByLabelText(/Start Alpha, age \d+/)
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Monthly Alpha pension")).not.toBeInTheDocument();
+    const ageRangeTable = await screen.findByLabelText(
+      "Income by age range table"
+    );
     expect(
-      await screen.findByLabelText("Monthly retirement income before tax")
+      within(ageRangeTable).queryByText(/Alpha pension/)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Income by age range" })
     ).toBeInTheDocument();
   });
 
@@ -1342,7 +1396,7 @@ describe("App settings form", () => {
       screen.getAllByRole("columnheader", { name: "Current model" }).length
     ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("heading", { name: "Pension Summary" })
+      screen.getByRole("heading", { name: "Retirement income summary" })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Plan status" })
@@ -1353,7 +1407,7 @@ describe("App settings form", () => {
     expect(screen.queryByText(/once the bridge ends/i)).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "This summary uses your current journey assumptions and shows your projected retirement income before tax."
+        "This summary uses your current journey assumptions and shows projected income by age range."
       )
     ).toBeInTheDocument();
     expect(
@@ -1405,7 +1459,7 @@ describe("App settings form", () => {
       screen.getAllByRole("columnheader", { name: "Current model" }).length
     ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("heading", { name: "Pension Summary" })
+      screen.getByRole("heading", { name: "Retirement income summary" })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Action required" })
@@ -1454,12 +1508,13 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
     advanceJourneyToResult();
 
+    const ageRangeTable = await screen.findByLabelText(
+      "Income by age range table"
+    );
     expect(
-      await screen.findByText("Monthly Alpha pension")
+      within(ageRangeTable).getByText("Alpha pension, State Pension")
     ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Monthly retirement income before tax")
-    ).not.toHaveTextContent("£0.00");
+    expect(within(ageRangeTable).getByText("£2,500.00")).toBeInTheDocument();
   });
 
   it("keeps the bridge target retirement age stable after slider release", () => {
@@ -1734,7 +1789,10 @@ describe("App settings form", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { level: 2, name: "Pension Summary" })
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Retirement income summary",
+      })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Plan status" })
@@ -1759,16 +1817,14 @@ describe("App settings form", () => {
         name: /Work through every setting with full control/i,
       })
     ).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Monthly Alpha pension")).toBeInTheDocument();
-    expect(screen.getByText("Monthly SIPP")).toBeInTheDocument();
-    expect(screen.getByText("Monthly ISA")).toBeInTheDocument();
-    expect(screen.getByText("Monthly State Pension")).toBeInTheDocument();
+    const ageRangeTable = screen.getByLabelText("Income by age range table");
     expect(
-      screen.getByLabelText("Monthly retirement income before tax")
-    ).toHaveTextContent("£2,950.00");
-    expect(
-      screen.getByLabelText("Monthly target retirement income")
-    ).toHaveTextContent("£2,641.67");
+      within(ageRangeTable).getByText(
+        "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
+      )
+    ).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,950.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,641.67")).toBeInTheDocument();
     expect(
       screen.getAllByText("Starts Drawing Alpha Pension").length
     ).toBeGreaterThan(0);
@@ -1867,16 +1923,19 @@ describe("App settings form", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Annual" }));
 
-    expect(screen.getByText("Annual Alpha pension")).toBeInTheDocument();
-    expect(screen.getByText("Annual SIPP")).toBeInTheDocument();
-    expect(screen.getByText("Annual ISA")).toBeInTheDocument();
-    expect(screen.getByText("Annual State Pension")).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Annual retirement income before tax")
-    ).toHaveTextContent("£35,400.00");
+      screen.getByRole("heading", { name: "Income by age range" })
+    ).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Annual target retirement income")
-    ).toHaveTextContent("£31,700.00");
+      screen.getByRole("columnheader", { name: "Age range" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText("£35,400.00")).toBeInTheDocument();
+    expect(screen.getByText("£31,700.00")).toBeInTheDocument();
   });
 
   it("restores journey and comparison summary displays independently after a refresh", () => {
@@ -1892,11 +1951,9 @@ describe("App settings form", () => {
     renderAcknowledgedExpertResult();
 
     expect(
-      screen.getByLabelText("Annual retirement income before tax")
+      screen.getByRole("heading", { name: "Income by age range" })
     ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Annual target retirement income")
-    ).toHaveTextContent("£31,700.00");
+    expect(screen.getByText("£31,700.00")).toBeInTheDocument();
     expect(
       within(
         screen.getByRole("region", { name: "Comparison results" })
@@ -2172,7 +2229,11 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByText("Monthly State Pension")).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Income by age range table")).getByText(
+        /State Pension/
+      )
+    ).toBeInTheDocument();
   });
 
   it("resets the state pension slider back to its default value", () => {
@@ -3006,7 +3067,11 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByText("Monthly ISA")).toBeInTheDocument();
+    expect(
+      within(
+        await screen.findByLabelText("Income by age range table")
+      ).getByText(/ISA withdrawal/)
+    ).toBeInTheDocument();
     expect(
       await screen.findByRole("columnheader", { name: "ISA" })
     ).toBeInTheDocument();
@@ -3091,9 +3156,20 @@ describe("App settings form", () => {
     expect(screen.queryByText("Monthly SIPP")).not.toBeInTheDocument();
     expect(screen.queryByText("Monthly ISA")).not.toBeInTheDocument();
     expect(screen.queryByText("Monthly State Pension")).not.toBeInTheDocument();
+    const ageRangeTable = screen.getByLabelText("Income by age range table");
     expect(
-      screen.getByLabelText("Monthly retirement income before tax")
-    ).toHaveTextContent("£1,600.00");
+      within(ageRangeTable).queryByText(/SIPP withdrawal/)
+    ).not.toBeInTheDocument();
+    expect(
+      within(ageRangeTable).queryByText(/ISA withdrawal/)
+    ).not.toBeInTheDocument();
+    expect(
+      within(ageRangeTable).queryByText(/State Pension/)
+    ).not.toBeInTheDocument();
+    expect(
+      within(ageRangeTable).getByText("Alpha pension")
+    ).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£1,600.00")).toBeInTheDocument();
     expect(
       screen.queryByRole("columnheader", { name: "Monthly State pension" })
     ).not.toBeInTheDocument();

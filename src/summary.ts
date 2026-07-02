@@ -4,6 +4,7 @@ import { calculateTotalLisaContributionsWithBonus } from "./projection-domains/l
 import { NUVOS_FINAL_PENSIONABLE_SERVICE_DATE } from "./projection-domains/nuvos";
 import { calculateTotalSippContributionsAfterTaxRelief } from "./projection-domains/sipp";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
+import { calculateRetirementIncomeTargetAtDate } from "./projection-domains/inflation";
 import {
   addYears,
   calculateAge,
@@ -13,11 +14,15 @@ import {
 } from "./derive-inputs";
 import { calculateStartingAlphaPortionsAtStartDate } from "./row-assembly";
 import type {
+  BridgeWithdrawalSource,
   PensionSummary,
   ProjectionRow,
+  RetirementIncomeAgeRange,
   RetirementIncomeSource,
   RetirementIncomeSummary,
 } from "./projection-core";
+
+const ACTIVE_INCOME_EPSILON = 0.005;
 
 export function generatePensionSummary(
   tableData: ProjectionRow[],
@@ -71,6 +76,7 @@ export function generatePensionSummary(
       monthlyAtStateStart: 0,
       monthlyStatePension: 0,
       retirementIncome: buildRetirementIncomeSummary({
+        summaryDate: settings.startDate,
         alphaMonthlyIncome: 0,
         nuvosMonthlyIncome: 0,
         sippMonthlyIncome: 0,
@@ -78,6 +84,8 @@ export function generatePensionSummary(
         lisaMonthlyIncome: 0,
         statePensionMonthlyIncome: 0,
         monthlyIncomeTax: 0,
+        bridgeWithdrawals: [],
+        ageRanges: [],
         settings,
       }),
     });
@@ -186,6 +194,14 @@ function buildRowSummaryContext(
       "monthlyLisaPension"
     ),
   };
+  const summaryRow = findRetirementIncomeSummaryRow(tableData, settings, {
+    alphaPensionDrawDate: input.alphaPensionDrawDate,
+    nuvosPensionDrawDate: input.nuvosPensionDrawDate,
+    statePensionStartDate: input.statePensionStartDate,
+    sippIncomeRow: flexibleIncomeRows.sippIncomeRow,
+    isaIncomeRow: flexibleIncomeRows.isaIncomeRow,
+    lisaIncomeRow: flexibleIncomeRows.lisaIncomeRow,
+  });
   const maximumAnnualAccrued = Math.max(
     ...tableData.map((row) => row.annualAccruedAlphaPension)
   );
@@ -195,6 +211,8 @@ function buildRowSummaryContext(
   const retirementIncome = buildRowRetirementIncomeSummary(settings, {
     ...drawRows,
     ...flexibleIncomeRows,
+    summaryRow,
+    ageRanges: buildRetirementIncomeAgeRanges(tableData, settings),
   });
 
   return {
@@ -246,19 +264,26 @@ function buildRowRetirementIncomeSummary(
     sippIncomeRow: ProjectionRow | undefined;
     isaIncomeRow: ProjectionRow | undefined;
     lisaIncomeRow: ProjectionRow | undefined;
+    summaryRow: ProjectionRow | undefined;
+    ageRanges: RetirementIncomeAgeRange[];
   }
 ) {
-  const alphaMonthlyIncome =
-    drawRows.alphaDrawRow?.monthlyAlphaPensionGross ?? 0;
-  const nuvosMonthlyIncome =
-    drawRows.nuvosDrawRow?.monthlyNuvosPensionGross ?? 0;
-  const statePensionMonthlyIncome =
-    drawRows.statePensionRow?.monthlyStatePension ?? 0;
-  const sippMonthlyIncome = drawRows.sippIncomeRow?.monthlySippPension ?? 0;
-  const isaMonthlyIncome = drawRows.isaIncomeRow?.monthlyIsaPension ?? 0;
-  const lisaMonthlyIncome = drawRows.lisaIncomeRow?.monthlyLisaPension ?? 0;
+  const summaryRow = drawRows.summaryRow;
+  const alphaMonthlyIncome = summaryRow?.monthlyAlphaPensionGross ?? 0;
+  const nuvosMonthlyIncome = summaryRow?.monthlyNuvosPensionGross ?? 0;
+  const statePensionMonthlyIncome = summaryRow?.monthlyStatePension ?? 0;
+  const sippMonthlyIncome = summaryRow?.monthlySippPension ?? 0;
+  const isaMonthlyIncome = summaryRow?.monthlyIsaPension ?? 0;
+  const lisaMonthlyIncome = summaryRow?.monthlyLisaPension ?? 0;
+  const bridgeWithdrawals = buildBridgeWithdrawalSources(settings, {
+    summaryRow,
+    sippIncomeRow: drawRows.sippIncomeRow,
+    isaIncomeRow: drawRows.isaIncomeRow,
+    lisaIncomeRow: drawRows.lisaIncomeRow,
+  });
 
   return buildRetirementIncomeSummary({
+    summaryDate: summaryRow?.date ?? settings.startDate,
     alphaMonthlyIncome,
     nuvosMonthlyIncome,
     sippMonthlyIncome,
@@ -272,8 +297,258 @@ function buildRowRetirementIncomeSummary(
       monthlyStatePension: statePensionMonthlyIncome,
       monthlySippPension: sippMonthlyIncome,
     }),
+    bridgeWithdrawals,
+    ageRanges: drawRows.ageRanges,
     settings,
   });
+}
+
+function buildRetirementIncomeAgeRanges(
+  tableData: ProjectionRow[],
+  settings: PensionSettings
+): RetirementIncomeAgeRange[] {
+  const retirementDate = addYears(
+    settings.dateOfBirth,
+    settings.requirementAge
+  );
+  const endDate = addYears(settings.dateOfBirth, settings.lifeExpectancy);
+  const rows = tableData.filter(
+    (row) => row.date >= retirementDate && row.date <= endDate
+  );
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const ranges: RetirementIncomeAgeRange[] = [];
+  let currentRangeStart = createAgeRangeSnapshot(rows[0], settings);
+
+  rows.slice(1).forEach((row) => {
+    const nextSnapshot = createAgeRangeSnapshot(row, settings);
+
+    if (
+      getAgeRangeSourceSignature(nextSnapshot) ===
+      getAgeRangeSourceSignature(currentRangeStart)
+    ) {
+      return;
+    }
+
+    if (nextSnapshot.startAge > currentRangeStart.startAge) {
+      ranges.push({
+        ...currentRangeStart,
+        endAge: nextSnapshot.startAge,
+      });
+    }
+
+    currentRangeStart = nextSnapshot;
+  });
+
+  if (settings.lifeExpectancy > currentRangeStart.startAge) {
+    ranges.push({
+      ...currentRangeStart,
+      endAge: settings.lifeExpectancy,
+    });
+  }
+
+  return ranges;
+}
+
+function createAgeRangeSnapshot(
+  row: ProjectionRow,
+  settings: PensionSettings
+): RetirementIncomeAgeRange {
+  const annualTargetIncome = calculateRetirementIncomeTargetAtDate(
+    settings,
+    row.date
+  );
+  const annualIncomeBeforeTax = row.totalMonthlyIncomeBeforeTax * 12;
+  const annualIncomeAfterTax = row.totalMonthlyNetIncome * 12;
+  const annualAssessedIncome = settings.taxationEnabled
+    ? annualIncomeAfterTax
+    : annualIncomeBeforeTax;
+
+  return {
+    startAge: row.age + row.ageMonths / 12,
+    endAge: row.age + row.ageMonths / 12,
+    sourceLabels: getActiveIncomeSourceLabels(row, settings),
+    monthlyIncomeBeforeTax: row.totalMonthlyIncomeBeforeTax,
+    monthlyIncomeAfterTax: row.totalMonthlyNetIncome,
+    annualIncomeBeforeTax,
+    annualIncomeAfterTax,
+    annualTargetIncome,
+    annualShortfall: Math.max(0, annualTargetIncome - annualAssessedIncome),
+    annualSurplus: Math.max(0, annualAssessedIncome - annualTargetIncome),
+  };
+}
+
+function getActiveIncomeSourceLabels(
+  row: ProjectionRow,
+  settings: PensionSettings
+) {
+  const labels = [
+    settings.showAlpha && row.monthlyAlphaPensionGross > ACTIVE_INCOME_EPSILON
+      ? "Alpha pension"
+      : null,
+    settings.showNuvos && row.monthlyNuvosPensionGross > ACTIVE_INCOME_EPSILON
+      ? "nuvos pension"
+      : null,
+    settings.showSipp && row.monthlySippPension > ACTIVE_INCOME_EPSILON
+      ? "SIPP withdrawal"
+      : null,
+    settings.showIsa && row.monthlyIsaPension > ACTIVE_INCOME_EPSILON
+      ? "ISA withdrawal"
+      : null,
+    settings.showLisa && row.monthlyLisaPension > ACTIVE_INCOME_EPSILON
+      ? "LISA withdrawal"
+      : null,
+    settings.showStatePension && row.monthlyStatePension > ACTIVE_INCOME_EPSILON
+      ? "State Pension"
+      : null,
+  ].filter((label): label is string => Boolean(label));
+
+  return labels.length > 0 ? labels : ["No income modelled"];
+}
+
+function getAgeRangeSourceSignature(range: RetirementIncomeAgeRange) {
+  return range.sourceLabels.join("|");
+}
+
+function findRetirementIncomeSummaryRow(
+  tableData: ProjectionRow[],
+  settings: PensionSettings,
+  input: {
+    alphaPensionDrawDate: string;
+    nuvosPensionDrawDate: string;
+    statePensionStartDate: string;
+    sippIncomeRow: ProjectionRow | undefined;
+    isaIncomeRow: ProjectionRow | undefined;
+    lisaIncomeRow: ProjectionRow | undefined;
+  }
+) {
+  const secureIncomeStartDates = [
+    ...(settings.showAlpha ? [input.alphaPensionDrawDate] : []),
+    ...(settings.showNuvos ? [input.nuvosPensionDrawDate] : []),
+    ...(settings.showStatePension ? [input.statePensionStartDate] : []),
+  ];
+  const flexibleIncomeDates = [
+    input.sippIncomeRow,
+    input.isaIncomeRow,
+    input.lisaIncomeRow,
+  ]
+    .filter((row): row is ProjectionRow => Boolean(row))
+    .map((row) => row.date);
+  const summaryDate =
+    secureIncomeStartDates.sort().at(-1) ??
+    flexibleIncomeDates.sort()[0] ??
+    addYears(settings.dateOfBirth, settings.requirementAge);
+
+  return findFirstRowAtOrAfterDate(tableData, summaryDate);
+}
+
+function buildBridgeWithdrawalSources(
+  settings: PensionSettings,
+  rows: {
+    summaryRow: ProjectionRow | undefined;
+    sippIncomeRow: ProjectionRow | undefined;
+    isaIncomeRow: ProjectionRow | undefined;
+    lisaIncomeRow: ProjectionRow | undefined;
+  }
+): BridgeWithdrawalSource[] {
+  return [
+    settings.showSipp
+      ? createBridgeWithdrawalSource({
+          key: "sipp",
+          label: "SIPP",
+          monthlyIncome: rows.sippIncomeRow?.monthlySippPension ?? 0,
+          summaryMonthlyIncome: rows.summaryRow?.monthlySippPension ?? 0,
+          incomeRow: rows.sippIncomeRow,
+          summaryRow: rows.summaryRow,
+          startAge: settings.sippDrawAge,
+          endAge:
+            settings.sippWithdrawalStrategy === "use_by_age"
+              ? settings.sippWithdrawalTargetAge
+              : null,
+          startDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
+          endDate:
+            settings.sippWithdrawalStrategy === "use_by_age"
+              ? addYears(settings.dateOfBirth, settings.sippWithdrawalTargetAge)
+              : null,
+        })
+      : null,
+    settings.showIsa
+      ? createBridgeWithdrawalSource({
+          key: "isa",
+          label: "ISA",
+          monthlyIncome: rows.isaIncomeRow?.monthlyIsaPension ?? 0,
+          summaryMonthlyIncome: rows.summaryRow?.monthlyIsaPension ?? 0,
+          incomeRow: rows.isaIncomeRow,
+          summaryRow: rows.summaryRow,
+          startAge: settings.isaDrawAge,
+          endAge:
+            settings.isaWithdrawalStrategy === "use_by_age"
+              ? settings.isaWithdrawalTargetAge
+              : null,
+          startDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
+          endDate:
+            settings.isaWithdrawalStrategy === "use_by_age"
+              ? addYears(settings.dateOfBirth, settings.isaWithdrawalTargetAge)
+              : null,
+        })
+      : null,
+    settings.showLisa
+      ? createBridgeWithdrawalSource({
+          key: "lisa",
+          label: "LISA",
+          monthlyIncome: rows.lisaIncomeRow?.monthlyLisaPension ?? 0,
+          summaryMonthlyIncome: rows.summaryRow?.monthlyLisaPension ?? 0,
+          incomeRow: rows.lisaIncomeRow,
+          summaryRow: rows.summaryRow,
+          startAge: settings.lisaDrawAge,
+          endAge:
+            settings.lisaWithdrawalStrategy === "use_by_age"
+              ? settings.lisaWithdrawalTargetAge
+              : null,
+          startDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
+          endDate:
+            settings.lisaWithdrawalStrategy === "use_by_age"
+              ? addYears(settings.dateOfBirth, settings.lisaWithdrawalTargetAge)
+              : null,
+        })
+      : null,
+  ].filter((source): source is BridgeWithdrawalSource => Boolean(source));
+}
+
+function createBridgeWithdrawalSource(input: {
+  key: BridgeWithdrawalSource["key"];
+  label: string;
+  monthlyIncome: number;
+  summaryMonthlyIncome: number;
+  incomeRow: ProjectionRow | undefined;
+  summaryRow: ProjectionRow | undefined;
+  startAge: number;
+  endAge: number | null;
+  startDate: string;
+  endDate: string | null;
+}): BridgeWithdrawalSource | null {
+  if (
+    input.monthlyIncome <= 0 ||
+    input.summaryMonthlyIncome > 0 ||
+    !input.incomeRow ||
+    input.incomeRow.date === input.summaryRow?.date
+  ) {
+    return null;
+  }
+
+  return {
+    key: input.key,
+    label: input.label,
+    monthlyIncome: input.monthlyIncome,
+    annualIncome: input.monthlyIncome * 12,
+    startDate: input.startDate,
+    endDate: input.endDate,
+    startAge: input.startAge,
+    endAge: input.endAge,
+  };
 }
 
 function createEmptySummary(settings: PensionSettings): PensionSummary {
@@ -319,6 +594,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     monthlyAtStateStart: 0,
     monthlyStatePension: 0,
     retirementIncome: buildRetirementIncomeSummary({
+      summaryDate: settings.startDate,
       alphaMonthlyIncome: 0,
       nuvosMonthlyIncome: 0,
       sippMonthlyIncome: 0,
@@ -326,6 +602,8 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
       lisaMonthlyIncome: 0,
       statePensionMonthlyIncome: 0,
       monthlyIncomeTax: 0,
+      bridgeWithdrawals: [],
+      ageRanges: [],
       settings,
     }),
   });
@@ -462,6 +740,7 @@ function createSummaryResponse(input: {
 }
 
 function buildRetirementIncomeSummary({
+  summaryDate,
   alphaMonthlyIncome,
   nuvosMonthlyIncome,
   sippMonthlyIncome,
@@ -469,8 +748,11 @@ function buildRetirementIncomeSummary({
   lisaMonthlyIncome,
   statePensionMonthlyIncome,
   monthlyIncomeTax,
+  bridgeWithdrawals,
+  ageRanges,
   settings,
 }: {
+  summaryDate: string;
   alphaMonthlyIncome: number;
   nuvosMonthlyIncome: number;
   sippMonthlyIncome: number;
@@ -478,6 +760,8 @@ function buildRetirementIncomeSummary({
   lisaMonthlyIncome: number;
   statePensionMonthlyIncome: number;
   monthlyIncomeTax: number;
+  bridgeWithdrawals: BridgeWithdrawalSource[];
+  ageRanges: RetirementIncomeAgeRange[];
   settings: PensionSettings;
 }): RetirementIncomeSummary {
   const sources: RetirementIncomeSource[] = [
@@ -534,7 +818,10 @@ function buildRetirementIncomeSummary({
   );
 
   return {
+    summaryDate,
     sources,
+    bridgeWithdrawals,
+    ageRanges,
     totalMonthlyIncome,
     totalAnnualIncome: totalMonthlyIncome * 12,
   };

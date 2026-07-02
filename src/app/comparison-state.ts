@@ -4,19 +4,17 @@ import type { RetirementIncomeDisplay } from "../projection";
 import type { RetirementIncomePoint } from "../RetirementIncomeBridgeChart";
 import {
   buildComparisonStatusItems,
-  buildRetirementIncomeItems,
+  buildIncomeAgeRangeItems,
   calculateComparisonInsights,
   clonePensionSettings,
   createComparisonResult,
   createComparisonScenarioId,
-  formatCurrencyDetailed,
-  getRetirementIncomeTargetTitle,
-  getRetirementIncomeTitle,
   getSettingsSignature,
   type ComparisonInsights,
   type ComparisonResult,
   type ComparisonResultCache,
   type ComparisonScenario,
+  type IncomeAgeRangeItem,
 } from "../app-domains";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import type { SummaryItem } from "./results-summary";
@@ -29,11 +27,7 @@ export type ComparisonPanelData = {
   insights: ComparisonInsights;
   resultStatusItems: SummaryItem[];
   results: ComparisonResult[];
-  retirementIncomeItems: SummaryItem[];
-  retirementIncomeTarget: string;
-  retirementIncomeTargetTitle: string;
-  retirementIncomeTitle: string;
-  retirementIncomeTotal: string;
+  incomeAgeRangeItems: IncomeAgeRangeItem[];
   savedResults: Array<ComparisonResult & { currentMatchesSaved: boolean }>;
 };
 
@@ -252,7 +246,7 @@ export function buildComparisonPanelData({
       : [],
     results,
     savedResults,
-    ...buildRetirementIncomeSummary(
+    incomeAgeRangeItems: buildIncomeAgeRangeSummary(
       activeResult,
       retirementIncomeDisplay,
       taxationEnabled
@@ -260,42 +254,18 @@ export function buildComparisonPanelData({
   };
 }
 
-function buildRetirementIncomeSummary(
+function buildIncomeAgeRangeSummary(
   activeResult: ComparisonResult | null,
   retirementIncomeDisplay: RetirementIncomeDisplay | undefined,
   taxationEnabled: boolean
 ) {
   if (!activeResult || !retirementIncomeDisplay) {
-    return {
-      retirementIncomeItems: [] as SummaryItem[],
-      retirementIncomeTarget: "",
-      retirementIncomeTargetTitle: "",
-      retirementIncomeTitle: "",
-      retirementIncomeTotal: "",
-    };
+    return [] as IncomeAgeRangeItem[];
   }
 
-  return {
-    retirementIncomeItems: buildRetirementIncomeItems(
-      activeResult.summary,
-      retirementIncomeDisplay
-    ),
-    retirementIncomeTarget: formatCurrencyDetailed(
-      retirementIncomeDisplay === "monthly"
-        ? activeResult.annualTarget / 12
-        : activeResult.annualTarget
-    ),
-    retirementIncomeTargetTitle: getRetirementIncomeTargetTitle(
-      retirementIncomeDisplay
-    ),
-    retirementIncomeTitle: getRetirementIncomeTitle(
-      taxationEnabled,
-      retirementIncomeDisplay
-    ),
-    retirementIncomeTotal: formatCurrencyDetailed(
-      retirementIncomeDisplay === "monthly"
-        ? activeResult.summary.retirementIncome.totalMonthlyIncome
-        : activeResult.summary.retirementIncome.totalAnnualIncome
-    ),
-  };
+  return buildIncomeAgeRangeItems(
+    activeResult.summary,
+    retirementIncomeDisplay,
+    taxationEnabled
+  );
 }

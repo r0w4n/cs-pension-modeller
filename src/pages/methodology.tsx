@@ -591,6 +591,14 @@ export function MethodologyPage() {
           to cover income gaps before later income streams begin.
         </p>
         <p className="section-copy">
+          The retirement income summary starts with an outcome banner showing
+          whether the scenario appears to meet the selected income target.
+          Temporary ISA, LISA and SIPP withdrawals that run in a bridge period
+          are not treated as permanent pension income. The detailed summary
+          groups projected income by age range, with each range starting when
+          the active income sources change.
+        </p>
+        <p className="section-copy">
           The model can show where income is below the selected
           retirement-income target and whether ISA, LISA or SIPP drawdown can
           cover that gap.

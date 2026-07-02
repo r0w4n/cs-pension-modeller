@@ -1585,8 +1585,116 @@ h3 {
   border-top: 1px solid var(--border);
 }
 
+.summary-outcome-banner {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+  padding: 1rem;
+  border: 1px solid rgba(18, 32, 51, 0.12);
+  border-radius: 0.75rem;
+  background: #f8fbfd;
+}
+
+.summary-outcome-banner--onTrack {
+  border-color: rgba(17, 100, 102, 0.26);
+  background: #eef8f5;
+}
+
+.summary-outcome-banner--shortfall {
+  border-color: rgba(164, 61, 38, 0.32);
+  background: #fff4ef;
+}
+
+.summary-outcome-banner--atRisk {
+  border-color: rgba(142, 98, 0, 0.3);
+  background: #fff8e6;
+}
+
+.summary-outcome-status {
+  width: fit-content;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(18, 32, 51, 0.08);
+  color: var(--text);
+  font-size: var(--font-size-label);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.summary-outcome-banner--onTrack .summary-outcome-status {
+  background: rgba(17, 100, 102, 0.14);
+  color: #0b4b4d;
+}
+
+.summary-outcome-banner--shortfall .summary-outcome-status {
+  background: rgba(164, 61, 38, 0.14);
+  color: #7d2f1f;
+}
+
+.summary-outcome-banner--atRisk .summary-outcome-status {
+  background: rgba(142, 98, 0, 0.15);
+  color: #6c4a00;
+}
+
+.summary-outcome-banner p {
+  margin: 0;
+  max-width: 70rem;
+  color: var(--text);
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .summary-status-block h3 {
   margin-bottom: 0;
+}
+
+.summary-table-shell {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.summary-table-shell:focus-visible {
+  outline: 2px solid rgba(17, 100, 102, 0.4);
+  outline-offset: 2px;
+}
+
+.summary-age-range-table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+  font-size: var(--font-size-body-sm);
+}
+
+.summary-age-range-table th,
+.summary-age-range-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.summary-age-range-table th {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.summary-age-range-table td {
+  color: var(--text-muted);
+}
+
+.summary-age-range-table td:nth-child(n + 3) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.summary-age-range-table tbody tr:last-child th,
+.summary-age-range-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .bridge-table-section {

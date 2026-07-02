@@ -1,6 +1,5 @@
 import { useDeferredValue, useMemo } from "react";
 import {
-  calculateRetirementIncomeTargetAtDate,
   createProjectionTable,
   deriveInflationAssumptions,
   generatePensionSummary,
@@ -8,14 +7,10 @@ import {
 } from "../projection";
 import { validateSettings, type PensionSettings } from "../settings";
 import {
-  addYearsToIsoDate,
-  buildRetirementIncomeItems,
+  buildIncomeAgeRangeItems,
   createBridgeChartLimits,
   createBridgeChartParameters,
   createRetirementIncomeSeries,
-  formatCurrencyDetailed,
-  getRetirementIncomeTargetTitle,
-  getRetirementIncomeTitle,
 } from "../app-domains";
 
 export function useProjectionCalculations({
@@ -54,47 +49,23 @@ export function useProjectionCalculations({
     () => deriveInflationAssumptions(deferredSettings),
     [deferredSettings]
   );
-  const retirementIncomeTitle = getRetirementIncomeTitle(
-    effectiveSettings.taxationEnabled,
-    retirementIncomeDisplay
-  );
-  const retirementIncomeItems = pensionSummary
-    ? buildRetirementIncomeItems(pensionSummary, retirementIncomeDisplay)
+  const incomeAgeRangeItems = pensionSummary
+    ? buildIncomeAgeRangeItems(
+        pensionSummary,
+        retirementIncomeDisplay,
+        effectiveSettings.taxationEnabled
+      )
     : [];
-  const retirementIncomeTotal = formatCurrencyDetailed(
-    retirementIncomeDisplay === "monthly"
-      ? (pensionSummary?.retirementIncome.totalMonthlyIncome ?? 0)
-      : (pensionSummary?.retirementIncome.totalAnnualIncome ?? 0)
-  );
-  const retirementIncomeTargetTitle = getRetirementIncomeTargetTitle(
-    retirementIncomeDisplay
-  );
-  const annualRetirementIncomeTarget = calculateRetirementIncomeTargetAtDate(
-    effectiveSettings,
-    addYearsToIsoDate(
-      effectiveSettings.dateOfBirth,
-      effectiveSettings.requirementAge
-    )
-  );
-  const retirementIncomeTarget = formatCurrencyDetailed(
-    retirementIncomeDisplay === "monthly"
-      ? annualRetirementIncomeTarget / 12
-      : annualRetirementIncomeTarget
-  );
 
   return {
     bridgeChartLimits,
     bridgeChartParameters,
     deferredSettings,
     derivedInflationAssumptions,
+    incomeAgeRangeItems,
     pensionSummary,
     projectionRows,
-    retirementIncomeItems,
     retirementIncomeSeries,
-    retirementIncomeTarget,
-    retirementIncomeTargetTitle,
-    retirementIncomeTitle,
-    retirementIncomeTotal,
     validationIssues,
   };
 }

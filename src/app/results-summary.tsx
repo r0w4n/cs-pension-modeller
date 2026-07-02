@@ -91,7 +91,7 @@ type RetirementIncomeDisplayToggleProps = {
 export function RetirementIncomeDisplayToggle({
   value,
   onChange,
-  ariaLabel = "Pension Summary display",
+  ariaLabel = "Retirement income summary display",
   monthlyAriaLabel,
   annualAriaLabel,
 }: RetirementIncomeDisplayToggleProps) {

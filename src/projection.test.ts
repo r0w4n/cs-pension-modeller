@@ -1694,6 +1694,120 @@ describe("projection calculations", () => {
     );
   });
 
+  it("keeps real-terms Alpha pension increases aligned with the base accrual path", () => {
+    const baseSettings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-07-02",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 67,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+      alphaPensionAbsDate: "2025",
+      accruedPensionAtLastAbs: 16000,
+      pensionableEarnings: 70000,
+      alphaPayRisePercent: 0,
+      alphaPensionLeaveAge: 67,
+      alphaPensionDrawAge: 67,
+      alphaAddedPensionMonthly: 0,
+    };
+
+    const simpleAccrualSummary = generatePensionSummary(
+      createProjectionTable({
+        ...baseSettings,
+        applyPensionIncreases: false,
+      }),
+      {
+        ...baseSettings,
+        applyPensionIncreases: false,
+      }
+    );
+    const realTermsIncreaseSummary = generatePensionSummary(
+      createProjectionTable({
+        ...baseSettings,
+        applyPensionIncreases: true,
+      }),
+      {
+        ...baseSettings,
+        applyPensionIncreases: true,
+      }
+    );
+
+    expect(realTermsIncreaseSummary.alphaPension.monthlyAtDraw).toBeCloseTo(
+      simpleAccrualSummary.alphaPension.monthlyAtDraw,
+      6
+    );
+  });
+
+  it("does not change real-terms bridge income when Alpha pension increases are enabled", () => {
+    const baseSettings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-07-02",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 67,
+      showStatePension: true,
+      currentStatePension: 12547.6,
+      statePensionDrawDate: "2044-04-01",
+      statePensionApplyFutureGrowth: false,
+      showSipp: true,
+      showIsa: true,
+      showLisa: true,
+      taxationEnabled: false,
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+      desiredRetirementIncome: 31350,
+      alphaPensionAbsDate: "2025",
+      accruedPensionAtLastAbs: 16000,
+      pensionableEarnings: 70000,
+      alphaPayRisePercent: 0,
+      alphaPensionLeaveAge: 67,
+      alphaPensionDrawAge: 67,
+      alphaAddedPensionMonthly: 0,
+      sippCurrentPot: 0,
+      sippMonthlyContribution: 825,
+      sippDrawAge: 55,
+      sippRealInterestPercent: 5,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 64,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 1800,
+      isaDrawAge: 60,
+      isaRealInterestPercent: 5,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 67,
+      lisaCurrentPot: 0,
+      lisaMonthlyContribution: 150,
+      lisaDrawAge: 60,
+      lisaRealInterestPercent: 5,
+      lisaWithdrawalStrategy: "use_by_age",
+      lisaWithdrawalTargetAge: 70,
+    };
+    const withoutIncreases = {
+      ...baseSettings,
+      applyPensionIncreases: false,
+    };
+    const withIncreases = {
+      ...baseSettings,
+      applyPensionIncreases: true,
+    };
+    const simpleAccrualSummary = generatePensionSummary(
+      createProjectionTable(withoutIncreases),
+      withoutIncreases
+    );
+    const realTermsIncreaseSummary = generatePensionSummary(
+      createProjectionTable(withIncreases),
+      withIncreases
+    );
+
+    expect(
+      realTermsIncreaseSummary.incomeOverTime.monthlyAtAlphaStart
+    ).toBeCloseTo(simpleAccrualSummary.incomeOverTime.monthlyAtAlphaStart, 6);
+  });
+
   it("splits EPA accrual into an unreduced EPA portion", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
@@ -2357,9 +2471,11 @@ describe("projection calculations", () => {
 
     const rows = createProjectionTable(settings);
     const summary = generatePensionSummary(rows, settings);
+    const firstDrawdownRow = rows.find((row) => row.date >= "2027-01-01");
 
-    expect(findRowByDate(rows, "2027-01-01")?.monthlySippPension).toBe(0);
-    expect(findRowByDate(rows, "2027-01-01")?.monthlyIsaPension).toBe(0);
+    expect(firstDrawdownRow?.date).toBe("2027-01-13");
+    expect(firstDrawdownRow?.monthlySippPension).toBeGreaterThan(0);
+    expect(firstDrawdownRow?.monthlyIsaPension).toBeGreaterThan(0);
     expect(summary.sippPension.monthlyAtDraw).toBeGreaterThan(0);
     expect(summary.isaPension.monthlyAtDraw).toBeGreaterThan(0);
     expect(

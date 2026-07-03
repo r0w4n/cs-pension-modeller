@@ -1639,10 +1639,13 @@ function getFlexibleAssetsExhaustionTone(
   exhaustedAge: number,
   settings: PensionSettings
 ): "caution" | "problem" {
+  const scheduledMonthTolerance = 1 / 12;
   const expectedExhaustionAge =
     getExpectedFlexibleAssetsExhaustionAge(settings);
 
-  return exhaustedAge < expectedExhaustionAge ? "problem" : "caution";
+  return exhaustedAge + scheduledMonthTolerance < expectedExhaustionAge
+    ? "problem"
+    : "caution";
 }
 
 function getExpectedFlexibleAssetsExhaustionAge(settings: PensionSettings) {

@@ -62,7 +62,7 @@ export const defaultSettings: PensionSettings = {
   nuvosAccruedPensionAtLastAbs: nuvosDefaults.nuvosAccruedPensionAtLastAbs,
   nuvosPensionableEarnings: nuvosDefaults.nuvosPensionableEarnings,
   nuvosPensionLeaveAge: nuvosDefaults.nuvosPensionLeaveAge,
-  nuvosPensionDrawAge: personalDetailsDefaults.requirementAge,
+  nuvosPensionDrawAge: nuvosDefaults.nuvosPensionDrawAge,
   nuvosApplyPensionIncreases: nuvosDefaults.nuvosApplyPensionIncreases,
   nuvosAssumedCpiPercent: nuvosDefaults.nuvosAssumedCpiPercent,
   sippCurrentPot: 0,
@@ -113,7 +113,7 @@ export function createDefaultSettings(): PensionSettings {
     ...defaultSettings,
     normalPensionAge,
     startDate: getTodayIsoDate(),
-    nuvosPensionDrawAge: normalPensionAge,
+    nuvosPensionDrawAge: nuvosDefaults.nuvosPensionDrawAge,
     sippDrawAge: normalizeSippDrawAge(
       normalPensionAge,
       defaultSettings.dateOfBirth

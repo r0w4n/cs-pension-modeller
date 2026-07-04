@@ -269,7 +269,7 @@ describe("retirement-income chart limits", () => {
     expect(limits.sippAccessAge.min).toBe(55);
   });
 
-  it("requires nuvos draw age to stay at or after retirement age", () => {
+  it("does not require nuvos draw age to stay at or after retirement age", () => {
     const settings = {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
@@ -281,7 +281,7 @@ describe("retirement-income chart limits", () => {
 
     const limits = createBridgeChartLimits(settings);
 
-    expect(limits.nuvosStartAge.min).toBe(68);
+    expect(limits.nuvosStartAge.min).toBe(57);
   });
 
   it("does not constrain nuvos draw age by a future nuvos leave age", () => {

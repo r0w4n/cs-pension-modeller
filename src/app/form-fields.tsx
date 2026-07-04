@@ -8,7 +8,6 @@ import {
   isFieldDisabled,
   isFieldHiddenOnMobile,
   shouldRenderField,
-  splitSettingsFields,
 } from "../app-domains";
 import { AddedPensionLumpSumsEditor } from "./form-field-lump-sums";
 import {
@@ -37,7 +36,6 @@ type SettingsFieldsProps = {
   onChange: SettingsFieldOnChange;
   showGuidanceNotes: boolean;
   useDropdownDates: boolean;
-  alphaPensionIncreaseDescription?: string;
 };
 
 export {
@@ -55,67 +53,31 @@ export function SettingsFields({
   onChange,
   showGuidanceNotes,
   useDropdownDates,
-  alphaPensionIncreaseDescription,
 }: SettingsFieldsProps) {
-  const { baseFields, alphaPensionIncreaseFields } =
-    splitSettingsFields(fields);
-  const visibleBaseFields = baseFields.filter((field) =>
+  const visibleFields = fields.filter((field) =>
     shouldRenderField(field.id, settings)
   );
 
   return (
-    <>
-      <div className="field-grid">
-        {visibleBaseFields.map((field) => (
-          <Field
-            key={field.id}
-            field={field}
-            value={settings[field.id]}
-            settings={settings}
-            onChange={onChange}
-            showGuidanceNotes={showGuidanceNotes}
-            useDropdownDates={useDropdownDates}
-            disabled={isFieldDisabled(field.id, settings)}
-            hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
-            validationIssue={getValidationIssueForField(
-              validationIssues,
-              field.id
-            )}
-          />
-        ))}
-      </div>
-
-      {alphaPensionIncreaseFields.length > 0 ? (
-        <div className="settings-subsection">
-          <div className="settings-subsection-heading">
-            <h4>Pension increases</h4>
-            <p className="section-copy">
-              {alphaPensionIncreaseDescription ??
-                "Revalue Alpha benefits annually by CPI using the selected projection basis."}
-            </p>
-          </div>
-          <div className="field-grid">
-            {alphaPensionIncreaseFields.map((field) => (
-              <Field
-                key={field.id}
-                field={field}
-                value={settings[field.id]}
-                settings={settings}
-                onChange={onChange}
-                showGuidanceNotes={showGuidanceNotes}
-                useDropdownDates={useDropdownDates}
-                disabled={isFieldDisabled(field.id, settings)}
-                hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
-                validationIssue={getValidationIssueForField(
-                  validationIssues,
-                  field.id
-                )}
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </>
+    <div className="field-grid">
+      {visibleFields.map((field) => (
+        <Field
+          key={field.id}
+          field={field}
+          value={settings[field.id]}
+          settings={settings}
+          onChange={onChange}
+          showGuidanceNotes={showGuidanceNotes}
+          useDropdownDates={useDropdownDates}
+          disabled={isFieldDisabled(field.id, settings)}
+          hideOnMobile={isFieldHiddenOnMobile(field.id, settings)}
+          validationIssue={getValidationIssueForField(
+            validationIssues,
+            field.id
+          )}
+        />
+      ))}
+    </div>
   );
 }
 

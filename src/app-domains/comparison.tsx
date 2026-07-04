@@ -36,6 +36,7 @@ import {
   formatDate,
   formatDecimalAge,
   formatPercent,
+  formatShortfallOrSurplus,
 } from "./shared";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
@@ -1111,42 +1112,203 @@ export function buildComparisonStatusItems(
   ];
 }
 
-export function buildRetirementIncomeItems(
-  summary: PensionSummary,
-  display: RetirementIncomeDisplay
-): SummaryItemLike[] {
-  return summary.retirementIncome.sources.map((source) => ({
-    label:
-      display === "monthly"
-        ? `Monthly ${source.label}`
-        : `Annual ${source.label}`,
-    value: formatCurrencyDetailed(
-      display === "monthly" ? source.monthlyIncome : source.annualIncome
-    ),
-  }));
-}
+export type IncomeAgeRangeItem = {
+  ageRange: string;
+  sources: string;
+  income: string;
+  target: string;
+  difference: string;
+};
 
-export function getRetirementIncomeTitle(
-  taxationEnabled: boolean,
-  display: RetirementIncomeDisplay
-) {
-  if (display === "monthly") {
-    return taxationEnabled
-      ? "Monthly take-home retirement income"
-      : "Monthly retirement income before tax";
+export type RetirementOutcomeStatus = "onTrack" | "shortfall" | "atRisk";
+
+export type RetirementOutcomeBanner = {
+  status: RetirementOutcomeStatus;
+  label: "On track" | "Shortfall" | "At risk";
+  message: string;
+};
+
+export function buildRetirementOutcomeBanner(
+  result: ComparisonResult
+): RetirementOutcomeBanner {
+  const shortfallRange = result.summary.retirementIncome.ageRanges.find(
+    (range) => range.annualShortfall > 0
+  );
+
+  if (result.targetMissMonths > 0 || shortfallRange) {
+    return {
+      status: "shortfall",
+      label: "Shortfall",
+      message: buildShortfallOutcomeMessage(result, shortfallRange),
+    };
   }
 
-  return taxationEnabled
-    ? "Annual take-home retirement income"
-    : "Annual retirement income before tax";
+  return {
+    status: "onTrack",
+    label: "On track",
+    message: buildOnTrackOutcomeMessage(result),
+  };
 }
 
-export function getRetirementIncomeTargetTitle(
-  display: RetirementIncomeDisplay
+export function buildIncomeAgeRangeItems(
+  summary: PensionSummary,
+  display: RetirementIncomeDisplay,
+  taxationEnabled: boolean
+): IncomeAgeRangeItem[] {
+  return summary.retirementIncome.ageRanges.map((range) => {
+    const income =
+      display === "monthly"
+        ? taxationEnabled
+          ? range.monthlyIncomeAfterTax
+          : range.monthlyIncomeBeforeTax
+        : taxationEnabled
+          ? range.annualIncomeAfterTax
+          : range.annualIncomeBeforeTax;
+    const target =
+      display === "monthly"
+        ? range.annualTargetIncome / 12
+        : range.annualTargetIncome;
+    const difference =
+      display === "monthly"
+        ? {
+            shortfall: range.annualShortfall / 12,
+            surplus: range.annualSurplus / 12,
+          }
+        : {
+            shortfall: range.annualShortfall,
+            surplus: range.annualSurplus,
+          };
+
+    return {
+      ageRange: `Age ${formatDecimalAge(range.startAge)} to ${formatDecimalAge(
+        range.endAge
+      )}`,
+      sources: range.sourceLabels.join(", "),
+      income: formatCurrencyDetailed(income),
+      target: formatCurrencyDetailed(target),
+      difference: formatShortfallOrSurplus(
+        difference.shortfall,
+        difference.surplus
+      ),
+    };
+  });
+}
+
+function buildOnTrackOutcomeMessage(result: ComparisonResult) {
+  const settings = result.scenario.settings;
+  const sentences = [
+    `You can retire at ${formatDecimalAge(
+      settings.requirementAge
+    )} and meet your target income of ${formatCurrencyWholePerYear(
+      result.annualTarget
+    )} ${formatProjectionBasisPhrase(settings)} until age ${formatDecimalAge(
+      settings.lifeExpectancy
+    )}.`,
+    formatBridgeFundingSentence(result),
+    formatCivilServicePensionStartSentence(result),
+    formatStatePensionStartSentence(result),
+  ];
+
+  return `On track. ${sentences.filter(Boolean).join(" ")}`;
+}
+
+function buildShortfallOutcomeMessage(
+  result: ComparisonResult,
+  shortfallRange:
+    | PensionSummary["retirementIncome"]["ageRanges"][number]
+    | undefined
 ) {
-  return display === "monthly"
-    ? "Monthly target retirement income"
-    : "Annual target retirement income";
+  const settings = result.scenario.settings;
+  const firstShortfallAge = shortfallRange?.startAge ?? settings.requirementAge;
+  const targetIncome =
+    shortfallRange?.annualTargetIncome ?? result.annualTarget;
+  const firstShortfallSentence =
+    shortfallRange && shortfallRange.annualShortfall > 0
+      ? ` The first shortfall is ${formatCurrencyWholePerYear(
+          shortfallRange.annualShortfall
+        )} ${formatProjectionBasisPhrase(settings)}.`
+      : "";
+
+  return `Shortfall from age ${formatDecimalAge(
+    firstShortfallAge
+  )}. This plan does not meet your target income of ${formatCurrencyWholePerYear(
+    targetIncome
+  )} through to age ${formatDecimalAge(
+    settings.lifeExpectancy
+  )}.${firstShortfallSentence}`;
+}
+
+function formatBridgeFundingSentence(result: ComparisonResult) {
+  const bridgeWithdrawals = result.summary.retirementIncome.bridgeWithdrawals;
+
+  if (bridgeWithdrawals.length === 0) {
+    return "No bridge withdrawals are modelled before secure pension income starts.";
+  }
+
+  const startAge = Math.min(
+    ...bridgeWithdrawals.map((withdrawal) => withdrawal.startAge)
+  );
+  const endAges = bridgeWithdrawals
+    .map((withdrawal) => withdrawal.endAge)
+    .filter((age): age is number => age !== null);
+  const endAge = endAges.length > 0 ? Math.max(...endAges) : null;
+  const labels = bridgeWithdrawals.map((withdrawal) => withdrawal.label);
+
+  return `Bridge pots (${formatList(labels)}) cover ages ${formatDecimalAge(
+    startAge
+  )}${endAge === null ? " onwards" : `-${formatDecimalAge(endAge)}`}.`;
+}
+
+function formatCivilServicePensionStartSentence(result: ComparisonResult) {
+  const settings = result.scenario.settings;
+  const civilServiceStartAges = [
+    ...(settings.showAlpha ? [settings.alphaPensionDrawAge] : []),
+    ...(settings.showNuvos ? [settings.nuvosPensionDrawAge] : []),
+  ];
+
+  if (civilServiceStartAges.length === 0) {
+    return "";
+  }
+
+  return `Civil Service pension income starts at age ${formatDecimalAge(
+    Math.min(...civilServiceStartAges)
+  )}.`;
+}
+
+function formatStatePensionStartSentence(result: ComparisonResult) {
+  const settings = result.scenario.settings;
+
+  if (!settings.showStatePension) {
+    return "";
+  }
+
+  return `State Pension starts at age ${formatDecimalAge(
+    result.summary.calculated.statePensionAge
+  )}.`;
+}
+
+function formatCurrencyWholePerYear(value: number) {
+  return `${new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(value)}/year`;
+}
+
+function formatProjectionBasisPhrase(settings: PensionSettings) {
+  return settings.projectionBasis === "real"
+    ? "in today's money"
+    : "in nominal terms";
+}
+
+function formatList(values: string[]) {
+  const uniqueValues = Array.from(new Set(values));
+
+  if (uniqueValues.length <= 1) {
+    return uniqueValues[0] ?? "selected pots";
+  }
+
+  return `${uniqueValues.slice(0, -1).join(", ")} and ${uniqueValues.at(-1)}`;
 }
 
 function normalizeStoredComparisonScenario(
@@ -1532,10 +1694,13 @@ function getFlexibleAssetsExhaustionTone(
   exhaustedAge: number,
   settings: PensionSettings
 ): "caution" | "problem" {
+  const scheduledMonthTolerance = 1 / 12;
   const expectedExhaustionAge =
     getExpectedFlexibleAssetsExhaustionAge(settings);
 
-  return exhaustedAge < expectedExhaustionAge ? "problem" : "caution";
+  return exhaustedAge + scheduledMonthTolerance < expectedExhaustionAge
+    ? "problem"
+    : "caution";
 }
 
 function getExpectedFlexibleAssetsExhaustionAge(settings: PensionSettings) {

@@ -49,7 +49,15 @@ it("loads Google Analytics with reporting enabled and advertising storage denied
   expect(script?.src).toBe(
     "https://www.googletagmanager.com/gtag/js?id=G-TEST123"
   );
-  expect(window.dataLayer).toEqual(
+  const dataLayer = window.dataLayer as Array<ArrayLike<unknown>> | undefined;
+  const dataLayerCommands = dataLayer?.map((command): unknown[] =>
+    Array.from(command)
+  );
+
+  expect(Object.prototype.toString.call(dataLayer?.[0])).toBe(
+    "[object Arguments]"
+  );
+  expect(dataLayerCommands).toEqual(
     expect.arrayContaining([
       [
         "consent",

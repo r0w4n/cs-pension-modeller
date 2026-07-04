@@ -6,5 +6,6 @@
     "src/pages/privacy.tsx"
   ],
   "ignoreBinaries": ["actionlint"],
+  "ignoreUnresolved": ["progress", "summary"],
   "ignoreFiles": []
 }

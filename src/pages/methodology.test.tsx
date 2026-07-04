@@ -101,6 +101,11 @@ describe("MethodologyPage", () => {
     expect(screen.getByText(/Before SIPP and LISA access/)).toHaveTextContent(
       "draws from SIPP first"
     );
+    expect(
+      screen.getByText(/The retirement income summary starts/)
+    ).toHaveTextContent(
+      "each range starting when the active income sources change"
+    );
     expect(screen.getByText(/From LISA access onwards/)).toHaveTextContent(
       "draw from LISA before ISA"
     );

@@ -1,11 +1,9 @@
 import {
-  NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE,
   type PensionSettings,
   type PensionValidationIssue,
   type SippTaxReliefRate,
   type SippWithdrawalStrategy,
 } from "../settings-types";
-import { addYearsToIsoDate } from "../settings-shared/date";
 
 export function normalizeSippWithdrawalStrategy(
   value: unknown
@@ -63,18 +61,6 @@ export function validateSippRules({
     issues.push({
       field: "sippDrawAge",
       message: "SIPP draw start age must be within life expectancy.",
-    });
-  }
-
-  if (
-    settings.showSipp &&
-    sippDrawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE &&
-    sippDrawDate < addYearsToIsoDate(settings.dateOfBirth, 57)
-  ) {
-    issues.push({
-      field: "sippDrawAge",
-      message:
-        "SIPP draw start age must be at least 57 for access dates on or after 6 April 2028.",
     });
   }
 

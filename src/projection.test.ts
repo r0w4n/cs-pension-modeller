@@ -586,7 +586,7 @@ describe("projection calculations", () => {
     ).toBeCloseTo(10, 6);
   });
 
-  it("revalues regular monthly added pension purchases when pension increases are enabled", () => {
+  it("tracks regular monthly added pension purchases with Alpha revaluation", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       requirementAge: 60,
@@ -1613,7 +1613,7 @@ describe("projection calculations", () => {
     ).toBeCloseTo(458.6544, 6);
   });
 
-  it("applies optional Alpha pension increases in the projection table", () => {
+  it("applies Alpha pension increases in the projection table", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       applyPensionIncreases: true,
@@ -1674,13 +1674,13 @@ describe("projection calculations", () => {
       createProjectionTable(alignedStartSettings),
       alignedStartSettings
     );
-    const simpleAccrualSettings = {
+    const legacyOptOutSettings = {
       ...baseSettings,
       applyPensionIncreases: false,
     };
-    const simpleAccrualSummary = generatePensionSummary(
-      createProjectionTable(simpleAccrualSettings),
-      simpleAccrualSettings
+    const legacyOptOutSummary = generatePensionSummary(
+      createProjectionTable(legacyOptOutSettings),
+      legacyOptOutSettings
     );
 
     expect(summary.alphaPension.annualAtDraw).toBeCloseTo(
@@ -1688,10 +1688,121 @@ describe("projection calculations", () => {
       6
     );
     expect(summary.alphaPension.annualAtDraw).toBeCloseTo(46856, 6);
-    expect(simpleAccrualSummary.alphaPension.annualAtDraw).toBeCloseTo(
-      46856,
+    expect(legacyOptOutSummary.alphaPension.annualAtDraw).toBeCloseTo(46856, 6);
+  });
+
+  it("keeps real-terms Alpha pension increases aligned with the base accrual path", () => {
+    const baseSettings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-07-02",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 67,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+      alphaPensionAbsDate: "2025",
+      accruedPensionAtLastAbs: 16000,
+      pensionableEarnings: 70000,
+      alphaPayRisePercent: 0,
+      alphaPensionLeaveAge: 67,
+      alphaPensionDrawAge: 67,
+      alphaAddedPensionMonthly: 0,
+    };
+
+    const legacyOptOutSummary = generatePensionSummary(
+      createProjectionTable({
+        ...baseSettings,
+        applyPensionIncreases: false,
+      }),
+      {
+        ...baseSettings,
+        applyPensionIncreases: false,
+      }
+    );
+    const realTermsIncreaseSummary = generatePensionSummary(
+      createProjectionTable({
+        ...baseSettings,
+        applyPensionIncreases: true,
+      }),
+      {
+        ...baseSettings,
+        applyPensionIncreases: true,
+      }
+    );
+
+    expect(realTermsIncreaseSummary.alphaPension.monthlyAtDraw).toBeCloseTo(
+      legacyOptOutSummary.alphaPension.monthlyAtDraw,
       6
     );
+  });
+
+  it("does not change real-terms bridge income when Alpha pension increases are enabled", () => {
+    const baseSettings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-07-02",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 67,
+      showStatePension: true,
+      currentStatePension: 12547.6,
+      statePensionDrawDate: "2044-04-01",
+      statePensionApplyFutureGrowth: false,
+      showSipp: true,
+      showIsa: true,
+      showLisa: true,
+      taxationEnabled: false,
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+      desiredRetirementIncome: 31350,
+      alphaPensionAbsDate: "2025",
+      accruedPensionAtLastAbs: 16000,
+      pensionableEarnings: 70000,
+      alphaPayRisePercent: 0,
+      alphaPensionLeaveAge: 67,
+      alphaPensionDrawAge: 67,
+      alphaAddedPensionMonthly: 0,
+      sippCurrentPot: 0,
+      sippMonthlyContribution: 825,
+      sippDrawAge: 55,
+      sippRealInterestPercent: 5,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 64,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 1800,
+      isaDrawAge: 60,
+      isaRealInterestPercent: 5,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 67,
+      lisaCurrentPot: 0,
+      lisaMonthlyContribution: 150,
+      lisaDrawAge: 60,
+      lisaRealInterestPercent: 5,
+      lisaWithdrawalStrategy: "use_by_age",
+      lisaWithdrawalTargetAge: 70,
+    };
+    const withoutIncreases = {
+      ...baseSettings,
+      applyPensionIncreases: false,
+    };
+    const withIncreases = {
+      ...baseSettings,
+      applyPensionIncreases: true,
+    };
+    const simpleAccrualSummary = generatePensionSummary(
+      createProjectionTable(withoutIncreases),
+      withoutIncreases
+    );
+    const realTermsIncreaseSummary = generatePensionSummary(
+      createProjectionTable(withIncreases),
+      withIncreases
+    );
+
+    expect(
+      realTermsIncreaseSummary.incomeOverTime.monthlyAtAlphaStart
+    ).toBeCloseTo(simpleAccrualSummary.incomeOverTime.monthlyAtAlphaStart, 6);
   });
 
   it("splits EPA accrual into an unreduced EPA portion", () => {
@@ -2357,9 +2468,11 @@ describe("projection calculations", () => {
 
     const rows = createProjectionTable(settings);
     const summary = generatePensionSummary(rows, settings);
+    const firstDrawdownRow = rows.find((row) => row.date >= "2027-01-01");
 
-    expect(findRowByDate(rows, "2027-01-01")?.monthlySippPension).toBe(0);
-    expect(findRowByDate(rows, "2027-01-01")?.monthlyIsaPension).toBe(0);
+    expect(firstDrawdownRow?.date).toBe("2027-01-13");
+    expect(firstDrawdownRow?.monthlySippPension).toBeGreaterThan(0);
+    expect(firstDrawdownRow?.monthlyIsaPension).toBeGreaterThan(0);
     expect(summary.sippPension.monthlyAtDraw).toBeGreaterThan(0);
     expect(summary.isaPension.monthlyAtDraw).toBeGreaterThan(0);
     expect(
@@ -2370,6 +2483,100 @@ describe("projection calculations", () => {
       summary.retirementIncome.sources.find((source) => source.key === "isa")
         ?.monthlyIncome
     ).toBe(summary.isaPension.monthlyAtDraw);
+  });
+
+  it("shows temporary bridge withdrawals separately from later pension income", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-07-02",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 53,
+      showAlpha: true,
+      showNuvos: false,
+      showStatePension: true,
+      showSipp: true,
+      showIsa: true,
+      showLisa: false,
+      taxationEnabled: false,
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+      currentStatePension: 12547.6,
+      desiredRetirementIncome: 31350,
+      statePensionDrawDate: "2044-04-01",
+      statePensionApplyFutureGrowth: false,
+      applyPensionIncreases: false,
+      alphaPensionAbsDate: "2025",
+      alphaPensionLeaveAge: 53,
+      accruedPensionAtLastAbs: 16000,
+      pensionableEarnings: 70000,
+      alphaPayRisePercent: 0,
+      alphaPensionDrawAge: 67,
+      sippCurrentPot: 0,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 55,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 64,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 1800,
+      isaDrawAge: 60,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 67,
+      isaRealInterestPercent: 5,
+    };
+
+    const rows = createProjectionTable(settings);
+    const summary = generatePensionSummary(rows, settings);
+    const pensionStartRow = rows.find((row) => row.date >= "2044-04-01");
+    const isaBridge = summary.retirementIncome.bridgeWithdrawals.find(
+      (source) => source.key === "isa"
+    );
+
+    expect(pensionStartRow?.monthlyIsaPension).toBe(0);
+    expect(summary.retirementIncome.summaryDate).toBe(pensionStartRow?.date);
+    expect(summary.retirementIncome.totalAnnualIncome).toBeCloseTo(
+      (pensionStartRow?.monthlyAlphaPensionGross ?? 0) * 12 +
+        (pensionStartRow?.monthlyStatePension ?? 0) * 12,
+      6
+    );
+    expect(summary.retirementIncome.totalAnnualIncome).toBeCloseTo(36667.6, 6);
+    expect(
+      summary.retirementIncome.sources.find((source) => source.key === "isa")
+        ?.annualIncome
+    ).toBe(0);
+    expect(isaBridge).toEqual(
+      expect.objectContaining({
+        label: "ISA",
+        startAge: 60,
+        endAge: 67,
+      })
+    );
+    expect(typeof isaBridge?.annualIncome).toBe("number");
+    expect(isaBridge?.annualIncome).toBeCloseTo(15578.646056149604, 6);
+    expect(summary.retirementIncome.ageRanges).toEqual([
+      expect.objectContaining({
+        startAge: 53,
+        endAge: 60,
+        sourceLabels: ["No income modelled"],
+        annualIncomeBeforeTax: 0,
+      }),
+      expect.objectContaining({
+        startAge: 60,
+        endAge: 67,
+        sourceLabels: ["ISA withdrawal"],
+      }),
+      expect.objectContaining({
+        startAge: 67,
+        endAge: 80,
+        sourceLabels: ["Alpha pension", "State Pension"],
+      }),
+    ]);
+    expect(
+      summary.retirementIncome.ageRanges[1]?.annualIncomeBeforeTax
+    ).toBeCloseTo(15578.646056149604, 6);
+    expect(
+      summary.retirementIncome.ageRanges[2]?.annualIncomeBeforeTax
+    ).toBeCloseTo(36667.6, 6);
   });
 
   it("includes visible nuvos pension in retirement income sources", () => {

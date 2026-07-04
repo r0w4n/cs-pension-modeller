@@ -227,8 +227,8 @@ export function calculateMinimumPensionAccessAge(dateOfBirth: string) {
     : 55;
 }
 
-export function calculateMinimumSippAccessAge(dateOfBirth: string) {
-  return calculateMinimumPensionAccessAge(dateOfBirth);
+export function calculateMinimumSippAccessAge(_dateOfBirth: string) {
+  return 55;
 }
 
 export function normalizeAlphaPensionDrawAge(
@@ -238,6 +238,7 @@ export function normalizeAlphaPensionDrawAge(
   return normalizeMinimumPensionAccessAge(value, dateOfBirth);
 }
 
-export function normalizeSippDrawAge(value: number, dateOfBirth: string) {
-  return normalizeMinimumPensionAccessAge(value, dateOfBirth, 100);
+export function normalizeSippDrawAge(value: number, _dateOfBirth: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(100, Math.max(55, parsed)) : 58;
 }

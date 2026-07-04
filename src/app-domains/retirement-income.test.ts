@@ -218,18 +218,18 @@ describe("retirement-income chart limits", () => {
     expect(limits.sippAccessAge.min).toBe(55);
   });
 
-  it("uses age 57 as the SIPP chart minimum when age 55 is reached on 6 April 2028", () => {
+  it("uses age 55 as the SIPP chart minimum when age 55 is reached on 6 April 2028", () => {
     const settings = {
       ...createDefaultSettings(),
       dateOfBirth: "1973-04-06",
       startDate: "2026-06-01",
       requirementAge: 55,
-      sippDrawAge: 57,
+      sippDrawAge: 55,
     };
 
     const limits = createBridgeChartLimits(settings);
 
-    expect(limits.sippAccessAge.min).toBe(57);
+    expect(limits.sippAccessAge.min).toBe(55);
   });
 
   it("requires nuvos draw age to stay at or after retirement age", () => {

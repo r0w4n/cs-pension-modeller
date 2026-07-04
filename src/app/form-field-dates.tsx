@@ -331,6 +331,16 @@ export function YearSettingField({
   );
 }
 
+function formatStatementSchemeYear(year: number | string) {
+  const endYear = Number(year);
+
+  if (!Number.isFinite(endYear)) {
+    return String(year);
+  }
+
+  return `${endYear - 1}/${endYear}`;
+}
+
 function YearSettingFieldEditor({
   field,
   initialYear,
@@ -373,7 +383,7 @@ function YearSettingFieldEditor({
       >
         {yearOptions.map((year) => (
           <option key={year} value={year}>
-            {year}
+            {formatStatementSchemeYear(year)}
           </option>
         ))}
       </select>
@@ -387,7 +397,7 @@ function YearSettingFieldEditor({
           onChange(field.id, resetValue);
         }}
       >
-        {`Reset to default (${resetValue})`}
+        {`Reset to default (${formatStatementSchemeYear(resetValue)})`}
       </button>
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />

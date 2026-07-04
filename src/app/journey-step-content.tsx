@@ -22,6 +22,7 @@ import {
   getSettingsSignature,
   type ComparisonResultCache,
   type ComparisonScenario,
+  type IncomeAgeRangeItem,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyStepDefinition,
@@ -46,7 +47,6 @@ import {
 import {
   InflationBasisPanel as InflationBasisPanelFeature,
   SummarySection as SummarySectionFeature,
-  type SummaryItem,
   ValidationIssuesSection as ValidationIssuesSectionFeature,
   ResultsSummarySection,
 } from "./results-summary";
@@ -62,11 +62,7 @@ export type JourneyStepViewModel = {
   derivedInflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
   projectionRows: ProjectionRow[];
   retirementIncomeDisplay: RetirementIncomeDisplay;
-  retirementIncomeItems: SummaryItem[];
-  retirementIncomeTitle: string;
-  retirementIncomeTotal: string;
-  retirementIncomeTargetTitle: string;
-  retirementIncomeTarget: string;
+  incomeAgeRangeItems: IncomeAgeRangeItem[];
   comparisonRetirementIncomeDisplay: RetirementIncomeDisplay;
   showGuidanceNotes: boolean;
   useDropdownDates: boolean;
@@ -190,11 +186,7 @@ function renderAnswerStep(
     bridgeChartLimits,
     derivedInflationAssumptions,
     retirementIncomeDisplay,
-    retirementIncomeItems,
-    retirementIncomeTitle,
-    retirementIncomeTotal,
-    retirementIncomeTargetTitle,
-    retirementIncomeTarget,
+    incomeAgeRangeItems,
     comparisonRetirementIncomeDisplay,
     comparisonScenarios,
     comparisonResultCache,
@@ -216,14 +208,10 @@ function renderAnswerStep(
       <PensionSummarySectionFeature
         activeResult={currentComparisonResult}
         headingLevel={2}
-        description="This answer updates automatically as you adjust the journey assumptions."
+        description="Based on your selected retirement age, target income, pension start dates and bridge strategy."
         retirementIncomeDisplay={retirementIncomeDisplay}
         onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-        retirementIncomeItems={retirementIncomeItems}
-        retirementIncomeTitle={retirementIncomeTitle}
-        retirementIncomeTotal={retirementIncomeTotal}
-        retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-        retirementIncomeTarget={retirementIncomeTarget}
+        incomeAgeRangeItems={incomeAgeRangeItems}
         statusItems={buildStatusItems(currentComparisonResult)}
       />
 
@@ -285,11 +273,7 @@ function renderExpertAnswerStep(
     derivedInflationAssumptions,
     projectionRows,
     retirementIncomeDisplay,
-    retirementIncomeItems,
-    retirementIncomeTitle,
-    retirementIncomeTotal,
-    retirementIncomeTargetTitle,
-    retirementIncomeTarget,
+    incomeAgeRangeItems,
     comparisonRetirementIncomeDisplay,
     comparisonScenarios,
     comparisonResultCache,
@@ -308,14 +292,10 @@ function renderExpertAnswerStep(
         <PensionSummarySectionFeature
           activeResult={currentComparisonResult}
           headingLevel={2}
-          description="This answer updates automatically as you adjust the journey assumptions."
+          description="Based on your selected retirement age, target income, pension start dates and bridge strategy.."
           retirementIncomeDisplay={retirementIncomeDisplay}
           onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-          retirementIncomeItems={retirementIncomeItems}
-          retirementIncomeTitle={retirementIncomeTitle}
-          retirementIncomeTotal={retirementIncomeTotal}
-          retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-          retirementIncomeTarget={retirementIncomeTarget}
+          incomeAgeRangeItems={incomeAgeRangeItems}
           statusItems={buildStatusItems(currentComparisonResult)}
         />
       </ResultsSummarySection>
@@ -381,11 +361,7 @@ function renderBridgeAnswerStep(
     derivedInflationAssumptions,
     projectionRows,
     retirementIncomeDisplay,
-    retirementIncomeItems,
-    retirementIncomeTitle,
-    retirementIncomeTotal,
-    retirementIncomeTargetTitle,
-    retirementIncomeTarget,
+    incomeAgeRangeItems,
     comparisonRetirementIncomeDisplay,
     comparisonScenarios,
     comparisonResultCache,
@@ -404,14 +380,10 @@ function renderBridgeAnswerStep(
         <PensionSummarySectionFeature
           activeResult={currentComparisonResult}
           headingLevel={2}
-          description="This summary uses your current journey assumptions and shows your projected retirement income before tax."
+          description="This summary uses your current journey assumptions and shows projected income by age range."
           retirementIncomeDisplay={retirementIncomeDisplay}
           onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-          retirementIncomeItems={retirementIncomeItems}
-          retirementIncomeTitle={retirementIncomeTitle}
-          retirementIncomeTotal={retirementIncomeTotal}
-          retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-          retirementIncomeTarget={retirementIncomeTarget}
+          incomeAgeRangeItems={incomeAgeRangeItems}
           statusItems={buildStatusItems(currentComparisonResult, {
             hideBridgeFundingSection: Boolean(step.hideBridgeFundingSection),
           })}
@@ -470,7 +442,6 @@ function renderFieldsStep(
     fieldLabels?: JourneyFieldLabels;
     fieldDescriptions?: JourneyFieldDescriptions;
     groupId?: string;
-    alphaPensionIncreaseDescription?: string;
   },
   viewModel: JourneyStepViewModel
 ) {
@@ -497,7 +468,6 @@ function renderFieldsStep(
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
-        alphaPensionIncreaseDescription={step.alphaPensionIncreaseDescription}
       />
 
       {step.groupId ? (

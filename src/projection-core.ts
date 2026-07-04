@@ -124,8 +124,32 @@ export type RetirementIncomeSource = {
   annualIncome: number;
 };
 
+export type BridgeWithdrawalSource = Omit<RetirementIncomeSource, "key"> & {
+  key: "sipp" | "isa" | "lisa";
+  startDate: string;
+  endDate: string | null;
+  startAge: number;
+  endAge: number | null;
+};
+
+export type RetirementIncomeAgeRange = {
+  startAge: number;
+  endAge: number;
+  sourceLabels: string[];
+  monthlyIncomeBeforeTax: number;
+  monthlyIncomeAfterTax: number;
+  annualIncomeBeforeTax: number;
+  annualIncomeAfterTax: number;
+  annualTargetIncome: number;
+  annualShortfall: number;
+  annualSurplus: number;
+};
+
 export type RetirementIncomeSummary = {
+  summaryDate: string;
   sources: RetirementIncomeSource[];
+  bridgeWithdrawals: BridgeWithdrawalSource[];
+  ageRanges: RetirementIncomeAgeRange[];
   totalMonthlyIncome: number;
   totalAnnualIncome: number;
 };
@@ -208,7 +232,7 @@ export function createProjectionTable(
 
   const runtimeDates = createProjectionRuntimeDates(settings);
 
-  if (settings.applyPensionIncreases) {
+  if (settings.showAlpha) {
     return createProjectionTableWithPensionIncreases(
       settings,
       derivedInputs,

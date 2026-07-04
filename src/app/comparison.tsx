@@ -99,11 +99,7 @@ export function ComparisonPanel({
     insights,
     resultStatusItems,
     results,
-    retirementIncomeItems,
-    retirementIncomeTarget,
-    retirementIncomeTargetTitle,
-    retirementIncomeTitle,
-    retirementIncomeTotal,
+    incomeAgeRangeItems,
     savedResults,
   } = comparisonPanelData;
 
@@ -114,11 +110,7 @@ export function ComparisonPanel({
           activeResult={activeResult}
           retirementIncomeDisplay={retirementIncomeDisplay}
           onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-          retirementIncomeItems={retirementIncomeItems}
-          retirementIncomeTitle={retirementIncomeTitle}
-          retirementIncomeTotal={retirementIncomeTotal}
-          retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-          retirementIncomeTarget={retirementIncomeTarget}
+          incomeAgeRangeItems={incomeAgeRangeItems}
           statusItems={resultStatusItems}
         />
       ) : null}

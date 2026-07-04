@@ -91,7 +91,7 @@ type RetirementIncomeDisplayToggleProps = {
 export function RetirementIncomeDisplayToggle({
   value,
   onChange,
-  ariaLabel = "Pension Summary display",
+  ariaLabel = "Retirement income summary display",
   monthlyAriaLabel,
   annualAriaLabel,
 }: RetirementIncomeDisplayToggleProps) {
@@ -278,20 +278,16 @@ function buildInflationRows(
     {
       assumption: "Alpha in-service revaluation",
       userValue: "CPI",
-      modelledValue: settings.applyPensionIncreases
-        ? isRealTerms
-          ? "0% real"
-          : formatPercent(assumptions.alphaModelledInServiceRevaluationAnnual)
-        : "Not applied",
+      modelledValue: isRealTerms
+        ? "0% real"
+        : formatPercent(assumptions.alphaModelledInServiceRevaluationAnnual),
     },
     {
       assumption: "Deferred Alpha increase",
       userValue: "CPI",
-      modelledValue: settings.applyPensionIncreases
-        ? isRealTerms
-          ? "0% real"
-          : formatPercent(assumptions.alphaModelledDeferredIncreaseAnnual)
-        : "Not applied",
+      modelledValue: isRealTerms
+        ? "0% real"
+        : formatPercent(assumptions.alphaModelledDeferredIncreaseAnnual),
     },
   ];
 

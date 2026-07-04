@@ -1,9 +1,13 @@
 import type { RetirementIncomeDisplay } from "../projection";
-import type { ComparisonResult } from "../app-domains";
+import {
+  buildRetirementOutcomeBanner,
+  type ComparisonResult,
+  type IncomeAgeRangeItem,
+  type RetirementOutcomeBanner,
+} from "../app-domains";
 import {
   AssumptionsVersionStrip,
   RetirementIncomeDisplayToggle,
-  RetirementIncomeSummaryFooter,
   SummarySection,
   type SummaryItem,
 } from "./results-summary";
@@ -13,11 +17,7 @@ export type PensionSummarySectionProps = {
   description: string;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
   onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
-  retirementIncomeItems: SummaryItem[];
-  retirementIncomeTitle: string;
-  retirementIncomeTotal: string;
-  retirementIncomeTargetTitle: string;
-  retirementIncomeTarget: string;
+  incomeAgeRangeItems: IncomeAgeRangeItem[];
   statusItems: SummaryItem[];
   headingLevel?: 2 | 3;
 };
@@ -27,11 +27,7 @@ export function PensionSummarySection({
   description,
   retirementIncomeDisplay,
   onRetirementIncomeDisplayChange,
-  retirementIncomeItems,
-  retirementIncomeTitle,
-  retirementIncomeTotal,
-  retirementIncomeTargetTitle,
-  retirementIncomeTarget,
+  incomeAgeRangeItems,
   statusItems,
   headingLevel = 3,
 }: PensionSummarySectionProps) {
@@ -39,13 +35,15 @@ export function PensionSummarySection({
     return null;
   }
 
+  const outcomeBanner = buildRetirementOutcomeBanner(activeResult);
+
   return (
     <SummarySection
-      title="Pension Summary"
+      title="Retirement income summary"
       headingLevel={headingLevel}
       variant="feature"
       description={description}
-      items={retirementIncomeItems}
+      items={[]}
       controls={
         onRetirementIncomeDisplayChange ? (
           <RetirementIncomeDisplayToggle
@@ -56,12 +54,44 @@ export function PensionSummarySection({
       }
       footer={
         <>
-          <RetirementIncomeSummaryFooter
-            totalLabel={retirementIncomeTitle}
-            totalValue={retirementIncomeTotal}
-            targetLabel={retirementIncomeTargetTitle}
-            targetValue={retirementIncomeTarget}
-          />
+          <RetirementOutcomeBannerView outcome={outcomeBanner} />
+          {incomeAgeRangeItems.length > 0 ? (
+            <div className="summary-status-block">
+              <h3>Income by age range</h3>
+              <p className="section-copy">
+                Each row groups ages where the modelled income sources are the
+                same. Income and target values use the start of the age range.
+              </p>
+              <div
+                className="summary-table-shell"
+                aria-label="Income by age range table"
+                tabIndex={0}
+              >
+                <table className="summary-age-range-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Age range</th>
+                      <th scope="col">Sources</th>
+                      <th scope="col">Income</th>
+                      <th scope="col">Target</th>
+                      <th scope="col">Difference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incomeAgeRangeItems.map((item) => (
+                      <tr key={`${item.ageRange}-${item.sources}`}>
+                        <th scope="row">{item.ageRange}</th>
+                        <td>{item.sources}</td>
+                        <td>{item.income}</td>
+                        <td>{item.target}</td>
+                        <td>{item.difference}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
           <div className="summary-status-block">
             <h3>Plan status</h3>
             <p className="section-copy">
@@ -102,11 +132,7 @@ type ComparisonPensionSummaryProps = {
   activeResult: ComparisonResult | null;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
   onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
-  retirementIncomeItems: SummaryItem[];
-  retirementIncomeTitle: string;
-  retirementIncomeTotal: string;
-  retirementIncomeTargetTitle: string;
-  retirementIncomeTarget: string;
+  incomeAgeRangeItems: IncomeAgeRangeItem[];
   statusItems: SummaryItem[];
 };
 
@@ -114,11 +140,7 @@ export function ComparisonPensionSummary({
   activeResult,
   retirementIncomeDisplay,
   onRetirementIncomeDisplayChange,
-  retirementIncomeItems,
-  retirementIncomeTitle,
-  retirementIncomeTotal,
-  retirementIncomeTargetTitle,
-  retirementIncomeTarget,
+  incomeAgeRangeItems,
   statusItems,
 }: ComparisonPensionSummaryProps) {
   if (!activeResult || !retirementIncomeDisplay) {
@@ -128,15 +150,27 @@ export function ComparisonPensionSummary({
   return (
     <PensionSummarySection
       activeResult={activeResult}
-      description="This summary uses your current journey assumptions and shows your projected retirement income before tax."
+      description="This summary uses your current journey assumptions and shows projected income by age range."
       retirementIncomeDisplay={retirementIncomeDisplay}
       onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-      retirementIncomeItems={retirementIncomeItems}
-      retirementIncomeTitle={retirementIncomeTitle}
-      retirementIncomeTotal={retirementIncomeTotal}
-      retirementIncomeTargetTitle={retirementIncomeTargetTitle}
-      retirementIncomeTarget={retirementIncomeTarget}
+      incomeAgeRangeItems={incomeAgeRangeItems}
       statusItems={statusItems}
     />
+  );
+}
+
+function RetirementOutcomeBannerView({
+  outcome,
+}: {
+  outcome: RetirementOutcomeBanner;
+}) {
+  return (
+    <section
+      className={`summary-outcome-banner summary-outcome-banner--${outcome.status}`}
+      aria-label="Retirement outcome"
+    >
+      <div className="summary-outcome-status">{outcome.label}</div>
+      <p>{outcome.message}</p>
+    </section>
   );
 }

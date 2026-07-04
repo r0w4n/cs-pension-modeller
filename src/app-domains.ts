@@ -2,7 +2,6 @@ export {
   getAlphaDateYearRange,
   getAlphaEffectiveRangeField,
   isAlphaEpaField,
-  isAlphaPensionIncreaseField,
 } from "./app-domains/alpha";
 
 export {
@@ -31,7 +30,8 @@ export {
 export {
   buildComparisonStatusItems,
   buildComparisonTableRows,
-  buildRetirementIncomeItems,
+  buildIncomeAgeRangeItems,
+  buildRetirementOutcomeBanner,
   calculateComparisonInsights,
   clearStoredComparisonScenarios,
   clonePensionSettings,
@@ -40,18 +40,19 @@ export {
   createComparisonScenarioId,
   formatCapitalPreservation,
   formatTargetMissDuration,
-  getRetirementIncomeTargetTitle,
-  getRetirementIncomeTitle,
   getSettingsSignature,
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
   type BridgeAnswerResult,
   type BridgeAnswerResultCache,
   type ComparisonInsights,
+  type IncomeAgeRangeItem,
   type ComparisonResult,
   type ComparisonResultCache,
   type ComparisonScenario,
   type ComparisonTableRow,
+  type RetirementOutcomeBanner,
+  type RetirementOutcomeStatus,
 } from "./app-domains/comparison";
 
 export {
@@ -61,7 +62,6 @@ export {
   isFieldDisabled,
   isFieldHiddenOnMobile,
   shouldRenderField,
-  splitSettingsFields,
 } from "./app-domains/forms";
 
 export {

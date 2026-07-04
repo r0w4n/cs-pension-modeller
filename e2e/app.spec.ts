@@ -94,7 +94,7 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("region", { name: "Comparison results" })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Pension Summary" })
+      page.getByRole("heading", { name: "Retirement income summary" })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })

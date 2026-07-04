@@ -366,7 +366,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "statePensionWageGrowthPercent",
       settings.statePensionWageGrowthPercent
     ),
-    applyPensionIncreases: Boolean(settings.applyPensionIncreases),
+    applyPensionIncreases: true,
     assumedCpiPercent: normalizeSetting(
       "assumedCpiPercent",
       settings.assumedCpiPercent

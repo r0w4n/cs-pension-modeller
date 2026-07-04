@@ -8,12 +8,13 @@ type GtagCommand =
   | ["js", Date]
   | ["config", string, AnalyticsEventParameters]
   | ["event", string, AnalyticsEventParameters];
+type GtagDataLayerCommand = GtagCommand | IArguments;
 
 type GtagFunction = (...args: GtagCommand) => void;
 
 declare global {
   interface Window {
-    dataLayer?: GtagCommand[];
+    dataLayer?: GtagDataLayerCommand[];
     gtag?: GtagFunction;
   }
 }
@@ -47,8 +48,9 @@ export function initialiseAnalytics() {
   }
 
   window.dataLayer = window.dataLayer ?? [];
-  window.gtag = (...args) => {
-    window.dataLayer?.push(args);
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params -- Google gtag expects the Arguments object in dataLayer.
+    window.dataLayer?.push(arguments);
   };
 
   window.gtag("consent", "default", {

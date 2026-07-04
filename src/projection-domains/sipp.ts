@@ -51,7 +51,8 @@ export function calculateMonthlySippPension(input: {
     1,
     countScheduledWithdrawalDatesRemaining(
       drawDate,
-      strategy === "use_by_age" ? (targetDate ?? endDate) : endDate
+      strategy === "use_by_age" ? (targetDate ?? endDate) : endDate,
+      { includeEndDate: strategy !== "use_by_age" }
     )
   );
   return potAtDraw / drawdownMonths;
@@ -269,7 +270,9 @@ function calculateMonthlyWithdrawalFromPot(input: {
 
   const drawdownMonthsRemaining =
     strategy === "use_by_age" || strategy === "zero_at_death"
-      ? countScheduledWithdrawalDatesRemaining(rowDate, endDate)
+      ? countScheduledWithdrawalDatesRemaining(rowDate, endDate, {
+          includeEndDate: strategy !== "use_by_age",
+        })
       : Math.max(1, calculateWholeMonthDifference(rowDate, endDate));
 
   return Math.min(pot, pot / drawdownMonthsRemaining);
@@ -284,7 +287,8 @@ function calculateLevelMonthlyWithdrawalFromPot(input: {
   const { pot, rowDate, endDate, monthlyInterestRate } = input;
   const drawdownMonthsRemaining = countScheduledWithdrawalDatesRemaining(
     rowDate,
-    endDate
+    endDate,
+    { includeEndDate: false }
   );
 
   if (pot <= 0) {
@@ -306,16 +310,22 @@ function calculateLevelMonthlyWithdrawalFromPot(input: {
 
 function countScheduledWithdrawalDatesRemaining(
   rowDate: string,
-  endDate: string
+  endDate: string,
+  options: { includeEndDate?: boolean } = {}
 ) {
+  const includeEndDate = options.includeEndDate ?? true;
+
   if (endDate < rowDate) {
     return 1;
   }
 
   const wholeMonths = calculateWholeMonthDifference(rowDate, endDate);
   const lastScheduledDate = addMonths(rowDate, wholeMonths);
+  const lastScheduledDateIsInRange = includeEndDate
+    ? lastScheduledDate <= endDate
+    : lastScheduledDate < endDate;
 
-  return lastScheduledDate <= endDate
+  return lastScheduledDateIsInRange
     ? wholeMonths + 1
     : Math.max(1, wholeMonths);
 }

@@ -2,7 +2,11 @@ import {
   createDefaultSettings,
   LISA_MONTHLY_CONTRIBUTION_MAX,
 } from "../settings";
-import type { ProjectionRow } from "../projection";
+import {
+  createProjectionTable,
+  generatePensionSummary,
+  type ProjectionRow,
+} from "../projection";
 import {
   createBridgeChartLimits,
   createRetirementIncomeSeries,
@@ -179,6 +183,42 @@ describe("retirement-income transition points", () => {
     expect(series.find((point) => point.date === "2054-03-01")?.age).toBe(
       66.75
     );
+  });
+
+  it("does not carry an ISA withdrawal into the retirement age range when ISA use-by age equals retirement age", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-03-01",
+      dateOfBirth: "1977-03-01",
+      lifeExpectancy: 62,
+      requirementAge: 60,
+      desiredRetirementIncome: 24000,
+      showAlpha: false,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: true,
+      showLisa: false,
+      taxationEnabled: false,
+      projectionBasis: "real" as const,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 200,
+      isaDrawAge: 55,
+      isaRealInterestPercent: 3,
+      isaWithdrawalStrategy: "use_by_age" as const,
+      isaWithdrawalTargetAge: 60,
+    };
+
+    const rows = createProjectionTable(settings);
+    const summary = generatePensionSummary(rows, settings);
+
+    expect(summary.retirementIncome.ageRanges[0]).toEqual(
+      expect.objectContaining({
+        startAge: 60,
+        sourceLabels: ["No income modelled"],
+      })
+    );
+    expect(summary.retirementIncome.ageRanges[0]?.endAge).toBe(62);
   });
 });
 

@@ -1170,11 +1170,11 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
 
     expect(findRowByDate(rows, "2026-01-01")?.monthlySippPension).toBeCloseTo(
-      60000 / 61,
+      60000 / 60,
       6
     );
     expect(findRowByDate(rows, "2026-01-01")?.monthlyIsaPension).toBeCloseTo(
-      30000 / 61,
+      30000 / 60,
       6
     );
     expect(findRowByDate(rows, "2031-01-01")?.sippPot).toBeCloseTo(0, 6);

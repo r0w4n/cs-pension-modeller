@@ -22,6 +22,7 @@ import {
   getPensionStartAgeBounds,
   getSippChartAccessAgeBounds,
   getStatePensionAgeBounds,
+  getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
   isOptionalSectionToggleKey,
 } from "../app-domains";
@@ -322,11 +323,9 @@ function applyAccessAgePatch(
   }
 
   if (patch.nuvosStartAge !== undefined) {
-    const nuvosStartAgeBounds = getPensionStartAgeBounds({
+    const nuvosStartAgeBounds = getStandalonePensionStartAgeBounds({
       currentPlanningAge: context.currentPlanningAge,
-      leaveAge: 0,
       minimumPensionAccessAge: context.minimumAlphaAccessAge,
-      retirementAge: next.requirementAge,
     });
     const nuvosStartAge = clampNumber(
       patch.nuvosStartAge,

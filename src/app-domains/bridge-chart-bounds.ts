@@ -96,6 +96,21 @@ export function getPensionStartAgeBounds({
   };
 }
 
+export function getStandalonePensionStartAgeBounds({
+  currentPlanningAge,
+  minimumPensionAccessAge,
+}: {
+  currentPlanningAge: number;
+  minimumPensionAccessAge: number;
+}): ChartAgeBounds {
+  const min = Math.max(currentPlanningAge, minimumPensionAccessAge);
+
+  return {
+    min,
+    max: Math.max(min, MAXIMUM_CHART_PENSION_START_AGE),
+  };
+}
+
 export function getUseByAgeBounds({
   drawAge,
   lifeExpectancy,

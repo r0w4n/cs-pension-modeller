@@ -23,6 +23,7 @@ export {
   getPensionStartAgeBounds,
   getSippChartAccessAgeBounds,
   getStatePensionAgeBounds,
+  getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
   type ChartAgeBounds,
 } from "./app-domains/bridge-chart-bounds";

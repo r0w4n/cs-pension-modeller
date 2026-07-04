@@ -544,7 +544,7 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
-    nuvosPensionDrawAge: normalPensionAge,
+    nuvosPensionDrawAge: settings.nuvosPensionDrawAge,
     assumedCpiPercent: 0,
     showStatePension: true,
     showNuvos: settings.showNuvos,

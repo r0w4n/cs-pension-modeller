@@ -23,6 +23,7 @@ import {
   getPensionStartAgeBounds,
   getSippChartAccessAgeBounds,
   getStatePensionAgeBounds,
+  getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
 } from "./bridge-chart-bounds";
 import { addYearsToIsoDate, clampNumber } from "./shared";
@@ -531,11 +532,9 @@ export function createBridgeChartLimits(
     minimumPensionAccessAge: minimumAlphaAccessAge,
     retirementAge: settings.requirementAge,
   });
-  const nuvosStartAgeBounds = getPensionStartAgeBounds({
+  const nuvosStartAgeBounds = getStandalonePensionStartAgeBounds({
     currentPlanningAge,
-    leaveAge: 0,
     minimumPensionAccessAge: minimumAlphaAccessAge,
-    retirementAge: settings.requirementAge,
   });
   const premiumStartAgeBounds = getPensionStartAgeBounds({
     currentPlanningAge,

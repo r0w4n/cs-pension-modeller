@@ -913,7 +913,7 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
-  it("defaults the simple journey nuvos draw age to normal pension age", () => {
+  it("defaults the simple journey nuvos draw age to age 65", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
@@ -924,11 +924,11 @@ describe("App settings form", () => {
     openJourneyStep(/nuvos pension/i);
 
     expect(screen.getByLabelText("Planned nuvos Pension Draw Age")).toHaveValue(
-      String(defaultSettings.normalPensionAge)
+      "65"
     );
   });
 
-  it("does not let the simple journey move the nuvos chart marker before retirement age", () => {
+  it("lets the simple journey move the nuvos chart marker before retirement age", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
@@ -938,14 +938,11 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 68"), {
+    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 65"), {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Start Nuvos, age 68")).toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("Start Nuvos, age 67")
-    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Start Nuvos, age 64")).toBeInTheDocument();
   });
 
   it("lets the simple journey move the nuvos chart marker down to the retirement age", () => {

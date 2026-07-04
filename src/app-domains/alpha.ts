@@ -10,20 +10,11 @@ import {
 } from "../settings";
 import { calculateCurrentPlanningAge } from "./retirement-income";
 
-const ALPHA_PENSION_INCREASE_FIELD_IDS = new Set<FieldDefinition["id"]>([
-  "applyPensionIncreases",
-  "assumedCpiPercent",
-]);
-
 const ALPHA_EPA_FIELD_IDS = new Set<FieldDefinition["id"]>([
   "alphaEpaYearsBeforeNpa",
   "alphaEpaStartDate",
   "alphaEpaEndDate",
 ]);
-
-export function isAlphaPensionIncreaseField(fieldId: FieldDefinition["id"]) {
-  return ALPHA_PENSION_INCREASE_FIELD_IDS.has(fieldId);
-}
 
 export function isAlphaEpaField(fieldId: FieldDefinition["id"]) {
   return ALPHA_EPA_FIELD_IDS.has(fieldId);

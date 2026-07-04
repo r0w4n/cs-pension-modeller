@@ -301,8 +301,7 @@ export function MethodologyPage() {
 
         <h3>Alpha revaluation</h3>
         <p className="section-copy">
-          Where pension increases are enabled, accrued Alpha pension is revalued
-          annually by:
+          Accrued Alpha pension is revalued annually by:
         </p>
         <FormulaBlock>{"CPI"}</FormulaBlock>
         <p className="section-copy">
@@ -367,12 +366,10 @@ export function MethodologyPage() {
         <p className="section-copy">
           Known simplification: added-pension revaluation is currently
           simplified. The purchase revaluation factor used in the added-pension
-          factor calculation is currently 1. When Alpha pension increases are
-          enabled, purchased added pension is then tracked alongside the
-          standard Alpha portion for annual revaluation in the projection.
-          Without pension increases enabled, added pension remains at its
-          purchased annual amount. This may understate or misstate the final
-          value of added pension in some scenarios.
+          factor calculation is currently 1. Purchased added pension is then
+          tracked alongside the standard Alpha portion for annual revaluation in
+          the projection. This may understate or misstate the final value of
+          added pension in some scenarios.
         </p>
       </section>
 

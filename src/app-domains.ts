@@ -2,7 +2,6 @@ export {
   getAlphaDateYearRange,
   getAlphaEffectiveRangeField,
   isAlphaEpaField,
-  isAlphaPensionIncreaseField,
 } from "./app-domains/alpha";
 
 export {
@@ -63,7 +62,6 @@ export {
   isFieldDisabled,
   isFieldHiddenOnMobile,
   shouldRenderField,
-  splitSettingsFields,
 } from "./app-domains/forms";
 
 export {

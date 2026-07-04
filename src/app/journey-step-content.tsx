@@ -442,7 +442,6 @@ function renderFieldsStep(
     fieldLabels?: JourneyFieldLabels;
     fieldDescriptions?: JourneyFieldDescriptions;
     groupId?: string;
-    alphaPensionIncreaseDescription?: string;
   },
   viewModel: JourneyStepViewModel
 ) {
@@ -469,7 +468,6 @@ function renderFieldsStep(
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
-        alphaPensionIncreaseDescription={step.alphaPensionIncreaseDescription}
       />
 
       {step.groupId ? (

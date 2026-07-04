@@ -256,7 +256,7 @@ describe("settings unit tests", () => {
         lifeExpectancy: 120,
         currentStatePension: -10,
         desiredRetirementIncome: 43899.6,
-        applyPensionIncreases: true,
+        applyPensionIncreases: false,
         assumedCpiPercent: 2.34,
         statePensionDrawDate: "bad-date",
         alphaPensionAbsDate: "bad-date",

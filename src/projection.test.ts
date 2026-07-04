@@ -586,7 +586,7 @@ describe("projection calculations", () => {
     ).toBeCloseTo(10, 6);
   });
 
-  it("revalues regular monthly added pension purchases when pension increases are enabled", () => {
+  it("tracks regular monthly added pension purchases with Alpha revaluation", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       requirementAge: 60,
@@ -1613,7 +1613,7 @@ describe("projection calculations", () => {
     ).toBeCloseTo(458.6544, 6);
   });
 
-  it("applies optional Alpha pension increases in the projection table", () => {
+  it("applies Alpha pension increases in the projection table", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       applyPensionIncreases: true,
@@ -1674,13 +1674,13 @@ describe("projection calculations", () => {
       createProjectionTable(alignedStartSettings),
       alignedStartSettings
     );
-    const simpleAccrualSettings = {
+    const legacyOptOutSettings = {
       ...baseSettings,
       applyPensionIncreases: false,
     };
-    const simpleAccrualSummary = generatePensionSummary(
-      createProjectionTable(simpleAccrualSettings),
-      simpleAccrualSettings
+    const legacyOptOutSummary = generatePensionSummary(
+      createProjectionTable(legacyOptOutSettings),
+      legacyOptOutSettings
     );
 
     expect(summary.alphaPension.annualAtDraw).toBeCloseTo(
@@ -1688,10 +1688,7 @@ describe("projection calculations", () => {
       6
     );
     expect(summary.alphaPension.annualAtDraw).toBeCloseTo(46856, 6);
-    expect(simpleAccrualSummary.alphaPension.annualAtDraw).toBeCloseTo(
-      46856,
-      6
-    );
+    expect(legacyOptOutSummary.alphaPension.annualAtDraw).toBeCloseTo(46856, 6);
   });
 
   it("keeps real-terms Alpha pension increases aligned with the base accrual path", () => {
@@ -1715,7 +1712,7 @@ describe("projection calculations", () => {
       alphaAddedPensionMonthly: 0,
     };
 
-    const simpleAccrualSummary = generatePensionSummary(
+    const legacyOptOutSummary = generatePensionSummary(
       createProjectionTable({
         ...baseSettings,
         applyPensionIncreases: false,
@@ -1737,7 +1734,7 @@ describe("projection calculations", () => {
     );
 
     expect(realTermsIncreaseSummary.alphaPension.monthlyAtDraw).toBeCloseTo(
-      simpleAccrualSummary.alphaPension.monthlyAtDraw,
+      legacyOptOutSummary.alphaPension.monthlyAtDraw,
       6
     );
   });

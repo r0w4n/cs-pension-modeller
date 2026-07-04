@@ -100,7 +100,6 @@ export type JourneyStepDefinition =
       groupId?: FieldGroup["id"];
       fieldLabels?: JourneyFieldLabels;
       fieldDescriptions?: JourneyFieldDescriptions;
-      alphaPensionIncreaseDescription?: string;
       visible?: (settings: PensionSettings) => boolean;
     };
 
@@ -170,8 +169,6 @@ export const JOURNEY_DEFINITIONS = [
           "alphaEpaYearsBeforeNpa",
           "alphaEpaStartDate",
           "alphaEpaEndDate",
-          "applyPensionIncreases",
-          "assumedCpiPercent",
         ],
         visible: (settings) => settings.showAlpha,
       },
@@ -296,19 +293,12 @@ export const JOURNEY_DEFINITIONS = [
           "alphaPensionAbsDate",
           "accruedPensionAtLastAbs",
           "pensionableEarnings",
-          "applyPensionIncreases",
         ],
         fieldLabels: {
           alphaPensionAbsDate: "Annual Benefits Statement year",
           accruedPensionAtLastAbs: "Accrued pension to date (£ per year)",
           pensionableEarnings: "Pensionable earnings (£ per year)",
         },
-        fieldDescriptions: {
-          applyPensionIncreases:
-            "Include CPI-linked Alpha pension increases. Leave this off for a plain accrual-only estimate.",
-        },
-        alphaPensionIncreaseDescription:
-          "Increase Alpha benefits annually by CPI when pension increases are enabled. The simplified journey does not add a separate inflation assumption.",
         visible: (settings) => settings.showAlpha,
       },
       {
@@ -551,7 +541,7 @@ export function mergeSimpleJourneySettings(
     alphaAddedPensionFactorType: currentSettings.alphaAddedPensionFactorType,
     statePensionApplyFutureGrowth:
       currentSettings.statePensionApplyFutureGrowth,
-    applyPensionIncreases: nextSettings.applyPensionIncreases,
+    applyPensionIncreases: true,
     assumedCpiPercent: 0,
     taxationEnabled: currentSettings.taxationEnabled,
     partialRetirementEnabled: currentSettings.partialRetirementEnabled,

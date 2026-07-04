@@ -217,7 +217,7 @@ export function createProjectionTable(
 
   const runtimeDates = createProjectionRuntimeDates(settings);
 
-  if (settings.applyPensionIncreases) {
+  if (settings.showAlpha) {
     return createProjectionTableWithPensionIncreases(
       settings,
       derivedInputs,

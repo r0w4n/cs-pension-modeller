@@ -28,7 +28,7 @@ It supports:
   retirement sections
 - Alpha pension accrual from Annual Benefit Statement values and future
   pensionable earnings
-- Alpha early-retirement reduction and optional pension-increase modelling
+- Alpha early-retirement reduction and CPI-linked pension-increase modelling
 - Alpha added pension through monthly contributions and lump-sum purchase
   schedules
 - nuvos pension modelling with separate statement, leave, draw, and increase
@@ -70,7 +70,7 @@ The current app is driven by inputs grouped around:
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
-  draw age, added pension, and pension increases
+  draw age, and added pension
 - EPA: selected EPA years before Normal Pension Age and the EPA purchase date
   range
 - nuvos pension: statement year, accrued pension, draw age, and pension
@@ -94,8 +94,8 @@ Some important assumptions and simplifications are:
   rate encoded in the model.
 - The starting Alpha pension is rolled forward from the latest ABS year to the
   calculation start date.
-- Future Alpha accrual and pension increases depend on the selected
-  pension-increase and inflation assumptions.
+- Future Alpha accrual depends on pensionable earnings, and Alpha CPI-linked
+  pension increases use the central projection basis and inflation assumption.
 - nuvos pensionable-service accrual is capped at 31 March 2015; after then,
   modelled nuvos changes come from CPI-linked pension increases only.
 - Alpha added pension lump sums are converted using factor data stored in

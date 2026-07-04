@@ -8,7 +8,6 @@ import {
   getAlphaDateYearRange,
   getAlphaEffectiveRangeField,
   isAlphaEpaField,
-  isAlphaPensionIncreaseField,
 } from "./alpha";
 import {
   getIsaEffectiveRangeField,
@@ -52,7 +51,6 @@ export function isFieldDisabled(
   return (
     (isTaxAssumptionField(fieldId) && !settings.taxationEnabled) ||
     (isPartialRetirementField(fieldId) && !settings.partialRetirementEnabled) ||
-    (fieldId === "assumedCpiPercent" && !settings.applyPensionIncreases) ||
     (isNuvosPensionIncreaseField(fieldId) &&
       !settings.nuvosApplyPensionIncreases) ||
     (isStatePensionGrowthField(fieldId) &&
@@ -118,17 +116,6 @@ export function getPrimaryDateYearRange(
     default:
       return { min: currentYear - 25, max: currentYear + 25 };
   }
-}
-
-export function splitSettingsFields(fields: readonly FieldDefinition[]) {
-  return {
-    baseFields: fields.filter(
-      (field) => !isAlphaPensionIncreaseField(field.id)
-    ),
-    alphaPensionIncreaseFields: fields.filter((field) =>
-      isAlphaPensionIncreaseField(field.id)
-    ),
-  };
 }
 
 export function getLumpSumDateYearRange(kind: "start" | "end") {

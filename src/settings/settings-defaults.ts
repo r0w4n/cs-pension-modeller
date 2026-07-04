@@ -43,7 +43,7 @@ export const defaultSettings: PensionSettings = {
   statePensionCpiPercent: statePensionDefaults.statePensionCpiPercent,
   statePensionWageGrowthPercent:
     statePensionDefaults.statePensionWageGrowthPercent,
-  applyPensionIncreases: false,
+  applyPensionIncreases: true,
   assumedCpiPercent: 0,
   alphaPensionAbsDate: DEFAULT_ALPHA_ABS_YEAR,
   alphaAddedPensionMonthly: 0,

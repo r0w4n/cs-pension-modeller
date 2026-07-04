@@ -788,29 +788,16 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Your Alpha pension/i })
     );
 
-    const alphaIncreasesCheckbox = screen.getByRole("checkbox", {
-      name: "Apply Alpha pension increases",
-    });
-
-    expect(alphaIncreasesCheckbox).not.toBeChecked();
     expect(
-      screen.getByText(
+      screen.queryByLabelText("Apply Alpha pension increases")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
         "Increase Alpha benefits annually by CPI when pension increases are enabled. The simplified journey does not add a separate inflation assumption."
       )
-    ).toBeInTheDocument();
-
-    fireEvent.click(alphaIncreasesCheckbox);
-
-    expect(alphaIncreasesCheckbox).toBeChecked();
+    ).not.toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({ applyPensionIncreases: true })
-    );
-
-    fireEvent.click(alphaIncreasesCheckbox);
-
-    expect(alphaIncreasesCheckbox).not.toBeChecked();
-    expect(readStoredSettingsPayload()).toEqual(
-      expect.objectContaining({ applyPensionIncreases: false })
     );
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBe("simple");
   });
@@ -1662,8 +1649,8 @@ describe("App settings form", () => {
     expect(alphaAbsSelect).toHaveValue("2025");
     expect(alphaAbsSelect).toHaveDisplayValue("2024/2025");
     expect(
-      screen.getByLabelText("Apply Alpha pension increases")
-    ).not.toBeChecked();
+      screen.queryByLabelText("Apply Alpha pension increases")
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Annual Benefit Statement guide" })
     ).toHaveAttribute(
@@ -1695,11 +1682,8 @@ describe("App settings form", () => {
       "https://gadfactorguidancehub.co.uk/guidance/csps_gb/added-pension/csps_gb__csops__added-pension/tables"
     );
     expect(
-      screen.getByRole("link", { name: "Alpha pension increases" })
-    ).toHaveAttribute(
-      "href",
-      "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01215"
-    );
+      screen.queryByRole("link", { name: "Alpha pension increases" })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Add lump sum purchase" })
     ).toBeInTheDocument();
@@ -2323,19 +2307,14 @@ describe("App settings form", () => {
     ).toHaveValue(68);
   });
 
-  it("can apply pension increases using the global inflation assumption", () => {
+  it("uses the global inflation assumption for Alpha pension increases", () => {
     renderAcknowledgedApp();
 
     openJourneyStep(/Alpha pension details/i);
 
-    const applyIncreasesToggle = screen.getByLabelText(
-      "Apply Alpha pension increases"
-    );
-
-    fireEvent.click(applyIncreasesToggle);
-    fireEvent.blur(applyIncreasesToggle);
-
-    expect(applyIncreasesToggle).toBeChecked();
+    expect(
+      screen.queryByLabelText("Apply Alpha pension increases")
+    ).not.toBeInTheDocument();
 
     openJourneyStep(/Inflation and projection basis/i);
 
@@ -2348,7 +2327,6 @@ describe("App settings form", () => {
     });
     fireEvent.blur(inflationInput);
 
-    expect(applyIncreasesToggle).toBeChecked();
     expect(inflationInput).toHaveValue(3.4);
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({

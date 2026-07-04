@@ -1011,13 +1011,34 @@ Given("the member has EPA pension", function () {
   return;
 });
 
-When("the pension result is displayed", function () {
-  acceptanceUnsupported("a user-visible alpha result presentation contract");
-});
+When(
+  "the pension result is displayed",
+  function (this: AlphaPensionWorld & { premiumRecord?: boolean }) {
+    if (this.premiumRecord) {
+      return;
+    }
 
-Then("the result should show:", function () {
-  acceptanceUnsupported("a user-visible alpha assumptions result contract");
-});
+    acceptanceUnsupported("a user-visible alpha result presentation contract");
+  }
+);
+
+Then(
+  "the result should show:",
+  function (
+    this: AlphaPensionWorld & { resultRows?: PensionBreakdownRow[] },
+    table: DataTable
+  ) {
+    if (this.resultRows) {
+      assertDeepEqual(
+        normalizeActualRows(this.resultRows),
+        parseExpectedRows(table)
+      );
+      return;
+    }
+
+    acceptanceUnsupported("a user-visible alpha assumptions result contract");
+  }
+);
 
 Then("the result should show separate rows for:", function () {
   acceptanceUnsupported("a user-visible pension component breakdown contract");

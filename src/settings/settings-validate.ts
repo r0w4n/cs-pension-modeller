@@ -8,6 +8,7 @@ import { validateClassicRules } from "./settings-domains/classic";
 import { validateIsaRules } from "./settings-domains/isa";
 import { validateLisaRules } from "./settings-domains/lisa";
 import { validateNuvosRules } from "./settings-domains/nuvos";
+import { validatePremiumRules } from "./settings-domains/premium";
 import { validateStatePensionRules } from "./settings-domains/state-pension";
 import {
   getPartialRetirementStartDate,
@@ -36,6 +37,7 @@ type ValidationContext = {
   nuvosAbsDate: string;
   classicDrawDate: string;
   classicPlusDrawDate: string;
+  premiumDrawDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
@@ -107,6 +109,10 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
     nuvosAbsDate: resolveAlphaAbsDate(settings.nuvosPensionAbsDate),
     classicDrawDate,
     classicPlusDrawDate,
+    premiumDrawDate: addYearsToIsoDate(
+      settings.dateOfBirth,
+      settings.premiumDrawAge
+    ),
     sippDrawDate,
     isaDrawDate,
     lisaDrawDate,
@@ -147,6 +153,7 @@ export function validateSettings(
     ...validateAlphaPensionRules(context),
     ...validateClassicRules(context),
     ...validateNuvosRules(context),
+    ...validatePremiumRules(context),
     ...validateSippRules(context),
     ...validateIsaRules(context),
     ...validateLisaRules(context),

@@ -9,6 +9,7 @@ const PROJECTED_SOURCES = [
   "Civil Service classic pension",
   "Civil Service classic plus pension",
   "Civil Service nuvos pension",
+  "Civil Service Premium pension",
   "State Pension",
   "SIPP pension savings",
   "ISA savings",
@@ -22,6 +23,7 @@ const PROJECTED_SOURCES = [
 const KEY_DATES = [
   "calculation start date",
   "Alpha and nuvos statement dates",
+  "Premium valuation date",
   "State Pension age",
   "Alpha pension draw age",
   "Alpha accrual stop age",
@@ -30,6 +32,7 @@ const KEY_DATES = [
   "classic plus pension draw age",
   "nuvos pension draw age",
   "nuvos final pensionable-service date",
+  "Premium pension draw age",
   "SIPP access age",
   "ISA draw start age",
   "LISA draw start age",
@@ -83,6 +86,7 @@ const LISA_PROJECTS = [
 const BRIDGE_SENSITIVITIES = [
   "retirement age",
   "Alpha draw age",
+  "Premium draw age",
   "State Pension age",
   "SIPP access age",
   "ISA, LISA and SIPP balances",
@@ -103,6 +107,7 @@ const PARTIAL_RETIREMENT_EFFECTS = [
 const TAXABLE_INCOME_SOURCES = [
   "Alpha pension",
   "nuvos pension",
+  "Premium pension",
   "State Pension",
   "taxable SIPP withdrawals",
 ] as const;
@@ -464,6 +469,41 @@ export function MethodologyPage() {
             "3 years × 5% + 22 months × 4% / 12 = 22.33%\nfactor = 1 - 22.33% = 0.7767"
           }
         </FormulaBlock>
+      </section>
+
+      <section>
+        <h2>Premium pension methodology</h2>
+        <p className="section-copy">
+          Premium is modelled as a preserved legacy Civil Service defined
+          benefit pension. The model assumes no further Premium accrual and no
+          further Premium contributions.
+        </p>
+        <p className="section-copy">
+          The entered Premium amount is increased by CPI from the valuation or
+          statement date to the selected draw age. In real-terms mode this CPI
+          increase is removed, so the preserved Premium amount is flat in
+          today&apos;s spending power. In nominal mode it compounds using the
+          main inflation assumption.
+        </p>
+        <p className="section-copy">
+          If Premium is taken before its Normal Pension Age, a Premium
+          early-retirement reduction factor is required. The model does not use
+          Alpha reduction factors or the nuvos fixed-percentage reduction
+          formula for Premium.
+        </p>
+        <p className="section-copy">
+          Premium early-retirement factors must be sourced from the relevant
+          Civil Service/GAD factor tables. Until those Premium-specific factors
+          are populated, the model treats an early Premium draw as factor
+          unavailable and excludes the reduced Premium income rather than
+          silently estimating it.
+        </p>
+        <p className="section-copy">
+          The model does not currently estimate final salary, reckonable
+          service, commutation, survivor benefits, abatement, ill-health
+          retirement, pension sharing, GMP adjustments, or scheme-specific edge
+          cases.
+        </p>
       </section>
 
       <section>

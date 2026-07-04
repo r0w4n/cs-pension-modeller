@@ -19,6 +19,7 @@ import {
   calculateClassicPlusAnnualPension,
   calculateClassicPlusAutomaticLumpSum,
   calculateNuvosAnnualPension,
+  calculatePremiumAnnualPension,
   calculateStartingAlphaPortionsAtStartDate,
   createHistoricalProjectionRows,
 } from "./row-assembly";
@@ -42,6 +43,8 @@ export function createProjectionTableBase(
     classicPlusDrawDate,
     classicPlusNpaDate,
     classicPlusReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
     addedPensionStopDate,
     npaDate,
     epaDate,
@@ -81,6 +84,8 @@ export function createProjectionTableBase(
     classicPlusDrawDate,
     classicPlusNpaDate,
     classicPlusReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
   });
   let cumulativeStandardAccrual = 0;
   let cumulativeEpaAccrual = 0;
@@ -143,6 +148,8 @@ export function createProjectionTableBase(
       classicPlusDrawDate,
       classicPlusNpaDate,
       classicPlusReductionFactor,
+      premiumDrawDate,
+      premiumReductionFactor,
       annualStandardAlphaPension: calculateAccruedAlphaPension(
         startingAlphaPortionsAtStartDate.standardAlphaPension,
         cumulativeStandardAccrual + cumulativeStandardAddedPension
@@ -170,6 +177,11 @@ export function createProjectionTableBase(
       classicPlusAutomaticLumpSum: calculateClassicPlusAutomaticLumpSum({
         settings,
         rowDate,
+      }),
+      annualPremiumPension: calculatePremiumAnnualPension({
+        settings,
+        rowDate,
+        premiumDrawDate,
       }),
       monthlyAddedPension,
       lumpSumAddedPension,
@@ -199,5 +211,6 @@ export function createProjectionTableBase(
     nuvosAccrualStopDate,
     nuvosDrawDate,
     nuvosAbsDate,
+    premiumDrawDate,
   });
 }

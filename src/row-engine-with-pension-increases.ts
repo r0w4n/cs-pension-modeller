@@ -21,6 +21,7 @@ import {
   calculateClassicPlusAutomaticLumpSum,
   calculateInvestmentProjectionValues,
   calculateNuvosAnnualPension,
+  calculatePremiumAnnualPension,
 } from "./row-assembly";
 
 type AlphaBenefitPortion = "standard" | "epa";
@@ -50,6 +51,8 @@ export function createProjectionTableWithPensionIncreases(
     classicPlusDrawDate,
     classicPlusNpaDate,
     classicPlusReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
     addedPensionStopDate,
     npaDate,
     epaDate,
@@ -176,6 +179,8 @@ export function createProjectionTableWithPensionIncreases(
       classicPlusDrawDate,
       classicPlusNpaDate,
       classicPlusReductionFactor,
+      premiumDrawDate,
+      premiumReductionFactor,
       annualStandardAlphaPension: alphaPortions.standardAlphaPension,
       annualEpaAlphaPension: alphaPortions.epaAlphaPension,
       annualNuvosPension: calculateNuvosAnnualPension({
@@ -199,6 +204,11 @@ export function createProjectionTableWithPensionIncreases(
       classicPlusAutomaticLumpSum: calculateClassicPlusAutomaticLumpSum({
         settings,
         rowDate,
+      }),
+      annualPremiumPension: calculatePremiumAnnualPension({
+        settings,
+        rowDate,
+        premiumDrawDate,
       }),
       monthlyAddedPension,
       lumpSumAddedPension,
@@ -226,6 +236,7 @@ export function createProjectionTableWithPensionIncreases(
     nuvosAccrualStopDate,
     nuvosDrawDate,
     nuvosAbsDate,
+    premiumDrawDate,
   });
 }
 

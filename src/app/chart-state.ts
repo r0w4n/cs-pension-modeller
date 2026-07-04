@@ -161,6 +161,10 @@ function applyVisibilityPatch(
     next.showNuvos = patch.showNuvos;
   }
 
+  if (patch.showPremium !== undefined) {
+    next.showPremium = patch.showPremium;
+  }
+
   if (patch.showStatePension !== undefined) {
     next.showStatePension = patch.showStatePension;
   }
@@ -340,6 +344,21 @@ function applyAccessAgePatch(
       "nuvosPensionDrawAge",
       nuvosStartAge
     );
+  }
+
+  if (patch.premiumStartAge !== undefined) {
+    const premiumStartAgeBounds = getPensionStartAgeBounds({
+      currentPlanningAge: context.currentPlanningAge,
+      leaveAge: 0,
+      minimumPensionAccessAge: next.premiumEarliestAccessAge,
+      retirementAge: next.requirementAge,
+    });
+    const premiumStartAge = clampNumber(
+      patch.premiumStartAge,
+      premiumStartAgeBounds.min,
+      premiumStartAgeBounds.max
+    );
+    next.premiumDrawAge = normalizeSetting("premiumDrawAge", premiumStartAge);
   }
 }
 

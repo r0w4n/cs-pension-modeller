@@ -11,6 +11,7 @@ export const DEFAULT_DATE_OF_BIRTH = "1987-06-01";
 export const DEFAULT_STATE_PENSION_DRAW_DATE = "2055-06-01";
 export const DEFAULT_ALPHA_ABS_YEAR = "2025";
 export const DEFAULT_NUVOS_ABS_YEAR = "2025";
+export const DEFAULT_PREMIUM_VALUATION_DATE = "2025-04-01";
 
 export type AddedPensionLumpSumCadence = "once" | "yearly";
 export type AddedPensionFactorType = "self" | "self_plus_beneficiaries";
@@ -53,6 +54,7 @@ export type PensionSettings = {
   showClassic: boolean;
   showClassicPlus: boolean;
   showNuvos: boolean;
+  showPremium: boolean;
   showStatePension: boolean;
   showSipp: boolean;
   showIsa: boolean;
@@ -109,6 +111,12 @@ export type PensionSettings = {
   nuvosPensionDrawAge: number;
   nuvosApplyPensionIncreases: boolean;
   nuvosAssumedCpiPercent: number;
+  premiumAnnualPensionAtValuationDate: number;
+  premiumValuationDate: string;
+  premiumNormalPensionAge: number;
+  premiumDrawAge: number;
+  premiumEarliestAccessAge: 50 | 55;
+  premiumHasNpa65: boolean;
   sippCurrentPot: number;
   sippMonthlyContribution: number;
   sippDrawAge: number;

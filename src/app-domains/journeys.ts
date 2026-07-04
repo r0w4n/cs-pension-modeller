@@ -45,6 +45,12 @@ export const OPTIONAL_SECTION_TOGGLES = [
       "Models existing nuvos pension benefits separately from Alpha, including CPI-linked increases and its own draw date.",
   },
   {
+    key: "showPremium",
+    label: "Premium",
+    description:
+      "Models preserved Premium pension benefits as a closed legacy pension with CPI-only revaluation and its own draw date.",
+  },
+  {
     key: "showSipp",
     label: "SIPP",
     description:
@@ -166,6 +172,7 @@ export const JOURNEY_DEFINITIONS = [
           "showClassic",
           "showClassicPlus",
           "showNuvos",
+          "showPremium",
         ],
       },
       {
@@ -245,6 +252,23 @@ export const JOURNEY_DEFINITIONS = [
           "nuvosAssumedCpiPercent",
         ],
         visible: (settings) => settings.showNuvos,
+      },
+      {
+        id: "premium",
+        eyebrow: "Optional",
+        title: "Your Premium pension",
+        description:
+          "Add preserved Premium benefits if they should be part of the bridge calculation.",
+        kind: "fields",
+        fieldIds: [
+          "premiumAnnualPensionAtValuationDate",
+          "premiumValuationDate",
+          "premiumDrawAge",
+          "premiumNormalPensionAge",
+          "premiumEarliestAccessAge",
+          "premiumHasNpa65",
+        ],
+        visible: (settings) => settings.showPremium,
       },
       {
         id: "state",
@@ -343,6 +367,7 @@ export const JOURNEY_DEFINITIONS = [
           "showClassic",
           "showClassicPlus",
           "showNuvos",
+          "showPremium",
         ],
       },
       {
@@ -469,6 +494,23 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showNuvos,
       },
       {
+        id: "premium",
+        eyebrow: "Optional",
+        title: "Premium pension",
+        description:
+          "Add preserved Premium benefits if they should be part of the projection.",
+        kind: "fields",
+        fieldIds: [
+          "premiumAnnualPensionAtValuationDate",
+          "premiumValuationDate",
+          "premiumDrawAge",
+          "premiumNormalPensionAge",
+          "premiumEarliestAccessAge",
+          "premiumHasNpa65",
+        ],
+        visible: (settings) => settings.showPremium,
+      },
+      {
         id: "pots",
         eyebrow: "Optional",
         title: "ISA, LISA and SIPP",
@@ -568,6 +610,7 @@ function isExpertJourneyGroupVisible(groupId: string) {
     groupId === "classic" ||
     groupId === "classic-plus" ||
     groupId === "nuvos" ||
+    groupId === "premium" ||
     groupId === "state" ||
     groupId === "sipp" ||
     groupId === "isa" ||
@@ -615,6 +658,7 @@ export function applySimpleJourneyDefaults(
     showNuvos: settings.showNuvos,
     showClassic: settings.showClassic,
     showClassicPlus: settings.showClassicPlus,
+    showPremium: settings.showPremium,
   };
 }
 
@@ -630,6 +674,7 @@ export function applySimpleJourneyAssumptions(
     showNuvos: settings.showNuvos,
     showClassic: settings.showClassic,
     showClassicPlus: settings.showClassicPlus,
+    showPremium: settings.showPremium,
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     assumedCpiPercent: 0,

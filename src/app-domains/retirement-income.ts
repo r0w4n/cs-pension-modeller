@@ -56,6 +56,10 @@ export function createRetirementIncomeSeries(
     settings.dateOfBirth,
     settings.nuvosPensionDrawAge
   );
+  const premiumDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.premiumDrawAge
+  );
   const sippDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.sippDrawAge
@@ -125,29 +129,21 @@ export function createRetirementIncomeSeries(
           nextMonthlyIncome: nextRow?.monthlyLisaPension ?? 0,
         })
       : 0;
-    const alphaIncomeAnnual = getDefinedBenefitIncomeAnnual({
-      enabled: settings.showAlpha,
-      rowDate: row.date,
-      drawDate: alphaDrawDate,
-      monthlyIncome: row.monthlyAlphaPensionGross,
-    });
-    const classicIncomeAnnual = getDefinedBenefitIncomeAnnual({
-      enabled: settings.showClassic,
-      rowDate: row.date,
-      drawDate: classicDrawDate,
-      monthlyIncome: row.monthlyClassicPensionGross,
-    });
-    const classicPlusIncomeAnnual = getDefinedBenefitIncomeAnnual({
-      enabled: settings.showClassicPlus,
-      rowDate: row.date,
-      drawDate: classicPlusDrawDate,
-      monthlyIncome: row.monthlyClassicPlusPensionGross,
-    });
-    const nuvosIncomeAnnual = getDefinedBenefitIncomeAnnual({
-      enabled: settings.showNuvos,
-      rowDate: row.date,
-      drawDate: nuvosDrawDate,
-      monthlyIncome: row.monthlyNuvosPensionGross,
+    const {
+      alphaIncomeAnnual,
+      classicIncomeAnnual,
+      classicPlusIncomeAnnual,
+      nuvosIncomeAnnual,
+      premiumIncomeAnnual,
+      statePensionIncomeAnnual,
+    } = getSecureIncomeAnnual({
+      settings,
+      row,
+      alphaDrawDate,
+      classicDrawDate,
+      classicPlusDrawDate,
+      nuvosDrawDate,
+      premiumDrawDate,
     });
     const partialRetirementIncomeAnnual =
       calculatePartialRetirementIncomeAnnual(
@@ -155,10 +151,6 @@ export function createRetirementIncomeSeries(
         row.date,
         requirementDate
       );
-    const statePensionIncomeAnnual =
-      settings.showStatePension && row.date >= settings.statePensionDrawDate
-        ? row.monthlyStatePension * 12
-        : 0;
     const targetIncomeAnnual = calculateRetirementIncomeTargetAtDate(
       settings,
       row.date
@@ -172,6 +164,7 @@ export function createRetirementIncomeSeries(
       classicIncomeAnnual +
       classicPlusIncomeAnnual +
       nuvosIncomeAnnual +
+      premiumIncomeAnnual +
       statePensionIncomeAnnual;
     const monthlyIncomeTax = calculateMonthlyIncomeTax({
       settings,
@@ -179,6 +172,7 @@ export function createRetirementIncomeSeries(
       monthlyClassicPension: classicIncomeAnnual / 12,
       monthlyClassicPlusPension: classicPlusIncomeAnnual / 12,
       monthlyNuvosPension: nuvosIncomeAnnual / 12,
+      monthlyPremiumPension: premiumIncomeAnnual / 12,
       monthlyStatePension: statePensionIncomeAnnual / 12,
       monthlySippPension: sippIncomeAnnual / 12,
     });
@@ -196,6 +190,7 @@ export function createRetirementIncomeSeries(
       classicIncomeAnnual,
       classicPlusIncomeAnnual,
       nuvosIncomeAnnual,
+      premiumIncomeAnnual,
       statePensionIncomeAnnual,
       totalIncomeAnnual,
       assessedIncomeAnnual,
@@ -213,15 +208,51 @@ export function createRetirementIncomeSeries(
   return insertChartTransitionPoints(baseSeries, settings);
 }
 
-function getDefinedBenefitIncomeAnnual(input: {
-  enabled: boolean;
-  rowDate: string;
-  drawDate: string;
-  monthlyIncome: number;
+function getSecureIncomeAnnual(input: {
+  settings: PensionSettings;
+  row: ProjectionRow;
+  alphaDrawDate: string;
+  classicDrawDate: string;
+  classicPlusDrawDate: string;
+  nuvosDrawDate: string;
+  premiumDrawDate: string;
 }) {
-  return input.enabled && input.rowDate >= input.drawDate
-    ? input.monthlyIncome * 12
-    : 0;
+  const {
+    settings,
+    row,
+    alphaDrawDate,
+    classicDrawDate,
+    classicPlusDrawDate,
+    nuvosDrawDate,
+    premiumDrawDate,
+  } = input;
+
+  return {
+    alphaIncomeAnnual:
+      settings.showAlpha && row.date >= alphaDrawDate
+        ? row.monthlyAlphaPensionGross * 12
+        : 0,
+    classicIncomeAnnual:
+      settings.showClassic && row.date >= classicDrawDate
+        ? row.monthlyClassicPensionGross * 12
+        : 0,
+    classicPlusIncomeAnnual:
+      settings.showClassicPlus && row.date >= classicPlusDrawDate
+        ? row.monthlyClassicPlusPensionGross * 12
+        : 0,
+    nuvosIncomeAnnual:
+      settings.showNuvos && row.date >= nuvosDrawDate
+        ? row.monthlyNuvosPensionGross * 12
+        : 0,
+    premiumIncomeAnnual:
+      settings.showPremium && row.date >= premiumDrawDate
+        ? row.monthlyPremiumPensionGross * 12
+        : 0,
+    statePensionIncomeAnnual:
+      settings.showStatePension && row.date >= settings.statePensionDrawDate
+        ? row.monthlyStatePension * 12
+        : 0,
+  };
 }
 
 function getBridgePotIncomeAnnual(input: {
@@ -343,6 +374,15 @@ function insertChartTransitionPoints(
           age: settings.nuvosPensionDrawAge,
         }
       : null,
+    settings.showPremium
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.premiumDrawAge
+          ),
+          age: settings.premiumDrawAge,
+        }
+      : null,
     settings.showStatePension
       ? {
           date: settings.statePensionDrawDate,
@@ -451,6 +491,7 @@ export function createBridgeChartParameters(
     lisaAccessAge: settings.lisaDrawAge,
     alphaStartAge: settings.alphaPensionDrawAge,
     nuvosStartAge: settings.nuvosPensionDrawAge,
+    premiumStartAge: settings.premiumDrawAge,
     isaUseByAge: settings.isaWithdrawalTargetAge,
     lisaUseByAge: settings.lisaWithdrawalTargetAge,
     partialRetirementStartAge: settings.partialRetirementStartAge,
@@ -469,6 +510,7 @@ export function createBridgeChartParameters(
     sippUseByAgeEnabled:
       settings.showSipp && settings.sippWithdrawalStrategy === "use_by_age",
     showNuvos: settings.showNuvos,
+    showPremium: settings.showPremium,
     isaUseByAgeEnabled:
       settings.showIsa && settings.isaWithdrawalStrategy === "use_by_age",
     lisaUseByAgeEnabled:
@@ -530,6 +572,12 @@ export function createBridgeChartLimits(
   const nuvosStartAgeBounds = getStandalonePensionStartAgeBounds({
     currentPlanningAge,
     minimumPensionAccessAge: minimumAlphaAccessAge,
+  });
+  const premiumStartAgeBounds = getPensionStartAgeBounds({
+    currentPlanningAge,
+    leaveAge: 0,
+    minimumPensionAccessAge: settings.premiumEarliestAccessAge,
+    retirementAge: settings.requirementAge,
   });
   const statePensionAgeBounds = getStatePensionAgeBounds({
     defaultStatePensionAge,
@@ -596,6 +644,11 @@ export function createBridgeChartLimits(
     nuvosStartAge: {
       min: nuvosStartAgeBounds.min,
       max: nuvosStartAgeBounds.max,
+      step: 1,
+    },
+    premiumStartAge: {
+      min: premiumStartAgeBounds.min,
+      max: premiumStartAgeBounds.max,
       step: 1,
     },
     isaUseByAge: {

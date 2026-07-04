@@ -10,6 +10,10 @@ import {
   calculateClassicPlusAutomaticLumpSumAtDate,
 } from "./projection-domains/classic";
 import { calculateAnnualNuvosPensionAtDate } from "./projection-domains/nuvos";
+import {
+  calculateAnnualPremiumPensionAtDate,
+  calculateAnnualPremiumPensionIncludingReduction,
+} from "./projection-domains/premium";
 import { calculateSippProjectionRow } from "./projection-domains/sipp";
 import { calculateIsaProjectionRow } from "./projection-domains/isa";
 import { calculateLisaProjectionRow } from "./projection-domains/lisa";
@@ -47,13 +51,15 @@ export function calculateTotalGrossMonthlyIncome(
   monthlyLisaPension = 0,
   monthlyNuvosPensionIncludingReduction = 0,
   monthlyClassicPensionIncludingReduction = 0,
-  monthlyClassicPlusPensionIncludingReduction = 0
+  monthlyClassicPlusPensionIncludingReduction = 0,
+  monthlyPremiumPensionIncludingReduction = 0
 ) {
   return (
     monthlyAlphaPensionIncludingReduction +
     monthlyClassicPensionIncludingReduction +
     monthlyClassicPlusPensionIncludingReduction +
     monthlyNuvosPensionIncludingReduction +
+    monthlyPremiumPensionIncludingReduction +
     monthlyStatePension +
     monthlySippPension +
     monthlyIsaPension +
@@ -178,6 +184,8 @@ export function buildProjectionRow(input: {
   classicPlusDrawDate: string;
   classicPlusNpaDate: string;
   classicPlusReductionFactor: number;
+  premiumDrawDate: string;
+  premiumReductionFactor: number | null;
   annualStandardAlphaPension: number;
   annualEpaAlphaPension: number;
   annualNuvosPension: number;
@@ -185,6 +193,7 @@ export function buildProjectionRow(input: {
   classicAutomaticLumpSum: number;
   annualClassicPlusPension: number;
   classicPlusAutomaticLumpSum: number;
+  annualPremiumPension: number;
   monthlyAddedPension: number;
   lumpSumAddedPension: number;
   sippProjection: {
@@ -217,6 +226,8 @@ export function buildProjectionRow(input: {
     classicPlusDrawDate,
     classicPlusNpaDate,
     classicPlusReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
     annualStandardAlphaPension,
     annualEpaAlphaPension,
     annualNuvosPension,
@@ -224,6 +235,7 @@ export function buildProjectionRow(input: {
     classicAutomaticLumpSum,
     annualClassicPlusPension,
     classicPlusAutomaticLumpSum,
+    annualPremiumPension,
     monthlyAddedPension,
     lumpSumAddedPension,
     sippProjection,
@@ -298,6 +310,16 @@ export function buildProjectionRow(input: {
     classicPlusDrawDate,
     annualClassicPlusPensionIncludingReduction
   );
+  const annualPremiumPensionIncludingReduction =
+    calculateAnnualPremiumPensionIncludingReduction(
+      annualPremiumPension,
+      premiumReductionFactor
+    );
+  const monthlyPremiumPensionGross = calculateMonthlyAlphaPensionGross(
+    rowDate,
+    premiumDrawDate,
+    annualPremiumPensionIncludingReduction
+  );
   const monthlyStatePension = calculateMonthlyStatePension(
     rowDate,
     settings.statePensionDrawDate,
@@ -311,7 +333,8 @@ export function buildProjectionRow(input: {
     lisaProjection.monthlyLisaPension,
     monthlyNuvosPensionGross,
     monthlyClassicPensionGross,
-    monthlyClassicPlusPensionGross
+    monthlyClassicPlusPensionGross,
+    monthlyPremiumPensionGross
   );
   const monthlyIncomeTax = calculateMonthlyIncomeTax({
     settings,
@@ -319,6 +342,7 @@ export function buildProjectionRow(input: {
     monthlyClassicPension: monthlyClassicPensionGross,
     monthlyClassicPlusPension: monthlyClassicPlusPensionGross,
     monthlyNuvosPension: monthlyNuvosPensionGross,
+    monthlyPremiumPension: monthlyPremiumPensionGross,
     monthlyStatePension,
     monthlySippPension: sippProjection.monthlySippPension,
   });
@@ -347,6 +371,9 @@ export function buildProjectionRow(input: {
     annualNuvosPension,
     annualNuvosPensionIncludingReduction,
     monthlyNuvosPensionGross,
+    annualPremiumPension,
+    annualPremiumPensionIncludingReduction,
+    monthlyPremiumPensionGross,
     monthlyStatePension,
     sippPot: sippProjection.sippPot,
     monthlySippPension: sippProjection.monthlySippPension,
@@ -419,6 +446,8 @@ export function createHistoricalProjectionRows(input: {
   classicPlusDrawDate: string;
   classicPlusNpaDate: string;
   classicPlusReductionFactor: number;
+  premiumDrawDate: string;
+  premiumReductionFactor: number | null;
 }) {
   const {
     settings,
@@ -439,6 +468,8 @@ export function createHistoricalProjectionRows(input: {
     classicPlusDrawDate,
     classicPlusNpaDate,
     classicPlusReductionFactor,
+    premiumDrawDate,
+    premiumReductionFactor,
   } = input;
 
   if (alphaAbsDate >= settings.startDate) {
@@ -491,6 +522,8 @@ export function createHistoricalProjectionRows(input: {
         classicPlusDrawDate,
         classicPlusNpaDate,
         classicPlusReductionFactor,
+        premiumDrawDate,
+        premiumReductionFactor,
         annualStandardAlphaPension:
           cumulativeStandardAlphaPension + cumulativeLumpSumAddedPension,
         annualEpaAlphaPension: cumulativeEpaAlphaPension,
@@ -499,6 +532,11 @@ export function createHistoricalProjectionRows(input: {
         classicAutomaticLumpSum: 0,
         annualClassicPlusPension: 0,
         classicPlusAutomaticLumpSum: 0,
+        annualPremiumPension: calculatePremiumAnnualPension({
+          settings,
+          rowDate,
+          premiumDrawDate,
+        }),
         monthlyAddedPension,
         lumpSumAddedPension,
         sippProjection: { sippPot: 0, monthlySippPension: 0 },
@@ -542,6 +580,14 @@ export function calculateClassicPlusAutomaticLumpSum(input: {
   return calculateClassicPlusAutomaticLumpSumAtDate(input);
 }
 
+export function calculatePremiumAnnualPension(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  premiumDrawDate: string;
+}) {
+  return calculateAnnualPremiumPensionAtDate(input);
+}
+
 export function calculateNuvosAnnualPension(input: {
   settings: PensionSettings;
   rowDate: string;
@@ -570,6 +616,7 @@ export function attachMilestonesToRows(input: {
   nuvosAccrualStopDate: string;
   nuvosDrawDate: string;
   nuvosAbsDate: string;
+  premiumDrawDate: string;
 }) {
   const milestoneDefinitions = buildProjectionMilestoneDefinitions(input);
   const milestoneRows = buildMilestoneMapForRowDates(

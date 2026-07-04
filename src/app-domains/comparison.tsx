@@ -379,6 +379,9 @@ export function buildComparisonTableRows(
   const anyScenarioUsesNuvos = results.some(
     (result) => result.scenario.settings.showNuvos
   );
+  const anyScenarioUsesPremium = results.some(
+    (result) => result.scenario.settings.showPremium
+  );
   const nuvosTimingRows: Array<
     [metric: string, getValue: (result: ComparisonResult) => ReactNode]
   > = anyScenarioUsesNuvos
@@ -402,6 +405,35 @@ export function buildComparisonTableRows(
             result.scenario.settings.showNuvos
               ? formatRecurringAnnualCurrency(
                   result.summary.nuvosPension.annualAtDraw,
+                  retirementIncomeDisplay
+                )
+              : "n/a",
+        ],
+      ]
+    : [];
+  const premiumTimingRows: Array<
+    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+  > = anyScenarioUsesPremium
+    ? [
+        [
+          "Premium start",
+          (result) =>
+            result.scenario.settings.showPremium
+              ? formatDecimalAge(result.scenario.settings.premiumDrawAge)
+              : "n/a",
+        ],
+      ]
+    : [];
+  const premiumIncomeRows: Array<
+    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+  > = anyScenarioUsesPremium
+    ? [
+        [
+          "Premium income",
+          (result) =>
+            result.scenario.settings.showPremium
+              ? formatRecurringAnnualCurrency(
+                  result.summary.premiumPension.annualAtDraw,
                   retirementIncomeDisplay
                 )
               : "n/a",
@@ -480,6 +512,7 @@ export function buildComparisonTableRows(
           formatDecimalAge(result.scenario.settings.alphaPensionDrawAge),
       ],
       ...nuvosTimingRows,
+      ...premiumTimingRows,
       [
         "ISA start",
         (result) =>
@@ -519,6 +552,7 @@ export function buildComparisonTableRows(
           ),
       ],
       ...nuvosIncomeRows,
+      ...premiumIncomeRows,
       [
         "State Pension income",
         (result) =>
@@ -541,6 +575,9 @@ export function buildComparisonTableRows(
                 result.summary.alphaPension.annualAtDraw +
                   (result.scenario.settings.showNuvos
                     ? result.summary.nuvosPension.annualAtDraw
+                    : 0) +
+                  (result.scenario.settings.showPremium
+                    ? result.summary.premiumPension.annualAtDraw
                     : 0),
                 retirementIncomeDisplay
               ),
@@ -650,6 +687,9 @@ export function buildComparisonDetailedRows(
   const anyScenarioUsesNuvos = results.some(
     (result) => result.scenario.settings.showNuvos
   );
+  const anyScenarioUsesPremium = results.some(
+    (result) => result.scenario.settings.showPremium
+  );
   const nuvosSecurePensionRows: Array<
     [metric: string, getValue: (result: ComparisonResult) => ReactNode]
   > = anyScenarioUsesNuvos
@@ -659,6 +699,19 @@ export function buildComparisonDetailedRows(
           (result) =>
             result.scenario.settings.showNuvos
               ? formatAnnualCurrency(result.summary.nuvosPension.annualAtDraw)
+              : "n/a",
+        ],
+      ]
+    : [];
+  const premiumSecurePensionRows: Array<
+    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+  > = anyScenarioUsesPremium
+    ? [
+        [
+          "Premium income at draw age",
+          (result) =>
+            result.scenario.settings.showPremium
+              ? formatAnnualCurrency(result.summary.premiumPension.annualAtDraw)
               : "n/a",
         ],
       ]
@@ -704,6 +757,7 @@ export function buildComparisonDetailedRows(
           ),
       ],
       ...nuvosSecurePensionRows,
+      ...premiumSecurePensionRows,
       [
         "Combined secure pension at State Pension age",
         (result) =>
@@ -1443,6 +1497,7 @@ function getCombinedSecurePensionAtStateAge(result: ComparisonResult) {
   return (
     ((stateAgeRow?.monthlyAlphaPensionGross ?? 0) +
       (stateAgeRow?.monthlyNuvosPensionGross ?? 0) +
+      (stateAgeRow?.monthlyPremiumPensionGross ?? 0) +
       (stateAgeRow?.monthlyStatePension ?? 0)) *
     12
   );

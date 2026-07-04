@@ -11,6 +11,7 @@ const STOPS_ALPHA_ACCRUAL_LABEL = "Leave Alpha Pension Scheme";
 const STARTS_ALPHA_PENSION_LABEL = "Starts Drawing Alpha Pension";
 const STOPS_NUVOS_ACCRUAL_LABEL = "Leave nuvos Pension Scheme";
 const STARTS_NUVOS_PENSION_LABEL = "Starts Drawing nuvos Pension";
+const STARTS_PREMIUM_PENSION_LABEL = "Starts Drawing Premium Pension";
 const STARTS_SIPP_LABEL = "Starts Drawing SIPP";
 const STARTS_ISA_LABEL = "Starts Drawing ISA";
 const STARTS_LISA_LABEL = "Starts Drawing LISA";
@@ -43,6 +44,7 @@ export function generateMilestoneDefinitions(
   nuvosPensionStopDate = "",
   nuvosPensionDrawDate = "",
   nuvosAbsDate = "",
+  premiumPensionDrawDate = "",
   partialRetirementStartDate = "",
   lisaDrawDate = "",
   lisaLumpSums: AddedPensionLumpSum[] = []
@@ -64,6 +66,9 @@ export function generateMilestoneDefinitions(
       : []),
     ...(nuvosPensionDrawDate
       ? [{ date: nuvosPensionDrawDate, label: STARTS_NUVOS_PENSION_LABEL }]
+      : []),
+    ...(premiumPensionDrawDate
+      ? [{ date: premiumPensionDrawDate, label: STARTS_PREMIUM_PENSION_LABEL }]
       : []),
     ...(sippDrawDate ? [{ date: sippDrawDate, label: STARTS_SIPP_LABEL }] : []),
     ...(isaDrawDate ? [{ date: isaDrawDate, label: STARTS_ISA_LABEL }] : []),
@@ -150,6 +155,7 @@ export function buildProjectionMilestoneDefinitions(input: {
   nuvosAccrualStopDate: string;
   nuvosDrawDate: string;
   nuvosAbsDate: string;
+  premiumDrawDate: string;
 }) {
   const {
     settings,
@@ -163,6 +169,7 @@ export function buildProjectionMilestoneDefinitions(input: {
     nuvosAccrualStopDate,
     nuvosDrawDate,
     nuvosAbsDate,
+    premiumDrawDate,
   } = input;
 
   return generateMilestoneDefinitions(
@@ -181,6 +188,7 @@ export function buildProjectionMilestoneDefinitions(input: {
     settings.showNuvos ? nuvosAccrualStopDate : "",
     settings.showNuvos ? nuvosDrawDate : "",
     settings.showNuvos ? nuvosAbsDate : "",
+    settings.showPremium ? premiumDrawDate : "",
     settings.partialRetirementEnabled
       ? getPartialRetirementStartDate(settings)
       : "",

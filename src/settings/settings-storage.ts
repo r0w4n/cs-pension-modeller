@@ -4,6 +4,7 @@ import {
 } from "./settings-domains/alpha-pension";
 import { coerceClassicSettings } from "./settings-domains/classic";
 import { coerceNuvosSettings } from "./settings-domains/nuvos";
+import { coercePremiumSettings } from "./settings-domains/premium";
 import { coerceStatePensionSettings } from "./settings-domains/state-pension";
 import { coerceSippTaxReliefRate } from "./settings-domains/sipp";
 import { coerceTaxSettings } from "./settings-domains/tax";
@@ -210,6 +211,7 @@ function coerceSettings(
     ...coerceClassicSettings(input),
     ...coerceStatePensionSettings(input),
     ...coerceNuvosSettings(input),
+    ...coercePremiumSettings(input),
     ...coerceTaxSettings(input),
   };
 }

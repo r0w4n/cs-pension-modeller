@@ -2,6 +2,7 @@ import { calculateNormalPensionAge, type PensionSettings } from "./settings";
 import { calculateTotalIsaContributions } from "./projection-domains/isa";
 import { calculateTotalLisaContributionsWithBonus } from "./projection-domains/lisa";
 import { NUVOS_FINAL_PENSIONABLE_SERVICE_DATE } from "./projection-domains/nuvos";
+import { calculatePremiumPension } from "./projection-domains/premium";
 import { calculateTotalSippContributionsAfterTaxRelief } from "./projection-domains/sipp";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
 import { calculateRetirementIncomeTargetAtDate } from "./projection-domains/inflation";
@@ -42,6 +43,7 @@ export function generatePensionSummary(
     classicPlusDrawDate: classicPlusPensionDrawDate,
     nuvosDrawDate: nuvosPensionDrawDate,
     nuvosAccrualStopDate,
+    premiumDrawDate,
     reductionFactor,
   } = derivedInputs;
   const summaryDates = buildSummaryDates(settings, {
@@ -51,6 +53,7 @@ export function generatePensionSummary(
     classicPlusPensionDrawDate,
     nuvosPensionDrawDate,
     nuvosAccrualStopDate,
+    premiumDrawDate,
   });
   const baseSummaryContext = buildSummaryBaseContext(settings, {
     alphaAbsDate,
@@ -78,6 +81,12 @@ export function generatePensionSummary(
       classicPlusMonthlyAtDraw: 0,
       classicPlusAutomaticLumpSumAtDraw: 0,
       maximumAnnualClassicPlusAccrued: 0,
+      premiumAtDraw: 0,
+      premiumMonthlyAtDraw: 0,
+      premiumCpiRevaluedAnnualAtDraw: 0,
+      premiumEarlyRetirementFactor: null,
+      premiumIsReducedForEarlyPayment: false,
+      premiumFactorUnavailable: false,
       sippPotAtDraw: 0,
       sippMonthlyAtDraw: 0,
       isaPotAtDraw: 0,
@@ -93,6 +102,7 @@ export function generatePensionSummary(
         classicMonthlyIncome: 0,
         classicPlusMonthlyIncome: 0,
         nuvosMonthlyIncome: 0,
+        premiumMonthlyIncome: 0,
         sippMonthlyIncome: 0,
         isaMonthlyIncome: 0,
         lisaMonthlyIncome: 0,
@@ -128,6 +138,7 @@ function buildSummaryDates(
     classicPlusPensionDrawDate: string;
     nuvosPensionDrawDate: string;
     nuvosAccrualStopDate: string;
+    premiumDrawDate: string;
   }
 ) {
   return {
@@ -135,6 +146,7 @@ function buildSummaryDates(
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
+    premiumDrawDate: dates.premiumDrawDate,
     statePensionStartDate: settings.statePensionDrawDate,
   };
 }
@@ -171,6 +183,7 @@ function buildRowSummaryContext(
     classicPensionDrawDate: string;
     classicPlusPensionDrawDate: string;
     nuvosPensionDrawDate: string;
+    premiumDrawDate: string;
     sippDrawDate: string;
     isaDrawDate: string;
     lisaDrawDate: string;
@@ -195,6 +208,7 @@ function buildRowSummaryContext(
       tableData,
       input.nuvosPensionDrawDate
     ),
+    premiumDrawRow: findFirstRowAtOrAfterDate(tableData, input.premiumDrawDate),
     statePensionRow: findFirstRowAtOrAfterDate(
       tableData,
       input.statePensionStartDate
@@ -225,6 +239,7 @@ function buildRowSummaryContext(
     classicPensionDrawDate: input.classicPensionDrawDate,
     classicPlusPensionDrawDate: input.classicPlusPensionDrawDate,
     nuvosPensionDrawDate: input.nuvosPensionDrawDate,
+    premiumPensionDrawDate: input.premiumDrawDate,
     statePensionStartDate: input.statePensionStartDate,
     sippIncomeRow: flexibleIncomeRows.sippIncomeRow,
     isaIncomeRow: flexibleIncomeRows.isaIncomeRow,
@@ -315,6 +330,17 @@ function buildRowSummaryContext(
     drawRows.statePensionRow,
     "monthlyStatePension"
   );
+  const premiumCalculation = calculatePremiumPension({
+    annualPensionAtValuationDate: settings.premiumAnnualPensionAtValuationDate,
+    valuationDate: settings.premiumValuationDate,
+    dateOfBirth: settings.dateOfBirth,
+    drawAge: settings.premiumDrawAge,
+    normalPensionAge: settings.premiumNormalPensionAge,
+    cpiAssumption:
+      settings.projectionBasis === "real"
+        ? 0
+        : settings.inflationRateAnnual / 100,
+  });
 
   return {
     alphaAtDraw,
@@ -333,6 +359,16 @@ function buildRowSummaryContext(
     classicPlusMonthlyAtDraw,
     classicPlusAutomaticLumpSumAtDraw,
     maximumAnnualClassicPlusAccrued,
+    premiumAtDraw:
+      drawRows.premiumDrawRow?.annualPremiumPensionIncludingReduction ?? 0,
+    premiumMonthlyAtDraw:
+      drawRows.premiumDrawRow?.monthlyPremiumPensionGross ?? 0,
+    premiumCpiRevaluedAnnualAtDraw:
+      premiumCalculation.cpiRevaluedPensionAtDrawAge,
+    premiumEarlyRetirementFactor: premiumCalculation.earlyRetirementFactor,
+    premiumIsReducedForEarlyPayment:
+      premiumCalculation.isReducedForEarlyPayment,
+    premiumFactorUnavailable: premiumCalculation.factorUnavailable,
     sippPotAtDraw,
     sippMonthlyAtDraw,
     isaPotAtDraw,
@@ -373,6 +409,7 @@ function buildRowRetirementIncomeSummary(
     classicDrawRow: ProjectionRow | undefined;
     classicPlusDrawRow: ProjectionRow | undefined;
     nuvosDrawRow: ProjectionRow | undefined;
+    premiumDrawRow: ProjectionRow | undefined;
     statePensionRow: ProjectionRow | undefined;
     sippDrawRow: ProjectionRow | undefined;
     isaDrawRow: ProjectionRow | undefined;
@@ -390,6 +427,7 @@ function buildRowRetirementIncomeSummary(
   const classicPlusMonthlyIncome =
     summaryRow?.monthlyClassicPlusPensionGross ?? 0;
   const nuvosMonthlyIncome = summaryRow?.monthlyNuvosPensionGross ?? 0;
+  const premiumMonthlyIncome = summaryRow?.monthlyPremiumPensionGross ?? 0;
   const statePensionMonthlyIncome = summaryRow?.monthlyStatePension ?? 0;
   const sippMonthlyIncome = summaryRow?.monthlySippPension ?? 0;
   const isaMonthlyIncome = summaryRow?.monthlyIsaPension ?? 0;
@@ -407,6 +445,7 @@ function buildRowRetirementIncomeSummary(
     classicMonthlyIncome,
     classicPlusMonthlyIncome,
     nuvosMonthlyIncome,
+    premiumMonthlyIncome,
     sippMonthlyIncome,
     isaMonthlyIncome,
     lisaMonthlyIncome,
@@ -417,6 +456,7 @@ function buildRowRetirementIncomeSummary(
       monthlyClassicPension: classicMonthlyIncome,
       monthlyClassicPlusPension: classicPlusMonthlyIncome,
       monthlyNuvosPension: nuvosMonthlyIncome,
+      monthlyPremiumPension: premiumMonthlyIncome,
       monthlyStatePension: statePensionMonthlyIncome,
       monthlySippPension: sippMonthlyIncome,
     }),
@@ -523,6 +563,10 @@ function getActiveIncomeSourceLabels(
     settings.showNuvos && row.monthlyNuvosPensionGross > ACTIVE_INCOME_EPSILON
       ? "nuvos pension"
       : null,
+    settings.showPremium &&
+    row.monthlyPremiumPensionGross > ACTIVE_INCOME_EPSILON
+      ? "Premium pension"
+      : null,
     settings.showSipp && row.monthlySippPension > ACTIVE_INCOME_EPSILON
       ? "SIPP withdrawal"
       : null,
@@ -552,6 +596,7 @@ function findRetirementIncomeSummaryRow(
     classicPensionDrawDate: string;
     classicPlusPensionDrawDate: string;
     nuvosPensionDrawDate: string;
+    premiumPensionDrawDate: string;
     statePensionStartDate: string;
     sippIncomeRow: ProjectionRow | undefined;
     isaIncomeRow: ProjectionRow | undefined;
@@ -563,6 +608,7 @@ function findRetirementIncomeSummaryRow(
     ...(settings.showClassic ? [input.classicPensionDrawDate] : []),
     ...(settings.showClassicPlus ? [input.classicPlusPensionDrawDate] : []),
     ...(settings.showNuvos ? [input.nuvosPensionDrawDate] : []),
+    ...(settings.showPremium ? [input.premiumPensionDrawDate] : []),
     ...(settings.showStatePension ? [input.statePensionStartDate] : []),
   ];
   const flexibleIncomeDates = [
@@ -714,6 +760,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
       settings.dateOfBirth,
       settings.nuvosPensionDrawAge
     ),
+    premiumDrawDate: addYears(settings.dateOfBirth, settings.premiumDrawAge),
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
@@ -735,6 +782,12 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     classicPlusMonthlyAtDraw: 0,
     classicPlusAutomaticLumpSumAtDraw: 0,
     maximumAnnualClassicPlusAccrued: 0,
+    premiumAtDraw: 0,
+    premiumMonthlyAtDraw: 0,
+    premiumCpiRevaluedAnnualAtDraw: 0,
+    premiumEarlyRetirementFactor: null,
+    premiumIsReducedForEarlyPayment: false,
+    premiumFactorUnavailable: false,
     sippPotAtDraw: 0,
     sippMonthlyAtDraw: 0,
     isaPotAtDraw: 0,
@@ -750,6 +803,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
       classicMonthlyIncome: 0,
       classicPlusMonthlyIncome: 0,
       nuvosMonthlyIncome: 0,
+      premiumMonthlyIncome: 0,
       sippMonthlyIncome: 0,
       isaMonthlyIncome: 0,
       lisaMonthlyIncome: 0,
@@ -770,6 +824,7 @@ function createSummaryResponse(input: {
   classicPlusPensionDrawDate: string;
   nuvosAccrualStopDate: string;
   nuvosPensionDrawDate: string;
+  premiumDrawDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
@@ -791,6 +846,12 @@ function createSummaryResponse(input: {
   classicPlusMonthlyAtDraw: number;
   classicPlusAutomaticLumpSumAtDraw: number;
   maximumAnnualClassicPlusAccrued: number;
+  premiumAtDraw: number;
+  premiumMonthlyAtDraw: number;
+  premiumCpiRevaluedAnnualAtDraw: number;
+  premiumEarlyRetirementFactor: number | null;
+  premiumIsReducedForEarlyPayment: boolean;
+  premiumFactorUnavailable: boolean;
   sippPotAtDraw: number;
   sippMonthlyAtDraw: number;
   isaPotAtDraw: number;
@@ -810,6 +871,7 @@ function createSummaryResponse(input: {
     classicPlusPensionDrawDate,
     nuvosAccrualStopDate,
     nuvosPensionDrawDate,
+    premiumDrawDate,
     sippDrawDate,
     isaDrawDate,
     lisaDrawDate,
@@ -831,6 +893,12 @@ function createSummaryResponse(input: {
     classicPlusMonthlyAtDraw,
     classicPlusAutomaticLumpSumAtDraw,
     maximumAnnualClassicPlusAccrued,
+    premiumAtDraw,
+    premiumMonthlyAtDraw,
+    premiumCpiRevaluedAnnualAtDraw,
+    premiumEarlyRetirementFactor,
+    premiumIsReducedForEarlyPayment,
+    premiumFactorUnavailable,
     sippPotAtDraw,
     sippMonthlyAtDraw,
     isaPotAtDraw,
@@ -851,6 +919,7 @@ function createSummaryResponse(input: {
       startsClassicPlusPension: classicPlusPensionDrawDate,
       stopsNuvosAccrual: nuvosAccrualStopDate,
       startsNuvosPension: nuvosPensionDrawDate,
+      startsPremiumPension: premiumDrawDate,
       startsSippDraw: sippDrawDate,
       startsIsaDraw: isaDrawDate,
       startsLisaDraw: lisaDrawDate,
@@ -878,6 +947,14 @@ function createSummaryResponse(input: {
       monthlyAtDraw: classicPlusMonthlyAtDraw,
       automaticLumpSumAtDraw: classicPlusAutomaticLumpSumAtDraw,
       maximumAnnualAccrued: maximumAnnualClassicPlusAccrued,
+    },
+    premiumPension: {
+      annualAtDraw: premiumAtDraw,
+      monthlyAtDraw: premiumMonthlyAtDraw,
+      cpiRevaluedAnnualAtDraw: premiumCpiRevaluedAnnualAtDraw,
+      earlyRetirementFactor: premiumEarlyRetirementFactor,
+      isReducedForEarlyPayment: premiumIsReducedForEarlyPayment,
+      factorUnavailable: premiumFactorUnavailable,
     },
     sippPension: {
       potAtDraw: sippPotAtDraw,
@@ -932,6 +1009,7 @@ function buildRetirementIncomeSummary({
   classicMonthlyIncome,
   classicPlusMonthlyIncome,
   nuvosMonthlyIncome,
+  premiumMonthlyIncome,
   sippMonthlyIncome,
   isaMonthlyIncome,
   lisaMonthlyIncome,
@@ -946,6 +1024,7 @@ function buildRetirementIncomeSummary({
   classicMonthlyIncome: number;
   classicPlusMonthlyIncome: number;
   nuvosMonthlyIncome: number;
+  premiumMonthlyIncome: number;
   sippMonthlyIncome: number;
   isaMonthlyIncome: number;
   lisaMonthlyIncome: number;
@@ -989,6 +1068,15 @@ function buildRetirementIncomeSummary({
             "nuvos",
             "nuvos pension",
             nuvosMonthlyIncome
+          ),
+        ]
+      : []),
+    ...(settings.showPremium
+      ? [
+          createRetirementIncomeSource(
+            "premium",
+            "Premium pension",
+            premiumMonthlyIncome
           ),
         ]
       : []),

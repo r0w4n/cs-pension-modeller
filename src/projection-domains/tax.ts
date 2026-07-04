@@ -6,6 +6,7 @@ export function calculateMonthlyIncomeTax(input: {
   monthlyClassicPension?: number;
   monthlyClassicPlusPension?: number;
   monthlyNuvosPension?: number;
+  monthlyPremiumPension?: number;
   monthlyStatePension: number;
   monthlySippPension: number;
 }) {
@@ -15,6 +16,7 @@ export function calculateMonthlyIncomeTax(input: {
     monthlyClassicPension = 0,
     monthlyClassicPlusPension = 0,
     monthlyNuvosPension = 0,
+    monthlyPremiumPension = 0,
     monthlyStatePension,
     monthlySippPension,
   } = input;
@@ -29,6 +31,7 @@ export function calculateMonthlyIncomeTax(input: {
       monthlyClassicPension +
       monthlyClassicPlusPension +
       monthlyNuvosPension +
+      monthlyPremiumPension +
       monthlyStatePension +
       monthlySippPension * taxableSippShare) *
     12;

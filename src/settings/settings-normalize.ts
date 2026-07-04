@@ -35,6 +35,11 @@ import {
   nuvosNumericSettingRules,
 } from "./settings-domains/nuvos";
 import {
+  normalizePremiumBooleanSetting,
+  normalizePremiumEarliestAccessAge,
+  premiumNumericSettingRules,
+} from "./settings-domains/premium";
+import {
   normalizePersonalDateSetting,
   personalDetailsNumericSettingRules,
 } from "./settings-domains/personal-details";
@@ -82,6 +87,7 @@ const numericSettingRules = {
   alphaEpaYearsBeforeNpa: { min: 1, max: 3, step: 1 },
   ...classicNumericSettingRules,
   ...nuvosNumericSettingRules,
+  ...premiumNumericSettingRules,
   sippCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
   sippDrawAge: { min: 55, max: 100, step: 1 },
@@ -152,6 +158,10 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   nuvosPensionLeaveAge: defaultSettings.nuvosPensionLeaveAge,
   nuvosPensionDrawAge: defaultSettings.nuvosPensionDrawAge,
   nuvosAssumedCpiPercent: defaultSettings.nuvosAssumedCpiPercent,
+  premiumAnnualPensionAtValuationDate:
+    defaultSettings.premiumAnnualPensionAtValuationDate,
+  premiumNormalPensionAge: defaultSettings.premiumNormalPensionAge,
+  premiumDrawAge: defaultSettings.premiumDrawAge,
   sippCurrentPot: defaultSettings.sippCurrentPot,
   sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
   sippDrawAge: defaultSettings.sippDrawAge,
@@ -192,6 +202,7 @@ const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
   "classicPlusPensionDrawAge",
   "nuvosPensionLeaveAge",
   "nuvosPensionDrawAge",
+  "premiumDrawAge",
   "sippDrawAge",
   "sippWithdrawalTargetAge",
   "isaDrawAge",
@@ -248,6 +259,9 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeClassicBooleanSetting(value) as PensionSettings[K];
     case "showNuvos":
       return normalizeNuvosBooleanSetting(value) as PensionSettings[K];
+    case "showPremium":
+    case "premiumHasNpa65":
+      return normalizePremiumBooleanSetting(value) as PensionSettings[K];
     case "showStatePension":
       return normalizeStatePensionBooleanSetting(value) as PensionSettings[K];
     case "taxationEnabled":
@@ -296,10 +310,13 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeLisaWithdrawalStrategy(value) as PensionSettings[K];
     case "alphaEpaStartDate":
     case "alphaEpaEndDate":
+    case "premiumValuationDate":
       return normalizeIsoDate(
         value as string,
         defaultSettings[key] as string
       ) as PensionSettings[K];
+    case "premiumEarliestAccessAge":
+      return normalizePremiumEarliestAccessAge(value) as PensionSettings[K];
     case "alphaPensionAbsDate":
     case "nuvosPensionAbsDate":
       return normalizeAlphaAbsYearValue(
@@ -349,6 +366,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     showClassic: normalizeClassicBooleanSetting(settings.showClassic),
     showClassicPlus: normalizeClassicBooleanSetting(settings.showClassicPlus),
     showNuvos: normalizeNuvosBooleanSetting(settings.showNuvos),
+    showPremium: normalizePremiumBooleanSetting(settings.showPremium),
     showStatePension: normalizeStatePensionBooleanSetting(
       settings.showStatePension
     ),
@@ -544,6 +562,23 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "nuvosAssumedCpiPercent",
       settings.nuvosAssumedCpiPercent
     ),
+    premiumAnnualPensionAtValuationDate: normalizeSetting(
+      "premiumAnnualPensionAtValuationDate",
+      settings.premiumAnnualPensionAtValuationDate
+    ),
+    premiumValuationDate: normalizeSetting(
+      "premiumValuationDate",
+      settings.premiumValuationDate
+    ),
+    premiumNormalPensionAge: normalizeSetting(
+      "premiumNormalPensionAge",
+      settings.premiumHasNpa65 ? settings.premiumNormalPensionAge : 60
+    ),
+    premiumDrawAge: normalizeSetting("premiumDrawAge", settings.premiumDrawAge),
+    premiumEarliestAccessAge: normalizePremiumEarliestAccessAge(
+      settings.premiumEarliestAccessAge
+    ),
+    premiumHasNpa65: normalizePremiumBooleanSetting(settings.premiumHasNpa65),
     sippCurrentPot: normalizeSetting("sippCurrentPot", settings.sippCurrentPot),
     sippMonthlyContribution: normalizeSetting(
       "sippMonthlyContribution",

@@ -55,6 +55,7 @@ export function isFieldDisabled(
     (isPartialRetirementField(fieldId) && !settings.partialRetirementEnabled) ||
     (isNuvosPensionIncreaseField(fieldId) &&
       !settings.nuvosApplyPensionIncreases) ||
+    (fieldId === "premiumNormalPensionAge" && !settings.premiumHasNpa65) ||
     (isStatePensionGrowthField(fieldId) &&
       !settings.statePensionApplyFutureGrowth) ||
     isSippFieldDisabled(fieldId, settings) ||

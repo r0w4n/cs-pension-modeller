@@ -15,6 +15,7 @@ export type ProjectionRowLike = {
   monthlyClassicPensionGross?: number;
   monthlyClassicPlusPensionGross?: number;
   monthlyNuvosPensionGross: number;
+  monthlyPremiumPensionGross: number;
   monthlyStatePension: number;
 };
 
@@ -31,6 +32,7 @@ export type BridgePhase = {
   annualTargetIncome: number;
   annualAlphaPension: number;
   annualNuvosPension: number;
+  annualPremiumPension: number;
   annualStatePension: number;
   annualIsaBridge: number;
   annualLisaBridge: number;
@@ -50,6 +52,7 @@ export type BridgePotProjectionRow = {
   ageMonths: number;
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
+  monthlyPremiumPension: number;
   monthlyStatePension: number;
   isaBalance: number;
   lisaBalance: number;
@@ -106,6 +109,7 @@ type BridgePotGrowthRates = {
 type MonthlySecureIncome = {
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
+  monthlyPremiumPension: number;
   monthlyStatePension: number;
   guaranteedIncome: number;
 };
@@ -237,6 +241,7 @@ export function generateRetirementBridgeAnalysis(
       ageMonths: calculateAgeMonths(settings.dateOfBirth, rowDate),
       monthlyAlphaPension: secureIncome.monthlyAlphaPension,
       monthlyNuvosPension: secureIncome.monthlyNuvosPension,
+      monthlyPremiumPension: secureIncome.monthlyPremiumPension,
       monthlyStatePension: secureIncome.monthlyStatePension,
       monthlyTargetIncome,
       guaranteedIncome: secureIncome.guaranteedIncome,
@@ -256,6 +261,7 @@ export function generateRetirementBridgeAnalysis(
         settings,
         monthlyAlphaPension: secureIncome.monthlyAlphaPension,
         monthlyNuvosPension: secureIncome.monthlyNuvosPension,
+        monthlyPremiumPension: secureIncome.monthlyPremiumPension,
         monthlyStatePension: secureIncome.monthlyStatePension,
       }),
     };
@@ -373,6 +379,10 @@ function calculateMonthlySecureIncome(input: {
       : 0;
   const monthlyNuvosPension =
     settings.showNuvos && pensionRow ? pensionRow.monthlyNuvosPensionGross : 0;
+  const monthlyPremiumPension =
+    settings.showPremium && pensionRow
+      ? pensionRow.monthlyPremiumPensionGross
+      : 0;
   const monthlyStatePension =
     settings.showStatePension && pensionRow
       ? pensionRow.monthlyStatePension
@@ -383,6 +393,7 @@ function calculateMonthlySecureIncome(input: {
     monthlyClassicPension,
     monthlyClassicPlusPension,
     monthlyNuvosPension,
+    monthlyPremiumPension,
     monthlyStatePension,
     monthlySippPension: 0,
   });
@@ -390,6 +401,7 @@ function calculateMonthlySecureIncome(input: {
   return {
     monthlyAlphaPension,
     monthlyNuvosPension,
+    monthlyPremiumPension,
     monthlyStatePension,
     guaranteedIncome: Math.max(
       0,
@@ -397,6 +409,7 @@ function calculateMonthlySecureIncome(input: {
         monthlyClassicPension +
         monthlyClassicPlusPension +
         monthlyNuvosPension +
+        monthlyPremiumPension +
         monthlyStatePension -
         monthlyIncomeTax
     ),
@@ -465,6 +478,9 @@ function getFullSecureIncomeStartDate(
     ...(settings.showNuvos
       ? [addYears(settings.dateOfBirth, settings.nuvosPensionDrawAge)]
       : []),
+    ...(settings.showPremium
+      ? [addYears(settings.dateOfBirth, settings.premiumDrawAge)]
+      : []),
     ...(settings.showStatePension ? [settings.statePensionDrawDate] : []),
   ];
 
@@ -487,6 +503,7 @@ function getActiveBridgeIncomeSources(input: {
   settings: PensionSettings;
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
+  monthlyPremiumPension: number;
   monthlyStatePension: number;
 }) {
   const sources = [
@@ -495,6 +512,9 @@ function getActiveBridgeIncomeSources(input: {
       : []),
     ...(input.settings.showNuvos && input.monthlyNuvosPension > 0
       ? ["nuvos"]
+      : []),
+    ...(input.settings.showPremium && input.monthlyPremiumPension > 0
+      ? ["Premium"]
       : []),
     ...(input.settings.showStatePension && input.monthlyStatePension > 0
       ? ["State Pension"]
@@ -512,6 +532,7 @@ function buildBridgePhases(
     monthlyTargetIncome: number;
     monthlyAlphaPension: number;
     monthlyNuvosPension: number;
+    monthlyPremiumPension: number;
     monthlyStatePension: number;
     shortfall: number;
     surplus: number;
@@ -542,6 +563,9 @@ function buildBridgePhases(
       : []),
     ...(settings.showNuvos
       ? [addYears(settings.dateOfBirth, settings.nuvosPensionDrawAge)]
+      : []),
+    ...(settings.showPremium
+      ? [addYears(settings.dateOfBirth, settings.premiumDrawAge)]
       : []),
     ...(settings.showStatePension ? [settings.statePensionDrawDate] : []),
     endDate,
@@ -601,6 +625,9 @@ function buildBridgePhases(
     const averageAnnualNuvosPension = annualiseAverage(
       rows.map((row) => row.monthlyNuvosPension)
     );
+    const averageAnnualPremiumPension = annualiseAverage(
+      rows.map((row) => row.monthlyPremiumPension)
+    );
     const averageAnnualStatePension = annualiseAverage(
       rows.map((row) => row.monthlyStatePension)
     );
@@ -645,6 +672,7 @@ function buildBridgePhases(
         annualTargetIncome: averageAnnualTarget,
         annualAlphaPension: averageAnnualAlphaPension,
         annualNuvosPension: averageAnnualNuvosPension,
+        annualPremiumPension: averageAnnualPremiumPension,
         annualStatePension: averageAnnualStatePension,
         annualIsaBridge: averageAnnualIsaBridge,
         annualLisaBridge: averageAnnualLisaBridge,
@@ -700,12 +728,17 @@ function formatBridgeBoundaryLabel(
     settings.dateOfBirth,
     settings.nuvosPensionDrawAge
   );
+  const premiumDrawDate = addYears(
+    settings.dateOfBirth,
+    settings.premiumDrawAge
+  );
   const labels = [
     date === retirementDate ? "Retirement" : "",
     settings.showSipp && date === sippAccessDate ? "SIPP access" : "",
     settings.showLisa && date === lisaAccessDate ? "LISA access" : "",
     settings.showAlpha && date === alphaDrawDate ? "Alpha" : "",
     settings.showNuvos && date === nuvosDrawDate ? "nuvos" : "",
+    settings.showPremium && date === premiumDrawDate ? "Premium" : "",
     settings.showStatePension && date === settings.statePensionDrawDate
       ? "State Pension"
       : "",
@@ -775,6 +808,13 @@ function buildBridgePotProjection(
     addIncomeStartMilestone(
       addYears(settings.dateOfBirth, settings.nuvosPensionDrawAge),
       "nuvos starts"
+    );
+  }
+
+  if (settings.showPremium) {
+    addIncomeStartMilestone(
+      addYears(settings.dateOfBirth, settings.premiumDrawAge),
+      "Premium starts"
     );
   }
 
@@ -975,6 +1015,7 @@ function calculateEarliestSustainablePensionDrawAge(settings: PensionSettings) {
       ageMonths: calculateAgeMonths(settings.dateOfBirth, date),
       monthlyAlphaPensionGross: 0,
       monthlyNuvosPensionGross: 0,
+      monthlyPremiumPensionGross: 0,
       monthlyStatePension: 0,
     }));
 

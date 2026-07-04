@@ -26,6 +26,8 @@ export type RetirementIncomePoint = {
   lisaIncomeAnnual: number;
   sippIncomeAnnual: number;
   alphaIncomeAnnual: number;
+  classicIncomeAnnual: number;
+  classicPlusIncomeAnnual: number;
   nuvosIncomeAnnual: number;
   partialRetirementIncomeAnnual: number;
   statePensionIncomeAnnual: number;
@@ -65,6 +67,8 @@ export type RetirementIncomeBridgeParameters = {
   partialRetirementEnabled: boolean;
   statePensionAge: number;
   showAlpha: boolean;
+  showClassic: boolean;
+  showClassicPlus: boolean;
   showIsa: boolean;
   showLisa: boolean;
   showSipp: boolean;
@@ -116,6 +120,8 @@ type IncomeKey =
   | "lisaIncomeAnnual"
   | "sippIncomeAnnual"
   | "alphaIncomeAnnual"
+  | "classicIncomeAnnual"
+  | "classicPlusIncomeAnnual"
   | "nuvosIncomeAnnual"
   | "partialRetirementIncomeAnnual"
   | "statePensionIncomeAnnual";
@@ -175,6 +181,8 @@ const incomeKeys: IncomeKey[] = [
   "sippIncomeAnnual",
   "partialRetirementIncomeAnnual",
   "alphaIncomeAnnual",
+  "classicIncomeAnnual",
+  "classicPlusIncomeAnnual",
   "nuvosIncomeAnnual",
   "statePensionIncomeAnnual",
 ];
@@ -207,6 +215,16 @@ const sourceMeta: Record<
     label: "Alpha pension",
     shortLabel: "Alpha",
     colour: "#7353bf",
+  },
+  classicIncomeAnnual: {
+    label: "classic pension",
+    shortLabel: "classic",
+    colour: "#8b5cf6",
+  },
+  classicPlusIncomeAnnual: {
+    label: "classic plus pension",
+    shortLabel: "classic plus",
+    colour: "#a855f7",
   },
   nuvosIncomeAnnual: {
     label: "Nuvos pension",
@@ -266,6 +284,8 @@ export function RetirementIncomeBridgeChart({
   partialRetirementEnabled,
   statePensionAge,
   showAlpha,
+  showClassic,
+  showClassicPlus,
   showIsa,
   showLisa,
   showSipp,
@@ -373,6 +393,8 @@ export function RetirementIncomeBridgeChart({
       incomeKeys.filter((key) =>
         isIncomeSourceEnabled(key, {
           showAlpha,
+          showClassic,
+          showClassicPlus,
           partialRetirementEnabled,
           showIsa,
           showLisa,
@@ -384,6 +406,8 @@ export function RetirementIncomeBridgeChart({
     [
       partialRetirementEnabled,
       showAlpha,
+      showClassic,
+      showClassicPlus,
       showIsa,
       showLisa,
       showNuvos,
@@ -2338,6 +2362,8 @@ export function RetirementIncomeBridgeChart({
               key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
             const enabled = isIncomeSourceEnabled(key, {
               showAlpha,
+              showClassic,
+              showClassicPlus,
               partialRetirementEnabled,
               showIsa,
               showLisa,
@@ -3262,6 +3288,8 @@ function isIncomeSourceEnabled(
   state: Pick<
     RetirementIncomeBridgeParameters,
     | "showAlpha"
+    | "showClassic"
+    | "showClassicPlus"
     | "partialRetirementEnabled"
     | "showIsa"
     | "showLisa"
@@ -3272,6 +3300,14 @@ function isIncomeSourceEnabled(
 ) {
   if (key === "alphaIncomeAnnual") {
     return state.showAlpha;
+  }
+
+  if (key === "classicIncomeAnnual") {
+    return state.showClassic;
+  }
+
+  if (key === "classicPlusIncomeAnnual") {
+    return state.showClassicPlus;
   }
 
   if (key === "isaIncomeAnnual") {
@@ -3307,6 +3343,14 @@ function getIncomeSourceTogglePatch(
 ): Partial<RetirementIncomeBridgeParameters> | null {
   if (key === "alphaIncomeAnnual") {
     return { showAlpha: enabled };
+  }
+
+  if (key === "classicIncomeAnnual") {
+    return { showClassic: enabled };
+  }
+
+  if (key === "classicPlusIncomeAnnual") {
+    return { showClassicPlus: enabled };
   }
 
   if (key === "isaIncomeAnnual") {

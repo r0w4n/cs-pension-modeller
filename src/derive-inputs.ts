@@ -1,6 +1,7 @@
 import {
   calculateNormalPensionAge,
   getAlphaEpaDate,
+  isValidIsoDate,
   resolveAlphaAbsDate,
   validateSettings,
   type PensionSettings,
@@ -10,6 +11,10 @@ import {
   getModelledPensionInflationPercent,
 } from "./projection-domains/inflation";
 import { getAlphaEarlyRetirementFactor } from "./projection-domains/alpha";
+import {
+  calculateClassicEarlyRetirementFactor,
+  CLASSIC_NORMAL_PENSION_AGE,
+} from "./projection-domains/classic";
 import {
   calculateNuvosEarlyRetirementFactor,
   NUVOS_FINAL_PENSIONABLE_SERVICE_DATE,
@@ -27,6 +32,12 @@ export type DerivedProjectionInputs = {
   nuvosAccrualStopDate: string;
   nuvosNpaDate: string;
   nuvosReductionFactor: number;
+  classicDrawDate: string;
+  classicNpaDate: string;
+  classicReductionFactor: number;
+  classicPlusDrawDate: string;
+  classicPlusNpaDate: string;
+  classicPlusReductionFactor: number;
   addedPensionStopDate: string;
   npaDate: string;
   epaDate: string;
@@ -149,6 +160,38 @@ export function deriveProjectionInputs(
     Math.floor(nuvosMonthsEarly / 12),
     nuvosMonthsEarly % 12
   );
+  const classicDrawDate = addYears(
+    settings.dateOfBirth,
+    settings.classicPensionDrawAge
+  );
+  const classicNpaDate = addYears(
+    settings.dateOfBirth,
+    CLASSIC_NORMAL_PENSION_AGE
+  );
+  const classicMonthsEarly =
+    classicDrawDate >= classicNpaDate
+      ? 0
+      : calculateWholeMonthDifference(classicDrawDate, classicNpaDate);
+  const classicReductionFactor = calculateClassicEarlyRetirementFactor(
+    Math.floor(classicMonthsEarly / 12),
+    classicMonthsEarly % 12
+  );
+  const classicPlusDrawDate = addYears(
+    settings.dateOfBirth,
+    settings.classicPlusPensionDrawAge
+  );
+  const classicPlusNpaDate = addYears(
+    settings.dateOfBirth,
+    CLASSIC_NORMAL_PENSION_AGE
+  );
+  const classicPlusMonthsEarly =
+    classicPlusDrawDate >= classicPlusNpaDate
+      ? 0
+      : calculateWholeMonthDifference(classicPlusDrawDate, classicPlusNpaDate);
+  const classicPlusReductionFactor = calculateClassicEarlyRetirementFactor(
+    Math.floor(classicPlusMonthsEarly / 12),
+    classicPlusMonthsEarly % 12
+  );
   const addedPensionStopDate = accrualStopDate;
   const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
   const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
@@ -175,6 +218,12 @@ export function deriveProjectionInputs(
     nuvosAccrualStopDate,
     nuvosNpaDate,
     nuvosReductionFactor,
+    classicDrawDate,
+    classicNpaDate,
+    classicReductionFactor,
+    classicPlusDrawDate,
+    classicPlusNpaDate,
+    classicPlusReductionFactor,
     addedPensionStopDate,
     npaDate,
     epaDate,
@@ -279,6 +328,10 @@ export function addYears(date: string, years: number) {
 }
 
 export function addMonths(date: string, months: number) {
+  if (!isValidIsoDate(date) || !Number.isFinite(months)) {
+    return date;
+  }
+
   const parsed = parseIsoDate(date);
   const monthIndex = parsed.getUTCMonth() + months;
   const year = parsed.getUTCFullYear() + Math.floor(monthIndex / 12);

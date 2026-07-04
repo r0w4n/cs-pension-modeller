@@ -70,6 +70,35 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
     alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
     alphaAddedPensionLumpSums: [],
+    showClassic: defaultSettings.showClassic,
+    showClassicPlus: defaultSettings.showClassicPlus,
+    classicCalculationMode: defaultSettings.classicCalculationMode,
+    classicFinalSalaryLink: defaultSettings.classicFinalSalaryLink,
+    classicCurrentFinalPensionableEarnings:
+      defaultSettings.classicCurrentFinalPensionableEarnings,
+    classicPreservedFinalPensionableEarnings:
+      defaultSettings.classicPreservedFinalPensionableEarnings,
+    classicReckonableServiceYears:
+      defaultSettings.classicReckonableServiceYears,
+    classicAnnualPension: defaultSettings.classicAnnualPension,
+    classicAutomaticLumpSum: defaultSettings.classicAutomaticLumpSum,
+    classicPensionDrawAge: defaultSettings.classicPensionDrawAge,
+    classicApplyPensionIncreases: defaultSettings.classicApplyPensionIncreases,
+    classicPlusCalculationMode: defaultSettings.classicPlusCalculationMode,
+    classicPlusFinalSalaryLink: defaultSettings.classicPlusFinalSalaryLink,
+    classicPlusCurrentFinalPensionableEarnings:
+      defaultSettings.classicPlusCurrentFinalPensionableEarnings,
+    classicPlusPreservedFinalPensionableEarnings:
+      defaultSettings.classicPlusPreservedFinalPensionableEarnings,
+    classicPlusPre2002ServiceYears:
+      defaultSettings.classicPlusPre2002ServiceYears,
+    classicPlusPost2002ServiceYears:
+      defaultSettings.classicPlusPost2002ServiceYears,
+    classicPlusAnnualPension: defaultSettings.classicPlusAnnualPension,
+    classicPlusAutomaticLumpSum: defaultSettings.classicPlusAutomaticLumpSum,
+    classicPlusPensionDrawAge: defaultSettings.classicPlusPensionDrawAge,
+    classicPlusApplyPensionIncreases:
+      defaultSettings.classicPlusApplyPensionIncreases,
     nuvosPensionAbsDate: defaultSettings.nuvosPensionAbsDate,
     nuvosAccruedPensionAtLastAbs: defaultSettings.nuvosAccruedPensionAtLastAbs,
     nuvosPensionableEarnings: defaultSettings.nuvosPensionableEarnings,
@@ -330,6 +359,36 @@ describe("settings unit tests", () => {
           factorType: "self",
         },
       ],
+      showClassic: defaultSettings.showClassic,
+      showClassicPlus: defaultSettings.showClassicPlus,
+      classicCalculationMode: defaultSettings.classicCalculationMode,
+      classicFinalSalaryLink: defaultSettings.classicFinalSalaryLink,
+      classicCurrentFinalPensionableEarnings:
+        defaultSettings.classicCurrentFinalPensionableEarnings,
+      classicPreservedFinalPensionableEarnings:
+        defaultSettings.classicPreservedFinalPensionableEarnings,
+      classicReckonableServiceYears:
+        defaultSettings.classicReckonableServiceYears,
+      classicAnnualPension: defaultSettings.classicAnnualPension,
+      classicAutomaticLumpSum: defaultSettings.classicAutomaticLumpSum,
+      classicPensionDrawAge: defaultSettings.classicPensionDrawAge,
+      classicApplyPensionIncreases:
+        defaultSettings.classicApplyPensionIncreases,
+      classicPlusCalculationMode: defaultSettings.classicPlusCalculationMode,
+      classicPlusFinalSalaryLink: defaultSettings.classicPlusFinalSalaryLink,
+      classicPlusCurrentFinalPensionableEarnings:
+        defaultSettings.classicPlusCurrentFinalPensionableEarnings,
+      classicPlusPreservedFinalPensionableEarnings:
+        defaultSettings.classicPlusPreservedFinalPensionableEarnings,
+      classicPlusPre2002ServiceYears:
+        defaultSettings.classicPlusPre2002ServiceYears,
+      classicPlusPost2002ServiceYears:
+        defaultSettings.classicPlusPost2002ServiceYears,
+      classicPlusAnnualPension: defaultSettings.classicPlusAnnualPension,
+      classicPlusAutomaticLumpSum: defaultSettings.classicPlusAutomaticLumpSum,
+      classicPlusPensionDrawAge: defaultSettings.classicPlusPensionDrawAge,
+      classicPlusApplyPensionIncreases:
+        defaultSettings.classicPlusApplyPensionIncreases,
       nuvosPensionAbsDate: defaultSettings.nuvosPensionAbsDate,
       nuvosAccruedPensionAtLastAbs:
         defaultSettings.nuvosAccruedPensionAtLastAbs,

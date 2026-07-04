@@ -1,4 +1,5 @@
 import { DEFAULT_ALPHA_ABS_YEAR, type PensionSettings } from "./settings-types";
+import { classicDefaults } from "./settings-domains/classic";
 import { inflationDefaults } from "./settings-domains/inflation";
 import { personalDetailsDefaults } from "./settings-domains/personal-details";
 import { nuvosDefaults } from "./settings-domains/nuvos";
@@ -25,6 +26,8 @@ export const defaultSettings: PensionSettings = {
   showAlpha: true,
   projectionBasis: inflationDefaults.projectionBasis,
   inflationRateAnnual: inflationDefaults.inflationRateAnnual,
+  showClassic: classicDefaults.showClassic,
+  showClassicPlus: classicDefaults.showClassicPlus,
   showNuvos: nuvosDefaults.showNuvos,
   showStatePension: statePensionDefaults.showStatePension,
   showSipp: true,
@@ -58,6 +61,32 @@ export const defaultSettings: PensionSettings = {
   alphaEpaStartDate: "2026-04-01",
   alphaEpaEndDate: "2047-03-31",
   alphaAddedPensionLumpSums: [],
+  classicCalculationMode: classicDefaults.classicCalculationMode,
+  classicFinalSalaryLink: classicDefaults.classicFinalSalaryLink,
+  classicCurrentFinalPensionableEarnings:
+    classicDefaults.classicCurrentFinalPensionableEarnings,
+  classicPreservedFinalPensionableEarnings:
+    classicDefaults.classicPreservedFinalPensionableEarnings,
+  classicReckonableServiceYears: classicDefaults.classicReckonableServiceYears,
+  classicAnnualPension: classicDefaults.classicAnnualPension,
+  classicAutomaticLumpSum: classicDefaults.classicAutomaticLumpSum,
+  classicPensionDrawAge: classicDefaults.classicPensionDrawAge,
+  classicApplyPensionIncreases: classicDefaults.classicApplyPensionIncreases,
+  classicPlusCalculationMode: classicDefaults.classicPlusCalculationMode,
+  classicPlusFinalSalaryLink: classicDefaults.classicPlusFinalSalaryLink,
+  classicPlusCurrentFinalPensionableEarnings:
+    classicDefaults.classicPlusCurrentFinalPensionableEarnings,
+  classicPlusPreservedFinalPensionableEarnings:
+    classicDefaults.classicPlusPreservedFinalPensionableEarnings,
+  classicPlusPre2002ServiceYears:
+    classicDefaults.classicPlusPre2002ServiceYears,
+  classicPlusPost2002ServiceYears:
+    classicDefaults.classicPlusPost2002ServiceYears,
+  classicPlusAnnualPension: classicDefaults.classicPlusAnnualPension,
+  classicPlusAutomaticLumpSum: classicDefaults.classicPlusAutomaticLumpSum,
+  classicPlusPensionDrawAge: classicDefaults.classicPlusPensionDrawAge,
+  classicPlusApplyPensionIncreases:
+    classicDefaults.classicPlusApplyPensionIncreases,
   nuvosPensionAbsDate: nuvosDefaults.nuvosPensionAbsDate,
   nuvosAccruedPensionAtLastAbs: nuvosDefaults.nuvosAccruedPensionAtLastAbs,
   nuvosPensionableEarnings: nuvosDefaults.nuvosPensionableEarnings,

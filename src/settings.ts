@@ -17,6 +17,8 @@ export type {
   LisaWithdrawalStrategy,
   SippTaxReliefRate,
   ProjectionBasis,
+  ClassicCalculationMode,
+  ClassicFinalSalaryLink,
   PensionSettings,
   PensionValidationIssue,
 } from "./settings/settings-types";

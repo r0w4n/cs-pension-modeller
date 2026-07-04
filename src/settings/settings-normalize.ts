@@ -15,6 +15,12 @@ import {
   normalizeAlphaPensionBooleanSetting,
 } from "./settings-domains/alpha-pension";
 import {
+  classicNumericSettingRules,
+  normalizeClassicBooleanSetting,
+  normalizeClassicCalculationMode,
+  normalizeClassicFinalSalaryLink,
+} from "./settings-domains/classic";
+import {
   normalizeIsaBooleanSetting,
   normalizeIsaWithdrawalStrategy,
 } from "./settings-domains/isa";
@@ -74,6 +80,7 @@ const numericSettingRules = {
   alphaPayRisePercent: { min: 0, max: 15, step: 0.1 },
   alphaPensionDrawAge: { min: 55, max: 70, step: 1 },
   alphaEpaYearsBeforeNpa: { min: 1, max: 3, step: 1 },
+  ...classicNumericSettingRules,
   ...nuvosNumericSettingRules,
   sippCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
@@ -121,6 +128,25 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
   alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
   alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
+  classicCurrentFinalPensionableEarnings:
+    defaultSettings.classicCurrentFinalPensionableEarnings,
+  classicPreservedFinalPensionableEarnings:
+    defaultSettings.classicPreservedFinalPensionableEarnings,
+  classicReckonableServiceYears: defaultSettings.classicReckonableServiceYears,
+  classicAnnualPension: defaultSettings.classicAnnualPension,
+  classicAutomaticLumpSum: defaultSettings.classicAutomaticLumpSum,
+  classicPensionDrawAge: defaultSettings.classicPensionDrawAge,
+  classicPlusCurrentFinalPensionableEarnings:
+    defaultSettings.classicPlusCurrentFinalPensionableEarnings,
+  classicPlusPreservedFinalPensionableEarnings:
+    defaultSettings.classicPlusPreservedFinalPensionableEarnings,
+  classicPlusPre2002ServiceYears:
+    defaultSettings.classicPlusPre2002ServiceYears,
+  classicPlusPost2002ServiceYears:
+    defaultSettings.classicPlusPost2002ServiceYears,
+  classicPlusAnnualPension: defaultSettings.classicPlusAnnualPension,
+  classicPlusAutomaticLumpSum: defaultSettings.classicPlusAutomaticLumpSum,
+  classicPlusPensionDrawAge: defaultSettings.classicPlusPensionDrawAge,
   nuvosAccruedPensionAtLastAbs: defaultSettings.nuvosAccruedPensionAtLastAbs,
   nuvosPensionableEarnings: defaultSettings.nuvosPensionableEarnings,
   nuvosPensionLeaveAge: defaultSettings.nuvosPensionLeaveAge,
@@ -162,6 +188,8 @@ const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
   "partialRetirementStartAge",
   "alphaPensionLeaveAge",
   "alphaPensionDrawAge",
+  "classicPensionDrawAge",
+  "classicPlusPensionDrawAge",
   "nuvosPensionLeaveAge",
   "nuvosPensionDrawAge",
   "sippDrawAge",
@@ -213,6 +241,11 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "showAlpha":
     case "alphaEpaEnabled":
       return normalizeAlphaPensionBooleanSetting(value) as PensionSettings[K];
+    case "showClassic":
+    case "showClassicPlus":
+    case "classicApplyPensionIncreases":
+    case "classicPlusApplyPensionIncreases":
+      return normalizeClassicBooleanSetting(value) as PensionSettings[K];
     case "showNuvos":
       return normalizeNuvosBooleanSetting(value) as PensionSettings[K];
     case "showStatePension":
@@ -249,6 +282,12 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeSippTaxReliefRate(value) as PensionSettings[K];
     case "alphaAddedPensionFactorType":
       return normalizeAddedPensionFactorType(value) as PensionSettings[K];
+    case "classicCalculationMode":
+    case "classicPlusCalculationMode":
+      return normalizeClassicCalculationMode(value) as PensionSettings[K];
+    case "classicFinalSalaryLink":
+    case "classicPlusFinalSalaryLink":
+      return normalizeClassicFinalSalaryLink(value) as PensionSettings[K];
     case "sippWithdrawalStrategy":
       return normalizeSippWithdrawalStrategy(value) as PensionSettings[K];
     case "isaWithdrawalStrategy":
@@ -307,6 +346,8 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "inflationRateAnnual",
       settings.inflationRateAnnual
     ),
+    showClassic: normalizeClassicBooleanSetting(settings.showClassic),
+    showClassicPlus: normalizeClassicBooleanSetting(settings.showClassicPlus),
     showNuvos: normalizeNuvosBooleanSetting(settings.showNuvos),
     showStatePension: normalizeStatePensionBooleanSetting(
       settings.showStatePension
@@ -401,6 +442,80 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     alphaAddedPensionLumpSums: normalizeSetting(
       "alphaAddedPensionLumpSums",
       settings.alphaAddedPensionLumpSums
+    ),
+    classicCalculationMode: normalizeSetting(
+      "classicCalculationMode",
+      settings.classicCalculationMode
+    ),
+    classicFinalSalaryLink: normalizeSetting(
+      "classicFinalSalaryLink",
+      settings.classicFinalSalaryLink
+    ),
+    classicCurrentFinalPensionableEarnings: normalizeSetting(
+      "classicCurrentFinalPensionableEarnings",
+      settings.classicCurrentFinalPensionableEarnings
+    ),
+    classicPreservedFinalPensionableEarnings: normalizeSetting(
+      "classicPreservedFinalPensionableEarnings",
+      settings.classicPreservedFinalPensionableEarnings
+    ),
+    classicReckonableServiceYears: normalizeSetting(
+      "classicReckonableServiceYears",
+      settings.classicReckonableServiceYears
+    ),
+    classicAnnualPension: normalizeSetting(
+      "classicAnnualPension",
+      settings.classicAnnualPension
+    ),
+    classicAutomaticLumpSum: normalizeSetting(
+      "classicAutomaticLumpSum",
+      settings.classicAutomaticLumpSum
+    ),
+    classicPensionDrawAge: normalizeSetting(
+      "classicPensionDrawAge",
+      settings.classicPensionDrawAge
+    ),
+    classicApplyPensionIncreases: normalizeClassicBooleanSetting(
+      settings.classicApplyPensionIncreases
+    ),
+    classicPlusCalculationMode: normalizeSetting(
+      "classicPlusCalculationMode",
+      settings.classicPlusCalculationMode
+    ),
+    classicPlusFinalSalaryLink: normalizeSetting(
+      "classicPlusFinalSalaryLink",
+      settings.classicPlusFinalSalaryLink
+    ),
+    classicPlusCurrentFinalPensionableEarnings: normalizeSetting(
+      "classicPlusCurrentFinalPensionableEarnings",
+      settings.classicPlusCurrentFinalPensionableEarnings
+    ),
+    classicPlusPreservedFinalPensionableEarnings: normalizeSetting(
+      "classicPlusPreservedFinalPensionableEarnings",
+      settings.classicPlusPreservedFinalPensionableEarnings
+    ),
+    classicPlusPre2002ServiceYears: normalizeSetting(
+      "classicPlusPre2002ServiceYears",
+      settings.classicPlusPre2002ServiceYears
+    ),
+    classicPlusPost2002ServiceYears: normalizeSetting(
+      "classicPlusPost2002ServiceYears",
+      settings.classicPlusPost2002ServiceYears
+    ),
+    classicPlusAnnualPension: normalizeSetting(
+      "classicPlusAnnualPension",
+      settings.classicPlusAnnualPension
+    ),
+    classicPlusAutomaticLumpSum: normalizeSetting(
+      "classicPlusAutomaticLumpSum",
+      settings.classicPlusAutomaticLumpSum
+    ),
+    classicPlusPensionDrawAge: normalizeSetting(
+      "classicPlusPensionDrawAge",
+      settings.classicPlusPensionDrawAge
+    ),
+    classicPlusApplyPensionIncreases: normalizeClassicBooleanSetting(
+      settings.classicPlusApplyPensionIncreases
     ),
     nuvosPensionAbsDate: normalizeSetting(
       "nuvosPensionAbsDate",

@@ -4,6 +4,7 @@ import {
   resolveAlphaAbsDate,
   validateAlphaPensionRules,
 } from "./settings-domains/alpha-pension";
+import { validateClassicRules } from "./settings-domains/classic";
 import { validateIsaRules } from "./settings-domains/isa";
 import { validateLisaRules } from "./settings-domains/lisa";
 import { validateNuvosRules } from "./settings-domains/nuvos";
@@ -33,6 +34,8 @@ type ValidationContext = {
   latestAlphaAddedPensionPurchaseDate: string;
   nuvosDrawDate: string;
   nuvosAbsDate: string;
+  classicDrawDate: string;
+  classicPlusDrawDate: string;
   sippDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
@@ -59,6 +62,14 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
   const nuvosDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.nuvosPensionDrawAge
+  );
+  const classicDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.classicPensionDrawAge
+  );
+  const classicPlusDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.classicPlusPensionDrawAge
   );
   const sippDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
@@ -94,6 +105,8 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
     ),
     nuvosDrawDate,
     nuvosAbsDate: resolveAlphaAbsDate(settings.nuvosPensionAbsDate),
+    classicDrawDate,
+    classicPlusDrawDate,
     sippDrawDate,
     isaDrawDate,
     lisaDrawDate,
@@ -132,6 +145,7 @@ export function validateSettings(
     ...validatePersonalDetailsRules(settings, context.lifeExpectancyDate),
     ...validateStatePensionRules(context),
     ...validateAlphaPensionRules(context),
+    ...validateClassicRules(context),
     ...validateNuvosRules(context),
     ...validateSippRules(context),
     ...validateIsaRules(context),

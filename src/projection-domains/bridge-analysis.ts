@@ -12,6 +12,8 @@ export type ProjectionRowLike = {
   age: number;
   ageMonths: number;
   monthlyAlphaPensionGross: number;
+  monthlyClassicPensionGross?: number;
+  monthlyClassicPlusPensionGross?: number;
   monthlyNuvosPensionGross: number;
   monthlyStatePension: number;
 };
@@ -361,6 +363,14 @@ function calculateMonthlySecureIncome(input: {
     findFirstRowAtOrAfterDate(pensionRows, rowDate) ?? pensionRows.at(-1);
   const monthlyAlphaPension =
     settings.showAlpha && pensionRow ? pensionRow.monthlyAlphaPensionGross : 0;
+  const monthlyClassicPension =
+    settings.showClassic && pensionRow
+      ? (pensionRow.monthlyClassicPensionGross ?? 0)
+      : 0;
+  const monthlyClassicPlusPension =
+    settings.showClassicPlus && pensionRow
+      ? (pensionRow.monthlyClassicPlusPensionGross ?? 0)
+      : 0;
   const monthlyNuvosPension =
     settings.showNuvos && pensionRow ? pensionRow.monthlyNuvosPensionGross : 0;
   const monthlyStatePension =
@@ -370,6 +380,8 @@ function calculateMonthlySecureIncome(input: {
   const monthlyIncomeTax = calculateMonthlyIncomeTax({
     settings,
     monthlyAlphaPension,
+    monthlyClassicPension,
+    monthlyClassicPlusPension,
     monthlyNuvosPension,
     monthlyStatePension,
     monthlySippPension: 0,
@@ -382,6 +394,8 @@ function calculateMonthlySecureIncome(input: {
     guaranteedIncome: Math.max(
       0,
       monthlyAlphaPension +
+        monthlyClassicPension +
+        monthlyClassicPlusPension +
         monthlyNuvosPension +
         monthlyStatePension -
         monthlyIncomeTax

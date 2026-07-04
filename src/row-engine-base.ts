@@ -14,6 +14,10 @@ import {
   buildProjectionRow,
   calculateAddedPensionValues,
   calculateInvestmentProjectionValues,
+  calculateClassicAnnualPension,
+  calculateClassicAutomaticLumpSum,
+  calculateClassicPlusAnnualPension,
+  calculateClassicPlusAutomaticLumpSum,
   calculateNuvosAnnualPension,
   calculateStartingAlphaPortionsAtStartDate,
   createHistoricalProjectionRows,
@@ -32,6 +36,12 @@ export function createProjectionTableBase(
     nuvosAccrualStopDate,
     nuvosNpaDate,
     nuvosReductionFactor,
+    classicDrawDate,
+    classicNpaDate,
+    classicReductionFactor,
+    classicPlusDrawDate,
+    classicPlusNpaDate,
+    classicPlusReductionFactor,
     addedPensionStopDate,
     npaDate,
     epaDate,
@@ -65,6 +75,12 @@ export function createProjectionTableBase(
     nuvosDrawDate,
     nuvosNpaDate,
     nuvosReductionFactor,
+    classicDrawDate,
+    classicNpaDate,
+    classicReductionFactor,
+    classicPlusDrawDate,
+    classicPlusNpaDate,
+    classicPlusReductionFactor,
   });
   let cumulativeStandardAccrual = 0;
   let cumulativeEpaAccrual = 0;
@@ -121,6 +137,12 @@ export function createProjectionTableBase(
       nuvosDrawDate,
       nuvosNpaDate,
       nuvosReductionFactor,
+      classicDrawDate,
+      classicNpaDate,
+      classicReductionFactor,
+      classicPlusDrawDate,
+      classicPlusNpaDate,
+      classicPlusReductionFactor,
       annualStandardAlphaPension: calculateAccruedAlphaPension(
         startingAlphaPortionsAtStartDate.standardAlphaPension,
         cumulativeStandardAccrual + cumulativeStandardAddedPension
@@ -132,6 +154,22 @@ export function createProjectionTableBase(
         rowDate,
         nuvosAbsDate,
         nuvosAccrualStopDate,
+      }),
+      annualClassicPension: calculateClassicAnnualPension({
+        settings,
+        rowDate,
+      }),
+      classicAutomaticLumpSum: calculateClassicAutomaticLumpSum({
+        settings,
+        rowDate,
+      }),
+      annualClassicPlusPension: calculateClassicPlusAnnualPension({
+        settings,
+        rowDate,
+      }),
+      classicPlusAutomaticLumpSum: calculateClassicPlusAutomaticLumpSum({
+        settings,
+        rowDate,
       }),
       monthlyAddedPension,
       lumpSumAddedPension,

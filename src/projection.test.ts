@@ -259,6 +259,15 @@ describe("projection calculations", () => {
     expect(calculateAge("1987-06-15", "2026-06-15")).toBe(39);
   });
 
+  it("returns no projection rows instead of throwing when saved settings contain an invalid date of birth", () => {
+    expect(
+      createProjectionTable({
+        ...defaultSettings,
+        dateOfBirth: "bad-date",
+      })
+    ).toEqual([]);
+  });
+
   it("applies partial retirement to regular Alpha accrual and added pension purchases", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

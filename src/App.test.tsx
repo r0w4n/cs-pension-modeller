@@ -18,6 +18,16 @@ const projectionFixtures = vi.hoisted(() => {
       annualAccruedAlphaPension: 12000,
       annualAlphaPensionIncludingReduction: 12000,
       monthlyAlphaPensionGross: 900,
+      annualClassicPension: 0,
+      classicAutomaticLumpSum: 0,
+      annualClassicPensionIncludingReduction: 0,
+      classicAutomaticLumpSumIncludingReduction: 0,
+      monthlyClassicPensionGross: 0,
+      annualClassicPlusPension: 0,
+      classicPlusAutomaticLumpSum: 0,
+      annualClassicPlusPensionIncludingReduction: 0,
+      classicPlusAutomaticLumpSumIncludingReduction: 0,
+      monthlyClassicPlusPensionGross: 0,
       annualNuvosPension: 0,
       annualNuvosPensionIncludingReduction: 0,
       monthlyNuvosPensionGross: 0,
@@ -45,6 +55,16 @@ const projectionFixtures = vi.hoisted(() => {
       annualAccruedAlphaPension: 18000,
       annualAlphaPensionIncludingReduction: 18000,
       monthlyAlphaPensionGross: 1300,
+      annualClassicPension: 0,
+      classicAutomaticLumpSum: 0,
+      annualClassicPensionIncludingReduction: 0,
+      classicAutomaticLumpSumIncludingReduction: 0,
+      monthlyClassicPensionGross: 0,
+      annualClassicPlusPension: 0,
+      classicPlusAutomaticLumpSum: 0,
+      annualClassicPlusPensionIncludingReduction: 0,
+      classicPlusAutomaticLumpSumIncludingReduction: 0,
+      monthlyClassicPlusPensionGross: 0,
       annualNuvosPension: 5000,
       annualNuvosPensionIncludingReduction: 5000,
       monthlyNuvosPensionGross: 416.67,
@@ -76,6 +96,16 @@ const projectionFixtures = vi.hoisted(() => {
       annualAccruedAlphaPension: 22000,
       annualAlphaPensionIncludingReduction: 22000,
       monthlyAlphaPensionGross: 1600,
+      annualClassicPension: 0,
+      classicAutomaticLumpSum: 0,
+      annualClassicPensionIncludingReduction: 0,
+      classicAutomaticLumpSumIncludingReduction: 0,
+      monthlyClassicPensionGross: 0,
+      annualClassicPlusPension: 0,
+      classicPlusAutomaticLumpSum: 0,
+      annualClassicPlusPensionIncludingReduction: 0,
+      classicPlusAutomaticLumpSumIncludingReduction: 0,
+      monthlyClassicPlusPensionGross: 0,
       annualNuvosPension: 6000,
       annualNuvosPensionIncludingReduction: 6000,
       monthlyNuvosPensionGross: 500,
@@ -138,6 +168,37 @@ vi.mock("./projection", async () => {
           monthlyAlphaPensionGross: settings.showAlpha
             ? row.monthlyAlphaPensionGross
             : 0,
+          annualClassicPension: settings.showClassic
+            ? row.annualClassicPension
+            : 0,
+          classicAutomaticLumpSum: settings.showClassic
+            ? row.classicAutomaticLumpSum
+            : 0,
+          annualClassicPensionIncludingReduction: settings.showClassic
+            ? row.annualClassicPensionIncludingReduction
+            : 0,
+          classicAutomaticLumpSumIncludingReduction: settings.showClassic
+            ? row.classicAutomaticLumpSumIncludingReduction
+            : 0,
+          monthlyClassicPensionGross: settings.showClassic
+            ? row.monthlyClassicPensionGross
+            : 0,
+          annualClassicPlusPension: settings.showClassicPlus
+            ? row.annualClassicPlusPension
+            : 0,
+          classicPlusAutomaticLumpSum: settings.showClassicPlus
+            ? row.classicPlusAutomaticLumpSum
+            : 0,
+          annualClassicPlusPensionIncludingReduction: settings.showClassicPlus
+            ? row.annualClassicPlusPensionIncludingReduction
+            : 0,
+          classicPlusAutomaticLumpSumIncludingReduction:
+            settings.showClassicPlus
+              ? row.classicPlusAutomaticLumpSumIncludingReduction
+              : 0,
+          monthlyClassicPlusPensionGross: settings.showClassicPlus
+            ? row.monthlyClassicPlusPensionGross
+            : 0,
           monthlyStatePension: settings.showStatePension
             ? row.monthlyStatePension
             : 0,
@@ -149,6 +210,10 @@ vi.mock("./projection", async () => {
           monthlyLisaPension: settings.showLisa ? row.monthlyLisaPension : 0,
           totalMonthlyIncomeBeforeTax:
             (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
+            (settings.showClassic ? row.monthlyClassicPensionGross : 0) +
+            (settings.showClassicPlus
+              ? row.monthlyClassicPlusPensionGross
+              : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
@@ -157,6 +222,10 @@ vi.mock("./projection", async () => {
           monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
           totalMonthlyNetIncome:
             (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
+            (settings.showClassic ? row.monthlyClassicPensionGross : 0) +
+            (settings.showClassicPlus
+              ? row.monthlyClassicPlusPensionGross
+              : 0) +
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             (settings.showSipp ? row.monthlySippPension : 0) +
@@ -171,6 +240,8 @@ vi.mock("./projection", async () => {
         keyDates: {
           stopsAlphaAccrual: settings.startDate,
           startsAlphaPension: settings.startDate,
+          startsClassicPension: settings.startDate,
+          startsClassicPlusPension: settings.startDate,
           stopsNuvosAccrual: settings.startDate,
           startsNuvosPension: settings.startDate,
           startsSippDraw: settings.startDate,
@@ -192,6 +263,22 @@ vi.mock("./projection", async () => {
           annualAtDraw: rows.at(-1)?.annualNuvosPensionIncludingReduction ?? 0,
           monthlyAtDraw: rows.at(-1)?.monthlyNuvosPensionGross ?? 0,
           maximumAnnualAccrued: rows.at(-1)?.annualNuvosPension ?? 0,
+        },
+        classicPension: {
+          annualAtDraw:
+            rows.at(-1)?.annualClassicPensionIncludingReduction ?? 0,
+          monthlyAtDraw: rows.at(-1)?.monthlyClassicPensionGross ?? 0,
+          automaticLumpSumAtDraw:
+            rows.at(-1)?.classicAutomaticLumpSumIncludingReduction ?? 0,
+          maximumAnnualAccrued: rows.at(-1)?.annualClassicPension ?? 0,
+        },
+        classicPlusPension: {
+          annualAtDraw:
+            rows.at(-1)?.annualClassicPlusPensionIncludingReduction ?? 0,
+          monthlyAtDraw: rows.at(-1)?.monthlyClassicPlusPensionGross ?? 0,
+          automaticLumpSumAtDraw:
+            rows.at(-1)?.classicPlusAutomaticLumpSumIncludingReduction ?? 0,
+          maximumAnnualAccrued: rows.at(-1)?.annualClassicPlusPension ?? 0,
         },
         sippPension: {
           potAtDraw: rows.at(-1)?.sippPot ?? 0,
@@ -234,6 +321,29 @@ vi.mock("./projection", async () => {
                     monthlyIncome: rows.at(-1)?.monthlyAlphaPensionGross ?? 0,
                     annualIncome:
                       (rows.at(-1)?.monthlyAlphaPensionGross ?? 0) * 12,
+                  },
+                ]
+              : []),
+            ...(settings.showClassic
+              ? [
+                  {
+                    key: "classic" as const,
+                    label: "classic pension",
+                    monthlyIncome: rows.at(-1)?.monthlyClassicPensionGross ?? 0,
+                    annualIncome:
+                      (rows.at(-1)?.monthlyClassicPensionGross ?? 0) * 12,
+                  },
+                ]
+              : []),
+            ...(settings.showClassicPlus
+              ? [
+                  {
+                    key: "classicPlus" as const,
+                    label: "classic plus pension",
+                    monthlyIncome:
+                      rows.at(-1)?.monthlyClassicPlusPensionGross ?? 0,
+                    annualIncome:
+                      (rows.at(-1)?.monthlyClassicPlusPensionGross ?? 0) * 12,
                   },
                 ]
               : []),
@@ -416,6 +526,35 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
     alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
     alphaAddedPensionLumpSums: [],
+    showClassic: defaultSettings.showClassic,
+    showClassicPlus: defaultSettings.showClassicPlus,
+    classicCalculationMode: defaultSettings.classicCalculationMode,
+    classicFinalSalaryLink: defaultSettings.classicFinalSalaryLink,
+    classicCurrentFinalPensionableEarnings:
+      defaultSettings.classicCurrentFinalPensionableEarnings,
+    classicPreservedFinalPensionableEarnings:
+      defaultSettings.classicPreservedFinalPensionableEarnings,
+    classicReckonableServiceYears:
+      defaultSettings.classicReckonableServiceYears,
+    classicAnnualPension: defaultSettings.classicAnnualPension,
+    classicAutomaticLumpSum: defaultSettings.classicAutomaticLumpSum,
+    classicPensionDrawAge: defaultSettings.classicPensionDrawAge,
+    classicApplyPensionIncreases: defaultSettings.classicApplyPensionIncreases,
+    classicPlusCalculationMode: defaultSettings.classicPlusCalculationMode,
+    classicPlusFinalSalaryLink: defaultSettings.classicPlusFinalSalaryLink,
+    classicPlusCurrentFinalPensionableEarnings:
+      defaultSettings.classicPlusCurrentFinalPensionableEarnings,
+    classicPlusPreservedFinalPensionableEarnings:
+      defaultSettings.classicPlusPreservedFinalPensionableEarnings,
+    classicPlusPre2002ServiceYears:
+      defaultSettings.classicPlusPre2002ServiceYears,
+    classicPlusPost2002ServiceYears:
+      defaultSettings.classicPlusPost2002ServiceYears,
+    classicPlusAnnualPension: defaultSettings.classicPlusAnnualPension,
+    classicPlusAutomaticLumpSum: defaultSettings.classicPlusAutomaticLumpSum,
+    classicPlusPensionDrawAge: defaultSettings.classicPlusPensionDrawAge,
+    classicPlusApplyPensionIncreases:
+      defaultSettings.classicPlusApplyPensionIncreases,
     nuvosPensionAbsDate: defaultSettings.nuvosPensionAbsDate,
     nuvosAccruedPensionAtLastAbs: defaultSettings.nuvosAccruedPensionAtLastAbs,
     nuvosPensionableEarnings: defaultSettings.nuvosPensionableEarnings,
@@ -1879,6 +2018,8 @@ describe("App settings form", () => {
       "Alpha",
       "Partial retirement",
       "State Pension",
+      "classic",
+      "classic plus",
       "nuvos",
       "SIPP",
       "ISA",

@@ -3,6 +3,8 @@ import type { PensionSettings } from "../settings";
 export function calculateMonthlyIncomeTax(input: {
   settings: PensionSettings;
   monthlyAlphaPension: number;
+  monthlyClassicPension?: number;
+  monthlyClassicPlusPension?: number;
   monthlyNuvosPension?: number;
   monthlyStatePension: number;
   monthlySippPension: number;
@@ -10,6 +12,8 @@ export function calculateMonthlyIncomeTax(input: {
   const {
     settings,
     monthlyAlphaPension,
+    monthlyClassicPension = 0,
+    monthlyClassicPlusPension = 0,
     monthlyNuvosPension = 0,
     monthlyStatePension,
     monthlySippPension,
@@ -22,6 +26,8 @@ export function calculateMonthlyIncomeTax(input: {
   const taxableSippShare = 1 - settings.taxSippTaxFreeWithdrawalPercent / 100;
   const annualTaxableIncome =
     (monthlyAlphaPension +
+      monthlyClassicPension +
+      monthlyClassicPlusPension +
       monthlyNuvosPension +
       monthlyStatePension +
       monthlySippPension * taxableSippShare) *

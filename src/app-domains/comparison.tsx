@@ -19,6 +19,7 @@ import type {
 import {
   calculateStatePensionDrawAge,
   isLocalStorageEnabled,
+  parseStoredSettings,
   readStorageItem,
   removeStorageItem,
   writeStorageItem,
@@ -1283,7 +1284,7 @@ function normalizeStoredComparisonScenario(
       typeof candidate.name === "string" && candidate.name.trim()
         ? candidate.name
         : `Scenario ${index + 1}`,
-    settings: clonePensionSettings(settings),
+    settings: parseStoredSettings(settings) ?? clonePensionSettings(settings),
     createdAt:
       typeof candidate.createdAt === "string" && candidate.createdAt
         ? candidate.createdAt

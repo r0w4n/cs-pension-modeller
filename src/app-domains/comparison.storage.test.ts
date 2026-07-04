@@ -5,6 +5,7 @@ import {
 } from "../settings";
 import {
   clearStoredComparisonScenarios,
+  createComparisonResult,
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
   type ComparisonScenario,
@@ -81,6 +82,35 @@ describe("comparison scenario storage", () => {
     expect(loaded[0]?.updatedAt).toBe("2026-06-09T12:00:00.000Z");
     expect(loaded[1]?.name).toBe("Scenario 3");
     expect(loaded[1]?.id).toMatch(/\S/);
+  });
+
+  it("migrates legacy saved scenario settings before comparison projection", () => {
+    const legacySettings = {
+      ...createDefaultSettings(),
+    } as Partial<PensionSettings>;
+    delete legacySettings.classicPensionDrawAge;
+    delete legacySettings.classicPlusPensionDrawAge;
+
+    window.localStorage.setItem(
+      COMPARISON_SCENARIOS_STORAGE_KEY,
+      JSON.stringify([
+        createScenario(
+          "legacy-scenario",
+          "Legacy scenario",
+          legacySettings as PensionSettings
+        ),
+      ])
+    );
+
+    const [loadedScenario] = loadStoredComparisonScenarios();
+
+    if (!loadedScenario) {
+      throw new Error("Expected the legacy saved scenario to load.");
+    }
+
+    expect(loadedScenario?.settings.classicPensionDrawAge).toBe(60);
+    expect(loadedScenario?.settings.classicPlusPensionDrawAge).toBe(60);
+    expect(() => createComparisonResult(loadedScenario, "")).not.toThrow();
   });
 
   it("returns an empty list for corrupted storage or when local storage is disabled", () => {

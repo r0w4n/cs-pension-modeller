@@ -25,6 +25,16 @@ export type ProjectionRow = {
   annualAccruedAlphaPension: number;
   annualAlphaPensionIncludingReduction: number;
   monthlyAlphaPensionGross: number;
+  annualClassicPension: number;
+  classicAutomaticLumpSum: number;
+  annualClassicPensionIncludingReduction: number;
+  classicAutomaticLumpSumIncludingReduction: number;
+  monthlyClassicPensionGross: number;
+  annualClassicPlusPension: number;
+  classicPlusAutomaticLumpSum: number;
+  annualClassicPlusPensionIncludingReduction: number;
+  classicPlusAutomaticLumpSumIncludingReduction: number;
+  monthlyClassicPlusPensionGross: number;
   annualNuvosPension: number;
   annualNuvosPensionIncludingReduction: number;
   monthlyNuvosPensionGross: number;
@@ -44,6 +54,8 @@ export type PensionSummary = {
   keyDates: {
     stopsAlphaAccrual: string;
     startsAlphaPension: string;
+    startsClassicPension: string;
+    startsClassicPlusPension: string;
     stopsNuvosAccrual: string;
     startsNuvosPension: string;
     startsSippDraw: string;
@@ -60,6 +72,18 @@ export type PensionSummary = {
   nuvosPension: {
     annualAtDraw: number;
     monthlyAtDraw: number;
+    maximumAnnualAccrued: number;
+  };
+  classicPension: {
+    annualAtDraw: number;
+    monthlyAtDraw: number;
+    automaticLumpSumAtDraw: number;
+    maximumAnnualAccrued: number;
+  };
+  classicPlusPension: {
+    annualAtDraw: number;
+    monthlyAtDraw: number;
+    automaticLumpSumAtDraw: number;
     maximumAnnualAccrued: number;
   };
   sippPension: {
@@ -100,6 +124,8 @@ export type RetirementIncomeDisplay = "monthly" | "annual";
 export type RetirementIncomeSource = {
   key:
     | "alpha"
+    | "classic"
+    | "classicPlus"
     | "nuvos"
     | "sipp"
     | "isa"

@@ -42,6 +42,15 @@ export type RangeField = {
     | "alphaPayRisePercent"
     | "alphaPensionDrawAge"
     | "alphaEpaYearsBeforeNpa"
+    | "classicCurrentFinalPensionableEarnings"
+    | "classicPreservedFinalPensionableEarnings"
+    | "classicReckonableServiceYears"
+    | "classicPensionDrawAge"
+    | "classicPlusCurrentFinalPensionableEarnings"
+    | "classicPlusPreservedFinalPensionableEarnings"
+    | "classicPlusPre2002ServiceYears"
+    | "classicPlusPost2002ServiceYears"
+    | "classicPlusPensionDrawAge"
     | "nuvosPensionableEarnings"
     | "nuvosPensionLeaveAge"
     | "nuvosPensionDrawAge"
@@ -83,6 +92,8 @@ export type CheckboxField = {
   id:
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
+    | "classicApplyPensionIncreases"
+    | "classicPlusApplyPensionIncreases"
     | "nuvosApplyPensionIncreases";
   label: string;
   type: "checkbox";
@@ -96,6 +107,10 @@ export type CurrencyInputField = {
   id:
     | "currentStatePension"
     | "accruedPensionAtLastAbs"
+    | "classicAnnualPension"
+    | "classicAutomaticLumpSum"
+    | "classicPlusAnnualPension"
+    | "classicPlusAutomaticLumpSum"
     | "nuvosAccruedPensionAtLastAbs"
     | "desiredRetirementIncome"
     | "fullSalary"
@@ -127,6 +142,10 @@ export type SelectField = {
   id:
     | "projectionBasis"
     | "alphaAddedPensionFactorType"
+    | "classicCalculationMode"
+    | "classicFinalSalaryLink"
+    | "classicPlusCalculationMode"
+    | "classicPlusFinalSalaryLink"
     | "sippTaxReliefRate"
     | "sippWithdrawalStrategy"
     | "isaWithdrawalStrategy"
@@ -138,6 +157,8 @@ export type SelectField = {
       | PensionSettings["sippTaxReliefRate"]
       | PensionSettings["projectionBasis"]
       | PensionSettings["alphaAddedPensionFactorType"]
+      | PensionSettings["classicCalculationMode"]
+      | PensionSettings["classicFinalSalaryLink"]
       | PensionSettings["sippWithdrawalStrategy"]
       | PensionSettings["isaWithdrawalStrategy"]
       | PensionSettings["lisaWithdrawalStrategy"];
@@ -536,6 +557,241 @@ export const fieldGroups: FieldGroup[] = [
         type: "date",
         description:
           "The date EPA purchases stop in the model. This should not run beyond the Alpha service period you are modelling.",
+      },
+    ],
+  },
+  {
+    id: "classic",
+    eyebrow: "classic Pension",
+    title: "Your classic pension",
+    description:
+      "classic is a legacy Civil Service final salary defined benefit pension. Model known preserved benefits, or estimate them from final pensionable earnings and reckonable service.",
+    fields: [
+      {
+        id: "classicCalculationMode",
+        label: "classic calculation mode",
+        type: "select",
+        options: [
+          { value: "manual", label: "Enter known pension" },
+          {
+            value: "estimate",
+            label: "Estimate from salary and service",
+          },
+        ],
+        description:
+          "Use known figures from a statement where you have them. The salary-and-service estimate uses classic's 1/80 pension formula and automatic 3x pension lump sum.",
+      },
+      {
+        id: "classicFinalSalaryLink",
+        label: "Final salary link",
+        type: "select",
+        options: [
+          { value: "broken", label: "Broken - use preserved salary" },
+          {
+            value: "maintained",
+            label: "Maintained - project current salary",
+          },
+        ],
+        description:
+          "If a final salary link is maintained, the modeller projects current final pensionable earnings using the salary increase assumption. If it is broken, it uses the preserved final pensionable earnings entered here.",
+      },
+      {
+        id: "classicCurrentFinalPensionableEarnings",
+        label: "Current final pensionable earnings (£ per year)",
+        type: "range",
+        min: 0,
+        max: 300000,
+        step: 500,
+        inputStep: 1,
+        format: "currency",
+        description:
+          "Used only when estimating classic benefits and the final salary link is maintained.",
+      },
+      {
+        id: "classicPreservedFinalPensionableEarnings",
+        label: "Preserved final pensionable earnings (£ per year)",
+        type: "range",
+        min: 0,
+        max: 300000,
+        step: 500,
+        inputStep: 1,
+        format: "currency",
+        description:
+          "Used when estimating preserved classic benefits without a maintained final salary link.",
+      },
+      {
+        id: "classicReckonableServiceYears",
+        label: "classic reckonable service (years)",
+        type: "range",
+        min: 0,
+        max: 45,
+        step: 0.25,
+        inputStep: 0.0001,
+        description:
+          "The reckonable service used for classic final salary benefits. This does not increase during future Alpha service.",
+      },
+      {
+        id: "classicAnnualPension",
+        label: "Known classic pension (£ per year)",
+        type: "currency-input",
+        min: 0,
+        max: 100000,
+        step: 1,
+        format: "currency",
+        description:
+          "The annual classic pension from your statement before any early-payment reduction in this model.",
+      },
+      {
+        id: "classicAutomaticLumpSum",
+        label: "Known classic automatic lump sum (£)",
+        type: "currency-input",
+        min: 0,
+        max: 300000,
+        step: 1,
+        format: "currency",
+        description:
+          "The automatic lump sum from your statement before any early-payment reduction in this model.",
+      },
+      {
+        id: "classicPensionDrawAge",
+        label: "Planned classic Pension Draw Age",
+        type: "range",
+        min: 55,
+        max: 70,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age you plan to start taking classic benefits. The modeller uses age 60 as classic Normal Pension Age.",
+      },
+      {
+        id: "classicApplyPensionIncreases",
+        label: "Apply classic pension increases",
+        type: "checkbox",
+        description:
+          "Increase deferred classic pension and automatic lump sum by the projection inflation assumption each year.",
+      },
+    ],
+  },
+  {
+    id: "classic-plus",
+    eyebrow: "classic plus Pension",
+    title: "Your classic plus pension",
+    description:
+      "classic plus is a legacy Civil Service final salary defined benefit pension. The modeller keeps pre-2002 and post-2002 service separate because the automatic lump sum only applies to the pre-2002 classic-style part.",
+    fields: [
+      {
+        id: "classicPlusCalculationMode",
+        label: "classic plus calculation mode",
+        type: "select",
+        options: [
+          { value: "manual", label: "Enter known pension" },
+          {
+            value: "estimate",
+            label: "Estimate from salary and service",
+          },
+        ],
+        description:
+          "Use known figures from a statement where you have them. The estimate applies 1/80 to pre-2002 service with an automatic 3x lump sum, and 1/60 to post-2002 service with no automatic lump sum.",
+      },
+      {
+        id: "classicPlusFinalSalaryLink",
+        label: "Final salary link",
+        type: "select",
+        options: [
+          { value: "broken", label: "Broken - use preserved salary" },
+          {
+            value: "maintained",
+            label: "Maintained - project current salary",
+          },
+        ],
+        description:
+          "If a final salary link is maintained, the modeller projects current final pensionable earnings using the salary increase assumption. If it is broken, it uses the preserved final pensionable earnings entered here.",
+      },
+      {
+        id: "classicPlusCurrentFinalPensionableEarnings",
+        label: "Current final pensionable earnings (£ per year)",
+        type: "range",
+        min: 0,
+        max: 300000,
+        step: 500,
+        inputStep: 1,
+        format: "currency",
+        description:
+          "Used only when estimating classic plus benefits and the final salary link is maintained.",
+      },
+      {
+        id: "classicPlusPreservedFinalPensionableEarnings",
+        label: "Preserved final pensionable earnings (£ per year)",
+        type: "range",
+        min: 0,
+        max: 300000,
+        step: 500,
+        inputStep: 1,
+        format: "currency",
+        description:
+          "Used when estimating preserved classic plus benefits without a maintained final salary link.",
+      },
+      {
+        id: "classicPlusPre2002ServiceYears",
+        label: "classic plus pre-2002 service (years)",
+        type: "range",
+        min: 0,
+        max: 45,
+        step: 0.25,
+        inputStep: 0.0001,
+        description:
+          "The classic-style service in classic plus. This part produces an automatic lump sum in the model.",
+      },
+      {
+        id: "classicPlusPost2002ServiceYears",
+        label: "classic plus post-2002 service (years)",
+        type: "range",
+        min: 0,
+        max: 45,
+        step: 0.25,
+        inputStep: 0.0001,
+        description:
+          "The premium-style service in classic plus. This part builds pension at 1/60 and does not add an automatic lump sum in the model.",
+      },
+      {
+        id: "classicPlusAnnualPension",
+        label: "Known classic plus pension (£ per year)",
+        type: "currency-input",
+        min: 0,
+        max: 100000,
+        step: 1,
+        format: "currency",
+        description:
+          "The annual classic plus pension from your statement before any early-payment reduction in this model.",
+      },
+      {
+        id: "classicPlusAutomaticLumpSum",
+        label: "Known classic plus automatic lump sum (£)",
+        type: "currency-input",
+        min: 0,
+        max: 300000,
+        step: 1,
+        format: "currency",
+        description:
+          "The automatic lump sum from your statement before any early-payment reduction in this model.",
+      },
+      {
+        id: "classicPlusPensionDrawAge",
+        label: "Planned classic plus Pension Draw Age",
+        type: "range",
+        min: 55,
+        max: 70,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age you plan to start taking classic plus benefits. The modeller uses age 60 as classic plus Normal Pension Age.",
+      },
+      {
+        id: "classicPlusApplyPensionIncreases",
+        label: "Apply classic plus pension increases",
+        type: "checkbox",
+        description:
+          "Increase deferred classic plus pension and automatic lump sum by the projection inflation assumption each year.",
       },
     ],
   },

@@ -75,6 +75,10 @@ export function normalizeIsoMonthAsFirstOfMonth(
 }
 
 export function addMonthsToIsoDate(value: string, monthsToAdd: number) {
+  if (!isValidIsoDate(value) || !Number.isFinite(monthsToAdd)) {
+    return value;
+  }
+
   const [year, month, day] = value.split("-").map(Number);
   const monthIndex = month - 1 + monthsToAdd;
   const nextYear = year + Math.floor(monthIndex / 12);
@@ -94,6 +98,10 @@ export function addYearsToIsoDate(value: string, years: number) {
 }
 
 export function addDaysToIsoDate(value: string, daysToAdd: number) {
+  if (!isValidIsoDate(value) || !Number.isFinite(daysToAdd)) {
+    return value;
+  }
+
   const [year, month, day] = value.split("-").map(Number);
 
   return new Date(Date.UTC(year, month - 1, day + daysToAdd))

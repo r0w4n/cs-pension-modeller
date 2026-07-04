@@ -15,6 +15,12 @@ describe("settings-normalize", () => {
     expect(
       normalizeSetting("alphaAddedPensionFactorType", "bad" as never)
     ).toBe("self");
+    expect(normalizeSetting("classicCalculationMode", "bad" as never)).toBe(
+      "manual"
+    );
+    expect(normalizeSetting("classicFinalSalaryLink", "bad" as never)).toBe(
+      "broken"
+    );
   });
 
   it("normalizes date-based values", () => {

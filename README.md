@@ -4,10 +4,10 @@ A static React, TypeScript, and Vite app for exploring UK Civil Service pension
 and retirement-income scenarios.
 
 The modeller helps compare how different assumptions affect projected income
-over time. It can include Civil Service Alpha pension, nuvos pension, State
-Pension, ISA, Lifetime ISA (LISA) and SIPP bridge funding, partial retirement,
-inflation, simplified
-Income Tax, and saved scenario comparisons.
+over time. It can include Civil Service Alpha, classic, classic plus and nuvos
+pensions, State Pension, ISA, Lifetime ISA (LISA) and SIPP bridge funding,
+partial retirement, inflation, simplified Income Tax, and saved scenario
+comparisons.
 
 This project is for planning and illustration only. It is not financial advice,
 and it is not affiliated with the Civil Service Pension Scheme, Capita, the
@@ -24,13 +24,16 @@ calculation start date to the selected planning horizon.
 It supports:
 
 - simple, early-retirement bridge, and expert journeys
-- optional Alpha, nuvos, State Pension, SIPP, ISA, LISA, taxation, and partial
-  retirement sections
+- optional Alpha, classic, classic plus, nuvos, State Pension, SIPP, ISA, LISA,
+  taxation, and partial retirement sections
 - Alpha pension accrual from Annual Benefit Statement values and future
   pensionable earnings
 - Alpha early-retirement reduction and CPI-linked pension-increase modelling
 - Alpha added pension through monthly contributions and lump-sum purchase
   schedules
+- classic and classic plus modelling from known preserved benefits or final
+  salary and service details, including automatic lump sums and age-60
+  early-payment reductions
 - nuvos pension modelling with separate statement, leave, draw, and increase
   assumptions
 - State Pension age, optional deferral, and optional future uprating assumptions
@@ -50,8 +53,9 @@ figures as guaranteed outcomes.
 For each projection month, the model can calculate values such as:
 
 - age in years and months
-- Alpha and nuvos accrued pension
-- Alpha and nuvos pension after any early-payment reduction
+- Alpha, classic, classic plus and nuvos accrued pension
+- Alpha, classic, classic plus and nuvos pension after any early-payment
+  reduction
 - monthly Civil Service pension income once drawn
 - monthly State Pension once it starts
 - State Pension deferral uplift and future uprating where enabled
@@ -73,6 +77,8 @@ The current app is driven by inputs grouped around:
   draw age, and added pension
 - EPA: selected EPA years before Normal Pension Age and the EPA purchase date
   range
+- classic and classic plus pensions: known annual pension and automatic lump
+  sum values, or final pensionable earnings and reckonable service inputs
 - nuvos pension: statement year, accrued pension, draw age, and pension
   increases
 - State Pension: annual amount, start date, deferral, and future growth
@@ -98,6 +104,14 @@ Some important assumptions and simplifications are:
   pension increases use the central projection basis and inflation assumption.
 - nuvos pensionable-service accrual is capped at 31 March 2015; after then,
   modelled nuvos changes come from CPI-linked pension increases only.
+- classic pension estimates use final pensionable earnings multiplied by
+  reckonable service divided by 80, with an automatic lump sum of three times
+  the annual pension.
+- classic plus estimates split pre-2002 service at 1/80 with an automatic lump
+  sum from that part, and post-2002 service at 1/60 with no automatic lump sum
+  in the model.
+- classic and classic plus use age 60 as Normal Pension Age, with early-payment
+  reductions modelled as 5% per year early, pro-rated by month.
 - Alpha added pension lump sums are converted using factor data stored in
   [`src/data/alpha_pension_added_pension_factors.json`](src/data/alpha_pension_added_pension_factors.json).
 - Alpha early-payment reduction uses factor data stored in

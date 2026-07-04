@@ -9,6 +9,7 @@ import {
   getAlphaEffectiveRangeField,
   isAlphaEpaField,
 } from "./alpha";
+import { shouldRenderClassicField } from "./classic";
 import {
   getIsaEffectiveRangeField,
   isIsaFieldDisabled,
@@ -40,7 +41,8 @@ export function shouldRenderField(
   return (
     shouldRenderSippField(fieldId, settings) &&
     shouldRenderIsaField(fieldId, settings) &&
-    shouldRenderLisaField(fieldId, settings)
+    shouldRenderLisaField(fieldId, settings) &&
+    shouldRenderClassicField(fieldId, settings)
   );
 }
 

@@ -27,6 +27,18 @@ export const OPTIONAL_SECTION_TOGGLES = [
       "Adds estimated State Pension income from the selected State Pension start age.",
   },
   {
+    key: "showClassic",
+    label: "classic",
+    description:
+      "Models existing classic benefits separately from Alpha and nuvos, including automatic lump sum, CPI-linked increases, and age-60 early-payment reductions.",
+  },
+  {
+    key: "showClassicPlus",
+    label: "classic plus",
+    description:
+      "Models existing classic plus benefits with separate pre-2002 and post-2002 service and age-60 early-payment reductions.",
+  },
+  {
     key: "showNuvos",
     label: "nuvos",
     description:
@@ -149,7 +161,12 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "We include State Pension, ISA, LISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
-        toggleKeys: ["showAlpha", "showNuvos"],
+        toggleKeys: [
+          "showAlpha",
+          "showClassic",
+          "showClassicPlus",
+          "showNuvos",
+        ],
       },
       {
         id: "alpha",
@@ -171,6 +188,47 @@ export const JOURNEY_DEFINITIONS = [
           "alphaEpaEndDate",
         ],
         visible: (settings) => settings.showAlpha,
+      },
+      {
+        id: "classic",
+        eyebrow: "Optional",
+        title: "Your classic pension",
+        description:
+          "Add classic benefits if they should be part of the bridge calculation.",
+        kind: "fields",
+        fieldIds: [
+          "classicPensionDrawAge",
+          "classicCalculationMode",
+          "classicFinalSalaryLink",
+          "classicCurrentFinalPensionableEarnings",
+          "classicPreservedFinalPensionableEarnings",
+          "classicReckonableServiceYears",
+          "classicAnnualPension",
+          "classicAutomaticLumpSum",
+          "classicApplyPensionIncreases",
+        ],
+        visible: (settings) => settings.showClassic,
+      },
+      {
+        id: "classic-plus",
+        eyebrow: "Optional",
+        title: "Your classic plus pension",
+        description:
+          "Add classic plus benefits if they should be part of the bridge calculation.",
+        kind: "fields",
+        fieldIds: [
+          "classicPlusPensionDrawAge",
+          "classicPlusCalculationMode",
+          "classicPlusFinalSalaryLink",
+          "classicPlusCurrentFinalPensionableEarnings",
+          "classicPlusPreservedFinalPensionableEarnings",
+          "classicPlusPre2002ServiceYears",
+          "classicPlusPost2002ServiceYears",
+          "classicPlusAnnualPension",
+          "classicPlusAutomaticLumpSum",
+          "classicPlusApplyPensionIncreases",
+        ],
+        visible: (settings) => settings.showClassicPlus,
       },
       {
         id: "nuvos",
@@ -280,7 +338,12 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
-        toggleKeys: ["showAlpha", "showNuvos"],
+        toggleKeys: [
+          "showAlpha",
+          "showClassic",
+          "showClassicPlus",
+          "showNuvos",
+        ],
       },
       {
         id: "alpha",
@@ -347,6 +410,47 @@ export const JOURNEY_DEFINITIONS = [
           partialRetirementWorkPercent: "Reduced hours percentage",
         },
         visible: (settings) => settings.partialRetirementEnabled,
+      },
+      {
+        id: "classic",
+        eyebrow: "Optional",
+        title: "classic pension",
+        description:
+          "Add classic benefits if they should be part of the projection.",
+        kind: "fields",
+        fieldIds: [
+          "classicPensionDrawAge",
+          "classicCalculationMode",
+          "classicFinalSalaryLink",
+          "classicCurrentFinalPensionableEarnings",
+          "classicPreservedFinalPensionableEarnings",
+          "classicReckonableServiceYears",
+          "classicAnnualPension",
+          "classicAutomaticLumpSum",
+          "classicApplyPensionIncreases",
+        ],
+        visible: (settings) => settings.showClassic,
+      },
+      {
+        id: "classic-plus",
+        eyebrow: "Optional",
+        title: "classic plus pension",
+        description:
+          "Add classic plus benefits if they should be part of the projection.",
+        kind: "fields",
+        fieldIds: [
+          "classicPlusPensionDrawAge",
+          "classicPlusCalculationMode",
+          "classicPlusFinalSalaryLink",
+          "classicPlusCurrentFinalPensionableEarnings",
+          "classicPlusPreservedFinalPensionableEarnings",
+          "classicPlusPre2002ServiceYears",
+          "classicPlusPost2002ServiceYears",
+          "classicPlusAnnualPension",
+          "classicPlusAutomaticLumpSum",
+          "classicPlusApplyPensionIncreases",
+        ],
+        visible: (settings) => settings.showClassicPlus,
       },
       {
         id: "nuvos",
@@ -461,6 +565,8 @@ function createExpertJourneyFieldStep(
 function isExpertJourneyGroupVisible(groupId: string) {
   if (
     groupId === "alpha" ||
+    groupId === "classic" ||
+    groupId === "classic-plus" ||
     groupId === "nuvos" ||
     groupId === "state" ||
     groupId === "sipp" ||
@@ -507,6 +613,8 @@ export function applySimpleJourneyDefaults(
     assumedCpiPercent: 0,
     showStatePension: true,
     showNuvos: settings.showNuvos,
+    showClassic: settings.showClassic,
+    showClassicPlus: settings.showClassicPlus,
   };
 }
 
@@ -520,6 +628,8 @@ export function applySimpleJourneyAssumptions(
     showIsa: false,
     showLisa: false,
     showNuvos: settings.showNuvos,
+    showClassic: settings.showClassic,
+    showClassicPlus: settings.showClassicPlus,
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     assumedCpiPercent: 0,

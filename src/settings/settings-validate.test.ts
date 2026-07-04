@@ -27,4 +27,19 @@ describe("settings-validate", () => {
   it("returns no issues for defaults", () => {
     expect(validateSettings(createDefaultSettings())).toEqual([]);
   });
+
+  it("flags invalid personal dates without throwing", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "bad-date",
+      startDate: "also-bad",
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "dateOfBirth" }),
+        expect.objectContaining({ field: "startDate" }),
+      ])
+    );
+  });
 });

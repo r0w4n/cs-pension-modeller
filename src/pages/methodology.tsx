@@ -6,6 +6,8 @@ import "../index.css";
 const PROJECTED_SOURCES = [
   "Civil Service Alpha pension",
   "Alpha EPA pension where enabled",
+  "Civil Service classic pension",
+  "Civil Service classic plus pension",
   "Civil Service nuvos pension",
   "State Pension",
   "SIPP pension savings",
@@ -24,6 +26,8 @@ const KEY_DATES = [
   "Alpha pension draw age",
   "Alpha accrual stop age",
   "Alpha EPA unreduced date where EPA is enabled",
+  "classic pension draw age",
+  "classic plus pension draw age",
   "nuvos pension draw age",
   "nuvos final pensionable-service date",
   "SIPP access age",
@@ -370,6 +374,57 @@ export function MethodologyPage() {
           tracked alongside the standard Alpha portion for annual revaluation in
           the projection. This may understate or misstate the final value of
           added pension in some scenarios.
+        </p>
+      </section>
+
+      <section>
+        <h2>classic and classic plus pension methodology</h2>
+        <p className="section-copy">
+          classic and classic plus are modelled separately from Alpha and nuvos.
+          They are treated as legacy Civil Service defined-benefit pensions and
+          can be included in gross retirement income and tax calculations.
+        </p>
+        <p className="section-copy">
+          For classic, the model can either use known annual pension and
+          automatic lump sum figures entered by the user, or estimate benefits
+          from final pensionable earnings and reckonable service. The estimate
+          uses:
+        </p>
+        <FormulaBlock>
+          {
+            "classic annual pension = final pensionable earnings × reckonable service ÷ 80\nautomatic lump sum = classic annual pension × 3"
+          }
+        </FormulaBlock>
+        <p className="section-copy">
+          For classic plus, the estimate separates pre-2002 and post-2002
+          service. Pre-2002 service is modelled like classic with an automatic
+          lump sum. Post-2002 service is modelled at 1/60 with no automatic lump
+          sum in the model.
+        </p>
+        <FormulaBlock>
+          {
+            "pre-2002 pension = final pensionable earnings × pre-2002 service ÷ 80\npost-2002 pension = final pensionable earnings × post-2002 service ÷ 60\nautomatic lump sum = pre-2002 pension × 3"
+          }
+        </FormulaBlock>
+        <p className="section-copy">
+          If the final salary link is maintained, the model projects current
+          final pensionable earnings using the salary increase assumption. If
+          the link is broken, it uses the preserved final pensionable earnings
+          entered by the user. The entered reckonable service is treated as
+          fixed and does not increase during future Alpha service.
+        </p>
+        <p className="section-copy">
+          When pension increases are enabled, deferred classic and classic plus
+          pension and automatic lump sum values are revalued annually by the
+          modelled CPI assumption. In real-terms mode this CPI increase is
+          removed; in nominal mode it compounds using the main inflation
+          assumption.
+        </p>
+        <p className="section-copy">
+          The model uses age 60 as the Normal Pension Age for classic and
+          classic plus. If benefits are drawn before age 60, the model applies a
+          5% reduction for each year early, pro-rated by month. It does not add
+          a late-retirement enhancement when benefits are drawn after age 60.
         </p>
       </section>
 

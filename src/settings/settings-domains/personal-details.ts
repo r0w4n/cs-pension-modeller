@@ -4,6 +4,7 @@ import type {
 } from "../settings-types";
 import {
   getTodayIsoDate,
+  isValidIsoDate,
   normalizeIsoMonthAsFirstOfMonth,
 } from "../settings-shared/date";
 
@@ -64,15 +65,39 @@ export function validatePersonalDetailsRules(
   lifeExpectancyDate: string
 ): PensionValidationIssue[] {
   const issues: PensionValidationIssue[] = [];
+  const hasValidDateOfBirth = isValidIsoDate(settings.dateOfBirth);
+  const hasValidStartDate = isValidIsoDate(settings.startDate);
 
-  if (settings.dateOfBirth >= settings.startDate) {
+  if (!hasValidDateOfBirth) {
+    issues.push({
+      field: "dateOfBirth",
+      message: "Date of birth must be a valid date.",
+    });
+  }
+
+  if (!hasValidStartDate) {
+    issues.push({
+      field: "startDate",
+      message: "Calculation start date must be a valid date.",
+    });
+  }
+
+  if (
+    hasValidDateOfBirth &&
+    hasValidStartDate &&
+    settings.dateOfBirth >= settings.startDate
+  ) {
     issues.push({
       field: "dateOfBirth",
       message: "Date of birth must be before the calculation start date.",
     });
   }
 
-  if (settings.startDate > lifeExpectancyDate) {
+  if (
+    hasValidStartDate &&
+    isValidIsoDate(lifeExpectancyDate) &&
+    settings.startDate > lifeExpectancyDate
+  ) {
     issues.push({
       field: "startDate",
       message:

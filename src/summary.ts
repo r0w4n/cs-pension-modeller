@@ -38,6 +38,8 @@ export function generatePensionSummary(
   const {
     drawDate: alphaPensionDrawDate,
     accrualStopDate: alphaAccrualStopDate,
+    classicDrawDate: classicPensionDrawDate,
+    classicPlusDrawDate: classicPlusPensionDrawDate,
     nuvosDrawDate: nuvosPensionDrawDate,
     nuvosAccrualStopDate,
     reductionFactor,
@@ -45,6 +47,8 @@ export function generatePensionSummary(
   const summaryDates = buildSummaryDates(settings, {
     alphaPensionDrawDate,
     alphaAccrualStopDate,
+    classicPensionDrawDate,
+    classicPlusPensionDrawDate,
     nuvosPensionDrawDate,
     nuvosAccrualStopDate,
   });
@@ -66,6 +70,14 @@ export function generatePensionSummary(
       nuvosAtDraw: 0,
       nuvosMonthlyAtDraw: 0,
       maximumAnnualNuvosAccrued: 0,
+      classicAtDraw: 0,
+      classicMonthlyAtDraw: 0,
+      classicAutomaticLumpSumAtDraw: 0,
+      maximumAnnualClassicAccrued: 0,
+      classicPlusAtDraw: 0,
+      classicPlusMonthlyAtDraw: 0,
+      classicPlusAutomaticLumpSumAtDraw: 0,
+      maximumAnnualClassicPlusAccrued: 0,
       sippPotAtDraw: 0,
       sippMonthlyAtDraw: 0,
       isaPotAtDraw: 0,
@@ -78,6 +90,8 @@ export function generatePensionSummary(
       retirementIncome: buildRetirementIncomeSummary({
         summaryDate: settings.startDate,
         alphaMonthlyIncome: 0,
+        classicMonthlyIncome: 0,
+        classicPlusMonthlyIncome: 0,
         nuvosMonthlyIncome: 0,
         sippMonthlyIncome: 0,
         isaMonthlyIncome: 0,
@@ -110,6 +124,8 @@ function buildSummaryDates(
   dates: {
     alphaPensionDrawDate: string;
     alphaAccrualStopDate: string;
+    classicPensionDrawDate: string;
+    classicPlusPensionDrawDate: string;
     nuvosPensionDrawDate: string;
     nuvosAccrualStopDate: string;
   }
@@ -152,6 +168,8 @@ function buildRowSummaryContext(
   settings: PensionSettings,
   input: {
     alphaPensionDrawDate: string;
+    classicPensionDrawDate: string;
+    classicPlusPensionDrawDate: string;
     nuvosPensionDrawDate: string;
     sippDrawDate: string;
     isaDrawDate: string;
@@ -164,6 +182,14 @@ function buildRowSummaryContext(
     alphaDrawRow: findFirstRowAtOrAfterDate(
       tableData,
       input.alphaPensionDrawDate
+    ),
+    classicDrawRow: findFirstRowAtOrAfterDate(
+      tableData,
+      input.classicPensionDrawDate
+    ),
+    classicPlusDrawRow: findFirstRowAtOrAfterDate(
+      tableData,
+      input.classicPlusPensionDrawDate
     ),
     nuvosDrawRow: findFirstRowAtOrAfterDate(
       tableData,
@@ -196,6 +222,8 @@ function buildRowSummaryContext(
   };
   const summaryRow = findRetirementIncomeSummaryRow(tableData, settings, {
     alphaPensionDrawDate: input.alphaPensionDrawDate,
+    classicPensionDrawDate: input.classicPensionDrawDate,
+    classicPlusPensionDrawDate: input.classicPlusPensionDrawDate,
     nuvosPensionDrawDate: input.nuvosPensionDrawDate,
     statePensionStartDate: input.statePensionStartDate,
     sippIncomeRow: flexibleIncomeRows.sippIncomeRow,
@@ -208,37 +236,123 @@ function buildRowSummaryContext(
   const maximumAnnualNuvosAccrued = settings.showNuvos
     ? Math.max(...tableData.map((row) => row.annualNuvosPension))
     : 0;
+  const maximumAnnualClassicAccrued = settings.showClassic
+    ? Math.max(...tableData.map((row) => row.annualClassicPension))
+    : 0;
+  const maximumAnnualClassicPlusAccrued = settings.showClassicPlus
+    ? Math.max(...tableData.map((row) => row.annualClassicPlusPension))
+    : 0;
   const retirementIncome = buildRowRetirementIncomeSummary(settings, {
     ...drawRows,
     ...flexibleIncomeRows,
     summaryRow,
     ageRanges: buildRetirementIncomeAgeRanges(tableData, settings),
   });
+  const alphaAtDraw = getProjectionRowValue(
+    drawRows.alphaDrawRow,
+    "annualAlphaPensionIncludingReduction"
+  );
+  const alphaMonthlyAtDraw = getProjectionRowValue(
+    drawRows.alphaDrawRow,
+    "monthlyAlphaPensionGross"
+  );
+  const nuvosAtDraw = getProjectionRowValue(
+    drawRows.nuvosDrawRow,
+    "annualNuvosPensionIncludingReduction"
+  );
+  const nuvosMonthlyAtDraw = getProjectionRowValue(
+    drawRows.nuvosDrawRow,
+    "monthlyNuvosPensionGross"
+  );
+  const classicAtDraw = getProjectionRowValue(
+    drawRows.classicDrawRow,
+    "annualClassicPensionIncludingReduction"
+  );
+  const classicMonthlyAtDraw = getProjectionRowValue(
+    drawRows.classicDrawRow,
+    "monthlyClassicPensionGross"
+  );
+  const classicAutomaticLumpSumAtDraw = getProjectionRowValue(
+    drawRows.classicDrawRow,
+    "classicAutomaticLumpSumIncludingReduction"
+  );
+  const classicPlusAtDraw = getProjectionRowValue(
+    drawRows.classicPlusDrawRow,
+    "annualClassicPlusPensionIncludingReduction"
+  );
+  const classicPlusMonthlyAtDraw = getProjectionRowValue(
+    drawRows.classicPlusDrawRow,
+    "monthlyClassicPlusPensionGross"
+  );
+  const classicPlusAutomaticLumpSumAtDraw = getProjectionRowValue(
+    drawRows.classicPlusDrawRow,
+    "classicPlusAutomaticLumpSumIncludingReduction"
+  );
+  const sippPotAtDraw = getProjectionRowValue(drawRows.sippDrawRow, "sippPot");
+  const sippMonthlyAtDraw = getProjectionRowValue(
+    flexibleIncomeRows.sippIncomeRow,
+    "monthlySippPension"
+  );
+  const isaPotAtDraw = getProjectionRowValue(drawRows.isaDrawRow, "isaPot");
+  const isaMonthlyAtDraw = getProjectionRowValue(
+    flexibleIncomeRows.isaIncomeRow,
+    "monthlyIsaPension"
+  );
+  const lisaPotAtDraw = getProjectionRowValue(drawRows.lisaDrawRow, "lisaPot");
+  const lisaMonthlyAtDraw = getProjectionRowValue(
+    flexibleIncomeRows.lisaIncomeRow,
+    "monthlyLisaPension"
+  );
+  const monthlyAtAlphaStart = getProjectionRowValue(
+    drawRows.alphaDrawRow,
+    "totalMonthlyNetIncome"
+  );
+  const monthlyAtStateStart = getProjectionRowValue(
+    drawRows.statePensionRow,
+    "totalMonthlyNetIncome"
+  );
+  const monthlyStatePension = getProjectionRowValue(
+    drawRows.statePensionRow,
+    "monthlyStatePension"
+  );
 
   return {
-    alphaAtDraw:
-      drawRows.alphaDrawRow?.annualAlphaPensionIncludingReduction ?? 0,
-    alphaMonthlyAtDraw: drawRows.alphaDrawRow?.monthlyAlphaPensionGross ?? 0,
+    alphaAtDraw,
+    alphaMonthlyAtDraw,
     maximumAnnualAccrued,
     totalAddedAfterToday:
       maximumAnnualAccrued - input.startingAlphaPensionAtStartDate,
-    nuvosAtDraw:
-      drawRows.nuvosDrawRow?.annualNuvosPensionIncludingReduction ?? 0,
-    nuvosMonthlyAtDraw: drawRows.nuvosDrawRow?.monthlyNuvosPensionGross ?? 0,
+    nuvosAtDraw,
+    nuvosMonthlyAtDraw,
     maximumAnnualNuvosAccrued,
-    sippPotAtDraw: drawRows.sippDrawRow?.sippPot ?? 0,
-    sippMonthlyAtDraw:
-      flexibleIncomeRows.sippIncomeRow?.monthlySippPension ?? 0,
-    isaPotAtDraw: drawRows.isaDrawRow?.isaPot ?? 0,
-    isaMonthlyAtDraw: flexibleIncomeRows.isaIncomeRow?.monthlyIsaPension ?? 0,
-    lisaPotAtDraw: drawRows.lisaDrawRow?.lisaPot ?? 0,
-    lisaMonthlyAtDraw:
-      flexibleIncomeRows.lisaIncomeRow?.monthlyLisaPension ?? 0,
-    monthlyAtAlphaStart: drawRows.alphaDrawRow?.totalMonthlyNetIncome ?? 0,
-    monthlyAtStateStart: drawRows.statePensionRow?.totalMonthlyNetIncome ?? 0,
-    monthlyStatePension: drawRows.statePensionRow?.monthlyStatePension ?? 0,
+    classicAtDraw,
+    classicMonthlyAtDraw,
+    classicAutomaticLumpSumAtDraw,
+    maximumAnnualClassicAccrued,
+    classicPlusAtDraw,
+    classicPlusMonthlyAtDraw,
+    classicPlusAutomaticLumpSumAtDraw,
+    maximumAnnualClassicPlusAccrued,
+    sippPotAtDraw,
+    sippMonthlyAtDraw,
+    isaPotAtDraw,
+    isaMonthlyAtDraw,
+    lisaPotAtDraw,
+    lisaMonthlyAtDraw,
+    monthlyAtAlphaStart,
+    monthlyAtStateStart,
+    monthlyStatePension,
     retirementIncome,
   };
+}
+
+function getProjectionRowValue<K extends keyof ProjectionRow>(
+  row: ProjectionRow | undefined,
+  key: K
+) {
+  const value = row?.[key];
+
+  return typeof value === "number" ? value : 0;
 }
 
 function findFirstDrawdownRowAtOrAfterDate(
@@ -256,6 +370,8 @@ function buildRowRetirementIncomeSummary(
   settings: PensionSettings,
   drawRows: {
     alphaDrawRow: ProjectionRow | undefined;
+    classicDrawRow: ProjectionRow | undefined;
+    classicPlusDrawRow: ProjectionRow | undefined;
     nuvosDrawRow: ProjectionRow | undefined;
     statePensionRow: ProjectionRow | undefined;
     sippDrawRow: ProjectionRow | undefined;
@@ -270,6 +386,9 @@ function buildRowRetirementIncomeSummary(
 ) {
   const summaryRow = drawRows.summaryRow;
   const alphaMonthlyIncome = summaryRow?.monthlyAlphaPensionGross ?? 0;
+  const classicMonthlyIncome = summaryRow?.monthlyClassicPensionGross ?? 0;
+  const classicPlusMonthlyIncome =
+    summaryRow?.monthlyClassicPlusPensionGross ?? 0;
   const nuvosMonthlyIncome = summaryRow?.monthlyNuvosPensionGross ?? 0;
   const statePensionMonthlyIncome = summaryRow?.monthlyStatePension ?? 0;
   const sippMonthlyIncome = summaryRow?.monthlySippPension ?? 0;
@@ -285,6 +404,8 @@ function buildRowRetirementIncomeSummary(
   return buildRetirementIncomeSummary({
     summaryDate: summaryRow?.date ?? settings.startDate,
     alphaMonthlyIncome,
+    classicMonthlyIncome,
+    classicPlusMonthlyIncome,
     nuvosMonthlyIncome,
     sippMonthlyIncome,
     isaMonthlyIncome,
@@ -293,6 +414,8 @@ function buildRowRetirementIncomeSummary(
     monthlyIncomeTax: calculateMonthlyIncomeTax({
       settings,
       monthlyAlphaPension: alphaMonthlyIncome,
+      monthlyClassicPension: classicMonthlyIncome,
+      monthlyClassicPlusPension: classicPlusMonthlyIncome,
       monthlyNuvosPension: nuvosMonthlyIncome,
       monthlyStatePension: statePensionMonthlyIncome,
       monthlySippPension: sippMonthlyIncome,
@@ -389,6 +512,14 @@ function getActiveIncomeSourceLabels(
     settings.showAlpha && row.monthlyAlphaPensionGross > ACTIVE_INCOME_EPSILON
       ? "Alpha pension"
       : null,
+    settings.showClassic &&
+    row.monthlyClassicPensionGross > ACTIVE_INCOME_EPSILON
+      ? "classic pension"
+      : null,
+    settings.showClassicPlus &&
+    row.monthlyClassicPlusPensionGross > ACTIVE_INCOME_EPSILON
+      ? "classic plus pension"
+      : null,
     settings.showNuvos && row.monthlyNuvosPensionGross > ACTIVE_INCOME_EPSILON
       ? "nuvos pension"
       : null,
@@ -418,6 +549,8 @@ function findRetirementIncomeSummaryRow(
   settings: PensionSettings,
   input: {
     alphaPensionDrawDate: string;
+    classicPensionDrawDate: string;
+    classicPlusPensionDrawDate: string;
     nuvosPensionDrawDate: string;
     statePensionStartDate: string;
     sippIncomeRow: ProjectionRow | undefined;
@@ -427,6 +560,8 @@ function findRetirementIncomeSummaryRow(
 ) {
   const secureIncomeStartDates = [
     ...(settings.showAlpha ? [input.alphaPensionDrawDate] : []),
+    ...(settings.showClassic ? [input.classicPensionDrawDate] : []),
+    ...(settings.showClassicPlus ? [input.classicPlusPensionDrawDate] : []),
     ...(settings.showNuvos ? [input.nuvosPensionDrawDate] : []),
     ...(settings.showStatePension ? [input.statePensionStartDate] : []),
   ];
@@ -566,6 +701,14 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     settings,
     alphaAccrualStopDate,
     alphaPensionDrawDate,
+    classicPensionDrawDate: addYears(
+      settings.dateOfBirth,
+      settings.classicPensionDrawAge
+    ),
+    classicPlusPensionDrawDate: addYears(
+      settings.dateOfBirth,
+      settings.classicPlusPensionDrawAge
+    ),
     nuvosAccrualStopDate: NUVOS_FINAL_PENSIONABLE_SERVICE_DATE,
     nuvosPensionDrawDate: addYears(
       settings.dateOfBirth,
@@ -584,6 +727,14 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     nuvosAtDraw: 0,
     nuvosMonthlyAtDraw: 0,
     maximumAnnualNuvosAccrued: 0,
+    classicAtDraw: 0,
+    classicMonthlyAtDraw: 0,
+    classicAutomaticLumpSumAtDraw: 0,
+    maximumAnnualClassicAccrued: 0,
+    classicPlusAtDraw: 0,
+    classicPlusMonthlyAtDraw: 0,
+    classicPlusAutomaticLumpSumAtDraw: 0,
+    maximumAnnualClassicPlusAccrued: 0,
     sippPotAtDraw: 0,
     sippMonthlyAtDraw: 0,
     isaPotAtDraw: 0,
@@ -596,6 +747,8 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     retirementIncome: buildRetirementIncomeSummary({
       summaryDate: settings.startDate,
       alphaMonthlyIncome: 0,
+      classicMonthlyIncome: 0,
+      classicPlusMonthlyIncome: 0,
       nuvosMonthlyIncome: 0,
       sippMonthlyIncome: 0,
       isaMonthlyIncome: 0,
@@ -613,6 +766,8 @@ function createSummaryResponse(input: {
   settings: PensionSettings;
   alphaAccrualStopDate: string;
   alphaPensionDrawDate: string;
+  classicPensionDrawDate: string;
+  classicPlusPensionDrawDate: string;
   nuvosAccrualStopDate: string;
   nuvosPensionDrawDate: string;
   sippDrawDate: string;
@@ -628,6 +783,14 @@ function createSummaryResponse(input: {
   nuvosAtDraw: number;
   nuvosMonthlyAtDraw: number;
   maximumAnnualNuvosAccrued: number;
+  classicAtDraw: number;
+  classicMonthlyAtDraw: number;
+  classicAutomaticLumpSumAtDraw: number;
+  maximumAnnualClassicAccrued: number;
+  classicPlusAtDraw: number;
+  classicPlusMonthlyAtDraw: number;
+  classicPlusAutomaticLumpSumAtDraw: number;
+  maximumAnnualClassicPlusAccrued: number;
   sippPotAtDraw: number;
   sippMonthlyAtDraw: number;
   isaPotAtDraw: number;
@@ -643,6 +806,8 @@ function createSummaryResponse(input: {
     settings,
     alphaAccrualStopDate,
     alphaPensionDrawDate,
+    classicPensionDrawDate,
+    classicPlusPensionDrawDate,
     nuvosAccrualStopDate,
     nuvosPensionDrawDate,
     sippDrawDate,
@@ -658,6 +823,14 @@ function createSummaryResponse(input: {
     nuvosAtDraw,
     nuvosMonthlyAtDraw,
     maximumAnnualNuvosAccrued,
+    classicAtDraw,
+    classicMonthlyAtDraw,
+    classicAutomaticLumpSumAtDraw,
+    maximumAnnualClassicAccrued,
+    classicPlusAtDraw,
+    classicPlusMonthlyAtDraw,
+    classicPlusAutomaticLumpSumAtDraw,
+    maximumAnnualClassicPlusAccrued,
     sippPotAtDraw,
     sippMonthlyAtDraw,
     isaPotAtDraw,
@@ -674,6 +847,8 @@ function createSummaryResponse(input: {
     keyDates: {
       stopsAlphaAccrual: alphaAccrualStopDate,
       startsAlphaPension: alphaPensionDrawDate,
+      startsClassicPension: classicPensionDrawDate,
+      startsClassicPlusPension: classicPlusPensionDrawDate,
       stopsNuvosAccrual: nuvosAccrualStopDate,
       startsNuvosPension: nuvosPensionDrawDate,
       startsSippDraw: sippDrawDate,
@@ -691,6 +866,18 @@ function createSummaryResponse(input: {
       annualAtDraw: nuvosAtDraw,
       monthlyAtDraw: nuvosMonthlyAtDraw,
       maximumAnnualAccrued: maximumAnnualNuvosAccrued,
+    },
+    classicPension: {
+      annualAtDraw: classicAtDraw,
+      monthlyAtDraw: classicMonthlyAtDraw,
+      automaticLumpSumAtDraw: classicAutomaticLumpSumAtDraw,
+      maximumAnnualAccrued: maximumAnnualClassicAccrued,
+    },
+    classicPlusPension: {
+      annualAtDraw: classicPlusAtDraw,
+      monthlyAtDraw: classicPlusMonthlyAtDraw,
+      automaticLumpSumAtDraw: classicPlusAutomaticLumpSumAtDraw,
+      maximumAnnualAccrued: maximumAnnualClassicPlusAccrued,
     },
     sippPension: {
       potAtDraw: sippPotAtDraw,
@@ -742,6 +929,8 @@ function createSummaryResponse(input: {
 function buildRetirementIncomeSummary({
   summaryDate,
   alphaMonthlyIncome,
+  classicMonthlyIncome,
+  classicPlusMonthlyIncome,
   nuvosMonthlyIncome,
   sippMonthlyIncome,
   isaMonthlyIncome,
@@ -754,6 +943,8 @@ function buildRetirementIncomeSummary({
 }: {
   summaryDate: string;
   alphaMonthlyIncome: number;
+  classicMonthlyIncome: number;
+  classicPlusMonthlyIncome: number;
   nuvosMonthlyIncome: number;
   sippMonthlyIncome: number;
   isaMonthlyIncome: number;
@@ -771,6 +962,24 @@ function buildRetirementIncomeSummary({
             "alpha",
             "Alpha pension",
             alphaMonthlyIncome
+          ),
+        ]
+      : []),
+    ...(settings.showClassic
+      ? [
+          createRetirementIncomeSource(
+            "classic",
+            "classic pension",
+            classicMonthlyIncome
+          ),
+        ]
+      : []),
+    ...(settings.showClassicPlus
+      ? [
+          createRetirementIncomeSource(
+            "classicPlus",
+            "classic plus pension",
+            classicPlusMonthlyIncome
           ),
         ]
       : []),

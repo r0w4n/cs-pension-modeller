@@ -38,6 +38,8 @@ export type LisaWithdrawalStrategy =
   | "use_by_age";
 export type SippTaxReliefRate = "none" | "20" | "40";
 export type ProjectionBasis = "real" | "nominal";
+export type ClassicCalculationMode = "estimate" | "manual";
+export type ClassicFinalSalaryLink = "maintained" | "broken";
 
 export type PensionSettings = {
   startDate: string;
@@ -48,6 +50,8 @@ export type PensionSettings = {
   showAlpha: boolean;
   projectionBasis: ProjectionBasis;
   inflationRateAnnual: number;
+  showClassic: boolean;
+  showClassicPlus: boolean;
   showNuvos: boolean;
   showStatePension: boolean;
   showSipp: boolean;
@@ -79,6 +83,25 @@ export type PensionSettings = {
   alphaEpaStartDate: string;
   alphaEpaEndDate: string;
   alphaAddedPensionLumpSums: AddedPensionLumpSum[];
+  classicCalculationMode: ClassicCalculationMode;
+  classicFinalSalaryLink: ClassicFinalSalaryLink;
+  classicCurrentFinalPensionableEarnings: number;
+  classicPreservedFinalPensionableEarnings: number;
+  classicReckonableServiceYears: number;
+  classicAnnualPension: number;
+  classicAutomaticLumpSum: number;
+  classicPensionDrawAge: number;
+  classicApplyPensionIncreases: boolean;
+  classicPlusCalculationMode: ClassicCalculationMode;
+  classicPlusFinalSalaryLink: ClassicFinalSalaryLink;
+  classicPlusCurrentFinalPensionableEarnings: number;
+  classicPlusPreservedFinalPensionableEarnings: number;
+  classicPlusPre2002ServiceYears: number;
+  classicPlusPost2002ServiceYears: number;
+  classicPlusAnnualPension: number;
+  classicPlusAutomaticLumpSum: number;
+  classicPlusPensionDrawAge: number;
+  classicPlusApplyPensionIncreases: boolean;
   nuvosPensionAbsDate: string;
   nuvosAccruedPensionAtLastAbs: number;
   nuvosPensionableEarnings: number;

@@ -38,6 +38,8 @@ describe("chart module", () => {
             sippIncomeAnnual: 0,
             partialRetirementIncomeAnnual: 0,
             alphaIncomeAnnual: 12000,
+            classicIncomeAnnual: 0,
+            classicPlusIncomeAnnual: 0,
             nuvosIncomeAnnual: 0,
             statePensionIncomeAnnual: 0,
             totalIncomeAnnual: 12000,

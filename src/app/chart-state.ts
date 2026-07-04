@@ -137,6 +137,14 @@ function applyVisibilityPatch(
     next.showAlpha = patch.showAlpha;
   }
 
+  if (patch.showClassic !== undefined) {
+    next.showClassic = patch.showClassic;
+  }
+
+  if (patch.showClassicPlus !== undefined) {
+    next.showClassicPlus = patch.showClassicPlus;
+  }
+
   if (patch.showIsa !== undefined) {
     next.showIsa = patch.showIsa;
   }

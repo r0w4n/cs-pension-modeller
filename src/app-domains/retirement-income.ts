@@ -44,6 +44,14 @@ export function createRetirementIncomeSeries(
     settings.dateOfBirth,
     settings.alphaPensionDrawAge
   );
+  const classicDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.classicPensionDrawAge
+  );
+  const classicPlusDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.classicPlusPensionDrawAge
+  );
   const nuvosDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.nuvosPensionDrawAge
@@ -117,14 +125,30 @@ export function createRetirementIncomeSeries(
           nextMonthlyIncome: nextRow?.monthlyLisaPension ?? 0,
         })
       : 0;
-    const alphaIncomeAnnual =
-      settings.showAlpha && row.date >= alphaDrawDate
-        ? row.monthlyAlphaPensionGross * 12
-        : 0;
-    const nuvosIncomeAnnual =
-      settings.showNuvos && row.date >= nuvosDrawDate
-        ? row.monthlyNuvosPensionGross * 12
-        : 0;
+    const alphaIncomeAnnual = getDefinedBenefitIncomeAnnual({
+      enabled: settings.showAlpha,
+      rowDate: row.date,
+      drawDate: alphaDrawDate,
+      monthlyIncome: row.monthlyAlphaPensionGross,
+    });
+    const classicIncomeAnnual = getDefinedBenefitIncomeAnnual({
+      enabled: settings.showClassic,
+      rowDate: row.date,
+      drawDate: classicDrawDate,
+      monthlyIncome: row.monthlyClassicPensionGross,
+    });
+    const classicPlusIncomeAnnual = getDefinedBenefitIncomeAnnual({
+      enabled: settings.showClassicPlus,
+      rowDate: row.date,
+      drawDate: classicPlusDrawDate,
+      monthlyIncome: row.monthlyClassicPlusPensionGross,
+    });
+    const nuvosIncomeAnnual = getDefinedBenefitIncomeAnnual({
+      enabled: settings.showNuvos,
+      rowDate: row.date,
+      drawDate: nuvosDrawDate,
+      monthlyIncome: row.monthlyNuvosPensionGross,
+    });
     const partialRetirementIncomeAnnual =
       calculatePartialRetirementIncomeAnnual(
         settings,
@@ -145,11 +169,15 @@ export function createRetirementIncomeSeries(
       sippIncomeAnnual +
       partialRetirementIncomeAnnual +
       alphaIncomeAnnual +
+      classicIncomeAnnual +
+      classicPlusIncomeAnnual +
       nuvosIncomeAnnual +
       statePensionIncomeAnnual;
     const monthlyIncomeTax = calculateMonthlyIncomeTax({
       settings,
       monthlyAlphaPension: alphaIncomeAnnual / 12,
+      monthlyClassicPension: classicIncomeAnnual / 12,
+      monthlyClassicPlusPension: classicPlusIncomeAnnual / 12,
       monthlyNuvosPension: nuvosIncomeAnnual / 12,
       monthlyStatePension: statePensionIncomeAnnual / 12,
       monthlySippPension: sippIncomeAnnual / 12,
@@ -165,6 +193,8 @@ export function createRetirementIncomeSeries(
       sippIncomeAnnual,
       partialRetirementIncomeAnnual,
       alphaIncomeAnnual,
+      classicIncomeAnnual,
+      classicPlusIncomeAnnual,
       nuvosIncomeAnnual,
       statePensionIncomeAnnual,
       totalIncomeAnnual,
@@ -181,6 +211,17 @@ export function createRetirementIncomeSeries(
   });
 
   return insertChartTransitionPoints(baseSeries, settings);
+}
+
+function getDefinedBenefitIncomeAnnual(input: {
+  enabled: boolean;
+  rowDate: string;
+  drawDate: string;
+  monthlyIncome: number;
+}) {
+  return input.enabled && input.rowDate >= input.drawDate
+    ? input.monthlyIncome * 12
+    : 0;
 }
 
 function getBridgePotIncomeAnnual(input: {
@@ -420,6 +461,8 @@ export function createBridgeChartParameters(
       settings.statePensionDrawDate
     ),
     showAlpha: settings.showAlpha,
+    showClassic: settings.showClassic,
+    showClassicPlus: settings.showClassicPlus,
     showIsa: settings.showIsa,
     showLisa: settings.showLisa,
     showSipp: settings.showSipp,

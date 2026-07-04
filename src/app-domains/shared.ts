@@ -99,6 +99,14 @@ export function isSettingsGroupVisible(
     return settings.showNuvos;
   }
 
+  if (groupId === "classic") {
+    return settings.showClassic;
+  }
+
+  if (groupId === "classic-plus") {
+    return settings.showClassicPlus;
+  }
+
   if (groupId === "state") {
     return settings.showStatePension;
   }

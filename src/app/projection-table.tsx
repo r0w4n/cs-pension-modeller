@@ -27,6 +27,8 @@ export type TableColumn = {
 type ProjectionTableColumn = TableColumn & {
   setting?:
     | "showAlpha"
+    | "showClassic"
+    | "showClassicPlus"
     | "showNuvos"
     | "showStatePension"
     | "showSipp"
@@ -96,6 +98,54 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     label: "Monthly Alpha pension before tax",
     width: "7rem",
     setting: "showAlpha",
+  },
+  {
+    key: "annualClassicPension",
+    label: "Annual classic Pension",
+    width: "8rem",
+    setting: "showClassic",
+  },
+  {
+    key: "classicAutomaticLumpSum",
+    label: "classic automatic lump sum",
+    width: "8rem",
+    setting: "showClassic",
+  },
+  {
+    key: "annualClassicPensionIncludingReduction",
+    label: "Annual classic Pension Including Reduction",
+    width: "9rem",
+    setting: "showClassic",
+  },
+  {
+    key: "monthlyClassicPensionGross",
+    label: "Monthly classic pension before tax",
+    width: "7rem",
+    setting: "showClassic",
+  },
+  {
+    key: "annualClassicPlusPension",
+    label: "Annual classic plus Pension",
+    width: "8rem",
+    setting: "showClassicPlus",
+  },
+  {
+    key: "classicPlusAutomaticLumpSum",
+    label: "classic plus automatic lump sum",
+    width: "8rem",
+    setting: "showClassicPlus",
+  },
+  {
+    key: "annualClassicPlusPensionIncludingReduction",
+    label: "Annual classic plus Pension Including Reduction",
+    width: "9rem",
+    setting: "showClassicPlus",
+  },
+  {
+    key: "monthlyClassicPlusPensionGross",
+    label: "Monthly classic plus pension before tax",
+    width: "7rem",
+    setting: "showClassicPlus",
   },
   {
     key: "annualNuvosPension",

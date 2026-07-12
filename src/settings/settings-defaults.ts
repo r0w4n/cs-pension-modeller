@@ -35,6 +35,7 @@ export const defaultSettings: PensionSettings = {
   showSipp: true,
   showIsa: true,
   showLisa: false,
+  additionalGuaranteedIncomes: [],
   taxationEnabled: taxDefaults.taxationEnabled,
   partialRetirementEnabled: false,
   partialRetirementStartAge: 55,

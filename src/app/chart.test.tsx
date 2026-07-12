@@ -42,6 +42,7 @@ describe("chart module", () => {
             classicPlusIncomeAnnual: 0,
             nuvosIncomeAnnual: 0,
             premiumIncomeAnnual: 0,
+            additionalGuaranteedIncomeAnnual: 0,
             statePensionIncomeAnnual: 0,
             totalIncomeAnnual: 12000,
             assessedIncomeAnnual: 12000,

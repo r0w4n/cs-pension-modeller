@@ -11,6 +11,7 @@ const PROJECTED_SOURCES = [
   "Civil Service nuvos pension",
   "Civil Service Premium pension",
   "State Pension",
+  "Additional guaranteed income entered by the user",
   "SIPP pension savings",
   "ISA savings",
   "Lifetime ISA (LISA) savings",
@@ -109,6 +110,7 @@ const TAXABLE_INCOME_SOURCES = [
   "nuvos pension",
   "Premium pension",
   "State Pension",
+  "taxable additional guaranteed income",
   "taxable SIPP withdrawals",
 ] as const;
 
@@ -177,8 +179,9 @@ export function MethodologyPage() {
         <p className="section-copy">
           Within each row, investment pots are grown before that month&apos;s
           contribution and withdrawal calculations are applied. Defined-benefit
-          income starts from the selected draw dates, flexible withdrawals are
-          limited to the available pot balance, and Income Tax is calculated
+          income starts from the selected draw dates, additional guaranteed
+          income starts from the ages entered by the user, flexible withdrawals
+          are limited to the available pot balance, and Income Tax is calculated
           after gross income for the month has been assembled.
         </p>
       </section>
@@ -236,6 +239,12 @@ export function MethodologyPage() {
           <li>
             Inflation is only modelled where explicit CPI or growth assumptions
             are enabled.
+          </li>
+          <li>
+            Additional guaranteed income is a simple gross annual amount entered
+            by the user. It does not model provider-specific rules, early
+            retirement factors, commutation, survivor benefits, GMP, or scheme
+            revaluation rules.
           </li>
           <li>
             State Pension modelling does not cover benefit interactions,

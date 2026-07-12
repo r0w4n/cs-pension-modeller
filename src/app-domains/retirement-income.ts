@@ -151,6 +151,10 @@ export function createRetirementIncomeSeries(
         row.date,
         requirementDate
       );
+    const additionalGuaranteedIncomeAnnual =
+      row.monthlyAdditionalGuaranteedIncomeGross * 12;
+    const additionalGuaranteedIncomeTaxableAnnual =
+      row.monthlyAdditionalGuaranteedIncomeTaxable * 12;
     const targetIncomeAnnual = calculateRetirementIncomeTargetAtDate(
       settings,
       row.date
@@ -165,6 +169,7 @@ export function createRetirementIncomeSeries(
       classicPlusIncomeAnnual +
       nuvosIncomeAnnual +
       premiumIncomeAnnual +
+      additionalGuaranteedIncomeAnnual +
       statePensionIncomeAnnual;
     const monthlyIncomeTax = calculateMonthlyIncomeTax({
       settings,
@@ -175,6 +180,8 @@ export function createRetirementIncomeSeries(
       monthlyPremiumPension: premiumIncomeAnnual / 12,
       monthlyStatePension: statePensionIncomeAnnual / 12,
       monthlySippPension: sippIncomeAnnual / 12,
+      monthlyAdditionalGuaranteedIncomeTaxable:
+        additionalGuaranteedIncomeTaxableAnnual / 12,
     });
     const assessedIncomeAnnual = totalIncomeAnnual - monthlyIncomeTax * 12;
 
@@ -191,6 +198,7 @@ export function createRetirementIncomeSeries(
       classicPlusIncomeAnnual,
       nuvosIncomeAnnual,
       premiumIncomeAnnual,
+      additionalGuaranteedIncomeAnnual,
       statePensionIncomeAnnual,
       totalIncomeAnnual,
       assessedIncomeAnnual,

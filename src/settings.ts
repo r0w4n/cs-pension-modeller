@@ -13,6 +13,8 @@ export type {
   AddedPensionLumpSumCadence,
   AddedPensionFactorType,
   AddedPensionLumpSum,
+  AdditionalGuaranteedIncome,
+  AdditionalGuaranteedIncomeIndexation,
   SippWithdrawalStrategy,
   IsaWithdrawalStrategy,
   LisaWithdrawalStrategy,
@@ -83,5 +85,10 @@ export {
   getPartialRetirementContributionMultiplier,
   getPartialRetirementSavingsContributionMultiplier,
 } from "./settings/settings-domains/partial-retirement";
+
+export {
+  createDefaultAdditionalGuaranteedIncome,
+  getAdditionalGuaranteedIncomeDisplayName,
+} from "./settings/settings-domains/additional-guaranteed-income";
 
 export { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings/settings-domains/lisa";

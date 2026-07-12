@@ -290,6 +290,16 @@ export const JOURNEY_DEFINITIONS = [
         },
       },
       {
+        id: "additional-income",
+        eyebrow: "Optional",
+        title: "Additional guaranteed income",
+        description:
+          "Add known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
+        kind: "fields",
+        groupId: "additional-income",
+        fieldIds: [],
+      },
+      {
         id: "pots",
         eyebrow: "Step 5",
         title: "Your bridging pots",
@@ -545,6 +555,16 @@ export const JOURNEY_DEFINITIONS = [
           settings.showIsa || settings.showLisa || settings.showSipp,
       },
       {
+        id: "additional-income",
+        eyebrow: "Optional",
+        title: "Additional guaranteed income",
+        description:
+          "Add known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
+        kind: "fields",
+        groupId: "additional-income",
+        fieldIds: [],
+      },
+      {
         id: "answer",
         eyebrow: "Result",
         title: "Your results",
@@ -616,6 +636,7 @@ function isExpertJourneyGroupVisible(groupId: string) {
     groupId === "isa" ||
     groupId === "lisa" ||
     groupId === "tax" ||
+    groupId === "additional-income" ||
     groupId === "partial-retirement"
   ) {
     return (settings: PensionSettings) =>

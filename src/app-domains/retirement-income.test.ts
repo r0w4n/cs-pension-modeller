@@ -42,6 +42,8 @@ const baseRow: ProjectionRow = {
   annualPremiumPensionIncludingReduction: 0,
   monthlyPremiumPensionGross: 0,
   monthlyStatePension: 0,
+  monthlyAdditionalGuaranteedIncomeGross: 0,
+  monthlyAdditionalGuaranteedIncomeTaxable: 0,
   sippPot: 0,
   monthlySippPension: 0,
   isaPot: 0,

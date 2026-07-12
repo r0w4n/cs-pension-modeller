@@ -113,64 +113,44 @@ Feature: Model classic and classic plus Civil Service legacy pensions
   # ---------------------------------------------------------------------------
 
   @classic @salary-increase @final-salary-link
-  Scenario: Classic pension uses projected salary when final salary link is maintained
+  Scenario Outline: Apply the classic final salary link when projecting pensionable earnings
     Given the user has added a classic pension pot
     And the classic calculation mode is "estimate from salary and service"
-    And the classic final salary link is "maintained"
-    And the current classic final pensionable earnings are 70000.00
+    And the classic final salary link is "<finalSalaryLink>"
+    And the <salaryBasis> classic final pensionable earnings are 70000.00
     And the classic salary increase assumption is 3.00%
     And the classic reckonable service is 10.0000 years
     When the user projects the classic pension for 5 years
-    Then the final pensionable earnings used for classic should be 81149.19
+    Then the final pensionable earnings used for classic should <earningsOutcome> <expectedFinalPensionableEarnings>
     And the classic reckonable service should remain 10.0000 years
-    And the unreduced annual classic pension should be 10143.65
-    And the automatic classic lump sum should be 30430.94
+    And the unreduced annual classic pension should be <expectedAnnualPension>
+    And the automatic classic lump sum should be <expectedAutomaticLumpSum>
 
-  @classic @salary-increase @final-salary-link
-  Scenario: Classic pension uses preserved salary when final salary link is broken
-    Given the user has added a classic pension pot
-    And the classic calculation mode is "estimate from salary and service"
-    And the classic final salary link is "broken"
-    And the preserved classic final pensionable earnings are 70000.00
-    And the classic salary increase assumption is 3.00%
-    And the classic reckonable service is 10.0000 years
-    When the user projects the classic pension for 5 years
-    Then the final pensionable earnings used for classic should remain 70000.00
-    And the classic reckonable service should remain 10.0000 years
-    And the unreduced annual classic pension should be 8750.00
-    And the automatic classic lump sum should be 26250.00
+    Examples:
+      | finalSalaryLink | salaryBasis | earningsOutcome | expectedFinalPensionableEarnings | expectedAnnualPension | expectedAutomaticLumpSum |
+      | maintained      | current     | be              | 81149.19                         | 10143.65              | 30430.94                 |
+      | broken          | preserved   | remain          | 70000.00                         | 8750.00               | 26250.00                 |
 
   @classic-plus @salary-increase @final-salary-link
-  Scenario: Classic plus pension uses projected salary when final salary link is maintained
+  Scenario Outline: Apply the classic plus final salary link when projecting pensionable earnings
     Given the user has added a classic plus pension pot
     And the classic plus calculation mode is "estimate from salary and service"
-    And the classic plus final salary link is "maintained"
-    And the current classic plus final pensionable earnings are 70000.00
+    And the classic plus final salary link is "<finalSalaryLink>"
+    And the <salaryBasis> classic plus final pensionable earnings are 70000.00
     And the classic plus salary increase assumption is 3.00%
     And the classic plus pre-2002 reckonable service is 10.0000 years
     And the classic plus post-2002 reckonable service is 5.0000 years
     When the user projects the classic plus pension for 5 years
-    Then the final pensionable earnings used for classic plus should be 81149.19
-    And the pre-2002 annual classic plus pension should be 10143.65
-    And the post-2002 annual classic plus pension should be 6762.43
-    And the total unreduced annual classic plus pension should be 16906.08
-    And the automatic classic plus lump sum should be 30430.94
+    Then the final pensionable earnings used for classic plus should <earningsOutcome> <expectedFinalPensionableEarnings>
+    And the pre-2002 annual classic plus pension should be <expectedPre2002Pension>
+    And the post-2002 annual classic plus pension should be <expectedPost2002Pension>
+    And the total unreduced annual classic plus pension should be <expectedTotalPension>
+    And the automatic classic plus lump sum should be <expectedAutomaticLumpSum>
 
-  @classic-plus @salary-increase @final-salary-link
-  Scenario: Classic plus pension uses preserved salary when final salary link is broken
-    Given the user has added a classic plus pension pot
-    And the classic plus calculation mode is "estimate from salary and service"
-    And the classic plus final salary link is "broken"
-    And the preserved classic plus final pensionable earnings are 70000.00
-    And the classic plus salary increase assumption is 3.00%
-    And the classic plus pre-2002 reckonable service is 10.0000 years
-    And the classic plus post-2002 reckonable service is 5.0000 years
-    When the user projects the classic plus pension for 5 years
-    Then the final pensionable earnings used for classic plus should remain 70000.00
-    And the pre-2002 annual classic plus pension should be 8750.00
-    And the post-2002 annual classic plus pension should be 5833.33
-    And the total unreduced annual classic plus pension should be 14583.33
-    And the automatic classic plus lump sum should be 26250.00
+    Examples:
+      | finalSalaryLink | salaryBasis | earningsOutcome | expectedFinalPensionableEarnings | expectedPre2002Pension | expectedPost2002Pension | expectedTotalPension | expectedAutomaticLumpSum |
+      | maintained      | current     | be              | 81149.19                         | 10143.65               | 6762.43                 | 16906.08             | 30430.94                 |
+      | broken          | preserved   | remain          | 70000.00                         | 8750.00                | 5833.33                 | 14583.33             | 26250.00                 |
 
 
   # ---------------------------------------------------------------------------

@@ -41,6 +41,18 @@ export type SippTaxReliefRate = "none" | "20" | "40";
 export type ProjectionBasis = "real" | "nominal";
 export type ClassicCalculationMode = "estimate" | "manual";
 export type ClassicFinalSalaryLink = "maintained" | "broken";
+export type AdditionalGuaranteedIncomeIndexation = "none" | "cpi" | "fixed";
+
+export type AdditionalGuaranteedIncome = {
+  id: string;
+  name: string;
+  annualAmount: number | null;
+  startAge: number | null;
+  endAge?: number | null;
+  indexation: AdditionalGuaranteedIncomeIndexation;
+  fixedIncreasePercent?: number | null;
+  taxable: boolean;
+};
 
 export type PensionSettings = {
   startDate: string;
@@ -59,6 +71,7 @@ export type PensionSettings = {
   showSipp: boolean;
   showIsa: boolean;
   showLisa: boolean;
+  additionalGuaranteedIncomes: AdditionalGuaranteedIncome[];
   taxationEnabled: boolean;
   partialRetirementEnabled: boolean;
   partialRetirementStartAge: number;

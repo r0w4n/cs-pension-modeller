@@ -29,8 +29,22 @@ export function migrateFromV1ToV2(data: unknown) {
   };
 }
 
+export function migrateFromV2ToV3(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    additionalGuaranteedIncomes: Array.isArray(data.additionalGuaranteedIncomes)
+      ? data.additionalGuaranteedIncomes
+      : [],
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
+  2: migrateFromV2ToV3,
 };
 
 export function migrateSettingsToLatest(

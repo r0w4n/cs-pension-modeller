@@ -914,6 +914,128 @@ describe("projection calculations", () => {
     );
   });
 
+  it("adds additional guaranteed income to projection rows and tax", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2029-01-01",
+      dateOfBirth: "1970-01-01",
+      lifeExpectancy: 62,
+      requirementAge: 60,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+      taxationEnabled: true,
+      additionalGuaranteedIncomes: [
+        {
+          id: "previous-employer-db",
+          name: "Previous employer DB pension",
+          annualAmount: 20000,
+          startAge: 60,
+          endAge: 60,
+          indexation: "cpi",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    };
+
+    const rows = createProjectionTable(settings);
+    const beforeStartRow = findRowByDate(rows, "2029-12-01");
+    const startRow = findRowByDate(rows, "2030-01-01");
+    const finalPayableRow = findRowByDate(rows, "2030-12-01");
+    const afterEndRow = findRowByDate(rows, "2031-01-01");
+
+    expect(beforeStartRow?.monthlyAdditionalGuaranteedIncomeGross).toBe(0);
+    expect(startRow?.monthlyAdditionalGuaranteedIncomeGross).toBeCloseTo(
+      20000 / 12,
+      6
+    );
+    expect(startRow?.monthlyAdditionalGuaranteedIncomeTaxable).toBeCloseTo(
+      20000 / 12,
+      6
+    );
+    expect(startRow?.totalMonthlyIncomeBeforeTax).toBeCloseTo(20000 / 12, 6);
+    expect(startRow?.monthlyIncomeTax).toBeGreaterThan(0);
+    expect(finalPayableRow?.monthlyAdditionalGuaranteedIncomeGross).toBeCloseTo(
+      20000 / 12,
+      6
+    );
+    expect(afterEndRow?.monthlyAdditionalGuaranteedIncomeGross).toBe(0);
+  });
+
+  it("uses additional guaranteed income to reduce bridge withdrawals", () => {
+    const additionalGuaranteedIncomes: PensionSettings["additionalGuaranteedIncomes"] =
+      [
+        {
+          id: "previous-employer-db",
+          name: "Previous employer DB pension",
+          annualAmount: 5000,
+          startAge: 60,
+          endAge: null,
+          indexation: "cpi",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ];
+    const baseSettings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2029-01-01",
+      dateOfBirth: "1970-01-01",
+      lifeExpectancy: 61,
+      requirementAge: 60,
+      desiredRetirementIncome: 35000,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: true,
+      showLisa: false,
+      isaCurrentPot: 100000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 60,
+      taxationEnabled: false,
+      additionalGuaranteedIncomes: [],
+    };
+    const settingsWithAdditionalIncome = {
+      ...baseSettings,
+      additionalGuaranteedIncomes,
+    };
+    const rowsWithoutAdditionalIncome = createProjectionTable({
+      ...baseSettings,
+      showIsa: false,
+    });
+    const rowsWithAdditionalIncome = createProjectionTable({
+      ...settingsWithAdditionalIncome,
+      showIsa: false,
+    });
+
+    const bridgeWithoutAdditionalIncome = generateRetirementBridgeAnalysis(
+      rowsWithoutAdditionalIncome,
+      baseSettings
+    );
+    const bridgeWithAdditionalIncome = generateRetirementBridgeAnalysis(
+      rowsWithAdditionalIncome,
+      settingsWithAdditionalIncome
+    );
+
+    expect(bridgeWithAdditionalIncome.totalBridgeRequired).toBeLessThan(
+      bridgeWithoutAdditionalIncome.totalBridgeRequired
+    );
+    expect(
+      bridgeWithoutAdditionalIncome.totalBridgeRequired -
+        bridgeWithAdditionalIncome.totalBridgeRequired
+    ).toBeGreaterThan(4500);
+  });
+
   it("converts SIPP and ISA nominal returns to real returns in real-terms mode", () => {
     expect(calculateRealAnnualRate(0.07, 0.025)).toBeCloseTo(0.043902439, 9);
 

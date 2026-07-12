@@ -1,5 +1,6 @@
 import {
   migrateFromV1ToV2,
+  migrateFromV2ToV3,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -36,6 +37,33 @@ describe("settings-migrations", () => {
     ).toEqual({
       isaDrawAge: 60,
       requirementAge: 60,
+    });
+  });
+
+  it("defaults additional guaranteed income during v2 migration", () => {
+    expect(
+      migrateFromV2ToV3({
+        requirementAge: 60,
+      })
+    ).toEqual({
+      requirementAge: 60,
+      additionalGuaranteedIncomes: [],
+    });
+  });
+
+  it("migrates legacy data to the latest schema", () => {
+    expect(
+      migrateSettingsToLatest({
+        version: 1,
+        data: {
+          dateOfBirth: "1987-06-01",
+          targetRetirementAge: 60,
+        },
+      })
+    ).toEqual({
+      dateOfBirth: "1987-06-01",
+      requirementAge: 60,
+      additionalGuaranteedIncomes: [],
     });
   });
 

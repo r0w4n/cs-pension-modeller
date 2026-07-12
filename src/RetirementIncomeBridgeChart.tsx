@@ -31,6 +31,7 @@ export type RetirementIncomePoint = {
   nuvosIncomeAnnual: number;
   premiumIncomeAnnual: number;
   additionalGuaranteedIncomeAnnual: number;
+  additionalGuaranteedIncomeStreams?: RetirementIncomeAdditionalIncomePoint[];
   partialRetirementIncomeAnnual: number;
   statePensionIncomeAnnual: number;
   totalIncomeAnnual: number;
@@ -46,6 +47,12 @@ export type RetirementIncomePoint = {
     | "alpha-only"
     | "alpha-sipp"
     | "alpha-state";
+};
+
+export type RetirementIncomeAdditionalIncomePoint = {
+  id: string;
+  label: string;
+  annualAmount: number;
 };
 
 export type RetirementIncomeBridgeParameters = {
@@ -193,8 +200,24 @@ const incomeKeys: IncomeKey[] = [
   "classicPlusIncomeAnnual",
   "nuvosIncomeAnnual",
   "premiumIncomeAnnual",
-  "additionalGuaranteedIncomeAnnual",
   "statePensionIncomeAnnual",
+];
+
+type ChartIncomeSeriesDefinition = {
+  key: string;
+  label: string;
+  colour: string;
+  incomeKey?: IncomeKey;
+  additionalIncomeId?: string;
+};
+
+const additionalIncomeColours = [
+  "#6d7d10",
+  "#9a5b13",
+  "#0f766e",
+  "#7e3af2",
+  "#0e7490",
+  "#be123c",
 ];
 
 const sourceMeta: Record<
@@ -410,7 +433,7 @@ export function RetirementIncomeBridgeChart({
     displayedTargetIncomeAnnual,
     retirementAge,
   ]);
-  const visibleIncomeKeys = useMemo(
+  const enabledIncomeKeys = useMemo(
     () =>
       incomeKeys.filter((key) =>
         isIncomeSourceEnabled(key, {
@@ -439,11 +462,6 @@ export function RetirementIncomeBridgeChart({
       showStatePension,
     ]
   );
-  const legendIncomeKeys = useMemo(
-    () => (hideInactiveLegendItems ? visibleIncomeKeys : incomeKeys),
-    [hideInactiveLegendItems, visibleIncomeKeys]
-  );
-
   useEffect(() => {
     if (!shellRef.current || typeof ResizeObserver === "undefined") {
       return;
@@ -578,6 +596,28 @@ export function RetirementIncomeBridgeChart({
       displayedData,
     ]
   );
+  const enabledIncomeSeries = useMemo(
+    () => createChartIncomeSeriesDefinitions(enabledIncomeKeys, visibleData),
+    [enabledIncomeKeys, visibleData]
+  );
+  const allLegendIncomeSeries = useMemo(
+    () => createChartIncomeSeriesDefinitions(incomeKeys, visibleData),
+    [visibleData]
+  );
+  const legendIncomeKeys = useMemo(
+    () =>
+      hideInactiveLegendItems
+        ? enabledIncomeSeries.filter((series) =>
+            hasActiveIncome(visibleData, series)
+          )
+        : allLegendIncomeSeries,
+    [
+      allLegendIncomeSeries,
+      enabledIncomeSeries,
+      hideInactiveLegendItems,
+      visibleData,
+    ]
+  );
   const maxIncome =
     d3.max(visibleData, (point) => point.totalIncomeAnnual / divisor) ??
     displayedTargetIncomeAnnual / divisor;
@@ -600,14 +640,26 @@ export function RetirementIncomeBridgeChart({
     [plotHeight, yMax]
   );
   const stackedIncomeKeys = useMemo(
-    () => createStackedIncomeKeys(visibleIncomeKeys, visibleData),
-    [visibleData, visibleIncomeKeys]
+    () =>
+      createStackedIncomeSeries(
+        enabledIncomeSeries.filter((series) =>
+          hasActiveIncome(visibleData, series)
+        ),
+        visibleData
+      ),
+    [enabledIncomeSeries, visibleData]
   );
   const stack = d3
     .stack<RetirementIncomePoint>()
-    .keys(stackedIncomeKeys)
+    .keys(stackedIncomeKeys.map((series) => series.key))
     .order(d3.stackOrderNone)
-    .value((point, key) => Number(point[key as IncomeKey]) / divisor);
+    .value((point, key) => {
+      const series = stackedIncomeKeys.find(
+        (candidate) => candidate.key === key
+      );
+
+      return (series ? getChartIncomeValue(point, series) : 0) / divisor;
+    });
   const stackedSeries = stack(visibleData);
   const alphaStackedSeries = stackedSeries.find(
     (series) => series.key === "alphaIncomeAnnual"
@@ -2073,8 +2125,8 @@ export function RetirementIncomeBridgeChart({
 
       <p id={chartDescriptionId} className="visually-hidden">
         Stacked income chart showing ISA, SIPP, partial retirement income,
-        Alpha, Nuvos and State Pension income against the target retirement
-        income over age.
+        Alpha, Nuvos, additional guaranteed income and State Pension income
+        against the target retirement income over age.
       </p>
 
       <div className="bridge-chart-shell" ref={shellRef}>
@@ -2104,23 +2156,19 @@ export function RetirementIncomeBridgeChart({
                 strokeWidth="2"
               />
             </pattern>
-            {visibleIncomeKeys.map((key) => (
+            {enabledIncomeSeries.map((series) => (
               <linearGradient
-                key={key}
-                id={`bridge-gradient-${key}`}
+                key={series.key}
+                id={getChartIncomeGradientId(series.key)}
                 x1="0"
                 x2="0"
                 y1="0"
                 y2="1"
               >
-                <stop
-                  offset="0%"
-                  stopColor={sourceMeta[key].colour}
-                  stopOpacity="0.9"
-                />
+                <stop offset="0%" stopColor={series.colour} stopOpacity="0.9" />
                 <stop
                   offset="100%"
-                  stopColor={sourceMeta[key].colour}
+                  stopColor={series.colour}
                   stopOpacity="0.68"
                 />
               </linearGradient>
@@ -2155,14 +2203,20 @@ export function RetirementIncomeBridgeChart({
             ))}
 
             {stackedSeries.map((series) => {
-              const key = series.key as IncomeKey;
+              const chartSeries = stackedIncomeKeys.find(
+                (candidate) => candidate.key === series.key
+              );
+
+              if (!chartSeries) {
+                return null;
+              }
 
               return (
                 <path
-                  key={key}
+                  key={chartSeries.key}
                   d={area(series) ?? undefined}
-                  fill={`url(#bridge-gradient-${key})`}
-                  stroke={sourceMeta[key].colour}
+                  fill={`url(#${getChartIncomeGradientId(chartSeries.key)})`}
+                  stroke={chartSeries.colour}
                   strokeWidth="1.5"
                 />
               );
@@ -2399,27 +2453,32 @@ export function RetirementIncomeBridgeChart({
             <span className="bridge-build-up-key" />
             {BUILD_UP_META.label}
           </span>
-          {legendIncomeKeys.map((key) => {
+          {legendIncomeKeys.map((series) => {
+            const key = series.incomeKey;
             const label =
-              key === "alphaIncomeAnnual" ? alphaLabel : sourceMeta[key].label;
-            const enabled = isIncomeSourceEnabled(key, {
-              showAlpha,
-              showClassic,
-              showClassicPlus,
-              partialRetirementEnabled,
-              showIsa,
-              showLisa,
-              showNuvos,
-              showPremium,
-              showSipp,
-              showStatePension,
-            });
-            const togglePatch = getIncomeSourceTogglePatch(key, !enabled);
+              key === "alphaIncomeAnnual" ? alphaLabel : series.label;
+            const enabled = key
+              ? isIncomeSourceEnabled(key, {
+                  showAlpha,
+                  showClassic,
+                  showClassicPlus,
+                  partialRetirementEnabled,
+                  showIsa,
+                  showLisa,
+                  showNuvos,
+                  showPremium,
+                  showSipp,
+                  showStatePension,
+                })
+              : true;
+            const togglePatch = key
+              ? getIncomeSourceTogglePatch(key, !enabled)
+              : null;
 
-            if (!togglePatch) {
+            if (!key || !togglePatch) {
               return (
-                <span key={key}>
-                  <span style={{ background: sourceMeta[key].colour }} />
+                <span key={series.key}>
+                  <span style={{ background: series.colour }} />
                   {label}
                 </span>
               );
@@ -2427,14 +2486,14 @@ export function RetirementIncomeBridgeChart({
 
             return (
               <button
-                key={key}
+                key={series.key}
                 type="button"
                 className="bridge-legend-toggle"
                 aria-label={getIncomeSourceToggleLabel(key)}
                 aria-pressed={enabled}
                 onClick={() => onChangeParameters(togglePatch)}
               >
-                <span style={{ background: sourceMeta[key].colour }} />
+                <span style={{ background: series.colour }} />
                 {label}
               </button>
             );
@@ -2996,31 +3055,122 @@ function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {
   return undefined;
 }
 
-function createStackedIncomeKeys(
+function createChartIncomeSeriesDefinitions(
   keys: IncomeKey[],
   data: RetirementIncomePoint[]
 ) {
-  const keyIndex = new Map(keys.map((key, index) => [key, index]));
+  return [
+    ...keys.map((key) => ({
+      key,
+      label: sourceMeta[key].label,
+      colour: sourceMeta[key].colour,
+      incomeKey: key,
+    })),
+    ...createAdditionalIncomeSeriesDefinitions(data),
+  ];
+}
 
-  return [...keys].sort((leftKey, rightKey) => {
-    const leftFirstActiveAge = findFirstActiveIncomeAge(data, leftKey);
-    const rightFirstActiveAge = findFirstActiveIncomeAge(data, rightKey);
+function createAdditionalIncomeSeriesDefinitions(
+  data: RetirementIncomePoint[]
+) {
+  const seriesById = new Map<string, ChartIncomeSeriesDefinition>();
+
+  data.forEach((point) => {
+    point.additionalGuaranteedIncomeStreams?.forEach((stream) => {
+      if (seriesById.has(stream.id)) {
+        return;
+      }
+
+      seriesById.set(stream.id, {
+        key: createAdditionalIncomeSeriesKey(stream.id),
+        label: stream.label,
+        colour:
+          additionalIncomeColours[
+            seriesById.size % additionalIncomeColours.length
+          ],
+        additionalIncomeId: stream.id,
+      });
+    });
+  });
+
+  if (
+    seriesById.size === 0 &&
+    data.some((point) => point.additionalGuaranteedIncomeAnnual > 0)
+  ) {
+    return [
+      {
+        key: "additionalGuaranteedIncomeAnnual",
+        label: sourceMeta.additionalGuaranteedIncomeAnnual.label,
+        colour: sourceMeta.additionalGuaranteedIncomeAnnual.colour,
+        incomeKey: "additionalGuaranteedIncomeAnnual" as const,
+      },
+    ];
+  }
+
+  return [...seriesById.values()];
+}
+
+function createAdditionalIncomeSeriesKey(id: string) {
+  return `additionalGuaranteedIncome:${id}`;
+}
+
+function getChartIncomeGradientId(key: string) {
+  return `bridge-gradient-${key.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
+function getChartIncomeValue(
+  point: RetirementIncomePoint,
+  series: ChartIncomeSeriesDefinition
+) {
+  if (series.additionalIncomeId) {
+    return (
+      point.additionalGuaranteedIncomeStreams?.find(
+        (stream) => stream.id === series.additionalIncomeId
+      )?.annualAmount ?? 0
+    );
+  }
+
+  return series.incomeKey ? point[series.incomeKey] : 0;
+}
+
+function createStackedIncomeSeries(
+  seriesDefinitions: ChartIncomeSeriesDefinition[],
+  data: RetirementIncomePoint[]
+) {
+  const keyIndex = new Map(
+    seriesDefinitions.map((series, index) => [series.key, index])
+  );
+
+  return [...seriesDefinitions].sort((leftSeries, rightSeries) => {
+    const leftFirstActiveAge = findFirstActiveIncomeAge(data, leftSeries);
+    const rightFirstActiveAge = findFirstActiveIncomeAge(data, rightSeries);
 
     if (leftFirstActiveAge !== rightFirstActiveAge) {
       return leftFirstActiveAge - rightFirstActiveAge;
     }
 
-    return (keyIndex.get(leftKey) ?? 0) - (keyIndex.get(rightKey) ?? 0);
+    return (
+      (keyIndex.get(leftSeries.key) ?? 0) - (keyIndex.get(rightSeries.key) ?? 0)
+    );
   });
 }
 
 function findFirstActiveIncomeAge(
   data: RetirementIncomePoint[],
-  key: IncomeKey
+  series: ChartIncomeSeriesDefinition
 ) {
-  const firstActivePoint = data.find((point) => point[key] > 0);
+  const firstActivePoint = data.find(
+    (point) => getChartIncomeValue(point, series) > 0
+  );
 
   return firstActivePoint?.age ?? Number.POSITIVE_INFINITY;
+}
+
+function hasActiveIncome(
+  data: RetirementIncomePoint[],
+  series: ChartIncomeSeriesDefinition
+) {
+  return data.some((point) => getChartIncomeValue(point, series) > 0);
 }
 
 function createMarkerLayouts<

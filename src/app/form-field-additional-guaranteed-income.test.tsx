@@ -109,6 +109,27 @@ describe("AdditionalGuaranteedIncomeEditor", () => {
     ]);
   });
 
+  it("shows a draft hint before an annual income is entered", () => {
+    renderEditor([
+      {
+        id: "income-1",
+        name: "",
+        annualAmount: null,
+        startAge: 60,
+        endAge: null,
+        indexation: "cpi",
+        fixedIncreasePercent: null,
+        taxable: true,
+      },
+    ]);
+
+    expect(
+      screen.getByText(
+        "Enter an annual income to include this row in the projection."
+      )
+    ).toBeInTheDocument();
+  });
+
   it("renders validation messages for a stream", () => {
     renderEditor(
       [

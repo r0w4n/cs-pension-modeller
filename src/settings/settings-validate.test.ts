@@ -49,16 +49,6 @@ describe("settings-validate", () => {
       lifeExpectancy: 90,
       additionalGuaranteedIncomes: [
         {
-          id: "missing-amount",
-          name: "",
-          annualAmount: null,
-          startAge: 60,
-          endAge: null,
-          indexation: "cpi",
-          fixedIncreasePercent: null,
-          taxable: true,
-        },
-        {
           id: "bad-ages",
           name: "",
           annualAmount: -1000,
@@ -85,11 +75,6 @@ describe("settings-validate", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "additionalGuaranteedIncomes",
-          itemId: "missing-amount",
-          message: "Enter an annual amount.",
-        }),
-        expect.objectContaining({
-          field: "additionalGuaranteedIncomes",
           itemId: "bad-ages",
           message: "Annual amount must be zero or more.",
         }),
@@ -107,6 +92,61 @@ describe("settings-validate", () => {
           field: "additionalGuaranteedIncomes",
           itemId: "missing-fixed",
           message: "Enter a fixed annual increase percentage.",
+        }),
+      ])
+    );
+  });
+
+  it("treats a blank additional guaranteed income row as a draft", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      additionalGuaranteedIncomes: [
+        {
+          id: "draft-income",
+          name: "",
+          annualAmount: null,
+          startAge: 60,
+          endAge: null,
+          indexation: "cpi",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    });
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "draft-income",
+        }),
+      ])
+    );
+  });
+
+  it("requires a start age once additional guaranteed income has an amount", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      additionalGuaranteedIncomes: [
+        {
+          id: "missing-start-age",
+          name: "",
+          annualAmount: 6000,
+          startAge: null,
+          endAge: null,
+          indexation: "cpi",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "missing-start-age",
+          message: "Enter a start age.",
         }),
       ])
     );

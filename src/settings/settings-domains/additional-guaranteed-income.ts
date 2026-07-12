@@ -66,79 +66,165 @@ export function normalizeAdditionalGuaranteedIncomes(
 export function validateAdditionalGuaranteedIncomeRules(
   settings: PensionSettings
 ): PensionValidationIssue[] {
-  return settings.additionalGuaranteedIncomes.flatMap((income) => {
-    const issues: PensionValidationIssue[] = [];
-    const issueBase = {
-      field: "additionalGuaranteedIncomes" as const,
-      itemId: income.id,
-    };
+  return settings.additionalGuaranteedIncomes.flatMap((income) =>
+    validateAdditionalGuaranteedIncomeRule(settings, income)
+  );
+}
 
-    if (income.annualAmount === null || !Number.isFinite(income.annualAmount)) {
-      issues.push({
-        ...issueBase,
-        message: "Enter an annual amount.",
-      });
-    } else if (income.annualAmount < 0) {
-      issues.push({
-        ...issueBase,
-        message: "Annual amount must be zero or more.",
-      });
-    }
+type AdditionalGuaranteedIncomeIssueBase = Pick<
+  PensionValidationIssue,
+  "field" | "itemId"
+>;
 
-    if (income.startAge === null || !Number.isFinite(income.startAge)) {
-      issues.push({
-        ...issueBase,
-        message: "Enter a start age.",
-      });
-    } else if (
-      income.startAge < 0 ||
-      income.startAge > settings.lifeExpectancy
-    ) {
-      issues.push({
-        ...issueBase,
-        message: "Start age must be within the projection range.",
-      });
-    }
+function validateAdditionalGuaranteedIncomeRule(
+  settings: PensionSettings,
+  income: AdditionalGuaranteedIncome
+): PensionValidationIssue[] {
+  const annualAmount = income.annualAmount;
+  const hasAnnualAmount =
+    typeof annualAmount === "number" && Number.isFinite(annualAmount);
+  const hasPositiveAnnualAmount = hasAnnualAmount && annualAmount > 0;
+  const issueBase = {
+    field: "additionalGuaranteedIncomes" as const,
+    itemId: income.id,
+  };
 
-    if (
-      income.endAge !== null &&
-      income.endAge !== undefined &&
-      Number.isFinite(income.endAge) &&
-      income.startAge !== null &&
-      Number.isFinite(income.startAge) &&
-      income.endAge < income.startAge
-    ) {
-      issues.push({
+  return [
+    ...validateAdditionalGuaranteedIncomeAmount(income, issueBase),
+    ...validateAdditionalGuaranteedIncomeAges({
+      hasPositiveAnnualAmount,
+      income,
+      issueBase,
+      lifeExpectancy: settings.lifeExpectancy,
+    }),
+    ...validateAdditionalGuaranteedIncomeFixedIncrease({
+      hasPositiveAnnualAmount,
+      income,
+      issueBase,
+    }),
+  ];
+}
+
+function validateAdditionalGuaranteedIncomeAmount(
+  income: AdditionalGuaranteedIncome,
+  issueBase: AdditionalGuaranteedIncomeIssueBase
+): PensionValidationIssue[] {
+  if (income.annualAmount === null || income.annualAmount >= 0) {
+    return [];
+  }
+
+  return [
+    {
+      ...issueBase,
+      message: "Annual amount must be zero or more.",
+    },
+  ];
+}
+
+function validateAdditionalGuaranteedIncomeAges({
+  hasPositiveAnnualAmount,
+  income,
+  issueBase,
+  lifeExpectancy,
+}: {
+  hasPositiveAnnualAmount: boolean;
+  income: AdditionalGuaranteedIncome;
+  issueBase: AdditionalGuaranteedIncomeIssueBase;
+  lifeExpectancy: number;
+}): PensionValidationIssue[] {
+  const issues: PensionValidationIssue[] = [];
+
+  if (
+    hasPositiveAnnualAmount &&
+    (income.startAge === null || !Number.isFinite(income.startAge))
+  ) {
+    issues.push({
+      ...issueBase,
+      message: "Enter a start age.",
+    });
+  } else if (isAgeOutsideProjection(income.startAge, lifeExpectancy)) {
+    issues.push({
+      ...issueBase,
+      message: "Start age must be within the projection range.",
+    });
+  }
+
+  if (hasInvalidAdditionalGuaranteedIncomeEndAge(income)) {
+    issues.push({
+      ...issueBase,
+      message: "End age must be the same as or later than the start age.",
+    });
+  }
+
+  return issues;
+}
+
+function validateAdditionalGuaranteedIncomeFixedIncrease({
+  hasPositiveAnnualAmount,
+  income,
+  issueBase,
+}: {
+  hasPositiveAnnualAmount: boolean;
+  income: AdditionalGuaranteedIncome;
+  issueBase: AdditionalGuaranteedIncomeIssueBase;
+}): PensionValidationIssue[] {
+  if (!hasPositiveAnnualAmount || income.indexation !== "fixed") {
+    return [];
+  }
+
+  if (
+    income.fixedIncreasePercent === null ||
+    income.fixedIncreasePercent === undefined ||
+    !Number.isFinite(income.fixedIncreasePercent)
+  ) {
+    return [
+      {
         ...issueBase,
-        message: "End age must be the same as or later than the start age.",
-      });
-    }
+        message: "Enter a fixed annual increase percentage.",
+      },
+    ];
+  }
 
-    if (income.indexation === "fixed") {
-      if (
-        income.fixedIncreasePercent === null ||
-        income.fixedIncreasePercent === undefined ||
-        !Number.isFinite(income.fixedIncreasePercent)
-      ) {
-        issues.push({
-          ...issueBase,
-          message: "Enter a fixed annual increase percentage.",
-        });
-      } else if (
-        income.fixedIncreasePercent <
-          ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MIN ||
-        income.fixedIncreasePercent >
-          ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MAX
-      ) {
-        issues.push({
-          ...issueBase,
-          message: `Fixed annual increase must be between ${ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MIN}% and ${ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MAX}%.`,
-        });
-      }
-    }
+  if (
+    income.fixedIncreasePercent <
+      ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MIN ||
+    income.fixedIncreasePercent >
+      ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MAX
+  ) {
+    return [
+      {
+        ...issueBase,
+        message: `Fixed annual increase must be between ${ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MIN}% and ${ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MAX}%.`,
+      },
+    ];
+  }
 
-    return issues;
-  });
+  return [];
+}
+
+function isAgeOutsideProjection(
+  age: number | null | undefined,
+  lifeExpectancy: number
+) {
+  return (
+    age !== null &&
+    age !== undefined &&
+    Number.isFinite(age) &&
+    (age < 0 || age > lifeExpectancy)
+  );
+}
+
+function hasInvalidAdditionalGuaranteedIncomeEndAge(
+  income: AdditionalGuaranteedIncome
+) {
+  return (
+    income.endAge !== null &&
+    income.endAge !== undefined &&
+    Number.isFinite(income.endAge) &&
+    income.startAge !== null &&
+    Number.isFinite(income.startAge) &&
+    income.endAge < income.startAge
+  );
 }
 
 function normalizeAdditionalGuaranteedIncome(

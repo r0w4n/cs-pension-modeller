@@ -112,6 +112,12 @@ export function AdditionalGuaranteedIncomeEditor({
                     })
                   }
                 />
+                {income.annualAmount === null ? (
+                  <span className="field-help">
+                    Enter an annual income to include this row in the
+                    projection.
+                  </span>
+                ) : null}
               </label>
 
               <div className="additional-income-grid">

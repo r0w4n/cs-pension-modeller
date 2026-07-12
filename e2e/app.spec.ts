@@ -170,7 +170,9 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })
     ).toBeVisible();
-    await expect(page.getByText("Additional income").first()).toBeVisible();
+    await expect(
+      page.getByText("Previous employer DB pension").first()
+    ).toBeVisible();
 
     await page.getByLabel("Scenario name").fill("Bridge journey check");
     await page.getByRole("button", { name: "Add to comparison" }).click();

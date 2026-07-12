@@ -3452,6 +3452,24 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps a newly added blank additional income row as a draft", () => {
+    renderAcknowledgedExpertResult();
+
+    openJourneyStep(/Additional guaranteed income/i);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add additional income" })
+    );
+
+    expect(
+      screen.getByText(
+        "Enter an annual income to include this row in the projection."
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Check these assumptions" })
+    ).not.toBeInTheDocument();
+  });
+
   it("shows inline validation when date of birth is not before the calculation start date", async () => {
     const [startYear, startMonth] = getTodayIsoDate().split("-").map(Number);
     const invalidBirthMonth =

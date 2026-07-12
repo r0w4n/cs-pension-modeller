@@ -200,6 +200,135 @@ describe("retirement-income transition points", () => {
     );
   });
 
+  it("preserves exact additional guaranteed income start and stop ages in the chart series", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      additionalGuaranteedIncomes: [
+        {
+          id: "previous-employer-db",
+          name: "Previous employer DB pension",
+          annualAmount: 12000,
+          startAge: 60.25,
+          endAge: 61.75,
+          indexation: "none" as const,
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    };
+
+    const series = createRetirementIncomeSeries(
+      [
+        {
+          ...baseRow,
+          date: "2047-06-01",
+          age: 60,
+          ageMonths: 0,
+        },
+        {
+          ...baseRow,
+          date: "2047-10-01",
+          age: 60,
+          ageMonths: 4,
+          monthlyAdditionalGuaranteedIncomeGross: 1000,
+          monthlyAdditionalGuaranteedIncomeTaxable: 1000,
+        },
+        {
+          ...baseRow,
+          date: "2050-02-01",
+          age: 62,
+          ageMonths: 8,
+          monthlyAdditionalGuaranteedIncomeGross: 1000,
+          monthlyAdditionalGuaranteedIncomeTaxable: 1000,
+        },
+        {
+          ...baseRow,
+          date: "2050-04-01",
+          age: 62,
+          ageMonths: 10,
+        },
+      ],
+      settings
+    );
+
+    expect(series.find((point) => point.date === "2047-09-01")).toEqual(
+      expect.objectContaining({
+        age: 60.25,
+        additionalGuaranteedIncomeAnnual: 12000,
+      })
+    );
+    expect(series.find((point) => point.date === "2050-03-01")).toEqual(
+      expect.objectContaining({
+        age: 62.75,
+        additionalGuaranteedIncomeAnnual: 0,
+      })
+    );
+  });
+
+  it("adds named additional guaranteed income streams to chart points", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      additionalGuaranteedIncomes: [
+        {
+          id: "previous-employer-db",
+          name: "Previous employer DB pension",
+          annualAmount: 12000,
+          startAge: 60,
+          endAge: null,
+          indexation: "none" as const,
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+        {
+          id: "annuity",
+          name: "Purchased annuity",
+          annualAmount: 3000,
+          startAge: 60,
+          endAge: null,
+          indexation: "none" as const,
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    };
+
+    const series = createRetirementIncomeSeries(
+      [
+        {
+          ...baseRow,
+          date: "2047-06-01",
+          age: 60,
+          ageMonths: 0,
+          monthlyAdditionalGuaranteedIncomeGross: 1250,
+          monthlyAdditionalGuaranteedIncomeTaxable: 1250,
+        },
+      ],
+      settings
+    );
+
+    expect(series[0]).toEqual(
+      expect.objectContaining({
+        additionalGuaranteedIncomeAnnual: 15000,
+        additionalGuaranteedIncomeStreams: [
+          {
+            id: "previous-employer-db",
+            label: "Previous employer DB pension",
+            annualAmount: 12000,
+          },
+          {
+            id: "annuity",
+            label: "Purchased annuity",
+            annualAmount: 3000,
+          },
+        ],
+      })
+    );
+  });
+
   it("does not carry an ISA withdrawal into the retirement age range when ISA use-by age equals retirement age", () => {
     const settings = {
       ...createDefaultSettings(),

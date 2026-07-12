@@ -4,6 +4,7 @@ import type {
   RetirementIncomePoint,
 } from "../RetirementIncomeBridgeChart";
 import {
+  calculateAdditionalGuaranteedIncomeStreamForDate,
   calculateMonthlyIncomeTax,
   calculateRetirementIncomeTargetAtDate,
   type ProjectionRow,
@@ -14,6 +15,7 @@ import {
   calculateMinimumSippAccessAge,
   calculateMinimumStatePensionDrawAge,
   calculateStatePensionDrawAge,
+  getAdditionalGuaranteedIncomeDisplayName,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   LISA_MONTHLY_CONTRIBUTION_MAX,
   type PensionSettings,
@@ -151,6 +153,8 @@ export function createRetirementIncomeSeries(
         row.date,
         requirementDate
       );
+    const additionalGuaranteedIncomeStreams =
+      calculateAdditionalGuaranteedIncomeStreams(settings, row.date);
     const additionalGuaranteedIncomeAnnual =
       row.monthlyAdditionalGuaranteedIncomeGross * 12;
     const additionalGuaranteedIncomeTaxableAnnual =
@@ -199,6 +203,7 @@ export function createRetirementIncomeSeries(
       nuvosIncomeAnnual,
       premiumIncomeAnnual,
       additionalGuaranteedIncomeAnnual,
+      additionalGuaranteedIncomeStreams,
       statePensionIncomeAnnual,
       totalIncomeAnnual,
       assessedIncomeAnnual,
@@ -261,6 +266,30 @@ function getSecureIncomeAnnual(input: {
         ? row.monthlyStatePension * 12
         : 0,
   };
+}
+
+function calculateAdditionalGuaranteedIncomeStreams(
+  settings: PensionSettings,
+  rowDate: string
+) {
+  const labelCounts = new Map<string, number>();
+
+  return settings.additionalGuaranteedIncomes.map((income) => {
+    const baseLabel = getAdditionalGuaranteedIncomeDisplayName(income);
+    const currentCount = labelCounts.get(baseLabel) ?? 0;
+    const nextCount = currentCount + 1;
+    labelCounts.set(baseLabel, nextCount);
+
+    return {
+      id: income.id,
+      label: currentCount === 0 ? baseLabel : `${baseLabel} #${nextCount}`,
+      annualAmount: calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income,
+        rowDate,
+      }),
+    };
+  });
 }
 
 function getBridgePotIncomeAnnual(input: {
@@ -409,6 +438,28 @@ function insertChartTransitionPoints(
           age: settings.partialRetirementStartAge,
         }
       : null,
+    ...settings.additionalGuaranteedIncomes.flatMap((income) => {
+      if (
+        income.annualAmount === null ||
+        income.annualAmount <= 0 ||
+        income.startAge === null
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          date: addYearsToIsoDate(settings.dateOfBirth, income.startAge),
+          age: income.startAge,
+        },
+        income.endAge === null || income.endAge === undefined
+          ? null
+          : {
+              date: addYearsToIsoDate(settings.dateOfBirth, income.endAge + 1),
+              age: income.endAge + 1,
+            },
+      ];
+    }),
   ]
     .filter((point): point is TransitionBoundary => Boolean(point))
     .filter(

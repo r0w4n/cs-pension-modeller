@@ -273,6 +273,15 @@ function getAreaActiveXRange(path: string) {
   };
 }
 
+function getPathYSpan(path: string) {
+  const yCoordinates = [...path.matchAll(/-?\d+(?:\.\d+)?/g)]
+    .map((match, index) => ({ index, value: Number(match[0]) }))
+    .filter(({ index }) => index % 2 === 1)
+    .map(({ value }) => value);
+
+  return Math.max(...yCoordinates) - Math.min(...yCoordinates);
+}
+
 describe("RetirementIncomeBridgeChart", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -626,6 +635,103 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(
       screen.getByRole("button", { name: "Toggle chart SIPP source" })
     ).toHaveTextContent("SIPP");
+  });
+
+  it("hides the additional income legend item when it has no chart values", () => {
+    renderChart({ hideInactiveLegendItems: true });
+
+    expect(screen.queryByText("Additional income")).not.toBeInTheDocument();
+  });
+
+  it("renders named additional income areas when the chart data contains streams", () => {
+    renderChart({
+      data: [
+        basePoint,
+        {
+          ...basePoint,
+          date: "2045-07-01",
+          age: 60,
+          alphaIncomeAnnual: 18000,
+          additionalGuaranteedIncomeAnnual: 5000,
+          additionalGuaranteedIncomeStreams: [
+            {
+              id: "previous-employer-db",
+              label: "Previous employer DB pension",
+              annualAmount: 5000,
+            },
+          ],
+          totalIncomeAnnual: 23000,
+          assessedIncomeAnnual: 23000,
+          shortfallAnnual: 8700,
+          phase: "alpha-only",
+        },
+        {
+          ...basePoint,
+          date: "2065-07-01",
+          age: 80,
+          alphaIncomeAnnual: 18000,
+          additionalGuaranteedIncomeAnnual: 5000,
+          additionalGuaranteedIncomeStreams: [
+            {
+              id: "previous-employer-db",
+              label: "Previous employer DB pension",
+              annualAmount: 5000,
+            },
+          ],
+          statePensionIncomeAnnual: 10000,
+          totalIncomeAnnual: 33000,
+          assessedIncomeAnnual: 33000,
+          shortfallAnnual: 0,
+          phase: "alpha-state",
+        },
+      ],
+      hideInactiveLegendItems: true,
+    });
+
+    expect(
+      screen.getByText("Previous employer DB pension")
+    ).toBeInTheDocument();
+    expect(getIncomeAreaStrokeColours()).toContain("#6d7d10");
+    expect(getPathYSpan(getIncomeAreaPath("#6d7d10"))).toBeGreaterThan(0);
+  });
+
+  it("renders multiple additional income streams as separate chart areas", () => {
+    renderChart({
+      data: [
+        basePoint,
+        {
+          ...basePoint,
+          date: "2045-07-01",
+          age: 60,
+          additionalGuaranteedIncomeAnnual: 8000,
+          additionalGuaranteedIncomeStreams: [
+            {
+              id: "previous-employer-db",
+              label: "Previous employer DB pension",
+              annualAmount: 5000,
+            },
+            {
+              id: "annuity",
+              label: "Purchased annuity",
+              annualAmount: 3000,
+            },
+          ],
+          totalIncomeAnnual: 8000,
+          assessedIncomeAnnual: 8000,
+          shortfallAnnual: 23700,
+          phase: "alpha-only",
+        },
+      ],
+      hideInactiveLegendItems: true,
+    });
+
+    expect(
+      screen.getByText("Previous employer DB pension")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Purchased annuity")).toBeInTheDocument();
+    expect(getIncomeAreaStrokeColours()).toEqual(
+      expect.arrayContaining(["#6d7d10", "#9a5b13"])
+    );
   });
 
   it("matches ISA and SIPP start and stop handles to the legend colours", () => {

@@ -42,4 +42,73 @@ describe("settings-validate", () => {
       ])
     );
   });
+
+  it("flags invalid additional guaranteed income rows", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      lifeExpectancy: 90,
+      additionalGuaranteedIncomes: [
+        {
+          id: "missing-amount",
+          name: "",
+          annualAmount: null,
+          startAge: 60,
+          endAge: null,
+          indexation: "cpi",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+        {
+          id: "bad-ages",
+          name: "",
+          annualAmount: -1000,
+          startAge: 95,
+          endAge: 60,
+          indexation: "none",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+        {
+          id: "missing-fixed",
+          name: "",
+          annualAmount: 6000,
+          startAge: 67,
+          endAge: null,
+          indexation: "fixed",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "missing-amount",
+          message: "Enter an annual amount.",
+        }),
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "bad-ages",
+          message: "Annual amount must be zero or more.",
+        }),
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "bad-ages",
+          message: "Start age must be within the projection range.",
+        }),
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "bad-ages",
+          message: "End age must be the same as or later than the start age.",
+        }),
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "missing-fixed",
+          message: "Enter a fixed annual increase percentage.",
+        }),
+      ])
+    );
+  });
 });

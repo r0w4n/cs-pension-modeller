@@ -30,6 +30,7 @@ import {
   calculateAnnualStatePensionAtDate,
   calculateMonthlyStatePension,
 } from "./projection-domains/state-pension";
+import { calculateAdditionalGuaranteedIncomeForDate } from "./projection-domains/additional-guaranteed-income";
 import { addMonths, calculateAge, calculateAgeMonths } from "./derive-inputs";
 import {
   buildMilestoneDateMapForRowDates,
@@ -52,7 +53,8 @@ export function calculateTotalGrossMonthlyIncome(
   monthlyNuvosPensionIncludingReduction = 0,
   monthlyClassicPensionIncludingReduction = 0,
   monthlyClassicPlusPensionIncludingReduction = 0,
-  monthlyPremiumPensionIncludingReduction = 0
+  monthlyPremiumPensionIncludingReduction = 0,
+  monthlyAdditionalGuaranteedIncomeGross = 0
 ) {
   return (
     monthlyAlphaPensionIncludingReduction +
@@ -60,6 +62,7 @@ export function calculateTotalGrossMonthlyIncome(
     monthlyClassicPlusPensionIncludingReduction +
     monthlyNuvosPensionIncludingReduction +
     monthlyPremiumPensionIncludingReduction +
+    monthlyAdditionalGuaranteedIncomeGross +
     monthlyStatePension +
     monthlySippPension +
     monthlyIsaPension +
@@ -325,6 +328,16 @@ export function buildProjectionRow(input: {
     settings.statePensionDrawDate,
     calculateAnnualStatePensionAtDate(settings, rowDate)
   );
+  const additionalGuaranteedIncome = calculateAdditionalGuaranteedIncomeForDate(
+    {
+      settings,
+      rowDate,
+    }
+  );
+  const monthlyAdditionalGuaranteedIncomeGross =
+    additionalGuaranteedIncome.annualGross / 12;
+  const monthlyAdditionalGuaranteedIncomeTaxable =
+    additionalGuaranteedIncome.annualTaxable / 12;
   const totalMonthlyIncomeBeforeTax = calculateTotalGrossMonthlyIncome(
     monthlyAlphaPensionGross,
     monthlyStatePension,
@@ -334,7 +347,8 @@ export function buildProjectionRow(input: {
     monthlyNuvosPensionGross,
     monthlyClassicPensionGross,
     monthlyClassicPlusPensionGross,
-    monthlyPremiumPensionGross
+    monthlyPremiumPensionGross,
+    monthlyAdditionalGuaranteedIncomeGross
   );
   const monthlyIncomeTax = calculateMonthlyIncomeTax({
     settings,
@@ -345,6 +359,7 @@ export function buildProjectionRow(input: {
     monthlyPremiumPension: monthlyPremiumPensionGross,
     monthlyStatePension,
     monthlySippPension: sippProjection.monthlySippPension,
+    monthlyAdditionalGuaranteedIncomeTaxable,
   });
 
   return {
@@ -375,6 +390,8 @@ export function buildProjectionRow(input: {
     annualPremiumPensionIncludingReduction,
     monthlyPremiumPensionGross,
     monthlyStatePension,
+    monthlyAdditionalGuaranteedIncomeGross,
+    monthlyAdditionalGuaranteedIncomeTaxable,
     sippPot: sippProjection.sippPot,
     monthlySippPension: sippProjection.monthlySippPension,
     isaPot: isaProjection.isaPot,

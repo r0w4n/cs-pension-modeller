@@ -35,6 +35,8 @@ const projectionFixtures = vi.hoisted(() => {
       annualPremiumPensionIncludingReduction: 0,
       monthlyPremiumPensionGross: 0,
       monthlyStatePension: 0,
+      monthlyAdditionalGuaranteedIncomeGross: 0,
+      monthlyAdditionalGuaranteedIncomeTaxable: 0,
       sippPot: 40000,
       monthlySippPension: 0,
       isaPot: 15000,
@@ -75,6 +77,8 @@ const projectionFixtures = vi.hoisted(() => {
       annualPremiumPensionIncludingReduction: 0,
       monthlyPremiumPensionGross: 0,
       monthlyStatePension: 0,
+      monthlyAdditionalGuaranteedIncomeGross: 0,
+      monthlyAdditionalGuaranteedIncomeTaxable: 0,
       sippPot: 35000,
       monthlySippPension: 200,
       isaPot: 12000,
@@ -119,6 +123,8 @@ const projectionFixtures = vi.hoisted(() => {
       annualPremiumPensionIncludingReduction: 0,
       monthlyPremiumPensionGross: 0,
       monthlyStatePension: 900,
+      monthlyAdditionalGuaranteedIncomeGross: 0,
+      monthlyAdditionalGuaranteedIncomeTaxable: 0,
       sippPot: 0,
       monthlySippPension: 300,
       isaPot: 0,
@@ -217,6 +223,10 @@ vi.mock("./projection", async () => {
           monthlyPremiumPensionGross: settings.showPremium
             ? row.monthlyPremiumPensionGross
             : 0,
+          monthlyAdditionalGuaranteedIncomeGross:
+            row.monthlyAdditionalGuaranteedIncomeGross,
+          monthlyAdditionalGuaranteedIncomeTaxable:
+            row.monthlyAdditionalGuaranteedIncomeTaxable,
           monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
           monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
           monthlyLisaPension: settings.showLisa ? row.monthlyLisaPension : 0,
@@ -229,6 +239,7 @@ vi.mock("./projection", async () => {
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
+            row.monthlyAdditionalGuaranteedIncomeGross +
             (settings.showSipp ? row.monthlySippPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0) +
             (settings.showLisa ? row.monthlyLisaPension : 0),
@@ -242,6 +253,7 @@ vi.mock("./projection", async () => {
             (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
             (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
             (settings.showStatePension ? row.monthlyStatePension : 0) +
+            row.monthlyAdditionalGuaranteedIncomeGross +
             (settings.showSipp ? row.monthlySippPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0) +
             (settings.showLisa ? row.monthlyLisaPension : 0) -
@@ -534,6 +546,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
     showLisa: defaultSettings.showLisa,
+    additionalGuaranteedIncomes: [],
     taxationEnabled: defaultSettings.taxationEnabled,
     partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
     partialRetirementStartAge: defaultSettings.partialRetirementStartAge,

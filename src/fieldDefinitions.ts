@@ -921,6 +921,14 @@ export const fieldGroups: FieldGroup[] = [
     ],
   },
   {
+    id: "additional-income",
+    eyebrow: "Additional Income",
+    title: "Additional guaranteed income",
+    description:
+      "Add income from other sources that are not modelled elsewhere, such as another defined benefit pension, an annuity, or a known guaranteed annual income.",
+    fields: [],
+  },
+  {
     id: "sipp",
     eyebrow: "SIPP",
     title: "SIPP details",

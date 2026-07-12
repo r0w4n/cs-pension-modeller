@@ -122,28 +122,21 @@ Feature: Premium Civil Service pension modelling
     And new Civil Service pension accrual should be added only to alpha
 
   @legacy @alpha-transition @salary-link
-  Scenario: Premium pension updates with final salary when final salary link is maintained
+  Scenario Outline: Apply the Premium final salary link during future alpha service
     Given the member has a Premium pension record
     And the member has Premium reckonable service of 10.0000 years
-    And the member has final salary link status "maintained"
-    And the member has current final pensionable earnings of 70000.00
+    And the member has final salary link status "<finalSalaryLink>"
+    And the member has <salaryBasis> final pensionable earnings of 70000.00
     And the annual salary increase assumption is 3.00%
     When the member remains active in alpha for 5 further scheme years
     Then the Premium reckonable service should remain 10.0000 years
-    And the final pensionable earnings used for Premium should be 81149.19
-    And the unreduced annual Premium pension should be 13524.86
+    And the final pensionable earnings used for Premium should <earningsOutcome> <expectedFinalPensionableEarnings>
+    And the unreduced annual Premium pension should be <expectedAnnualPension>
 
-  @legacy @alpha-transition @salary-link
-  Scenario: Premium pension does not update with salary once final salary link is broken
-    Given the member has a Premium pension record
-    And the member has Premium reckonable service of 10.0000 years
-    And the member has final salary link status "broken"
-    And the member has preserved final pensionable earnings of 70000.00
-    And the annual salary increase assumption is 3.00%
-    When the member remains active in alpha for 5 further scheme years
-    Then the Premium reckonable service should remain 10.0000 years
-    And the final pensionable earnings used for Premium should remain 70000.00
-    And the unreduced annual Premium pension should be 11666.67
+    Examples:
+      | finalSalaryLink | salaryBasis | earningsOutcome | expectedFinalPensionableEarnings | expectedAnnualPension |
+      | maintained      | current     | be              | 81149.19                         | 13524.86              |
+      | broken          | preserved   | remain          | 70000.00                         | 11666.67              |
 
 
   # ---------------------------------------------------------------------------

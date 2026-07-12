@@ -17,6 +17,8 @@ export type ProjectionRowLike = {
   monthlyNuvosPensionGross: number;
   monthlyPremiumPensionGross: number;
   monthlyStatePension: number;
+  monthlyAdditionalGuaranteedIncomeGross?: number;
+  monthlyAdditionalGuaranteedIncomeTaxable?: number;
 };
 
 export type BridgePhase = {
@@ -33,6 +35,7 @@ export type BridgePhase = {
   annualAlphaPension: number;
   annualNuvosPension: number;
   annualPremiumPension: number;
+  annualAdditionalGuaranteedIncome: number;
   annualStatePension: number;
   annualIsaBridge: number;
   annualLisaBridge: number;
@@ -53,6 +56,8 @@ export type BridgePotProjectionRow = {
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
   monthlyPremiumPension: number;
+  monthlyAdditionalGuaranteedIncomeGross: number;
+  monthlyAdditionalGuaranteedIncomeTaxable: number;
   monthlyStatePension: number;
   isaBalance: number;
   lisaBalance: number;
@@ -110,6 +115,8 @@ type MonthlySecureIncome = {
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
   monthlyPremiumPension: number;
+  monthlyAdditionalGuaranteedIncomeGross: number;
+  monthlyAdditionalGuaranteedIncomeTaxable: number;
   monthlyStatePension: number;
   guaranteedIncome: number;
 };
@@ -242,6 +249,10 @@ export function generateRetirementBridgeAnalysis(
       monthlyAlphaPension: secureIncome.monthlyAlphaPension,
       monthlyNuvosPension: secureIncome.monthlyNuvosPension,
       monthlyPremiumPension: secureIncome.monthlyPremiumPension,
+      monthlyAdditionalGuaranteedIncomeGross:
+        secureIncome.monthlyAdditionalGuaranteedIncomeGross,
+      monthlyAdditionalGuaranteedIncomeTaxable:
+        secureIncome.monthlyAdditionalGuaranteedIncomeTaxable,
       monthlyStatePension: secureIncome.monthlyStatePension,
       monthlyTargetIncome,
       guaranteedIncome: secureIncome.guaranteedIncome,
@@ -262,6 +273,8 @@ export function generateRetirementBridgeAnalysis(
         monthlyAlphaPension: secureIncome.monthlyAlphaPension,
         monthlyNuvosPension: secureIncome.monthlyNuvosPension,
         monthlyPremiumPension: secureIncome.monthlyPremiumPension,
+        monthlyAdditionalGuaranteedIncomeGross:
+          secureIncome.monthlyAdditionalGuaranteedIncomeGross,
         monthlyStatePension: secureIncome.monthlyStatePension,
       }),
     };
@@ -383,6 +396,10 @@ function calculateMonthlySecureIncome(input: {
     settings.showPremium && pensionRow
       ? pensionRow.monthlyPremiumPensionGross
       : 0;
+  const monthlyAdditionalGuaranteedIncomeGross =
+    pensionRow?.monthlyAdditionalGuaranteedIncomeGross ?? 0;
+  const monthlyAdditionalGuaranteedIncomeTaxable =
+    pensionRow?.monthlyAdditionalGuaranteedIncomeTaxable ?? 0;
   const monthlyStatePension =
     settings.showStatePension && pensionRow
       ? pensionRow.monthlyStatePension
@@ -396,12 +413,15 @@ function calculateMonthlySecureIncome(input: {
     monthlyPremiumPension,
     monthlyStatePension,
     monthlySippPension: 0,
+    monthlyAdditionalGuaranteedIncomeTaxable,
   });
 
   return {
     monthlyAlphaPension,
     monthlyNuvosPension,
     monthlyPremiumPension,
+    monthlyAdditionalGuaranteedIncomeGross,
+    monthlyAdditionalGuaranteedIncomeTaxable,
     monthlyStatePension,
     guaranteedIncome: Math.max(
       0,
@@ -410,6 +430,7 @@ function calculateMonthlySecureIncome(input: {
         monthlyClassicPlusPension +
         monthlyNuvosPension +
         monthlyPremiumPension +
+        monthlyAdditionalGuaranteedIncomeGross +
         monthlyStatePension -
         monthlyIncomeTax
     ),
@@ -504,6 +525,7 @@ function getActiveBridgeIncomeSources(input: {
   monthlyAlphaPension: number;
   monthlyNuvosPension: number;
   monthlyPremiumPension: number;
+  monthlyAdditionalGuaranteedIncomeGross: number;
   monthlyStatePension: number;
 }) {
   const sources = [
@@ -515,6 +537,9 @@ function getActiveBridgeIncomeSources(input: {
       : []),
     ...(input.settings.showPremium && input.monthlyPremiumPension > 0
       ? ["Premium"]
+      : []),
+    ...(input.monthlyAdditionalGuaranteedIncomeGross > 0
+      ? ["Additional income"]
       : []),
     ...(input.settings.showStatePension && input.monthlyStatePension > 0
       ? ["State Pension"]
@@ -533,6 +558,7 @@ function buildBridgePhases(
     monthlyAlphaPension: number;
     monthlyNuvosPension: number;
     monthlyPremiumPension: number;
+    monthlyAdditionalGuaranteedIncomeGross: number;
     monthlyStatePension: number;
     shortfall: number;
     surplus: number;
@@ -628,6 +654,9 @@ function buildBridgePhases(
     const averageAnnualPremiumPension = annualiseAverage(
       rows.map((row) => row.monthlyPremiumPension)
     );
+    const averageAnnualAdditionalGuaranteedIncome = annualiseAverage(
+      rows.map((row) => row.monthlyAdditionalGuaranteedIncomeGross)
+    );
     const averageAnnualStatePension = annualiseAverage(
       rows.map((row) => row.monthlyStatePension)
     );
@@ -673,6 +702,8 @@ function buildBridgePhases(
         annualAlphaPension: averageAnnualAlphaPension,
         annualNuvosPension: averageAnnualNuvosPension,
         annualPremiumPension: averageAnnualPremiumPension,
+        annualAdditionalGuaranteedIncome:
+          averageAnnualAdditionalGuaranteedIncome,
         annualStatePension: averageAnnualStatePension,
         annualIsaBridge: averageAnnualIsaBridge,
         annualLisaBridge: averageAnnualLisaBridge,

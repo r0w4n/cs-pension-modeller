@@ -191,6 +191,11 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     setting: "showStatePension",
   },
   {
+    key: "monthlyAdditionalGuaranteedIncomeGross",
+    label: "Monthly additional income",
+    width: "7rem",
+  },
+  {
     key: "monthlySippPension",
     label: "Monthly SIPP pension",
     width: "7rem",
@@ -528,6 +533,8 @@ function renderProjectionTableCell(
       return formatCurrencyDetailed(row.monthlyNuvosPensionGross);
     case "monthlyStatePension":
       return formatCurrencyDetailed(row.monthlyStatePension);
+    case "monthlyAdditionalGuaranteedIncomeGross":
+      return formatCurrencyDetailed(row.monthlyAdditionalGuaranteedIncomeGross);
     case "monthlySippPension":
       return formatCurrencyDetailed(row.monthlySippPension);
     case "sippPot":

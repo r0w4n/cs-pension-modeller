@@ -19,6 +19,7 @@ const basePoint: RetirementIncomePoint = {
   classicPlusIncomeAnnual: 0,
   nuvosIncomeAnnual: 0,
   premiumIncomeAnnual: 0,
+  additionalGuaranteedIncomeAnnual: 0,
   statePensionIncomeAnnual: 0,
   totalIncomeAnnual: 0,
   assessedIncomeAnnual: 0,

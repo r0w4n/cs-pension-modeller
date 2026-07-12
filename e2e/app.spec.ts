@@ -54,6 +54,7 @@ test.describe("app end-to-end journeys", () => {
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current SIPP pot (£)", "125000");
     await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current ISA pot (£)", "40000");
@@ -87,6 +88,8 @@ test.describe("app end-to-end journeys", () => {
     await clickNextAndExpectStep(page, "Added pension");
     await clickNextAndExpectStep(page, "Alpha EPA");
 
+    await clickNextAndExpectStep(page, "Additional guaranteed income");
+    await addAdditionalIncome(page, "Simple journey annuity", "4000", "67");
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
 
@@ -140,6 +143,13 @@ test.describe("app end-to-end journeys", () => {
     );
     await clickNextAndExpectStep(page, "State Pension");
 
+    await clickNextAndExpectStep(page, "Additional guaranteed income");
+    await addAdditionalIncome(
+      page,
+      "Previous employer DB pension",
+      "5000",
+      "60"
+    );
     await clickNextAndExpectStep(page, "Your bridging pots");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
@@ -160,6 +170,7 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })
     ).toBeVisible();
+    await expect(page.getByText("Additional income").first()).toBeVisible();
 
     await page.getByLabel("Scenario name").fill("Bridge journey check");
     await page.getByRole("button", { name: "Add to comparison" }).click();
@@ -238,7 +249,23 @@ async function fillExactNumber(page: Page, label: string, value: string) {
 
 async function clickNextAndExpectStep(page: Page, heading: string) {
   await page.getByRole("button", { name: "Next" }).click();
-  await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 3, name: heading })
+  ).toBeVisible();
+}
+
+async function addAdditionalIncome(
+  page: Page,
+  name: string,
+  annualIncome: string,
+  startAge: string
+) {
+  await page.getByRole("button", { name: "Add additional income" }).click();
+  await page.getByLabel("Name, optional").fill(name);
+  await page
+    .getByRole("spinbutton", { name: "Annual income" })
+    .fill(annualIncome);
+  await page.getByRole("spinbutton", { name: "Starts at age" }).fill(startAge);
 }
 
 async function expectProjectionTableForViewport(

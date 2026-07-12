@@ -3,6 +3,7 @@ import {
   type AddedPensionLumpSum,
   type PensionSettings,
 } from "./settings-types";
+import { normalizeAdditionalGuaranteedIncomes } from "./settings-domains/additional-guaranteed-income";
 import { defaultSettings } from "./settings-defaults";
 import {
   inflationNumericSettingRules,
@@ -333,6 +334,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeAddedPensionLumpSums(
         value as AddedPensionLumpSum[]
       ) as PensionSettings[K];
+    case "additionalGuaranteedIncomes":
+      return normalizeAdditionalGuaranteedIncomes(value) as PensionSettings[K];
     default:
       return normalizeNumericSetting(
         key as NumericSettingKey,
@@ -373,6 +376,10 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     showSipp: Boolean(settings.showSipp),
     showIsa: Boolean(settings.showIsa),
     showLisa: Boolean(settings.showLisa),
+    additionalGuaranteedIncomes: normalizeSetting(
+      "additionalGuaranteedIncomes",
+      settings.additionalGuaranteedIncomes
+    ),
     taxationEnabled: normalizeTaxationBooleanSetting(settings.taxationEnabled),
     partialRetirementEnabled: Boolean(settings.partialRetirementEnabled),
     partialRetirementStartAge: normalizeSetting(

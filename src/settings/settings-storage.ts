@@ -2,6 +2,7 @@ import {
   coerceAddedPensionLumpSums,
   coerceLegacySippLumpSum,
 } from "./settings-domains/alpha-pension";
+import { normalizeAdditionalGuaranteedIncomes } from "./settings-domains/additional-guaranteed-income";
 import { coerceClassicSettings } from "./settings-domains/classic";
 import { coerceNuvosSettings } from "./settings-domains/nuvos";
 import { coercePremiumSettings } from "./settings-domains/premium";
@@ -143,6 +144,9 @@ function coerceSettings(
     showSipp: coerceBoolean(input.showSipp),
     showIsa: coerceBoolean(input.showIsa),
     showLisa: coerceBoolean(input.showLisa),
+    additionalGuaranteedIncomes: normalizeAdditionalGuaranteedIncomes(
+      input.additionalGuaranteedIncomes
+    ),
     partialRetirementEnabled: coerceBoolean(input.partialRetirementEnabled),
     partialRetirementStartAge: coerceNumber(input.partialRetirementStartAge),
     partialRetirementWorkPercent: coerceNumber(

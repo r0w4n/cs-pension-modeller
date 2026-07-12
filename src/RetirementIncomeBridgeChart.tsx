@@ -30,6 +30,7 @@ export type RetirementIncomePoint = {
   classicPlusIncomeAnnual: number;
   nuvosIncomeAnnual: number;
   premiumIncomeAnnual: number;
+  additionalGuaranteedIncomeAnnual: number;
   partialRetirementIncomeAnnual: number;
   statePensionIncomeAnnual: number;
   totalIncomeAnnual: number;
@@ -128,6 +129,7 @@ type IncomeKey =
   | "classicPlusIncomeAnnual"
   | "nuvosIncomeAnnual"
   | "premiumIncomeAnnual"
+  | "additionalGuaranteedIncomeAnnual"
   | "partialRetirementIncomeAnnual"
   | "statePensionIncomeAnnual";
 
@@ -191,6 +193,7 @@ const incomeKeys: IncomeKey[] = [
   "classicPlusIncomeAnnual",
   "nuvosIncomeAnnual",
   "premiumIncomeAnnual",
+  "additionalGuaranteedIncomeAnnual",
   "statePensionIncomeAnnual",
 ];
 
@@ -242,6 +245,11 @@ const sourceMeta: Record<
     label: "Premium pension",
     shortLabel: "Premium",
     colour: "#0f766e",
+  },
+  additionalGuaranteedIncomeAnnual: {
+    label: "Additional income",
+    shortLabel: "Additional",
+    colour: "#6d7d10",
   },
   statePensionIncomeAnnual: {
     label: "State Pension",

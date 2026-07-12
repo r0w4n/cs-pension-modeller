@@ -4,6 +4,7 @@ import {
   getValidationIssuesForField,
   type SettingsFieldOnChange,
 } from "./form-fields";
+import { AdditionalGuaranteedIncomeEditor } from "./form-field-additional-guaranteed-income";
 
 export function SettingsGroupSupplementaryEditor({
   groupId,
@@ -74,6 +75,22 @@ export function SettingsGroupSupplementaryEditor({
           "isaLumpSums"
         )}
         onChange={(nextLumpSums) => onChange("isaLumpSums", nextLumpSums)}
+      />
+    );
+  }
+
+  if (groupId === "additional-income") {
+    return (
+      <AdditionalGuaranteedIncomeEditor
+        incomes={settings.additionalGuaranteedIncomes}
+        defaultStartAge={settings.requirementAge}
+        validationIssues={getValidationIssuesForField(
+          validationIssues,
+          "additionalGuaranteedIncomes"
+        )}
+        onChange={(nextIncomes) =>
+          onChange("additionalGuaranteedIncomes", nextIncomes)
+        }
       />
     );
   }

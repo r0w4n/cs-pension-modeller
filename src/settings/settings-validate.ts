@@ -4,6 +4,7 @@ import {
   resolveAlphaAbsDate,
   validateAlphaPensionRules,
 } from "./settings-domains/alpha-pension";
+import { validateAdditionalGuaranteedIncomeRules } from "./settings-domains/additional-guaranteed-income";
 import { validateClassicRules } from "./settings-domains/classic";
 import { validateIsaRules } from "./settings-domains/isa";
 import { validateLisaRules } from "./settings-domains/lisa";
@@ -158,6 +159,7 @@ export function validateSettings(
     ...validateIsaRules(context),
     ...validateLisaRules(context),
     ...validatePartialRetirementRules(context),
+    ...validateAdditionalGuaranteedIncomeRules(settings),
     ...validateLumpSumRules(context),
   ];
 }

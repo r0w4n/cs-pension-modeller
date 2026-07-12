@@ -106,6 +106,7 @@ export function generatePensionSummary(
         sippMonthlyIncome: 0,
         isaMonthlyIncome: 0,
         lisaMonthlyIncome: 0,
+        additionalGuaranteedIncomeMonthlyIncome: 0,
         statePensionMonthlyIncome: 0,
         monthlyIncomeTax: 0,
         bridgeWithdrawals: [],
@@ -429,6 +430,10 @@ function buildRowRetirementIncomeSummary(
   const nuvosMonthlyIncome = summaryRow?.monthlyNuvosPensionGross ?? 0;
   const premiumMonthlyIncome = summaryRow?.monthlyPremiumPensionGross ?? 0;
   const statePensionMonthlyIncome = summaryRow?.monthlyStatePension ?? 0;
+  const additionalGuaranteedIncomeMonthlyIncome =
+    summaryRow?.monthlyAdditionalGuaranteedIncomeGross ?? 0;
+  const additionalGuaranteedIncomeTaxableMonthlyIncome =
+    summaryRow?.monthlyAdditionalGuaranteedIncomeTaxable ?? 0;
   const sippMonthlyIncome = summaryRow?.monthlySippPension ?? 0;
   const isaMonthlyIncome = summaryRow?.monthlyIsaPension ?? 0;
   const lisaMonthlyIncome = summaryRow?.monthlyLisaPension ?? 0;
@@ -449,6 +454,7 @@ function buildRowRetirementIncomeSummary(
     sippMonthlyIncome,
     isaMonthlyIncome,
     lisaMonthlyIncome,
+    additionalGuaranteedIncomeMonthlyIncome,
     statePensionMonthlyIncome,
     monthlyIncomeTax: calculateMonthlyIncomeTax({
       settings,
@@ -459,6 +465,8 @@ function buildRowRetirementIncomeSummary(
       monthlyPremiumPension: premiumMonthlyIncome,
       monthlyStatePension: statePensionMonthlyIncome,
       monthlySippPension: sippMonthlyIncome,
+      monthlyAdditionalGuaranteedIncomeTaxable:
+        additionalGuaranteedIncomeTaxableMonthlyIncome,
     }),
     bridgeWithdrawals,
     ageRanges: drawRows.ageRanges,
@@ -549,39 +557,67 @@ function getActiveIncomeSourceLabels(
   settings: PensionSettings
 ) {
   const labels = [
-    settings.showAlpha && row.monthlyAlphaPensionGross > ACTIVE_INCOME_EPSILON
-      ? "Alpha pension"
-      : null,
-    settings.showClassic &&
-    row.monthlyClassicPensionGross > ACTIVE_INCOME_EPSILON
-      ? "classic pension"
-      : null,
-    settings.showClassicPlus &&
-    row.monthlyClassicPlusPensionGross > ACTIVE_INCOME_EPSILON
-      ? "classic plus pension"
-      : null,
-    settings.showNuvos && row.monthlyNuvosPensionGross > ACTIVE_INCOME_EPSILON
-      ? "nuvos pension"
-      : null,
-    settings.showPremium &&
-    row.monthlyPremiumPensionGross > ACTIVE_INCOME_EPSILON
-      ? "Premium pension"
-      : null,
-    settings.showSipp && row.monthlySippPension > ACTIVE_INCOME_EPSILON
-      ? "SIPP withdrawal"
-      : null,
-    settings.showIsa && row.monthlyIsaPension > ACTIVE_INCOME_EPSILON
-      ? "ISA withdrawal"
-      : null,
-    settings.showLisa && row.monthlyLisaPension > ACTIVE_INCOME_EPSILON
-      ? "LISA withdrawal"
-      : null,
-    settings.showStatePension && row.monthlyStatePension > ACTIVE_INCOME_EPSILON
-      ? "State Pension"
-      : null,
+    createActiveIncomeSourceLabel(
+      settings.showAlpha,
+      row.monthlyAlphaPensionGross,
+      "Alpha pension"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showClassic,
+      row.monthlyClassicPensionGross,
+      "classic pension"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showClassicPlus,
+      row.monthlyClassicPlusPensionGross,
+      "classic plus pension"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showNuvos,
+      row.monthlyNuvosPensionGross,
+      "nuvos pension"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showPremium,
+      row.monthlyPremiumPensionGross,
+      "Premium pension"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showSipp,
+      row.monthlySippPension,
+      "SIPP withdrawal"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showIsa,
+      row.monthlyIsaPension,
+      "ISA withdrawal"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showLisa,
+      row.monthlyLisaPension,
+      "LISA withdrawal"
+    ),
+    createActiveIncomeSourceLabel(
+      settings.showStatePension,
+      row.monthlyStatePension,
+      "State Pension"
+    ),
+    createActiveIncomeSourceLabel(
+      true,
+      row.monthlyAdditionalGuaranteedIncomeGross,
+      "Additional income"
+    ),
   ].filter((label): label is string => Boolean(label));
 
   return labels.length > 0 ? labels : ["No income modelled"];
+}
+
+function createActiveIncomeSourceLabel(
+  enabled: boolean,
+  monthlyIncome: number,
+  label: string
+) {
+  return enabled && monthlyIncome > ACTIVE_INCOME_EPSILON ? label : null;
 }
 
 function getAgeRangeSourceSignature(range: RetirementIncomeAgeRange) {
@@ -808,6 +844,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
       isaMonthlyIncome: 0,
       lisaMonthlyIncome: 0,
       statePensionMonthlyIncome: 0,
+      additionalGuaranteedIncomeMonthlyIncome: 0,
       monthlyIncomeTax: 0,
       bridgeWithdrawals: [],
       ageRanges: [],
@@ -1013,6 +1050,7 @@ function buildRetirementIncomeSummary({
   sippMonthlyIncome,
   isaMonthlyIncome,
   lisaMonthlyIncome,
+  additionalGuaranteedIncomeMonthlyIncome,
   statePensionMonthlyIncome,
   monthlyIncomeTax,
   bridgeWithdrawals,
@@ -1028,6 +1066,7 @@ function buildRetirementIncomeSummary({
   sippMonthlyIncome: number;
   isaMonthlyIncome: number;
   lisaMonthlyIncome: number;
+  additionalGuaranteedIncomeMonthlyIncome: number;
   statePensionMonthlyIncome: number;
   monthlyIncomeTax: number;
   bridgeWithdrawals: BridgeWithdrawalSource[];
@@ -1095,6 +1134,15 @@ function buildRetirementIncomeSummary({
             "statePension",
             "State Pension",
             statePensionMonthlyIncome
+          ),
+        ]
+      : []),
+    ...(additionalGuaranteedIncomeMonthlyIncome > ACTIVE_INCOME_EPSILON
+      ? [
+          createRetirementIncomeSource(
+            "additionalGuaranteedIncome",
+            "Additional income",
+            additionalGuaranteedIncomeMonthlyIncome
           ),
         ]
       : []),

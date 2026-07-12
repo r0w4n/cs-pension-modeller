@@ -41,4 +41,41 @@ describe("settings-normalize", () => {
     expect(settings.requirementAge).toBe(65);
     expect(settings.isaDrawAge).toBe(72);
   });
+
+  it("defaults missing additional guaranteed incomes to an empty list", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      additionalGuaranteedIncomes: undefined as never,
+    });
+
+    expect(settings.additionalGuaranteedIncomes).toEqual([]);
+  });
+
+  it("normalizes additional guaranteed income rows", () => {
+    expect(
+      normalizeSetting("additionalGuaranteedIncomes", [
+        {
+          id: "",
+          name: "  Previous employer DB pension  ",
+          annualAmount: "4500",
+          startAge: "60",
+          endAge: "",
+          indexation: "unknown",
+          fixedIncreasePercent: "3",
+          taxable: undefined,
+        },
+      ] as never)
+    ).toEqual([
+      {
+        id: "additional-income-1",
+        name: "Previous employer DB pension",
+        annualAmount: 4500,
+        startAge: 60,
+        endAge: null,
+        indexation: "cpi",
+        fixedIncreasePercent: null,
+        taxable: true,
+      },
+    ]);
+  });
 });

@@ -42,6 +42,8 @@ export type ProjectionRow = {
   annualPremiumPensionIncludingReduction: number;
   monthlyPremiumPensionGross: number;
   monthlyStatePension: number;
+  monthlyAdditionalGuaranteedIncomeGross: number;
+  monthlyAdditionalGuaranteedIncomeTaxable: number;
   sippPot: number;
   monthlySippPension: number;
   isaPot: number;
@@ -140,6 +142,7 @@ export type RetirementIncomeSource = {
     | "classicPlus"
     | "nuvos"
     | "premium"
+    | "additionalGuaranteedIncome"
     | "sipp"
     | "isa"
     | "lisa"
@@ -194,6 +197,7 @@ export type BridgePhase = {
   annualAlphaPension: number;
   annualNuvosPension: number;
   annualPremiumPension: number;
+  annualAdditionalGuaranteedIncome: number;
   annualStatePension: number;
   annualIsaBridge: number;
   annualLisaBridge: number;

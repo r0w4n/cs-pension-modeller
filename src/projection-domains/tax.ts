@@ -9,6 +9,7 @@ export function calculateMonthlyIncomeTax(input: {
   monthlyPremiumPension?: number;
   monthlyStatePension: number;
   monthlySippPension: number;
+  monthlyAdditionalGuaranteedIncomeTaxable?: number;
 }) {
   const {
     settings,
@@ -19,6 +20,7 @@ export function calculateMonthlyIncomeTax(input: {
     monthlyPremiumPension = 0,
     monthlyStatePension,
     monthlySippPension,
+    monthlyAdditionalGuaranteedIncomeTaxable = 0,
   } = input;
 
   if (!settings.taxationEnabled) {
@@ -33,6 +35,7 @@ export function calculateMonthlyIncomeTax(input: {
       monthlyNuvosPension +
       monthlyPremiumPension +
       monthlyStatePension +
+      monthlyAdditionalGuaranteedIncomeTaxable +
       monthlySippPension * taxableSippShare) *
     12;
 

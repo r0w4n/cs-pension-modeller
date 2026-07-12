@@ -72,6 +72,7 @@ test.describe("accessibility", () => {
     );
     await clickNextAndExpectStep(page, "State Pension");
 
+    await clickNextAndExpectStep(page, "Additional guaranteed income");
     await clickNextAndExpectStep(page, "Your bridging pots");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
@@ -211,7 +212,9 @@ async function fillExactNumber(page: Page, label: string, value: string) {
 
 async function clickNextAndExpectStep(page: Page, heading: string) {
   await page.getByRole("button", { name: "Next" }).click();
-  await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 3, name: heading })
+  ).toBeVisible();
 }
 
 async function expectProjectionTableForViewport(

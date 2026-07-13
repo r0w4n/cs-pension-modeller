@@ -525,12 +525,36 @@ function renderProjectionTableCell(
       return formatCurrencyDetailed(row.annualAlphaPensionIncludingReduction);
     case "monthlyAlphaPensionGross":
       return formatCurrencyDetailed(row.monthlyAlphaPensionGross);
+    case "annualClassicPension":
+      return formatCurrencyDetailed(row.annualClassicPension);
+    case "classicAutomaticLumpSum":
+      return formatCurrencyDetailed(row.classicAutomaticLumpSum);
+    case "annualClassicPensionIncludingReduction":
+      return formatCurrencyDetailed(row.annualClassicPensionIncludingReduction);
+    case "monthlyClassicPensionGross":
+      return formatCurrencyDetailed(row.monthlyClassicPensionGross);
+    case "annualClassicPlusPension":
+      return formatCurrencyDetailed(row.annualClassicPlusPension);
+    case "classicPlusAutomaticLumpSum":
+      return formatCurrencyDetailed(row.classicPlusAutomaticLumpSum);
+    case "annualClassicPlusPensionIncludingReduction":
+      return formatCurrencyDetailed(
+        row.annualClassicPlusPensionIncludingReduction
+      );
+    case "monthlyClassicPlusPensionGross":
+      return formatCurrencyDetailed(row.monthlyClassicPlusPensionGross);
     case "annualNuvosPension":
       return formatCurrencyDetailed(row.annualNuvosPension);
     case "annualNuvosPensionIncludingReduction":
       return formatCurrencyDetailed(row.annualNuvosPensionIncludingReduction);
     case "monthlyNuvosPensionGross":
       return formatCurrencyDetailed(row.monthlyNuvosPensionGross);
+    case "annualPremiumPension":
+      return formatCurrencyDetailed(row.annualPremiumPension);
+    case "annualPremiumPensionIncludingReduction":
+      return formatCurrencyDetailed(row.annualPremiumPensionIncludingReduction);
+    case "monthlyPremiumPensionGross":
+      return formatCurrencyDetailed(row.monthlyPremiumPensionGross);
     case "monthlyStatePension":
       return formatCurrencyDetailed(row.monthlyStatePension);
     case "monthlyAdditionalGuaranteedIncomeGross":

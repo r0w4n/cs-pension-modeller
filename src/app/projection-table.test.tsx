@@ -110,6 +110,36 @@ describe("projection-table module", () => {
     vi.useRealTimers();
   });
 
+  it("renders Premium pension values when Premium is enabled", () => {
+    vi.useFakeTimers();
+    const premiumRows: ProjectionRow[] = [
+      {
+        ...rows[0],
+        annualPremiumPension: 16500,
+        annualPremiumPensionIncludingReduction: 12375,
+        monthlyPremiumPensionGross: 1031.25,
+        totalMonthlyIncomeBeforeTax: 1111.25,
+        totalMonthlyNetIncome: 1111.25,
+      },
+    ];
+
+    render(
+      <ProjectionTableSection
+        rows={premiumRows}
+        settings={{ ...createDefaultSettings(), showPremium: true }}
+      />
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(screen.getByText("£16,500.00")).toBeInTheDocument();
+    expect(screen.getByText("£12,375.00")).toBeInTheDocument();
+    expect(screen.getByText("£1,031.25")).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it("renders mobile cards when the 640px breakpoint matches", () => {
     mockMatchMedia(true);
 

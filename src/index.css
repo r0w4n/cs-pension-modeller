@@ -2486,6 +2486,171 @@ h3 {
   outline: none;
 }
 
+.acceptance-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.acceptance-summary p,
+.acceptance-feature,
+.acceptance-scenario,
+.acceptance-example {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.acceptance-summary p {
+  margin: 0;
+  padding: 0.85rem;
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+}
+
+.acceptance-summary strong {
+  display: block;
+  color: #122033;
+  font-size: var(--font-size-heading-sm);
+}
+
+.acceptance-feature-list,
+.acceptance-scenario-list,
+.acceptance-examples {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.acceptance-feature > summary,
+.acceptance-scenario > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+  color: #122033;
+  font-weight: 700;
+}
+
+.acceptance-feature > summary:focus-visible,
+.acceptance-scenario > summary:focus-visible {
+  outline: 3px solid rgba(17, 100, 102, 0.32);
+  outline-offset: 2px;
+}
+
+.acceptance-feature-body,
+.acceptance-scenario-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 0.85rem 0.85rem;
+}
+
+.acceptance-feature-count,
+.acceptance-status,
+.acceptance-tags,
+.acceptance-source,
+.acceptance-review-note,
+.acceptance-scenario-keyword {
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-body);
+}
+
+.acceptance-feature-count,
+.acceptance-tags,
+.acceptance-source,
+.acceptance-review-note,
+.acceptance-scenario-keyword {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.acceptance-status {
+  flex: 0 0 auto;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  font-weight: 700;
+}
+
+.acceptance-status--covered {
+  background: rgba(17, 100, 102, 0.12);
+  color: var(--accent-strong);
+}
+
+.acceptance-status--under-review {
+  background: rgba(154, 92, 0, 0.12);
+  color: #8a5200;
+}
+
+.acceptance-tags,
+.acceptance-source,
+.acceptance-review-note {
+  display: inline-block;
+  margin-right: 0.75rem;
+}
+
+.acceptance-steps {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding-left: 1.4rem;
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+}
+
+.acceptance-steps p {
+  margin: 0;
+}
+
+.acceptance-example {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.acceptance-example h4 {
+  margin: 0;
+  color: #122033;
+  font-size: var(--font-size-body);
+}
+
+.acceptance-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.acceptance-table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-body);
+}
+
+.acceptance-table caption {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.acceptance-table th,
+.acceptance-table td {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.45rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.acceptance-table th {
+  background: var(--surface-strong);
+  color: #122033;
+}
+
 .formula-block {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

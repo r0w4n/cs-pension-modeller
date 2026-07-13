@@ -17,6 +17,9 @@ describe("site-footer", () => {
       "href",
       "./methodology/"
     );
+    expect(
+      screen.getByRole("link", { name: "Acceptance criteria" })
+    ).toHaveAttribute("href", "./acceptance/");
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(
       "href",
       "./about/"

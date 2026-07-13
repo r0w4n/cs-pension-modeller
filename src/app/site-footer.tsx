@@ -9,6 +9,7 @@ export function SiteFooter() {
         <a href={`${appBaseHref}settings/`}>Settings</a>
         <a href={`${appBaseHref}privacy/`}>Privacy</a>
         <a href={`${appBaseHref}methodology/`}>Methodology</a>
+        <a href={`${appBaseHref}acceptance/`}>Acceptance criteria</a>
         <a href={`${appBaseHref}about/`}>About</a>
         <a
           href="https://forms.gle/mqgPbWFLt9byHC7B8"

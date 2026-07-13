@@ -57,5 +57,25 @@ test.describe("production build smoke checks", () => {
     });
 
     expect(methodologyHorizontalOverflow).toBeLessThanOrEqual(1);
+
+    await page.goto("/acceptance/");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Acceptance criteria" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "What this page shows",
+      })
+    ).toBeVisible();
+    await expect(page.getByText("Alpha pension modelling")).toBeVisible();
+
+    const acceptanceHorizontalOverflow = await page.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+
+    expect(acceptanceHorizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

@@ -2,6 +2,7 @@
   "$schema": "./node_modules/knip/schema.json",
   "entry": [
     "src/pages/about.tsx",
+    "src/pages/acceptance.tsx",
     "src/pages/methodology.tsx",
     "src/pages/privacy.tsx"
   ],

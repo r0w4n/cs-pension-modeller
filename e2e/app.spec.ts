@@ -188,6 +188,7 @@ test.describe("app end-to-end journeys", () => {
     await assertFooterPage(page, "Settings", "Export parameters");
     await assertFooterPage(page, "Privacy", "What we collect");
     await assertFooterPage(page, "Methodology", "What the model projects");
+    await assertFooterPage(page, "Acceptance criteria", "What this page shows");
     await assertFooterPage(page, "About", "What it is");
   });
 });
@@ -288,19 +289,23 @@ async function expectProjectionTableForViewport(
 
 async function assertFooterPage(
   page: Page,
-  pageName: "About" | "Methodology" | "Privacy" | "Settings",
+  pageName:
+    | "About"
+    | "Acceptance criteria"
+    | "Methodology"
+    | "Privacy"
+    | "Settings",
   sectionHeading: string
 ) {
-  const path = `/${pageName.toLowerCase()}/`;
+  const pathSegment =
+    pageName === "Acceptance criteria" ? "acceptance" : pageName.toLowerCase();
+  const path = `/${pathSegment}/`;
   const link = page
     .getByRole("contentinfo")
     .getByRole("link", { name: pageName });
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect(link).toHaveAttribute(
-    "href",
-    new RegExp(`${pageName.toLowerCase()}/$`)
-  );
+  await expect(link).toHaveAttribute("href", new RegExp(`${pathSegment}/$`));
   await Promise.all([page.waitForURL(new RegExp(`${path}$`)), link.click()]);
   await page.waitForLoadState("domcontentloaded");
 

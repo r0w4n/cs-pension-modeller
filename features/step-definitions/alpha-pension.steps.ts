@@ -6,7 +6,10 @@ import {
   setWorldConstructor,
 } from "@cucumber/cucumber";
 import { addYears, calculateAge } from "../../src/projection-core";
-import { defaultSettings } from "../../src/settings";
+import {
+  calculateMinimumPensionAccessAge,
+  defaultSettings,
+} from "../../src/settings";
 import { validateAlphaPensionRules } from "../../src/settings/settings-domains/alpha-pension";
 import {
   calculateAnnualAlphaPensionIncludingReduction,
@@ -77,6 +80,7 @@ class AlphaPensionWorld {
     | undefined;
   minimumPensionAge = 0;
   requestedDrawDate = "";
+  minimumClaimAge = 0;
   activeAlphaResult: ActiveAlphaResult | undefined;
   deferredPensionAtDrawAge = 0;
   totalAddedPensionContribution = 0;
@@ -931,6 +935,24 @@ Given(
   "the member was born on {word}",
   function (this: AlphaPensionWorld, dateOfBirth: string) {
     this.dateOfBirth = dateOfBirth;
+  }
+);
+
+Given(
+  "the member's date of birth is {word}",
+  function (this: AlphaPensionWorld, dateOfBirth: string) {
+    this.dateOfBirth = dateOfBirth;
+  }
+);
+
+When("the minimum claim age is determined", function (this: AlphaPensionWorld) {
+  this.minimumClaimAge = calculateMinimumPensionAccessAge(this.dateOfBirth);
+});
+
+Then(
+  "the minimum claim age is {int}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertEqual(this.minimumClaimAge, expected);
   }
 );
 

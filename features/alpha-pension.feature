@@ -279,6 +279,22 @@ Feature: Alpha pension modelling
   # Minimum pension age validation
   # ---------------------------------------------------------------------------
 
+  @minimum-claim-age
+  Scenario Outline: Determine minimum claim age from date of birth
+    Given the member's date of birth is <date_of_birth>
+    When the minimum claim age is determined
+    Then the minimum claim age is <minimum_claim_age>
+
+    Examples:
+      | date_of_birth | minimum_claim_age |
+      | 1970-04-05    | 55                |
+      | 1971-04-05    | 55                |
+      | 1972-04-05    | 55                |
+      | 1973-04-05    | 55                |
+      | 1973-04-06    | 57                |
+      | 1974-01-01    | 57                |
+      | 1980-01-01    | 57                |
+
   @validation @minimum-pension-age
   Scenario Outline: Validate requested draw age against minimum pension age
     Given the member is in the alpha scheme

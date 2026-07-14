@@ -35,6 +35,7 @@ export const defaultSettings: PensionSettings = {
   showSipp: true,
   showIsa: true,
   showLisa: false,
+  showAdditionalGuaranteedIncome: true,
   additionalGuaranteedIncomes: [],
   taxationEnabled: taxDefaults.taxationEnabled,
   partialRetirementEnabled: false,

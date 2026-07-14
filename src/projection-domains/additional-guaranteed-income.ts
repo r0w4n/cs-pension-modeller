@@ -8,6 +8,10 @@ export function calculateAdditionalGuaranteedIncomeForDate(input: {
 }) {
   const { settings, rowDate } = input;
 
+  if (!settings.showAdditionalGuaranteedIncome) {
+    return { annualGross: 0, annualTaxable: 0 };
+  }
+
   return settings.additionalGuaranteedIncomes.reduce(
     (totals, income) => {
       const annualGross = calculateAdditionalGuaranteedIncomeStreamForDate({

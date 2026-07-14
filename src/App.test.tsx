@@ -546,6 +546,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showSipp: defaultSettings.showSipp,
     showIsa: defaultSettings.showIsa,
     showLisa: defaultSettings.showLisa,
+    showAdditionalGuaranteedIncome:
+      defaultSettings.showAdditionalGuaranteedIncome,
     additionalGuaranteedIncomes: [],
     taxationEnabled: defaultSettings.taxationEnabled,
     partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
@@ -2081,6 +2083,7 @@ describe("App settings form", () => {
       "SIPP",
       "ISA",
       "LISA",
+      "Additional guaranteed income",
       "Taxation",
     ]);
   });
@@ -3375,6 +3378,46 @@ describe("App settings form", () => {
     openJourneyStep(/ISA details/i);
 
     expect(screen.getByLabelText("Current ISA pot (£)")).toHaveValue(12000);
+  });
+
+  it("can toggle additional guaranteed income in expert optional sections", () => {
+    renderAcknowledgedApp();
+
+    openJourneyStep(/Additional guaranteed income/i);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add additional income" })
+    );
+    const annualIncomeInput = screen.getByRole("spinbutton", {
+      name: /Annual income/,
+    });
+    fireEvent.change(annualIncomeInput, {
+      target: { value: "5000" },
+    });
+    fireEvent.blur(annualIncomeInput);
+
+    openJourneyStep(/Optional sections/i);
+    fireEvent.click(screen.getByLabelText("Additional guaranteed income"));
+
+    expect(
+      screen.queryByRole("button", { name: /Additional guaranteed income/i })
+    ).not.toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        showAdditionalGuaranteedIncome: false,
+        additionalGuaranteedIncomes: [
+          expect.objectContaining({
+            annualAmount: 5000,
+          }),
+        ],
+      })
+    );
+
+    fireEvent.click(screen.getByLabelText("Additional guaranteed income"));
+    openJourneyStep(/Additional guaranteed income/i);
+
+    expect(
+      screen.getByRole("spinbutton", { name: /Annual income/ })
+    ).toHaveValue(5000);
   });
 
   it("normalizes unexpected stored values back to allowed settings", () => {

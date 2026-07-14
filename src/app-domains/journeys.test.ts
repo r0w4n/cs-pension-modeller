@@ -23,6 +23,12 @@ function getJourneyStepFieldIds(journeyId: string, stepId: string) {
   return new Set(step?.kind === "fields" ? step.fieldIds : []);
 }
 
+function getJourneyStepIds(journeyId: string) {
+  const journey = JOURNEY_DEFINITIONS.find((entry) => entry.id === journeyId);
+
+  return new Set(journey?.steps.map((step) => step.id) ?? []);
+}
+
 describe("journey definitions", () => {
   it("keeps the Alpha pay-rise control in the expert journey only", () => {
     const alphaPayRiseFieldIds = [
@@ -84,6 +90,21 @@ describe("journey definitions", () => {
   it("keeps EPA out of the optional sections page", () => {
     expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).not.toContain(
       "alphaEpaEnabled"
+    );
+  });
+
+  it("lets expert mode toggle additional guaranteed income", () => {
+    expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).toContain(
+      "showAdditionalGuaranteedIncome"
+    );
+  });
+
+  it("keeps additional guaranteed income in the simple and bridge journeys", () => {
+    expect(getJourneyStepIds("early-retirement-bridge")).toContain(
+      "additional-income"
+    );
+    expect(getJourneyStepIds("simple-early-retirement")).toContain(
+      "additional-income"
     );
   });
 

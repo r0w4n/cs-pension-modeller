@@ -69,6 +69,12 @@ export const OPTIONAL_SECTION_TOGGLES = [
       "Models a Lifetime ISA pot, capped eligible additions, government bonus, growth, and tax-free retirement withdrawals from age 60.",
   },
   {
+    key: "showAdditionalGuaranteedIncome",
+    label: "Additional guaranteed income",
+    description:
+      "Includes known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
+  },
+  {
     key: "taxationEnabled",
     label: "Taxation",
     description:

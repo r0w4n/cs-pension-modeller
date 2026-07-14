@@ -376,6 +376,8 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     showSipp: Boolean(settings.showSipp),
     showIsa: Boolean(settings.showIsa),
     showLisa: Boolean(settings.showLisa),
+    showAdditionalGuaranteedIncome:
+      settings.showAdditionalGuaranteedIncome !== false,
     additionalGuaranteedIncomes: normalizeSetting(
       "additionalGuaranteedIncomes",
       settings.additionalGuaranteedIncomes

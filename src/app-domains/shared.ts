@@ -127,6 +127,10 @@ export function isSettingsGroupVisible(
     return settings.showLisa;
   }
 
+  if (groupId === "additional-income") {
+    return settings.showAdditionalGuaranteedIncome;
+  }
+
   if (groupId === "tax") {
     return settings.taxationEnabled;
   }

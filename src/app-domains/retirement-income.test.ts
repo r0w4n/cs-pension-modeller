@@ -329,6 +329,48 @@ describe("retirement-income transition points", () => {
     );
   });
 
+  it("hides additional guaranteed income chart values when the section is disabled", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2026-06-01",
+      showAdditionalGuaranteedIncome: false,
+      additionalGuaranteedIncomes: [
+        {
+          id: "previous-employer-db",
+          name: "Previous employer DB pension",
+          annualAmount: 12000,
+          startAge: 60,
+          endAge: null,
+          indexation: "none" as const,
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    };
+
+    const series = createRetirementIncomeSeries(
+      [
+        {
+          ...baseRow,
+          date: "2047-06-01",
+          age: 60,
+          ageMonths: 0,
+          monthlyAdditionalGuaranteedIncomeGross: 1000,
+          monthlyAdditionalGuaranteedIncomeTaxable: 1000,
+        },
+      ],
+      settings
+    );
+
+    expect(series[0]).toEqual(
+      expect.objectContaining({
+        additionalGuaranteedIncomeAnnual: 0,
+        additionalGuaranteedIncomeStreams: [],
+      })
+    );
+  });
+
   it("does not carry an ISA withdrawal into the retirement age range when ISA use-by age equals retirement age", () => {
     const settings = {
       ...createDefaultSettings(),

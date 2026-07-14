@@ -51,6 +51,15 @@ describe("settings-normalize", () => {
     expect(settings.additionalGuaranteedIncomes).toEqual([]);
   });
 
+  it("defaults missing additional guaranteed income visibility to included", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      showAdditionalGuaranteedIncome: undefined as never,
+    });
+
+    expect(settings.showAdditionalGuaranteedIncome).toBe(true);
+  });
+
   it("normalizes additional guaranteed income rows", () => {
     expect(
       normalizeSetting("additionalGuaranteedIncomes", [

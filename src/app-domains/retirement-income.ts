@@ -156,9 +156,13 @@ export function createRetirementIncomeSeries(
     const additionalGuaranteedIncomeStreams =
       calculateAdditionalGuaranteedIncomeStreams(settings, row.date);
     const additionalGuaranteedIncomeAnnual =
-      row.monthlyAdditionalGuaranteedIncomeGross * 12;
+      settings.showAdditionalGuaranteedIncome
+        ? row.monthlyAdditionalGuaranteedIncomeGross * 12
+        : 0;
     const additionalGuaranteedIncomeTaxableAnnual =
-      row.monthlyAdditionalGuaranteedIncomeTaxable * 12;
+      settings.showAdditionalGuaranteedIncome
+        ? row.monthlyAdditionalGuaranteedIncomeTaxable * 12
+        : 0;
     const targetIncomeAnnual = calculateRetirementIncomeTargetAtDate(
       settings,
       row.date
@@ -272,6 +276,10 @@ function calculateAdditionalGuaranteedIncomeStreams(
   settings: PensionSettings,
   rowDate: string
 ) {
+  if (!settings.showAdditionalGuaranteedIncome) {
+    return [];
+  }
+
   const labelCounts = new Map<string, number>();
 
   return settings.additionalGuaranteedIncomes.map((income) => {
@@ -438,7 +446,10 @@ function insertChartTransitionPoints(
           age: settings.partialRetirementStartAge,
         }
       : null,
-    ...settings.additionalGuaranteedIncomes.flatMap((income) => {
+    ...(settings.showAdditionalGuaranteedIncome
+      ? settings.additionalGuaranteedIncomes
+      : []
+    ).flatMap((income) => {
       if (
         income.annualAmount === null ||
         income.annualAmount <= 0 ||

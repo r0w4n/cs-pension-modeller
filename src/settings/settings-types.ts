@@ -71,6 +71,7 @@ export type PensionSettings = {
   showSipp: boolean;
   showIsa: boolean;
   showLisa: boolean;
+  showAdditionalGuaranteedIncome: boolean;
   additionalGuaranteedIncomes: AdditionalGuaranteedIncome[];
   taxationEnabled: boolean;
   partialRetirementEnabled: boolean;

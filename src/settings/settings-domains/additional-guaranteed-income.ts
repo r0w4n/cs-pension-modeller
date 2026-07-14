@@ -66,6 +66,10 @@ export function normalizeAdditionalGuaranteedIncomes(
 export function validateAdditionalGuaranteedIncomeRules(
   settings: PensionSettings
 ): PensionValidationIssue[] {
+  if (!settings.showAdditionalGuaranteedIncome) {
+    return [];
+  }
+
   return settings.additionalGuaranteedIncomes.flatMap((income) =>
     validateAdditionalGuaranteedIncomeRule(settings, income)
   );

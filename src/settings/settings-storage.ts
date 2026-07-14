@@ -144,6 +144,9 @@ function coerceSettings(
     showSipp: coerceBoolean(input.showSipp),
     showIsa: coerceBoolean(input.showIsa),
     showLisa: coerceBoolean(input.showLisa),
+    showAdditionalGuaranteedIncome: coerceBoolean(
+      input.showAdditionalGuaranteedIncome
+    ),
     additionalGuaranteedIncomes: normalizeAdditionalGuaranteedIncomes(
       input.additionalGuaranteedIncomes
     ),

@@ -97,6 +97,34 @@ describe("settings-validate", () => {
     );
   });
 
+  it("ignores additional guaranteed income validation when its section is disabled", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      showAdditionalGuaranteedIncome: false,
+      additionalGuaranteedIncomes: [
+        {
+          id: "bad-ages",
+          name: "",
+          annualAmount: -1000,
+          startAge: 95,
+          endAge: 60,
+          indexation: "none",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    });
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "additionalGuaranteedIncomes",
+          itemId: "bad-ages",
+        }),
+      ])
+    );
+  });
+
   it("treats a blank additional guaranteed income row as a draft", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),

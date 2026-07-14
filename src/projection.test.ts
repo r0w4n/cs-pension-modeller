@@ -969,6 +969,46 @@ describe("projection calculations", () => {
     expect(afterEndRow?.monthlyAdditionalGuaranteedIncomeGross).toBe(0);
   });
 
+  it("excludes additional guaranteed income when its optional section is disabled", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2029-01-01",
+      dateOfBirth: "1970-01-01",
+      lifeExpectancy: 62,
+      requirementAge: 60,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+      showAdditionalGuaranteedIncome: false,
+      taxationEnabled: true,
+      additionalGuaranteedIncomes: [
+        {
+          id: "previous-employer-db",
+          name: "Previous employer DB pension",
+          annualAmount: 20000,
+          startAge: 60,
+          endAge: null,
+          indexation: "cpi",
+          fixedIncreasePercent: null,
+          taxable: true,
+        },
+      ],
+    };
+
+    const row = findRowByDate(createProjectionTable(settings), "2030-01-01");
+
+    expect(row?.monthlyAdditionalGuaranteedIncomeGross).toBe(0);
+    expect(row?.monthlyAdditionalGuaranteedIncomeTaxable).toBe(0);
+    expect(row?.totalMonthlyIncomeBeforeTax).toBe(0);
+    expect(row?.monthlyIncomeTax).toBe(0);
+  });
+
   it("uses additional guaranteed income to reduce bridge withdrawals", () => {
     const additionalGuaranteedIncomes: PensionSettings["additionalGuaranteedIncomes"] =
       [

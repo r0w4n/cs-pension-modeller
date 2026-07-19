@@ -3,9 +3,13 @@ import {
   type PensionSettings,
 } from "../settings";
 import { calculateMonthlyIncomeTax } from "./tax";
-import { calculateIsaPotAtDate } from "./isa";
-import { calculateSippPotAtDate } from "./sipp";
-import { calculateLisaPotAtDate } from "./lisa";
+import { calculateIsaPotBeforeWithdrawalAtDate } from "./isa";
+import { calculateSippPotBeforeWithdrawalAtDate } from "./sipp";
+import { calculateLisaPotBeforeWithdrawalAtDate } from "./lisa";
+import {
+  calculateRetirementIncomeTargetAtDate,
+  getModelledMonthlyGrowthRate,
+} from "./inflation";
 
 export type ProjectionRowLike = {
   date: string;
@@ -59,6 +63,7 @@ export type BridgePotProjectionRow = {
   monthlyAdditionalGuaranteedIncomeGross: number;
   monthlyAdditionalGuaranteedIncomeTaxable: number;
   monthlyStatePension: number;
+  monthlyTargetIncome: number;
   isaBalance: number;
   lisaBalance: number;
   sippBalance: number;
@@ -152,31 +157,38 @@ export function generateRetirementBridgeAnalysis(
   const endDate = addYears(settings.dateOfBirth, settings.lifeExpectancy);
   const sippAccessDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
   const lisaAccessDate = addYears(settings.dateOfBirth, settings.lisaDrawAge);
-  const monthlyTargetIncome = settings.desiredRetirementIncome / 12;
   const bridgeRows = generateMonthlyDateRange(retirementDate, endDate);
-  const isaMonthlyGrowthRate =
-    (1 + settings.isaRealInterestPercent / 100) ** (1 / 12) - 1;
-  const sippMonthlyGrowthRate =
-    (1 + settings.sippRealInterestPercent / 100) ** (1 / 12) - 1;
-  const lisaMonthlyGrowthRate =
-    (1 + settings.lisaRealInterestPercent / 100) ** (1 / 12) - 1;
+  const monthlyTargetIncomeAtRetirement =
+    calculateRetirementIncomeTargetAtDate(settings, retirementDate) / 12;
+  const isaMonthlyGrowthRate = getModelledMonthlyGrowthRate(
+    settings,
+    settings.isaRealInterestPercent / 100
+  );
+  const sippMonthlyGrowthRate = getModelledMonthlyGrowthRate(
+    settings,
+    settings.sippRealInterestPercent / 100
+  );
+  const lisaMonthlyGrowthRate = getModelledMonthlyGrowthRate(
+    settings,
+    settings.lisaRealInterestPercent / 100
+  );
   const potBalances: BridgePotBalances = {
     isaBalance: settings.showIsa
-      ? calculateIsaPotAtDate({
+      ? calculateIsaPotBeforeWithdrawalAtDate({
           settings: { ...settings, showIsa: true },
           rowDate: retirementDate,
           drawDate: retirementDate,
         })
       : 0,
     sippBalance: settings.showSipp
-      ? calculateSippPotAtDate({
+      ? calculateSippPotBeforeWithdrawalAtDate({
           settings: { ...settings, showSipp: true },
           rowDate: retirementDate,
           drawDate: retirementDate,
         })
       : 0,
     lisaBalance: settings.showLisa
-      ? calculateLisaPotAtDate({
+      ? calculateLisaPotBeforeWithdrawalAtDate({
           settings: { ...settings, showLisa: true },
           rowDate: retirementDate,
           drawDate: retirementDate,
@@ -205,6 +217,8 @@ export function generateRetirementBridgeAnalysis(
       pensionRows,
       rowDate,
     });
+    const monthlyTargetIncome =
+      calculateRetirementIncomeTargetAtDate(settings, rowDate) / 12;
     const shortfall = Math.max(
       0,
       monthlyTargetIncome - secureIncome.guaranteedIncome
@@ -301,8 +315,8 @@ export function generateRetirementBridgeAnalysis(
     target: {
       retirementDate,
       retirementAge: settings.requirementAge,
-      annualIncome: settings.desiredRetirementIncome,
-      monthlyIncome: monthlyTargetIncome,
+      annualIncome: monthlyTargetIncomeAtRetirement * 12,
+      monthlyIncome: monthlyTargetIncomeAtRetirement,
       endDate,
     },
     planWorks: totalUnfundedShortfall <= 0.005,
@@ -330,10 +344,19 @@ export function generateRetirementBridgeAnalysis(
         : null,
     fullSecureAnnualGuaranteedIncome,
     fullSecureAnnualGuaranteedSurplus:
-      fullSecureAnnualGuaranteedIncome - settings.desiredRetirementIncome,
+      fullSecureAnnualGuaranteedIncome -
+      (fullSecureIncomeStartRow
+        ? calculateRetirementIncomeTargetAtDate(
+            settings,
+            fullSecureIncomeStartRow.date
+          )
+        : settings.desiredRetirementIncome),
     stableAnnualGuaranteedIncome,
     stableAnnualGuaranteedSurplus:
-      stableAnnualGuaranteedIncome - settings.desiredRetirementIncome,
+      stableAnnualGuaranteedIncome -
+      (stableRow
+        ? calculateRetirementIncomeTargetAtDate(settings, stableRow.date)
+        : settings.desiredRetirementIncome),
     phases: buildBridgePhases(monthlyRows, settings, retirementDate, endDate),
     potProjection: buildBridgePotProjection(monthlyRows, settings),
   };

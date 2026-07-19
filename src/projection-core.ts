@@ -219,6 +219,7 @@ export type BridgePotProjectionRow = {
   monthlyNuvosPension: number;
   monthlyPremiumPension: number;
   monthlyStatePension: number;
+  monthlyTargetIncome: number;
   isaBalance: number;
   lisaBalance: number;
   sippBalance: number;

@@ -3,7 +3,7 @@ import {
   type AddedPensionLumpSum,
   type PensionSettings,
 } from "../settings";
-import { getModelledAnnualGrowthRate } from "./inflation";
+import { getModelledMonthlyGrowthRate } from "./inflation";
 
 export function calculateSippPotAtDate(input: {
   settings: PensionSettings;
@@ -24,6 +24,38 @@ export function calculateSippPotAtDate(input: {
     endDate:
       input.endDate ?? addYears(settings.dateOfBirth, settings.lifeExpectancy),
   }).sippPot;
+}
+
+export function calculateSippPotBeforeWithdrawalAtDate(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  drawDate: string;
+  endDate?: string;
+}) {
+  const { settings, rowDate, drawDate } = input;
+
+  if (!settings.showSipp) {
+    return 0;
+  }
+
+  return calculatePotProjectionAtDate({
+    settings,
+    rowDate,
+    drawDate,
+    endDate:
+      input.endDate ?? addYears(settings.dateOfBirth, settings.lifeExpectancy),
+    showPot: settings.showSipp,
+    currentPot: settings.sippCurrentPot,
+    monthlyContribution: settings.sippMonthlyContribution,
+    lumpSums: settings.sippLumpSums,
+    realInterestPercent: settings.sippRealInterestPercent,
+    withdrawalStrategy: settings.sippWithdrawalStrategy,
+    withdrawalPercent: settings.sippWithdrawalPercent,
+    withdrawalTargetAge: settings.sippWithdrawalTargetAge,
+    contributionMultiplier: getSippContributionMultiplier(
+      settings.sippTaxReliefRate
+    ),
+  }).potBeforeWithdrawal;
 }
 
 export function calculateMonthlySippPension(input: {
@@ -165,14 +197,15 @@ function calculatePotProjectionAtDate(input: {
   if (!showPot || rowDate < settings.startDate) {
     return {
       pot: 0,
+      potBeforeWithdrawal: 0,
       monthlyWithdrawal: 0,
     };
   }
 
-  const monthlyInterestRate =
-    (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) **
-      (1 / 12) -
-    1;
+  const monthlyInterestRate = getModelledMonthlyGrowthRate(
+    settings,
+    realInterestPercent / 100
+  );
   const projectionMonthCount = calculateWholeMonthDifference(
     settings.startDate,
     rowDate
@@ -184,6 +217,7 @@ function calculatePotProjectionAtDate(input: {
   const contributionStopDate = getPotContributionStopDate(settings, drawDate);
   let pot = currentPot;
   let monthlyWithdrawal = 0;
+  let potBeforeWithdrawal = currentPot;
   let levelUseByAgeMonthlyWithdrawal: number | undefined;
   let previousProjectionMonthDate: string | undefined;
 
@@ -214,6 +248,7 @@ function calculatePotProjectionAtDate(input: {
       contributionMultiplier,
       latestPaymentDateExclusive: contributionStopDate,
     });
+    potBeforeWithdrawal = pot;
 
     if (projectionMonthDate >= drawDate) {
       if (withdrawalStrategy === "use_by_age") {
@@ -245,6 +280,7 @@ function calculatePotProjectionAtDate(input: {
 
   return {
     pot,
+    potBeforeWithdrawal,
     monthlyWithdrawal,
   };
 }

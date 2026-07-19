@@ -8,6 +8,7 @@ import {
   calculateAnnualAlphaPensionIncludingReduction,
   calculateAnnualNuvosPensionAtDate,
   calculateRealAnnualRate,
+  calculateRetirementIncomeTargetAtDate,
   calculateIsaPotAtDate,
   calculateLumpSumAddedPension,
   calculateMonthlyAddedPension,
@@ -26,6 +27,8 @@ import {
   getAddedPensionFactorForAge,
   getAlphaEarlyRetirementFactor,
   getLifeExpectancyDate,
+  getModelledAnnualGrowthRate,
+  getModelledMonthlyGrowthRate,
   prepareBridgeProjectionSettings,
 } from "./projection";
 import {
@@ -41,6 +44,101 @@ function findRowByDate(
   date: string
 ) {
   return rows.find((row) => row.date === date);
+}
+
+const bridgePotCases = [
+  {
+    label: "ISA",
+    settings: {
+      showIsa: true,
+      isaCurrentPot: 10000,
+      isaMonthlyContribution: 0,
+      isaRealInterestPercent: 5,
+      isaWithdrawalStrategy: "percentage",
+      isaWithdrawalPercent: 12,
+    },
+    balanceKey: "isaBalance",
+    drawdownKey: "isaDrawdown",
+    rateKey: "isaRealInterestPercent",
+  },
+  {
+    label: "SIPP",
+    settings: {
+      showSipp: true,
+      sippCurrentPot: 10000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 57,
+      sippRealInterestPercent: 5,
+      sippTaxReliefRate: "none",
+      sippWithdrawalStrategy: "percentage",
+      sippWithdrawalPercent: 12,
+    },
+    balanceKey: "sippBalance",
+    drawdownKey: "sippDrawdown",
+    rateKey: "sippRealInterestPercent",
+  },
+  {
+    label: "LISA",
+    settings: {
+      showLisa: true,
+      lisaCurrentPot: 10000,
+      lisaMonthlyContribution: 0,
+      lisaDrawAge: 60,
+      lisaRealInterestPercent: 5,
+      lisaWithdrawalStrategy: "percentage",
+      lisaWithdrawalPercent: 12,
+    },
+    balanceKey: "lisaBalance",
+    drawdownKey: "lisaDrawdown",
+    rateKey: "lisaRealInterestPercent",
+  },
+] as const;
+
+function createBridgeAnalysisForNoIncomeSettings(settings: PensionSettings) {
+  const pensionRows = createProjectionTable({
+    ...settings,
+    showSipp: false,
+    showIsa: false,
+    showLisa: false,
+  });
+
+  return generateRetirementBridgeAnalysis(pensionRows, settings);
+}
+
+function createRetirementDateBridgeSettings(
+  overrides: Partial<PensionSettings> = {}
+): PensionSettings {
+  return prepareBridgeProjectionSettings({
+    ...defaultSettings,
+    startDate: "2046-01-01",
+    dateOfBirth: "1986-01-01",
+    requirementAge: 60,
+    lifeExpectancy: 60.25,
+    desiredRetirementIncome: 0,
+    projectionBasis: "real",
+    inflationRateAnnual: 0,
+    showAlpha: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: false,
+    showSipp: false,
+    showIsa: false,
+    showLisa: false,
+    taxationEnabled: false,
+    sippCurrentPot: 0,
+    sippMonthlyContribution: 0,
+    sippRealInterestPercent: 0,
+    sippTaxReliefRate: "none",
+    isaCurrentPot: 0,
+    isaMonthlyContribution: 0,
+    isaRealInterestPercent: 0,
+    lisaCurrentPot: 0,
+    lisaMonthlyContribution: 0,
+    lisaRealInterestPercent: 0,
+    ...overrides,
+  });
 }
 
 const bridgeBoundaryScenario1: PensionSettings = {
@@ -1076,6 +1174,193 @@ describe("projection calculations", () => {
     ).toBeGreaterThan(4500);
   });
 
+  it.each(bridgePotCases)(
+    "uses shared real-basis growth for $label bridge balances",
+    ({ settings: potSettings, balanceKey, rateKey }) => {
+      const settings = createRetirementDateBridgeSettings({
+        ...potSettings,
+        projectionBasis: "real",
+        inflationRateAnnual: 2,
+      });
+      const analysis = createBridgeAnalysisForNoIncomeSettings(settings);
+      const expectedMonthlyGrowthRate = getModelledMonthlyGrowthRate(
+        settings,
+        settings[rateKey] / 100
+      );
+
+      expect(getModelledAnnualGrowthRate(settings, 0.05)).toBeCloseTo(
+        1.05 / 1.02 - 1,
+        12
+      );
+      expect(analysis.potProjection[1]?.[balanceKey]).toBeCloseTo(
+        10000 * (1 + expectedMonthlyGrowthRate),
+        6
+      );
+    }
+  );
+
+  it.each(bridgePotCases)(
+    "uses shared nominal-basis growth for $label bridge balances",
+    ({ settings: potSettings, balanceKey, rateKey }) => {
+      const settings = createRetirementDateBridgeSettings({
+        ...potSettings,
+        projectionBasis: "nominal",
+        inflationRateAnnual: 2,
+      });
+      const analysis = createBridgeAnalysisForNoIncomeSettings(settings);
+      const expectedMonthlyGrowthRate = getModelledMonthlyGrowthRate(
+        settings,
+        settings[rateKey] / 100
+      );
+
+      expect(getModelledAnnualGrowthRate(settings, 0.05)).toBeCloseTo(0.05, 12);
+      expect(analysis.potProjection[1]?.[balanceKey]).toBeCloseTo(
+        10000 * (1 + expectedMonthlyGrowthRate),
+        6
+      );
+    }
+  );
+
+  it("uses the shared inflation-aware target for each bridge date", () => {
+    const baseSettings = createRetirementDateBridgeSettings({
+      startDate: "2026-01-01",
+      dateOfBirth: "1986-01-01",
+      requirementAge: 41,
+      lifeExpectancy: 41.25,
+      desiredRetirementIncome: 12000,
+      inflationRateAnnual: 2,
+    });
+    const realSettings = {
+      ...baseSettings,
+      projectionBasis: "real" as const,
+    };
+    const nominalSettings = {
+      ...baseSettings,
+      projectionBasis: "nominal" as const,
+    };
+    const realAnalysis = createBridgeAnalysisForNoIncomeSettings(realSettings);
+    const nominalAnalysis =
+      createBridgeAnalysisForNoIncomeSettings(nominalSettings);
+
+    expect(
+      realAnalysis.potProjection.map((row) => row.monthlyTargetIncome)
+    ).toEqual([1000, 1000, 1000, 1000]);
+    nominalAnalysis.potProjection.forEach((row) => {
+      expect(row.monthlyTargetIncome).toBeCloseTo(
+        calculateRetirementIncomeTargetAtDate(nominalSettings, row.date) / 12,
+        10
+      );
+    });
+    expect(nominalAnalysis.potProjection[0]?.monthlyTargetIncome).toBeCloseTo(
+      calculateRetirementIncomeTargetAtDate(nominalSettings, "2027-01-01") / 12,
+      10
+    );
+    expect(
+      nominalAnalysis.potProjection[1]?.monthlyTargetIncome ?? 0
+    ).toBeGreaterThan(
+      nominalAnalysis.potProjection[0]?.monthlyTargetIncome ?? 0
+    );
+  });
+
+  it.each(bridgePotCases)(
+    "does not consume the $label bridge balance when the target is zero",
+    ({ settings: potSettings, balanceKey, drawdownKey }) => {
+      const settings = createRetirementDateBridgeSettings({
+        ...potSettings,
+        desiredRetirementIncome: 0,
+        projectionBasis: "real",
+        inflationRateAnnual: 0,
+      });
+      const analysis = createBridgeAnalysisForNoIncomeSettings(settings);
+      const firstRow = analysis.potProjection[0];
+
+      expect(firstRow?.[balanceKey]).toBe(10000);
+      expect(firstRow?.[drawdownKey]).toBe(0);
+    }
+  );
+
+  it.each(bridgePotCases)(
+    "applies exactly one first-month $label bridge withdrawal",
+    ({ settings: potSettings, balanceKey, drawdownKey }) => {
+      const settings = createRetirementDateBridgeSettings({
+        ...potSettings,
+        desiredRetirementIncome: 12000,
+        projectionBasis: "real",
+        inflationRateAnnual: 0,
+      });
+      const analysis = createBridgeAnalysisForNoIncomeSettings(settings);
+      const firstRow = analysis.potProjection[0];
+
+      expect(firstRow?.[drawdownKey]).toBe(1000);
+      expect(firstRow?.[balanceKey]).toBe(9000);
+    }
+  );
+
+  it("starts bridge balances from pre-withdrawal build-up including contributions, lump sums and partial retirement", () => {
+    const settings = createRetirementDateBridgeSettings({
+      startDate: "2026-01-01",
+      dateOfBirth: "1986-01-01",
+      requirementAge: 40.25,
+      lifeExpectancy: 40.5,
+      desiredRetirementIncome: 0,
+      projectionBasis: "nominal",
+      showSipp: true,
+      showIsa: true,
+      showLisa: true,
+      sippCurrentPot: 1000,
+      sippMonthlyContribution: 100,
+      sippRealInterestPercent: 0,
+      sippTaxReliefRate: "20",
+      sippLumpSums: [
+        {
+          id: "sipp-lump",
+          amount: 500,
+          startDate: "2026-02-01",
+          cadence: "once",
+          endDate: "2026-02-01",
+        },
+      ],
+      isaCurrentPot: 1000,
+      isaMonthlyContribution: 100,
+      isaRealInterestPercent: 0,
+      isaLumpSums: [
+        {
+          id: "isa-lump",
+          amount: 500,
+          startDate: "2026-02-01",
+          cadence: "once",
+          endDate: "2026-02-01",
+        },
+      ],
+      lisaCurrentPot: 1000,
+      lisaMonthlyContribution: 100,
+      lisaRealInterestPercent: 0,
+      lisaLumpSums: [
+        {
+          id: "lisa-lump",
+          amount: 500,
+          startDate: "2026-02-01",
+          cadence: "once",
+          endDate: "2026-02-01",
+        },
+      ],
+      partialRetirementEnabled: true,
+      partialRetirementStartAge: 40 + 1 / 12,
+      partialRetirementWorkPercent: 50,
+      fullSalary: 40000,
+    });
+
+    const firstRow =
+      createBridgeAnalysisForNoIncomeSettings(settings).potProjection[0];
+
+    expect(firstRow?.isaBalance).toBe(1700);
+    expect(firstRow?.sippBalance).toBe(1875);
+    expect(firstRow?.lisaBalance).toBe(1875);
+    expect(firstRow?.isaDrawdown).toBe(0);
+    expect(firstRow?.sippDrawdown).toBe(0);
+    expect(firstRow?.lisaDrawdown).toBe(0);
+  });
+
   it("converts SIPP and ISA nominal returns to real returns in real-terms mode", () => {
     expect(calculateRealAnnualRate(0.07, 0.025)).toBeCloseTo(0.043902439, 9);
 
@@ -1350,6 +1635,55 @@ describe("projection calculations", () => {
     );
     expect(findRowByDate(rows, "2031-01-01")?.sippPot).toBeCloseTo(0, 6);
     expect(findRowByDate(rows, "2031-01-01")?.isaPot).toBeCloseTo(0, 6);
+  });
+
+  it("preserves configured SIPP, ISA and LISA withdrawals in the normal projection", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      projectionBasis: "nominal",
+      startDate: "2045-12-01",
+      dateOfBirth: "1986-01-01",
+      lifeExpectancy: 61,
+      requirementAge: 60,
+      alphaPensionDrawAge: 60,
+      alphaPensionLeaveAge: 60,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: true,
+      showIsa: true,
+      showLisa: true,
+      sippCurrentPot: 2400,
+      sippMonthlyContribution: 0,
+      sippRealInterestPercent: 0,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "use_by_age",
+      sippWithdrawalTargetAge: 61,
+      sippTaxReliefRate: "none",
+      isaCurrentPot: 1200,
+      isaMonthlyContribution: 0,
+      isaRealInterestPercent: 0,
+      isaDrawAge: 60,
+      isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: 61,
+      lisaCurrentPot: 3600,
+      lisaMonthlyContribution: 0,
+      lisaRealInterestPercent: 0,
+      lisaDrawAge: 60,
+      lisaWithdrawalStrategy: "use_by_age",
+      lisaWithdrawalTargetAge: 61,
+    };
+
+    const firstDrawRow = findRowByDate(
+      createProjectionTable(settings),
+      "2046-01-01"
+    );
+
+    expect(firstDrawRow?.monthlyIsaPension).toBeCloseTo(100, 6);
+    expect(firstDrawRow?.isaPot).toBeCloseTo(1100, 6);
+    expect(firstDrawRow?.monthlySippPension).toBeCloseTo(200, 6);
+    expect(firstDrawRow?.sippPot).toBeCloseTo(2200, 6);
+    expect(firstDrawRow?.monthlyLisaPension).toBeCloseTo(300, 6);
+    expect(firstDrawRow?.lisaPot).toBeCloseTo(3300, 6);
   });
 
   it("keeps use-by-age SIPP and ISA withdrawals level while applying drawdown growth", () => {

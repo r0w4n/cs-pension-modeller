@@ -709,7 +709,20 @@ export function MethodologyPage() {
           accrual stops at the target retirement age and ISA drawdown can begin
           at retirement. It then compares net secure income from Alpha, nuvos
           and State Pension with the selected target for each month from
-          retirement to life expectancy.
+          retirement to life expectancy. In real-terms mode the target remains
+          in today's-money terms; in nominal mode it is increased from the model
+          start date using the same monthly inflation convention as the main
+          projection.
+        </p>
+        <p className="section-copy">
+          ISA, LISA and SIPP bridge balances start from the retirement-date
+          balance immediately before any configured main-projection withdrawal.
+          That balance includes applicable investment growth, regular saving,
+          scheduled lump sums and partial-retirement saving reductions up to
+          retirement. The bridge calculation then applies only the temporary
+          withdrawal needed for that month's modelled shortfall. Investment
+          growth during the bridge uses the same real or nominal growth
+          conversion as the main pot projections.
         </p>
         <p className="section-copy">
           Before SIPP and LISA access, any shortfall is tracked as an ISA-only

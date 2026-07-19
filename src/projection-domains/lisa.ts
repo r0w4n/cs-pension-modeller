@@ -8,7 +8,7 @@ import {
   LISA_CONTRIBUTION_STOP_AGE,
   LISA_GOVERNMENT_BONUS_RATE,
 } from "../settings/settings-domains/lisa";
-import { getModelledAnnualGrowthRate } from "./inflation";
+import { getModelledMonthlyGrowthRate } from "./inflation";
 
 type LisaTaxYearContributionTracker = Map<string, number>;
 
@@ -31,6 +31,35 @@ export function calculateLisaPotAtDate(input: {
     endDate:
       input.endDate ?? addYears(settings.dateOfBirth, settings.lifeExpectancy),
   }).lisaPot;
+}
+
+export function calculateLisaPotBeforeWithdrawalAtDate(input: {
+  settings: PensionSettings;
+  rowDate: string;
+  drawDate: string;
+  endDate?: string;
+}) {
+  const { settings, rowDate, drawDate } = input;
+
+  if (!settings.showLisa) {
+    return 0;
+  }
+
+  return calculatePotProjectionAtDate({
+    settings,
+    rowDate,
+    drawDate,
+    endDate:
+      input.endDate ?? addYears(settings.dateOfBirth, settings.lifeExpectancy),
+    showPot: settings.showLisa,
+    currentPot: settings.lisaCurrentPot,
+    monthlyContribution: settings.lisaMonthlyContribution,
+    lumpSums: settings.lisaLumpSums,
+    realInterestPercent: settings.lisaRealInterestPercent,
+    withdrawalStrategy: settings.lisaWithdrawalStrategy,
+    withdrawalPercent: settings.lisaWithdrawalPercent,
+    withdrawalTargetAge: settings.lisaWithdrawalTargetAge,
+  }).potBeforeWithdrawal;
 }
 
 export function calculateTotalLisaContributionsWithBonus(
@@ -143,14 +172,15 @@ function calculatePotProjectionAtDate(input: {
   if (!showPot || rowDate < settings.startDate) {
     return {
       pot: 0,
+      potBeforeWithdrawal: 0,
       monthlyWithdrawal: 0,
     };
   }
 
-  const monthlyInterestRate =
-    (1 + getModelledAnnualGrowthRate(settings, realInterestPercent / 100)) **
-      (1 / 12) -
-    1;
+  const monthlyInterestRate = getModelledMonthlyGrowthRate(
+    settings,
+    realInterestPercent / 100
+  );
   const projectionMonthCount = calculateWholeMonthDifference(
     settings.startDate,
     rowDate
@@ -163,6 +193,7 @@ function calculatePotProjectionAtDate(input: {
   const taxYearContributions: LisaTaxYearContributionTracker = new Map();
   let pot = currentPot;
   let monthlyWithdrawal = 0;
+  let potBeforeWithdrawal = currentPot;
   let levelUseByAgeMonthlyWithdrawal: number | undefined;
   let previousProjectionMonthDate: string | undefined;
 
@@ -196,6 +227,7 @@ function calculatePotProjectionAtDate(input: {
       latestPaymentDateExclusive: contributionStopDate,
       taxYearContributions,
     });
+    potBeforeWithdrawal = pot;
 
     if (projectionMonthDate >= drawDate) {
       if (withdrawalStrategy === "use_by_age") {
@@ -227,6 +259,7 @@ function calculatePotProjectionAtDate(input: {
 
   return {
     pot,
+    potBeforeWithdrawal,
     monthlyWithdrawal,
   };
 }

@@ -1175,6 +1175,23 @@ describe("RetirementIncomeBridgeChart", () => {
     ).toBeInTheDocument();
   });
 
+  it("emits a Premium start-age patch for keyboard changes to its milestone", () => {
+    const onChangeParameters = vi.fn();
+
+    renderChart({
+      showPremium: true,
+      premiumStartAge: 60,
+      onChangeParameters,
+    });
+
+    fireEvent.keyDown(
+      screen.getByRole("slider", { name: "Start Premium, age 60" }),
+      { key: "ArrowLeft" }
+    );
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ premiumStartAge: 59 });
+  });
+
   it("aligns the ISA area boundaries with the ISA markers", () => {
     renderChart({
       data: [

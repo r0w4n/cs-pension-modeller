@@ -181,9 +181,9 @@ Feature: Premium Civil Service pension modelling
     Examples:
       | unreducedAnnualPension | drawAge | expectedAnnualPension | expectedAnnualReduction |
       | 12000.00               | 60      | 12000.00              | 0.00                    |
-      | 12000.00               | 58      | 10800.00              | 1200.00                 |
-      | 12000.00               | 55      | 9000.00               | 3000.00                 |
-      | 18000.00               | 55      | 13500.00              | 4500.00                 |
+      | 12000.00               | 58      | 10992.00              | 1008.00                 |
+      | 12000.00               | 55      | 9672.00               | 2328.00                 |
+      | 18000.00               | 55      | 14508.00              | 3492.00                 |
 
   @early-retirement
   Scenario: Premium early retirement reduction is permanent
@@ -191,8 +191,8 @@ Feature: Premium Civil Service pension modelling
     And the member has Premium normal pension age 60
     And the member has unreduced annual Premium pension of 12000.00
     When the member draws Premium pension at age 55
-    Then the annual Premium pension payable at age 55 should be 9000.00
-    And the annual Premium pension payable at age 60 before pension increases should still be 9000.00
+    Then the annual Premium pension payable at age 55 should be 9672.00
+    And the annual Premium pension payable at age 60 before pension increases should still be 9672.00
     And the model should not remove the early retirement reduction at normal pension age
 
 
@@ -299,12 +299,12 @@ Feature: Premium Civil Service pension modelling
     When the member draws Premium pension at age 55
     And the member chooses an optional lump sum of 9000.00
     Then the unreduced annual Premium pension before early retirement should be 12000.00
-    And the annual Premium pension after early retirement reduction should be 9000.00
-    And the annual Premium pension after commutation should be 8250.00
+    And the annual Premium pension after early retirement reduction should be 9672.00
+    And the annual Premium pension after commutation should be 8922.00
     And the optional lump sum payable should be 9000.00
     And the result should show:
       | component                       | annualAmount |
       | premiumBeforeEarlyRetirement    | 12000.00     |
-      | premiumAfterEarlyRetirement     | 9000.00      |
+      | premiumAfterEarlyRetirement     | 9672.00      |
       | pensionGivenUpForOptionalLumpSum | 750.00       |
-      | premiumAfterCommutation         | 8250.00      |
+      | premiumAfterCommutation         | 8922.00      |

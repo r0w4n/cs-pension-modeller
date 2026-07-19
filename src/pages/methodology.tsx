@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { knowledgeLinks } from "../knowledgeLinks";
 import { StaticPageLayout } from "./static-page-layout";
 import "../index.css";
 
@@ -496,16 +497,63 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           If Premium is taken before its Normal Pension Age, a Premium
-          early-retirement reduction factor is required. The model does not use
-          Alpha reduction factors or the nuvos fixed-percentage reduction
-          formula for Premium.
+          early-retirement reduction factor is required. For a supported
+          whole-year draw age from 55, the model multiplies the CPI-revalued
+          pension by the published Premium factor for Normal Pension Age 60 or
+          65. It does not use Alpha reduction factors or the nuvos
+          fixed-percentage reduction formula for Premium.
+        </p>
+        <FormulaBlock>
+          {
+            "reduced Premium pension = CPI-revalued Premium pension × Premium early-retirement factor"
+          }
+        </FormulaBlock>
+        <p className="section-copy">
+          The factors come from the Government Actuary&apos;s Department (GAD)
+          consolidated Civil Service factors workbook, version 2026-01,
+          retrieved on 19 July 2026. NPA 60 uses workbook sheet x-406, table
+          1-406 (guidance table P1ER60PEN1); NPA 65 uses sheet x-410, table
+          1-410 (guidance table P1ER65PEN1). The source workbook is available
+          from the{" "}
+          <a
+            href={knowledgeLinks.premiumEarlyRetirementFactors}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GAD Civil Service early-retirement factor tables
+          </a>
+          . A versioned copy of the values used by the model is stored with the
+          application source.
         </p>
         <p className="section-copy">
-          Premium early-retirement factors must be sourced from the relevant
-          Civil Service/GAD factor tables. Until those Premium-specific factors
-          are populated, the model treats an early Premium draw as factor
-          unavailable and excludes the reduced Premium income rather than
-          silently estimating it.
+          For example, the published NPA 60 factor at age 55 is 0.806, so a
+          CPI-revalued Premium pension of £12,000 is modelled as £9,672 a year
+          from age 55. The reduction remains in the pension after Normal Pension
+          Age; the model does not restore the unreduced amount at age 60.
+        </p>
+        <p className="section-copy">
+          The model does not estimate under-55 cases, fractional draw ages, or
+          personal Normal Pension Ages other than 60 or 65. Those cases can
+          require additional scheme-specific inputs or calculations. If a
+          published factor is unavailable, the model excludes the reduced
+          Premium income and flags the omission rather than silently estimating
+          it.
+        </p>
+        <p className="section-copy">
+          Civil Service Pensions currently says that factors used in some
+          pension calculations are under review following the change to the
+          SCAPE discount rate effective from 19 May 2026. This model continues
+          to use the published 2026-01 workbook until replacement Premium
+          factors are issued. Check material decisions against an official
+          quotation and the latest{" "}
+          <a
+            href={knowledgeLinks.premiumFactorReviewNotice}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Civil Service Pensions calculator notice
+          </a>
+          .
         </p>
         <p className="section-copy">
           The model does not currently estimate final salary, reckonable

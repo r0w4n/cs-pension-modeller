@@ -27,6 +27,10 @@ export const knowledgeLinks = {
     "https://www.civilservicepensionscheme.org.uk/memberhub/knowledge-centre/pension-scheme/nuvos-scheme-guide/",
   nuvosBenefits:
     "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01134",
+  premiumEarlyRetirementFactors:
+    "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__pcsps__early-retirement-late-retirement-age-addition-and-late-payment-supplement/tables",
+  premiumFactorReviewNotice:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/knowledge-centre/tools-and-calcs/pension-calculators/",
   lifeExpectancy:
     "https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/healthandlifeexpectancies/articles/lifeexpectancycalculator/2019-06-07",
   retirementLivingStandards: "https://www.retirementlivingstandards.org.uk/",

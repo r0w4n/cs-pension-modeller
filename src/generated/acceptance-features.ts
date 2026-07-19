@@ -6795,11 +6795,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-184-column-44",
-                    value: "10800.00",
+                    value: "10992.00",
                   },
                   {
                     id: "line-184-column-68",
-                    value: "1200.00",
+                    value: "1008.00",
                   },
                 ],
               },
@@ -6816,11 +6816,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-185-column-44",
-                    value: "9000.00",
+                    value: "9672.00",
                   },
                   {
                     id: "line-185-column-68",
-                    value: "3000.00",
+                    value: "2328.00",
                   },
                 ],
               },
@@ -6837,11 +6837,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-186-column-44",
-                    value: "13500.00",
+                    value: "14508.00",
                   },
                   {
                     id: "line-186-column-68",
-                    value: "4500.00",
+                    value: "3492.00",
                   },
                 ],
               },
@@ -6881,12 +6881,12 @@ export const acceptanceFeatures = [
           {
             id: "line-194",
             keyword: "Then",
-            text: "the annual Premium pension payable at age 55 should be 9000.00",
+            text: "the annual Premium pension payable at age 55 should be 9672.00",
           },
           {
             id: "line-195",
             keyword: "And",
-            text: "the annual Premium pension payable at age 60 before pension increases should still be 9000.00",
+            text: "the annual Premium pension payable at age 60 before pension increases should still be 9672.00",
           },
           {
             id: "line-196",
@@ -7437,12 +7437,12 @@ export const acceptanceFeatures = [
           {
             id: "line-302",
             keyword: "And",
-            text: "the annual Premium pension after early retirement reduction should be 9000.00",
+            text: "the annual Premium pension after early retirement reduction should be 9672.00",
           },
           {
             id: "line-303",
             keyword: "And",
-            text: "the annual Premium pension after commutation should be 8250.00",
+            text: "the annual Premium pension after commutation should be 8922.00",
           },
           {
             id: "line-304",
@@ -7489,7 +7489,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-308-column-43",
-                    value: "9000.00",
+                    value: "9672.00",
                   },
                 ],
               },
@@ -7515,7 +7515,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-310-column-43",
-                    value: "8250.00",
+                    value: "8922.00",
                   },
                 ],
               },

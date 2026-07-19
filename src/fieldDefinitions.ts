@@ -888,7 +888,9 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         inputStep: 1,
         description:
-          "The age you plan to start taking Premium benefits. Premium benefits are usually payable unreduced from age 60; if taken earlier, Premium early-retirement factors are needed.",
+          "The age you plan to start taking Premium benefits. For supported early draws from age 55, the modeller applies published GAD Premium factors for Normal Pension Age 60 or 65.",
+        infoUrl: knowledgeLinks.premiumEarlyRetirementFactors,
+        infoLinkText: "Premium early-retirement factors",
       },
       {
         id: "premiumHasNpa65",
@@ -906,7 +908,7 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         inputStep: 1,
         description:
-          "Premium Normal Pension Age normally defaults to 60 and is separate from State Pension age. Only use 65 if your Premium benefits have a personal NPA 65 arrangement.",
+          "Premium Normal Pension Age normally defaults to 60 and is separate from State Pension age. The published factors used by the modeller cover NPA 60 and NPA 65 only.",
       },
       {
         id: "premiumEarliestAccessAge",

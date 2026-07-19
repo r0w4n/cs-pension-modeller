@@ -1,0 +1,44 @@
+{
+  "source": {
+    "publisher": "Government Actuary's Department",
+    "workbook": "CS_GB_Consolidated_Factors_2026-01.xlsx",
+    "workbook_version": "2026-01",
+    "factor_review_set": "2023",
+    "source_url": "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__pcsps__early-retirement-late-retirement-age-addition-and-late-payment-supplement/tables",
+    "retrieved_on": "2026-07-19",
+    "scope": "Premium pension factors for retirement at completed whole-year ages from 55, where Normal Pension Age is 60 or 65.",
+    "tables": {
+      "60": {
+        "workbook_sheet": "x-406",
+        "workbook_table": "1-406",
+        "guidance_table": "P1ER60PEN1"
+      },
+      "65": {
+        "workbook_sheet": "x-410",
+        "workbook_table": "1-410",
+        "guidance_table": "P1ER65PEN1"
+      }
+    }
+  },
+  "factors": {
+    "60": {
+      "55": 0.806,
+      "56": 0.841,
+      "57": 0.877,
+      "58": 0.916,
+      "59": 0.957
+    },
+    "65": {
+      "55": 0.632,
+      "56": 0.658,
+      "57": 0.686,
+      "58": 0.715,
+      "59": 0.747,
+      "60": 0.783,
+      "61": 0.82,
+      "62": 0.86,
+      "63": 0.903,
+      "64": 0.95
+    }
+  }
+}

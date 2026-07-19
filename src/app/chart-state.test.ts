@@ -197,6 +197,25 @@ describe("chart-state", () => {
     expect(next.nuvosPensionDrawAge).toBe(60);
   });
 
+  it("updates Premium draw age when its chart milestone moves earlier", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1970-04-01",
+      startDate: "2025-04-01",
+      lifeExpectancy: 90,
+      requirementAge: 55,
+      premiumDrawAge: 60,
+      premiumEarliestAccessAge: 55 as const,
+      showPremium: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      premiumStartAge: 55,
+    });
+
+    expect(next.premiumDrawAge).toBe(55);
+  });
+
   it("allows alpha draw age to move beyond state pension age", () => {
     const current = {
       ...createDefaultSettings(),

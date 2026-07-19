@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRetirementIncomeSeries } from "../app-domains/retirement-income";
+import { applyBridgeChartParameterPatch } from "../app/chart-state";
 import { createProjectionTable, generatePensionSummary } from "../projection";
 import { defaultSettings, type PensionSettings } from "../settings";
 
@@ -80,18 +81,27 @@ describe("Premium projection integration", () => {
     );
   });
 
-  it("excludes early Premium income when the required Premium factor is unavailable", () => {
-    const settings = createPremiumSettings({
-      premiumDrawAge: 58,
-      lifeExpectancy: 60,
-    });
+  it("keeps Premium income in the results when the graph moves its start age earlier", () => {
+    const settings = applyBridgeChartParameterPatch(
+      createPremiumSettings({ lifeExpectancy: 60, requirementAge: 55 }),
+      { premiumStartAge: 58 }
+    );
     const rows = createProjectionTable(settings);
     const drawRow = rows.find((row) => row.date === "2028-04-01");
     const summary = generatePensionSummary(rows, settings);
+    const expectedAnnual = 5000 * 1.025 ** 8 * 0.916;
 
+    expect(settings.premiumDrawAge).toBe(58);
     expect(drawRow?.annualPremiumPension).toBeGreaterThan(0);
-    expect(drawRow?.annualPremiumPensionIncludingReduction).toBe(0);
-    expect(drawRow?.monthlyPremiumPensionGross).toBe(0);
-    expect(summary.premiumPension.factorUnavailable).toBe(true);
+    expect(drawRow?.annualPremiumPensionIncludingReduction).toBeCloseTo(
+      expectedAnnual,
+      6
+    );
+    expect(drawRow?.monthlyPremiumPensionGross).toBeCloseTo(
+      expectedAnnual / 12,
+      6
+    );
+    expect(summary.premiumPension.earlyRetirementFactor).toBe(0.916);
+    expect(summary.premiumPension.factorUnavailable).toBe(false);
   });
 });

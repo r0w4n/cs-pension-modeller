@@ -67,7 +67,7 @@ describe("MethodologyPage", () => {
     );
   });
 
-  it("documents Premium as a preserved pension with unavailable factors excluded", () => {
+  it("documents Premium factor provenance, scope, and the current review caveat", () => {
     render(<MethodologyPage />);
 
     const premiumHeading = screen.getByRole("heading", {
@@ -79,8 +79,29 @@ describe("MethodologyPage", () => {
     expect(premiumSection as HTMLElement).toHaveTextContent(
       "no further Premium accrual and no further Premium contributions"
     );
+    expect(premiumSection as HTMLElement).toHaveTextContent("version 2026-01");
     expect(premiumSection as HTMLElement).toHaveTextContent(
-      "excludes the reduced Premium income rather than silently estimating it"
+      "sheet x-406, table 1-406 (guidance table P1ER60PEN1)"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "sheet x-410, table 1-410 (guidance table P1ER65PEN1)"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "published NPA 60 factor at age 55 is 0.806"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "does not estimate under-55 cases, fractional draw ages, or personal Normal Pension Ages other than 60 or 65"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "under review following the change to the SCAPE discount rate"
+    );
+    expect(
+      screen.getByRole("link", {
+        name: "GAD Civil Service early-retirement factor tables",
+      })
+    ).toHaveAttribute(
+      "href",
+      "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__pcsps__early-retirement-late-retirement-age-addition-and-late-payment-supplement/tables"
     );
   });
 

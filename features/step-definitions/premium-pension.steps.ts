@@ -5,12 +5,6 @@ const PREMIUM_ACCRUAL_DENOMINATOR = 60;
 const PREMIUM_COMMUTATION_FACTOR = 12;
 const ACCEPTANCE_DATE_OF_BIRTH = "1970-04-01";
 const ACCEPTANCE_VALUATION_DATE = "2026-04-01";
-const ACCEPTANCE_PREMIUM_EARLY_RETIREMENT_FACTORS = {
-  60: {
-    55: 0.75,
-    58: 0.9,
-  },
-};
 
 type ServiceHistoryRow = {
   period: string;
@@ -139,7 +133,6 @@ function calculatePremiumPayable(
     drawAge,
     normalPensionAge,
     cpiAssumption: 0,
-    earlyRetirementFactors: ACCEPTANCE_PREMIUM_EARLY_RETIREMENT_FACTORS,
   }).annualPensionPayableAtDrawAge;
 }
 

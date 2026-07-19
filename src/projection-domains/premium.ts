@@ -1,3 +1,4 @@
+import premiumEarlyRetirementFactorData from "../data/premium_pension_reduction_factors.json";
 import type { PensionSettings } from "../settings";
 
 export type PremiumEarlyRetirementFactorTable = Record<
@@ -27,13 +28,8 @@ export type PremiumCalculationResult = {
   factorUnavailable: boolean;
 };
 
-// TODO: Populate with authoritative Civil Service/GAD Premium early-retirement
-// factors. Do not approximate Premium reductions using Alpha or nuvos factors.
 export const PREMIUM_EARLY_RETIREMENT_FACTORS: PremiumEarlyRetirementFactorTable =
-  {
-    60: {},
-    65: {},
-  };
+  premiumEarlyRetirementFactorData.factors;
 
 export function calculatePremiumPension(
   input: PremiumCalculationInput
@@ -116,9 +112,13 @@ export function getPremiumEarlyRetirementFactor(
     return 1;
   }
 
-  const wholeDrawAge = Math.floor(drawAge);
+  // The UI currently selects completed whole-year ages. Under-55 cases can
+  // require additional scheme-specific inputs, so they remain unsupported.
+  if (!Number.isInteger(drawAge) || drawAge < 55) {
+    return null;
+  }
 
-  return earlyRetirementFactors[normalPensionAge]?.[wholeDrawAge] ?? null;
+  return earlyRetirementFactors[normalPensionAge]?.[drawAge] ?? null;
 }
 
 export function calculateAnnualPremiumPensionIncludingReduction(

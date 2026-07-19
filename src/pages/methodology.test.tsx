@@ -67,6 +67,37 @@ describe("MethodologyPage", () => {
     );
   });
 
+  it("documents current Alpha GAD factor provenance and completed-month lookup", () => {
+    render(<MethodologyPage />);
+
+    const alphaHeading = screen.getByRole("heading", {
+      name: "Alpha pension methodology",
+    });
+    const alphaSection = alphaHeading.closest("section");
+
+    expect(alphaSection).not.toBeNull();
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "CS_GB_Consolidated_Factors_2026-01.xlsx, issued on 29 May 2026"
+    );
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "table 0-402 for NPA/EPA 65, table 0-403 for 66, table 0-404 for 67, and table 0-405 for 68"
+    );
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "matched to the published factor for age in complete years and months, ignoring part months"
+    );
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "If NPA or EPA is itself a non-integer age"
+    );
+    expect(
+      screen.getByRole("link", {
+        name: "GAD Alpha early-payment factor tables",
+      })
+    ).toHaveAttribute(
+      "href",
+      "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__csops__early-payment-reduction-normal-health-and-age-addition/tables"
+    );
+  });
+
   it("documents Premium factor provenance, scope, and the current review caveat", () => {
     render(<MethodologyPage />);
 
@@ -90,7 +121,13 @@ describe("MethodologyPage", () => {
       "published NPA 60 factor at age 55 is 0.806"
     );
     expect(premiumSection as HTMLElement).toHaveTextContent(
-      "does not estimate under-55 cases, fractional draw ages, or personal Normal Pension Ages other than 60 or 65"
+      "entry for age in completed years and completed months, ignoring part months"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "does not estimate under-55 cases or personal Normal Pension Ages other than 60 or 65"
+    );
+    expect(premiumSection as HTMLElement).toHaveTextContent(
+      "does not substitute tables 1-408 or 1-412 as direct pension multipliers"
     );
     expect(premiumSection as HTMLElement).toHaveTextContent(
       "under review following the change to the SCAPE discount rate"

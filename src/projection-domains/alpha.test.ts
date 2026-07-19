@@ -116,15 +116,32 @@ describe("projection alpha domain", () => {
     ).toBeCloseTo(12820 / getAddedPensionFactorForAge(62), 6);
   });
 
-  it("interpolates Alpha early retirement reduction factors for decimal ages", () => {
-    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBeCloseTo(
-      (0.648 + 0.68) / 2,
-      6
-    );
+  it("uses the published completed-month Alpha factor without annual interpolation", () => {
+    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBe(0.677);
+    expect(getAlphaEarlyRetirementFactor(68, 60 + 6.9 / 12)).toBe(0.677);
   });
 
   it("uses the Alpha factor table rather than the nuvos formula", () => {
-    expect(getAlphaEarlyRetirementFactor(65, 60)).toBe(0.771);
+    expect(getAlphaEarlyRetirementFactor(65, 60)).toBe(0.783);
+  });
+
+  it("loads representative current GAD factors for every supported Alpha NPA", () => {
+    expect(getAlphaEarlyRetirementFactor(65, 55)).toBe(0.632);
+    expect(getAlphaEarlyRetirementFactor(66, 60)).toBe(0.741);
+    expect(getAlphaEarlyRetirementFactor(67, 60)).toBe(0.7);
+    expect(getAlphaEarlyRetirementFactor(68, 60)).toBe(0.661);
+  });
+
+  it("interpolates between published tables for a non-integer Alpha NPA", () => {
+    expect(getAlphaEarlyRetirementFactor(66 + 1 / 12, 60)).toBeCloseTo(
+      0.741 + (0.7 - 0.741) / 12,
+      10
+    );
+  });
+
+  it("uses the final published monthly factor immediately before Alpha NPA", () => {
+    expect(getAlphaEarlyRetirementFactor(67, 66 + 11 / 12)).toBe(0.998);
+    expect(getAlphaEarlyRetirementFactor(67, 67)).toBe(1);
   });
 
   it("applies early retirement reduction when draw date is on or before NPA", () => {

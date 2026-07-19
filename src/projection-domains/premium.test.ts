@@ -85,6 +85,31 @@ describe("projection Premium domain", () => {
     expect(getPremiumEarlyRetirementFactor(64, 65)).toBe(0.95);
   });
 
+  it("uses published completed-month Premium factors without annual interpolation", () => {
+    expect(getPremiumEarlyRetirementFactor(58.5, 60)).toBe(0.936);
+    expect(getPremiumEarlyRetirementFactor(58 + 6.9 / 12, 60)).toBe(0.936);
+    expect(getPremiumEarlyRetirementFactor(60.5, 65)).toBe(0.801);
+
+    const result = calculatePremiumPension({
+      annualPensionAtValuationDate: 12000,
+      valuationDate: "2026-04-01",
+      dateOfBirth: "1970-04-01",
+      drawAge: 58.5,
+      normalPensionAge: 60,
+      cpiAssumption: 0,
+    });
+
+    expect(result.earlyRetirementFactor).toBe(0.936);
+    expect(result.annualPensionPayableAtDrawAge).toBe(11232);
+  });
+
+  it("uses the final published monthly Premium factor immediately before NPA", () => {
+    expect(getPremiumEarlyRetirementFactor(59 + 11 / 12, 60)).toBe(0.998);
+    expect(getPremiumEarlyRetirementFactor(64 + 11 / 12, 65)).toBe(0.998);
+    expect(getPremiumEarlyRetirementFactor(60, 60)).toBe(1);
+    expect(getPremiumEarlyRetirementFactor(65, 65)).toBe(1);
+  });
+
   it("returns factor unavailable for an under-55 case needing additional scheme inputs", () => {
     const result = calculatePremiumPension({
       annualPensionAtValuationDate: 5000,
@@ -100,8 +125,7 @@ describe("projection Premium domain", () => {
     expect(result.annualPensionPayableAtDrawAge).toBe(0);
   });
 
-  it("does not silently floor a fractional draw age or estimate a personal NPA factor", () => {
-    expect(getPremiumEarlyRetirementFactor(58.5, 60)).toBeNull();
+  it("does not estimate a personal Premium NPA factor", () => {
     expect(getPremiumEarlyRetirementFactor(58, 63)).toBeNull();
   });
 });

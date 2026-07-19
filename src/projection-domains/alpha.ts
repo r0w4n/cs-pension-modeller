@@ -13,11 +13,16 @@ type AddedPensionFactorRecord = {
   self_plus_beneficiaries: number | null;
 };
 
-type AlphaEarlyRetirementFactorRecord = {
-  normal_pension_age: number;
-  retirement_age: number;
-  reduction_factor: number;
-};
+type AlphaEarlyRetirementFactorTable = Record<
+  number,
+  Record<number, readonly number[]>
+>;
+
+const ALPHA_EARLY_RETIREMENT_FACTORS = (
+  alphaEarlyRetirementFactors as {
+    factors: AlphaEarlyRetirementFactorTable;
+  }
+).factors;
 
 const MONTHLY_ALPHA_ACCRUAL_RATE = 0.0232 / 12;
 const DEFAULT_ALPHA_ACCRUAL_RATE = 0.0232;
@@ -239,58 +244,35 @@ export function getAlphaEarlyRetirementFactor(
   normalPensionAge: number,
   retirementAge: number
 ) {
-  if (retirementAge >= normalPensionAge) {
+  const normalPensionAgeInMonths = toCompletedAgeMonths(normalPensionAge);
+  const retirementAgeInMonths = toCompletedAgeMonths(retirementAge);
+
+  if (retirementAgeInMonths >= normalPensionAgeInMonths) {
     return 1;
   }
 
-  const records =
-    alphaEarlyRetirementFactors as AlphaEarlyRetirementFactorRecord[];
-  const normalPensionAges = Array.from(
-    new Set(records.map((record) => record.normal_pension_age))
-  ).sort((first, second) => first - second);
-  const exactNormalPensionAge = normalPensionAges.find(
-    (age) => age === normalPensionAge
-  );
-
-  if (exactNormalPensionAge !== undefined) {
-    return getAlphaEarlyRetirementFactorForNormalPensionAge(
-      records,
-      exactNormalPensionAge,
-      retirementAge
-    );
-  }
-
-  const lowerNormalPensionAge = [...normalPensionAges]
-    .reverse()
-    .find((age) => age < normalPensionAge);
-  const upperNormalPensionAge = normalPensionAges.find(
-    (age) => age > normalPensionAge
-  );
-
-  if (
-    lowerNormalPensionAge === undefined ||
-    upperNormalPensionAge === undefined
-  ) {
-    return 1;
-  }
-
-  const lowerReductionFactor = getAlphaEarlyRetirementFactorForNormalPensionAge(
-    records,
+  const lowerNormalPensionAge = Math.floor(normalPensionAgeInMonths / 12);
+  const normalPensionAgeMonths = normalPensionAgeInMonths % 12;
+  const lowerFactor = getPublishedAlphaEarlyRetirementFactor(
     lowerNormalPensionAge,
-    retirementAge
+    retirementAgeInMonths
   );
-  const upperReductionFactor = getAlphaEarlyRetirementFactorForNormalPensionAge(
-    records,
-    upperNormalPensionAge,
-    retirementAge
+
+  if (normalPensionAgeMonths === 0) {
+    return lowerFactor ?? 1;
+  }
+
+  const upperFactor = getPublishedAlphaEarlyRetirementFactor(
+    lowerNormalPensionAge + 1,
+    retirementAgeInMonths
   );
-  const normalPensionAgeProgress =
-    (normalPensionAge - lowerNormalPensionAge) /
-    (upperNormalPensionAge - lowerNormalPensionAge);
+
+  if (lowerFactor === null || upperFactor === null) {
+    return 1;
+  }
 
   return (
-    lowerReductionFactor +
-    (upperReductionFactor - lowerReductionFactor) * normalPensionAgeProgress
+    lowerFactor + (upperFactor - lowerFactor) * (normalPensionAgeMonths / 12)
   );
 }
 
@@ -369,41 +351,22 @@ function isEpaAccrualDate(settings: PensionSettings, rowDate: string) {
   );
 }
 
-function getAlphaEarlyRetirementFactorForNormalPensionAge(
-  records: AlphaEarlyRetirementFactorRecord[],
+function getPublishedAlphaEarlyRetirementFactor(
   normalPensionAge: number,
-  retirementAge: number
+  retirementAgeInMonths: number
 ) {
-  const recordsForNormalPensionAge = records
-    .filter((record) => record.normal_pension_age === normalPensionAge)
-    .sort((first, second) => first.retirement_age - second.retirement_age);
-  const match = recordsForNormalPensionAge.find(
-    (record) => record.retirement_age === retirementAge
-  );
-
-  if (match) {
-    return match.reduction_factor;
-  }
-
-  const lowerRecord = [...recordsForNormalPensionAge]
-    .reverse()
-    .find((record) => record.retirement_age < retirementAge);
-  const upperRecord = recordsForNormalPensionAge.find(
-    (record) => record.retirement_age > retirementAge
-  );
-
-  if (!lowerRecord || !upperRecord) {
-    return 1;
-  }
-
-  const ageProgress =
-    (retirementAge - lowerRecord.retirement_age) /
-    (upperRecord.retirement_age - lowerRecord.retirement_age);
+  const retirementAge = Math.floor(retirementAgeInMonths / 12);
+  const completedMonths = retirementAgeInMonths % 12;
 
   return (
-    lowerRecord.reduction_factor +
-    (upperRecord.reduction_factor - lowerRecord.reduction_factor) * ageProgress
+    ALPHA_EARLY_RETIREMENT_FACTORS[normalPensionAge]?.[retirementAge]?.[
+      completedMonths
+    ] ?? null
   );
+}
+
+function toCompletedAgeMonths(age: number) {
+  return Math.floor(age * 12 + 1e-8);
 }
 
 function calculateAge(dateOfBirth: string, rowDate: string) {

@@ -8,7 +8,7 @@ Feature: Alpha pension modelling
   exposing actuarial factors in the Gherkin.
 
   Background:
-    Given alpha pension factor tables version "acceptance-v1" are loaded
+    Given alpha pension factor tables version "GAD-2026-01" are loaded
     And alpha pension purchase factor tables version "acceptance-v1" are loaded
     And pension outputs are rounded to 2 decimal places
 
@@ -188,9 +188,9 @@ Feature: Alpha pension modelling
     When the member draws pension at age 60 and 0 months
     Then the reduced annual pension breakdown should be:
       | component    | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | alpha        | 12000.00              | 8244.00             | 3756.00         |
-      | addedPension | 400.00                | 274.80              | 125.20          |
-      | total        | 12400.00              | 8518.80             | 3881.20         |
+      | alpha        | 12000.00              | 8400.00             | 3600.00         |
+      | addedPension | 400.00                | 280.00              | 120.00          |
+      | total        | 12400.00              | 8680.00             | 3720.00         |
 
 
   # ---------------------------------------------------------------------------
@@ -210,9 +210,10 @@ Feature: Alpha pension modelling
     Examples:
       | dateOfBirth | normalPensionAge | unreducedAlphaPension | drawAge | drawAgeMonths | expectedAnnualPension | expectedAnnualReduction |
       | 1977-05-01  | 67               | 15000.00              | 67      | 0             | 15000.00              | 0.00                    |
-      | 1977-05-01  | 67               | 15000.00              | 65      | 0             | 13380.00              | 1620.00                 |
-      | 1977-05-01  | 67               | 15000.00              | 60      | 0             | 10305.00              | 4695.00                 |
-      | 1977-05-01  | 67               | 10000.00              | 60      | 0             | 6870.00               | 3130.00                 |
+      | 1977-05-01  | 65               | 10000.00              | 55      | 0             | 6320.00               | 3680.00                 |
+      | 1977-05-01  | 67               | 15000.00              | 65      | 0             | 13455.00              | 1545.00                 |
+      | 1977-05-01  | 67               | 15000.00              | 60      | 0             | 10500.00              | 4500.00                 |
+      | 1977-05-01  | 68               | 10000.00              | 60      | 6             | 6770.00               | 3230.00                 |
 
   @alpha @early-retirement
   Scenario: Early retirement reduction is permanent
@@ -220,8 +221,8 @@ Feature: Alpha pension modelling
     And the member has alpha normal pension age 67
     And the member has unreduced alpha pension of 15000.00
     When the member draws alpha pension at age 60 and 0 months
-    Then the annual alpha pension payable at age 60 should be 10305.00
-    And the annual alpha pension payable at age 67 before CPI increases should still be 10305.00
+    Then the annual alpha pension payable at age 60 should be 10500.00
+    And the annual alpha pension payable at age 67 before CPI increases should still be 10500.00
     And the model should not remove the early retirement reduction at normal pension age
 
 
@@ -256,9 +257,9 @@ Feature: Alpha pension modelling
     When the member draws all alpha pension at age 65 and 0 months
     Then the annual pension breakdown should be:
       | component     | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | standardAlpha | 10000.00              | 8920.00             | 1080.00         |
+      | standardAlpha | 10000.00              | 8970.00             | 1030.00         |
       | epaAlpha      | 1200.00               | 1200.00             | 0.00            |
-      | total         | 11200.00              | 10120.00            | 1080.00         |
+      | total         | 11200.00              | 10170.00            | 1030.00         |
 
   @alpha @epa @early-retirement
   Scenario: Draw before EPA age and reduce both standard and EPA portions
@@ -270,9 +271,9 @@ Feature: Alpha pension modelling
     When the member draws all alpha pension at age 64 and 0 months
     Then the annual pension breakdown should be:
       | component     | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | standardAlpha | 10000.00              | 8440.00             | 1560.00         |
-      | epaAlpha      | 1200.00               | 1137.60             | 62.40           |
-      | total         | 11200.00              | 9577.60             | 1622.40         |
+      | standardAlpha | 10000.00              | 8510.00             | 1490.00         |
+      | epaAlpha      | 1200.00               | 1140.00             | 60.00           |
+      | total         | 11200.00              | 9650.00             | 1550.00         |
 
 
   # ---------------------------------------------------------------------------

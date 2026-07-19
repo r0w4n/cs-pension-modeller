@@ -3,7 +3,7 @@ import type { PensionSettings } from "../settings";
 
 export type PremiumEarlyRetirementFactorTable = Record<
   number,
-  Record<number, number>
+  Record<number, readonly number[]>
 >;
 
 export type PremiumCalculationInput = {
@@ -47,7 +47,8 @@ export function calculatePremiumPension(
   const yearsToDraw = calculateWholeYearDifference(valuationDate, drawDate);
   const cpiRevaluedPensionAtDrawAge =
     annualPensionAtValuationDate * (1 + cpiAssumption) ** yearsToDraw;
-  const isReducedForEarlyPayment = drawAge < normalPensionAge;
+  const isReducedForEarlyPayment =
+    toCompletedAgeMonths(drawAge) < toCompletedAgeMonths(normalPensionAge);
   const earlyRetirementFactor = isReducedForEarlyPayment
     ? getPremiumEarlyRetirementFactor(
         drawAge,
@@ -108,17 +109,27 @@ export function getPremiumEarlyRetirementFactor(
   normalPensionAge: number,
   earlyRetirementFactors: PremiumEarlyRetirementFactorTable = PREMIUM_EARLY_RETIREMENT_FACTORS
 ) {
-  if (drawAge >= normalPensionAge) {
+  const drawAgeInMonths = toCompletedAgeMonths(drawAge);
+  const normalPensionAgeInMonths = toCompletedAgeMonths(normalPensionAge);
+
+  if (drawAgeInMonths >= normalPensionAgeInMonths) {
     return 1;
   }
 
-  // The UI currently selects completed whole-year ages. Under-55 cases can
-  // require additional scheme-specific inputs, so they remain unsupported.
-  if (!Number.isInteger(drawAge) || drawAge < 55) {
+  // Under-55 cases can require the separate Circumstance 2 formula and
+  // additional scheme-specific inputs, so they remain unsupported.
+  if (drawAgeInMonths < 55 * 12 || !Number.isInteger(normalPensionAge)) {
     return null;
   }
 
-  return earlyRetirementFactors[normalPensionAge]?.[drawAge] ?? null;
+  const drawAgeYears = Math.floor(drawAgeInMonths / 12);
+  const completedMonths = drawAgeInMonths % 12;
+
+  return (
+    earlyRetirementFactors[normalPensionAge]?.[drawAgeYears]?.[
+      completedMonths
+    ] ?? null
+  );
 }
 
 export function calculateAnnualPremiumPensionIncludingReduction(
@@ -134,10 +145,11 @@ export function calculateAnnualPremiumPensionIncludingReduction(
 
 function addYears(date: string, years: number) {
   const parsed = parseIsoDate(date);
+  const completedMonths = toCompletedAgeMonths(years);
   const next = new Date(
     Date.UTC(
-      parsed.getUTCFullYear() + Math.floor(years),
-      parsed.getUTCMonth() + Math.round((years % 1) * 12),
+      parsed.getUTCFullYear() + Math.floor(completedMonths / 12),
+      parsed.getUTCMonth() + (completedMonths % 12),
       parsed.getUTCDate()
     )
   );
@@ -159,4 +171,8 @@ function calculateWholeYearDifference(startDate: string, endDate: string) {
 
 function parseIsoDate(value: string) {
   return new Date(`${value}T00:00:00Z`);
+}
+
+function toCompletedAgeMonths(age: number) {
+  return Math.floor(age * 12 + 1e-8);
 }

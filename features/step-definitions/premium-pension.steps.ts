@@ -195,7 +195,7 @@ function parseExpectedRows(table: DataTable) {
 Given(
   "Civil Service pension factor tables version {string} are loaded",
   function (version: string) {
-    assertEqual(version, "acceptance-v1");
+    assertEqual(version, "GAD-2026-01");
   }
 );
 
@@ -617,29 +617,40 @@ Given(
 When(
   "the member draws Premium pension at age {int}",
   function (this: PremiumWorld, drawAge: number) {
-    this.premiumDrawAge = drawAge;
-    const unreducedAnnualPremiumPension =
-      this.unreducedAnnualPremiumPension ??
-      calculatePremiumFinalSalaryPension(
-        this.finalPensionableEarnings ??
-          this.preservedFinalPensionableEarnings ??
-          0,
-        this.reckonableServiceYears ?? 0
-      );
-    this.unreducedAnnualPremiumPension = unreducedAnnualPremiumPension;
-    this.annualPremiumPensionPayable = calculatePremiumPayable(
-      unreducedAnnualPremiumPension,
-      drawAge,
-      this.premiumNormalPensionAge ?? 60
-    );
-    this.annualPremiumPensionAfterEarlyRetirement =
-      this.annualPremiumPensionPayable;
-    this.annualPremiumPensionAtAge60BeforeIncreases =
-      this.annualPremiumPensionPayable;
-    this.annualReduction =
-      unreducedAnnualPremiumPension - this.annualPremiumPensionPayable;
+    drawPremiumPensionAtAge(this, drawAge);
   }
 );
+
+When(
+  "the member draws Premium pension at age {int} and {int} months",
+  function (this: PremiumWorld, drawAge: number, drawAgeMonths: number) {
+    drawPremiumPensionAtAge(this, drawAge + drawAgeMonths / 12);
+  }
+);
+
+function drawPremiumPensionAtAge(world: PremiumWorld, drawAge: number) {
+  world.premiumDrawAge = drawAge;
+  const unreducedAnnualPremiumPension =
+    world.unreducedAnnualPremiumPension ??
+    calculatePremiumFinalSalaryPension(
+      world.finalPensionableEarnings ??
+        world.preservedFinalPensionableEarnings ??
+        0,
+      world.reckonableServiceYears ?? 0
+    );
+  world.unreducedAnnualPremiumPension = unreducedAnnualPremiumPension;
+  world.annualPremiumPensionPayable = calculatePremiumPayable(
+    unreducedAnnualPremiumPension,
+    drawAge,
+    world.premiumNormalPensionAge ?? 60
+  );
+  world.annualPremiumPensionAfterEarlyRetirement =
+    world.annualPremiumPensionPayable;
+  world.annualPremiumPensionAtAge60BeforeIncreases =
+    world.annualPremiumPensionPayable;
+  world.annualReduction =
+    unreducedAnnualPremiumPension - world.annualPremiumPensionPayable;
+}
 
 Then(
   "the annual Premium pension payable should be {float}",

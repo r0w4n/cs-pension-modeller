@@ -835,20 +835,17 @@ describe("projection calculations", () => {
   });
 
   it("loads Alpha early retirement reduction factors from JSON", () => {
-    expect(getAlphaEarlyRetirementFactor(68, 60)).toBe(0.648);
+    expect(getAlphaEarlyRetirementFactor(68, 60)).toBe(0.661);
   });
 
-  it("interpolates Alpha early retirement reduction factors for decimal ages", () => {
-    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBeCloseTo(
-      (0.648 + 0.68) / 2,
-      6
-    );
+  it("uses published Alpha factors for completed months", () => {
+    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBe(0.677);
   });
 
   it("interpolates Alpha early retirement reduction factors for decimal normal pension ages", () => {
     expect(getAlphaEarlyRetirementFactor(66 + 1 / 12, 60)).toBeCloseTo(
-      0.729 + (0.687 - 0.729) / 12,
-      6
+      0.741 + (0.7 - 0.741) / 12,
+      10
     );
   });
 
@@ -903,7 +900,7 @@ describe("projection calculations", () => {
       accrualStopDate: "2047-06-01",
       addedPensionStopDate: "2047-06-01",
       npaDate: "2055-06-01",
-      reductionFactor: 0.648,
+      reductionFactor: 0.661,
     });
   });
 
@@ -927,8 +924,8 @@ describe("projection calculations", () => {
 
     expect(derivedInputs?.npaDate).toBe("2026-05-06");
     expect(derivedInputs?.reductionFactor).toBeCloseTo(
-      0.729 + (0.687 - 0.729) / 12,
-      6
+      0.741 + (0.7 - 0.741) / 12,
+      10
     );
   });
 
@@ -2117,14 +2114,14 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
     expect(
       findRowByDate(rows, "2047-05-15")?.annualAlphaPensionIncludingReduction
-    ).toBeCloseTo(5451.2352, 6);
+    ).toBeCloseTo(5560.5964, 6);
     expect(findRowByDate(rows, "2047-05-15")?.monthlyAlphaPensionGross).toBe(0);
     expect(
       findRowByDate(rows, "2047-06-15")?.monthlyAlphaPensionGross
-    ).toBeCloseTo(458.6544, 6);
+    ).toBeCloseTo(467.8558, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.totalMonthlyNetIncome
-    ).toBeCloseTo(458.6544, 6);
+    ).toBeCloseTo(467.8558, 6);
   });
 
   it("applies Alpha pension increases in the projection table", () => {
@@ -2347,7 +2344,7 @@ describe("projection calculations", () => {
     expect(row?.annualStandardAlphaPension).toBeCloseTo(81.2, 6);
     expect(row?.annualEpaAlphaPension).toBeCloseTo(162.4, 6);
     expect(row?.annualAccruedAlphaPension).toBeCloseTo(243.6, 6);
-    expect(row?.annualAlphaPensionIncludingReduction).toBeCloseTo(230.608, 6);
+    expect(row?.annualAlphaPensionIncludingReduction).toBeCloseTo(231.0952, 6);
   });
 
   it("still projects rows when EPA is enabled before the EPA age", () => {
@@ -2447,7 +2444,7 @@ describe("projection calculations", () => {
     ).toBeCloseTo(9493.6, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.monthlyAlphaPensionGross
-    ).toBeCloseTo(512.6544, 6);
+    ).toBeCloseTo(522.9391333333334, 6);
   });
 
   it("uses the calculated starting Alpha pension at the projection start instead of the raw ABS value", () => {

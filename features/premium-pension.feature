@@ -11,7 +11,7 @@ Feature: Premium Civil Service pension modelling
   Service pension pots.
 
   Background:
-    Given Civil Service pension factor tables version "acceptance-v1" are loaded
+    Given Civil Service pension factor tables version "GAD-2026-01" are loaded
     And Civil Service pension commutation tables version "acceptance-v1" are loaded
     And pension outputs are rounded to 2 decimal places
 
@@ -170,20 +170,23 @@ Feature: Premium Civil Service pension modelling
   # ---------------------------------------------------------------------------
 
   @early-retirement
-  Scenario Outline: Reduce Premium pension when drawn before age 60
+  Scenario Outline: Reduce Premium pension when drawn before its normal pension age
     Given the member has a Premium pension record
-    And the member has Premium normal pension age 60
+    And the member has Premium normal pension age <normalPensionAge>
     And the member has unreduced annual Premium pension of <unreducedAnnualPension>
-    When the member draws Premium pension at age <drawAge>
+    When the member draws Premium pension at age <drawAge> and <drawAgeMonths> months
     Then the annual Premium pension payable should be <expectedAnnualPension>
     And the annual reduction should be <expectedAnnualReduction>
 
     Examples:
-      | unreducedAnnualPension | drawAge | expectedAnnualPension | expectedAnnualReduction |
-      | 12000.00               | 60      | 12000.00              | 0.00                    |
-      | 12000.00               | 58      | 10992.00              | 1008.00                 |
-      | 12000.00               | 55      | 9672.00               | 2328.00                 |
-      | 18000.00               | 55      | 14508.00              | 3492.00                 |
+      | normalPensionAge | unreducedAnnualPension | drawAge | drawAgeMonths | expectedAnnualPension | expectedAnnualReduction |
+      | 60               | 12000.00               | 60      | 0             | 12000.00              | 0.00                    |
+      | 60               | 12000.00               | 58      | 0             | 10992.00              | 1008.00                 |
+      | 60               | 12000.00               | 58      | 6             | 11232.00              | 768.00                  |
+      | 60               | 18000.00               | 55      | 0             | 14508.00              | 3492.00                 |
+      | 65               | 12000.00               | 60      | 0             | 9396.00               | 2604.00                 |
+      | 65               | 12000.00               | 60      | 6             | 9612.00               | 2388.00                 |
+      | 65               | 12000.00               | 65      | 0             | 12000.00              | 0.00                    |
 
   @early-retirement
   Scenario: Premium early retirement reduction is permanent

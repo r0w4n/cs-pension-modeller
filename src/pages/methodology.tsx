@@ -352,13 +352,41 @@ export function MethodologyPage() {
 
         <h3>Alpha draw age and early retirement</h3>
         <p className="section-copy">
-          If Alpha is drawn before its normal pension age, the model applies
-          Alpha early-retirement reduction factors from the Alpha factor table.
+          If Alpha is drawn before its normal pension age, the model applies the
+          Government Actuary&apos;s Department (GAD) Alpha early-payment
+          reduction factor for the relevant Normal Pension Age or EPA.
         </p>
         <p className="section-copy">
-          The model uses the selected Alpha draw date to determine whether a
-          reduction applies. Where the draw date falls between factor-table
-          points, the model interpolates between available values.
+          The factor data comes from consolidated Civil Service factors workbook
+          CS_GB_Consolidated_Factors_2026-01.xlsx, issued on 29 May 2026. The
+          model uses table 0-402 for NPA/EPA 65, table 0-403 for 66, table 0-404
+          for 67, and table 0-405 for 68. These are the workbook sheets x-402 to
+          x-405 and are explicitly identified as Alpha tables. The source is
+          available from the{" "}
+          <a
+            href={knowledgeLinks.alphaEarlyRetirementFactors}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GAD Alpha early-payment factor tables
+          </a>
+          .
+        </p>
+        <p className="section-copy">
+          Retirement age is matched to the published factor for age in complete
+          years and months, ignoring part months. The model uses that monthly
+          entry directly rather than interpolating between annual retirement-age
+          values. If NPA or EPA is itself a non-integer age, the model follows
+          the GAD guidance by interpolating between the two relevant NPA/EPA
+          tables. The on-screen Alpha draw-age control currently selects whole
+          years, while the calculation and acceptance tests retain
+          completed-month precision.
+        </p>
+        <p className="section-copy">
+          The workbook identifies these factors as the 2023 factor review set
+          and records them as issued to the client on 29 June 2023. GAD may
+          revise the workbook or factors, so important decisions should be
+          checked against an official pension quotation or statement.
         </p>
         <p className="section-copy">
           The model does not add a late-retirement enhancement when Alpha is
@@ -497,11 +525,15 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           If Premium is taken before its Normal Pension Age, a Premium
-          early-retirement reduction factor is required. For a supported
-          whole-year draw age from 55, the model multiplies the CPI-revalued
-          pension by the published Premium factor for Normal Pension Age 60 or
-          65. It does not use Alpha reduction factors or the nuvos
-          fixed-percentage reduction formula for Premium.
+          early-retirement reduction factor is required. For a supported draw
+          age from 55, the model multiplies the CPI-revalued pension by the
+          published Premium factor for Normal Pension Age 60 or 65. It selects
+          the entry for age in completed years and completed months, ignoring
+          part months, rather than interpolating between annual retirement-age
+          values. It does not use Alpha reduction factors or the nuvos
+          fixed-percentage reduction formula for Premium. The on-screen Premium
+          draw-age control currently selects whole years, while the factor
+          calculation and acceptance tests retain completed-month precision.
         </p>
         <FormulaBlock>
           {
@@ -510,11 +542,13 @@ export function MethodologyPage() {
         </FormulaBlock>
         <p className="section-copy">
           The factors come from the Government Actuary&apos;s Department (GAD)
-          consolidated Civil Service factors workbook, version 2026-01,
-          retrieved on 19 July 2026. NPA 60 uses workbook sheet x-406, table
-          1-406 (guidance table P1ER60PEN1); NPA 65 uses sheet x-410, table
-          1-410 (guidance table P1ER65PEN1). The source workbook is available
-          from the{" "}
+          consolidated Civil Service factors workbook, version 2026-01, issued
+          on 29 May 2026 and retrieved on 19 July 2026. NPA 60 uses workbook
+          sheet x-406, table 1-406 (guidance table P1ER60PEN1); NPA 65 uses
+          sheet x-410, table 1-410 (guidance table P1ER65PEN1). The workbook
+          identifies these factors as the 2023 factor review set and records
+          them as issued to the client on 29 June 2023. The source workbook is
+          available from the{" "}
           <a
             href={knowledgeLinks.premiumEarlyRetirementFactors}
             target="_blank"
@@ -532,12 +566,14 @@ export function MethodologyPage() {
           Age; the model does not restore the unreduced amount at age 60.
         </p>
         <p className="section-copy">
-          The model does not estimate under-55 cases, fractional draw ages, or
-          personal Normal Pension Ages other than 60 or 65. Those cases can
-          require additional scheme-specific inputs or calculations. If a
-          published factor is unavailable, the model excludes the reduced
-          Premium income and flags the omission rather than silently estimating
-          it.
+          The model does not estimate under-55 cases or personal Normal Pension
+          Ages other than 60 or 65. Some under-55 cases require the separate GAD
+          Circumstance 2 formula, a pension-increase multiplier and table 1-421;
+          personal pension ages are handled case by case in the GAD guidance.
+          The model does not substitute tables 1-408 or 1-412 as direct pension
+          multipliers or interpolate a personal NPA. If a factor is unavailable,
+          the model excludes the reduced Premium income and flags the omission
+          rather than silently estimating it.
         </p>
         <p className="section-copy">
           Civil Service Pensions currently says that factors used in some

@@ -298,7 +298,7 @@ function acceptanceUnsupported(reason: string): never {
 Given(
   "alpha pension factor tables version {string} are loaded",
   function (this: AlphaPensionWorld, version: string) {
-    assertEqual(version, "acceptance-v1");
+    assertEqual(version, "GAD-2026-01");
   }
 );
 

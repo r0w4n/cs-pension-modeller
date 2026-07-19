@@ -3172,6 +3172,29 @@ describe("App settings form", () => {
     );
   });
 
+  it("moves focus from a number field to a slider without scrolling", () => {
+    renderAcknowledgedApp();
+
+    openJourneyStep(/Alpha pension details/i);
+
+    const exactEarningsInput = screen.getByLabelText(
+      "Current Pensionable Earnings (£ per year) exact value"
+    );
+    const earningsSlider = screen.getByLabelText(
+      "Current Pensionable Earnings (£ per year)"
+    );
+    const focusSpy = vi.spyOn(earningsSlider, "focus");
+
+    exactEarningsInput.focus();
+    expect(exactEarningsInput).toHaveFocus();
+
+    fireEvent.pointerDown(earningsSlider);
+
+    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
+    expect(earningsSlider).toHaveFocus();
+    expect(exactEarningsInput).not.toHaveFocus();
+  });
+
   it("keeps partial exact numeric entry editable before saving a valid range value", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,

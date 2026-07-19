@@ -334,6 +334,9 @@ export function RangeSettingField({
             disabled={disabled}
             aria-invalid={Boolean(validationIssue) || undefined}
             aria-describedby={validationId}
+            onPointerDown={(event) => {
+              event.currentTarget.focus({ preventScroll: true });
+            }}
             onChange={(event) => {
               const nextValue = Number(event.target.value);
               setDraftValue(nextValue);

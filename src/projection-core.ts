@@ -285,5 +285,12 @@ export function generateRetirementBridgeAnalysis(
   settings: PensionSettings,
   options: { calculateSafeDrawAge?: boolean } = {}
 ): RetirementBridgeAnalysis {
-  return generateRetirementBridgeAnalysisDomain(pensionRows, settings, options);
+  if (!options.calculateSafeDrawAge) {
+    return generateRetirementBridgeAnalysisDomain(pensionRows, settings);
+  }
+
+  return generateRetirementBridgeAnalysisDomain(pensionRows, settings, {
+    calculateSafeDrawAge: true,
+    projectPensionRows: createProjectionTable,
+  });
 }

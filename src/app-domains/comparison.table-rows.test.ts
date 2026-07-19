@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isValidElement } from "react";
 import type { ReactNode } from "react";
 import {
+  buildComparisonDetailedRows,
   buildComparisonStatusItems,
   buildComparisonTableRows,
   createComparisonResult,
@@ -186,6 +187,46 @@ describe("comparison table rows", () => {
 
     expect(rows.some((row) => row.metric === "nuvos start")).toBe(false);
     expect(rows.some((row) => row.metric === "nuvos income")).toBe(false);
+  });
+
+  it("shows a sustainable pension draw age when projected Alpha income supports the target", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      startDate: "2025-04-01",
+      dateOfBirth: "1971-01-01",
+      requirementAge: 55,
+      normalPensionAge: 67,
+      alphaPensionDrawAge: 67,
+      lifeExpectancy: 56,
+      desiredRetirementIncome: 5000,
+      inflationRateAnnual: 0,
+      showAlpha: true,
+      accruedPensionAtLastAbs: 20000,
+      pensionableEarnings: 0,
+      alphaAddedPensionMonthly: 0,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Sustainable Alpha",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    expect(
+      getFirstComparisonValue(
+        buildComparisonDetailedRows([result]),
+        "Earliest sustainable pension draw age"
+      )
+    ).toBe("55");
   });
 
   it("keeps bridge wording for normal status items but hides it when bridge funding is hidden", () => {

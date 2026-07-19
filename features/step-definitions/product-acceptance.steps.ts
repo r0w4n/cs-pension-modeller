@@ -35,6 +35,7 @@ import {
   prepareBridgeProjectionSettings,
 } from "../../src/projection";
 import {
+  calculateNormalPensionAge,
   createDefaultSettings,
   saveLocalStoragePreference,
   type PensionSettings,
@@ -512,6 +513,34 @@ Given(
 );
 
 Given(
+  "the bridge plan has Alpha pension of {float} per year",
+  function (this: ProductAcceptanceWorld, accruedPensionAtLastAbs: number) {
+    const dateOfBirth = "1971-01-01";
+    const normalPensionAge = calculateNormalPensionAge(dateOfBirth);
+
+    updateSettings(this, {
+      startDate: "2025-04-01",
+      dateOfBirth,
+      normalPensionAge,
+      showAlpha: true,
+      alphaPensionAbsDate: "2025",
+      alphaPensionDrawAge: normalPensionAge,
+      accruedPensionAtLastAbs,
+      pensionableEarnings: 0,
+      alphaAddedPensionMonthly: 0,
+      inflationRateAnnual: 0,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+    });
+  }
+);
+
+Given(
   "the bridge plan includes State Pension of {float} per year from {word}",
   function (
     this: ProductAcceptanceWorld,
@@ -617,6 +646,26 @@ When("the bridge plan is analysed", function (this: ProductAcceptanceWorld) {
 });
 
 When(
+  "the earliest sustainable pension draw age is calculated",
+  function (this: ProductAcceptanceWorld) {
+    const bridgeSettings = prepareBridgeProjectionSettings(getSettings(this));
+    const pensionRows = createProjectionTable({
+      ...bridgeSettings,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+    });
+
+    this.settings = bridgeSettings;
+    this.bridgeAnalysis = generateRetirementBridgeAnalysis(
+      pensionRows,
+      bridgeSettings,
+      { calculateSafeDrawAge: true }
+    );
+  }
+);
+
+When(
   "the same bridge plan adds guaranteed income of {float} per year from age {float}",
   function (
     this: ProductAcceptanceWorld,
@@ -649,6 +698,16 @@ Then(
   "the bridge plan should work on these assumptions",
   function (this: ProductAcceptanceWorld) {
     assertEqual(getBridgeAnalysis(this).planWorks, true);
+  }
+);
+
+Then(
+  "the earliest sustainable pension draw age should be {float}",
+  function (this: ProductAcceptanceWorld, expectedAge: number) {
+    assertEqual(
+      getBridgeAnalysis(this).earliestSustainablePensionDrawAge,
+      expectedAge
+    );
   }
 );
 

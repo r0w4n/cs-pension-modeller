@@ -25,6 +25,18 @@ export type ProjectionRowLike = {
   monthlyAdditionalGuaranteedIncomeTaxable?: number;
 };
 
+type ProjectPensionRows = (settings: PensionSettings) => ProjectionRowLike[];
+
+type RetirementBridgeAnalysisOptions =
+  | {
+      calculateSafeDrawAge?: false;
+      projectPensionRows?: never;
+    }
+  | {
+      calculateSafeDrawAge: true;
+      projectPensionRows: ProjectPensionRows;
+    };
+
 export type BridgePhase = {
   startDate: string;
   endDate: string;
@@ -148,7 +160,7 @@ export function prepareBridgeProjectionSettings(
 export function generateRetirementBridgeAnalysis(
   pensionRows: ProjectionRowLike[],
   settings: PensionSettings,
-  options: { calculateSafeDrawAge?: boolean } = {}
+  options: RetirementBridgeAnalysisOptions = {}
 ): RetirementBridgeAnalysis {
   const retirementDate = addYears(
     settings.dateOfBirth,
@@ -368,7 +380,10 @@ export function generateRetirementBridgeAnalysis(
   return {
     ...analysisWithoutSafeDrawAge,
     earliestSustainablePensionDrawAge:
-      calculateEarliestSustainablePensionDrawAge(settings),
+      calculateEarliestSustainablePensionDrawAge(
+        settings,
+        options.projectPensionRows
+      ),
   };
 }
 
@@ -1035,7 +1050,10 @@ function addPotDepletionMilestone(input: {
   return true;
 }
 
-function calculateEarliestSustainablePensionDrawAge(settings: PensionSettings) {
+function calculateEarliestSustainablePensionDrawAge(
+  settings: PensionSettings,
+  projectPensionRows: ProjectPensionRows
+) {
   if (!settings.showAlpha && !settings.showNuvos) {
     return null;
   }
@@ -1055,34 +1073,22 @@ function calculateEarliestSustainablePensionDrawAge(settings: PensionSettings) {
       nuvosPensionDrawAge: settings.showNuvos
         ? age
         : settings.nuvosPensionDrawAge,
+    });
+
+    const pensionRows = projectPensionRows({
+      ...candidateSettings,
       showSipp: false,
       showIsa: false,
       showLisa: false,
     });
-
-    const rows = generateMonthlyDateRange(
-      settings.startDate,
-      addYears(settings.dateOfBirth, settings.lifeExpectancy)
-    ).map((date) => ({
-      date,
-      age: calculateAge(settings.dateOfBirth, date),
-      ageMonths: calculateAgeMonths(settings.dateOfBirth, date),
-      monthlyAlphaPensionGross: 0,
-      monthlyNuvosPensionGross: 0,
-      monthlyPremiumPensionGross: 0,
-      monthlyStatePension: 0,
-    }));
-
-    const analysis = generateRetirementBridgeAnalysis(rows, {
-      ...candidateSettings,
-      showSipp: settings.showSipp,
-      showIsa: settings.showIsa,
-      showLisa: settings.showLisa,
-    });
+    const analysis = generateRetirementBridgeAnalysis(
+      pensionRows,
+      candidateSettings
+    );
 
     if (
       analysis.planWorks &&
-      analysis.stableAnnualGuaranteedIncome >= settings.desiredRetirementIncome
+      analysis.stableAnnualGuaranteedSurplus >= -0.005
     ) {
       return age;
     }

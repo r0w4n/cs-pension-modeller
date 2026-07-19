@@ -53,3 +53,13 @@ Feature: Early retirement bridge planning
     When the bridge plan is analysed
     And the same bridge plan adds guaranteed income of 6000.00 per year from age 60
     Then the total bridge funding need should be lower with the guaranteed income
+
+  @sustainable-draw-age
+  Scenario: Find the earliest Alpha draw age that sustains the retirement target
+    Given the bridge plan has Alpha pension of 20000.00 per year
+    And the bridge plan has no State Pension
+    And the bridge retirement age is 55
+    And the bridge life expectancy age is 56
+    And the bridge target income is 5000.00 per year
+    When the earliest sustainable pension draw age is calculated
+    Then the earliest sustainable pension draw age should be 55

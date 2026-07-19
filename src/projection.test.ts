@@ -3536,6 +3536,73 @@ describe("projection calculations", () => {
     expect(statePensionPhase?.annualSurplus).toBeCloseTo(3000, 6);
   });
 
+  it("finds the earliest sustainable Alpha draw age using projected pension income", () => {
+    const dateOfBirth = "1971-01-01";
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2025-04-01",
+      dateOfBirth,
+      requirementAge: 55,
+      normalPensionAge: calculateNormalPensionAge(dateOfBirth),
+      alphaPensionDrawAge: calculateNormalPensionAge(dateOfBirth),
+      lifeExpectancy: 56,
+      desiredRetirementIncome: 5000,
+      inflationRateAnnual: 0,
+      showAlpha: true,
+      accruedPensionAtLastAbs: 20000,
+      pensionableEarnings: 0,
+      alphaAddedPensionMonthly: 0,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+    });
+    const pensionRows = createProjectionTable(settings);
+
+    const analysis = generateRetirementBridgeAnalysis(pensionRows, settings, {
+      calculateSafeDrawAge: true,
+    });
+
+    expect(analysis.earliestSustainablePensionDrawAge).toBe(55);
+  });
+
+  it("returns the first whole-year draw age whose projected Alpha income meets the target", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      dateOfBirth: "1987-06-01",
+      requirementAge: 57,
+      normalPensionAge: 68,
+      alphaPensionDrawAge: 68,
+      lifeExpectancy: 59,
+      desiredRetirementIncome: 12000,
+      inflationRateAnnual: 0,
+      showAlpha: true,
+      accruedPensionAtLastAbs: 20000,
+      pensionableEarnings: 0,
+      alphaAddedPensionMonthly: 0,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: true,
+      isaCurrentPot: 20000,
+      isaMonthlyContribution: 0,
+      isaRealInterestPercent: 0,
+      showLisa: false,
+    });
+    const pensionRows = createProjectionTable({
+      ...settings,
+      showIsa: false,
+    });
+
+    const analysis = generateRetirementBridgeAnalysis(pensionRows, settings, {
+      calculateSafeDrawAge: true,
+    });
+
+    expect(analysis.earliestSustainablePensionDrawAge).toBe(58);
+  });
+
   it("does not mark an early Alpha draw sustainable when later income falls below target", () => {
     const settings = prepareBridgeProjectionSettings({
       ...defaultSettings,

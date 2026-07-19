@@ -98,7 +98,8 @@ export type CheckboxField = {
     | "classicApplyPensionIncreases"
     | "classicPlusApplyPensionIncreases"
     | "nuvosApplyPensionIncreases"
-    | "premiumHasNpa65";
+    | "premiumHasNpa65"
+    | "sippHasProtectedPensionAge";
   label: string;
   type: "checkbox";
   description: string;
@@ -962,12 +963,21 @@ export const fieldGroups: FieldGroup[] = [
         id: "sippDrawAge",
         label: "SIPP draw start age",
         type: "range",
-        min: 55,
+        min: 0,
         max: 100,
         step: 1,
         inputStep: 1,
         description:
-          "The age SIPP withdrawals can start in the model. This is constrained by private pension access rules based on your date of birth, so a SIPP may not be available at the first retirement age you want.",
+          "The age SIPP withdrawals start in the model. Standard private pension access is 55 before 6 April 2028 and 57 from that date, unless your provider has confirmed a protected pension age for this pension.",
+        infoUrl: knowledgeLinks.pensionAccessAge,
+        infoLinkText: "Private pension access",
+      },
+      {
+        id: "sippHasProtectedPensionAge",
+        label: "I have a provider-confirmed protected SIPP age",
+        type: "checkbox",
+        description:
+          "Only turn this on when your provider or scheme administrator has confirmed the earliest age for these scheme-specific pension rights.",
         infoUrl: knowledgeLinks.pensionAccessAge,
         infoLinkText: "Private pension access",
       },

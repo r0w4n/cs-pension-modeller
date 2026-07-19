@@ -91,7 +91,8 @@ const numericSettingRules = {
   ...premiumNumericSettingRules,
   sippCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
-  sippDrawAge: { min: 55, max: 100, step: 1 },
+  sippProtectedPensionAge: { min: 0, max: 56, step: 1 },
+  sippDrawAge: { min: 0, max: 100, step: 1 },
   sippRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   sippWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
   sippWithdrawalTargetAge: { min: 55, max: 100, step: 1 },
@@ -165,6 +166,7 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   premiumDrawAge: defaultSettings.premiumDrawAge,
   sippCurrentPot: defaultSettings.sippCurrentPot,
   sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+  sippProtectedPensionAge: defaultSettings.sippProtectedPensionAge,
   sippDrawAge: defaultSettings.sippDrawAge,
   sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
   sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
@@ -272,6 +274,7 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         value
       ) as PensionSettings[K];
     case "showSipp":
+    case "sippHasProtectedPensionAge":
       return normalizeSippBooleanSetting(value) as PensionSettings[K];
     case "showIsa":
       return normalizeIsaBooleanSetting(value) as PensionSettings[K];
@@ -592,6 +595,13 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     sippMonthlyContribution: normalizeSetting(
       "sippMonthlyContribution",
       settings.sippMonthlyContribution
+    ),
+    sippHasProtectedPensionAge: normalizeSippBooleanSetting(
+      settings.sippHasProtectedPensionAge
+    ),
+    sippProtectedPensionAge: normalizeSetting(
+      "sippProtectedPensionAge",
+      settings.sippProtectedPensionAge
     ),
     sippDrawAge: normalizeSippDrawAge(settings.sippDrawAge, dateOfBirth),
     sippLumpSums: normalizeSetting("sippLumpSums", settings.sippLumpSums),

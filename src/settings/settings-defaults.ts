@@ -107,6 +107,8 @@ export const defaultSettings: PensionSettings = {
   premiumHasNpa65: premiumDefaults.premiumHasNpa65,
   sippCurrentPot: 0,
   sippMonthlyContribution: 0,
+  sippHasProtectedPensionAge: false,
+  sippProtectedPensionAge: 55,
   sippDrawAge: personalDetailsDefaults.requirementAge,
   sippLumpSums: [],
   sippRealInterestPercent: 5,

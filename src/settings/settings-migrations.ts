@@ -42,9 +42,28 @@ export function migrateFromV2ToV3(data: unknown) {
   };
 }
 
+export function migrateFromV3ToV4(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    sippHasProtectedPensionAge:
+      typeof data.sippHasProtectedPensionAge === "boolean"
+        ? data.sippHasProtectedPensionAge
+        : false,
+    sippProtectedPensionAge:
+      typeof data.sippProtectedPensionAge === "number"
+        ? data.sippProtectedPensionAge
+        : 55,
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
+  3: migrateFromV3ToV4,
 };
 
 export function migrateSettingsToLatest(

@@ -1,6 +1,7 @@
 import {
   migrateFromV1ToV2,
   migrateFromV2ToV3,
+  migrateFromV3ToV4,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -51,6 +52,20 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("defaults SIPP protected pension age settings during v3 migration", () => {
+    expect(
+      migrateFromV3ToV4({
+        dateOfBirth: "1972-08-01",
+        sippDrawAge: 55,
+      })
+    ).toEqual({
+      dateOfBirth: "1972-08-01",
+      sippDrawAge: 55,
+      sippHasProtectedPensionAge: false,
+      sippProtectedPensionAge: 55,
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -64,6 +79,8 @@ describe("settings-migrations", () => {
       dateOfBirth: "1987-06-01",
       requirementAge: 60,
       additionalGuaranteedIncomes: [],
+      sippHasProtectedPensionAge: false,
+      sippProtectedPensionAge: 55,
     });
   });
 

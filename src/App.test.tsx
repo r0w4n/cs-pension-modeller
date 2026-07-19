@@ -622,6 +622,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     premiumHasNpa65: defaultSettings.premiumHasNpa65,
     sippCurrentPot: defaultSettings.sippCurrentPot,
     sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+    sippHasProtectedPensionAge: defaultSettings.sippHasProtectedPensionAge,
+    sippProtectedPensionAge: defaultSettings.sippProtectedPensionAge,
     sippDrawAge: defaultSettings.sippDrawAge,
     sippLumpSums: defaultSettings.sippLumpSums,
     sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
@@ -1893,6 +1895,35 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("SIPP draw start age")).toHaveValue(
       defaultSettings.sippDrawAge.toString()
     );
+    const sippDrawAgeCard = screen
+      .getByLabelText("SIPP draw start age")
+      .closest(".field-card");
+    expect(sippDrawAgeCard).not.toBeNull();
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "I have a provider-confirmed protected SIPP age"
+      )
+    ).not.toBeChecked();
+    expect(
+      within(sippDrawAgeCard as HTMLElement).queryByLabelText(
+        "Protected pension access age"
+      )
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "I have a provider-confirmed protected SIPP age"
+      )
+    );
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "SIPP draw start age"
+      )
+    ).toHaveAttribute("min", "50");
+    expect(
+      within(sippDrawAgeCard as HTMLElement).queryByLabelText(
+        "Protected pension access age"
+      )
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Add SIPP lump sum" })
     ).toBeInTheDocument();
@@ -2010,7 +2041,7 @@ describe("App settings form", () => {
     expect(screen.getAllByText("Life expectancy").length).toBeGreaterThan(0);
   });
 
-  it("enforces age 57 for Alpha access while allowing SIPP access from age 55", () => {
+  it("enforces age 57 for Alpha and standard SIPP access after the 2028 change", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -2039,14 +2070,14 @@ describe("App settings form", () => {
 
     openJourneyStep(/SIPP details/i);
 
-    expect(screen.getByLabelText("SIPP draw start age")).toHaveValue("55");
+    expect(screen.getByLabelText("SIPP draw start age")).toHaveValue("57");
     expect(screen.getByLabelText("SIPP draw start age")).toHaveAttribute(
       "min",
-      "55"
+      "57"
     );
     expect(
       screen.getByLabelText("SIPP draw start age exact value")
-    ).toHaveAttribute("min", "55");
+    ).toHaveAttribute("min", "57");
 
     openJourneyStep(/State pension details/i);
 
@@ -2057,6 +2088,64 @@ describe("App settings form", () => {
       "min",
       "67.75"
     );
+  });
+
+  it("raises protected SIPP draw age to the standard minimum when protection is cleared", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          dateOfBirth: "1977-11-23",
+          sippHasProtectedPensionAge: true,
+          sippDrawAge: 50,
+          statePensionDrawDate: "2045-07-06",
+        })
+      )
+    );
+
+    renderAcknowledgedApp();
+
+    openJourneyStep(/SIPP details/i);
+
+    const sippDrawAgeCard = screen
+      .getByLabelText("SIPP draw start age")
+      .closest(".field-card");
+    expect(sippDrawAgeCard).not.toBeNull();
+
+    const protectedPensionAgeCheckbox = within(
+      sippDrawAgeCard as HTMLElement
+    ).getByLabelText("I have a provider-confirmed protected SIPP age");
+
+    expect(protectedPensionAgeCheckbox).toBeChecked();
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "SIPP draw start age"
+      )
+    ).toHaveValue("50");
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "SIPP draw start age"
+      )
+    ).toHaveAttribute("min", "50");
+
+    fireEvent.click(protectedPensionAgeCheckbox);
+
+    expect(protectedPensionAgeCheckbox).not.toBeChecked();
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "SIPP draw start age"
+      )
+    ).toHaveValue("57");
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "SIPP draw start age"
+      )
+    ).toHaveAttribute("min", "57");
+    expect(
+      within(sippDrawAgeCard as HTMLElement).getByLabelText(
+        "SIPP draw start age exact value"
+      )
+    ).toHaveValue(57);
   });
 
   it("orders optional section toggles like the assumptions sections", () => {

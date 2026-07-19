@@ -67,6 +67,7 @@ export {
   calculateStatePensionDrawDateFromAge,
   calculateMinimumPensionAccessAge,
   calculateMinimumSippAccessAge,
+  resolveSippMinimumAccessAge,
   calculateStatePensionDrawDate,
   calculateNormalPensionAge,
 } from "./settings/settings-shared/state";

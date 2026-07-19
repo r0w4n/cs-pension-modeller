@@ -46,6 +46,8 @@ describe("settings-storage", () => {
     const settings = {
       ...createDefaultSettings(),
       desiredRetirementIncome: 60000,
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 50,
       startDate: "2026-05-01",
     };
 
@@ -59,6 +61,8 @@ describe("settings-storage", () => {
 
     const loaded = loadStoredSettings();
     expect(loaded.desiredRetirementIncome).toBe(60000);
+    expect(loaded.sippHasProtectedPensionAge).toBe(true);
+    expect(loaded.sippProtectedPensionAge).toBe(50);
     expect(loaded.startDate).toBe("2026-04-25");
   });
 
@@ -75,6 +79,26 @@ describe("settings-storage", () => {
 
     expect(loaded.requirementAge).toBe(61);
     expect(loaded.desiredRetirementIncome).toBe(60000);
+  });
+
+  it("does not infer protected SIPP access from legacy SIPP draw age", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: 3,
+        data: {
+          dateOfBirth: "1972-08-01",
+          sippDrawAge: 55,
+          showSipp: true,
+        },
+      })
+    );
+
+    const loaded = loadStoredSettings();
+
+    expect(loaded.sippDrawAge).toBe(55);
+    expect(loaded.sippHasProtectedPensionAge).toBe(false);
+    expect(loaded.sippProtectedPensionAge).toBe(55);
   });
 
   it("loads current versioned settings envelopes", () => {

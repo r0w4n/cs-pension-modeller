@@ -597,7 +597,8 @@ export function createBridgeChartLimits(
     settings.statePensionDrawDate
   );
   const minimumSippAccessAge = calculateMinimumSippAccessAge(
-    settings.dateOfBirth
+    settings.dateOfBirth,
+    settings
   );
   const minimumAlphaAccessAge = calculateMinimumPensionAccessAge(
     settings.dateOfBirth

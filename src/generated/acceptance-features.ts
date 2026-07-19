@@ -7723,6 +7723,226 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/sipp.feature",
+    name: "SIPP access age modelling",
+    description:
+      "The modeller should apply standard private pension access ages and allow\n  provider-confirmed protected pension age assumptions without treating them as\n  legal determinations.",
+    tags: ["@sipp"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-8",
+        keyword: "Scenario",
+        name: "Apply the standard SIPP access age using the planned draw date",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-9",
+            keyword: "Given",
+            text: 'a SIPP modelling scenario for someone born on "1972-08-01"',
+          },
+          {
+            id: "line-10",
+            keyword: "And",
+            text: "provider-confirmed SIPP protected pension age is off",
+          },
+          {
+            id: "line-11",
+            keyword: "When",
+            text: "the SIPP draw start age is 55",
+          },
+          {
+            id: "line-12",
+            keyword: "Then",
+            text: "SIPP draw start age validation should pass",
+          },
+          {
+            id: "line-13",
+            keyword: "And",
+            text: "the SIPP projection should start withdrawals at age 55",
+          },
+          {
+            id: "line-14",
+            keyword: "When",
+            text: "the SIPP draw start age is 56",
+          },
+          {
+            id: "line-15",
+            keyword: "Then",
+            text: 'the SIPP draw start age validation message should be "SIPP draw start age must be at least 57 for access dates on or after 6 April 2028, unless your provider has confirmed a protected pension age."',
+          },
+          {
+            id: "line-16",
+            keyword: "When",
+            text: "the SIPP draw start age is 57",
+          },
+          {
+            id: "line-17",
+            keyword: "Then",
+            text: "SIPP draw start age validation should pass",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-19",
+        keyword: "Scenario",
+        name: "Use a provider-confirmed protected SIPP access age",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-20",
+            keyword: "Given",
+            text: 'a SIPP modelling scenario for someone born on "1980-08-01"',
+          },
+          {
+            id: "line-21",
+            keyword: "And",
+            text: "provider-confirmed SIPP protected access is on",
+          },
+          {
+            id: "line-22",
+            keyword: "When",
+            text: "the SIPP draw start age is 50",
+          },
+          {
+            id: "line-23",
+            keyword: "Then",
+            text: "SIPP draw start age validation should pass",
+          },
+          {
+            id: "line-24",
+            keyword: "And",
+            text: "the SIPP projection should start withdrawals at age 50",
+          },
+          {
+            id: "line-25",
+            keyword: "When",
+            text: "the SIPP draw start age is 49",
+          },
+          {
+            id: "line-26",
+            keyword: "Then",
+            text: 'the SIPP draw start age validation message should be "SIPP draw start age must not be earlier than the provider-confirmed protected SIPP access age of 50."',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-28",
+        keyword: "Scenario",
+        name: "Ignore stored protected age while provider confirmation is off",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-29",
+            keyword: "Given",
+            text: 'a SIPP modelling scenario for someone born on "1973-04-06"',
+          },
+          {
+            id: "line-30",
+            keyword: "And",
+            text: "stored SIPP protected pension age is 55 while provider confirmation is off",
+          },
+          {
+            id: "line-31",
+            keyword: "When",
+            text: "the SIPP draw start age is 55",
+          },
+          {
+            id: "line-32",
+            keyword: "Then",
+            text: 'the SIPP draw start age validation message should be "SIPP draw start age must be at least 57 for access dates on or after 6 April 2028, unless your provider has confirmed a protected pension age."',
+          },
+          {
+            id: "line-33",
+            keyword: "And",
+            text: "the protected pension age standalone form field should be hidden",
+          },
+          {
+            id: "line-34",
+            keyword: "And",
+            text: "the SIPP draw start age field minimum should be 57",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-36",
+        keyword: "Scenario",
+        name: "Persist provider-confirmed protected SIPP access age settings",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-37",
+            keyword: "Given",
+            text: 'a SIPP modelling scenario for someone born on "1980-08-01"',
+          },
+          {
+            id: "line-38",
+            keyword: "And",
+            text: "provider-confirmed SIPP protected access is on",
+          },
+          {
+            id: "line-39",
+            keyword: "When",
+            text: "the SIPP settings are saved and loaded",
+          },
+          {
+            id: "line-40",
+            keyword: "Then",
+            text: "the loaded SIPP settings should have provider-confirmed protected pension age on",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-42",
+        keyword: "Scenario",
+        name: "Expose protected SIPP controls in SIPP journeys",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-43",
+            keyword: "Given",
+            text: 'a SIPP modelling scenario for someone born on "1980-08-01"',
+          },
+          {
+            id: "line-44",
+            keyword: "And",
+            text: "provider-confirmed SIPP protected access is on",
+          },
+          {
+            id: "line-45",
+            keyword: "Then",
+            text: "the SIPP draw start age section should contain protected SIPP controls",
+          },
+          {
+            id: "line-46",
+            keyword: "And",
+            text: "every journey that exposes SIPP draw start age should keep protected SIPP controls after it",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
     path: "features/state-pension.feature",
     name: "State Pension modelling",
     description:

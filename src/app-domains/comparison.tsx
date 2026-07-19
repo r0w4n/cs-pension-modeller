@@ -882,6 +882,13 @@ export function buildComparisonDetailedRows(
               (result) => formatUseByAge(result.scenario.settings, "sipp"),
             ],
             [
+              "SIPP protected pension age",
+              (result) =>
+                result.scenario.settings.showSipp
+                  ? formatSippProtectedPensionAge(result.scenario.settings)
+                  : "n/a",
+            ],
+            [
               "SIPP withdrawal strategy",
               (result) =>
                 formatSippWithdrawalStrategy(result.scenario.settings),
@@ -1057,6 +1064,12 @@ export function buildComparisonDetailedRows(
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
+}
+
+function formatSippProtectedPensionAge(settings: PensionSettings) {
+  return settings.sippHasProtectedPensionAge
+    ? "Provider-confirmed age 50"
+    : "Not confirmed";
 }
 
 export function buildComparisonStatusItems(

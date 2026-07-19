@@ -189,6 +189,10 @@ function Field({
 
   if (field.type === "checkbox") {
     const validationId = validationIssue ? `${field.id}-validation` : undefined;
+    const descriptionId = showGuidanceNotes
+      ? `${field.id}-description`
+      : undefined;
+    const describedBy = [descriptionId, validationId].filter(Boolean).join(" ");
 
     return (
       <label
@@ -203,10 +207,12 @@ function Field({
             type="checkbox"
             checked={value as boolean}
             aria-invalid={Boolean(validationIssue) || undefined}
-            aria-describedby={validationId}
+            aria-describedby={describedBy || undefined}
             onChange={(event) => onChange(field.id, event.target.checked)}
           />
-          {showGuidanceNotes ? <span>{field.description}</span> : null}
+          {showGuidanceNotes ? (
+            <span id={descriptionId}>{field.description}</span>
+          ) : null}
         </span>
         <FieldValidationMessage id={validationId} issue={validationIssue} />
       </label>

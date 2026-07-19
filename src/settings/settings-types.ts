@@ -133,6 +133,8 @@ export type PensionSettings = {
   premiumHasNpa65: boolean;
   sippCurrentPot: number;
   sippMonthlyContribution: number;
+  sippHasProtectedPensionAge: boolean;
+  sippProtectedPensionAge: number;
   sippDrawAge: number;
   sippLumpSums: AddedPensionLumpSum[];
   sippRealInterestPercent: number;

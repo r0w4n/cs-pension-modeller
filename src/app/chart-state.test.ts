@@ -86,12 +86,32 @@ describe("chart-state", () => {
     expect(next.sippDrawAge).toBe(55);
   });
 
-  it("lets SIPP draw age move to 55 when age 55 is reached on 6 April 2028", () => {
+  it("resolves SIPP draw age to 57 when age 55 is reached on 6 April 2028 without protection", () => {
     const current = {
       ...createDefaultSettings(),
       dateOfBirth: "1973-04-06",
       startDate: "2026-06-01",
       requirementAge: 55,
+      sippDrawAge: 68,
+      showSipp: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      sippAccessAge: 55,
+    });
+
+    expect(next.requirementAge).toBe(55);
+    expect(next.sippDrawAge).toBe(57);
+  });
+
+  it("allows SIPP draw age to move to a provider-confirmed protected age after 6 April 2028", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1973-04-06",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 55,
       sippDrawAge: 68,
       showSipp: true,
     };

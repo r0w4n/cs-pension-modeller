@@ -3,6 +3,7 @@ import {
   NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE,
   STATE_PENSION_AGE_STEP,
 } from "../settings-types";
+import type { PensionSettings } from "../settings-types";
 import {
   addMonthsToIsoDate,
   addYearsToIsoDate,
@@ -227,8 +228,48 @@ export function calculateMinimumPensionAccessAge(dateOfBirth: string) {
     : 55;
 }
 
-export function calculateMinimumSippAccessAge(_dateOfBirth: string) {
-  return 55;
+export type SippAccessAgeSettings = Pick<
+  PensionSettings,
+  | "dateOfBirth"
+  | "sippDrawAge"
+  | "sippHasProtectedPensionAge"
+  | "sippProtectedPensionAge"
+>;
+
+export const PROVIDER_CONFIRMED_PROTECTED_SIPP_ACCESS_AGE = 50;
+
+export function resolveSippMinimumAccessAge(settings: SippAccessAgeSettings) {
+  if (settings.sippHasProtectedPensionAge) {
+    return PROVIDER_CONFIRMED_PROTECTED_SIPP_ACCESS_AGE;
+  }
+
+  const normalizedDateOfBirth = normalizeIsoDate(
+    settings.dateOfBirth,
+    DEFAULT_DATE_OF_BIRTH
+  );
+  const sippDrawDate = addYearsToIsoDate(
+    normalizedDateOfBirth,
+    settings.sippDrawAge
+  );
+
+  return sippDrawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE ? 57 : 55;
+}
+
+export function calculateMinimumSippAccessAge(
+  dateOfBirth: string,
+  settings?: Partial<
+    Pick<
+      PensionSettings,
+      "sippHasProtectedPensionAge" | "sippProtectedPensionAge"
+    >
+  >
+) {
+  return resolveSippMinimumAccessAge({
+    dateOfBirth,
+    sippDrawAge: 55,
+    sippHasProtectedPensionAge: settings?.sippHasProtectedPensionAge ?? false,
+    sippProtectedPensionAge: settings?.sippProtectedPensionAge ?? 55,
+  });
 }
 
 export function normalizeAlphaPensionDrawAge(
@@ -240,5 +281,5 @@ export function normalizeAlphaPensionDrawAge(
 
 export function normalizeSippDrawAge(value: number, _dateOfBirth: string) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.min(100, Math.max(55, parsed)) : 58;
+  return Number.isFinite(parsed) ? Math.min(100, Math.max(0, parsed)) : 58;
 }

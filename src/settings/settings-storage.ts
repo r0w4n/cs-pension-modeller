@@ -181,6 +181,8 @@ function coerceSettings(
     ),
     sippCurrentPot: coerceNumber(input.sippCurrentPot),
     sippMonthlyContribution: coerceNumber(input.sippMonthlyContribution),
+    sippHasProtectedPensionAge: coerceBoolean(input.sippHasProtectedPensionAge),
+    sippProtectedPensionAge: coerceNumber(input.sippProtectedPensionAge),
     sippDrawAge: coerceNumber(input.sippDrawAge),
     sippLumpSums:
       coerceAddedPensionLumpSums(input.sippLumpSums) ??

@@ -13,6 +13,7 @@ import {
   normalizeSippDrawAge,
   normalizeStatePensionDrawAge,
   normalizeStatePensionDrawDate,
+  resolveSippMinimumAccessAge,
   type PensionSettings,
 } from "../settings";
 import {
@@ -67,7 +68,10 @@ function createChartStateContext(settings: PensionSettings): ChartStateContext {
     minimumAlphaAccessAge: calculateMinimumPensionAccessAge(
       settings.dateOfBirth
     ),
-    minimumSippAccessAge: calculateMinimumSippAccessAge(settings.dateOfBirth),
+    minimumSippAccessAge: calculateMinimumSippAccessAge(
+      settings.dateOfBirth,
+      settings
+    ),
   };
 }
 
@@ -288,7 +292,10 @@ function applyAccessAgePatch(
       sippAccessAgeBounds.min,
       sippAccessAgeBounds.max
     );
-    next.sippDrawAge = normalizeSippDrawAge(sippAccessAge, next.dateOfBirth);
+    next.sippDrawAge = normalizeSippDrawAge(
+      resolveSippChartAccessAge(next, sippAccessAge),
+      next.dateOfBirth
+    );
     reconcileSippWithdrawalTarget(next);
   }
 
@@ -360,6 +367,18 @@ function applyAccessAgePatch(
     );
     next.premiumDrawAge = normalizeSetting("premiumDrawAge", premiumStartAge);
   }
+}
+
+function resolveSippChartAccessAge(
+  settings: PensionSettings,
+  sippAccessAge: number
+) {
+  const minimumSippAccessAge = resolveSippMinimumAccessAge({
+    ...settings,
+    sippDrawAge: sippAccessAge,
+  });
+
+  return Math.max(sippAccessAge, minimumSippAccessAge);
 }
 
 function applyUseByAgePatch(

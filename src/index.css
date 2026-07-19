@@ -1387,6 +1387,16 @@ h3 {
   accent-color: var(--accent);
 }
 
+.sipp-protected-age-panel {
+  display: grid;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+}
+
+.sipp-protected-age-panel .field-help {
+  margin: 0;
+}
+
 .range-scale {
   display: flex;
   justify-content: space-between;

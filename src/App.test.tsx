@@ -1726,6 +1726,41 @@ describe("App settings form", () => {
     );
   });
 
+  it("allows an aligned Alpha retirement and draw age to move later", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          dateOfBirth: "1987-06-01",
+          requirementAge: 57,
+          alphaPensionLeaveAge: 57,
+          alphaPensionDrawAge: 57,
+          statePensionDrawDate: "2055-06-01",
+          showAlpha: true,
+        })
+      )
+    );
+    renderAcknowledgedApp({ mode: "bridge" });
+
+    const targetAgeInput = screen.getByLabelText(
+      "Target retirement age exact value"
+    );
+    fireEvent.focus(targetAgeInput);
+    fireEvent.change(targetAgeInput, { target: { value: "60" } });
+    fireEvent.blur(targetAgeInput);
+
+    expect(
+      screen.getByLabelText("Target retirement age exact value")
+    ).toHaveValue(60);
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        requirementAge: 60,
+        alphaPensionDrawAge: 60,
+      })
+    );
+  });
+
   it("renders sensible default values", async () => {
     renderAcknowledgedApp();
 

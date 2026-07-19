@@ -7,6 +7,14 @@ Feature: Early retirement bridge planning
   Background:
     Given bridge analysis outputs are rounded to 2 decimal places
 
+  @retirement-age
+  Scenario: Move an aligned Alpha draw age with a later retirement age
+    Given the bridge retirement age is 57
+    And the bridge Alpha draw age is 57
+    When the bridge target retirement age is changed to 60
+    Then the bridge retirement age should be 60
+    And the bridge Alpha draw age should be 60
+
   @no-civil-service-pension
   Scenario: Model a bridge plan without Civil Service pension income
     Given the bridge plan has no Civil Service pension

@@ -33,6 +33,87 @@ describe("chart-state", () => {
     expect(next.alphaPensionLeaveAge).toBe(64);
   });
 
+  it("moves an aligned Alpha draw age when retirement moves later", () => {
+    const current = {
+      ...createDefaultSettings(),
+      requirementAge: 57,
+      alphaPensionLeaveAge: 57,
+      alphaPensionDrawAge: 57,
+      showAlpha: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      retirementAge: 60,
+    });
+
+    expect(next.requirementAge).toBe(60);
+    expect(next.alphaPensionDrawAge).toBe(60);
+    expect(next.alphaPensionLeaveAge).toBe(57);
+  });
+
+  it("preserves an intentionally later Alpha draw age", () => {
+    const current = {
+      ...createDefaultSettings(),
+      requirementAge: 57,
+      alphaPensionLeaveAge: 57,
+      alphaPensionDrawAge: 68,
+      showAlpha: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      retirementAge: 60,
+    });
+
+    expect(next.requirementAge).toBe(60);
+    expect(next.alphaPensionDrawAge).toBe(68);
+  });
+
+  it("keeps other pension and savings start ages independent", () => {
+    const current = {
+      ...createDefaultSettings(),
+      requirementAge: 57,
+      alphaPensionDrawAge: 57,
+      isaDrawAge: 72,
+      sippDrawAge: 68,
+      nuvosPensionDrawAge: 65,
+      premiumDrawAge: 60,
+      showAlpha: true,
+      showIsa: true,
+      showSipp: true,
+      showNuvos: true,
+      showPremium: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      retirementAge: 60,
+    });
+
+    expect(next.requirementAge).toBe(60);
+    expect(next.alphaPensionDrawAge).toBe(60);
+    expect(next.isaDrawAge).toBe(72);
+    expect(next.sippDrawAge).toBe(68);
+    expect(next.nuvosPensionDrawAge).toBe(65);
+    expect(next.premiumDrawAge).toBe(60);
+  });
+
+  it("continues to cap retirement at State Pension age", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      requirementAge: 57,
+      alphaPensionDrawAge: 57,
+      statePensionDrawDate: "2055-06-01",
+      showAlpha: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      retirementAge: 70,
+    });
+
+    expect(next.requirementAge).toBe(68);
+    expect(next.alphaPensionDrawAge).toBe(68);
+  });
+
   it("does not move ISA draw age when retirement age changes", () => {
     const current = {
       ...createDefaultSettings(),

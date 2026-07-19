@@ -22,6 +22,7 @@ import {
   saveStoredJourneyRetirementIncomeDisplay,
   type RetirementIncomeDisplay,
 } from "../../src/app/app-persistence";
+import { applyBridgeChartParameterPatch } from "../../src/app/chart-state";
 import {
   calculateAnnualIncomeTax,
   calculateAnnualStatePensionAtDraw,
@@ -555,6 +556,45 @@ Given(
   "the bridge retirement age is {float}",
   function (this: ProductAcceptanceWorld, requirementAge: number) {
     updateSettings(this, { requirementAge });
+  }
+);
+
+Given(
+  "the bridge Alpha draw age is {float}",
+  function (this: ProductAcceptanceWorld, alphaPensionDrawAge: number) {
+    updateSettings(this, {
+      showAlpha: true,
+      alphaPensionDrawAge,
+    });
+  }
+);
+
+When(
+  "the bridge target retirement age is changed to {float}",
+  function (this: ProductAcceptanceWorld, retirementAge: number) {
+    this.settings = applyBridgeChartParameterPatch(getSettings(this), {
+      retirementAge,
+    });
+  }
+);
+
+Then(
+  "the bridge retirement age should be {float}",
+  function (this: ProductAcceptanceWorld, expectedAge: number) {
+    assertCondition(
+      getSettings(this).requirementAge === expectedAge,
+      `Expected bridge retirement age ${expectedAge}, received ${getSettings(this).requirementAge}.`
+    );
+  }
+);
+
+Then(
+  "the bridge Alpha draw age should be {float}",
+  function (this: ProductAcceptanceWorld, expectedAge: number) {
+    assertCondition(
+      getSettings(this).alphaPensionDrawAge === expectedAge,
+      `Expected bridge Alpha draw age ${expectedAge}, received ${getSettings(this).alphaPensionDrawAge}.`
+    );
   }
 );
 

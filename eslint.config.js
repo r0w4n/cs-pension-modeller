@@ -112,6 +112,28 @@ export default tseslint.config(
     },
   },
   {
+    files: ["features/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@playwright/test",
+              message:
+                "Keep Gherkin/Cucumber tests as fast business-rule checks. Put browser journeys in e2e Playwright specs.",
+            },
+            {
+              name: "playwright",
+              message:
+                "Keep Gherkin/Cucumber tests as fast business-rule checks. Put browser journeys in e2e Playwright specs.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["**/*.test.{ts,tsx}", "src/test/**/*.{ts,tsx}"],
     extends: [vitest.configs.recommended, testingLibrary.configs["flat/react"]],
     languageOptions: {

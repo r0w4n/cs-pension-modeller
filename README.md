@@ -304,6 +304,7 @@ npm run format:check
 npm run lint
 npm run typecheck:all
 npm run test:coverage
+npm run test:bdd
 npm run test:e2e
 npm run test:a11y
 npm run test:smoke:prod
@@ -312,6 +313,12 @@ npm run test:smoke:prod
 Static analysis is performed with type-aware ESLint backed by
 `typescript-eslint` and `eslint-plugin-sonarjs`, so `npm run lint` checks for
 TypeScript misuse and common bug patterns in addition to normal lint rules.
+
+The Cucumber/Gherkin suite under [`features/`](features) is for fast executable
+business rules and pension acceptance examples. Step definitions should exercise
+production domain, projection, settings, or app-domain APIs rather than browser
+automation. Browser journeys, routing, storage flows, layout, accessibility, and
+production smoke coverage live in [`e2e/`](e2e) Playwright specs.
 
 GitHub Actions workflow files are linted in CI with `actionlint`. If the
 `actionlint` binary is installed locally, run:
@@ -339,9 +346,9 @@ the same local checks that are expected before review.
 ## CI/CD
 
 GitHub Actions cover formatting, linting, TypeScript checks, test coverage,
-production build, Playwright journeys, axe accessibility checks, production
-smoke checks, dependency review, CodeQL, scheduled/manual npm audit, and GitHub
-Pages deployment from `main`.
+BDD acceptance tests, production build, Playwright journeys, axe accessibility
+checks, production smoke checks, dependency review, CodeQL, scheduled/manual npm
+audit, and GitHub Pages deployment from `main`.
 
 Dependency updates are managed by Dependabot for npm packages and GitHub
 Actions. Pull requests also run GitHub's Dependency Review action so dependency

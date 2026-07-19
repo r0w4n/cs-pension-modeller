@@ -1,4 +1,5 @@
 #!/bin/sh
 
 echo "Running pre-publish checks..."
-npm run test
+npm run test &&
+npm run test:bdd

@@ -2,6 +2,7 @@
 
 echo "Running pre-push checks..."
 npm run test &&
+npm run test:bdd &&
 npm run test:e2e &&
 npm run test:a11y &&
 npm run build

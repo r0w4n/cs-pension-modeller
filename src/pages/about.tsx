@@ -6,7 +6,7 @@ import "../index.css";
 function AboutPage() {
   return (
     <StaticPageLayout
-      eyebrow="Civil Service"
+      eyebrow="Civil Service Pensions"
       title="About"
       lead="A local-first planning tool for exploring pension timing and retirement income scenarios."
       description="Learn what the Civil Service Pension Modeller does, what it can include, how it stores data locally, and where it should be used cautiously."

@@ -140,7 +140,7 @@ function FormulaBlock({ children }: { children: string }) {
 export function MethodologyPage() {
   return (
     <StaticPageLayout
-      eyebrow="Civil Service"
+      eyebrow="Civil Service Pensions"
       title="Methodology"
       lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, drawdown, tax and bridge funding."
       description="Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."

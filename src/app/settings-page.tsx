@@ -121,7 +121,7 @@ export function SettingsPage({
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Civil Service</p>
+          <p className="eyebrow">Civil Service Pensions</p>
           <h1>Settings</h1>
           <p className="lead">Manage saved assumptions for this browser.</p>
           <a className="static-backlink" href={appBaseHref}>

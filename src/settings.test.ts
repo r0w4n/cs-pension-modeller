@@ -655,7 +655,7 @@ describe("settings unit tests", () => {
     );
   });
 
-  it("reports when date of birth is not before the calculation start date", () => {
+  it("reports when date of birth is not before the current date", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
       startDate: "2026-05-01",
@@ -666,7 +666,7 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "dateOfBirth",
-          message: "Date of birth must be before the calculation start date.",
+          message: "Date of birth must be before the current date.",
         }),
       ])
     );
@@ -707,7 +707,7 @@ describe("settings unit tests", () => {
         expect.objectContaining({
           field: "alphaPensionAbsDate",
           message:
-            "Last Annual Benefits Statement must be on or before the calculation start date.",
+            "Last Annual Benefits Statement must be on or before the current date.",
         }),
       ])
     );
@@ -748,13 +748,11 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "sippDrawAge",
-          message:
-            "SIPP draw start age must be after the calculation start date.",
+          message: "SIPP draw start age must be after the current date.",
         }),
         expect.objectContaining({
           field: "isaDrawAge",
-          message:
-            "ISA draw start age must be after the calculation start date.",
+          message: "ISA draw start age must be after the current date.",
         }),
       ])
     );
@@ -885,7 +883,7 @@ describe("settings unit tests", () => {
           field: "isaLumpSums",
           itemId: "isa-lump",
           message:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         }),
       ])
     );
@@ -925,13 +923,13 @@ describe("settings unit tests", () => {
           field: "sippLumpSums",
           itemId: "sipp-after-retirement",
           message:
-            "SIPP lump sums must fall between the calculation start date and the earlier of retirement age and SIPP draw start.",
+            "SIPP lump sums must fall between the current date and the earlier of retirement age and SIPP draw start.",
         }),
         expect.objectContaining({
           field: "isaLumpSums",
           itemId: "isa-after-retirement",
           message:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         }),
       ])
     );

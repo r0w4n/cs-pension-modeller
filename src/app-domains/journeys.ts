@@ -159,12 +159,9 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 2",
         title: "Your personal details",
         description:
-          "Set the dates that define current age, access ages, and the length of the bridge.",
+          "Set the details that define current age, access ages, and the length of the bridge.",
         kind: "fields",
-        fieldIds: ["startDate", "dateOfBirth", "lifeExpectancy"],
-        fieldLabels: {
-          startDate: "Start modelling from",
-        },
+        fieldIds: ["dateOfBirth", "lifeExpectancy"],
       },
       {
         id: "include",

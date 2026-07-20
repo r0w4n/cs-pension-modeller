@@ -12,7 +12,6 @@ export type FieldInfoLink = {
 
 export type DateField = {
   id:
-    | "startDate"
     | "dateOfBirth"
     | "statePensionDrawDate"
     | "alphaPensionAbsDate"
@@ -203,13 +202,6 @@ export const fieldGroups: FieldGroup[] = [
     description:
       "Core personal dates and assumptions used across the modeller.",
     fields: [
-      {
-        id: "startDate",
-        label: "Calculation Start Date",
-        type: "date",
-        description:
-          "The date the projection starts from. Use today for a fresh plan, or a statement date if you are reconciling the model to a known figure.",
-      },
       {
         id: "dateOfBirth",
         label: "Your Birth Month and Year",
@@ -489,7 +481,7 @@ export const fieldGroups: FieldGroup[] = [
         max: 15,
         step: 0.1,
         description:
-          "The annual pay-rise assumption applied to current pensionable earnings before calculating future Alpha accrual. Set this to 0% to keep current pensionable earnings flat. The model compounds this once for each full year after the calculation start date.",
+          "The annual pay-rise assumption applied to current pensionable earnings before calculating future Alpha accrual. Set this to 0% to keep current pensionable earnings flat. The model compounds this once for each full year after the current date.",
       },
       {
         id: "alphaPensionDrawAge",

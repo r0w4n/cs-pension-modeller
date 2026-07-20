@@ -82,7 +82,7 @@ export function validateLisaRules({
   if (settings.showLisa && lisaDrawDate <= settings.startDate) {
     issues.push({
       field: "lisaDrawAge",
-      message: "LISA draw start age must be after the calculation start date.",
+      message: "LISA draw start age must be after the current date.",
     });
   }
 

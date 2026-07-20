@@ -284,7 +284,7 @@ export function validateAlphaPensionRules({
     issues.push({
       field: "alphaPensionAbsDate",
       message:
-        "Last Annual Benefits Statement must be on or before the calculation start date.",
+        "Last Annual Benefits Statement must be on or before the current date.",
     });
   }
 

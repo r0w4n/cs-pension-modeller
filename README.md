@@ -19,8 +19,8 @@ advice where appropriate.
 ## What The App Does
 
 The app takes user-entered pension, savings, tax, inflation, and retirement
-timing assumptions and builds a month-by-month projection from the selected
-calculation start date to the selected planning horizon.
+timing assumptions and builds a month-by-month projection from the current date
+to the selected planning horizon. The calculation start is set automatically.
 
 It supports:
 
@@ -72,8 +72,7 @@ For each projection month, the model can calculate values such as:
 
 The current app is driven by inputs grouped around:
 
-- personal details: calculation start date, birth month/year, retirement target,
-  and planning horizon
+- personal details: birth month/year, retirement target, and planning horizon
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
@@ -104,7 +103,7 @@ Some important assumptions and simplifications are:
 - Alpha accrual is calculated from pensionable earnings using the Alpha accrual
   rate encoded in the model.
 - The starting Alpha pension is rolled forward from the latest ABS year to the
-  calculation start date.
+  current date, which is used as the internal calculation start date.
 - Future Alpha accrual depends on pensionable earnings, and Alpha CPI-linked
   pension increases use the central projection basis and inflation assumption.
 - nuvos pensionable-service accrual is capped at 31 March 2015; after then,

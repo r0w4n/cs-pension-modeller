@@ -114,8 +114,6 @@ export function getPrimaryDateYearRange(
   switch (fieldId) {
     case "dateOfBirth":
       return { min: currentYear - 100, max: currentYear };
-    case "startDate":
-      return { min: currentYear - 5, max: currentYear + 5 };
     default:
       return { min: currentYear - 25, max: currentYear + 25 };
   }

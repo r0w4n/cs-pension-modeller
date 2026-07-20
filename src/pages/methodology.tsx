@@ -23,7 +23,7 @@ const PROJECTED_SOURCES = [
 ] as const;
 
 const KEY_DATES = [
-  "calculation start date",
+  "current date (the internal calculation start date)",
   "Alpha and nuvos statement dates",
   "Premium valuation date",
   "State Pension age",
@@ -166,8 +166,9 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
-          The projection is run month by month from the selected start date to
-          the selected planning horizon. Each month, the model calculates
+          The projection is run month by month from the current date to the
+          selected planning horizon. The current date is set automatically and
+          is not an editable assumption. Each month, the model calculates
           expected pension accrual, revaluation, savings growth, contributions,
           withdrawals, gross income, estimated tax and net income.
         </p>
@@ -308,14 +309,14 @@ export function MethodologyPage() {
         <p className="section-copy">
           The model can start from an existing Alpha pension amount taken from
           an Annual Benefit Statement. It then projects future accrual from the
-          selected start date.
+          current date.
         </p>
         <p className="section-copy">
           In the expert journey, an optional expected pay-rise percentage can
           increase future Alpha pensionable earnings for each full year after
-          the calculation start date. Leaving it at 0% keeps pensionable
-          earnings flat. This affects future Alpha accrual, but does not model
-          payroll contribution deductions.
+          the current date. Leaving it at 0% keeps pensionable earnings flat.
+          This affects future Alpha accrual, but does not model payroll
+          contribution deductions.
         </p>
 
         <h3>Alpha revaluation</h3>

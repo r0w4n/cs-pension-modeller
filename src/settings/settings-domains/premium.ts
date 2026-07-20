@@ -71,8 +71,7 @@ export function validatePremiumRules({
   if (settings.premiumValuationDate > settings.startDate) {
     issues.push({
       field: "premiumValuationDate",
-      message:
-        "Premium valuation date must be on or before the calculation start date.",
+      message: "Premium valuation date must be on or before the current date.",
     });
   }
 

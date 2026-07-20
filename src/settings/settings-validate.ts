@@ -266,7 +266,7 @@ function validateLumpSumRules(
           earliestDate: settings.startDate,
           latestDate: context.sippContributionStopDate,
           rangeMessage:
-            "SIPP lump sums must fall between the calculation start date and the earlier of retirement age and SIPP draw start.",
+            "SIPP lump sums must fall between the current date and the earlier of retirement age and SIPP draw start.",
         })
       : []),
     ...(settings.showIsa
@@ -276,7 +276,7 @@ function validateLumpSumRules(
           earliestDate: settings.startDate,
           latestDate: context.isaContributionStopDate,
           rangeMessage:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         })
       : []),
     ...(settings.showLisa
@@ -286,7 +286,7 @@ function validateLumpSumRules(
           earliestDate: settings.startDate,
           latestDate: context.lisaContributionStopDate,
           rangeMessage:
-            "LISA lump sums must fall between the calculation start date and the earlier of retirement age and LISA draw start.",
+            "LISA lump sums must fall between the current date and the earlier of retirement age and LISA draw start.",
         })
       : []),
   ];

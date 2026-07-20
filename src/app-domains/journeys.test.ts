@@ -30,6 +30,12 @@ function getJourneyStepIds(journeyId: string) {
 }
 
 describe("journey definitions", () => {
+  it("keeps the internal calculation start date out of every journey", () => {
+    for (const journey of JOURNEY_DEFINITIONS) {
+      expect(getJourneyFieldIds(journey.id)).not.toContain("startDate");
+    }
+  });
+
   it("keeps the Alpha pay-rise control in the expert journey only", () => {
     const alphaPayRiseFieldIds = [
       "alphaPayRisePercent",

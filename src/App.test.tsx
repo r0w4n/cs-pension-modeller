@@ -1782,9 +1782,9 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(
-      getTodayIsoDate()
-    );
+    expect(
+      screen.queryByLabelText("Calculation Start Date")
+    ).not.toBeInTheDocument();
     expect(
       screen.getByLabelText("Your Birth Month and Year month")
     ).toHaveValue("06");
@@ -2529,9 +2529,9 @@ describe("App settings form", () => {
 
     openJourneyStep(/Personal details/i);
 
-    expect(screen.getByLabelText("Calculation Start Date")).toHaveValue(
-      getTodayIsoDate()
-    );
+    expect(
+      screen.queryByLabelText("Calculation Start Date")
+    ).not.toBeInTheDocument();
 
     advanceJourneyToResult();
 
@@ -3660,7 +3660,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows inline validation when date of birth is not before the calculation start date", async () => {
+  it("shows inline validation when date of birth is not before the current date", async () => {
     const [startYear, startMonth] = getTodayIsoDate().split("-").map(Number);
     const invalidBirthMonth =
       startMonth === 12 ? "12" : `${startMonth + 1}`.padStart(2, "0");
@@ -3680,7 +3680,7 @@ describe("App settings form", () => {
 
     expect(
       await screen.findAllByText(
-        "Date of birth must be before the calculation start date."
+        "Date of birth must be before the current date."
       )
     ).not.toHaveLength(0);
     expect(
@@ -3745,15 +3745,10 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows inline validation when the ABS year is after the calculation start date", async () => {
+  it("shows inline validation when the ABS year is after the current date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-31T12:00:00Z"));
     renderAcknowledgedApp();
-
-    openJourneyStep(/Personal details/i);
-
-    fireEvent.change(screen.getByLabelText("Calculation Start Date"), {
-      target: { value: "2026-03-31" },
-    });
-    fireEvent.blur(screen.getByLabelText("Calculation Start Date"));
 
     openJourneyStep(/Alpha pension details/i);
 
@@ -3763,8 +3758,8 @@ describe("App settings form", () => {
     fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
 
     expect(
-      await screen.findAllByText(
-        "Last Annual Benefits Statement must be on or before the calculation start date."
+      screen.getAllByText(
+        "Last Annual Benefits Statement must be on or before the current date."
       )
     ).not.toHaveLength(0);
     expect(

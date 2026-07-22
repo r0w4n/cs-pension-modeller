@@ -58,6 +58,27 @@ export function SettingsGroupSupplementaryEditor({
     );
   }
 
+  if (groupId === "cs-avc") {
+    return (
+      <AddedPensionLumpSumsEditorFeature
+        lumpSums={settings.csAvcLumpSums}
+        defaultStartDate={settings.startDate}
+        useDropdownDates={useDropdownDates}
+        title="CS AVC lump sums"
+        description="Add one-off or yearly lump sum CS AVC contributions. A yearly entry repeats on the same calendar date until its end date."
+        emptyText="No CS AVC lump sum contributions set up yet."
+        itemLabel="CS AVC lump sum"
+        addButtonLabel="Add CS AVC lump sum"
+        removeButtonLabel="Remove CS AVC lump sum"
+        validationIssues={getValidationIssuesForField(
+          validationIssues,
+          "csAvcLumpSums"
+        )}
+        onChange={(nextLumpSums) => onChange("csAvcLumpSums", nextLumpSums)}
+      />
+    );
+  }
+
   if (groupId === "isa") {
     return (
       <AddedPensionLumpSumsEditorFeature

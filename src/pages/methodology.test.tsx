@@ -156,9 +156,9 @@ describe("MethodologyPage", () => {
     expect(
       screen.getByText(/grosses up net additions by 1 \/ 0.8/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Before SIPP and LISA access/)).toHaveTextContent(
-      "draws from SIPP first"
-    );
+    expect(
+      screen.getByText(/Before pension-pot and LISA access/)
+    ).toHaveTextContent("draws from SIPP first");
     expect(
       screen.getByText(/The retirement income summary starts/)
     ).toHaveTextContent(
@@ -176,7 +176,7 @@ describe("MethodologyPage", () => {
       screen.getByRole("heading", { name: "Scenario comparison methodology" })
     ).toBeInTheDocument();
     expect(
-      screen.getByText("ISA, LISA and SIPP depletion ages")
+      screen.getByText("ISA, LISA, SIPP and CS AVC depletion ages")
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Lifetime ISA methodology" })

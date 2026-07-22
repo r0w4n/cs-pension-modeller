@@ -39,6 +39,8 @@ const projectionFixtures = vi.hoisted(() => {
       monthlyAdditionalGuaranteedIncomeTaxable: 0,
       sippPot: 40000,
       monthlySippPension: 0,
+      csAvcPot: 0,
+      monthlyCsAvcPension: 0,
       isaPot: 15000,
       monthlyIsaPension: 0,
       lisaPot: 0,
@@ -81,6 +83,8 @@ const projectionFixtures = vi.hoisted(() => {
       monthlyAdditionalGuaranteedIncomeTaxable: 0,
       sippPot: 35000,
       monthlySippPension: 200,
+      csAvcPot: 0,
+      monthlyCsAvcPension: 0,
       isaPot: 12000,
       monthlyIsaPension: 100,
       lisaPot: 0,
@@ -127,6 +131,8 @@ const projectionFixtures = vi.hoisted(() => {
       monthlyAdditionalGuaranteedIncomeTaxable: 0,
       sippPot: 0,
       monthlySippPension: 300,
+      csAvcPot: 0,
+      monthlyCsAvcPension: 0,
       isaPot: 0,
       monthlyIsaPension: 150,
       lisaPot: 0,
@@ -241,6 +247,7 @@ vi.mock("./projection", async () => {
             (settings.showStatePension ? row.monthlyStatePension : 0) +
             row.monthlyAdditionalGuaranteedIncomeGross +
             (settings.showSipp ? row.monthlySippPension : 0) +
+            (settings.showCsAvc ? row.monthlyCsAvcPension : 0) +
             (settings.showIsa ? row.monthlyIsaPension : 0) +
             (settings.showLisa ? row.monthlyLisaPension : 0),
           monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
@@ -272,6 +279,7 @@ vi.mock("./projection", async () => {
           startsNuvosPension: settings.startDate,
           startsPremiumPension: settings.startDate,
           startsSippDraw: settings.startDate,
+          startsCsAvcDraw: settings.startDate,
           startsIsaDraw: settings.startDate,
           startsLisaDraw: settings.startDate,
           startsStatePension: settings.statePensionDrawDate,
@@ -320,6 +328,11 @@ vi.mock("./projection", async () => {
           potAtDraw: rows.at(-1)?.sippPot ?? 0,
           monthlyAtDraw: rows.at(-1)?.monthlySippPension ?? 0,
           totalContributionsAfterTaxRelief: 0,
+        },
+        csAvcPension: {
+          potAtDraw: rows.at(-1)?.csAvcPot ?? 0,
+          monthlyAtDraw: rows.at(-1)?.monthlyCsAvcPension ?? 0,
+          totalContributions: 0,
         },
         isaPension: {
           potAtDraw: rows.at(-1)?.isaPot ?? 0,
@@ -544,6 +557,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showPremium: defaultSettings.showPremium,
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
+    showCsAvc: defaultSettings.showCsAvc,
     showIsa: defaultSettings.showIsa,
     showLisa: defaultSettings.showLisa,
     showAdditionalGuaranteedIncome:
@@ -631,6 +645,16 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
     sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
     sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+    csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+    csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+    csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+    csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+    csAvcDrawAge: defaultSettings.csAvcDrawAge,
+    csAvcLumpSums: defaultSettings.csAvcLumpSums,
+    csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+    csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+    csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+    csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
     isaCurrentPot: defaultSettings.isaCurrentPot,
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
     isaDrawAge: defaultSettings.isaDrawAge,
@@ -657,6 +681,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
     taxSippTaxFreeWithdrawalPercent:
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
+    taxCsAvcTaxFreeWithdrawalPercent:
+      defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     ...overrides,
   };
 }
@@ -1024,6 +1050,105 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Planned nuvos Pension Draw Age")
     ).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      toggleName: "Alpha",
+      stepName: /Your Alpha pension/i,
+      headingName: "Your Alpha pension",
+    },
+    {
+      toggleName: "classic",
+      stepName: /classic pension/i,
+      headingName: "classic pension",
+    },
+    {
+      toggleName: "classic plus",
+      stepName: /classic plus pension/i,
+      headingName: "classic plus pension",
+    },
+    {
+      toggleName: "nuvos",
+      stepName: /nuvos pension/i,
+      headingName: "nuvos pension",
+    },
+    {
+      toggleName: "Premium",
+      stepName: /Premium pension/i,
+      headingName: "Premium pension",
+    },
+    {
+      toggleName: "Civil Service AVC",
+      stepName: /Civil Service AVC/i,
+      headingName: "Civil Service AVC",
+    },
+  ])(
+    "lets the simple journey exercise the $toggleName optional checkbox",
+    ({ toggleName, stepName, headingName }) => {
+      renderAcknowledgedApp({ mode: "simple" });
+      openJourneyStep(/Your Civil Service pensions/i);
+
+      const toggle = screen.getByRole("checkbox", { name: toggleName });
+
+      if (!toggle.matches(":checked")) {
+        fireEvent.click(toggle);
+      }
+
+      expect(toggle).toBeChecked();
+      expect(
+        screen.getByRole("button", { name: stepName })
+      ).toBeInTheDocument();
+
+      fireEvent.click(toggle);
+
+      expect(toggle).not.toBeChecked();
+      expect(
+        screen.queryByRole("button", { name: stepName })
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(toggle);
+
+      expect(toggle).toBeChecked();
+      openJourneyStep(stepName);
+      expect(
+        screen.getByRole("heading", { name: headingName })
+      ).toBeInTheDocument();
+    }
+  );
+
+  it("keeps ISA, LISA and SIPP off when simple journey CS AVC is enabled", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+    openJourneyStep(/Your Civil Service pensions/i);
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Civil Service AVC" })
+    );
+    openJourneyStep(/Civil Service AVC/i);
+
+    expect(
+      screen.getByLabelText("Current CS AVC balance (£)")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Current ISA balance (£)")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Current LISA balance (£)")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Current SIPP balance (£)")
+    ).not.toBeInTheDocument();
+    expect(
+      vi
+        .mocked(createProjectionTable)
+        .mock.calls.some(
+          ([settings]) =>
+            settings.showCsAvc &&
+            !settings.showIsa &&
+            !settings.showLisa &&
+            !settings.showSipp
+        )
+    ).toBe(true);
   });
 
   it("lets the simple journey hide Alpha-specific steps from the Civil Service pensions step", () => {
@@ -2205,6 +2330,7 @@ describe("App settings form", () => {
       "nuvos",
       "Premium",
       "SIPP",
+      "Civil Service AVC",
       "ISA",
       "LISA",
       "Additional guaranteed income",

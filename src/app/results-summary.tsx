@@ -226,7 +226,7 @@ export function InflationBasisPanel({
     ? "Projection basis: Real terms, today's money"
     : "Projection basis: Nominal terms, future inflated values";
   const explanation = isRealTerms
-    ? "You are viewing results in real terms. This means all figures are shown in today's money. Inflation-linked increases have been removed from Alpha, nuvos, and State Pension where they only preserve purchasing power. SIPP, ISA and LISA growth uses inflation-adjusted real returns."
+    ? "You are viewing results in real terms. This means all figures are shown in today's money. Inflation-linked increases have been removed from Alpha, nuvos, and State Pension where they only preserve purchasing power. SIPP, CS AVC, ISA and LISA growth uses inflation-adjusted real returns."
     : "You are viewing results in nominal terms. This means future figures include assumed inflation. Retirement income targets, pension increases, and investment balances are projected as future pound amounts.";
   const rows = buildInflationRows(settings, assumptions, isRealTerms);
 
@@ -298,6 +298,18 @@ function buildInflationRows(
         true,
         assumptions.sippNominalReturnAnnual,
         assumptions.sippModelledReturnAnnual,
+        settings.projectionBasis
+      )
+    );
+  }
+
+  if (settings.showCsAvc) {
+    rows.push(
+      createReturnRow(
+        "CS AVC nominal return",
+        true,
+        assumptions.csAvcNominalReturnAnnual,
+        assumptions.csAvcModelledReturnAnnual,
         settings.projectionBasis
       )
     );

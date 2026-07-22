@@ -55,6 +55,8 @@ export type DerivedInflationAssumptions = {
   inflationRateMonthly: number;
   sippNominalReturnAnnual: number;
   sippModelledReturnAnnual: number;
+  csAvcNominalReturnAnnual: number;
+  csAvcModelledReturnAnnual: number;
   isaNominalReturnAnnual: number;
   isaModelledReturnAnnual: number;
   lisaNominalReturnAnnual: number;
@@ -71,6 +73,7 @@ export type DerivedInflationAssumptions = {
 
 export type ProjectionRuntimeDates = {
   sippDrawDate: string;
+  csAvcDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
   alphaAbsDate: string;
@@ -84,6 +87,7 @@ export function deriveInflationAssumptions(
   const inflationRateAnnual = settings.inflationRateAnnual / 100;
   const inflationRateMonthly = (1 + inflationRateAnnual) ** (1 / 12) - 1;
   const sippNominalReturnAnnual = settings.sippRealInterestPercent / 100;
+  const csAvcNominalReturnAnnual = settings.csAvcRealInterestPercent / 100;
   const isaNominalReturnAnnual = settings.isaRealInterestPercent / 100;
   const lisaNominalReturnAnnual = settings.lisaRealInterestPercent / 100;
   const alphaNominalInServiceRevaluationAnnual = inflationRateAnnual;
@@ -98,6 +102,11 @@ export function deriveInflationAssumptions(
     sippModelledReturnAnnual: getModelledAnnualGrowthRate(
       settings,
       sippNominalReturnAnnual
+    ),
+    csAvcNominalReturnAnnual,
+    csAvcModelledReturnAnnual: getModelledAnnualGrowthRate(
+      settings,
+      csAvcNominalReturnAnnual
     ),
     isaNominalReturnAnnual,
     isaModelledReturnAnnual: getModelledAnnualGrowthRate(
@@ -260,6 +269,7 @@ export function createProjectionRuntimeDates(
 ): ProjectionRuntimeDates {
   return {
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
+    csAvcDrawDate: addYears(settings.dateOfBirth, settings.csAvcDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     alphaAbsDate: resolveAlphaAbsDate(settings.alphaPensionAbsDate),

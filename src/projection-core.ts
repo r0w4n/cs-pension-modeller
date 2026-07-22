@@ -46,6 +46,8 @@ export type ProjectionRow = {
   monthlyAdditionalGuaranteedIncomeTaxable: number;
   sippPot: number;
   monthlySippPension: number;
+  csAvcPot: number;
+  monthlyCsAvcPension: number;
   isaPot: number;
   monthlyIsaPension: number;
   lisaPot: number;
@@ -65,6 +67,7 @@ export type PensionSummary = {
     startsNuvosPension: string;
     startsPremiumPension: string;
     startsSippDraw: string;
+    startsCsAvcDraw: string;
     startsIsaDraw: string;
     startsLisaDraw: string;
     startsStatePension: string;
@@ -105,6 +108,11 @@ export type PensionSummary = {
     monthlyAtDraw: number;
     totalContributionsAfterTaxRelief: number;
   };
+  csAvcPension: {
+    potAtDraw: number;
+    monthlyAtDraw: number;
+    totalContributions: number;
+  };
   isaPension: {
     potAtDraw: number;
     monthlyAtDraw: number;
@@ -144,6 +152,7 @@ export type RetirementIncomeSource = {
     | "premium"
     | "additionalGuaranteedIncome"
     | "sipp"
+    | "csAvc"
     | "isa"
     | "lisa"
     | "statePension"
@@ -154,7 +163,7 @@ export type RetirementIncomeSource = {
 };
 
 export type BridgeWithdrawalSource = Omit<RetirementIncomeSource, "key"> & {
-  key: "sipp" | "isa" | "lisa";
+  key: "sipp" | "csAvc" | "isa" | "lisa";
   startDate: string;
   endDate: string | null;
   startAge: number;
@@ -202,11 +211,13 @@ export type BridgePhase = {
   annualIsaBridge: number;
   annualLisaBridge: number;
   annualSippBridge: number;
+  annualCsAvcBridge: number;
   annualShortfall: number;
   annualSurplus: number;
   totalIsaBridge: number;
   totalLisaBridge: number;
   totalSippBridge: number;
+  totalCsAvcBridge: number;
   totalBridgeRequired: number;
   unfundedShortfall: number;
 };
@@ -223,9 +234,11 @@ export type BridgePotProjectionRow = {
   isaBalance: number;
   lisaBalance: number;
   sippBalance: number;
+  csAvcBalance: number;
   isaDrawdown: number;
   lisaDrawdown: number;
   sippDrawdown: number;
+  csAvcDrawdown: number;
   unfundedShortfall: number;
   growth: number;
   milestones: string[];

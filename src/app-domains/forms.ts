@@ -29,6 +29,11 @@ import {
   shouldRenderSippField,
 } from "./sipp";
 import {
+  getCsAvcEffectiveRangeField,
+  isCsAvcFieldDisabled,
+  shouldRenderCsAvcField,
+} from "./cs-avc";
+import {
   getStatePensionDateYearRange,
   isStatePensionGrowthField,
 } from "./state-pension";
@@ -40,6 +45,7 @@ export function shouldRenderField(
 ) {
   return (
     shouldRenderSippField(fieldId, settings) &&
+    shouldRenderCsAvcField(fieldId, settings) &&
     shouldRenderIsaField(fieldId, settings) &&
     shouldRenderLisaField(fieldId, settings) &&
     shouldRenderClassicField(fieldId, settings)
@@ -59,6 +65,7 @@ export function isFieldDisabled(
     (isStatePensionGrowthField(fieldId) &&
       !settings.statePensionApplyFutureGrowth) ||
     isSippFieldDisabled(fieldId, settings) ||
+    isCsAvcFieldDisabled(fieldId, settings) ||
     isIsaFieldDisabled(fieldId, settings) ||
     isLisaFieldDisabled(fieldId, settings) ||
     (isAlphaEpaField(fieldId) && !settings.alphaEpaEnabled)
@@ -80,6 +87,7 @@ export function getEffectiveRangeField(
 
   effectiveField = getAlphaEffectiveRangeField(effectiveField, settings);
   effectiveField = getSippEffectiveRangeField(effectiveField, settings);
+  effectiveField = getCsAvcEffectiveRangeField(effectiveField, settings);
   effectiveField = getIsaEffectiveRangeField(effectiveField, settings);
   effectiveField = getLisaEffectiveRangeField(effectiveField, settings);
 

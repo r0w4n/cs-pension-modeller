@@ -9,6 +9,7 @@ export function calculateMonthlyIncomeTax(input: {
   monthlyPremiumPension?: number;
   monthlyStatePension: number;
   monthlySippPension: number;
+  monthlyCsAvcPension?: number;
   monthlyAdditionalGuaranteedIncomeTaxable?: number;
 }) {
   const {
@@ -20,6 +21,7 @@ export function calculateMonthlyIncomeTax(input: {
     monthlyPremiumPension = 0,
     monthlyStatePension,
     monthlySippPension,
+    monthlyCsAvcPension = 0,
     monthlyAdditionalGuaranteedIncomeTaxable = 0,
   } = input;
 
@@ -28,6 +30,7 @@ export function calculateMonthlyIncomeTax(input: {
   }
 
   const taxableSippShare = 1 - settings.taxSippTaxFreeWithdrawalPercent / 100;
+  const taxableCsAvcShare = 1 - settings.taxCsAvcTaxFreeWithdrawalPercent / 100;
   const annualTaxableIncome =
     (monthlyAlphaPension +
       monthlyClassicPension +
@@ -36,7 +39,8 @@ export function calculateMonthlyIncomeTax(input: {
       monthlyPremiumPension +
       monthlyStatePension +
       monthlyAdditionalGuaranteedIncomeTaxable +
-      monthlySippPension * taxableSippShare) *
+      monthlySippPension * taxableSippShare +
+      monthlyCsAvcPension * taxableCsAvcShare) *
     12;
 
   return calculateAnnualIncomeTax(settings, annualTaxableIncome) / 12;

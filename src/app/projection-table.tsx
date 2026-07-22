@@ -33,6 +33,7 @@ type ProjectionTableColumn = TableColumn & {
     | "showPremium"
     | "showStatePension"
     | "showSipp"
+    | "showCsAvc"
     | "showIsa"
     | "showLisa"
     | "taxationEnabled";
@@ -206,6 +207,18 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     label: "SIPP balance",
     width: "7rem",
     setting: "showSipp",
+  },
+  {
+    key: "monthlyCsAvcPension",
+    label: "Monthly CS AVC",
+    width: "7rem",
+    setting: "showCsAvc",
+  },
+  {
+    key: "csAvcPot",
+    label: "CS AVC balance",
+    width: "7rem",
+    setting: "showCsAvc",
   },
   {
     key: "monthlyIsaPension",
@@ -563,6 +576,10 @@ function renderProjectionTableCell(
       return formatCurrencyDetailed(row.monthlySippPension);
     case "sippPot":
       return formatCurrencyDetailed(row.sippPot);
+    case "monthlyCsAvcPension":
+      return formatCurrencyDetailed(row.monthlyCsAvcPension);
+    case "csAvcPot":
+      return formatCurrencyDetailed(row.csAvcPot);
     case "monthlyIsaPension":
       return formatCurrencyDetailed(row.monthlyIsaPension);
     case "isaPot":

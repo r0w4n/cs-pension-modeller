@@ -5,6 +5,7 @@ import {
 import { calculateMonthlyIncomeTax } from "./tax";
 import { calculateIsaPotBeforeWithdrawalAtDate } from "./isa";
 import { calculateSippPotBeforeWithdrawalAtDate } from "./sipp";
+import { calculateCsAvcPotBeforeWithdrawalAtDate } from "./cs-avc";
 import { calculateLisaPotBeforeWithdrawalAtDate } from "./lisa";
 import {
   calculateRetirementIncomeTargetAtDate,
@@ -56,11 +57,13 @@ export type BridgePhase = {
   annualIsaBridge: number;
   annualLisaBridge: number;
   annualSippBridge: number;
+  annualCsAvcBridge: number;
   annualShortfall: number;
   annualSurplus: number;
   totalIsaBridge: number;
   totalLisaBridge: number;
   totalSippBridge: number;
+  totalCsAvcBridge: number;
   totalBridgeRequired: number;
   unfundedShortfall: number;
 };
@@ -79,9 +82,11 @@ export type BridgePotProjectionRow = {
   isaBalance: number;
   lisaBalance: number;
   sippBalance: number;
+  csAvcBalance: number;
   isaDrawdown: number;
   lisaDrawdown: number;
   sippDrawdown: number;
+  csAvcDrawdown: number;
   unfundedShortfall: number;
   growth: number;
   milestones: string[];
@@ -120,16 +125,20 @@ type BridgePotBalances = {
   isaBalance: number;
   lisaBalance: number;
   sippBalance: number;
+  csAvcBalance: number;
 };
 
 type BridgePotGrowthRates = {
   isaMonthlyGrowthRate: number;
   lisaMonthlyGrowthRate: number;
   sippMonthlyGrowthRate: number;
+  csAvcMonthlyGrowthRate: number;
 };
 
 type MonthlySecureIncome = {
   monthlyAlphaPension: number;
+  monthlyClassicPension: number;
+  monthlyClassicPlusPension: number;
   monthlyNuvosPension: number;
   monthlyPremiumPension: number;
   monthlyAdditionalGuaranteedIncomeGross: number;
@@ -142,9 +151,11 @@ type BridgePotMilestoneTracker = {
   hasStartedIsaDrawdown: boolean;
   hasStartedLisaDrawdown: boolean;
   hasStartedSippDrawdown: boolean;
+  hasStartedCsAvcDrawdown: boolean;
   hasIncludedIsaDepletion: boolean;
   hasIncludedLisaDepletion: boolean;
   hasIncludedSippDepletion: boolean;
+  hasIncludedCsAvcDepletion: boolean;
 };
 
 export function prepareBridgeProjectionSettings(
@@ -168,6 +179,7 @@ export function generateRetirementBridgeAnalysis(
   );
   const endDate = addYears(settings.dateOfBirth, settings.lifeExpectancy);
   const sippAccessDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
+  const csAvcAccessDate = addYears(settings.dateOfBirth, settings.csAvcDrawAge);
   const lisaAccessDate = addYears(settings.dateOfBirth, settings.lisaDrawAge);
   const bridgeRows = generateMonthlyDateRange(retirementDate, endDate);
   const monthlyTargetIncomeAtRetirement =
@@ -179,6 +191,10 @@ export function generateRetirementBridgeAnalysis(
   const sippMonthlyGrowthRate = getModelledMonthlyGrowthRate(
     settings,
     settings.sippRealInterestPercent / 100
+  );
+  const csAvcMonthlyGrowthRate = getModelledMonthlyGrowthRate(
+    settings,
+    settings.csAvcRealInterestPercent / 100
   );
   const lisaMonthlyGrowthRate = getModelledMonthlyGrowthRate(
     settings,
@@ -195,6 +211,13 @@ export function generateRetirementBridgeAnalysis(
     sippBalance: settings.showSipp
       ? calculateSippPotBeforeWithdrawalAtDate({
           settings: { ...settings, showSipp: true },
+          rowDate: retirementDate,
+          drawDate: retirementDate,
+        })
+      : 0,
+    csAvcBalance: settings.showCsAvc
+      ? calculateCsAvcPotBeforeWithdrawalAtDate({
+          settings: { ...settings, showCsAvc: true },
           rowDate: retirementDate,
           drawDate: retirementDate,
         })
@@ -221,6 +244,7 @@ export function generateRetirementBridgeAnalysis(
         isaMonthlyGrowthRate,
         lisaMonthlyGrowthRate,
         sippMonthlyGrowthRate,
+        csAvcMonthlyGrowthRate,
       },
       shouldApplyGrowth: index > 0,
     });
@@ -242,8 +266,10 @@ export function generateRetirementBridgeAnalysis(
     const drawdown = drawBridgeShortfall({
       balances: potBalances,
       lisaAccessDate,
+      csAvcAccessDate,
       remainingShortfall: shortfall,
       rowDate,
+      secureIncome,
       settings,
       sippAccessDate,
     });
@@ -257,7 +283,10 @@ export function generateRetirementBridgeAnalysis(
     }
 
     totalBridgeRequired +=
-      drawdown.isaDrawdown + drawdown.lisaDrawdown + drawdown.sippDrawdown;
+      drawdown.isaDrawdown +
+      drawdown.lisaDrawdown +
+      drawdown.sippDrawdown +
+      drawdown.csAvcDrawdown;
     totalUnfundedShortfall += drawdown.remainingShortfall;
 
     if (drawdown.remainingShortfall > 0 && !firstFailureDate) {
@@ -287,11 +316,17 @@ export function generateRetirementBridgeAnalysis(
       isaDrawdown: drawdown.isaDrawdown,
       lisaDrawdown: drawdown.lisaDrawdown,
       sippDrawdown: drawdown.sippDrawdown,
+      csAvcDrawdown: drawdown.csAvcDrawdown,
       unfundedShortfall: drawdown.remainingShortfall,
       isaBalance: potBalances.isaBalance,
       lisaBalance: potBalances.lisaBalance,
       sippBalance: potBalances.sippBalance,
-      growth: growth.isaGrowth + growth.lisaGrowth + growth.sippGrowth,
+      csAvcBalance: potBalances.csAvcBalance,
+      growth:
+        growth.isaGrowth +
+        growth.lisaGrowth +
+        growth.sippGrowth +
+        growth.csAvcGrowth,
       milestones: [],
       milestoneDates: [],
       activeSources: getActiveBridgeIncomeSources({
@@ -402,12 +437,16 @@ function applyBridgePotGrowth(input: {
   const sippGrowth = shouldApplyGrowth
     ? balances.sippBalance * rates.sippMonthlyGrowthRate
     : 0;
+  const csAvcGrowth = shouldApplyGrowth
+    ? balances.csAvcBalance * rates.csAvcMonthlyGrowthRate
+    : 0;
 
   balances.isaBalance += isaGrowth;
   balances.lisaBalance += lisaGrowth;
   balances.sippBalance += sippGrowth;
+  balances.csAvcBalance += csAvcGrowth;
 
-  return { isaGrowth, lisaGrowth, sippGrowth };
+  return { isaGrowth, lisaGrowth, sippGrowth, csAvcGrowth };
 }
 
 function calculateMonthlySecureIncome(input: {
@@ -451,11 +490,14 @@ function calculateMonthlySecureIncome(input: {
     monthlyPremiumPension,
     monthlyStatePension,
     monthlySippPension: 0,
+    monthlyCsAvcPension: 0,
     monthlyAdditionalGuaranteedIncomeTaxable,
   });
 
   return {
     monthlyAlphaPension,
+    monthlyClassicPension,
+    monthlyClassicPlusPension,
     monthlyNuvosPension,
     monthlyPremiumPension,
     monthlyAdditionalGuaranteedIncomeGross,
@@ -477,21 +519,67 @@ function calculateMonthlySecureIncome(input: {
 
 function drawBridgeShortfall(input: {
   balances: BridgePotBalances;
+  csAvcAccessDate: string;
   lisaAccessDate: string;
   remainingShortfall: number;
   rowDate: string;
+  secureIncome: MonthlySecureIncome;
   settings: PensionSettings;
   sippAccessDate: string;
 }) {
-  const { balances, lisaAccessDate, rowDate, settings, sippAccessDate } = input;
+  const {
+    balances,
+    csAvcAccessDate,
+    lisaAccessDate,
+    rowDate,
+    secureIncome,
+    settings,
+    sippAccessDate,
+  } = input;
   let remainingShortfall = input.remainingShortfall;
-  const sippDrawdown = drawFromBridgePot({
+  const sippDrawdownResult = drawFromTaxableBridgePot({
     balance: balances.sippBalance,
     canDraw: rowDate >= sippAccessDate && settings.showSipp,
     remainingShortfall,
+    calculateNetIncome: (grossDrawdown) =>
+      calculateNetBridgeWithdrawal({
+        settings,
+        secureIncome,
+        sippDrawdown: grossDrawdown,
+        csAvcDrawdown: 0,
+      }),
   });
+  const sippDrawdown = sippDrawdownResult.grossDrawdown;
   balances.sippBalance -= sippDrawdown;
-  remainingShortfall -= sippDrawdown;
+  remainingShortfall = Math.max(
+    0,
+    remainingShortfall - sippDrawdownResult.netIncome
+  );
+
+  const csAvcDrawdownResult = drawFromTaxableBridgePot({
+    balance: balances.csAvcBalance,
+    canDraw: rowDate >= csAvcAccessDate && settings.showCsAvc,
+    remainingShortfall,
+    calculateNetIncome: (grossDrawdown) =>
+      calculateNetBridgeWithdrawal({
+        settings,
+        secureIncome,
+        sippDrawdown,
+        csAvcDrawdown: grossDrawdown,
+      }) -
+      calculateNetBridgeWithdrawal({
+        settings,
+        secureIncome,
+        sippDrawdown,
+        csAvcDrawdown: 0,
+      }),
+  });
+  const csAvcDrawdown = csAvcDrawdownResult.grossDrawdown;
+  balances.csAvcBalance -= csAvcDrawdown;
+  remainingShortfall = Math.max(
+    0,
+    remainingShortfall - csAvcDrawdownResult.netIncome
+  );
 
   const lisaDrawdown = drawFromBridgePot({
     balance: balances.lisaBalance,
@@ -514,6 +602,7 @@ function drawBridgeShortfall(input: {
     lisaDrawdown,
     remainingShortfall,
     sippDrawdown,
+    csAvcDrawdown,
   };
 }
 
@@ -523,6 +612,102 @@ function drawFromBridgePot(input: {
   remainingShortfall: number;
 }) {
   return input.canDraw ? Math.min(input.balance, input.remainingShortfall) : 0;
+}
+
+function drawFromTaxableBridgePot(input: {
+  balance: number;
+  canDraw: boolean;
+  remainingShortfall: number;
+  calculateNetIncome: (grossDrawdown: number) => number;
+}) {
+  if (!input.canDraw || input.balance <= 0 || input.remainingShortfall <= 0) {
+    return { grossDrawdown: 0, netIncome: 0 };
+  }
+
+  const directDrawdown = Math.min(input.balance, input.remainingShortfall);
+  const directNetIncome = input.calculateNetIncome(directDrawdown);
+
+  if (Math.abs(directNetIncome - directDrawdown) <= 0.0000001) {
+    return {
+      grossDrawdown: directDrawdown,
+      netIncome: directNetIncome,
+    };
+  }
+
+  const maximumNetIncome = input.calculateNetIncome(input.balance);
+
+  if (maximumNetIncome <= input.remainingShortfall) {
+    return {
+      grossDrawdown: input.balance,
+      netIncome: maximumNetIncome,
+    };
+  }
+
+  let lowerGrossDrawdown = 0;
+  let upperGrossDrawdown = input.balance;
+
+  for (let iteration = 0; iteration < 50; iteration += 1) {
+    const candidateGrossDrawdown =
+      (lowerGrossDrawdown + upperGrossDrawdown) / 2;
+    const candidateNetIncome = input.calculateNetIncome(candidateGrossDrawdown);
+
+    if (candidateNetIncome < input.remainingShortfall) {
+      lowerGrossDrawdown = candidateGrossDrawdown;
+    } else {
+      upperGrossDrawdown = candidateGrossDrawdown;
+    }
+  }
+
+  return {
+    grossDrawdown: upperGrossDrawdown,
+    netIncome: input.calculateNetIncome(upperGrossDrawdown),
+  };
+}
+
+function calculateNetBridgeWithdrawal(input: {
+  settings: PensionSettings;
+  secureIncome: MonthlySecureIncome;
+  sippDrawdown: number;
+  csAvcDrawdown: number;
+}) {
+  const { settings, secureIncome, sippDrawdown, csAvcDrawdown } = input;
+  const taxBeforeFlexibleWithdrawals = calculateBridgeIncomeTax({
+    settings,
+    secureIncome,
+    sippDrawdown: 0,
+    csAvcDrawdown: 0,
+  });
+  const taxAfterFlexibleWithdrawals = calculateBridgeIncomeTax(input);
+
+  return Math.max(
+    0,
+    sippDrawdown +
+      csAvcDrawdown -
+      (taxAfterFlexibleWithdrawals - taxBeforeFlexibleWithdrawals)
+  );
+}
+
+function calculateBridgeIncomeTax(input: {
+  settings: PensionSettings;
+  secureIncome: MonthlySecureIncome;
+  sippDrawdown: number;
+  csAvcDrawdown: number;
+}) {
+  const { settings, secureIncome, sippDrawdown, csAvcDrawdown } = input;
+
+  return calculateMonthlyIncomeTax({
+    settings,
+    monthlyAlphaPension: secureIncome.monthlyAlphaPension,
+    monthlyClassicPension: secureIncome.monthlyClassicPension,
+    monthlyClassicPlusPension: secureIncome.monthlyClassicPlusPension,
+    monthlyNuvosPension: secureIncome.monthlyNuvosPension,
+    monthlyPremiumPension: secureIncome.monthlyPremiumPension,
+    monthlyStatePension: secureIncome.monthlyStatePension,
+    monthlySippPension: sippDrawdown,
+    monthlyCsAvcPension: csAvcDrawdown,
+    monthlyAdditionalGuaranteedIncomeTaxable:
+      secureIncome.monthlyAdditionalGuaranteedIncomeTaxable,
+  });
 }
 
 function getFullSecureIncomeStartDate(
@@ -603,6 +788,7 @@ function buildBridgePhases(
     isaDrawdown: number;
     lisaDrawdown: number;
     sippDrawdown: number;
+    csAvcDrawdown: number;
     unfundedShortfall: number;
     activeSources: string[];
   }>,
@@ -618,6 +804,9 @@ function buildBridgePhases(
     retirementDate,
     ...(settings.showSipp
       ? [addYears(settings.dateOfBirth, settings.sippDrawAge)]
+      : []),
+    ...(settings.showCsAvc
+      ? [addYears(settings.dateOfBirth, settings.csAvcDrawAge)]
       : []),
     ...(settings.showLisa
       ? [addYears(settings.dateOfBirth, settings.lisaDrawAge)]
@@ -658,7 +847,11 @@ function buildBridgePhases(
     );
     const totalDrawdown = rows.reduce(
       (total, row) =>
-        total + row.isaDrawdown + row.lisaDrawdown + row.sippDrawdown,
+        total +
+        row.isaDrawdown +
+        row.lisaDrawdown +
+        row.sippDrawdown +
+        row.csAvcDrawdown,
       0
     );
     const totalIsaBridge = rows.reduce(
@@ -667,6 +860,10 @@ function buildBridgePhases(
     );
     const totalSippBridge = rows.reduce(
       (total, row) => total + row.sippDrawdown,
+      0
+    );
+    const totalCsAvcBridge = rows.reduce(
+      (total, row) => total + row.csAvcDrawdown,
       0
     );
     const totalLisaBridge = rows.reduce(
@@ -707,6 +904,9 @@ function buildBridgePhases(
     const averageAnnualSippBridge = annualiseAverage(
       rows.map((row) => row.sippDrawdown)
     );
+    const averageAnnualCsAvcBridge = annualiseAverage(
+      rows.map((row) => row.csAvcDrawdown)
+    );
     const averageAnnualShortfall =
       (rows.reduce((total, row) => total + row.shortfall, 0) / rows.length) *
       12;
@@ -716,6 +916,9 @@ function buildBridgePhases(
       rows.some((row) => row.isaDrawdown > 0) ? "ISA bridge" : "",
       rows.some((row) => row.lisaDrawdown > 0) ? "LISA bridge" : "",
       rows.some((row) => row.sippDrawdown > 0) ? "SIPP bridge" : "",
+      rows.some((row) => row.csAvcDrawdown > 0)
+        ? "Civil Service AVC bridge"
+        : "",
       rows.some((row) => row.unfundedShortfall > 0) ? "Unfunded shortfall" : "",
     ].filter(Boolean);
 
@@ -746,11 +949,13 @@ function buildBridgePhases(
         annualIsaBridge: averageAnnualIsaBridge,
         annualLisaBridge: averageAnnualLisaBridge,
         annualSippBridge: averageAnnualSippBridge,
+        annualCsAvcBridge: averageAnnualCsAvcBridge,
         annualShortfall: averageAnnualShortfall,
         annualSurplus: averageAnnualSurplus,
         totalIsaBridge,
         totalLisaBridge,
         totalSippBridge,
+        totalCsAvcBridge,
         totalBridgeRequired: totalDrawdown,
         unfundedShortfall: totalUnfunded,
       },
@@ -788,6 +993,7 @@ function formatBridgeBoundaryLabel(
   endDate: string
 ) {
   const sippAccessDate = addYears(settings.dateOfBirth, settings.sippDrawAge);
+  const csAvcAccessDate = addYears(settings.dateOfBirth, settings.csAvcDrawAge);
   const lisaAccessDate = addYears(settings.dateOfBirth, settings.lisaDrawAge);
   const alphaDrawDate = addYears(
     settings.dateOfBirth,
@@ -804,6 +1010,9 @@ function formatBridgeBoundaryLabel(
   const labels = [
     date === retirementDate ? "Retirement" : "",
     settings.showSipp && date === sippAccessDate ? "SIPP access" : "",
+    settings.showCsAvc && date === csAvcAccessDate
+      ? "Civil Service AVC access"
+      : "",
     settings.showLisa && date === lisaAccessDate ? "LISA access" : "",
     settings.showAlpha && date === alphaDrawDate ? "Alpha" : "",
     settings.showNuvos && date === nuvosDrawDate ? "nuvos" : "",
@@ -905,9 +1114,11 @@ function buildBridgePotProjection(
     hasStartedIsaDrawdown: false,
     hasStartedLisaDrawdown: false,
     hasStartedSippDrawdown: false,
+    hasStartedCsAvcDrawdown: false,
     hasIncludedIsaDepletion: false,
     hasIncludedLisaDepletion: false,
     hasIncludedSippDepletion: false,
+    hasIncludedCsAvcDepletion: false,
   };
 
   return monthlyRows.map((row, index) => {
@@ -955,6 +1166,14 @@ function buildBridgePotProjectionMilestones(input: {
     milestones,
     rowDate: row.date,
   });
+  tracker.hasStartedCsAvcDrawdown = addPotDrawdownStartMilestone({
+    drawdown: row.csAvcDrawdown,
+    hasStarted: tracker.hasStartedCsAvcDrawdown,
+    label: "Civil Service AVC drawdown starts",
+    milestoneDates,
+    milestones,
+    rowDate: row.date,
+  });
   tracker.hasStartedLisaDrawdown = addPotDrawdownStartMilestone({
     drawdown: row.lisaDrawdown,
     hasStarted: tracker.hasStartedLisaDrawdown,
@@ -984,6 +1203,17 @@ function buildBridgePotProjectionMilestones(input: {
     previousBalance: previousRow?.sippBalance ?? 0,
     rowDate: row.date,
     showPot: settings.showSipp,
+  });
+  tracker.hasIncludedCsAvcDepletion = addPotDepletionMilestone({
+    balance: row.csAvcBalance,
+    drawdown: row.csAvcDrawdown,
+    hasIncluded: tracker.hasIncludedCsAvcDepletion,
+    label: "Civil Service AVC pot exhausted",
+    milestoneDates,
+    milestones,
+    previousBalance: previousRow?.csAvcBalance ?? 0,
+    rowDate: row.date,
+    showPot: settings.showCsAvc,
   });
   tracker.hasIncludedLisaDepletion = addPotDepletionMilestone({
     balance: row.lisaBalance,
@@ -1078,6 +1308,7 @@ function calculateEarliestSustainablePensionDrawAge(
     const pensionRows = projectPensionRows({
       ...candidateSettings,
       showSipp: false,
+      showCsAvc: false,
       showIsa: false,
       showLisa: false,
     });

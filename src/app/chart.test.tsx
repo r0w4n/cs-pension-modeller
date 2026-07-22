@@ -36,6 +36,7 @@ describe("chart module", () => {
             isaIncomeAnnual: 0,
             lisaIncomeAnnual: 0,
             sippIncomeAnnual: 0,
+            csAvcIncomeAnnual: 0,
             partialRetirementIncomeAnnual: 0,
             alphaIncomeAnnual: 12000,
             classicIncomeAnnual: 0,

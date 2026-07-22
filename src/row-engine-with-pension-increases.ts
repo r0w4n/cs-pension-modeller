@@ -61,6 +61,7 @@ export function createProjectionTableWithPensionIncreases(
   } = derivedInputs;
   const {
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     alphaAbsDate,
@@ -98,12 +99,13 @@ export function createProjectionTableWithPensionIncreases(
   ).sort();
 
   const allRows = allRowDates.map((rowDate) => {
-    const { sippProjection, isaProjection, lisaProjection } =
+    const { sippProjection, csAvcProjection, isaProjection, lisaProjection } =
       calculateInvestmentProjectionValues({
         settings,
         rowDate,
         endDate,
         sippDrawDate,
+        csAvcDrawDate,
         isaDrawDate,
         lisaDrawDate,
         active: rowDate >= settings.startDate,
@@ -213,6 +215,7 @@ export function createProjectionTableWithPensionIncreases(
       monthlyAddedPension,
       lumpSumAddedPension,
       sippProjection,
+      csAvcProjection,
       isaProjection,
       lisaProjection,
     });
@@ -230,6 +233,7 @@ export function createProjectionTableWithPensionIncreases(
     accrualStopDate,
     drawDate,
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     alphaAbsDate,

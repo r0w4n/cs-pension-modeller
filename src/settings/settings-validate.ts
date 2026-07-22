@@ -17,6 +17,7 @@ import {
 } from "./settings-domains/partial-retirement";
 import { validatePersonalDetailsRules } from "./settings-domains/personal-details";
 import { validateSippRules } from "./settings-domains/sipp";
+import { validateCsAvcRules } from "./settings-domains/cs-avc";
 import { addYearsToIsoDate } from "./settings-shared/date";
 import { calculateStatePensionDrawDate } from "./settings-shared/state";
 import {
@@ -40,13 +41,16 @@ type ValidationContext = {
   classicPlusDrawDate: string;
   premiumDrawDate: string;
   sippDrawDate: string;
+  csAvcDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
   retirementDate: string;
   sippContributionStopDate: string;
+  csAvcContributionStopDate: string;
   isaContributionStopDate: string;
   lisaContributionStopDate: string;
   sippWithdrawalTargetDate: string;
+  csAvcWithdrawalTargetDate: string;
   isaWithdrawalTargetDate: string;
   lisaWithdrawalTargetDate: string;
   partialRetirementStartDate: string;
@@ -77,6 +81,10 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
   const sippDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.sippDrawAge
+  );
+  const csAvcDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.csAvcDrawAge
   );
   const isaDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
@@ -115,11 +123,14 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
       settings.premiumDrawAge
     ),
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     retirementDate,
     sippContributionStopDate:
       sippDrawDate <= retirementDate ? sippDrawDate : retirementDate,
+    csAvcContributionStopDate:
+      csAvcDrawDate <= retirementDate ? csAvcDrawDate : retirementDate,
     isaContributionStopDate:
       isaDrawDate <= retirementDate ? isaDrawDate : retirementDate,
     lisaContributionStopDate:
@@ -127,6 +138,10 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
     sippWithdrawalTargetDate: addYearsToIsoDate(
       settings.dateOfBirth,
       settings.sippWithdrawalTargetAge
+    ),
+    csAvcWithdrawalTargetDate: addYearsToIsoDate(
+      settings.dateOfBirth,
+      settings.csAvcWithdrawalTargetAge
     ),
     isaWithdrawalTargetDate: addYearsToIsoDate(
       settings.dateOfBirth,
@@ -156,6 +171,7 @@ export function validateSettings(
     ...validateNuvosRules(context),
     ...validatePremiumRules(context),
     ...validateSippRules(context),
+    ...validateCsAvcRules(context),
     ...validateIsaRules(context),
     ...validateLisaRules(context),
     ...validatePartialRetirementRules(context),
@@ -170,6 +186,7 @@ function validateLumpSums(
     field:
       | "alphaAddedPensionLumpSums"
       | "sippLumpSums"
+      | "csAvcLumpSums"
       | "isaLumpSums"
       | "lisaLumpSums";
     label: string;
@@ -209,7 +226,11 @@ function validateLumpSums(
 function validateLumpSumScheduleEndsByDate(
   lumpSums: AddedPensionLumpSum[],
   options: {
-    field: "alphaAddedPensionLumpSums" | "sippLumpSums" | "isaLumpSums";
+    field:
+      | "alphaAddedPensionLumpSums"
+      | "sippLumpSums"
+      | "csAvcLumpSums"
+      | "isaLumpSums";
     latestDate: string;
     message: string;
   }
@@ -267,6 +288,16 @@ function validateLumpSumRules(
           latestDate: context.sippContributionStopDate,
           rangeMessage:
             "SIPP lump sums must fall between the current date and the earlier of retirement age and SIPP draw start.",
+        })
+      : []),
+    ...(settings.showCsAvc
+      ? validateLumpSums(settings.csAvcLumpSums, {
+          field: "csAvcLumpSums",
+          label: "CS AVC lump sum",
+          earliestDate: settings.startDate,
+          latestDate: context.csAvcContributionStopDate,
+          rangeMessage:
+            "CS AVC lump sums must fall between the current date and the earlier of retirement age and CS AVC draw start.",
         })
       : []),
     ...(settings.showIsa

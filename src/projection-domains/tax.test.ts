@@ -45,6 +45,24 @@ describe("projection tax domain", () => {
     ).toBeCloseTo(6486 / 12, 6);
   });
 
+  it("taxes CS AVC withdrawals using the CS AVC tax-free share", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      taxationEnabled: true,
+      taxCsAvcTaxFreeWithdrawalPercent: 25,
+    };
+
+    expect(
+      calculateMonthlyIncomeTax({
+        settings,
+        monthlyAlphaPension: 2000,
+        monthlyStatePension: 1000,
+        monthlySippPension: 0,
+        monthlyCsAvcPension: 1000,
+      })
+    ).toBeCloseTo(6486 / 12, 6);
+  });
+
   it("includes nuvos pension in taxable retirement income", () => {
     expect(
       calculateMonthlyIncomeTax({

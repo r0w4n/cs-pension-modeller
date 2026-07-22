@@ -15,6 +15,7 @@ import {
   calculateAnnualPremiumPensionIncludingReduction,
 } from "./projection-domains/premium";
 import { calculateSippProjectionRow } from "./projection-domains/sipp";
+import { calculateCsAvcProjectionRow } from "./projection-domains/cs-avc";
 import { calculateIsaProjectionRow } from "./projection-domains/isa";
 import { calculateLisaProjectionRow } from "./projection-domains/lisa";
 import {
@@ -48,6 +49,7 @@ export function calculateTotalGrossMonthlyIncome(
   monthlyAlphaPensionIncludingReduction: number,
   monthlyStatePension: number,
   monthlySippPension = 0,
+  monthlyCsAvcPension = 0,
   monthlyIsaPension = 0,
   monthlyLisaPension = 0,
   monthlyNuvosPensionIncludingReduction = 0,
@@ -65,6 +67,7 @@ export function calculateTotalGrossMonthlyIncome(
     monthlyAdditionalGuaranteedIncomeGross +
     monthlyStatePension +
     monthlySippPension +
+    monthlyCsAvcPension +
     monthlyIsaPension +
     monthlyLisaPension
   );
@@ -85,6 +88,7 @@ export function calculateInvestmentProjectionValues(input: {
   rowDate: string;
   endDate: string;
   sippDrawDate: string;
+  csAvcDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
   active: boolean;
@@ -94,6 +98,7 @@ export function calculateInvestmentProjectionValues(input: {
     rowDate,
     endDate,
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     active,
@@ -102,6 +107,7 @@ export function calculateInvestmentProjectionValues(input: {
   if (!active) {
     return {
       sippProjection: { sippPot: 0, monthlySippPension: 0 },
+      csAvcProjection: { csAvcPot: 0, monthlyCsAvcPension: 0 },
       isaProjection: { isaPot: 0, monthlyIsaPension: 0 },
       lisaProjection: { lisaPot: 0, monthlyLisaPension: 0 },
     };
@@ -112,6 +118,12 @@ export function calculateInvestmentProjectionValues(input: {
       settings,
       rowDate,
       drawDate: sippDrawDate,
+      endDate,
+    }),
+    csAvcProjection: calculateCsAvcProjectionRow({
+      settings,
+      rowDate,
+      drawDate: csAvcDrawDate,
       endDate,
     }),
     isaProjection: calculateIsaProjectionRow({
@@ -203,6 +215,10 @@ export function buildProjectionRow(input: {
     sippPot: number;
     monthlySippPension: number;
   };
+  csAvcProjection: {
+    csAvcPot: number;
+    monthlyCsAvcPension: number;
+  };
   isaProjection: {
     isaPot: number;
     monthlyIsaPension: number;
@@ -242,6 +258,7 @@ export function buildProjectionRow(input: {
     monthlyAddedPension,
     lumpSumAddedPension,
     sippProjection,
+    csAvcProjection,
     isaProjection,
     lisaProjection,
   } = input;
@@ -342,6 +359,7 @@ export function buildProjectionRow(input: {
     monthlyAlphaPensionGross,
     monthlyStatePension,
     sippProjection.monthlySippPension,
+    csAvcProjection.monthlyCsAvcPension,
     isaProjection.monthlyIsaPension,
     lisaProjection.monthlyLisaPension,
     monthlyNuvosPensionGross,
@@ -359,6 +377,7 @@ export function buildProjectionRow(input: {
     monthlyPremiumPension: monthlyPremiumPensionGross,
     monthlyStatePension,
     monthlySippPension: sippProjection.monthlySippPension,
+    monthlyCsAvcPension: csAvcProjection.monthlyCsAvcPension,
     monthlyAdditionalGuaranteedIncomeTaxable,
   });
 
@@ -394,6 +413,8 @@ export function buildProjectionRow(input: {
     monthlyAdditionalGuaranteedIncomeTaxable,
     sippPot: sippProjection.sippPot,
     monthlySippPension: sippProjection.monthlySippPension,
+    csAvcPot: csAvcProjection.csAvcPot,
+    monthlyCsAvcPension: csAvcProjection.monthlyCsAvcPension,
     isaPot: isaProjection.isaPot,
     monthlyIsaPension: isaProjection.monthlyIsaPension,
     lisaPot: lisaProjection.lisaPot,
@@ -557,6 +578,7 @@ export function createHistoricalProjectionRows(input: {
         monthlyAddedPension,
         lumpSumAddedPension,
         sippProjection: { sippPot: 0, monthlySippPension: 0 },
+        csAvcProjection: { csAvcPot: 0, monthlyCsAvcPension: 0 },
         isaProjection: { isaPot: 0, monthlyIsaPension: 0 },
         lisaProjection: { lisaPot: 0, monthlyLisaPension: 0 },
       })
@@ -627,6 +649,7 @@ export function attachMilestonesToRows(input: {
   accrualStopDate: string;
   drawDate: string;
   sippDrawDate: string;
+  csAvcDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
   alphaAbsDate: string;

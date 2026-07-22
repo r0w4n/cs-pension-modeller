@@ -41,6 +41,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showPremium: defaultSettings.showPremium,
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
+    showCsAvc: defaultSettings.showCsAvc,
     showIsa: defaultSettings.showIsa,
     showLisa: defaultSettings.showLisa,
     showAdditionalGuaranteedIncome:
@@ -128,6 +129,16 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
     sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
     sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+    csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+    csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+    csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+    csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+    csAvcDrawAge: defaultSettings.csAvcDrawAge,
+    csAvcLumpSums: defaultSettings.csAvcLumpSums,
+    csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+    csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+    csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+    csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
     isaCurrentPot: defaultSettings.isaCurrentPot,
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
     isaDrawAge: defaultSettings.isaDrawAge,
@@ -154,6 +165,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
     taxSippTaxFreeWithdrawalPercent:
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
+    taxCsAvcTaxFreeWithdrawalPercent:
+      defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     ...overrides,
   };
 }
@@ -335,6 +348,7 @@ describe("settings unit tests", () => {
       showPremium: defaultSettings.showPremium,
       showStatePension: defaultSettings.showStatePension,
       showSipp: defaultSettings.showSipp,
+      showCsAvc: defaultSettings.showCsAvc,
       showIsa: defaultSettings.showIsa,
       showLisa: defaultSettings.showLisa,
       showAdditionalGuaranteedIncome:
@@ -434,6 +448,16 @@ describe("settings unit tests", () => {
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
       sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+      csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+      csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+      csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+      csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+      csAvcDrawAge: defaultSettings.csAvcDrawAge,
+      csAvcLumpSums: defaultSettings.csAvcLumpSums,
+      csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+      csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+      csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+      csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
       isaCurrentPot: defaultSettings.isaCurrentPot,
       isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
       isaDrawAge: defaultSettings.isaDrawAge,
@@ -460,6 +484,8 @@ describe("settings unit tests", () => {
       taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
       taxSippTaxFreeWithdrawalPercent:
         defaultSettings.taxSippTaxFreeWithdrawalPercent,
+      taxCsAvcTaxFreeWithdrawalPercent:
+        defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     });
   });
 

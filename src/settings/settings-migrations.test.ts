@@ -2,6 +2,7 @@ import {
   migrateFromV1ToV2,
   migrateFromV2ToV3,
   migrateFromV3ToV4,
+  migrateFromV4ToV5,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -66,6 +67,30 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("defaults CS AVC settings during v4 migration", () => {
+    expect(
+      migrateFromV4ToV5({
+        dateOfBirth: "1972-08-01",
+        requirementAge: 60,
+      })
+    ).toEqual({
+      dateOfBirth: "1972-08-01",
+      requirementAge: 60,
+      showCsAvc: false,
+      csAvcCurrentPot: 0,
+      csAvcMonthlyContribution: 0,
+      csAvcHasProtectedPensionAge: false,
+      csAvcProtectedPensionAge: 55,
+      csAvcDrawAge: 60,
+      csAvcLumpSums: [],
+      csAvcRealInterestPercent: 5,
+      csAvcWithdrawalStrategy: "use_by_age",
+      csAvcWithdrawalPercent: 4,
+      csAvcWithdrawalTargetAge: 75,
+      taxCsAvcTaxFreeWithdrawalPercent: 25,
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -81,6 +106,18 @@ describe("settings-migrations", () => {
       additionalGuaranteedIncomes: [],
       sippHasProtectedPensionAge: false,
       sippProtectedPensionAge: 55,
+      showCsAvc: false,
+      csAvcCurrentPot: 0,
+      csAvcMonthlyContribution: 0,
+      csAvcHasProtectedPensionAge: false,
+      csAvcProtectedPensionAge: 55,
+      csAvcDrawAge: 60,
+      csAvcLumpSums: [],
+      csAvcRealInterestPercent: 5,
+      csAvcWithdrawalStrategy: "use_by_age",
+      csAvcWithdrawalPercent: 4,
+      csAvcWithdrawalTargetAge: 75,
+      taxCsAvcTaxFreeWithdrawalPercent: 25,
     });
   });
 

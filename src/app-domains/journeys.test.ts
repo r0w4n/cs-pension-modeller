@@ -2,6 +2,7 @@ import {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   applySimpleJourneyAssumptions,
+  mergeSimpleJourneySettings,
 } from "./journeys";
 import type { FieldDefinition } from "../fieldDefinitions";
 import { defaultSettings } from "../settings";
@@ -114,6 +115,18 @@ describe("journey definitions", () => {
     );
   });
 
+  it("keeps the simple CS AVC step separate from personal pots", () => {
+    expect([
+      ...getJourneyStepFieldIds("simple-early-retirement", "cs-avc"),
+    ]).toEqual([
+      "csAvcCurrentPot",
+      "csAvcMonthlyContribution",
+      "csAvcDrawAge",
+      "csAvcHasProtectedPensionAge",
+      "csAvcRealInterestPercent",
+    ]);
+  });
+
   it("keeps EPA enabled when applying simple journey assumptions", () => {
     expect(
       applySimpleJourneyAssumptions({
@@ -123,6 +136,53 @@ describe("journey definitions", () => {
     ).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
+      })
+    );
+  });
+
+  it("keeps an enabled CS AVC visible in simple journey assumptions", () => {
+    expect(
+      applySimpleJourneyAssumptions({
+        ...defaultSettings,
+        showCsAvc: true,
+        showSipp: true,
+        showIsa: true,
+        showLisa: true,
+      })
+    ).toEqual(
+      expect.objectContaining({
+        showCsAvc: true,
+        showSipp: false,
+        showIsa: false,
+        showLisa: false,
+      })
+    );
+  });
+
+  it("applies a CS AVC toggle while preserving hidden simple journey pots", () => {
+    expect(
+      mergeSimpleJourneySettings(
+        {
+          ...defaultSettings,
+          showCsAvc: false,
+          showSipp: true,
+          showIsa: true,
+          showLisa: true,
+        },
+        {
+          ...defaultSettings,
+          showCsAvc: true,
+          showSipp: false,
+          showIsa: false,
+          showLisa: false,
+        }
+      )
+    ).toEqual(
+      expect.objectContaining({
+        showCsAvc: true,
+        showSipp: true,
+        showIsa: true,
+        showLisa: true,
       })
     );
   });

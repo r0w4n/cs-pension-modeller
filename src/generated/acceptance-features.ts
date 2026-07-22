@@ -5212,6 +5212,706 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/cs-avc.feature",
+    name: "Civil Service AVC modelling",
+    description:
+      "The modeller should let users model Civil Service Additional Voluntary\n  Contributions (CS AVC) as a separate invested defined contribution pension\n  pot. CS AVC values should not be mixed into alpha, classic, premium, nuvos,\n  Added Pension, EPA, State Pension, SIPP, ISA, or LISA modelling.",
+    tags: ["@civil-service-pension", "@cs-avc", "@avc"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-13",
+        keyword: "Scenario",
+        name: "Show CS AVC as a separate defined contribution pension pot",
+        description: "",
+        tags: ["@scheme-status"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-14",
+            keyword: "When",
+            text: "the CS AVC settings group is inspected",
+          },
+          {
+            id: "line-15",
+            keyword: "Then",
+            text: 'the CS AVC group should be titled "Civil Service AVC"',
+          },
+          {
+            id: "line-16",
+            keyword: "And",
+            text: "the CS AVC current pot field should explain it is a separate invested defined contribution pot",
+          },
+          {
+            id: "line-17",
+            keyword: "And",
+            text: "the CS AVC current pot field should not describe alpha, classic, premium or nuvos accrual",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-20",
+        keyword: "Scenario",
+        name: "CS AVC is not treated as Civil Service defined benefit pension accrual",
+        description: "",
+        tags: ["@scheme-status"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-21",
+            keyword: "Given",
+            text: "the CS AVC member has alpha pension of 12000.00 per year",
+          },
+          {
+            id: "line-22",
+            keyword: "And",
+            text: "the member has a CS AVC balance of 30000.00",
+          },
+          {
+            id: "line-23",
+            keyword: "When",
+            text: "the Civil Service pension projection is calculated for CS AVC",
+          },
+          {
+            id: "line-24",
+            keyword: "Then",
+            text: "the alpha pension projection should match the same scenario without CS AVC",
+          },
+          {
+            id: "line-25",
+            keyword: "And",
+            text: "the CS AVC balance should be shown separately from Civil Service pension payable",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-28",
+        keyword: "Scenario",
+        name: "Project regular CS AVC contributions into the invested pot",
+        description: "",
+        tags: ["@contributions"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-29",
+            keyword: "Given",
+            text: "the member has a CS AVC balance of 10000.00",
+          },
+          {
+            id: "line-30",
+            keyword: "And",
+            text: "the member pays CS AVC contributions of 250.00 per month",
+          },
+          {
+            id: "line-31",
+            keyword: "And",
+            text: "the annual CS AVC net investment return assumption is 0.00%",
+          },
+          {
+            id: "line-32",
+            keyword: "When",
+            text: "the CS AVC pot is projected for 12 months",
+          },
+          {
+            id: "line-33",
+            keyword: "Then",
+            text: "the projected CS AVC balance should be 13000.00",
+          },
+          {
+            id: "line-34",
+            keyword: "And",
+            text: "the total CS AVC contributions paid should be 3000.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-37",
+        keyword: "Scenario",
+        name: "Do not add employer contributions to CS AVC",
+        description: "",
+        tags: ["@contributions"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-38",
+            keyword: "Given",
+            text: "the member has a CS AVC balance of 10000.00",
+          },
+          {
+            id: "line-39",
+            keyword: "And",
+            text: "the member pays CS AVC contributions of 250.00 per month",
+          },
+          {
+            id: "line-40",
+            keyword: "And",
+            text: "the employer Civil Service pension contribution rate is 28.97%",
+          },
+          {
+            id: "line-41",
+            keyword: "When",
+            text: "the CS AVC pot is projected for 12 months",
+          },
+          {
+            id: "line-42",
+            keyword: "Then",
+            text: "the projected CS AVC balance should include member CS AVC contributions only",
+          },
+          {
+            id: "line-43",
+            keyword: "And",
+            text: "the employer contribution added to the CS AVC pot should be 0.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-46",
+        keyword: "Scenario Outline",
+        name: "Apply net investment return to the CS AVC pot",
+        description: "",
+        tags: ["@investment-growth"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-47",
+            keyword: "Given",
+            text: "the member has a CS AVC balance of <startingBalance>",
+          },
+          {
+            id: "line-48",
+            keyword: "And",
+            text: "the member pays CS AVC contributions of <monthlyContribution> per month",
+          },
+          {
+            id: "line-49",
+            keyword: "And",
+            text: "the annual CS AVC net investment return assumption is <netReturn>",
+          },
+          {
+            id: "line-50",
+            keyword: "When",
+            text: "the CS AVC pot is projected for <projectionYears> years",
+          },
+          {
+            id: "line-51",
+            keyword: "Then",
+            text: "the projected CS AVC balance should be <expectedBalance>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-53",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-54",
+                cells: [
+                  {
+                    id: "line-54-column-9",
+                    value: "startingBalance",
+                  },
+                  {
+                    id: "line-54-column-27",
+                    value: "monthlyContribution",
+                  },
+                  {
+                    id: "line-54-column-49",
+                    value: "netReturn",
+                  },
+                  {
+                    id: "line-54-column-61",
+                    value: "projectionYears",
+                  },
+                  {
+                    id: "line-54-column-79",
+                    value: "expectedBalance",
+                  },
+                ],
+              },
+              {
+                id: "line-55",
+                cells: [
+                  {
+                    id: "line-55-column-9",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-55-column-27",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-55-column-49",
+                    value: "0.00%",
+                  },
+                  {
+                    id: "line-55-column-61",
+                    value: "5",
+                  },
+                  {
+                    id: "line-55-column-79",
+                    value: "10000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-56",
+                cells: [
+                  {
+                    id: "line-56-column-9",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-56-column-27",
+                    value: "200.00",
+                  },
+                  {
+                    id: "line-56-column-49",
+                    value: "0.00%",
+                  },
+                  {
+                    id: "line-56-column-61",
+                    value: "5",
+                  },
+                  {
+                    id: "line-56-column-79",
+                    value: "22000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-57",
+                cells: [
+                  {
+                    id: "line-57-column-9",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-57-column-27",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-57-column-49",
+                    value: "3.50%",
+                  },
+                  {
+                    id: "line-57-column-61",
+                    value: "5",
+                  },
+                  {
+                    id: "line-57-column-79",
+                    value: "11842.86",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-60",
+        keyword: "Scenario",
+        name: "Apply the standard private pension access age to CS AVC drawdown",
+        description: "",
+        tags: ["@access-age"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-61",
+            keyword: "Given",
+            text: 'a CS AVC modelling scenario for someone born on "1972-08-01"',
+          },
+          {
+            id: "line-62",
+            keyword: "And",
+            text: "provider-confirmed CS AVC protected pension age is off",
+          },
+          {
+            id: "line-63",
+            keyword: "When",
+            text: "the CS AVC draw start age is 55",
+          },
+          {
+            id: "line-64",
+            keyword: "Then",
+            text: "CS AVC draw start age validation should pass",
+          },
+          {
+            id: "line-65",
+            keyword: "When",
+            text: "the CS AVC draw start age is 56",
+          },
+          {
+            id: "line-66",
+            keyword: "Then",
+            text: 'the CS AVC draw start age validation message should be "CS AVC draw start age must be at least 57 for access dates on or after 6 April 2028, unless your provider has confirmed a protected pension age."',
+          },
+          {
+            id: "line-67",
+            keyword: "When",
+            text: "the CS AVC draw start age is 57",
+          },
+          {
+            id: "line-68",
+            keyword: "Then",
+            text: "CS AVC draw start age validation should pass",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-71",
+        keyword: "Scenario",
+        name: "Use a provider-confirmed protected CS AVC access age",
+        description: "",
+        tags: ["@access-age"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-72",
+            keyword: "Given",
+            text: 'a CS AVC modelling scenario for someone born on "1980-08-01"',
+          },
+          {
+            id: "line-73",
+            keyword: "And",
+            text: "provider-confirmed CS AVC protected access is on",
+          },
+          {
+            id: "line-74",
+            keyword: "When",
+            text: "the CS AVC draw start age is 50",
+          },
+          {
+            id: "line-75",
+            keyword: "Then",
+            text: "CS AVC draw start age validation should pass",
+          },
+          {
+            id: "line-76",
+            keyword: "And",
+            text: "the CS AVC projection should start withdrawals at age 50",
+          },
+          {
+            id: "line-77",
+            keyword: "When",
+            text: "the CS AVC draw start age is 49",
+          },
+          {
+            id: "line-78",
+            keyword: "Then",
+            text: 'the CS AVC draw start age validation message should be "CS AVC draw start age must not be earlier than the provider-confirmed protected CS AVC access age of 50."',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-81",
+        keyword: "Scenario",
+        name: "Let CS AVC benefits start independently of Civil Service pension",
+        description: "",
+        tags: ["@access-age"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-82",
+            keyword: "Given",
+            text: "the CS AVC member has alpha normal pension age 67",
+          },
+          {
+            id: "line-83",
+            keyword: "And",
+            text: "the member has a CS AVC balance of 60000.00",
+          },
+          {
+            id: "line-84",
+            keyword: "And",
+            text: "the member draws CS AVC from age 57",
+          },
+          {
+            id: "line-85",
+            keyword: "And",
+            text: "the CS AVC member draws alpha pension from age 67",
+          },
+          {
+            id: "line-86",
+            keyword: "When",
+            text: "the retirement income projection is calculated for CS AVC",
+          },
+          {
+            id: "line-87",
+            keyword: "Then",
+            text: "CS AVC income should be available from age 57",
+          },
+          {
+            id: "line-88",
+            keyword: "And",
+            text: "CS AVC scenario alpha pension income should start at age 67",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-91",
+        keyword: "Scenario",
+        name: "Include taxable CS AVC withdrawals in retirement income tax estimates",
+        description: "",
+        tags: ["@draw-options"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-92",
+            keyword: "Given",
+            text: "CS AVC Income Tax modelling is on",
+          },
+          {
+            id: "line-93",
+            keyword: "And",
+            text: "the CS AVC tax-free withdrawal share is 25.00%",
+          },
+          {
+            id: "line-94",
+            keyword: "And",
+            text: "CS AVC monthly Alpha pension income is 2000.00",
+          },
+          {
+            id: "line-95",
+            keyword: "And",
+            text: "CS AVC monthly State Pension income is 1000.00",
+          },
+          {
+            id: "line-96",
+            keyword: "And",
+            text: "monthly CS AVC withdrawal income is 800.00",
+          },
+          {
+            id: "line-97",
+            keyword: "When",
+            text: "monthly Income Tax is calculated for CS AVC",
+          },
+          {
+            id: "line-98",
+            keyword: "Then",
+            text: "only 600.00 of monthly CS AVC withdrawal income should be taxable",
+          },
+          {
+            id: "line-99",
+            keyword: "And",
+            text: "the monthly Income Tax estimate should include taxable CS AVC income",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-102",
+        keyword: "Scenario",
+        name: "Use CS AVC to reduce the early retirement bridge funding gap",
+        description: "",
+        tags: ["@bridge"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-103",
+            keyword: "Given",
+            text: "the CS AVC bridge plan has Alpha pension of 18000.00 per year from age 67",
+          },
+          {
+            id: "line-104",
+            keyword: "And",
+            text: "the CS AVC bridge plan has State Pension of 12000.00 per year from age 67",
+          },
+          {
+            id: "line-105",
+            keyword: "And",
+            text: "the CS AVC bridge plan has a CS AVC balance of 50000.00",
+          },
+          {
+            id: "line-106",
+            keyword: "And",
+            text: "the CS AVC bridge retirement age is 57",
+          },
+          {
+            id: "line-107",
+            keyword: "And",
+            text: "the CS AVC bridge life expectancy age is 68",
+          },
+          {
+            id: "line-108",
+            keyword: "And",
+            text: "the CS AVC bridge target income is 24000.00 per year",
+          },
+          {
+            id: "line-109",
+            keyword: "When",
+            text: "the CS AVC bridge plan is analysed",
+          },
+          {
+            id: "line-110",
+            keyword: "Then",
+            text: 'at least one CS AVC bridge phase should include "Civil Service AVC"',
+          },
+          {
+            id: "line-111",
+            keyword: "And",
+            text: "the unfunded bridge shortfall should be lower than the same plan without CS AVC",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-114",
+        keyword: "Scenario",
+        name: "Keep secure pension income separate from flexible CS AVC income",
+        description: "",
+        tags: ["@summary"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-115",
+            keyword: "Given",
+            text: "the CS AVC member has alpha pension of 18000.00 per year",
+          },
+          {
+            id: "line-116",
+            keyword: "And",
+            text: "the CS AVC member has State Pension of 12000.00 per year",
+          },
+          {
+            id: "line-117",
+            keyword: "And",
+            text: "the member has planned CS AVC withdrawals of 6000.00 per year",
+          },
+          {
+            id: "line-118",
+            keyword: "When",
+            text: "the retirement income summary is generated for CS AVC",
+          },
+          {
+            id: "line-119",
+            keyword: "Then",
+            text: "stable annual secure income should include alpha pension and State Pension",
+          },
+          {
+            id: "line-120",
+            keyword: "And",
+            text: "flexible pension income should include CS AVC withdrawals",
+          },
+          {
+            id: "line-121",
+            keyword: "And",
+            text: "stable annual secure income should not include CS AVC withdrawals",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-124",
+        keyword: "Scenario",
+        name: "Persist CS AVC settings locally only",
+        description: "",
+        tags: ["@storage"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-125",
+            keyword: "Given",
+            text: "the member has a CS AVC balance of 30000.00",
+          },
+          {
+            id: "line-126",
+            keyword: "And",
+            text: "the member pays CS AVC contributions of 250.00 per month",
+          },
+          {
+            id: "line-127",
+            keyword: "And",
+            text: "local storage is enabled for CS AVC",
+          },
+          {
+            id: "line-128",
+            keyword: "When",
+            text: "the CS AVC settings are saved and loaded",
+          },
+          {
+            id: "line-129",
+            keyword: "Then",
+            text: "the loaded CS AVC settings should include a balance of 30000.00",
+          },
+          {
+            id: "line-130",
+            keyword: "And",
+            text: "the loaded CS AVC settings should include monthly contributions of 250.00",
+          },
+          {
+            id: "line-131",
+            keyword: "And",
+            text: "no CS AVC financial information should be transmitted externally",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-134",
+        keyword: "Scenario",
+        name: "Explain CS AVC modelling without regulated advice wording",
+        description: "",
+        tags: ["@copy"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-135",
+            keyword: "When",
+            text: "the CS AVC user-facing copy is inspected",
+          },
+          {
+            id: "line-136",
+            keyword: "Then",
+            text: 'the CS AVC copy should include "separate invested defined contribution pot"',
+          },
+          {
+            id: "line-137",
+            keyword: "And",
+            text: 'the CS AVC copy should include "provider has confirmed"',
+          },
+          {
+            id: "line-138",
+            keyword: "And",
+            text: 'the CS AVC copy should not include "you will receive"',
+          },
+          {
+            id: "line-139",
+            keyword: "And",
+            text: 'the CS AVC copy should not include "you should"',
+          },
+          {
+            id: "line-140",
+            keyword: "And",
+            text: "the CS AVC copy should not imply the modeller is an official Civil Service Pension Scheme calculator",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
     path: "features/income-tax.feature",
     name: "Retirement income tax modelling",
     description:

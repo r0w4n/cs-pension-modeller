@@ -33,6 +33,7 @@ export const defaultSettings: PensionSettings = {
   showPremium: premiumDefaults.showPremium,
   showStatePension: statePensionDefaults.showStatePension,
   showSipp: true,
+  showCsAvc: false,
   showIsa: true,
   showLisa: false,
   showAdditionalGuaranteedIncome: true,
@@ -116,6 +117,16 @@ export const defaultSettings: PensionSettings = {
   sippWithdrawalStrategy: "use_by_age",
   sippWithdrawalPercent: 4,
   sippWithdrawalTargetAge: 75,
+  csAvcCurrentPot: 0,
+  csAvcMonthlyContribution: 0,
+  csAvcHasProtectedPensionAge: false,
+  csAvcProtectedPensionAge: 55,
+  csAvcDrawAge: personalDetailsDefaults.requirementAge,
+  csAvcLumpSums: [],
+  csAvcRealInterestPercent: 5,
+  csAvcWithdrawalStrategy: "use_by_age",
+  csAvcWithdrawalPercent: 4,
+  csAvcWithdrawalTargetAge: 75,
   isaCurrentPot: 0,
   isaMonthlyContribution: 0,
   isaDrawAge: personalDetailsDefaults.requirementAge,
@@ -141,6 +152,7 @@ export const defaultSettings: PensionSettings = {
   taxHigherRatePercent: taxDefaults.taxHigherRatePercent,
   taxAdditionalRatePercent: taxDefaults.taxAdditionalRatePercent,
   taxSippTaxFreeWithdrawalPercent: taxDefaults.taxSippTaxFreeWithdrawalPercent,
+  taxCsAvcTaxFreeWithdrawalPercent: taxDefaults.taxSippTaxFreeWithdrawalPercent,
 };
 
 export function createDefaultSettings(): PensionSettings {
@@ -158,6 +170,10 @@ export function createDefaultSettings(): PensionSettings {
     nuvosPensionDrawAge: nuvosDefaults.nuvosPensionDrawAge,
     premiumDrawAge: premiumDefaults.premiumNormalPensionAge,
     sippDrawAge: normalizeSippDrawAge(
+      normalPensionAge,
+      defaultSettings.dateOfBirth
+    ),
+    csAvcDrawAge: normalizeSippDrawAge(
       normalPensionAge,
       defaultSettings.dateOfBirth
     ),

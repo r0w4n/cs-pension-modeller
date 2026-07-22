@@ -14,6 +14,7 @@ const PROJECTED_SOURCES = [
   "State Pension",
   "Additional guaranteed income entered by the user",
   "SIPP pension savings",
+  "Civil Service Additional Voluntary Contribution (CS AVC) pension savings",
   "ISA savings",
   "Lifetime ISA (LISA) savings",
   "Optional bridge funding before defined-benefit or State Pension income starts",
@@ -36,9 +37,11 @@ const KEY_DATES = [
   "nuvos final pensionable-service date",
   "Premium pension draw age",
   "SIPP access age",
+  "CS AVC access age",
   "ISA draw start age",
   "LISA draw start age",
   "SIPP draw start age",
+  "CS AVC draw start age",
   "planning end age or life expectancy",
 ] as const;
 
@@ -63,6 +66,16 @@ const SIPP_WITHDRAWAL_APPROACHES = [
   "fixed annual withdrawal percentage",
   "depletion over life expectancy",
   "use-by-age strategy",
+] as const;
+
+const CS_AVC_PROJECTS = [
+  "starting CS AVC balance",
+  "regular CS AVC contributions",
+  "lump-sum CS AVC contributions",
+  "investment growth",
+  "selected CS AVC draw age",
+  "selected withdrawal strategy",
+  "tax-free and taxable withdrawal proportions",
 ] as const;
 
 const ISA_PROJECTS = [
@@ -91,7 +104,8 @@ const BRIDGE_SENSITIVITIES = [
   "Premium draw age",
   "State Pension age",
   "SIPP access age",
-  "ISA, LISA and SIPP balances",
+  "CS AVC access age",
+  "ISA, LISA, SIPP and CS AVC balances",
   "withdrawal order",
   "investment returns",
   "inflation",
@@ -102,6 +116,7 @@ const BRIDGE_SENSITIVITIES = [
 const PARTIAL_RETIREMENT_EFFECTS = [
   "future Alpha accrual",
   "SIPP contributions",
+  "CS AVC contributions",
   "ISA contributions",
   "LISA contributions",
 ] as const;
@@ -113,6 +128,7 @@ const TAXABLE_INCOME_SOURCES = [
   "State Pension",
   "taxable additional guaranteed income",
   "taxable SIPP withdrawals",
+  "taxable CS AVC withdrawals",
 ] as const;
 
 const TAX_ASSUMPTIONS = [
@@ -122,6 +138,7 @@ const TAX_ASSUMPTIONS = [
   "higher-rate band",
   "additional-rate threshold",
   "taxable share of SIPP withdrawals",
+  "taxable share of CS AVC withdrawals",
 ] as const;
 
 const COMPARISON_OUTPUTS = [
@@ -129,8 +146,8 @@ const COMPARISON_OUTPUTS = [
   "lowest projected income",
   "years and lifetime amount below target",
   "secure pension income at key ages",
-  "bridge-funding gaps before and after SIPP and LISA access",
-  "ISA, LISA and SIPP depletion ages",
+  "bridge-funding gaps before and after pension-pot and LISA access",
+  "ISA, LISA, SIPP and CS AVC depletion ages",
 ] as const;
 
 function FormulaBlock({ children }: { children: string }) {
@@ -703,6 +720,41 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>CS AVC methodology</h2>
+        <p className="section-copy">
+          Civil Service AVC is modelled as a separate invested defined
+          contribution pension pot. It does not increase Alpha, classic, premium
+          or nuvos defined benefit pension in the model.
+        </p>
+        <p className="section-copy">The model projects:</p>
+        <ul className="section-copy">
+          {CS_AVC_PROJECTS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="section-copy">
+          Regular CS AVC contributions and scheduled lump sums are included
+          until the earlier of the CS AVC draw date and target retirement age.
+          The entered contribution is treated as the amount added to the CS AVC
+          pot. The model does not add employer contributions and does not apply
+          the SIPP tax-relief gross-up setting to CS AVC contributions.
+        </p>
+        <p className="section-copy">
+          CS AVC drawdown uses the same withdrawal strategies as SIPP:
+          percentage, zero at death, or use by a selected age. Withdrawals can
+          be split between tax-free and taxable portions using the separate CS
+          AVC tax-free withdrawal setting.
+        </p>
+        <p className="section-copy">
+          The model applies standard registered pension access-age assumptions:
+          age 55 before 6 April 2028 and age 57 from that date, unless the user
+          marks the CS AVC as having provider-confirmed protected access. Users
+          should check access age, provider terms, charges and retirement
+          options against their CS AVC provider statement.
+        </p>
+      </section>
+
+      <section>
         <h2>ISA methodology</h2>
         <p className="section-copy">
           The ISA is modelled as a tax-free investment pot.
@@ -779,15 +831,15 @@ export function MethodologyPage() {
         <p className="section-copy">
           The retirement income summary starts with an outcome banner showing
           whether the scenario appears to meet the selected income target.
-          Temporary ISA, LISA and SIPP withdrawals that run in a bridge period
-          are not treated as permanent pension income. The detailed summary
-          groups projected income by age range, with each range starting when
-          the active income sources change.
+          Temporary ISA, LISA, SIPP and CS AVC withdrawals that run in a bridge
+          period are not treated as permanent pension income. The detailed
+          summary groups projected income by age range, with each range starting
+          when the active income sources change.
         </p>
         <p className="section-copy">
           The model can show where income is below the selected
-          retirement-income target and whether ISA, LISA or SIPP drawdown can
-          cover that gap.
+          retirement-income target and whether ISA, LISA, SIPP or CS AVC
+          drawdown can cover that gap.
         </p>
         <p className="section-copy">
           Bridge analysis first prepares a retirement scenario where Alpha
@@ -800,19 +852,21 @@ export function MethodologyPage() {
           projection.
         </p>
         <p className="section-copy">
-          ISA, LISA and SIPP bridge balances start from the retirement-date
-          balance immediately before any configured main-projection withdrawal.
-          That balance includes applicable investment growth, regular saving,
-          scheduled lump sums and partial-retirement saving reductions up to
-          retirement. The bridge calculation then applies only the temporary
-          withdrawal needed for that month's modelled shortfall. Investment
-          growth during the bridge uses the same real or nominal growth
-          conversion as the main pot projections.
+          ISA, LISA, SIPP and CS AVC bridge balances start from the
+          retirement-date balance immediately before any configured
+          main-projection withdrawal. That balance includes applicable
+          investment growth, regular saving, scheduled lump sums and
+          partial-retirement saving reductions up to retirement. The bridge
+          calculation then applies only the temporary withdrawal needed for that
+          month's modelled shortfall. Investment growth during the bridge uses
+          the same real or nominal growth conversion as the main pot
+          projections.
         </p>
         <p className="section-copy">
-          Before SIPP and LISA access, any shortfall is tracked as an ISA-only
-          bridge requirement. From SIPP access onwards, the bridge calculation
-          draws from SIPP first. From LISA access onwards, it can then draw from
+          Before pension-pot and LISA access, any shortfall is tracked as an
+          ISA-only bridge requirement. From SIPP access onwards, the bridge
+          calculation draws from SIPP first. From CS AVC access onwards, it can
+          then draw from CS AVC. From LISA access onwards, it can then draw from
           LISA before ISA, limited by the balances available. Any remaining gap
           is recorded as an unfunded shortfall. The comparison view also
           estimates the extra monthly saving that would be needed to cover any
@@ -821,7 +875,7 @@ export function MethodologyPage() {
         <p className="section-copy">A typical bridge scenario might be:</p>
         <FormulaBlock>
           {
-            "Retire early → use ISA → use SIPP/LISA → Alpha starts → State Pension starts"
+            "Retire early -> use ISA -> use SIPP/CS AVC/LISA -> Alpha starts -> State Pension starts"
           }
         </FormulaBlock>
         <p className="section-copy">The bridge analysis is sensitive to:</p>

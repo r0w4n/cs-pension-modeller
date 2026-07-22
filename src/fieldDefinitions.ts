@@ -62,6 +62,11 @@ export type RangeField = {
     | "sippRealInterestPercent"
     | "sippWithdrawalPercent"
     | "sippWithdrawalTargetAge"
+    | "csAvcDrawAge"
+    | "csAvcMonthlyContribution"
+    | "csAvcRealInterestPercent"
+    | "csAvcWithdrawalPercent"
+    | "csAvcWithdrawalTargetAge"
     | "isaDrawAge"
     | "isaMonthlyContribution"
     | "isaRealInterestPercent"
@@ -75,7 +80,8 @@ export type RangeField = {
     | "taxBasicRatePercent"
     | "taxHigherRatePercent"
     | "taxAdditionalRatePercent"
-    | "taxSippTaxFreeWithdrawalPercent";
+    | "taxSippTaxFreeWithdrawalPercent"
+    | "taxCsAvcTaxFreeWithdrawalPercent";
   label: string;
   type: "range";
   min: number;
@@ -98,7 +104,8 @@ export type CheckboxField = {
     | "classicPlusApplyPensionIncreases"
     | "nuvosApplyPensionIncreases"
     | "premiumHasNpa65"
-    | "sippHasProtectedPensionAge";
+    | "sippHasProtectedPensionAge"
+    | "csAvcHasProtectedPensionAge";
   label: string;
   type: "checkbox";
   description: string;
@@ -120,6 +127,7 @@ export type CurrencyInputField = {
     | "desiredRetirementIncome"
     | "fullSalary"
     | "sippCurrentPot"
+    | "csAvcCurrentPot"
     | "isaCurrentPot"
     | "lisaCurrentPot"
     | "taxPersonalAllowance"
@@ -153,6 +161,7 @@ export type SelectField = {
     | "classicPlusFinalSalaryLink"
     | "sippTaxReliefRate"
     | "sippWithdrawalStrategy"
+    | "csAvcWithdrawalStrategy"
     | "isaWithdrawalStrategy"
     | "lisaWithdrawalStrategy"
     | "premiumEarliestAccessAge";
@@ -166,6 +175,7 @@ export type SelectField = {
       | PensionSettings["classicCalculationMode"]
       | PensionSettings["classicFinalSalaryLink"]
       | PensionSettings["sippWithdrawalStrategy"]
+      | PensionSettings["csAvcWithdrawalStrategy"]
       | PensionSettings["isaWithdrawalStrategy"]
       | PensionSettings["lisaWithdrawalStrategy"]
       | PensionSettings["premiumEarliestAccessAge"];
@@ -1035,6 +1045,103 @@ export const fieldGroups: FieldGroup[] = [
     ],
   },
   {
+    id: "cs-avc",
+    eyebrow: "CS AVC",
+    title: "Civil Service AVC",
+    description:
+      "Civil Service Additional Voluntary Contribution pot, contributions, investment return, and drawdown assumptions.",
+    fields: [
+      {
+        id: "csAvcCurrentPot",
+        label: "Current CS AVC pot (£)",
+        type: "currency-input",
+        min: 0,
+        max: 2000000,
+        step: 1,
+        format: "currency",
+        description:
+          "The current Civil Service Additional Voluntary Contribution balance. CS AVC is modelled as a separate invested defined contribution pot, not as Alpha, classic, premium or nuvos pension accrual.",
+      },
+      {
+        id: "csAvcMonthlyContribution",
+        label: "Regular CS AVC contribution (£ per month)",
+        type: "range",
+        min: 0,
+        max: 5000,
+        step: 25,
+        format: "currency",
+        valuePrefix: "/mo",
+        description:
+          "The regular gross amount you plan to add before drawdown. The modeller does not add any employer contribution to the CS AVC pot.",
+      },
+      {
+        id: "csAvcDrawAge",
+        label: "CS AVC draw start age",
+        type: "range",
+        min: 0,
+        max: 100,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age CS AVC withdrawals start in the model. Standard private pension access is 55 before 6 April 2028 and 57 from that date, unless your provider has confirmed a protected pension age for this pot.",
+        infoUrl: knowledgeLinks.pensionAccessAge,
+        infoLinkText: "Private pension access",
+      },
+      {
+        id: "csAvcHasProtectedPensionAge",
+        label: "I have a provider-confirmed protected CS AVC age",
+        type: "checkbox",
+        description:
+          "Only turn this on when the CS AVC provider or scheme administrator has confirmed the earliest age for these scheme-specific pension rights.",
+        infoUrl: knowledgeLinks.pensionAccessAge,
+        infoLinkText: "Private pension access",
+      },
+      {
+        id: "csAvcRealInterestPercent",
+        label: "CS AVC expected nominal return (%)",
+        type: "range",
+        min: -10,
+        max: 10,
+        step: 0.1,
+        description:
+          "Defaults to 5% as a simple long-term planning assumption for an invested pension pot before inflation. Actual returns and charges may differ from the assumption entered.",
+      },
+      {
+        id: "csAvcWithdrawalStrategy",
+        label: "CS AVC withdrawal strategy",
+        type: "select",
+        options: [
+          { value: "zero_at_death", label: "Zero at death" },
+          { value: "percentage", label: "Annual percentage" },
+          { value: "use_by_age", label: "Use by age" },
+        ],
+        description:
+          "Controls how the CS AVC pot is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+      },
+      {
+        id: "csAvcWithdrawalPercent",
+        label: "CS AVC withdrawal rate (%)",
+        type: "range",
+        min: 0,
+        max: 15,
+        step: 0.1,
+        description:
+          "The annual percentage withdrawn from the CS AVC pot when the percentage strategy is selected.",
+      },
+      {
+        id: "csAvcWithdrawalTargetAge",
+        label: "CS AVC use-by age",
+        type: "range",
+        min: 55,
+        max: 100,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age by which the CS AVC pot is intended to be used up when the use-by-age strategy is selected.",
+      },
+    ],
+  },
+  {
     id: "isa",
     eyebrow: "ISA",
     title: "ISA details",
@@ -1310,6 +1417,18 @@ export const fieldGroups: FieldGroup[] = [
         step: 0.1,
         description:
           "The share of SIPP withdrawals the model treats as tax-free pension cash. Alpha, nuvos, State Pension and taxable SIPP withdrawals can be taxable income; ISA withdrawals are not modelled as taxable income.",
+        infoUrl: knowledgeLinks.pensionTaxFree,
+        infoLinkText: "Check pension tax-free rules",
+      },
+      {
+        id: "taxCsAvcTaxFreeWithdrawalPercent",
+        label: "CS AVC tax-free withdrawal share (%)",
+        type: "range",
+        min: 0,
+        max: 25,
+        step: 0.1,
+        description:
+          "The share of CS AVC withdrawals the model treats as tax-free pension cash. The remaining share is included in the simplified Income Tax estimate.",
         infoUrl: knowledgeLinks.pensionTaxFree,
         infoLinkText: "Check pension tax-free rules",
       },

@@ -2943,6 +2943,43 @@ describe("projection calculations", () => {
     );
   });
 
+  it("reports the CS AVC pot at draw before the first withdrawal", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2025-01-01",
+      dateOfBirth: "1965-01-01",
+      lifeExpectancy: 70,
+      requirementAge: 60,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: true,
+      showIsa: false,
+      showLisa: false,
+      showAdditionalGuaranteedIncome: false,
+      csAvcCurrentPot: 120000,
+      csAvcMonthlyContribution: 0,
+      csAvcDrawAge: 61,
+      csAvcRealInterestPercent: 0,
+      csAvcWithdrawalStrategy: "percentage",
+      csAvcWithdrawalPercent: 4,
+    };
+
+    const rows = createProjectionTable(settings);
+    const summary = generatePensionSummary(rows, settings);
+    const drawRow = rows.find((row) => row.date === "2026-01-01");
+
+    expect(drawRow?.monthlyCsAvcPension).toBe(400);
+    expect(drawRow?.csAvcPot).toBe(119600);
+    expect(summary.csAvcPension.potAtDraw).toBe(120000);
+  });
+
   it("uses active flexible pot income in the summary when draw ages land on month-start rows", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

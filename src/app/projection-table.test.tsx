@@ -41,6 +41,8 @@ const rows: ProjectionRow[] = [
     monthlyAdditionalGuaranteedIncomeTaxable: 0,
     sippPot: 0,
     monthlySippPension: 0,
+    csAvcPot: 0,
+    monthlyCsAvcPension: 0,
     isaPot: 0,
     monthlyIsaPension: 0,
     lisaPot: 0,

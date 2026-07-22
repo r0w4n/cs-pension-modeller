@@ -16,6 +16,7 @@ export type {
   AdditionalGuaranteedIncome,
   AdditionalGuaranteedIncomeIndexation,
   SippWithdrawalStrategy,
+  CsAvcWithdrawalStrategy,
   IsaWithdrawalStrategy,
   LisaWithdrawalStrategy,
   SippTaxReliefRate,
@@ -67,7 +68,9 @@ export {
   calculateStatePensionDrawDateFromAge,
   calculateMinimumPensionAccessAge,
   calculateMinimumSippAccessAge,
+  calculateMinimumCsAvcAccessAge,
   resolveSippMinimumAccessAge,
+  resolveCsAvcMinimumAccessAge,
   calculateStatePensionDrawDate,
   calculateNormalPensionAge,
 } from "./settings/settings-shared/state";

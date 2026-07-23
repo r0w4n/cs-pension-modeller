@@ -264,7 +264,7 @@ export function InflationBasisPanel({
   );
 }
 
-function buildInflationRows(
+export function buildInflationRows(
   settings: PensionSettings,
   assumptions: ReturnType<typeof deriveInflationAssumptions>,
   isRealTerms: boolean

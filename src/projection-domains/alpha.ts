@@ -6,11 +6,28 @@ import {
   type AddedPensionLumpSum,
   type PensionSettings,
 } from "../settings";
+import {
+  calculateNormalPensionAge,
+  calculateStatePensionDrawDate,
+} from "../settings/settings-shared/state";
 
-type AddedPensionFactorRecord = {
-  age: number;
-  self: number | null;
-  self_plus_beneficiaries: number | null;
+type AddedPensionPurchaseType = "lump_sum" | "monthly";
+
+type AddedPensionFactorTable = {
+  minimum_age: number;
+  self: readonly number[];
+  self_plus_beneficiaries: readonly number[];
+};
+
+type AddedPensionFactorsData = {
+  factors: Record<
+    AddedPensionPurchaseType,
+    Record<string, AddedPensionFactorTable>
+  >;
+  revaluation_factors: {
+    minimum_aprils: number;
+    values: readonly number[];
+  };
 };
 
 type AlphaEarlyRetirementFactorTable = Record<
@@ -24,6 +41,7 @@ const ALPHA_EARLY_RETIREMENT_FACTORS = (
   }
 ).factors;
 
+const ADDED_PENSION_FACTORS = addedPensionFactors as AddedPensionFactorsData;
 const MONTHLY_ALPHA_ACCRUAL_RATE = 0.0232 / 12;
 const DEFAULT_ALPHA_ACCRUAL_RATE = 0.0232;
 
@@ -135,6 +153,7 @@ export function calculateMonthlyAddedPension(input: {
   stopDate: string;
   dateOfBirth: string;
   addedPensionMonthlyContribution: number;
+  calculationDate?: string;
   contributionMultiplier?: number;
   factorType?: AddedPensionFactorType;
 }) {
@@ -143,6 +162,7 @@ export function calculateMonthlyAddedPension(input: {
     stopDate,
     dateOfBirth,
     addedPensionMonthlyContribution,
+    calculationDate = rowDate,
     contributionMultiplier = 1,
     factorType = "self",
   } = input;
@@ -151,14 +171,24 @@ export function calculateMonthlyAddedPension(input: {
     return 0;
   }
 
-  const age = calculateAge(dateOfBirth, rowDate);
-  const factor = getAddedPensionFactorForAge(age, factorType);
+  const normalPensionAge = calculateNormalPensionAge(dateOfBirth);
+  const normalPensionDate = calculateStatePensionDrawDate(dateOfBirth);
+  const age = calculateAge(dateOfBirth, calculationDate);
+  const factor = getAddedPensionFactorForAge(
+    age,
+    factorType,
+    "monthly",
+    normalPensionAge
+  );
 
   if (!factor) {
     return 0;
   }
 
-  const revaluationFactor = getAddedPensionRevaluationFactor(rowDate, stopDate);
+  const revaluationFactor = getAddedPensionRevaluationFactor(
+    calculationDate,
+    normalPensionDate
+  );
 
   if (!revaluationFactor) {
     return 0;
@@ -168,6 +198,18 @@ export function calculateMonthlyAddedPension(input: {
     (addedPensionMonthlyContribution * contributionMultiplier) /
     (factor * revaluationFactor)
   );
+}
+
+export function getAddedPensionPeriodCalculationDate(
+  contributionStartDate: string,
+  rowDate: string
+) {
+  const rowYear = Number(rowDate.slice(0, 4));
+  const schemeYearStart = `${rowDate.slice(5) < "04-01" ? rowYear - 1 : rowYear}-04-01`;
+
+  return contributionStartDate > schemeYearStart
+    ? contributionStartDate
+    : schemeYearStart;
 }
 
 export function calculateLumpSumAddedPension(input: {
@@ -195,9 +237,12 @@ export function calculateLumpSumAddedPension(input: {
     const purchasedPension = matchingPaymentDates.reduce(
       (runningTotal, paymentDate) => {
         const age = calculateAge(dateOfBirth, paymentDate);
+        const normalPensionAge = calculateNormalPensionAge(dateOfBirth);
         const factor = getAddedPensionFactorForAge(
           age,
-          lumpSum.factorType ?? factorType
+          lumpSum.factorType ?? factorType,
+          "lump_sum",
+          normalPensionAge
         );
 
         if (!factor) {
@@ -206,7 +251,7 @@ export function calculateLumpSumAddedPension(input: {
 
         const revaluationFactor = getAddedPensionRevaluationFactor(
           paymentDate,
-          lumpSum.endDate
+          calculateStatePensionDrawDate(dateOfBirth)
         );
 
         if (!revaluationFactor) {
@@ -224,20 +269,50 @@ export function calculateLumpSumAddedPension(input: {
 
 export function getAddedPensionFactorForAge(
   age: number,
-  factorType: AddedPensionFactorType = "self"
+  factorType: AddedPensionFactorType = "self",
+  purchaseType: AddedPensionPurchaseType = "monthly",
+  normalPensionAge = 68
 ) {
-  const match = (addedPensionFactors as AddedPensionFactorRecord[]).find(
-    (record) => record.age === age
+  const normalPensionAgeInMonths = toCompletedAgeMonths(normalPensionAge);
+  const lowerNormalPensionAge = Math.floor(normalPensionAgeInMonths / 12);
+  const completedMonths = normalPensionAgeInMonths % 12;
+  const lowerFactor = getPublishedAddedPensionFactor(
+    age,
+    factorType,
+    purchaseType,
+    lowerNormalPensionAge
   );
 
-  return match?.[factorType] ?? 0;
+  if (completedMonths === 0) {
+    return lowerFactor ?? 0;
+  }
+
+  const upperFactor = getPublishedAddedPensionFactor(
+    age,
+    factorType,
+    purchaseType,
+    lowerNormalPensionAge + 1
+  );
+
+  if (lowerFactor === null || upperFactor === null) {
+    return 0;
+  }
+
+  return lowerFactor + (upperFactor - lowerFactor) * (completedMonths / 12);
 }
 
 export function getAddedPensionRevaluationFactor(
-  _rowDate: string,
-  _stopDate: string
+  calculationDate: string,
+  normalPensionDate: string
 ) {
-  return 1;
+  const numberOfAprils = countFirstAprilsAfter(
+    calculationDate,
+    normalPensionDate
+  );
+  const { minimum_aprils: minimumAprils, values } =
+    ADDED_PENSION_FACTORS.revaluation_factors;
+
+  return values[numberOfAprils - minimumAprils] ?? 0;
 }
 
 export function getAlphaEarlyRetirementFactor(
@@ -362,6 +437,44 @@ function getPublishedAlphaEarlyRetirementFactor(
     ALPHA_EARLY_RETIREMENT_FACTORS[normalPensionAge]?.[retirementAge]?.[
       completedMonths
     ] ?? null
+  );
+}
+
+function getPublishedAddedPensionFactor(
+  age: number,
+  factorType: AddedPensionFactorType,
+  purchaseType: AddedPensionPurchaseType,
+  normalPensionAge: number
+) {
+  const table =
+    ADDED_PENSION_FACTORS.factors[purchaseType][String(normalPensionAge)];
+
+  if (!table) {
+    return null;
+  }
+
+  return table[factorType][age - table.minimum_age] ?? null;
+}
+
+function countFirstAprilsAfter(
+  calculationDate: string,
+  normalPensionDate: string
+) {
+  const calculationYear = Number(calculationDate.slice(0, 4));
+  let firstApril = `${calculationYear}-04-01`;
+
+  if (firstApril <= calculationDate) {
+    firstApril = `${calculationYear + 1}-04-01`;
+  }
+
+  if (firstApril > normalPensionDate) {
+    return 0;
+  }
+
+  return (
+    Number(normalPensionDate.slice(0, 4)) -
+    Number(firstApril.slice(0, 4)) +
+    (normalPensionDate.slice(5) >= "04-01" ? 1 : 0)
   );
 }
 

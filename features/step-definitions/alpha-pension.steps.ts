@@ -5,18 +5,27 @@ import {
   When,
   setWorldConstructor,
 } from "@cucumber/cucumber";
-import { addYears, calculateAge } from "../../src/projection-core";
+import {
+  addMonths,
+  addYears,
+  calculateAge,
+  createProjectionTable,
+  deriveInflationAssumptions,
+} from "../../src/projection-core";
+import { getVisibleProjectionTableColumns } from "../../src/app/projection-table";
+import { buildInflationRows } from "../../src/app/results-summary";
 import {
   calculateMinimumPensionAccessAge,
   defaultSettings,
 } from "../../src/settings";
 import { validateAlphaPensionRules } from "../../src/settings/settings-domains/alpha-pension";
+import { calculateNormalPensionAge } from "../../src/settings/settings-shared/state";
 import {
   calculateAnnualAlphaPensionIncludingReduction,
   calculateAlphaPensionRevaluationFactor,
   calculateLumpSumAddedPension,
   calculateMonthlyAddedPension,
-  calculateMonthlyAlphaAccrual,
+  calculateMonthlyStandardAlphaAccrual,
   calculateProjectedAlphaPensionableEarnings,
   getAlphaEarlyRetirementFactor,
 } from "../../src/projection-domains/alpha";
@@ -88,6 +97,10 @@ class AlphaPensionWorld {
   annualAlphaPensionPayable = 0;
   annualReduction = 0;
   pensionBreakdown: PensionBreakdownRow[] = [];
+  hasCompletedAlphaProjection = false;
+  hasAlphaComponentInputs = false;
+  displayedAlphaAssumptions: string[] = [];
+  displayedAlphaColumns: string[] = [];
   validationResult:
     | { ageAtDrawDate: number; valid: boolean; messages: string[] }
     | undefined;
@@ -153,46 +166,88 @@ function ageWithMonths(age: number, months: number) {
 }
 
 function projectActiveAlpha(world: AlphaPensionWorld, activeYears: number) {
+  const normalPensionAge = calculateNormalPensionAge(world.dateOfBirth);
   const settings = {
     ...defaultSettings,
     startDate: ACCEPTANCE_START_DATE,
+    dateOfBirth: world.dateOfBirth,
+    lifeExpectancy: 90,
+    requirementAge: 55,
+    normalPensionAge,
+    showAlpha: true,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: false,
+    showSipp: false,
+    showCsAvc: false,
+    showIsa: false,
+    showLisa: false,
+    showAdditionalGuaranteedIncome: false,
+    projectionBasis: world.cpiEnabled
+      ? ("nominal" as const)
+      : ("real" as const),
+    inflationRateAnnual: world.cpiRate,
+    accruedPensionAtLastAbs: world.startingAlphaPension,
+    alphaPensionAbsDate: "2026",
+    alphaPensionLeaveAge: normalPensionAge,
+    alphaPensionDrawAge: normalPensionAge,
     pensionableEarnings: world.startingSalary,
     alphaPayRisePercent: world.salaryIncrease,
+    alphaAddedPensionMonthly: 0,
+    alphaAddedPensionLumpSums: [],
   };
-  let accruedAlphaPension = world.startingAlphaPension;
+  const projectionRows = createProjectionTable(settings);
   const breakdown: ActiveAlphaResult["breakdown"] = [];
+  let newAlphaAccrual = 0;
 
   for (let schemeYear = 1; schemeYear <= activeYears; schemeYear += 1) {
-    const rowDate = addYears(ACCEPTANCE_START_DATE, schemeYear - 1);
+    const rowDate = addMonths(ACCEPTANCE_START_DATE, (schemeYear - 1) * 12);
+    const schemeYearEndDate = addMonths(
+      ACCEPTANCE_START_DATE,
+      schemeYear * 12 - 1
+    );
     const pensionableSalary = calculateProjectedAlphaPensionableEarnings(
       settings,
       rowDate
     );
-    const annualAccrual = calculateMonthlyAlphaAccrual(pensionableSalary) * 12;
+    let annualAccrual = 0;
 
-    if (world.cpiEnabled) {
-      accruedAlphaPension *= 1 + world.cpiRate / 100;
+    for (let month = 0; month < 12; month += 1) {
+      annualAccrual += calculateMonthlyStandardAlphaAccrual(
+        settings,
+        addMonths(rowDate, month)
+      );
     }
 
-    accruedAlphaPension += annualAccrual;
+    newAlphaAccrual += annualAccrual;
+    const schemeYearEndRow = projectionRows.find(
+      (row) => row.date === schemeYearEndDate
+    );
+
+    assertCondition(
+      schemeYearEndRow,
+      `Expected a production projection row for ${schemeYearEndDate}`
+    );
     breakdown.push({
       schemeYear,
       pensionableSalary,
       annualAccrual,
-      accruedAlphaPension,
+      accruedAlphaPension: schemeYearEndRow.annualAccruedAlphaPension,
     });
   }
 
+  const finalRow = breakdown.at(-1);
+  assertCondition(finalRow, "Expected at least one active scheme year");
+
   return {
-    alphaPension: accruedAlphaPension,
+    alphaPension: finalRow.accruedAlphaPension,
     finalSalary: calculateProjectedAlphaPensionableEarnings(
       settings,
       addYears(ACCEPTANCE_START_DATE, activeYears)
     ),
-    newAlphaAccrual: breakdown.reduce(
-      (total, row) => total + row.annualAccrual,
-      0
-    ),
+    newAlphaAccrual,
     breakdown,
   };
 }
@@ -289,12 +344,6 @@ function validateDrawRequest(world: AlphaPensionWorld) {
   };
 }
 
-function acceptanceUnsupported(reason: string): never {
-  throw new Error(
-    `Acceptance scenario is not implemented in the current model: ${reason}`
-  );
-}
-
 Given(
   "alpha pension factor tables version {string} are loaded",
   function (this: AlphaPensionWorld, version: string) {
@@ -305,7 +354,7 @@ Given(
 Given(
   "alpha pension purchase factor tables version {string} are loaded",
   function (this: AlphaPensionWorld, version: string) {
-    assertEqual(version, "acceptance-v1");
+    assertEqual(version, "GAD-2026-01");
   }
 );
 
@@ -464,7 +513,7 @@ Then(
 );
 
 Then(
-  "the model should not apply active member revaluation after leaving service",
+  "the model should apply CPI revaluation after leaving service",
   function (this: AlphaPensionWorld) {
     const expectedCpiOnlyFactor = (1 + this.cpiRate / 100) ** 5;
 
@@ -908,7 +957,9 @@ function drawAllAlphaPensionAtAge(
             world.addedPensionPurchase.purchaseDate || ACCEPTANCE_START_DATE,
           stopDate:
             world.addedPensionPurchase.purchaseDate || ACCEPTANCE_START_DATE,
-          dateOfBirth: "1981-04-01",
+          calculationDate:
+            world.addedPensionPurchase.purchaseDate || ACCEPTANCE_START_DATE,
+          dateOfBirth: world.dateOfBirth,
           addedPensionMonthlyContribution:
             world.addedPensionPurchase.monthlyContribution,
         }) * world.addedPensionPurchase.monthsPaid
@@ -1017,20 +1068,26 @@ Then(
   }
 );
 
-Given("the member has completed an alpha pension projection", function () {
-  return;
+Given(
+  "the member has completed an alpha pension projection",
+  function (this: AlphaPensionWorld) {
+    this.hasCompletedAlphaProjection = true;
+  }
+);
+
+Given(
+  "the member has standard alpha pension",
+  function (this: AlphaPensionWorld) {
+    this.hasAlphaComponentInputs = true;
+  }
+);
+
+Given("the member has Added Pension", function (this: AlphaPensionWorld) {
+  this.hasAlphaComponentInputs = true;
 });
 
-Given("the member has standard alpha pension", function () {
-  return;
-});
-
-Given("the member has Added Pension", function () {
-  return;
-});
-
-Given("the member has EPA pension", function () {
-  return;
+Given("the member has EPA pension", function (this: AlphaPensionWorld) {
+  this.hasAlphaComponentInputs = true;
 });
 
 When(
@@ -1040,7 +1097,62 @@ When(
       return;
     }
 
-    acceptanceUnsupported("a user-visible alpha result presentation contract");
+    if (this.hasCompletedAlphaProjection) {
+      const settings = {
+        ...defaultSettings,
+        showAlpha: true,
+        showStatePension: false,
+        showSipp: false,
+        showCsAvc: false,
+        showIsa: false,
+        showLisa: false,
+        projectionBasis: "nominal" as const,
+        inflationRateAnnual: 2,
+      };
+      this.displayedAlphaAssumptions = buildInflationRows(
+        settings,
+        deriveInflationAssumptions(settings),
+        false
+      ).map((row) => row.assumption);
+    }
+
+    if (this.hasAlphaComponentInputs) {
+      this.displayedAlphaColumns = getVisibleProjectionTableColumns({
+        ...defaultSettings,
+        showAlpha: true,
+      })
+        .filter((column) =>
+          [
+            "monthlyAddedPension",
+            "lumpSumAddedPension",
+            "annualStandardAlphaPension",
+            "annualEpaAlphaPension",
+            "annualAccruedAlphaPension",
+            "annualAlphaPensionIncludingReduction",
+          ].includes(column.key)
+        )
+        .map((column) => column.label);
+    }
+  }
+);
+
+Then(
+  "the Alpha revaluation assumptions should include:",
+  function (this: AlphaPensionWorld, table: DataTable) {
+    assertDeepEqual(
+      this.displayedAlphaAssumptions,
+      table.hashes().map((row) => row.assumption)
+    );
+  }
+);
+
+Then(
+  "the Alpha projection table should include columns:",
+  function (this: AlphaPensionWorld, table: DataTable) {
+    assertDeepEqual(
+      this.displayedAlphaColumns,
+      table.hashes().map((row) => row.column)
+    );
   }
 );
 
@@ -1050,30 +1162,10 @@ Then(
     this: AlphaPensionWorld & { resultRows?: PensionBreakdownRow[] },
     table: DataTable
   ) {
-    if (this.resultRows) {
-      assertDeepEqual(
-        normalizeActualRows(this.resultRows),
-        parseExpectedRows(table)
-      );
-      return;
-    }
-
-    acceptanceUnsupported("a user-visible alpha assumptions result contract");
+    assertCondition(this.resultRows);
+    assertDeepEqual(
+      normalizeActualRows(this.resultRows),
+      parseExpectedRows(table)
+    );
   }
 );
-
-Then("the result should show separate rows for:", function () {
-  acceptanceUnsupported("a user-visible pension component breakdown contract");
-});
-
-Then("each row should show unreduced annual pension", function () {
-  acceptanceUnsupported("a user-visible pension component breakdown contract");
-});
-
-Then("each row should show payable annual pension", function () {
-  acceptanceUnsupported("a user-visible pension component breakdown contract");
-});
-
-Then("each row should show annual reduction where applicable", function () {
-  acceptanceUnsupported("a user-visible pension component breakdown contract");
-});

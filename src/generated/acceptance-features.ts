@@ -16,7 +16,7 @@ export const acceptanceFeatures = [
         description: "",
         tags: ["@alpha", "@accrual"],
         status: "covered",
-        hasUnderReviewExamples: true,
+        hasUnderReviewExamples: false,
         steps: [
           {
             id: "line-22",
@@ -185,45 +185,82 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-38",
-            name: "Pending active revaluation expectation review",
-            tags: ["@pending"],
-            status: "under-review",
+            id: "line-37",
+            name: "Active revaluation examples",
+            tags: [],
+            status: "covered",
             table: [
+              {
+                id: "line-38",
+                cells: [
+                  {
+                    id: "line-38-column-9",
+                    value: "startingAlphaPension",
+                  },
+                  {
+                    id: "line-38-column-32",
+                    value: "startingSalary",
+                  },
+                  {
+                    id: "line-38-column-49",
+                    value: "salaryIncrease",
+                  },
+                  {
+                    id: "line-38-column-66",
+                    value: "cpiRate",
+                  },
+                  {
+                    id: "line-38-column-76",
+                    value: "cpiEnabled",
+                  },
+                  {
+                    id: "line-38-column-89",
+                    value: "activeYears",
+                  },
+                  {
+                    id: "line-38-column-103",
+                    value: "expectedAlphaPension",
+                  },
+                  {
+                    id: "line-38-column-126",
+                    value: "expectedFinalSalary",
+                  },
+                ],
+              },
               {
                 id: "line-39",
                 cells: [
                   {
                     id: "line-39-column-9",
-                    value: "startingAlphaPension",
+                    value: "10000.00",
                   },
                   {
                     id: "line-39-column-32",
-                    value: "startingSalary",
+                    value: "50000.00",
                   },
                   {
                     id: "line-39-column-49",
-                    value: "salaryIncrease",
+                    value: "5.00%",
                   },
                   {
                     id: "line-39-column-66",
-                    value: "cpiRate",
+                    value: "4.00%",
                   },
                   {
                     id: "line-39-column-76",
-                    value: "cpiEnabled",
+                    value: "on",
                   },
                   {
                     id: "line-39-column-89",
-                    value: "activeYears",
+                    value: "2",
                   },
                   {
                     id: "line-39-column-103",
-                    value: "expectedAlphaPension",
+                    value: "12824.40",
                   },
                   {
                     id: "line-39-column-126",
-                    value: "expectedFinalSalary",
+                    value: "55125.00",
                   },
                 ],
               },
@@ -248,7 +285,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-40-column-76",
-                    value: "on",
+                    value: "off",
                   },
                   {
                     id: "line-40-column-89",
@@ -256,47 +293,10 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-40-column-103",
-                    value: "13572.05",
+                    value: "12378.00",
                   },
                   {
                     id: "line-40-column-126",
-                    value: "55125.00",
-                  },
-                ],
-              },
-              {
-                id: "line-41",
-                cells: [
-                  {
-                    id: "line-41-column-9",
-                    value: "10000.00",
-                  },
-                  {
-                    id: "line-41-column-32",
-                    value: "50000.00",
-                  },
-                  {
-                    id: "line-41-column-49",
-                    value: "5.00%",
-                  },
-                  {
-                    id: "line-41-column-66",
-                    value: "4.00%",
-                  },
-                  {
-                    id: "line-41-column-76",
-                    value: "off",
-                  },
-                  {
-                    id: "line-41-column-89",
-                    value: "2",
-                  },
-                  {
-                    id: "line-41-column-103",
-                    value: "12697.65",
-                  },
-                  {
-                    id: "line-41-column-126",
                     value: "55125.00",
                   },
                 ],
@@ -306,7 +306,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-44",
+        id: "line-43",
         keyword: "Scenario",
         name: "Show year-by-year alpha accrual breakdown",
         description: "",
@@ -315,63 +315,84 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-45",
+            id: "line-44",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-46",
+            id: "line-45",
             keyword: "And",
             text: "the member starts with accrued alpha pension of 0.00",
           },
           {
-            id: "line-47",
+            id: "line-46",
             keyword: "And",
             text: "the member has pensionable salary of 60000.00",
           },
           {
-            id: "line-48",
+            id: "line-47",
             keyword: "And",
             text: "the annual salary increase assumption is 4.00%",
           },
           {
-            id: "line-49",
+            id: "line-48",
             keyword: "And",
             text: "the annual CPI assumption is 0.00%",
           },
           {
-            id: "line-50",
+            id: "line-49",
             keyword: "And",
             text: "CPI revaluation is off",
           },
           {
-            id: "line-51",
+            id: "line-50",
             keyword: "When",
             text: "the member remains active for 3 scheme years",
           },
           {
-            id: "line-52",
+            id: "line-51",
             keyword: "Then",
             text: "the alpha accrual breakdown should be:",
             table: [
+              {
+                id: "line-52",
+                cells: [
+                  {
+                    id: "line-52-column-9",
+                    value: "schemeYear",
+                  },
+                  {
+                    id: "line-52-column-22",
+                    value: "pensionableSalary",
+                  },
+                  {
+                    id: "line-52-column-42",
+                    value: "annualAccrual",
+                  },
+                  {
+                    id: "line-52-column-58",
+                    value: "accruedAlphaPension",
+                  },
+                ],
+              },
               {
                 id: "line-53",
                 cells: [
                   {
                     id: "line-53-column-9",
-                    value: "schemeYear",
+                    value: "1",
                   },
                   {
                     id: "line-53-column-22",
-                    value: "pensionableSalary",
+                    value: "60000.00",
                   },
                   {
                     id: "line-53-column-42",
-                    value: "annualAccrual",
+                    value: "1392.00",
                   },
                   {
                     id: "line-53-column-58",
-                    value: "accruedAlphaPension",
+                    value: "1392.00",
                   },
                 ],
               },
@@ -380,19 +401,19 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-54-column-9",
-                    value: "1",
+                    value: "2",
                   },
                   {
                     id: "line-54-column-22",
-                    value: "60000.00",
+                    value: "62400.00",
                   },
                   {
                     id: "line-54-column-42",
-                    value: "1392.00",
+                    value: "1447.68",
                   },
                   {
                     id: "line-54-column-58",
-                    value: "1392.00",
+                    value: "2839.68",
                   },
                 ],
               },
@@ -401,39 +422,18 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-55-column-9",
-                    value: "2",
-                  },
-                  {
-                    id: "line-55-column-22",
-                    value: "62400.00",
-                  },
-                  {
-                    id: "line-55-column-42",
-                    value: "1447.68",
-                  },
-                  {
-                    id: "line-55-column-58",
-                    value: "2839.68",
-                  },
-                ],
-              },
-              {
-                id: "line-56",
-                cells: [
-                  {
-                    id: "line-56-column-9",
                     value: "3",
                   },
                   {
-                    id: "line-56-column-22",
+                    id: "line-55-column-22",
                     value: "64896.00",
                   },
                   {
-                    id: "line-56-column-42",
+                    id: "line-55-column-42",
                     value: "1505.59",
                   },
                   {
-                    id: "line-56-column-58",
+                    id: "line-55-column-58",
                     value: "4345.27",
                   },
                 ],
@@ -444,74 +444,99 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-64",
+        id: "line-63",
         keyword: "Scenario Outline",
         name: "Salary increase affects future alpha accrual",
         description: "",
         tags: ["@alpha", "@salary-increase"],
         status: "covered",
-        hasUnderReviewExamples: true,
+        hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-65",
+            id: "line-64",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-66",
+            id: "line-65",
             keyword: "And",
             text: "the member starts with pensionable salary of <startingSalary>",
           },
           {
-            id: "line-67",
+            id: "line-66",
             keyword: "And",
             text: "the annual salary increase assumption is <salaryIncrease>",
           },
           {
-            id: "line-68",
+            id: "line-67",
             keyword: "When",
             text: "the member remains active for <activeYears> scheme years",
           },
           {
-            id: "line-69",
+            id: "line-68",
             keyword: "Then",
             text: "the final pensionable salary should be <expectedFinalSalary>",
           },
           {
-            id: "line-70",
+            id: "line-69",
             keyword: "And",
             text: "the total new alpha accrual should be <expectedNewAlphaAccrual>",
           },
         ],
         examples: [
           {
-            id: "line-72",
+            id: "line-71",
             name: "Passing salary increase examples",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-72",
+                cells: [
+                  {
+                    id: "line-72-column-9",
+                    value: "startingSalary",
+                  },
+                  {
+                    id: "line-72-column-26",
+                    value: "salaryIncrease",
+                  },
+                  {
+                    id: "line-72-column-43",
+                    value: "activeYears",
+                  },
+                  {
+                    id: "line-72-column-57",
+                    value: "expectedFinalSalary",
+                  },
+                  {
+                    id: "line-72-column-79",
+                    value: "expectedNewAlphaAccrual",
+                  },
+                ],
+              },
+              {
                 id: "line-73",
                 cells: [
                   {
                     id: "line-73-column-9",
-                    value: "startingSalary",
+                    value: "60000.00",
                   },
                   {
                     id: "line-73-column-26",
-                    value: "salaryIncrease",
+                    value: "0.00%",
                   },
                   {
                     id: "line-73-column-43",
-                    value: "activeYears",
+                    value: "3",
                   },
                   {
                     id: "line-73-column-57",
-                    value: "expectedFinalSalary",
+                    value: "60000.00",
                   },
                   {
                     id: "line-73-column-79",
-                    value: "expectedNewAlphaAccrual",
+                    value: "4176.00",
                   },
                 ],
               },
@@ -524,7 +549,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-74-column-26",
-                    value: "0.00%",
+                    value: "4.00%",
                   },
                   {
                     id: "line-74-column-43",
@@ -532,35 +557,10 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-74-column-57",
-                    value: "60000.00",
-                  },
-                  {
-                    id: "line-74-column-79",
-                    value: "4176.00",
-                  },
-                ],
-              },
-              {
-                id: "line-75",
-                cells: [
-                  {
-                    id: "line-75-column-9",
-                    value: "60000.00",
-                  },
-                  {
-                    id: "line-75-column-26",
-                    value: "4.00%",
-                  },
-                  {
-                    id: "line-75-column-43",
-                    value: "3",
-                  },
-                  {
-                    id: "line-75-column-57",
                     value: "67491.84",
                   },
                   {
-                    id: "line-75-column-79",
+                    id: "line-74-column-79",
                     value: "4345.27",
                   },
                 ],
@@ -568,58 +568,58 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-78",
-            name: "Pending salary rounding expectation review",
-            tags: ["@pending"],
-            status: "under-review",
+            id: "line-76",
+            name: "Salary growth over five years",
+            tags: [],
+            status: "covered",
             table: [
               {
-                id: "line-79",
+                id: "line-77",
                 cells: [
                   {
-                    id: "line-79-column-9",
+                    id: "line-77-column-9",
                     value: "startingSalary",
                   },
                   {
-                    id: "line-79-column-26",
+                    id: "line-77-column-26",
                     value: "salaryIncrease",
                   },
                   {
-                    id: "line-79-column-43",
+                    id: "line-77-column-43",
                     value: "activeYears",
                   },
                   {
-                    id: "line-79-column-57",
+                    id: "line-77-column-57",
                     value: "expectedFinalSalary",
                   },
                   {
-                    id: "line-79-column-79",
+                    id: "line-77-column-79",
                     value: "expectedNewAlphaAccrual",
                   },
                 ],
               },
               {
-                id: "line-80",
+                id: "line-78",
                 cells: [
                   {
-                    id: "line-80-column-9",
+                    id: "line-78-column-9",
                     value: "70000.00",
                   },
                   {
-                    id: "line-80-column-26",
+                    id: "line-78-column-26",
                     value: "3.00%",
                   },
                   {
-                    id: "line-80-column-43",
+                    id: "line-78-column-43",
                     value: "5",
                   },
                   {
-                    id: "line-80-column-57",
-                    value: "81148.19",
+                    id: "line-78-column-57",
+                    value: "81149.19",
                   },
                   {
-                    id: "line-80-column-79",
-                    value: "8619.86",
+                    id: "line-78-column-79",
+                    value: "8622.04",
                   },
                 ],
               },
@@ -628,92 +628,158 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-88",
+        id: "line-86",
         keyword: "Scenario Outline",
         name: "CPI can be switched on or off while active",
         description: "",
-        tags: ["@alpha", "@cpi", "@active-revaluation", "@pending"],
-        status: "under-review",
+        tags: ["@alpha", "@cpi", "@active-revaluation"],
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-89",
+            id: "line-87",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-90",
+            id: "line-88",
             keyword: "And",
             text: "the member starts with accrued alpha pension of <startingAlphaPension>",
           },
           {
-            id: "line-91",
+            id: "line-89",
             keyword: "And",
             text: "the member has pensionable salary of <startingSalary>",
           },
           {
-            id: "line-92",
+            id: "line-90",
             keyword: "And",
             text: "the annual salary increase assumption is <salaryIncrease>",
           },
           {
-            id: "line-93",
+            id: "line-91",
             keyword: "And",
             text: "the annual CPI assumption is <cpiRate>",
           },
           {
-            id: "line-94",
+            id: "line-92",
             keyword: "And",
             text: "CPI revaluation is <cpiEnabled>",
           },
           {
-            id: "line-95",
+            id: "line-93",
             keyword: "When",
             text: "the member remains active for <activeYears> scheme years",
           },
           {
-            id: "line-96",
+            id: "line-94",
             keyword: "Then",
             text: "the projected unreduced alpha pension should be <expectedAlphaPension>",
           },
         ],
         examples: [
           {
-            id: "line-98",
+            id: "line-96",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-97",
+                cells: [
+                  {
+                    id: "line-97-column-9",
+                    value: "startingAlphaPension",
+                  },
+                  {
+                    id: "line-97-column-32",
+                    value: "startingSalary",
+                  },
+                  {
+                    id: "line-97-column-49",
+                    value: "salaryIncrease",
+                  },
+                  {
+                    id: "line-97-column-66",
+                    value: "cpiRate",
+                  },
+                  {
+                    id: "line-97-column-76",
+                    value: "cpiEnabled",
+                  },
+                  {
+                    id: "line-97-column-89",
+                    value: "activeYears",
+                  },
+                  {
+                    id: "line-97-column-103",
+                    value: "expectedAlphaPension",
+                  },
+                ],
+              },
+              {
+                id: "line-98",
+                cells: [
+                  {
+                    id: "line-98-column-9",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-98-column-32",
+                    value: "50000.00",
+                  },
+                  {
+                    id: "line-98-column-49",
+                    value: "5.00%",
+                  },
+                  {
+                    id: "line-98-column-66",
+                    value: "4.00%",
+                  },
+                  {
+                    id: "line-98-column-76",
+                    value: "on",
+                  },
+                  {
+                    id: "line-98-column-89",
+                    value: "2",
+                  },
+                  {
+                    id: "line-98-column-103",
+                    value: "12824.40",
+                  },
+                ],
+              },
+              {
                 id: "line-99",
                 cells: [
                   {
                     id: "line-99-column-9",
-                    value: "startingAlphaPension",
+                    value: "10000.00",
                   },
                   {
                     id: "line-99-column-32",
-                    value: "startingSalary",
+                    value: "50000.00",
                   },
                   {
                     id: "line-99-column-49",
-                    value: "salaryIncrease",
+                    value: "5.00%",
                   },
                   {
                     id: "line-99-column-66",
-                    value: "cpiRate",
+                    value: "4.00%",
                   },
                   {
                     id: "line-99-column-76",
-                    value: "cpiEnabled",
+                    value: "off",
                   },
                   {
                     id: "line-99-column-89",
-                    value: "activeYears",
+                    value: "2",
                   },
                   {
                     id: "line-99-column-103",
-                    value: "expectedAlphaPension",
+                    value: "12378.00",
                   },
                 ],
               },
@@ -722,19 +788,19 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-100-column-9",
-                    value: "10000.00",
+                    value: "20000.00",
                   },
                   {
                     id: "line-100-column-32",
-                    value: "50000.00",
+                    value: "70000.00",
                   },
                   {
                     id: "line-100-column-49",
-                    value: "5.00%",
+                    value: "0.00%",
                   },
                   {
                     id: "line-100-column-66",
-                    value: "4.00%",
+                    value: "2.00%",
                   },
                   {
                     id: "line-100-column-76",
@@ -742,11 +808,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-100-column-89",
-                    value: "2",
+                    value: "5",
                   },
                   {
                     id: "line-100-column-103",
-                    value: "13572.05",
+                    value: "30100.00",
                   },
                 ],
               },
@@ -755,19 +821,19 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-101-column-9",
-                    value: "10000.00",
+                    value: "20000.00",
                   },
                   {
                     id: "line-101-column-32",
-                    value: "50000.00",
+                    value: "70000.00",
                   },
                   {
                     id: "line-101-column-49",
-                    value: "5.00%",
+                    value: "0.00%",
                   },
                   {
                     id: "line-101-column-66",
-                    value: "4.00%",
+                    value: "2.00%",
                   },
                   {
                     id: "line-101-column-76",
@@ -775,77 +841,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-101-column-89",
-                    value: "2",
+                    value: "5",
                   },
                   {
                     id: "line-101-column-103",
-                    value: "12697.65",
-                  },
-                ],
-              },
-              {
-                id: "line-102",
-                cells: [
-                  {
-                    id: "line-102-column-9",
-                    value: "20000.00",
-                  },
-                  {
-                    id: "line-102-column-32",
-                    value: "70000.00",
-                  },
-                  {
-                    id: "line-102-column-49",
-                    value: "0.00%",
-                  },
-                  {
-                    id: "line-102-column-66",
-                    value: "2.00%",
-                  },
-                  {
-                    id: "line-102-column-76",
-                    value: "on",
-                  },
-                  {
-                    id: "line-102-column-89",
-                    value: "5",
-                  },
-                  {
-                    id: "line-102-column-103",
-                    value: "33134.97",
-                  },
-                ],
-              },
-              {
-                id: "line-103",
-                cells: [
-                  {
-                    id: "line-103-column-9",
-                    value: "20000.00",
-                  },
-                  {
-                    id: "line-103-column-32",
-                    value: "70000.00",
-                  },
-                  {
-                    id: "line-103-column-49",
-                    value: "0.00%",
-                  },
-                  {
-                    id: "line-103-column-66",
-                    value: "2.00%",
-                  },
-                  {
-                    id: "line-103-column-76",
-                    value: "off",
-                  },
-                  {
-                    id: "line-103-column-89",
-                    value: "5",
-                  },
-                  {
-                    id: "line-103-column-103",
-                    value: "30633.41",
+                    value: "28120.00",
                   },
                 ],
               },
@@ -854,7 +854,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-106",
+        id: "line-104",
         keyword: "Scenario Outline",
         name: "CPI can be switched on or off after leaving service",
         description: "",
@@ -863,136 +863,136 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-107",
+            id: "line-105",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-108",
+            id: "line-106",
             keyword: "And",
             text: "the member leaves pensionable service at age <leaveAge>",
           },
           {
-            id: "line-109",
+            id: "line-107",
             keyword: "And",
             text: "the member draws pension at age <drawAge>",
           },
           {
-            id: "line-110",
+            id: "line-108",
             keyword: "And",
             text: "the member has alpha pension of <pensionAtLeaving> at leaving service",
           },
           {
-            id: "line-111",
+            id: "line-109",
             keyword: "And",
             text: "the annual CPI assumption is <cpiRate>",
           },
           {
-            id: "line-112",
+            id: "line-110",
             keyword: "And",
             text: "CPI revaluation is <cpiEnabled>",
           },
           {
-            id: "line-113",
+            id: "line-111",
             keyword: "When",
             text: "the deferred pension is projected to draw age",
           },
           {
-            id: "line-114",
+            id: "line-112",
             keyword: "Then",
             text: "the unreduced pension at draw age should be <unreducedAtDrawAge>",
           },
         ],
         examples: [
           {
-            id: "line-116",
+            id: "line-114",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-117",
+                id: "line-115",
                 cells: [
                   {
-                    id: "line-117-column-9",
+                    id: "line-115-column-9",
                     value: "leaveAge",
                   },
                   {
-                    id: "line-117-column-20",
+                    id: "line-115-column-20",
                     value: "drawAge",
                   },
                   {
-                    id: "line-117-column-30",
+                    id: "line-115-column-30",
                     value: "pensionAtLeaving",
                   },
                   {
-                    id: "line-117-column-49",
+                    id: "line-115-column-49",
                     value: "cpiRate",
                   },
                   {
-                    id: "line-117-column-59",
+                    id: "line-115-column-59",
                     value: "cpiEnabled",
                   },
                   {
-                    id: "line-117-column-72",
+                    id: "line-115-column-72",
                     value: "unreducedAtDrawAge",
                   },
                 ],
               },
               {
-                id: "line-118",
+                id: "line-116",
                 cells: [
                   {
-                    id: "line-118-column-9",
+                    id: "line-116-column-9",
                     value: "55",
                   },
                   {
-                    id: "line-118-column-20",
+                    id: "line-116-column-20",
                     value: "60",
                   },
                   {
-                    id: "line-118-column-30",
+                    id: "line-116-column-30",
                     value: "10000.00",
                   },
                   {
-                    id: "line-118-column-49",
+                    id: "line-116-column-49",
                     value: "3.00%",
                   },
                   {
-                    id: "line-118-column-59",
+                    id: "line-116-column-59",
                     value: "on",
                   },
                   {
-                    id: "line-118-column-72",
+                    id: "line-116-column-72",
                     value: "11592.74",
                   },
                 ],
               },
               {
-                id: "line-119",
+                id: "line-117",
                 cells: [
                   {
-                    id: "line-119-column-9",
+                    id: "line-117-column-9",
                     value: "55",
                   },
                   {
-                    id: "line-119-column-20",
+                    id: "line-117-column-20",
                     value: "60",
                   },
                   {
-                    id: "line-119-column-30",
+                    id: "line-117-column-30",
                     value: "10000.00",
                   },
                   {
-                    id: "line-119-column-49",
+                    id: "line-117-column-49",
                     value: "3.00%",
                   },
                   {
-                    id: "line-119-column-59",
+                    id: "line-117-column-59",
                     value: "off",
                   },
                   {
-                    id: "line-119-column-72",
+                    id: "line-117-column-72",
                     value: "10000.00",
                   },
                 ],
@@ -1002,127 +1002,169 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-122",
+        id: "line-120",
         keyword: "Scenario",
-        name: "Active alpha revaluation premium is not applied after leaving service",
+        name: "Deferred alpha pension continues to use CPI after leaving service",
         description: "",
         tags: ["@alpha", "@cpi", "@deferred"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-123",
+            id: "line-121",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-124",
+            id: "line-122",
             keyword: "And",
             text: "the member leaves pensionable service at age 55",
           },
           {
-            id: "line-125",
+            id: "line-123",
             keyword: "And",
             text: "the member draws pension at age 60",
           },
           {
-            id: "line-126",
+            id: "line-124",
             keyword: "And",
             text: "the member has alpha pension of 10000.00 at leaving service",
           },
           {
-            id: "line-127",
+            id: "line-125",
             keyword: "And",
             text: "the annual CPI assumption is 3.00%",
           },
           {
-            id: "line-128",
+            id: "line-126",
             keyword: "And",
             text: "CPI revaluation is on",
           },
           {
-            id: "line-129",
+            id: "line-127",
             keyword: "When",
             text: "the deferred pension is projected to draw age",
           },
           {
-            id: "line-130",
+            id: "line-128",
             keyword: "Then",
             text: "the unreduced pension at draw age should be 11592.74",
           },
           {
-            id: "line-131",
+            id: "line-129",
             keyword: "And",
-            text: "the model should not apply active member revaluation after leaving service",
+            text: "the model should apply CPI revaluation after leaving service",
           },
         ],
         examples: [],
       },
       {
-        id: "line-139",
+        id: "line-137",
         keyword: "Scenario Outline",
         name: "Buy Added Pension using a lump sum",
         description: "",
-        tags: ["@alpha", "@added-pension", "@lump-sum", "@pending"],
-        status: "under-review",
+        tags: ["@alpha", "@added-pension", "@lump-sum"],
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-140",
+            id: "line-138",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-141",
+            id: "line-139",
             keyword: "And",
             text: "the member buys Added Pension using a lump sum of <lumpSumPayment>",
           },
           {
-            id: "line-142",
+            id: "line-140",
             keyword: "And",
             text: "the member is age <memberAge> on the purchase date",
           },
           {
-            id: "line-143",
+            id: "line-141",
             keyword: "And",
             text: "the purchase date is <purchaseDate>",
           },
           {
-            id: "line-144",
+            id: "line-142",
             keyword: "When",
             text: "the Added Pension purchase is calculated",
           },
           {
-            id: "line-145",
+            id: "line-143",
             keyword: "Then",
             text: "the purchased annual Added Pension should be <expectedAddedPension>",
           },
         ],
         examples: [
           {
-            id: "line-147",
+            id: "line-145",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-146",
+                cells: [
+                  {
+                    id: "line-146-column-9",
+                    value: "memberAge",
+                  },
+                  {
+                    id: "line-146-column-21",
+                    value: "purchaseDate",
+                  },
+                  {
+                    id: "line-146-column-36",
+                    value: "lumpSumPayment",
+                  },
+                  {
+                    id: "line-146-column-53",
+                    value: "expectedAddedPension",
+                  },
+                ],
+              },
+              {
+                id: "line-147",
+                cells: [
+                  {
+                    id: "line-147-column-9",
+                    value: "45",
+                  },
+                  {
+                    id: "line-147-column-21",
+                    value: "2026-04-01",
+                  },
+                  {
+                    id: "line-147-column-36",
+                    value: "6000.00",
+                  },
+                  {
+                    id: "line-147-column-53",
+                    value: "490.00",
+                  },
+                ],
+              },
+              {
                 id: "line-148",
                 cells: [
                   {
                     id: "line-148-column-9",
-                    value: "memberAge",
+                    value: "45",
                   },
                   {
                     id: "line-148-column-21",
-                    value: "purchaseDate",
+                    value: "2026-04-01",
                   },
                   {
                     id: "line-148-column-36",
-                    value: "lumpSumPayment",
+                    value: "3000.00",
                   },
                   {
                     id: "line-148-column-53",
-                    value: "expectedAddedPension",
+                    value: "245.00",
                   },
                 ],
               },
@@ -1131,7 +1173,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-149-column-9",
-                    value: "45",
+                    value: "50",
                   },
                   {
                     id: "line-149-column-21",
@@ -1139,53 +1181,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-149-column-36",
-                    value: "6000.00",
-                  },
-                  {
-                    id: "line-149-column-53",
-                    value: "400.00",
-                  },
-                ],
-              },
-              {
-                id: "line-150",
-                cells: [
-                  {
-                    id: "line-150-column-9",
-                    value: "45",
-                  },
-                  {
-                    id: "line-150-column-21",
-                    value: "2026-04-01",
-                  },
-                  {
-                    id: "line-150-column-36",
-                    value: "3000.00",
-                  },
-                  {
-                    id: "line-150-column-53",
-                    value: "200.00",
-                  },
-                ],
-              },
-              {
-                id: "line-151",
-                cells: [
-                  {
-                    id: "line-151-column-9",
-                    value: "50",
-                  },
-                  {
-                    id: "line-151-column-21",
-                    value: "2026-04-01",
-                  },
-                  {
-                    id: "line-151-column-36",
                     value: "7500.00",
                   },
                   {
-                    id: "line-151-column-53",
-                    value: "450.00",
+                    id: "line-149-column-53",
+                    value: "548.89",
                   },
                 ],
               },
@@ -1194,88 +1194,146 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-154",
+        id: "line-152",
         keyword: "Scenario Outline",
         name: "Buy Added Pension using monthly contributions",
         description: "",
-        tags: ["@alpha", "@added-pension", "@monthly", "@pending"],
-        status: "under-review",
+        tags: ["@alpha", "@added-pension", "@monthly"],
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-155",
+            id: "line-153",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-156",
+            id: "line-154",
             keyword: "And",
             text: "the member buys Added Pension using monthly contributions of <monthlyContribution>",
           },
           {
-            id: "line-157",
+            id: "line-155",
             keyword: "And",
             text: "the member pays those contributions for <monthsPaid> months",
           },
           {
-            id: "line-158",
+            id: "line-156",
             keyword: "And",
             text: "the member is age <memberAge> on the purchase start date",
           },
           {
-            id: "line-159",
+            id: "line-157",
             keyword: "And",
             text: "the purchase start date is <purchaseDate>",
           },
           {
-            id: "line-160",
+            id: "line-158",
             keyword: "When",
             text: "the Added Pension purchase is calculated",
           },
           {
-            id: "line-161",
+            id: "line-159",
             keyword: "Then",
             text: "the total Added Pension contribution should be <totalContribution>",
           },
           {
-            id: "line-162",
+            id: "line-160",
             keyword: "And",
             text: "the purchased annual Added Pension should be <expectedAddedPension>",
           },
         ],
         examples: [
           {
-            id: "line-164",
+            id: "line-162",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-163",
+                cells: [
+                  {
+                    id: "line-163-column-9",
+                    value: "memberAge",
+                  },
+                  {
+                    id: "line-163-column-21",
+                    value: "purchaseDate",
+                  },
+                  {
+                    id: "line-163-column-36",
+                    value: "monthlyContribution",
+                  },
+                  {
+                    id: "line-163-column-58",
+                    value: "monthsPaid",
+                  },
+                  {
+                    id: "line-163-column-71",
+                    value: "totalContribution",
+                  },
+                  {
+                    id: "line-163-column-91",
+                    value: "expectedAddedPension",
+                  },
+                ],
+              },
+              {
+                id: "line-164",
+                cells: [
+                  {
+                    id: "line-164-column-9",
+                    value: "45",
+                  },
+                  {
+                    id: "line-164-column-21",
+                    value: "2026-04-01",
+                  },
+                  {
+                    id: "line-164-column-36",
+                    value: "400.00",
+                  },
+                  {
+                    id: "line-164-column-58",
+                    value: "12",
+                  },
+                  {
+                    id: "line-164-column-71",
+                    value: "4800.00",
+                  },
+                  {
+                    id: "line-164-column-91",
+                    value: "384.55",
+                  },
+                ],
+              },
+              {
                 id: "line-165",
                 cells: [
                   {
                     id: "line-165-column-9",
-                    value: "memberAge",
+                    value: "45",
                   },
                   {
                     id: "line-165-column-21",
-                    value: "purchaseDate",
+                    value: "2026-04-01",
                   },
                   {
                     id: "line-165-column-36",
-                    value: "monthlyContribution",
+                    value: "250.00",
                   },
                   {
                     id: "line-165-column-58",
-                    value: "monthsPaid",
+                    value: "6",
                   },
                   {
                     id: "line-165-column-71",
-                    value: "totalContribution",
+                    value: "1500.00",
                   },
                   {
                     id: "line-165-column-91",
-                    value: "expectedAddedPension",
+                    value: "120.17",
                   },
                 ],
               },
@@ -1284,7 +1342,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-166-column-9",
-                    value: "45",
+                    value: "50",
                   },
                   {
                     id: "line-166-column-21",
@@ -1292,7 +1350,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-166-column-36",
-                    value: "400.00",
+                    value: "100.00",
                   },
                   {
                     id: "line-166-column-58",
@@ -1300,69 +1358,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-166-column-71",
-                    value: "4800.00",
-                  },
-                  {
-                    id: "line-166-column-91",
-                    value: "300.00",
-                  },
-                ],
-              },
-              {
-                id: "line-167",
-                cells: [
-                  {
-                    id: "line-167-column-9",
-                    value: "45",
-                  },
-                  {
-                    id: "line-167-column-21",
-                    value: "2026-04-01",
-                  },
-                  {
-                    id: "line-167-column-36",
-                    value: "250.00",
-                  },
-                  {
-                    id: "line-167-column-58",
-                    value: "6",
-                  },
-                  {
-                    id: "line-167-column-71",
-                    value: "1500.00",
-                  },
-                  {
-                    id: "line-167-column-91",
-                    value: "93.75",
-                  },
-                ],
-              },
-              {
-                id: "line-168",
-                cells: [
-                  {
-                    id: "line-168-column-9",
-                    value: "50",
-                  },
-                  {
-                    id: "line-168-column-21",
-                    value: "2026-04-01",
-                  },
-                  {
-                    id: "line-168-column-36",
-                    value: "100.00",
-                  },
-                  {
-                    id: "line-168-column-58",
-                    value: "12",
-                  },
-                  {
-                    id: "line-168-column-71",
                     value: "1200.00",
                   },
                   {
-                    id: "line-168-column-91",
-                    value: "72.00",
+                    id: "line-166-column-91",
+                    value: "86.06",
                   },
                 ],
               },
@@ -1371,7 +1371,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-171",
+        id: "line-169",
         keyword: "Scenario",
         name: "Added Pension is included in pension payable at normal pension age",
         description: "",
@@ -1380,40 +1380,66 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-172",
+            id: "line-170",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-173",
+            id: "line-171",
             keyword: "And",
             text: "the member has unreduced alpha pension of 12000.00",
           },
           {
-            id: "line-174",
+            id: "line-172",
             keyword: "And",
             text: "the member has purchased annual Added Pension of 400.00",
           },
           {
-            id: "line-175",
+            id: "line-173",
             keyword: "When",
             text: "the member draws pension at normal pension age",
           },
           {
-            id: "line-176",
+            id: "line-174",
             keyword: "Then",
             text: "the annual pension breakdown should be:",
             table: [
+              {
+                id: "line-175",
+                cells: [
+                  {
+                    id: "line-175-column-9",
+                    value: "component",
+                  },
+                  {
+                    id: "line-175-column-24",
+                    value: "annualAmount",
+                  },
+                ],
+              },
+              {
+                id: "line-176",
+                cells: [
+                  {
+                    id: "line-176-column-9",
+                    value: "alpha",
+                  },
+                  {
+                    id: "line-176-column-24",
+                    value: "12000.00",
+                  },
+                ],
+              },
               {
                 id: "line-177",
                 cells: [
                   {
                     id: "line-177-column-9",
-                    value: "component",
+                    value: "addedPension",
                   },
                   {
                     id: "line-177-column-24",
-                    value: "annualAmount",
+                    value: "400.00",
                   },
                 ],
               },
@@ -1422,36 +1448,10 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-178-column-9",
-                    value: "alpha",
-                  },
-                  {
-                    id: "line-178-column-24",
-                    value: "12000.00",
-                  },
-                ],
-              },
-              {
-                id: "line-179",
-                cells: [
-                  {
-                    id: "line-179-column-9",
-                    value: "addedPension",
-                  },
-                  {
-                    id: "line-179-column-24",
-                    value: "400.00",
-                  },
-                ],
-              },
-              {
-                id: "line-180",
-                cells: [
-                  {
-                    id: "line-180-column-9",
                     value: "total",
                   },
                   {
-                    id: "line-180-column-24",
+                    id: "line-178-column-24",
                     value: "12400.00",
                   },
                 ],
@@ -1462,7 +1462,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-183",
+        id: "line-181",
         keyword: "Scenario",
         name: "Added Pension is reduced when drawn early",
         description: "",
@@ -1471,53 +1471,95 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-184",
+            id: "line-182",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-185",
+            id: "line-183",
             keyword: "And",
             text: "the member has alpha normal pension age 67",
           },
           {
-            id: "line-186",
+            id: "line-184",
             keyword: "And",
             text: "the member has unreduced alpha pension of 12000.00",
           },
           {
-            id: "line-187",
+            id: "line-185",
             keyword: "And",
             text: "the member has purchased annual Added Pension of 400.00",
           },
           {
-            id: "line-188",
+            id: "line-186",
             keyword: "When",
             text: "the member draws pension at age 60 and 0 months",
           },
           {
-            id: "line-189",
+            id: "line-187",
             keyword: "Then",
             text: "the reduced annual pension breakdown should be:",
             table: [
+              {
+                id: "line-188",
+                cells: [
+                  {
+                    id: "line-188-column-9",
+                    value: "component",
+                  },
+                  {
+                    id: "line-188-column-24",
+                    value: "unreducedAnnualAmount",
+                  },
+                  {
+                    id: "line-188-column-48",
+                    value: "payableAnnualAmount",
+                  },
+                  {
+                    id: "line-188-column-70",
+                    value: "annualReduction",
+                  },
+                ],
+              },
+              {
+                id: "line-189",
+                cells: [
+                  {
+                    id: "line-189-column-9",
+                    value: "alpha",
+                  },
+                  {
+                    id: "line-189-column-24",
+                    value: "12000.00",
+                  },
+                  {
+                    id: "line-189-column-48",
+                    value: "8400.00",
+                  },
+                  {
+                    id: "line-189-column-70",
+                    value: "3600.00",
+                  },
+                ],
+              },
               {
                 id: "line-190",
                 cells: [
                   {
                     id: "line-190-column-9",
-                    value: "component",
+                    value: "addedPension",
                   },
                   {
                     id: "line-190-column-24",
-                    value: "unreducedAnnualAmount",
+                    value: "400.00",
                   },
                   {
                     id: "line-190-column-48",
-                    value: "payableAnnualAmount",
+                    value: "280.00",
                   },
                   {
                     id: "line-190-column-70",
-                    value: "annualReduction",
+                    value: "120.00",
                   },
                 ],
               },
@@ -1526,60 +1568,18 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-191-column-9",
-                    value: "alpha",
-                  },
-                  {
-                    id: "line-191-column-24",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-191-column-48",
-                    value: "8400.00",
-                  },
-                  {
-                    id: "line-191-column-70",
-                    value: "3600.00",
-                  },
-                ],
-              },
-              {
-                id: "line-192",
-                cells: [
-                  {
-                    id: "line-192-column-9",
-                    value: "addedPension",
-                  },
-                  {
-                    id: "line-192-column-24",
-                    value: "400.00",
-                  },
-                  {
-                    id: "line-192-column-48",
-                    value: "280.00",
-                  },
-                  {
-                    id: "line-192-column-70",
-                    value: "120.00",
-                  },
-                ],
-              },
-              {
-                id: "line-193",
-                cells: [
-                  {
-                    id: "line-193-column-9",
                     value: "total",
                   },
                   {
-                    id: "line-193-column-24",
+                    id: "line-191-column-24",
                     value: "12400.00",
                   },
                   {
-                    id: "line-193-column-48",
+                    id: "line-191-column-48",
                     value: "8680.00",
                   },
                   {
-                    id: "line-193-column-70",
+                    id: "line-191-column-70",
                     value: "3720.00",
                   },
                 ],
@@ -1590,7 +1590,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-201",
+        id: "line-199",
         keyword: "Scenario Outline",
         name: "Reduce alpha pension when drawn before normal pension age",
         description: "",
@@ -1599,78 +1599,144 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-202",
+            id: "line-200",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-203",
+            id: "line-201",
             keyword: "And",
             text: "the member has date of birth <dateOfBirth>",
           },
           {
-            id: "line-204",
+            id: "line-202",
             keyword: "And",
             text: "the member has alpha normal pension age <normalPensionAge>",
           },
           {
-            id: "line-205",
+            id: "line-203",
             keyword: "And",
             text: "the member has unreduced alpha pension of <unreducedAlphaPension>",
           },
           {
-            id: "line-206",
+            id: "line-204",
             keyword: "When",
             text: "the member draws alpha pension at age <drawAge> and <drawAgeMonths> months",
           },
           {
-            id: "line-207",
+            id: "line-205",
             keyword: "Then",
             text: "the annual alpha pension payable should be <expectedAnnualPension>",
           },
           {
-            id: "line-208",
+            id: "line-206",
             keyword: "And",
             text: "the annual reduction should be <expectedAnnualReduction>",
           },
         ],
         examples: [
           {
-            id: "line-210",
+            id: "line-208",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-209",
+                cells: [
+                  {
+                    id: "line-209-column-9",
+                    value: "dateOfBirth",
+                  },
+                  {
+                    id: "line-209-column-23",
+                    value: "normalPensionAge",
+                  },
+                  {
+                    id: "line-209-column-42",
+                    value: "unreducedAlphaPension",
+                  },
+                  {
+                    id: "line-209-column-66",
+                    value: "drawAge",
+                  },
+                  {
+                    id: "line-209-column-76",
+                    value: "drawAgeMonths",
+                  },
+                  {
+                    id: "line-209-column-92",
+                    value: "expectedAnnualPension",
+                  },
+                  {
+                    id: "line-209-column-116",
+                    value: "expectedAnnualReduction",
+                  },
+                ],
+              },
+              {
+                id: "line-210",
+                cells: [
+                  {
+                    id: "line-210-column-9",
+                    value: "1977-05-01",
+                  },
+                  {
+                    id: "line-210-column-23",
+                    value: "67",
+                  },
+                  {
+                    id: "line-210-column-42",
+                    value: "15000.00",
+                  },
+                  {
+                    id: "line-210-column-66",
+                    value: "67",
+                  },
+                  {
+                    id: "line-210-column-76",
+                    value: "0",
+                  },
+                  {
+                    id: "line-210-column-92",
+                    value: "15000.00",
+                  },
+                  {
+                    id: "line-210-column-116",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
                 id: "line-211",
                 cells: [
                   {
                     id: "line-211-column-9",
-                    value: "dateOfBirth",
+                    value: "1977-05-01",
                   },
                   {
                     id: "line-211-column-23",
-                    value: "normalPensionAge",
+                    value: "65",
                   },
                   {
                     id: "line-211-column-42",
-                    value: "unreducedAlphaPension",
+                    value: "10000.00",
                   },
                   {
                     id: "line-211-column-66",
-                    value: "drawAge",
+                    value: "55",
                   },
                   {
                     id: "line-211-column-76",
-                    value: "drawAgeMonths",
+                    value: "0",
                   },
                   {
                     id: "line-211-column-92",
-                    value: "expectedAnnualPension",
+                    value: "6320.00",
                   },
                   {
                     id: "line-211-column-116",
-                    value: "expectedAnnualReduction",
+                    value: "3680.00",
                   },
                 ],
               },
@@ -1691,7 +1757,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-212-column-66",
-                    value: "67",
+                    value: "65",
                   },
                   {
                     id: "line-212-column-76",
@@ -1699,11 +1765,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-212-column-92",
-                    value: "15000.00",
+                    value: "13455.00",
                   },
                   {
                     id: "line-212-column-116",
-                    value: "0.00",
+                    value: "1545.00",
                   },
                 ],
               },
@@ -1716,15 +1782,15 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-213-column-23",
-                    value: "65",
+                    value: "67",
                   },
                   {
                     id: "line-213-column-42",
-                    value: "10000.00",
+                    value: "15000.00",
                   },
                   {
                     id: "line-213-column-66",
-                    value: "55",
+                    value: "60",
                   },
                   {
                     id: "line-213-column-76",
@@ -1732,11 +1798,11 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-213-column-92",
-                    value: "6320.00",
+                    value: "10500.00",
                   },
                   {
                     id: "line-213-column-116",
-                    value: "3680.00",
+                    value: "4500.00",
                   },
                 ],
               },
@@ -1749,92 +1815,26 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-214-column-23",
-                    value: "67",
-                  },
-                  {
-                    id: "line-214-column-42",
-                    value: "15000.00",
-                  },
-                  {
-                    id: "line-214-column-66",
-                    value: "65",
-                  },
-                  {
-                    id: "line-214-column-76",
-                    value: "0",
-                  },
-                  {
-                    id: "line-214-column-92",
-                    value: "13455.00",
-                  },
-                  {
-                    id: "line-214-column-116",
-                    value: "1545.00",
-                  },
-                ],
-              },
-              {
-                id: "line-215",
-                cells: [
-                  {
-                    id: "line-215-column-9",
-                    value: "1977-05-01",
-                  },
-                  {
-                    id: "line-215-column-23",
-                    value: "67",
-                  },
-                  {
-                    id: "line-215-column-42",
-                    value: "15000.00",
-                  },
-                  {
-                    id: "line-215-column-66",
-                    value: "60",
-                  },
-                  {
-                    id: "line-215-column-76",
-                    value: "0",
-                  },
-                  {
-                    id: "line-215-column-92",
-                    value: "10500.00",
-                  },
-                  {
-                    id: "line-215-column-116",
-                    value: "4500.00",
-                  },
-                ],
-              },
-              {
-                id: "line-216",
-                cells: [
-                  {
-                    id: "line-216-column-9",
-                    value: "1977-05-01",
-                  },
-                  {
-                    id: "line-216-column-23",
                     value: "68",
                   },
                   {
-                    id: "line-216-column-42",
+                    id: "line-214-column-42",
                     value: "10000.00",
                   },
                   {
-                    id: "line-216-column-66",
+                    id: "line-214-column-66",
                     value: "60",
                   },
                   {
-                    id: "line-216-column-76",
+                    id: "line-214-column-76",
                     value: "6",
                   },
                   {
-                    id: "line-216-column-92",
+                    id: "line-214-column-92",
                     value: "6770.00",
                   },
                   {
-                    id: "line-216-column-116",
+                    id: "line-214-column-116",
                     value: "3230.00",
                   },
                 ],
@@ -1844,7 +1844,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-219",
+        id: "line-217",
         keyword: "Scenario",
         name: "Early retirement reduction is permanent",
         description: "",
@@ -1853,37 +1853,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-220",
+            id: "line-218",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-221",
+            id: "line-219",
             keyword: "And",
             text: "the member has alpha normal pension age 67",
           },
           {
-            id: "line-222",
+            id: "line-220",
             keyword: "And",
             text: "the member has unreduced alpha pension of 15000.00",
           },
           {
-            id: "line-223",
+            id: "line-221",
             keyword: "When",
             text: "the member draws alpha pension at age 60 and 0 months",
           },
           {
-            id: "line-224",
+            id: "line-222",
             keyword: "Then",
             text: "the annual alpha pension payable at age 60 should be 10500.00",
           },
           {
-            id: "line-225",
+            id: "line-223",
             keyword: "And",
             text: "the annual alpha pension payable at age 67 before CPI increases should still be 10500.00",
           },
           {
-            id: "line-226",
+            id: "line-224",
             keyword: "And",
             text: "the model should not remove the early retirement reduction at normal pension age",
           },
@@ -1891,7 +1891,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-234",
+        id: "line-232",
         keyword: "Scenario Outline",
         name: "Validate EPA option against alpha normal pension age",
         description: "",
@@ -1900,56 +1900,98 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-235",
+            id: "line-233",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-236",
+            id: "line-234",
             keyword: "And",
             text: "the member has alpha normal pension age <normalPensionAge>",
           },
           {
-            id: "line-237",
+            id: "line-235",
             keyword: "When",
             text: "the member selects EPA option <epaOption>",
           },
           {
-            id: "line-238",
+            id: "line-236",
             keyword: "Then",
             text: "the EPA option should be <validationResult>",
           },
           {
-            id: "line-239",
+            id: "line-237",
             keyword: "And",
             text: "the EPA payable age should be <expectedEpaPayableAge>",
           },
         ],
         examples: [
           {
-            id: "line-241",
+            id: "line-239",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-240",
+                cells: [
+                  {
+                    id: "line-240-column-9",
+                    value: "normalPensionAge",
+                  },
+                  {
+                    id: "line-240-column-28",
+                    value: "epaOption",
+                  },
+                  {
+                    id: "line-240-column-40",
+                    value: "validationResult",
+                  },
+                  {
+                    id: "line-240-column-59",
+                    value: "expectedEpaPayableAge",
+                  },
+                ],
+              },
+              {
+                id: "line-241",
+                cells: [
+                  {
+                    id: "line-241-column-9",
+                    value: "67",
+                  },
+                  {
+                    id: "line-241-column-28",
+                    value: "NPA-1",
+                  },
+                  {
+                    id: "line-241-column-40",
+                    value: "valid",
+                  },
+                  {
+                    id: "line-241-column-59",
+                    value: "66",
+                  },
+                ],
+              },
+              {
                 id: "line-242",
                 cells: [
                   {
                     id: "line-242-column-9",
-                    value: "normalPensionAge",
+                    value: "67",
                   },
                   {
                     id: "line-242-column-28",
-                    value: "epaOption",
+                    value: "NPA-2",
                   },
                   {
                     id: "line-242-column-40",
-                    value: "validationResult",
+                    value: "valid",
                   },
                   {
                     id: "line-242-column-59",
-                    value: "expectedEpaPayableAge",
+                    value: "65",
                   },
                 ],
               },
@@ -1962,15 +2004,15 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-243-column-28",
-                    value: "NPA-1",
+                    value: "NPA-3",
                   },
                   {
                     id: "line-243-column-40",
-                    value: "valid",
+                    value: "invalid",
                   },
                   {
-                    id: "line-243-column-59",
-                    value: "66",
+                    id: "line-243-column-81",
+                    value: "",
                   },
                 ],
               },
@@ -1979,11 +2021,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-244-column-9",
-                    value: "67",
+                    value: "66",
                   },
                   {
                     id: "line-244-column-28",
-                    value: "NPA-2",
+                    value: "NPA-1",
                   },
                   {
                     id: "line-244-column-40",
@@ -2000,11 +2042,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-245-column-9",
-                    value: "67",
+                    value: "66",
                   },
                   {
                     id: "line-245-column-28",
-                    value: "NPA-3",
+                    value: "NPA-2",
                   },
                   {
                     id: "line-245-column-40",
@@ -2021,7 +2063,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-246-column-9",
-                    value: "66",
+                    value: "65",
                   },
                   {
                     id: "line-246-column-28",
@@ -2029,52 +2071,10 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-246-column-40",
-                    value: "valid",
-                  },
-                  {
-                    id: "line-246-column-59",
-                    value: "65",
-                  },
-                ],
-              },
-              {
-                id: "line-247",
-                cells: [
-                  {
-                    id: "line-247-column-9",
-                    value: "66",
-                  },
-                  {
-                    id: "line-247-column-28",
-                    value: "NPA-2",
-                  },
-                  {
-                    id: "line-247-column-40",
                     value: "invalid",
                   },
                   {
-                    id: "line-247-column-81",
-                    value: "",
-                  },
-                ],
-              },
-              {
-                id: "line-248",
-                cells: [
-                  {
-                    id: "line-248-column-9",
-                    value: "65",
-                  },
-                  {
-                    id: "line-248-column-28",
-                    value: "NPA-1",
-                  },
-                  {
-                    id: "line-248-column-40",
-                    value: "invalid",
-                  },
-                  {
-                    id: "line-248-column-81",
+                    id: "line-246-column-81",
                     value: "",
                   },
                 ],
@@ -2084,7 +2084,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-251",
+        id: "line-249",
         keyword: "Scenario",
         name: "Draw at EPA age with standard alpha reduced and EPA portion unreduced",
         description: "",
@@ -2093,58 +2093,100 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-252",
+            id: "line-250",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-253",
+            id: "line-251",
             keyword: "And",
             text: "the member has alpha normal pension age 67",
           },
           {
-            id: "line-254",
+            id: "line-252",
             keyword: "And",
             text: "the member has standard alpha pension of 10000.00",
           },
           {
-            id: "line-255",
+            id: "line-253",
             keyword: "And",
             text: "the member has EPA alpha pension of 1200.00",
           },
           {
-            id: "line-256",
+            id: "line-254",
             keyword: "And",
             text: "the member has selected EPA option NPA-2",
           },
           {
-            id: "line-257",
+            id: "line-255",
             keyword: "When",
             text: "the member draws all alpha pension at age 65 and 0 months",
           },
           {
-            id: "line-258",
+            id: "line-256",
             keyword: "Then",
             text: "the annual pension breakdown should be:",
             table: [
+              {
+                id: "line-257",
+                cells: [
+                  {
+                    id: "line-257-column-9",
+                    value: "component",
+                  },
+                  {
+                    id: "line-257-column-25",
+                    value: "unreducedAnnualAmount",
+                  },
+                  {
+                    id: "line-257-column-49",
+                    value: "payableAnnualAmount",
+                  },
+                  {
+                    id: "line-257-column-71",
+                    value: "annualReduction",
+                  },
+                ],
+              },
+              {
+                id: "line-258",
+                cells: [
+                  {
+                    id: "line-258-column-9",
+                    value: "standardAlpha",
+                  },
+                  {
+                    id: "line-258-column-25",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-258-column-49",
+                    value: "8970.00",
+                  },
+                  {
+                    id: "line-258-column-71",
+                    value: "1030.00",
+                  },
+                ],
+              },
               {
                 id: "line-259",
                 cells: [
                   {
                     id: "line-259-column-9",
-                    value: "component",
+                    value: "epaAlpha",
                   },
                   {
                     id: "line-259-column-25",
-                    value: "unreducedAnnualAmount",
+                    value: "1200.00",
                   },
                   {
                     id: "line-259-column-49",
-                    value: "payableAnnualAmount",
+                    value: "1200.00",
                   },
                   {
                     id: "line-259-column-71",
-                    value: "annualReduction",
+                    value: "0.00",
                   },
                 ],
               },
@@ -2153,60 +2195,18 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-260-column-9",
-                    value: "standardAlpha",
-                  },
-                  {
-                    id: "line-260-column-25",
-                    value: "10000.00",
-                  },
-                  {
-                    id: "line-260-column-49",
-                    value: "8970.00",
-                  },
-                  {
-                    id: "line-260-column-71",
-                    value: "1030.00",
-                  },
-                ],
-              },
-              {
-                id: "line-261",
-                cells: [
-                  {
-                    id: "line-261-column-9",
-                    value: "epaAlpha",
-                  },
-                  {
-                    id: "line-261-column-25",
-                    value: "1200.00",
-                  },
-                  {
-                    id: "line-261-column-49",
-                    value: "1200.00",
-                  },
-                  {
-                    id: "line-261-column-71",
-                    value: "0.00",
-                  },
-                ],
-              },
-              {
-                id: "line-262",
-                cells: [
-                  {
-                    id: "line-262-column-9",
                     value: "total",
                   },
                   {
-                    id: "line-262-column-25",
+                    id: "line-260-column-25",
                     value: "11200.00",
                   },
                   {
-                    id: "line-262-column-49",
+                    id: "line-260-column-49",
                     value: "10170.00",
                   },
                   {
-                    id: "line-262-column-71",
+                    id: "line-260-column-71",
                     value: "1030.00",
                   },
                 ],
@@ -2217,7 +2217,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-265",
+        id: "line-263",
         keyword: "Scenario",
         name: "Draw before EPA age and reduce both standard and EPA portions",
         description: "",
@@ -2226,58 +2226,100 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-266",
+            id: "line-264",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-267",
+            id: "line-265",
             keyword: "And",
             text: "the member has alpha normal pension age 67",
           },
           {
-            id: "line-268",
+            id: "line-266",
             keyword: "And",
             text: "the member has standard alpha pension of 10000.00",
           },
           {
-            id: "line-269",
+            id: "line-267",
             keyword: "And",
             text: "the member has EPA alpha pension of 1200.00",
           },
           {
-            id: "line-270",
+            id: "line-268",
             keyword: "And",
             text: "the member has selected EPA option NPA-2",
           },
           {
-            id: "line-271",
+            id: "line-269",
             keyword: "When",
             text: "the member draws all alpha pension at age 64 and 0 months",
           },
           {
-            id: "line-272",
+            id: "line-270",
             keyword: "Then",
             text: "the annual pension breakdown should be:",
             table: [
+              {
+                id: "line-271",
+                cells: [
+                  {
+                    id: "line-271-column-9",
+                    value: "component",
+                  },
+                  {
+                    id: "line-271-column-25",
+                    value: "unreducedAnnualAmount",
+                  },
+                  {
+                    id: "line-271-column-49",
+                    value: "payableAnnualAmount",
+                  },
+                  {
+                    id: "line-271-column-71",
+                    value: "annualReduction",
+                  },
+                ],
+              },
+              {
+                id: "line-272",
+                cells: [
+                  {
+                    id: "line-272-column-9",
+                    value: "standardAlpha",
+                  },
+                  {
+                    id: "line-272-column-25",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-272-column-49",
+                    value: "8510.00",
+                  },
+                  {
+                    id: "line-272-column-71",
+                    value: "1490.00",
+                  },
+                ],
+              },
               {
                 id: "line-273",
                 cells: [
                   {
                     id: "line-273-column-9",
-                    value: "component",
+                    value: "epaAlpha",
                   },
                   {
                     id: "line-273-column-25",
-                    value: "unreducedAnnualAmount",
+                    value: "1200.00",
                   },
                   {
                     id: "line-273-column-49",
-                    value: "payableAnnualAmount",
+                    value: "1140.00",
                   },
                   {
                     id: "line-273-column-71",
-                    value: "annualReduction",
+                    value: "60.00",
                   },
                 ],
               },
@@ -2286,60 +2328,18 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-274-column-9",
-                    value: "standardAlpha",
-                  },
-                  {
-                    id: "line-274-column-25",
-                    value: "10000.00",
-                  },
-                  {
-                    id: "line-274-column-49",
-                    value: "8510.00",
-                  },
-                  {
-                    id: "line-274-column-71",
-                    value: "1490.00",
-                  },
-                ],
-              },
-              {
-                id: "line-275",
-                cells: [
-                  {
-                    id: "line-275-column-9",
-                    value: "epaAlpha",
-                  },
-                  {
-                    id: "line-275-column-25",
-                    value: "1200.00",
-                  },
-                  {
-                    id: "line-275-column-49",
-                    value: "1140.00",
-                  },
-                  {
-                    id: "line-275-column-71",
-                    value: "60.00",
-                  },
-                ],
-              },
-              {
-                id: "line-276",
-                cells: [
-                  {
-                    id: "line-276-column-9",
                     value: "total",
                   },
                   {
-                    id: "line-276-column-25",
+                    id: "line-274-column-25",
                     value: "11200.00",
                   },
                   {
-                    id: "line-276-column-49",
+                    id: "line-274-column-49",
                     value: "9650.00",
                   },
                   {
-                    id: "line-276-column-71",
+                    id: "line-274-column-71",
                     value: "1550.00",
                   },
                 ],
@@ -2350,7 +2350,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-284",
+        id: "line-282",
         keyword: "Scenario Outline",
         name: "Determine minimum claim age from date of birth",
         description: "",
@@ -2359,38 +2359,64 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-285",
+            id: "line-283",
             keyword: "Given",
             text: "the member's date of birth is <date_of_birth>",
           },
           {
-            id: "line-286",
+            id: "line-284",
             keyword: "When",
             text: "the minimum claim age is determined",
           },
           {
-            id: "line-287",
+            id: "line-285",
             keyword: "Then",
             text: "the minimum claim age is <minimum_claim_age>",
           },
         ],
         examples: [
           {
-            id: "line-289",
+            id: "line-287",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-288",
+                cells: [
+                  {
+                    id: "line-288-column-9",
+                    value: "date_of_birth",
+                  },
+                  {
+                    id: "line-288-column-25",
+                    value: "minimum_claim_age",
+                  },
+                ],
+              },
+              {
+                id: "line-289",
+                cells: [
+                  {
+                    id: "line-289-column-9",
+                    value: "1970-04-05",
+                  },
+                  {
+                    id: "line-289-column-25",
+                    value: "55",
+                  },
+                ],
+              },
+              {
                 id: "line-290",
                 cells: [
                   {
                     id: "line-290-column-9",
-                    value: "date_of_birth",
+                    value: "1971-04-05",
                   },
                   {
                     id: "line-290-column-25",
-                    value: "minimum_claim_age",
+                    value: "55",
                   },
                 ],
               },
@@ -2399,7 +2425,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-291-column-9",
-                    value: "1970-04-05",
+                    value: "1972-04-05",
                   },
                   {
                     id: "line-291-column-25",
@@ -2412,7 +2438,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-292-column-9",
-                    value: "1971-04-05",
+                    value: "1973-04-05",
                   },
                   {
                     id: "line-292-column-25",
@@ -2425,11 +2451,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-293-column-9",
-                    value: "1972-04-05",
+                    value: "1973-04-06",
                   },
                   {
                     id: "line-293-column-25",
-                    value: "55",
+                    value: "57",
                   },
                 ],
               },
@@ -2438,11 +2464,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-294-column-9",
-                    value: "1973-04-05",
+                    value: "1974-01-01",
                   },
                   {
                     id: "line-294-column-25",
-                    value: "55",
+                    value: "57",
                   },
                 ],
               },
@@ -2451,36 +2477,10 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-295-column-9",
-                    value: "1973-04-06",
-                  },
-                  {
-                    id: "line-295-column-25",
-                    value: "57",
-                  },
-                ],
-              },
-              {
-                id: "line-296",
-                cells: [
-                  {
-                    id: "line-296-column-9",
-                    value: "1974-01-01",
-                  },
-                  {
-                    id: "line-296-column-25",
-                    value: "57",
-                  },
-                ],
-              },
-              {
-                id: "line-297",
-                cells: [
-                  {
-                    id: "line-297-column-9",
                     value: "1980-01-01",
                   },
                   {
-                    id: "line-297-column-25",
+                    id: "line-295-column-25",
                     value: "57",
                   },
                 ],
@@ -2490,7 +2490,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-300",
+        id: "line-298",
         keyword: "Scenario Outline",
         name: "Validate requested draw age against minimum pension age",
         description: "",
@@ -2499,70 +2499,120 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-301",
+            id: "line-299",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-302",
+            id: "line-300",
             keyword: "And",
             text: "the member was born on <dateOfBirth>",
           },
           {
-            id: "line-303",
+            id: "line-301",
             keyword: "And",
             text: "the member requests to draw pension on <drawDate>",
           },
           {
-            id: "line-304",
+            id: "line-302",
             keyword: "And",
             text: "the applicable minimum pension age is <minimumPensionAge>",
           },
           {
-            id: "line-305",
+            id: "line-303",
             keyword: "When",
             text: "the draw age is validated",
           },
           {
-            id: "line-306",
+            id: "line-304",
             keyword: "Then",
             text: "the member's age at draw date should be <ageAtDrawDate>",
           },
           {
-            id: "line-307",
+            id: "line-305",
             keyword: "And",
             text: "the draw request should be <validationResult>",
           },
         ],
         examples: [
           {
-            id: "line-309",
+            id: "line-307",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-308",
+                cells: [
+                  {
+                    id: "line-308-column-9",
+                    value: "dateOfBirth",
+                  },
+                  {
+                    id: "line-308-column-23",
+                    value: "drawDate",
+                  },
+                  {
+                    id: "line-308-column-36",
+                    value: "minimumPensionAge",
+                  },
+                  {
+                    id: "line-308-column-56",
+                    value: "ageAtDrawDate",
+                  },
+                  {
+                    id: "line-308-column-72",
+                    value: "validationResult",
+                  },
+                ],
+              },
+              {
+                id: "line-309",
+                cells: [
+                  {
+                    id: "line-309-column-9",
+                    value: "1977-05-01",
+                  },
+                  {
+                    id: "line-309-column-23",
+                    value: "2037-05-01",
+                  },
+                  {
+                    id: "line-309-column-36",
+                    value: "57",
+                  },
+                  {
+                    id: "line-309-column-56",
+                    value: "60",
+                  },
+                  {
+                    id: "line-309-column-72",
+                    value: "valid",
+                  },
+                ],
+              },
+              {
                 id: "line-310",
                 cells: [
                   {
                     id: "line-310-column-9",
-                    value: "dateOfBirth",
+                    value: "1977-05-01",
                   },
                   {
                     id: "line-310-column-23",
-                    value: "drawDate",
+                    value: "2034-05-01",
                   },
                   {
                     id: "line-310-column-36",
-                    value: "minimumPensionAge",
+                    value: "57",
                   },
                   {
                     id: "line-310-column-56",
-                    value: "ageAtDrawDate",
+                    value: "57",
                   },
                   {
                     id: "line-310-column-72",
-                    value: "validationResult",
+                    value: "valid",
                   },
                 ],
               },
@@ -2575,7 +2625,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-311-column-23",
-                    value: "2037-05-01",
+                    value: "2033-05-01",
                   },
                   {
                     id: "line-311-column-36",
@@ -2583,60 +2633,10 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-311-column-56",
-                    value: "60",
-                  },
-                  {
-                    id: "line-311-column-72",
-                    value: "valid",
-                  },
-                ],
-              },
-              {
-                id: "line-312",
-                cells: [
-                  {
-                    id: "line-312-column-9",
-                    value: "1977-05-01",
-                  },
-                  {
-                    id: "line-312-column-23",
-                    value: "2034-05-01",
-                  },
-                  {
-                    id: "line-312-column-36",
-                    value: "57",
-                  },
-                  {
-                    id: "line-312-column-56",
-                    value: "57",
-                  },
-                  {
-                    id: "line-312-column-72",
-                    value: "valid",
-                  },
-                ],
-              },
-              {
-                id: "line-313",
-                cells: [
-                  {
-                    id: "line-313-column-9",
-                    value: "1977-05-01",
-                  },
-                  {
-                    id: "line-313-column-23",
-                    value: "2033-05-01",
-                  },
-                  {
-                    id: "line-313-column-36",
-                    value: "57",
-                  },
-                  {
-                    id: "line-313-column-56",
                     value: "56",
                   },
                   {
-                    id: "line-313-column-72",
+                    id: "line-311-column-72",
                     value: "invalid",
                   },
                 ],
@@ -2646,51 +2646,51 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-316",
+        id: "line-314",
         keyword: "Scenario",
         name: "Explain invalid draw age to the user",
         description: "",
-        tags: ["@validation", "@minimum-pension-age", "@pending"],
-        status: "under-review",
+        tags: ["@validation", "@minimum-pension-age"],
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-317",
+            id: "line-315",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-318",
+            id: "line-316",
             keyword: "And",
             text: "the member was born on 1977-05-01",
           },
           {
-            id: "line-319",
+            id: "line-317",
             keyword: "And",
             text: "the member requests to draw pension on 2033-05-01",
           },
           {
-            id: "line-320",
+            id: "line-318",
             keyword: "And",
             text: "the applicable minimum pension age is 57",
           },
           {
-            id: "line-321",
+            id: "line-319",
             keyword: "When",
             text: "the draw age is validated",
           },
           {
-            id: "line-322",
+            id: "line-320",
             keyword: "Then",
             text: "the model should show the validation message:",
             docString:
-              "You cannot draw this pension at age 56. The minimum pension age for this projection is 57.",
+              "Alpha pension draw age must be at least 57 for access dates on or after 6 April 2028.",
           },
         ],
         examples: [],
       },
       {
-        id: "line-332",
+        id: "line-330",
         keyword: "Scenario",
         name: "Active alpha member buys Added Pension and retires early",
         description: "",
@@ -2700,109 +2700,150 @@ export const acceptanceFeatures = [
           "@added-pension",
           "@early-retirement",
           "@cpi",
-          "@pending",
         ],
-        status: "under-review",
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-333",
+            id: "line-331",
             keyword: "Given",
             text: "the member is in the alpha scheme",
           },
           {
-            id: "line-334",
+            id: "line-332",
             keyword: "And",
             text: "the member has date of birth 1977-05-01",
           },
           {
-            id: "line-335",
+            id: "line-333",
             keyword: "And",
             text: "the member has alpha normal pension age 67",
           },
           {
-            id: "line-336",
+            id: "line-334",
             keyword: "And",
             text: "the member starts with accrued alpha pension of 16178.00",
           },
           {
-            id: "line-337",
+            id: "line-335",
             keyword: "And",
             text: "the member has pensionable salary of 70000.00",
           },
           {
-            id: "line-338",
+            id: "line-336",
             keyword: "And",
             text: "the annual salary increase assumption is 0.00%",
           },
           {
-            id: "line-339",
+            id: "line-337",
             keyword: "And",
             text: "the annual CPI assumption is 2.00%",
           },
           {
-            id: "line-340",
+            id: "line-338",
             keyword: "And",
             text: "CPI revaluation is on",
           },
           {
-            id: "line-341",
+            id: "line-339",
             keyword: "And",
             text: "the member buys Added Pension using monthly contributions of 400.00",
           },
           {
-            id: "line-342",
+            id: "line-340",
             keyword: "And",
             text: "the member pays those contributions for 12 months",
           },
           {
-            id: "line-343",
+            id: "line-341",
             keyword: "And",
             text: "the member remains active for 5 scheme years",
           },
           {
-            id: "line-344",
+            id: "line-342",
             keyword: "When",
             text: "the member draws all alpha pension at age 60 and 0 months",
           },
           {
-            id: "line-345",
+            id: "line-343",
             keyword: "Then",
-            text: "the unreduced standard alpha pension at draw age should be 27923.03",
+            text: "the unreduced standard alpha pension at draw age should be 25962.95",
+          },
+          {
+            id: "line-344",
+            keyword: "And",
+            text: "the purchased annual Added Pension should be 362.10",
+          },
+          {
+            id: "line-345",
+            keyword: "And",
+            text: "the combined unreduced annual pension should be 26325.05",
           },
           {
             id: "line-346",
             keyword: "And",
-            text: "the purchased annual Added Pension should be 300.00",
-          },
-          {
-            id: "line-347",
-            keyword: "And",
-            text: "the combined unreduced annual pension should be 28223.03",
-          },
-          {
-            id: "line-348",
-            keyword: "And",
             text: "the reduced annual pension breakdown should be:",
             table: [
+              {
+                id: "line-347",
+                cells: [
+                  {
+                    id: "line-347-column-9",
+                    value: "component",
+                  },
+                  {
+                    id: "line-347-column-25",
+                    value: "unreducedAnnualAmount",
+                  },
+                  {
+                    id: "line-347-column-49",
+                    value: "payableAnnualAmount",
+                  },
+                  {
+                    id: "line-347-column-71",
+                    value: "annualReduction",
+                  },
+                ],
+              },
+              {
+                id: "line-348",
+                cells: [
+                  {
+                    id: "line-348-column-9",
+                    value: "standardAlpha",
+                  },
+                  {
+                    id: "line-348-column-25",
+                    value: "25962.95",
+                  },
+                  {
+                    id: "line-348-column-49",
+                    value: "18174.06",
+                  },
+                  {
+                    id: "line-348-column-71",
+                    value: "7788.88",
+                  },
+                ],
+              },
               {
                 id: "line-349",
                 cells: [
                   {
                     id: "line-349-column-9",
-                    value: "component",
+                    value: "addedPension",
                   },
                   {
                     id: "line-349-column-25",
-                    value: "unreducedAnnualAmount",
+                    value: "362.10",
                   },
                   {
                     id: "line-349-column-49",
-                    value: "payableAnnualAmount",
+                    value: "253.47",
                   },
                   {
                     id: "line-349-column-71",
-                    value: "annualReduction",
+                    value: "108.63",
                   },
                 ],
               },
@@ -2811,61 +2852,19 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-350-column-9",
-                    value: "standardAlpha",
-                  },
-                  {
-                    id: "line-350-column-25",
-                    value: "27923.03",
-                  },
-                  {
-                    id: "line-350-column-49",
-                    value: "20663.04",
-                  },
-                  {
-                    id: "line-350-column-71",
-                    value: "7259.99",
-                  },
-                ],
-              },
-              {
-                id: "line-351",
-                cells: [
-                  {
-                    id: "line-351-column-9",
-                    value: "addedPension",
-                  },
-                  {
-                    id: "line-351-column-25",
-                    value: "300.00",
-                  },
-                  {
-                    id: "line-351-column-49",
-                    value: "222.00",
-                  },
-                  {
-                    id: "line-351-column-71",
-                    value: "78.00",
-                  },
-                ],
-              },
-              {
-                id: "line-352",
-                cells: [
-                  {
-                    id: "line-352-column-9",
                     value: "total",
                   },
                   {
-                    id: "line-352-column-25",
-                    value: "28223.03",
+                    id: "line-350-column-25",
+                    value: "26325.05",
                   },
                   {
-                    id: "line-352-column-49",
-                    value: "20885.04",
+                    id: "line-350-column-49",
+                    value: "18427.53",
                   },
                   {
-                    id: "line-352-column-71",
-                    value: "7337.99",
+                    id: "line-350-column-71",
+                    value: "7897.51",
                   },
                 ],
               },
@@ -2875,35 +2874,53 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-360",
+        id: "line-358",
         keyword: "Scenario",
-        name: "Show calculation assumptions used in the result",
+        name: "Show Alpha revaluation assumptions used in the result",
         description: "",
-        tags: ["@display", "@explainability", "@pending"],
-        status: "under-review",
+        tags: ["@display", "@explainability"],
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-361",
+            id: "line-359",
             keyword: "Given",
             text: "the member has completed an alpha pension projection",
           },
           {
-            id: "line-362",
+            id: "line-360",
             keyword: "When",
             text: "the pension result is displayed",
           },
           {
-            id: "line-363",
+            id: "line-361",
             keyword: "Then",
-            text: "the result should show:",
+            text: "the Alpha revaluation assumptions should include:",
             table: [
+              {
+                id: "line-362",
+                cells: [
+                  {
+                    id: "line-362-column-9",
+                    value: "assumption",
+                  },
+                ],
+              },
+              {
+                id: "line-363",
+                cells: [
+                  {
+                    id: "line-363-column-9",
+                    value: "Inflation",
+                  },
+                ],
+              },
               {
                 id: "line-364",
                 cells: [
                   {
                     id: "line-364-column-9",
-                    value: "assumption",
+                    value: "Alpha in-service revaluation",
                   },
                 ],
               },
@@ -2912,88 +2929,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-365-column-9",
-                    value: "scheme",
-                  },
-                ],
-              },
-              {
-                id: "line-366",
-                cells: [
-                  {
-                    id: "line-366-column-9",
-                    value: "current accrued pension",
-                  },
-                ],
-              },
-              {
-                id: "line-367",
-                cells: [
-                  {
-                    id: "line-367-column-9",
-                    value: "pensionable salary",
-                  },
-                ],
-              },
-              {
-                id: "line-368",
-                cells: [
-                  {
-                    id: "line-368-column-9",
-                    value: "salary increase assumption",
-                  },
-                ],
-              },
-              {
-                id: "line-369",
-                cells: [
-                  {
-                    id: "line-369-column-9",
-                    value: "CPI assumption",
-                  },
-                ],
-              },
-              {
-                id: "line-370",
-                cells: [
-                  {
-                    id: "line-370-column-9",
-                    value: "CPI revaluation on or off",
-                  },
-                ],
-              },
-              {
-                id: "line-371",
-                cells: [
-                  {
-                    id: "line-371-column-9",
-                    value: "normal pension age",
-                  },
-                ],
-              },
-              {
-                id: "line-372",
-                cells: [
-                  {
-                    id: "line-372-column-9",
-                    value: "draw age",
-                  },
-                ],
-              },
-              {
-                id: "line-373",
-                cells: [
-                  {
-                    id: "line-373-column-9",
-                    value: "added pension contribution",
-                  },
-                ],
-              },
-              {
-                id: "line-374",
-                cells: [
-                  {
-                    id: "line-374-column-9",
-                    value: "EPA option",
+                    value: "Deferred Alpha increase",
                   },
                 ],
               },
@@ -3003,100 +2939,103 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-377",
+        id: "line-368",
         keyword: "Scenario",
-        name: "Show pension components separately before showing total",
+        name: "Show Alpha pension components in the projection table",
         description: "",
-        tags: ["@display", "@explainability", "@pending"],
-        status: "under-review",
+        tags: ["@display", "@explainability"],
+        status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-378",
+            id: "line-369",
             keyword: "Given",
             text: "the member has standard alpha pension",
           },
           {
-            id: "line-379",
+            id: "line-370",
             keyword: "And",
             text: "the member has Added Pension",
           },
           {
-            id: "line-380",
+            id: "line-371",
             keyword: "And",
             text: "the member has EPA pension",
           },
           {
-            id: "line-381",
+            id: "line-372",
             keyword: "When",
             text: "the pension result is displayed",
           },
           {
-            id: "line-382",
+            id: "line-373",
             keyword: "Then",
-            text: "the result should show separate rows for:",
+            text: "the Alpha projection table should include columns:",
             table: [
               {
-                id: "line-383",
+                id: "line-374",
                 cells: [
                   {
-                    id: "line-383-column-9",
-                    value: "component",
+                    id: "line-374-column-9",
+                    value: "column",
                   },
                 ],
               },
               {
-                id: "line-384",
+                id: "line-375",
                 cells: [
                   {
-                    id: "line-384-column-9",
-                    value: "standardAlpha",
+                    id: "line-375-column-9",
+                    value: "Monthly Added Pension",
                   },
                 ],
               },
               {
-                id: "line-385",
+                id: "line-376",
                 cells: [
                   {
-                    id: "line-385-column-9",
-                    value: "addedPension",
+                    id: "line-376-column-9",
+                    value: "Lump sum added pension",
                   },
                 ],
               },
               {
-                id: "line-386",
+                id: "line-377",
                 cells: [
                   {
-                    id: "line-386-column-9",
-                    value: "epaAlpha",
+                    id: "line-377-column-9",
+                    value: "Standard Alpha Pension",
                   },
                 ],
               },
               {
-                id: "line-387",
+                id: "line-378",
                 cells: [
                   {
-                    id: "line-387-column-9",
-                    value: "total",
+                    id: "line-378-column-9",
+                    value: "EPA Alpha Pension",
+                  },
+                ],
+              },
+              {
+                id: "line-379",
+                cells: [
+                  {
+                    id: "line-379-column-9",
+                    value: "Annual Accrued Alpha Pension",
+                  },
+                ],
+              },
+              {
+                id: "line-380",
+                cells: [
+                  {
+                    id: "line-380-column-9",
+                    value: "Annual Alpha Pension Including Reduction",
                   },
                 ],
               },
             ],
-          },
-          {
-            id: "line-388",
-            keyword: "And",
-            text: "each row should show unreduced annual pension",
-          },
-          {
-            id: "line-389",
-            keyword: "And",
-            text: "each row should show payable annual pension",
-          },
-          {
-            id: "line-390",
-            keyword: "And",
-            text: "each row should show annual reduction where applicable",
           },
         ],
         examples: [],

@@ -425,16 +425,30 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
-          The model uses age-based added-pension factor tables to estimate the
-          extra annual pension purchased.
+          The model uses the Government Actuary&apos;s Department consolidated
+          Civil Service factors workbook
+          CS_GB_Consolidated_Factors_2026-01.xlsx, issued on 29 May 2026. Lump
+          sums use tables 0-714 to 0-717 and regular contributions use tables
+          0-718 to 0-721, covering Normal Pension Ages 65 to 68. The source is
+          available from the{" "}
+          <a
+            href={knowledgeLinks.alphaAddedPensionFactors}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GAD Alpha added-pension factor tables
+          </a>
+          .
         </p>
         <p className="section-copy">
-          Known simplification: added-pension revaluation is currently
-          simplified. The purchase revaluation factor used in the added-pension
-          factor calculation is currently 1. Purchased added pension is then
-          tracked alongside the standard Alpha portion for annual revaluation in
-          the projection. This may understate or misstate the final value of
-          added pension in some scenarios.
+          For a lump sum, the model uses the member&apos;s age on the payment
+          date. For regular contributions, it uses the age at the start of the
+          scheme year or payment period. If Normal Pension Age is not a whole
+          year, the factor is interpolated between the adjacent published
+          tables. The purchase calculation also applies GAD table 0-728 using
+          the number of 1 Aprils after the calculation date up to Normal Pension
+          Age. The purchased amount is then tracked alongside standard Alpha for
+          the projection&apos;s annual CPI revaluation.
         </p>
       </section>
 

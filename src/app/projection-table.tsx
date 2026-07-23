@@ -246,6 +246,15 @@ const projectionTableColumns: ProjectionTableColumn[] = [
   },
 ] as const;
 
+export function getVisibleProjectionTableColumns(settings: PensionSettings) {
+  return projectionTableColumns
+    .filter((column) => !column.setting || settings[column.setting])
+    .map((column) => ({
+      ...column,
+      label: getProjectionTableColumnLabel(column, settings),
+    }));
+}
+
 export function ProjectionTableSectionContainer({
   children,
 }: ProjectionTableSectionContainerProps) {
@@ -292,9 +301,7 @@ export function ProjectionTableSection({
 
 export function ProjectionTable({ rows, settings }: ProjectionTableProps) {
   const [showMilestonesOnly, setShowMilestonesOnly] = useState(true);
-  const visibleColumns = projectionTableColumns.filter(
-    (column) => !column.setting || settings[column.setting]
-  );
+  const visibleColumns = getVisibleProjectionTableColumns(settings);
   const visibleRows = showMilestonesOnly
     ? rows.filter((row) => row.milestones.length > 0)
     : rows;
@@ -306,7 +313,6 @@ export function ProjectionTable({ rows, settings }: ProjectionTableProps) {
     <ProjectionTableFrame
       columns={visibleColumns.map((column) => ({
         ...column,
-        label: getProjectionTableColumnLabel(column, settings),
       }))}
       rows={visibleRows}
       emptyMessage="No projection rows are available for the current settings."

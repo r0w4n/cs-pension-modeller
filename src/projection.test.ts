@@ -389,13 +389,14 @@ describe("projection calculations", () => {
 
     const rows = createProjectionTable(settings);
     const partialRow = findRowByDate(rows, "2042-04-01");
+    const expectedAddedPension = 64.1 / (10.6 * 1.29);
 
     expect(partialRow?.monthlyAddedPension).toBeCloseTo(
-      64.1 / getAddedPensionFactorForAge(54),
+      expectedAddedPension,
       6
     );
     expect(partialRow?.annualAccruedAlphaPension).toBeCloseTo(
-      (12000 * 0.0232) / 12 / 2 + 64.1 / getAddedPensionFactorForAge(54),
+      (12000 * 0.0232) / 12 / 2 + expectedAddedPension,
       6
     );
   });
@@ -588,19 +589,19 @@ describe("projection calculations", () => {
     ).toBeCloseTo(2320, 6);
   });
 
-  it("loads the added pension factor from JSON", () => {
-    expect(getAddedPensionFactorForAge(60)).toBe(12.82);
+  it("loads current GAD added-pension factors from JSON", () => {
+    expect(getAddedPensionFactorForAge(60)).toBe(12.91);
     expect(getAddedPensionFactorForAge(60, "self_plus_beneficiaries")).toBe(
-      13.77
+      14.17
     );
   });
 
-  it("handles blank added pension factors safely", () => {
-    expect(getAddedPensionFactorForAge(68)).toBe(0);
+  it("handles unsupported added pension ages safely", () => {
+    expect(getAddedPensionFactorForAge(69)).toBe(0);
     expect(
       calculateMonthlyAddedPension({
-        rowDate: "2055-06-15",
-        stopDate: "2055-06-15",
+        rowDate: "2056-06-15",
+        stopDate: "2056-06-15",
         dateOfBirth: "1987-06-15",
         addedPensionMonthlyContribution: 150,
       })
@@ -615,7 +616,7 @@ describe("projection calculations", () => {
         dateOfBirth: "1987-06-15",
         addedPensionMonthlyContribution: 150,
       })
-    ).toBeCloseTo(11.7004680187, 6);
+    ).toBeCloseTo(150 / (12.91 * 1.17), 6);
   });
 
   it("calculates monthly added pension with the self and dependants factor", () => {
@@ -627,7 +628,7 @@ describe("projection calculations", () => {
         addedPensionMonthlyContribution: 137.7,
         factorType: "self_plus_beneficiaries",
       })
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(137.7 / (14.17 * 1.17), 6);
   });
 
   it("carries regular monthly added pension purchases into accrued Alpha pension", () => {
@@ -649,18 +650,19 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
+    const expectedAddedPension = 128.2 / (12.91 * 1.17);
 
     expect(findRowByDate(rows, "2047-04-01")?.monthlyAddedPension).toBeCloseTo(
-      10,
+      expectedAddedPension,
       6
     );
     expect(
       findRowByDate(rows, "2047-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
     expect(findRowByDate(rows, "2047-05-01")?.monthlyAddedPension).toBe(0);
     expect(
       findRowByDate(rows, "2047-05-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
   });
 
   it("uses the selected added pension factor in projected monthly purchases", () => {
@@ -683,14 +685,15 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
+    const expectedAddedPension = 137.7 / (14.17 * 1.17);
 
     expect(findRowByDate(rows, "2047-04-01")?.monthlyAddedPension).toBeCloseTo(
-      10,
+      expectedAddedPension,
       6
     );
     expect(
       findRowByDate(rows, "2047-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
   });
 
   it("tracks regular monthly added pension purchases with Alpha revaluation", () => {
@@ -714,13 +717,14 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
+    const expectedAddedPension = 128.2 / (12.91 * 1.17);
 
     expect(
       findRowByDate(rows, "2047-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
     expect(
       findRowByDate(rows, "2048-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
   });
 
   it("calculates a one-off lump sum added pension purchase on its payment date", () => {
@@ -738,7 +742,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(12820 / (12.66 * 1.17), 6);
   });
 
   it("calculates lump sum added pension with the self and dependants factor", () => {
@@ -757,7 +761,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(13770 / (13.89 * 1.17), 6);
   });
 
   it("uses a lump sum's own added pension factor independently from monthly purchases", () => {
@@ -792,8 +796,14 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
     const purchaseRow = findRowByDate(rows, "2047-04-01");
 
-    expect(purchaseRow?.monthlyAddedPension).toBeCloseTo(10, 6);
-    expect(purchaseRow?.lumpSumAddedPension).toBeCloseTo(1000, 6);
+    expect(purchaseRow?.monthlyAddedPension).toBeCloseTo(
+      128.2 / (12.91 * 1.17),
+      6
+    );
+    expect(purchaseRow?.lumpSumAddedPension).toBeCloseTo(
+      13770 / (13.89 * 1.17),
+      6
+    );
   });
 
   it("applies a lump sum on the first projection row after its payment date", () => {
@@ -812,7 +822,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(12820 / (12.66 * 1.17), 6);
   });
 
   it("calculates yearly recurring lump sum added pension purchases", () => {
@@ -831,7 +841,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(12820 / getAddedPensionFactorForAge(62), 6);
+    ).toBeCloseTo(12820 / (13.55 * 1.13), 6);
   });
 
   it("loads Alpha early retirement reduction factors from JSON", () => {
@@ -2429,7 +2439,7 @@ describe("projection calculations", () => {
 
     expect(findRowByDate(rows, "2047-05-15")?.lumpSumAddedPension).toBe(0);
     expect(findRowByDate(rows, "2047-06-15")?.lumpSumAddedPension).toBeCloseTo(
-      1000,
+      12820 / (12.66 * 1.17),
       6
     );
     expect(findRowByDate(rows, "2047-07-15")?.lumpSumAddedPension).toBe(0);
@@ -2438,13 +2448,13 @@ describe("projection calculations", () => {
     ).toBeCloseTo(8412.4, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.annualAccruedAlphaPension
-    ).toBeCloseTo(9493.6, 6);
+    ).toBeCloseTo(9359.102761237358, 6);
     expect(
       findRowByDate(rows, "2047-07-15")?.annualAccruedAlphaPension
-    ).toBeCloseTo(9493.6, 6);
+    ).toBeCloseTo(9359.102761237358, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.monthlyAlphaPensionGross
-    ).toBeCloseTo(522.9391333333334, 6);
+    ).toBeCloseTo(515.5305770981578, 6);
   });
 
   it("uses the calculated starting Alpha pension at the projection start instead of the raw ABS value", () => {

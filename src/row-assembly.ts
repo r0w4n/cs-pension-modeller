@@ -26,6 +26,7 @@ import {
   calculateMonthlyAlphaPensionGross,
   calculateMonthlyEpaAlphaAccrual,
   calculateMonthlyStandardAlphaAccrual,
+  getAddedPensionPeriodCalculationDate,
 } from "./projection-domains/alpha";
 import {
   calculateAnnualStatePensionAtDate,
@@ -164,6 +165,10 @@ export function calculateAddedPensionValues(input: {
           stopDate: addedPensionStopDate,
           dateOfBirth: settings.dateOfBirth,
           addedPensionMonthlyContribution: settings.alphaAddedPensionMonthly,
+          calculationDate: getAddedPensionPeriodCalculationDate(
+            settings.startDate,
+            rowDate
+          ),
           factorType: settings.alphaAddedPensionFactorType,
           contributionMultiplier: getPartialRetirementContributionMultiplier(
             settings,

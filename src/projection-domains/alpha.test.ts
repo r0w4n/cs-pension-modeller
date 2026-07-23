@@ -10,6 +10,8 @@ import {
   calculateProjectedAlphaPensionableEarnings,
   calculateStartingAlphaPensionAtStartDate,
   getAddedPensionFactorForAge,
+  getAddedPensionPeriodCalculationDate,
+  getAddedPensionRevaluationFactor,
   getAlphaEarlyRetirementFactor,
 } from "./alpha";
 import { defaultSettings } from "../settings";
@@ -78,11 +80,27 @@ describe("projection alpha domain", () => {
     ).toBeCloseTo(2320, 6);
   });
 
-  it("loads the added pension factor from JSON", () => {
-    expect(getAddedPensionFactorForAge(60)).toBe(12.82);
-    expect(getAddedPensionFactorForAge(60, "self_plus_beneficiaries")).toBe(
-      13.77
+  it("loads current GAD added-pension factors by purchase type and NPA", () => {
+    expect(getAddedPensionFactorForAge(45, "self", "lump_sum", 68)).toBe(7.75);
+    expect(getAddedPensionFactorForAge(45, "self", "monthly", 68)).toBe(7.9);
+    expect(
+      getAddedPensionFactorForAge(60, "self_plus_beneficiaries", "monthly", 68)
+    ).toBe(14.17);
+    expect(getAddedPensionFactorForAge(45, "self", "lump_sum", 67.5)).toBe(
+      (8.28 + 7.75) / 2
     );
+  });
+
+  it("uses the GAD revaluation table and scheme-year calculation date", () => {
+    expect(getAddedPensionRevaluationFactor("2026-04-01", "2049-04-01")).toBe(
+      1.58
+    );
+    expect(
+      getAddedPensionPeriodCalculationDate("2026-07-15", "2027-02-01")
+    ).toBe("2026-07-15");
+    expect(
+      getAddedPensionPeriodCalculationDate("2026-07-15", "2027-04-01")
+    ).toBe("2027-04-01");
   });
 
   it("calculates monthly added pension with the self and dependants factor", () => {
@@ -94,7 +112,7 @@ describe("projection alpha domain", () => {
         addedPensionMonthlyContribution: 137.7,
         factorType: "self_plus_beneficiaries",
       })
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(137.7 / (14.17 * 1.17), 6);
   });
 
   it("calculates yearly recurring lump sum added pension purchases", () => {
@@ -113,7 +131,7 @@ describe("projection alpha domain", () => {
           },
         ],
       })
-    ).toBeCloseTo(12820 / getAddedPensionFactorForAge(62), 6);
+    ).toBeCloseTo(12820 / (13.55 * 1.13), 6);
   });
 
   it("uses the published completed-month Alpha factor without annual interpolation", () => {

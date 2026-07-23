@@ -2,6 +2,7 @@ import {
   getPartialRetirementStartDate,
   type PensionSettings,
 } from "../settings";
+import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
 import { calculateMonthlyIncomeTax } from "./tax";
 import { calculateIsaPotBeforeWithdrawalAtDate } from "./isa";
 import { calculateSippPotBeforeWithdrawalAtDate } from "./sipp";
@@ -1337,11 +1338,13 @@ function findFirstRowAtOrAfterDate(
 
 function generateMonthlyDateRange(startDate: string, endDate: string) {
   const dates: string[] = [];
-  let currentDate = startDate;
+  let monthIndex = 0;
+  let currentDate = addMonths(startDate, monthIndex);
 
   while (currentDate <= endDate) {
     dates.push(currentDate);
-    currentDate = addMonths(currentDate, 1);
+    monthIndex += 1;
+    currentDate = addMonths(startDate, monthIndex);
   }
 
   if (dates.at(-1) !== endDate) {
@@ -1395,19 +1398,6 @@ function calculateAgeMonths(dateOfBirth: string, rowDate: string) {
   }
 
   return Math.max(0, months % 12);
-}
-
-function calculateWholeMonthDifference(startDate: string, endDate: string) {
-  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
-  const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
-
-  let monthDifference = (endYear - startYear) * 12 + (endMonth - startMonth);
-
-  if (endDay < startDay) {
-    monthDifference -= 1;
-  }
-
-  return monthDifference;
 }
 
 function parseIsoDate(value: string) {

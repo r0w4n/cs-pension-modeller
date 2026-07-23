@@ -3,6 +3,7 @@ import {
   type AddedPensionLumpSum,
   type PensionSettings,
 } from "../settings";
+import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
 import { getModelledMonthlyGrowthRate } from "./inflation";
 
 export function calculateCsAvcPotAtDate(input: {
@@ -455,19 +456,6 @@ function addMonths(date: string, months: number) {
   const day = Math.min(parsed.getUTCDate(), getDaysInMonth(year, month));
 
   return formatIsoDate(new Date(Date.UTC(year, month, day)));
-}
-
-function calculateWholeMonthDifference(startDate: string, endDate: string) {
-  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
-  const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
-
-  let monthDifference = (endYear - startYear) * 12 + (endMonth - startMonth);
-
-  if (endDay < startDay) {
-    monthDifference -= 1;
-  }
-
-  return monthDifference;
 }
 
 function parseIsoDate(value: string) {

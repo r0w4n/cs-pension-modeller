@@ -33,14 +33,16 @@ export function calculateAnnualNuvosPensionAtDate(input: {
       startDate: nuvosAbsDate,
     },
   ];
-  let accrualDate = addMonths(nuvosAbsDate, 1);
+  let accrualMonthIndex = 1;
+  let accrualDate = addMonths(nuvosAbsDate, accrualMonthIndex);
 
   while (accrualDate <= rowDate && accrualDate <= finalAccrualDate) {
     benefitComponents.push({
       amount: calculateMonthlyNuvosAccrual(settings, accrualDate),
       startDate: accrualDate,
     });
-    accrualDate = addMonths(accrualDate, 1);
+    accrualMonthIndex += 1;
+    accrualDate = addMonths(nuvosAbsDate, accrualMonthIndex);
   }
 
   return benefitComponents.reduce((total, component) => {

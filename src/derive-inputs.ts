@@ -287,11 +287,13 @@ export function getLifeExpectancyDate(
 
 export function generateMonthlyDateRange(startDate: string, endDate: string) {
   const dates: string[] = [];
-  let currentDate = startDate;
+  let monthIndex = 0;
+  let currentDate = addMonths(startDate, monthIndex);
 
   while (currentDate <= endDate) {
     dates.push(currentDate);
-    currentDate = addMonths(currentDate, 1);
+    monthIndex += 1;
+    currentDate = addMonths(startDate, monthIndex);
   }
 
   if (dates.at(-1) !== endDate) {

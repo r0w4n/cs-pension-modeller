@@ -453,7 +453,8 @@ export function calculateStartingAlphaPortionsAtStartDate(input: {
 
   let standardAlphaPension = settings.accruedPensionAtLastAbs;
   let epaAlphaPension = 0;
-  let rowDate = addMonths(alphaAbsDate, 1);
+  let monthIndex = 1;
+  let rowDate = addMonths(alphaAbsDate, monthIndex);
 
   while (rowDate <= settings.startDate && rowDate <= accrualStopDate) {
     standardAlphaPension += calculateMonthlyStandardAlphaAccrual(
@@ -461,7 +462,8 @@ export function calculateStartingAlphaPortionsAtStartDate(input: {
       rowDate
     );
     epaAlphaPension += calculateMonthlyEpaAlphaAccrual(settings, rowDate);
-    rowDate = addMonths(rowDate, 1);
+    monthIndex += 1;
+    rowDate = addMonths(alphaAbsDate, monthIndex);
   }
 
   return {
@@ -520,7 +522,8 @@ export function createHistoricalProjectionRows(input: {
   }
 
   const rows: ProjectionRowWithoutMilestones[] = [];
-  let rowDate = alphaAbsDate;
+  let monthIndex = 0;
+  let rowDate = addMonths(alphaAbsDate, monthIndex);
   let previousRowDate: string | undefined;
   let cumulativeLumpSumAddedPension = 0;
   let cumulativeStandardAlphaPension = settings.accruedPensionAtLastAbs;
@@ -590,7 +593,8 @@ export function createHistoricalProjectionRows(input: {
     );
 
     previousRowDate = rowDate;
-    rowDate = addMonths(rowDate, 1);
+    monthIndex += 1;
+    rowDate = addMonths(alphaAbsDate, monthIndex);
   }
 
   return rows;

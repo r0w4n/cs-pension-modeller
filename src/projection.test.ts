@@ -341,6 +341,76 @@ describe("projection calculations", () => {
     ]);
   });
 
+  it("keeps month-end rows and flexible-pot projections anchored after a shorter month", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-01-31",
+      dateOfBirth: "1986-01-31",
+      lifeExpectancy: 61,
+      requirementAge: 60,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
+      applyPensionIncreases: false,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: true,
+      showCsAvc: true,
+      showIsa: true,
+      showLisa: true,
+      showAdditionalGuaranteedIncome: false,
+      sippCurrentPot: 10000,
+      sippMonthlyContribution: 100,
+      sippDrawAge: 60,
+      sippRealInterestPercent: 0,
+      sippTaxReliefRate: "none",
+      sippLumpSums: [],
+      sippWithdrawalStrategy: "percentage",
+      csAvcCurrentPot: 10000,
+      csAvcMonthlyContribution: 100,
+      csAvcDrawAge: 60,
+      csAvcRealInterestPercent: 0,
+      csAvcLumpSums: [],
+      csAvcWithdrawalStrategy: "percentage",
+      isaCurrentPot: 10000,
+      isaMonthlyContribution: 100,
+      isaDrawAge: 60,
+      isaRealInterestPercent: 0,
+      isaLumpSums: [],
+      isaWithdrawalStrategy: "percentage",
+      lisaCurrentPot: 10000,
+      lisaMonthlyContribution: 100,
+      lisaDrawAge: 60,
+      lisaRealInterestPercent: 0,
+      lisaLumpSums: [],
+      lisaWithdrawalStrategy: "percentage",
+    };
+
+    const rows = createProjectionTable(settings)
+      .filter((row) => row.date >= settings.startDate)
+      .slice(0, 4);
+
+    expect(rows.map((row) => row.date)).toEqual([
+      "2026-01-31",
+      "2026-02-28",
+      "2026-03-31",
+      "2026-04-30",
+    ]);
+    expect(rows.map((row) => row.sippPot)).toEqual([
+      10100, 10200, 10300, 10400,
+    ]);
+    expect(rows.map((row) => row.csAvcPot)).toEqual([
+      10100, 10200, 10300, 10400,
+    ]);
+    expect(rows.map((row) => row.isaPot)).toEqual([10100, 10200, 10300, 10400]);
+    expect(rows.map((row) => row.lisaPot)).toEqual([
+      10125, 10250, 10375, 10500,
+    ]);
+  });
+
   it("preserves month-end semantics across shorter months and leap years", () => {
     expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
     expect(addMonths("2024-01-31", 1)).toBe("2024-02-29");

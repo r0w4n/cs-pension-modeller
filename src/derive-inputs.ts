@@ -10,7 +10,10 @@ import {
   getModelledAnnualGrowthRate,
   getModelledPensionInflationPercent,
 } from "./projection-domains/inflation";
-import { getAlphaEarlyRetirementFactor } from "./projection-domains/alpha";
+import {
+  calculateAlphaLateRetirementMultiplier,
+  getAlphaEarlyRetirementFactor,
+} from "./projection-domains/alpha";
 import {
   calculateClassicEarlyRetirementFactor,
   CLASSIC_NORMAL_PENSION_AGE,
@@ -225,9 +228,15 @@ export function deriveProjectionInputs(
   const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
   const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const epaDate = getAlphaEpaDate(settings);
+  const lateRetirementStatus =
+    alphaStopDate >= drawDate ? "active" : "deferred";
   const reductionFactor =
     drawDate > npaDate
-      ? 1
+      ? (calculateAlphaLateRetirementMultiplier({
+          normalPensionAge,
+          retirementAge: settings.alphaPensionDrawAge,
+          status: lateRetirementStatus,
+        }) ?? 1)
       : getAlphaEarlyRetirementFactor(
           normalPensionAge,
           settings.alphaPensionDrawAge

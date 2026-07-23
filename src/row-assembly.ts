@@ -237,8 +237,6 @@ export function buildProjectionRow(input: {
     settings,
     rowDate,
     drawDate,
-    npaDate,
-    epaDate,
     reductionFactor,
     epaReductionFactor,
     nuvosDrawDate,
@@ -274,9 +272,6 @@ export function buildProjectionRow(input: {
     calculateAnnualAlphaPensionIncludingEpaReduction({
       standardAlphaPension: annualStandardAlphaPension,
       epaAlphaPension: annualEpaAlphaPension,
-      alphaPensionDrawDate: drawDate,
-      npaDate,
-      epaDate,
       reductionFactor,
       epaReductionFactor,
     });

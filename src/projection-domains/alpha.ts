@@ -572,36 +572,26 @@ export function calculateAnnualAlphaPensionIncludingReduction(
 export function calculateAnnualAlphaPensionIncludingEpaReduction(input: {
   standardAlphaPension: number;
   epaAlphaPension: number;
-  alphaPensionDrawDate: string;
-  npaDate: string;
-  epaDate: string;
   reductionFactor: number;
   epaReductionFactor: number;
 }) {
   const {
     standardAlphaPension,
     epaAlphaPension,
-    alphaPensionDrawDate,
-    npaDate,
-    epaDate,
     reductionFactor,
     epaReductionFactor,
   } = input;
-  const standardPaymentFactor =
-    alphaPensionDrawDate > npaDate ? 1 : reductionFactor;
-  const epaPaymentFactor =
-    alphaPensionDrawDate >= epaDate ? 1 : epaReductionFactor;
 
   const breakdown = calculateAlphaPensionComponentBreakdown([
     {
       component: "standardAlpha",
       unreducedAnnualAmount: standardAlphaPension,
-      paymentFactor: standardPaymentFactor,
+      paymentFactor: reductionFactor,
     },
     {
       component: "epaAlpha",
       unreducedAnnualAmount: epaAlphaPension,
-      paymentFactor: epaPaymentFactor,
+      paymentFactor: epaReductionFactor,
     },
   ]);
 

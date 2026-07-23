@@ -572,6 +572,60 @@ describe("projection calculations", () => {
     );
   });
 
+  it.each([
+    {
+      status: "active member",
+      alphaPensionLeaveAge: 68,
+      expectedAnnualPension: 12729.6,
+    },
+    {
+      status: "deferred member",
+      alphaPensionLeaveAge: 67,
+      expectedAnnualPension: 12671.48,
+    },
+  ])(
+    "applies the Alpha late-retirement factor for an $status",
+    ({ status, alphaPensionLeaveAge, expectedAnnualPension }) => {
+      const settings: PensionSettings = {
+        ...defaultSettings,
+        startDate: "2044-01-01",
+        dateOfBirth: "1977-01-01",
+        lifeExpectancy: 70,
+        requirementAge: 68,
+        projectionBasis: "nominal",
+        inflationRateAnnual: 0,
+        applyPensionIncreases: false,
+        showAlpha: true,
+        showClassic: false,
+        showClassicPlus: false,
+        showNuvos: false,
+        showPremium: false,
+        showStatePension: false,
+        showSipp: false,
+        showCsAvc: false,
+        showIsa: false,
+        showLisa: false,
+        showAdditionalGuaranteedIncome: false,
+        alphaPensionAbsDate: "2043",
+        accruedPensionAtLastAbs: 12000,
+        pensionableEarnings: 0,
+        alphaPensionLeaveAge,
+        alphaPensionDrawAge: 68,
+        alphaAddedPensionMonthly: 0,
+        alphaAddedPensionLumpSums: [],
+        alphaEpaEnabled: false,
+      };
+
+      const rows = createProjectionTable(settings);
+      const summary = generatePensionSummary(rows, settings);
+
+      expect(
+        summary.alphaPension.annualAtDraw,
+        `${status} annual Alpha pension at draw`
+      ).toBeCloseTo(expectedAnnualPension, 2);
+    }
+  );
+
   it("uses whole-month differences and ignores days", () => {
     expect(calculateWholeMonthDifference("2025-04-01", "2025-04-30")).toBe(0);
     expect(calculateWholeMonthDifference("2025-04-01", "2025-05-31")).toBe(1);

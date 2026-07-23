@@ -17,17 +17,28 @@ import { buildInflationRows } from "../../src/app/results-summary";
 import {
   calculateMinimumPensionAccessAge,
   defaultSettings,
+  getAlphaEpaDate,
 } from "../../src/settings";
 import { validateAlphaPensionRules } from "../../src/settings/settings-domains/alpha-pension";
 import { calculateNormalPensionAge } from "../../src/settings/settings-shared/state";
 import {
+  calculateAlphaCommutation,
+  calculateAlphaLateRetirementMultiplier,
+  calculateAlphaPartialRetirement,
+  calculateAlphaPensionAfterAnnualIncrease,
+  calculateAlphaPensionComponentBreakdown,
   calculateAnnualAlphaPensionIncludingReduction,
   calculateAlphaPensionRevaluationFactor,
   calculateLumpSumAddedPension,
   calculateMonthlyAddedPension,
+  calculateMonthlyAlphaPensionGross,
+  calculateMonthlyEpaAlphaAccrual,
   calculateMonthlyStandardAlphaAccrual,
   calculateProjectedAlphaPensionableEarnings,
+  calculateStartingAlphaPensionAtStartDate,
+  getAddedPensionFactorForAge,
   getAlphaEarlyRetirementFactor,
+  getAlphaLeavingServiceOutcome,
 } from "../../src/projection-domains/alpha";
 
 const ACCEPTANCE_START_DATE = "2026-04-01";
@@ -54,7 +65,6 @@ type PensionBreakdownRow = {
 };
 
 class AlphaPensionWorld {
-  precision = 2;
   dateOfBirth = DEFAULT_ACCEPTANCE_DATE_OF_BIRTH;
   startingAlphaPension = 0;
   startingSalary = 0;
@@ -101,6 +111,39 @@ class AlphaPensionWorld {
   hasAlphaComponentInputs = false;
   displayedAlphaAssumptions: string[] = [];
   displayedAlphaColumns: string[] = [];
+  derivedNormalPensionAge = 0;
+  annualPensionAfterIncrease = 0;
+  lateRetirementStatus: "active" | "deferred" = "active";
+  lateRetirementMultiplier: number | null = 1;
+  commutationResult:
+    | {
+        annualPensionAfterCommutation: number;
+        retirementLumpSum: number;
+      }
+    | undefined;
+  annualPensionExchanged = 0;
+  partialRetirementResult:
+    | {
+        eligible: boolean;
+        annualPensionPayable: number;
+        remainingAccruedPension: number;
+      }
+    | undefined;
+  partialRetirementPayReduction = 0;
+  partialRetirementPensionTaken = 0;
+  partialRetirementEmployerAgreement = false;
+  partialRetirementMinimumAgeReached = false;
+  partialRetirementWorkPercent = 0;
+  qualifyingServiceYears = 0;
+  leavingServiceOutcome = "";
+  addedPensionFactorType: "self" | "self_plus_beneficiaries" = "self";
+  selectedAddedPensionFactor = 0;
+  monthlyStandardAccrual = 0;
+  monthlyEpaAccrual = 0;
+  epaAccrualStartDate = "";
+  epaAccrualEndDate = "";
+  epaPayableDate = "";
+  alphaStatementDate = "";
   validationResult:
     | { ageAtDrawDate: number; valid: boolean; messages: string[] }
     | undefined;
@@ -252,40 +295,6 @@ function projectActiveAlpha(world: AlphaPensionWorld, activeYears: number) {
   };
 }
 
-function buildBreakdownRows(
-  components: { component: string; unreducedAnnualAmount: number }[],
-  factor: number
-) {
-  const rows = components.map((component) => {
-    const payableAnnualAmount = component.unreducedAnnualAmount * factor;
-
-    return {
-      ...component,
-      payableAnnualAmount,
-      annualReduction: component.unreducedAnnualAmount - payableAnnualAmount,
-    };
-  });
-  const total = rows.reduce<PensionBreakdownRow>(
-    (runningTotal, row) => ({
-      component: "total",
-      unreducedAnnualAmount:
-        (runningTotal.unreducedAnnualAmount ?? 0) + row.unreducedAnnualAmount,
-      payableAnnualAmount:
-        (runningTotal.payableAnnualAmount ?? 0) + row.payableAnnualAmount,
-      annualReduction:
-        (runningTotal.annualReduction ?? 0) + row.annualReduction,
-    }),
-    {
-      component: "total",
-      unreducedAnnualAmount: 0,
-      payableAnnualAmount: 0,
-      annualReduction: 0,
-    }
-  );
-
-  return [...rows, total];
-}
-
 function normalizeActualRows(rows: PensionBreakdownRow[]) {
   return rows.map((row) =>
     Object.fromEntries(
@@ -345,23 +354,9 @@ function validateDrawRequest(world: AlphaPensionWorld) {
 }
 
 Given(
-  "alpha pension factor tables version {string} are loaded",
-  function (this: AlphaPensionWorld, version: string) {
-    assertEqual(version, "GAD-2026-01");
-  }
-);
-
-Given(
-  "alpha pension purchase factor tables version {string} are loaded",
-  function (this: AlphaPensionWorld, version: string) {
-    assertEqual(version, "GAD-2026-01");
-  }
-);
-
-Given(
   "pension outputs are rounded to {int} decimal places",
-  function (this: AlphaPensionWorld, precision: number) {
-    this.precision = precision;
+  function (precision: number) {
+    assertEqual(precision, 2);
   }
 );
 
@@ -671,18 +666,21 @@ Given(
 When(
   "the member draws pension at normal pension age",
   function (this: AlphaPensionWorld) {
-    this.pensionBreakdown = [
-      { component: "alpha", annualAmount: this.unreducedAlphaPension },
+    this.pensionBreakdown = calculateAlphaPensionComponentBreakdown([
+      {
+        component: "alpha",
+        unreducedAnnualAmount: this.unreducedAlphaPension,
+        paymentFactor: 1,
+      },
       {
         component: "addedPension",
-        annualAmount: this.purchasedAnnualAddedPension,
+        unreducedAnnualAmount: this.purchasedAnnualAddedPension,
+        paymentFactor: 1,
       },
-      {
-        component: "total",
-        annualAmount:
-          this.unreducedAlphaPension + this.purchasedAnnualAddedPension,
-      },
-    ];
+    ]).map((row) => ({
+      component: row.component,
+      annualAmount: row.payableAnnualAmount,
+    }));
   }
 );
 
@@ -723,19 +721,18 @@ function drawPensionAtAge(
     ageWithMonths(drawAge, drawAgeMonths)
   );
 
-  world.pensionBreakdown = buildBreakdownRows(
-    [
-      {
-        component: "alpha",
-        unreducedAnnualAmount: world.unreducedAlphaPension,
-      },
-      {
-        component: "addedPension",
-        unreducedAnnualAmount: world.purchasedAnnualAddedPension,
-      },
-    ],
-    factor
-  );
+  world.pensionBreakdown = calculateAlphaPensionComponentBreakdown([
+    {
+      component: "alpha",
+      unreducedAnnualAmount: world.unreducedAlphaPension,
+      paymentFactor: factor,
+    },
+    {
+      component: "addedPension",
+      unreducedAnnualAmount: world.purchasedAnnualAddedPension,
+      paymentFactor: factor,
+    },
+  ]);
 }
 
 Then(
@@ -821,15 +818,45 @@ Then(
 
 Then(
   "the annual alpha pension payable at age {int} before CPI increases should still be {float}",
-  function (this: AlphaPensionWorld, _age: number, expected: number) {
-    expectMoney(this.annualAlphaPensionPayable, expected);
+  function (this: AlphaPensionWorld, age: number, expected: number) {
+    const annualPensionAtLaterAge =
+      calculateMonthlyAlphaPensionGross(
+        addYears(this.dateOfBirth, age),
+        addYears(
+          this.dateOfBirth,
+          ageWithMonths(this.drawAge, this.drawAgeMonths)
+        ),
+        this.annualAlphaPensionPayable
+      ) * 12;
+
+    expectMoney(annualPensionAtLaterAge, expected);
   }
 );
 
 Then(
   "the model should not remove the early retirement reduction at normal pension age",
-  function () {
-    return;
+  function (
+    this: AlphaPensionWorld & {
+      unreducedAnnualPremiumPension?: number;
+      annualPremiumPensionAtAge60BeforeIncreases?: number;
+    }
+  ) {
+    if (
+      this.unreducedAnnualPremiumPension !== undefined &&
+      this.annualPremiumPensionAtAge60BeforeIncreases !== undefined
+    ) {
+      assertCondition(
+        this.annualPremiumPensionAtAge60BeforeIncreases <
+          this.unreducedAnnualPremiumPension,
+        "Expected the Premium early-retirement reduction to remain at NPA"
+      );
+      return;
+    }
+
+    assertCondition(
+      this.annualAlphaPensionPayable < this.unreducedAlphaPension,
+      "Expected the early-retirement reduction to remain in the payment amount"
+    );
   }
 );
 
@@ -839,9 +866,29 @@ When(
     this.epaOption = option;
     const yearsBeforeNpa = Number(option.replace("NPA-", ""));
     const payableAge = this.normalPensionAge - yearsBeforeNpa;
+    const settings = {
+      ...defaultSettings,
+      showAlpha: true,
+      alphaEpaEnabled: true,
+      alphaEpaYearsBeforeNpa: yearsBeforeNpa,
+    };
+    const issues = validateAlphaPensionRules({
+      settings,
+      lifeExpectancyDate: addYears(settings.dateOfBirth, 90),
+      alphaDrawDate: addYears(settings.dateOfBirth, payableAge),
+      alphaLeaveDate: addYears(settings.dateOfBirth, payableAge),
+      alphaAccrualStopDate: addYears(settings.dateOfBirth, payableAge),
+      alphaAbsDate: ACCEPTANCE_START_DATE,
+      alphaEpaAgeDate: addYears(settings.dateOfBirth, payableAge),
+      latestAlphaAddedPensionPurchaseDate: addYears(settings.dateOfBirth, 67),
+    });
+    const hasEpaAgeIssue = issues.some(
+      (issue) => issue.field === "alphaEpaYearsBeforeNpa"
+    );
+
     this.epaValidation = {
-      valid: payableAge >= 65,
-      payableAge: payableAge >= 65 ? payableAge : undefined,
+      valid: !hasEpaAgeIssue,
+      payableAge: hasEpaAgeIssue ? undefined : payableAge,
     };
   }
 );
@@ -912,40 +959,27 @@ function drawAllAlphaPensionAtAge(
   const drawAgeWithMonths = ageWithMonths(drawAge, drawAgeMonths);
 
   if (hasEpaPension) {
-    const standardPayable =
-      world.standardAlphaPension *
-      getAlphaEarlyRetirementFactor(world.normalPensionAge, drawAgeWithMonths);
-    const epaPayable =
+    const standardFactor = getAlphaEarlyRetirementFactor(
+      world.normalPensionAge,
+      drawAgeWithMonths
+    );
+    const epaFactor =
       drawAgeWithMonths >= epaAge
-        ? world.epaAlphaPension
-        : world.epaAlphaPension *
-          getAlphaEarlyRetirementFactor(epaAge, drawAgeWithMonths);
+        ? 1
+        : getAlphaEarlyRetirementFactor(epaAge, drawAgeWithMonths);
 
-    world.pensionBreakdown = [
+    world.pensionBreakdown = calculateAlphaPensionComponentBreakdown([
       {
         component: "standardAlpha",
         unreducedAnnualAmount: world.standardAlphaPension,
-        payableAnnualAmount: standardPayable,
-        annualReduction: world.standardAlphaPension - standardPayable,
+        paymentFactor: standardFactor,
       },
       {
         component: "epaAlpha",
         unreducedAnnualAmount: world.epaAlphaPension,
-        payableAnnualAmount: epaPayable,
-        annualReduction: world.epaAlphaPension - epaPayable,
+        paymentFactor: epaFactor,
       },
-      {
-        component: "total",
-        unreducedAnnualAmount:
-          world.standardAlphaPension + world.epaAlphaPension,
-        payableAnnualAmount: standardPayable + epaPayable,
-        annualReduction:
-          world.standardAlphaPension +
-          world.epaAlphaPension -
-          standardPayable -
-          epaPayable,
-      },
-    ];
+    ]);
     return;
   }
 
@@ -970,16 +1004,18 @@ function drawAllAlphaPensionAtAge(
   );
 
   world.calculatedAddedPension = addedPension;
-  world.pensionBreakdown = buildBreakdownRows(
-    [
-      {
-        component: "standardAlpha",
-        unreducedAnnualAmount: world.activeAlphaResult.alphaPension,
-      },
-      { component: "addedPension", unreducedAnnualAmount: addedPension },
-    ],
-    factor
-  );
+  world.pensionBreakdown = calculateAlphaPensionComponentBreakdown([
+    {
+      component: "standardAlpha",
+      unreducedAnnualAmount: world.activeAlphaResult.alphaPension,
+      paymentFactor: factor,
+    },
+    {
+      component: "addedPension",
+      unreducedAnnualAmount: addedPension,
+      paymentFactor: factor,
+    },
+  ]);
 }
 
 Given(
@@ -1167,5 +1203,435 @@ Then(
       normalizeActualRows(this.resultRows),
       parseExpectedRows(table)
     );
+  }
+);
+
+When(
+  "the Alpha Normal Pension Age is determined",
+  function (this: AlphaPensionWorld) {
+    this.derivedNormalPensionAge = calculateNormalPensionAge(this.dateOfBirth);
+  }
+);
+
+Then(
+  "the Alpha Normal Pension Age should be {int} years and {int} months",
+  function (this: AlphaPensionWorld, years: number, months: number) {
+    const totalMonths = Math.floor(this.derivedNormalPensionAge * 12 + 1e-8);
+
+    assertEqual(Math.floor(totalMonths / 12), years);
+    assertEqual(totalMonths % 12, months);
+  }
+);
+
+Given(
+  "the member has actual pensionable earnings of {float}",
+  function (this: AlphaPensionWorld, earnings: number) {
+    this.startingSalary = earnings;
+  }
+);
+
+When(
+  "one year of Alpha pension is accrued",
+  function (this: AlphaPensionWorld) {
+    const settings = {
+      ...defaultSettings,
+      showAlpha: true,
+      pensionableEarnings: this.startingSalary,
+      alphaPayRisePercent: 0,
+      alphaEpaEnabled: false,
+      partialRetirementEnabled: this.partialRetirementWorkPercent > 0,
+      partialRetirementStartAge: 0,
+      partialRetirementWorkPercent: this.partialRetirementWorkPercent,
+    };
+
+    this.monthlyStandardAccrual =
+      calculateMonthlyStandardAlphaAccrual(settings, ACCEPTANCE_START_DATE) *
+      12;
+  }
+);
+
+Then(
+  "the new annual Alpha pension should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.monthlyStandardAccrual, expected);
+  }
+);
+
+Given(
+  "the last statement recorded Alpha pension of {float} on {word}",
+  function (
+    this: AlphaPensionWorld,
+    annualPension: number,
+    statementDate: string
+  ) {
+    this.startingAlphaPension = annualPension;
+    this.alphaStatementDate = statementDate;
+  }
+);
+
+When(
+  "the starting Alpha pension is calculated on {word}",
+  function (this: AlphaPensionWorld, calculationDate: string) {
+    this.annualAlphaPensionPayable = calculateStartingAlphaPensionAtStartDate({
+      alphaPensionAccruedAtLastStatement: this.startingAlphaPension,
+      alphaPensionAbsDate: this.alphaStatementDate,
+      startDate: calculationDate,
+      pensionableEarnings: this.startingSalary,
+    });
+  }
+);
+
+Then(
+  "the starting Alpha pension should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.annualAlphaPensionPayable, expected);
+  }
+);
+
+Given(
+  "annual Alpha pension of {float}",
+  function (this: AlphaPensionWorld, annualPension: number) {
+    this.unreducedAlphaPension = annualPension;
+  }
+);
+
+Given(
+  "annual Alpha pension in payment of {float}",
+  function (this: AlphaPensionWorld, annualPension: number) {
+    this.unreducedAlphaPension = annualPension;
+  }
+);
+
+When(
+  "an annual price adjustment of {word} is applied",
+  function (this: AlphaPensionWorld, adjustment: string) {
+    this.annualPensionAfterIncrease = calculateAlphaPensionAfterAnnualIncrease(
+      this.unreducedAlphaPension,
+      parsePercent(adjustment)
+    );
+  }
+);
+
+Then(
+  "the adjusted annual Alpha pension should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.annualPensionAfterIncrease, expected);
+  }
+);
+
+Given(
+  "the member has {float} years of qualifying service",
+  function (this: AlphaPensionWorld, years: number) {
+    this.qualifyingServiceYears = years;
+  }
+);
+
+When(
+  "the member leaves Alpha pensionable service",
+  function (this: AlphaPensionWorld) {
+    this.leavingServiceOutcome = getAlphaLeavingServiceOutcome(
+      this.qualifyingServiceYears
+    );
+  }
+);
+
+Then(
+  "the leaving-service outcome should be {word}",
+  function (this: AlphaPensionWorld, expected: string) {
+    assertEqual(this.leavingServiceOutcome, expected);
+  }
+);
+
+Given(
+  "the member selects Added Pension benefits for {word}",
+  function (this: AlphaPensionWorld, benefits: string) {
+    this.addedPensionFactorType =
+      benefits === "self_only" ? "self" : "self_plus_beneficiaries";
+  }
+);
+
+When(
+  "the lump-sum Added Pension factor is selected for age {int} and NPA {int}",
+  function (this: AlphaPensionWorld, age: number, normalPensionAge: number) {
+    this.selectedAddedPensionFactor = getAddedPensionFactorForAge(
+      age,
+      this.addedPensionFactorType,
+      "lump_sum",
+      normalPensionAge
+    );
+  }
+);
+
+When(
+  "the lump-sum Added Pension factor is selected for age {int} and NPA {int} years {int} months",
+  function (
+    this: AlphaPensionWorld,
+    age: number,
+    normalPensionAgeYears: number,
+    normalPensionAgeMonths: number
+  ) {
+    this.selectedAddedPensionFactor = getAddedPensionFactorForAge(
+      age,
+      this.addedPensionFactorType,
+      "lump_sum",
+      ageWithMonths(normalPensionAgeYears, normalPensionAgeMonths)
+    );
+  }
+);
+
+Then(
+  "the Added Pension purchase factor should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertEqual(this.selectedAddedPensionFactor, expected);
+  }
+);
+
+When(
+  "the contribution is projected on {word} after stopping on {word}",
+  function (this: AlphaPensionWorld, rowDate: string, stopDate: string) {
+    assertCondition(this.addedPensionPurchase?.kind === "monthly");
+    this.calculatedAddedPension = calculateMonthlyAddedPension({
+      rowDate,
+      stopDate,
+      dateOfBirth: this.dateOfBirth,
+      addedPensionMonthlyContribution:
+        this.addedPensionPurchase.monthlyContribution,
+    });
+  }
+);
+
+Then(
+  "the new annual Added Pension should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.calculatedAddedPension, expected);
+  }
+);
+
+Given(
+  "the member has an Alpha opening balance of {float} at NPA {int}",
+  function (
+    this: AlphaPensionWorld,
+    openingBalance: number,
+    normalPensionAge: number
+  ) {
+    this.unreducedAlphaPension = openingBalance;
+    this.normalPensionAge = normalPensionAge;
+  }
+);
+
+Given(
+  /^the member retires late from (active|deferred) status$/,
+  function (this: AlphaPensionWorld, status: "active" | "deferred") {
+    this.lateRetirementStatus = status;
+  }
+);
+
+When(
+  "the member claims Alpha pension at age {int} and {int} months",
+  function (this: AlphaPensionWorld, age: number, months: number) {
+    this.lateRetirementMultiplier = calculateAlphaLateRetirementMultiplier({
+      normalPensionAge: this.normalPensionAge,
+      retirementAge: ageWithMonths(age, months),
+      status: this.lateRetirementStatus,
+    });
+    assertCondition(
+      this.lateRetirementMultiplier !== null,
+      "Expected a published late-retirement factor"
+    );
+    this.annualAlphaPensionPayable =
+      this.unreducedAlphaPension * this.lateRetirementMultiplier;
+  }
+);
+
+Then(
+  "the late-retirement multiplier should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertCondition(this.lateRetirementMultiplier !== null);
+    assertCondition(
+      Math.abs(this.lateRetirementMultiplier - expected) < 0.000001,
+      `Expected ${this.lateRetirementMultiplier} to be within 0.000001 of ${expected}`
+    );
+  }
+);
+
+Then(
+  "the annual Alpha opening balance with late increase should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.annualAlphaPensionPayable, expected);
+  }
+);
+
+Given(
+  "EPA accrual is active from {word} to {word}",
+  function (this: AlphaPensionWorld, startDate: string, endDate: string) {
+    this.epaAccrualStartDate = startDate;
+    this.epaAccrualEndDate = endDate;
+  }
+);
+
+When(
+  "Alpha accrual is calculated for {word}",
+  function (this: AlphaPensionWorld, rowDate: string) {
+    const settings = {
+      ...defaultSettings,
+      showAlpha: true,
+      pensionableEarnings: this.startingSalary,
+      alphaPayRisePercent: 0,
+      alphaEpaEnabled: true,
+      alphaEpaStartDate: this.epaAccrualStartDate,
+      alphaEpaEndDate: this.epaAccrualEndDate,
+    };
+
+    this.monthlyStandardAccrual = calculateMonthlyStandardAlphaAccrual(
+      settings,
+      rowDate
+    );
+    this.monthlyEpaAccrual = calculateMonthlyEpaAlphaAccrual(settings, rowDate);
+  }
+);
+
+Then(
+  "monthly standard Alpha accrual should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.monthlyStandardAccrual, expected);
+  }
+);
+
+Then(
+  "monthly EPA Alpha accrual should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    expectMoney(this.monthlyEpaAccrual, expected);
+  }
+);
+
+When("the EPA payable date is determined", function (this: AlphaPensionWorld) {
+  this.epaPayableDate = getAlphaEpaDate({
+    ...defaultSettings,
+    dateOfBirth: this.dateOfBirth,
+    alphaEpaEnabled: true,
+    alphaEpaYearsBeforeNpa: Number(this.epaOption.replace("NPA-", "")),
+  });
+});
+
+Then(
+  "the EPA payable date should be {word}",
+  function (this: AlphaPensionWorld, expected: string) {
+    assertEqual(this.epaPayableDate, expected);
+  }
+);
+
+Given(
+  "annual Alpha pension before commutation of {float}",
+  function (this: AlphaPensionWorld, annualPension: number) {
+    this.unreducedAlphaPension = annualPension;
+  }
+);
+
+Given(
+  "annual Alpha pension exchanged of {float}",
+  function (this: AlphaPensionWorld, annualPension: number) {
+    this.annualPensionExchanged = annualPension;
+  }
+);
+
+When("Alpha commutation is calculated", function (this: AlphaPensionWorld) {
+  this.commutationResult = calculateAlphaCommutation({
+    annualPensionBeforeCommutation: this.unreducedAlphaPension,
+    annualPensionExchanged: this.annualPensionExchanged,
+  });
+});
+
+Then(
+  "annual Alpha pension after commutation should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertCondition(this.commutationResult);
+    expectMoney(this.commutationResult.annualPensionAfterCommutation, expected);
+  }
+);
+
+Then(
+  "the Alpha retirement lump sum should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertCondition(this.commutationResult);
+    expectMoney(this.commutationResult.retirementLumpSum, expected);
+  }
+);
+
+Given(
+  "the member has accrued Alpha pension of {float}",
+  function (this: AlphaPensionWorld, annualPension: number) {
+    this.unreducedAlphaPension = annualPension;
+  }
+);
+
+Given(
+  "the member chooses to take {word} of it",
+  function (this: AlphaPensionWorld, percentage: string) {
+    this.partialRetirementPensionTaken = parsePercent(percentage);
+  }
+);
+
+Given(
+  "their pensionable earnings reduce by {word}",
+  function (this: AlphaPensionWorld, percentage: string) {
+    this.partialRetirementPayReduction = parsePercent(percentage);
+  }
+);
+
+Given(
+  "the member works at {word} of their previous hours after partial retirement",
+  function (this: AlphaPensionWorld, percentage: string) {
+    this.partialRetirementWorkPercent = parsePercent(percentage);
+  }
+);
+
+Given(
+  "they have reached minimum pension age",
+  function (this: AlphaPensionWorld) {
+    this.partialRetirementMinimumAgeReached = true;
+  }
+);
+
+Given(
+  "their employer agrees to partial retirement",
+  function (this: AlphaPensionWorld) {
+    this.partialRetirementEmployerAgreement = true;
+  }
+);
+
+When(
+  "Alpha partial retirement is calculated",
+  function (this: AlphaPensionWorld) {
+    this.partialRetirementResult = calculateAlphaPartialRetirement({
+      accruedAlphaPension: this.unreducedAlphaPension,
+      pensionTakenPercent: this.partialRetirementPensionTaken,
+      payReductionPercent: this.partialRetirementPayReduction,
+      hasEmployerAgreement: this.partialRetirementEmployerAgreement,
+      hasReachedMinimumPensionAge: this.partialRetirementMinimumAgeReached,
+    });
+  }
+);
+
+Then(
+  "partial retirement should be {word}",
+  function (this: AlphaPensionWorld, expected: string) {
+    assertCondition(this.partialRetirementResult);
+    assertEqual(this.partialRetirementResult.eligible, expected === "eligible");
+  }
+);
+
+Then(
+  "annual Alpha pension released should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertCondition(this.partialRetirementResult);
+    expectMoney(this.partialRetirementResult.annualPensionPayable, expected);
+  }
+);
+
+Then(
+  "annual Alpha pension remaining should be {float}",
+  function (this: AlphaPensionWorld, expected: number) {
+    assertCondition(this.partialRetirementResult);
+    expectMoney(this.partialRetirementResult.remainingAccruedPension, expected);
   }
 );

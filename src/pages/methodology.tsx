@@ -260,6 +260,17 @@ export function MethodologyPage() {
             are enabled.
           </li>
           <li>
+            The modeller does not calculate Alpha ill-health retirement, death
+            benefits, survivor benefits, transfers, pension sharing, scheme pays
+            adjustments, or remedy-specific benefit choices.
+          </li>
+          <li>
+            Alpha partial retirement in the planning journey changes future
+            earnings, accrual and saving assumptions. It does not currently add
+            a separately selected partial-retirement pension payment to the
+            income timeline.
+          </li>
+          <li>
             Additional guaranteed income is a simple gross annual amount entered
             by the user. It does not model provider-specific rules, early
             retirement factors, commutation, survivor benefits, GMP, or scheme
@@ -343,7 +354,23 @@ export function MethodologyPage() {
         <FormulaBlock>{"CPI"}</FormulaBlock>
         <p className="section-copy">
           Leaving the scheme stops future 2.32% accrual. The model applies CPI
-          revaluation to accrued Alpha pension.
+          revaluation to accrued Alpha pension. The scheme&apos;s annual price
+          adjustment can be positive or negative, and pension in payment
+          continues to receive the applicable annual pension increase.
+          Projection inputs remain assumptions rather than forecasts.
+        </p>
+        <p className="section-copy">
+          Members leaving with at least two years of qualifying service will
+          normally retain preserved Alpha benefits. Shorter service can instead
+          lead to refund or transfer options. See the{" "}
+          <a
+            href={knowledgeLinks.alphaLeavingService}
+            target="_blank"
+            rel="noreferrer"
+          >
+            official leaving-service guidance
+          </a>
+          .
         </p>
 
         <h3>Alpha EPA</h3>
@@ -366,6 +393,16 @@ export function MethodologyPage() {
           portion is not reduced for early payment. The standard Alpha portion
           continues to use the normal Alpha reduction test against Normal
           Pension Age.
+        </p>
+        <p className="section-copy">
+          An EPA cannot provide an unreduced age below 65. EPA accrual is
+          revalued like the main Alpha pension, and a change to State Pension
+          age can change both Normal Pension Age and the corresponding EPA age.
+          See the{" "}
+          <a href={knowledgeLinks.alphaEpa} target="_blank" rel="noreferrer">
+            official EPA guidance
+          </a>
+          .
         </p>
 
         <h3>Alpha draw age and early retirement</h3>
@@ -406,9 +443,36 @@ export function MethodologyPage() {
           revise the workbook or factors, so important decisions should be
           checked against an official pension quotation or statement.
         </p>
+        <h3>Alpha late retirement</h3>
         <p className="section-copy">
-          The model does not add a late-retirement enhancement when Alpha is
-          drawn after Normal Pension Age; it treats the reduction factor as 1.
+          The Alpha calculation domain distinguishes members remaining in active
+          service from members retiring from deferred status. Active opening
+          balances use GAD age-addition tables 0-415 and 0-416. Deferred opening
+          balances use late-payment-supplement tables 0-419 and 0-420. Self-only
+          Added Pension uses its separate table.
+        </p>
+        <p className="section-copy">
+          The factor is selected for age in completed years and months. A
+          cumulative multiplier for an opening balance is calculated by dividing
+          the factor at payment age by the factor at Normal Pension Age.
+          Active-member age-addition percentages are rounded to four decimal
+          places as directed by GAD. GAD&apos;s full active-member calculation
+          applies additions to scheme-year opening balances and may include an
+          assumed age addition on leaving or retirement. See the{" "}
+          <a
+            href={knowledgeLinks.alphaLateRetirementMethodology}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GAD Alpha age-addition methodology
+          </a>
+          .
+        </p>
+        <p className="section-copy">
+          The main projection timeline does not yet reconstruct every
+          scheme-year age addition across pension earned after Normal Pension
+          Age. Late-retirement examples therefore cover a stated opening balance
+          and should not be treated as an official late-retirement quotation.
         </p>
 
         <h3>Alpha added pension</h3>
@@ -449,6 +513,24 @@ export function MethodologyPage() {
           the number of 1 Aprils after the calculation date up to Normal Pension
           Age. The purchased amount is then tracked alongside standard Alpha for
           the projection&apos;s annual CPI revaluation.
+        </p>
+
+        <h3>Alpha retirement lump sum</h3>
+        <p className="section-copy">
+          Alpha does not provide an automatic retirement lump sum. Subject to
+          the scheme and tax limits, a member can exchange annual pension for a
+          lump sum at £12 of lump sum for each £1 of annual pension exchanged.
+          The calculation domain captures that exchange rule, but the main
+          projection journey does not currently include a commutation amount
+          control. See the{" "}
+          <a
+            href={knowledgeLinks.alphaCommutation}
+            target="_blank"
+            rel="noreferrer"
+          >
+            official lump-sum guidance
+          </a>
+          .
         </p>
       </section>
 
@@ -944,6 +1026,23 @@ export function MethodologyPage() {
           State Pension, or the current ISA and SIPP balances already entered.
           It changes future accrual and regular saving assumptions from the
           selected start age.
+        </p>
+        <p className="section-copy">
+          Under the Alpha scheme rules, partial retirement also requires
+          employer agreement, the member to have reached minimum pension age,
+          and a reduction in pensionable earnings of at least 20%. A member may
+          take some or all of their accrued pension and continue building
+          further pension. The current planning controls model reduced future
+          work and saving only; they do not place a selected portion of accrued
+          Alpha pension into payment. See the{" "}
+          <a
+            href={knowledgeLinks.alphaPartialRetirement}
+            target="_blank"
+            rel="noreferrer"
+          >
+            official partial-retirement guidance
+          </a>
+          .
         </p>
       </section>
 

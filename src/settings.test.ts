@@ -633,7 +633,7 @@ describe("settings unit tests", () => {
         expect.objectContaining({
           field: "alphaAddedPensionMonthly",
           message:
-            "Monthly added pension purchases must stop before age 68 because the factor table does not include age 68 or later.",
+            "Monthly added pension purchases must stop before age 68 because purchases are only supported through age 67.",
         }),
         expect.objectContaining({
           field: "alphaAddedPensionLumpSums",

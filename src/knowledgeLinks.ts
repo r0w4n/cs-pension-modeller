@@ -11,6 +11,16 @@ export const knowledgeLinks = {
     "https://www.civilservicepensionscheme.org.uk/memberhub/joining-the-pension-scheme/alpha-or-partnership/",
   alphaEarlyRetirementFactors:
     "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__csops__early-payment-reduction-normal-health-and-age-addition/tables",
+  alphaLateRetirementMethodology:
+    "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__csops__early-payment-reduction-normal-health-and-age-addition/methodology/age-additions-and-assumed-age-additions-for-active-members-retiring-after-npaepa",
+  alphaLeavingService:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01126",
+  alphaCommutation:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01211",
+  alphaPartialRetirement:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01205",
+  alphaEpa:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/planning-for-retirement/what-are-my-options/early-retirement/epa/",
   statePensionAge: "https://www.gov.uk/state-pension-age",
   statePensionDeferral:
     "https://www.gov.uk/deferring-state-pension/if-you-reach-state-pension-age-on-or-after-6-april-2016",

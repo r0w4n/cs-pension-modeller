@@ -31,6 +31,9 @@ describe("MethodologyPage", () => {
       "Inflation is only modelled where explicit CPI or growth assumptions are enabled."
     );
     expect(assumptionsSectionElement).toHaveTextContent(
+      "The modeller does not calculate Alpha ill-health retirement, death benefits, survivor benefits, transfers, pension sharing, scheme pays adjustments, or remedy-specific benefit choices."
+    );
+    expect(assumptionsSectionElement).toHaveTextContent(
       "State Pension modelling does not cover benefit interactions, overseas rules, lump-sum arrears choices, or pre-2016 deferral rules."
     );
     expect(assumptionsSectionElement).toHaveTextContent(
@@ -88,6 +91,15 @@ describe("MethodologyPage", () => {
     expect(alphaSection as HTMLElement).toHaveTextContent(
       "If NPA or EPA is itself a non-integer age"
     );
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "age-addition tables 0-415 and 0-416"
+    );
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "late-payment-supplement tables 0-419 and 0-420"
+    );
+    expect(alphaSection as HTMLElement).toHaveTextContent(
+      "£12 of lump sum for each £1 of annual pension exchanged"
+    );
     expect(
       screen.getByRole("link", {
         name: "GAD Alpha early-payment factor tables",
@@ -95,6 +107,14 @@ describe("MethodologyPage", () => {
     ).toHaveAttribute(
       "href",
       "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__csops__early-payment-reduction-normal-health-and-age-addition/tables"
+    );
+    expect(
+      screen.getByRole("link", {
+        name: "GAD Alpha age-addition methodology",
+      })
+    ).toHaveAttribute(
+      "href",
+      "https://gadfactorguidancehub.co.uk/guidance/csps_gb/erf-and-lrf/csps_gb__csops__early-payment-reduction-normal-health-and-age-addition/methodology/age-additions-and-assumed-age-additions-for-active-members-retiring-after-npaepa"
     );
   });
 
@@ -153,6 +173,9 @@ describe("MethodologyPage", () => {
     ).toHaveTextContent(
       "The EPA unreduced date is calculated as Normal Pension Age minus the selected number of EPA years."
     );
+    expect(
+      screen.getByText(/Under the Alpha scheme rules, partial retirement/)
+    ).toHaveTextContent("reduction in pensionable earnings of at least 20%");
     expect(
       screen.getByText(/grosses up net additions by 1 \/ 0.8/)
     ).toBeInTheDocument();

@@ -37,7 +37,7 @@ import {
   getStatePensionDateYearRange,
   isStatePensionGrowthField,
 } from "./state-pension";
-import { isTaxAssumptionField } from "./tax";
+import { isTaxAssumptionField, shouldRenderTaxAssumptionField } from "./tax";
 
 export function shouldRenderField(
   fieldId: FieldDefinition["id"],
@@ -48,7 +48,8 @@ export function shouldRenderField(
     shouldRenderCsAvcField(fieldId, settings) &&
     shouldRenderIsaField(fieldId, settings) &&
     shouldRenderLisaField(fieldId, settings) &&
-    shouldRenderClassicField(fieldId, settings)
+    shouldRenderClassicField(fieldId, settings) &&
+    shouldRenderTaxAssumptionField(fieldId, settings)
   );
 }
 

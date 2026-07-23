@@ -2338,6 +2338,34 @@ describe("App settings form", () => {
     ]);
   });
 
+  it("shows tax withdrawal assumptions only for enabled optional sections", () => {
+    renderAcknowledgedApp();
+
+    fireEvent.click(screen.getByLabelText("Taxation"));
+
+    openJourneyStep(/Tax assumptions/i);
+
+    expect(
+      screen.getByLabelText("SIPP tax-free withdrawal share (%)")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("CS AVC tax-free withdrawal share (%)")
+    ).not.toBeInTheDocument();
+
+    openJourneyStep(/Optional sections/i);
+    fireEvent.click(screen.getByLabelText("SIPP"));
+    fireEvent.click(screen.getByLabelText("Civil Service AVC"));
+
+    openJourneyStep(/Tax assumptions/i);
+
+    expect(
+      screen.queryByLabelText("SIPP tax-free withdrawal share (%)")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("CS AVC tax-free withdrawal share (%)")
+    ).toBeInTheDocument();
+  });
+
   it("does not show expandable modeller limitations on the results page", () => {
     renderAcknowledgedExpertResult();
 

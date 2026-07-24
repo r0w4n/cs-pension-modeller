@@ -104,4 +104,28 @@ describe("Premium projection integration", () => {
     expect(summary.premiumPension.earlyRetirementFactor).toBe(0.916);
     expect(summary.premiumPension.factorUnavailable).toBe(false);
   });
+
+  it("continues CPI-linked Premium increases after an early pension enters payment", () => {
+    const settings = createPremiumSettings({
+      lifeExpectancy: 60,
+      premiumDrawAge: 58,
+    });
+    const rows = createProjectionTable(settings);
+    const drawRow = rows.find((row) => row.date === "2028-04-01");
+    const oneYearInPaymentRow = rows.find((row) => row.date === "2029-04-01");
+    const expectedAtDraw = 5000 * 1.025 ** 8 * 0.916;
+    const expectedAfterOneYear = 5000 * 1.025 ** 9 * 0.916;
+
+    expect(drawRow?.annualPremiumPensionIncludingReduction).toBeCloseTo(
+      expectedAtDraw,
+      6
+    );
+    expect(
+      oneYearInPaymentRow?.annualPremiumPensionIncludingReduction
+    ).toBeCloseTo(expectedAfterOneYear, 6);
+    expect(oneYearInPaymentRow?.monthlyPremiumPensionGross).toBeCloseTo(
+      expectedAfterOneYear / 12,
+      6
+    );
+  });
 });

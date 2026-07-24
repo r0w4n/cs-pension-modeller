@@ -632,10 +632,14 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The entered Premium amount is increased by CPI from the valuation or
-          statement date to the selected draw age. In real-terms mode this CPI
-          increase is removed, so the preserved Premium amount is flat in
-          today&apos;s spending power. In nominal mode it compounds using the
-          main inflation assumption.
+          statement date and continues to receive CPI-linked increases after
+          payment begins. In real-terms mode these CPI increases are removed, so
+          the Premium amount is flat in today&apos;s spending power. In nominal
+          mode it compounds using the main inflation assumption. The model uses
+          simplified whole-year compounding from the valuation date; it does not
+          reproduce the scheme&apos;s April increase date or the proportionate
+          first increase for a pension that has been in payment for less than a
+          year.
         </p>
         <p className="section-copy">
           If Premium is taken before its Normal Pension Age, a Premium

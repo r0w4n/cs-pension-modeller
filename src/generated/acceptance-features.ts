@@ -8759,8 +8759,8 @@ export const acceptanceFeatures = [
       },
       {
         id: "line-224",
-        keyword: "Scenario",
-        name: "Increase Premium pension in payment using CPI",
+        keyword: "Scenario Outline",
+        name: "Apply the CPI setting to Premium pension increases in payment",
         description: "",
         tags: ["@cpi", "@in-payment"],
         status: "covered",
@@ -8784,7 +8784,7 @@ export const acceptanceFeatures = [
           {
             id: "line-228",
             keyword: "And",
-            text: "CPI revaluation is on",
+            text: "CPI revaluation is <cpiEnabled>",
           },
           {
             id: "line-229",
@@ -8794,22 +8794,82 @@ export const acceptanceFeatures = [
           {
             id: "line-230",
             keyword: "Then",
-            text: "the annual Premium pension after increase should be 12360.00",
+            text: "the annual Premium pension after increase should be <expectedAnnualPension>",
           },
           {
             id: "line-231",
             keyword: "And",
-            text: "the monthly gross Premium pension should be 1030.00",
+            text: "the monthly gross Premium pension should be <expectedMonthlyPension>",
           },
         ],
-        examples: [],
+        examples: [
+          {
+            id: "line-233",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-234",
+                cells: [
+                  {
+                    id: "line-234-column-9",
+                    value: "cpiEnabled",
+                  },
+                  {
+                    id: "line-234-column-22",
+                    value: "expectedAnnualPension",
+                  },
+                  {
+                    id: "line-234-column-46",
+                    value: "expectedMonthlyPension",
+                  },
+                ],
+              },
+              {
+                id: "line-235",
+                cells: [
+                  {
+                    id: "line-235-column-9",
+                    value: "on",
+                  },
+                  {
+                    id: "line-235-column-22",
+                    value: "12360.00",
+                  },
+                  {
+                    id: "line-235-column-46",
+                    value: "1030.00",
+                  },
+                ],
+              },
+              {
+                id: "line-236",
+                cells: [
+                  {
+                    id: "line-236-column-9",
+                    value: "off",
+                  },
+                  {
+                    id: "line-236-column-22",
+                    value: "12000.00",
+                  },
+                  {
+                    id: "line-236-column-46",
+                    value: "1000.00",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
       {
         id: "line-239",
-        keyword: "Scenario Outline",
-        name: "Member gives up Premium pension for an optional lump sum",
+        keyword: "Scenario",
+        name: "Increase an early-reduced Premium pension in payment without removing the reduction",
         description: "",
-        tags: ["@lump-sum", "@commutation"],
+        tags: ["@cpi", "@in-payment", "@early-retirement"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
@@ -8821,116 +8881,178 @@ export const acceptanceFeatures = [
           {
             id: "line-241",
             keyword: "And",
-            text: "the member has annual Premium pension before commutation of <annualPensionBeforeCommutation>",
+            text: "the member has Premium normal pension age 60",
           },
           {
             id: "line-242",
             keyword: "And",
-            text: "the member chooses an optional lump sum of <chosenLumpSum>",
+            text: "the member has unreduced annual Premium pension of 12000.00",
           },
           {
             id: "line-243",
+            keyword: "And",
+            text: "the annual CPI assumption is 3.00%",
+          },
+          {
+            id: "line-244",
+            keyword: "And",
+            text: "CPI revaluation is on",
+          },
+          {
+            id: "line-245",
+            keyword: "When",
+            text: "the member draws Premium pension at age 55",
+          },
+          {
+            id: "line-246",
+            keyword: "Then",
+            text: "the annual Premium pension payable should be 9672.00",
+          },
+          {
+            id: "line-247",
+            keyword: "When",
+            text: "the pension is increased for 1 year in payment",
+          },
+          {
+            id: "line-248",
+            keyword: "Then",
+            text: "the annual Premium pension after increase should be 9962.16",
+          },
+          {
+            id: "line-249",
+            keyword: "And",
+            text: "the monthly gross Premium pension should be 830.18",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-257",
+        keyword: "Scenario Outline",
+        name: "Member gives up Premium pension for an optional lump sum",
+        description: "",
+        tags: ["@lump-sum", "@commutation"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-258",
+            keyword: "Given",
+            text: "the member has a Premium pension record",
+          },
+          {
+            id: "line-259",
+            keyword: "And",
+            text: "the member has annual Premium pension before commutation of <annualPensionBeforeCommutation>",
+          },
+          {
+            id: "line-260",
+            keyword: "And",
+            text: "the member chooses an optional lump sum of <chosenLumpSum>",
+          },
+          {
+            id: "line-261",
             keyword: "When",
             text: "the Premium commutation calculation is performed",
           },
           {
-            id: "line-244",
+            id: "line-262",
             keyword: "Then",
             text: "the annual Premium pension after commutation should be <annualPensionAfterCommutation>",
           },
           {
-            id: "line-245",
+            id: "line-263",
             keyword: "And",
             text: "the optional lump sum payable should be <optionalLumpSum>",
           },
         ],
         examples: [
           {
-            id: "line-247",
+            id: "line-265",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-248",
+                id: "line-266",
                 cells: [
                   {
-                    id: "line-248-column-9",
+                    id: "line-266-column-9",
                     value: "annualPensionBeforeCommutation",
                   },
                   {
-                    id: "line-248-column-42",
+                    id: "line-266-column-42",
                     value: "chosenLumpSum",
                   },
                   {
-                    id: "line-248-column-58",
+                    id: "line-266-column-58",
                     value: "annualPensionAfterCommutation",
                   },
                   {
-                    id: "line-248-column-90",
+                    id: "line-266-column-90",
                     value: "optionalLumpSum",
                   },
                 ],
               },
               {
-                id: "line-249",
+                id: "line-267",
                 cells: [
                   {
-                    id: "line-249-column-9",
+                    id: "line-267-column-9",
                     value: "12000.00",
                   },
                   {
-                    id: "line-249-column-42",
+                    id: "line-267-column-42",
                     value: "0.00",
                   },
                   {
-                    id: "line-249-column-58",
+                    id: "line-267-column-58",
                     value: "12000.00",
                   },
                   {
-                    id: "line-249-column-90",
+                    id: "line-267-column-90",
                     value: "0.00",
                   },
                 ],
               },
               {
-                id: "line-250",
+                id: "line-268",
                 cells: [
                   {
-                    id: "line-250-column-9",
+                    id: "line-268-column-9",
                     value: "12000.00",
                   },
                   {
-                    id: "line-250-column-42",
+                    id: "line-268-column-42",
                     value: "12000.00",
                   },
                   {
-                    id: "line-250-column-58",
+                    id: "line-268-column-58",
                     value: "11000.00",
                   },
                   {
-                    id: "line-250-column-90",
+                    id: "line-268-column-90",
                     value: "12000.00",
                   },
                 ],
               },
               {
-                id: "line-251",
+                id: "line-269",
                 cells: [
                   {
-                    id: "line-251-column-9",
+                    id: "line-269-column-9",
                     value: "12000.00",
                   },
                   {
-                    id: "line-251-column-42",
+                    id: "line-269-column-42",
                     value: "24000.00",
                   },
                   {
-                    id: "line-251-column-58",
+                    id: "line-269-column-58",
                     value: "10000.00",
                   },
                   {
-                    id: "line-251-column-90",
+                    id: "line-269-column-90",
                     value: "24000.00",
                   },
                 ],
@@ -8940,7 +9062,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-254",
+        id: "line-272",
         keyword: "Scenario",
         name: "Reject optional lump sum above the permitted maximum",
         description: "",
@@ -8949,32 +9071,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-255",
+            id: "line-273",
             keyword: "Given",
             text: "the member has a Premium pension record",
           },
           {
-            id: "line-256",
+            id: "line-274",
             keyword: "And",
             text: "the member has annual Premium pension before commutation of 12000.00",
           },
           {
-            id: "line-257",
+            id: "line-275",
             keyword: "And",
             text: "the maximum permitted optional lump sum is 60000.00",
           },
           {
-            id: "line-258",
+            id: "line-276",
             keyword: "When",
             text: "the member chooses an optional lump sum of 75000.00",
           },
           {
-            id: "line-259",
+            id: "line-277",
             keyword: "Then",
             text: "the optional lump sum should be rejected",
           },
           {
-            id: "line-260",
+            id: "line-278",
             keyword: "And",
             text: "the model should show the validation message:",
             docString:
@@ -8984,7 +9106,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-271",
+        id: "line-289",
         keyword: "Scenario",
         name: "Warn that Premium may be subject to abatement on Civil Service re-employment",
         description: "",
@@ -8993,22 +9115,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-272",
+            id: "line-290",
             keyword: "Given",
             text: "the member has a Premium pension in payment",
           },
           {
-            id: "line-273",
+            id: "line-291",
             keyword: "And",
             text: "the member indicates they may return to Civil Service employment",
           },
           {
-            id: "line-274",
+            id: "line-292",
             keyword: "When",
             text: "the pension result is displayed",
           },
           {
-            id: "line-275",
+            id: "line-293",
             keyword: "Then",
             text: "the model should show the warning:",
             docString:
@@ -9018,7 +9140,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-282",
+        id: "line-300",
         keyword: "Scenario",
         name: "Do not show alpha-only abatement wording for Premium",
         description: "",
@@ -9027,22 +9149,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-283",
+            id: "line-301",
             keyword: "Given",
             text: "the member has a Premium pension in payment",
           },
           {
-            id: "line-284",
+            id: "line-302",
             keyword: "When",
             text: "the pension result is displayed",
           },
           {
-            id: "line-285",
+            id: "line-303",
             keyword: "Then",
             text: 'the model should not say "alpha pensions are subject to abatement"',
           },
           {
-            id: "line-286",
+            id: "line-304",
             keyword: "And",
             text: "the model should explain abatement only for applicable legacy pension schemes",
           },
@@ -9050,7 +9172,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-294",
+        id: "line-312",
         keyword: "Scenario",
         name: "Project preserved Premium pension and draw it early with optional lump sum",
         description: "",
@@ -9065,136 +9187,136 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-295",
+            id: "line-313",
             keyword: "Given",
             text: "the member has a Premium pension record",
           },
           {
-            id: "line-296",
+            id: "line-314",
             keyword: "And",
             text: "the member has Premium reckonable service of 10.0000 years",
           },
           {
-            id: "line-297",
+            id: "line-315",
             keyword: "And",
             text: 'the member has final salary link status "broken"',
           },
           {
-            id: "line-298",
+            id: "line-316",
             keyword: "And",
             text: "the member has preserved final pensionable earnings of 72000.00",
           },
           {
-            id: "line-299",
+            id: "line-317",
             keyword: "And",
             text: "the member has Premium normal pension age 60",
           },
           {
-            id: "line-300",
+            id: "line-318",
             keyword: "And",
             text: "the annual CPI assumption is 0.00%",
           },
           {
-            id: "line-301",
+            id: "line-319",
             keyword: "And",
             text: "CPI revaluation is off",
           },
           {
-            id: "line-302",
+            id: "line-320",
             keyword: "When",
             text: "the member draws Premium pension at age 55",
           },
           {
-            id: "line-303",
+            id: "line-321",
             keyword: "And",
             text: "the member chooses an optional lump sum of 9000.00",
           },
           {
-            id: "line-304",
+            id: "line-322",
             keyword: "Then",
             text: "the unreduced annual Premium pension before early retirement should be 12000.00",
           },
           {
-            id: "line-305",
+            id: "line-323",
             keyword: "And",
             text: "the annual Premium pension after early retirement reduction should be 9672.00",
           },
           {
-            id: "line-306",
+            id: "line-324",
             keyword: "And",
             text: "the annual Premium pension after commutation should be 8922.00",
           },
           {
-            id: "line-307",
+            id: "line-325",
             keyword: "And",
             text: "the optional lump sum payable should be 9000.00",
           },
           {
-            id: "line-308",
+            id: "line-326",
             keyword: "And",
             text: "the result should show:",
             table: [
               {
-                id: "line-309",
+                id: "line-327",
                 cells: [
                   {
-                    id: "line-309-column-9",
+                    id: "line-327-column-9",
                     value: "component",
                   },
                   {
-                    id: "line-309-column-43",
+                    id: "line-327-column-43",
                     value: "annualAmount",
                   },
                 ],
               },
               {
-                id: "line-310",
+                id: "line-328",
                 cells: [
                   {
-                    id: "line-310-column-9",
+                    id: "line-328-column-9",
                     value: "premiumBeforeEarlyRetirement",
                   },
                   {
-                    id: "line-310-column-43",
+                    id: "line-328-column-43",
                     value: "12000.00",
                   },
                 ],
               },
               {
-                id: "line-311",
+                id: "line-329",
                 cells: [
                   {
-                    id: "line-311-column-9",
+                    id: "line-329-column-9",
                     value: "premiumAfterEarlyRetirement",
                   },
                   {
-                    id: "line-311-column-43",
+                    id: "line-329-column-43",
                     value: "9672.00",
                   },
                 ],
               },
               {
-                id: "line-312",
+                id: "line-330",
                 cells: [
                   {
-                    id: "line-312-column-9",
+                    id: "line-330-column-9",
                     value: "pensionGivenUpForOptionalLumpSum",
                   },
                   {
-                    id: "line-312-column-44",
+                    id: "line-330-column-44",
                     value: "750.00",
                   },
                 ],
               },
               {
-                id: "line-313",
+                id: "line-331",
                 cells: [
                   {
-                    id: "line-313-column-9",
+                    id: "line-331-column-9",
                     value: "premiumAfterCommutation",
                   },
                   {
-                    id: "line-313-column-43",
+                    id: "line-331-column-43",
                     value: "8922.00",
                   },
                 ],

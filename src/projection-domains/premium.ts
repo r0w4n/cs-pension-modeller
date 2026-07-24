@@ -78,7 +78,7 @@ export function calculateAnnualPremiumPensionAtDate(input: {
   rowDate: string;
   premiumDrawDate: string;
 }) {
-  const { settings, rowDate, premiumDrawDate } = input;
+  const { settings, rowDate } = input;
 
   if (
     !settings.showPremium ||
@@ -88,14 +88,13 @@ export function calculateAnnualPremiumPensionAtDate(input: {
     return 0;
   }
 
-  const calculationDate = rowDate < premiumDrawDate ? rowDate : premiumDrawDate;
   const cpiRate =
     settings.projectionBasis === "real"
       ? 0
       : settings.inflationRateAnnual / 100;
   const revaluationYears = calculateWholeYearDifference(
     settings.premiumValuationDate,
-    calculationDate
+    rowDate
   );
 
   return (

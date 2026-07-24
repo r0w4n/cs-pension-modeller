@@ -861,7 +861,7 @@ export const fieldGroups: FieldGroup[] = [
     eyebrow: "Premium Pension",
     title: "Your Premium pension",
     description:
-      "Premium is a closed legacy Civil Service defined benefit pension. You cannot build up new Premium pension. Enter the preserved annual Premium pension from your statement or pension portal; the modeller increases it by CPI only until the age you choose to take it.",
+      "Premium is a closed legacy Civil Service defined benefit pension. You cannot build up new Premium pension. Enter the preserved annual Premium pension from your statement or pension portal; the modeller applies simplified CPI-linked increases before and after the age you choose to take it.",
     fields: [
       {
         id: "premiumAnnualPensionAtValuationDate",
@@ -879,7 +879,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "Premium valuation or statement date",
         type: "date",
         description:
-          "The date your preserved Premium pension amount relates to. The modeller applies CPI from this date to the selected Premium draw age only.",
+          "The date your preserved Premium pension amount relates to. The modeller uses this date as the starting point for simplified whole-year CPI-linked increases before and after payment begins.",
       },
       {
         id: "premiumDrawAge",

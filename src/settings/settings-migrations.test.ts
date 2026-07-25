@@ -3,6 +3,7 @@ import {
   migrateFromV2ToV3,
   migrateFromV3ToV4,
   migrateFromV4ToV5,
+  migrateFromV5ToV6,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -91,6 +92,17 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("keeps existing plans on flat spending during v5 migration", () => {
+    expect(
+      migrateFromV5ToV6({
+        desiredRetirementIncome: 35_000,
+      })
+    ).toEqual({
+      desiredRetirementIncome: 35_000,
+      spendingStrategyType: "FLAT",
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -118,6 +130,7 @@ describe("settings-migrations", () => {
       csAvcWithdrawalPercent: 4,
       csAvcWithdrawalTargetAge: 75,
       taxCsAvcTaxFreeWithdrawalPercent: 25,
+      spendingStrategyType: "FLAT",
     });
   });
 

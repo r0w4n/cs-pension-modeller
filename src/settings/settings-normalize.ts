@@ -70,6 +70,7 @@ import {
   normalizeSippDrawAge,
   normalizeStatePensionDrawAge,
 } from "./settings-shared/state";
+import { normalizeSpendingSmile } from "../spending-smile";
 
 const numericSettingRules = {
   ...personalDetailsNumericSettingRules,
@@ -315,6 +316,15 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         value as PensionSettings["projectionBasis"],
         normalizeNumericSetting
       ) as PensionSettings[K];
+    case "spendingStrategyType":
+      return (
+        value === "SPENDING_SMILE" ? "SPENDING_SMILE" : "FLAT"
+      ) as PensionSettings[K];
+    case "spendingSmile":
+      return normalizeSpendingSmile(
+        value,
+        defaultSettings.desiredRetirementIncome
+      ) as PensionSettings[K];
     case "inflationRateAnnual":
       return normalizeInflationSetting(
         "inflationRateAnnual",
@@ -432,6 +442,17 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     desiredRetirementIncome: normalizeSetting(
       "desiredRetirementIncome",
       settings.desiredRetirementIncome
+    ),
+    spendingStrategyType:
+      settings.spendingStrategyType === "SPENDING_SMILE"
+        ? "SPENDING_SMILE"
+        : "FLAT",
+    spendingSmile: normalizeSpendingSmile(
+      settings.spendingSmile,
+      normalizeSetting(
+        "desiredRetirementIncome",
+        settings.desiredRetirementIncome
+      )
     ),
     statePensionDrawDate: normalizeStatePensionDrawDate(
       settings.statePensionDrawDate,

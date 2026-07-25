@@ -381,6 +381,7 @@ function insertChartTransitionPoints(
       date: addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge),
       age: settings.requirementAge,
     },
+    ...getSpendingSmileTransitionBoundaries(settings),
     settings.showIsa
       ? {
           date: addYearsToIsoDate(settings.dateOfBirth, settings.isaDrawAge),
@@ -528,6 +529,29 @@ function insertChartTransitionPoints(
   return nextPoints;
 }
 
+function getSpendingSmileTransitionBoundaries(settings: PensionSettings) {
+  if (settings.spendingStrategyType !== "SPENDING_SMILE") {
+    return [];
+  }
+
+  return [
+    {
+      date: addYearsToIsoDate(
+        settings.dateOfBirth,
+        settings.spendingSmile.slowGoStartAge
+      ),
+      age: settings.spendingSmile.slowGoStartAge,
+    },
+    {
+      date: addYearsToIsoDate(
+        settings.dateOfBirth,
+        settings.spendingSmile.noGoStartAge
+      ),
+      age: settings.spendingSmile.noGoStartAge,
+    },
+  ];
+}
+
 function insertChartTransitionPoint(
   points: RetirementIncomePoint[],
   transitionBoundary: { date: string; age: number }
@@ -588,7 +612,10 @@ export function createBridgeChartParameters(
   settings: PensionSettings
 ): RetirementIncomeBridgeParameters {
   return {
-    targetIncomeAnnual: settings.desiredRetirementIncome,
+    targetIncomeAnnual:
+      settings.spendingStrategyType === "SPENDING_SMILE"
+        ? settings.spendingSmile.goGo.annualAmountReal
+        : settings.desiredRetirementIncome,
     alphaMonthlyAddedPension: settings.alphaAddedPensionMonthly,
     isaMonthlyContribution: settings.isaMonthlyContribution,
     lisaMonthlyContribution: settings.lisaMonthlyContribution,

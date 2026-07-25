@@ -176,8 +176,39 @@ export function validateSettings(
     ...validateLisaRules(context),
     ...validatePartialRetirementRules(context),
     ...validateAdditionalGuaranteedIncomeRules(settings),
+    ...validateSpendingSmileRules(settings),
     ...validateLumpSumRules(context),
   ];
+}
+
+function validateSpendingSmileRules(
+  settings: PensionSettings
+): PensionValidationIssue[] {
+  if (settings.spendingStrategyType !== "SPENDING_SMILE") {
+    return [];
+  }
+
+  if (settings.spendingSmile.slowGoStartAge <= settings.requirementAge) {
+    return [
+      {
+        field: "spendingSmile",
+        message: "Slow-go years must start after your retirement age.",
+      },
+    ];
+  }
+
+  if (
+    settings.spendingSmile.noGoStartAge <= settings.spendingSmile.slowGoStartAge
+  ) {
+    return [
+      {
+        field: "spendingSmile",
+        message: "No-go years must start after the Slow-go years.",
+      },
+    ];
+  }
+
+  return [];
 }
 
 function validateLumpSums(

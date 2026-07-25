@@ -27,6 +27,7 @@ import {
   getUseByAgeBounds,
   isOptionalSectionToggleKey,
 } from "../app-domains";
+import { updateGoGoAnnualAmount } from "../spending-smile";
 
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
@@ -80,11 +81,20 @@ function applyIncomeAndContributionPatch(
   patch: Partial<RetirementIncomeBridgeParameters>,
   context: ChartStateContext
 ) {
-  assignNormalizedNumber(
-    next,
-    "desiredRetirementIncome",
-    patch.targetIncomeAnnual
-  );
+  if (patch.targetIncomeAnnual !== undefined) {
+    if (next.spendingStrategyType === "SPENDING_SMILE") {
+      next.spendingSmile = updateGoGoAnnualAmount(
+        next.spendingSmile,
+        patch.targetIncomeAnnual
+      );
+    } else {
+      assignNormalizedNumber(
+        next,
+        "desiredRetirementIncome",
+        patch.targetIncomeAnnual
+      );
+    }
+  }
   assignNormalizedNumber(
     next,
     "alphaAddedPensionMonthly",
@@ -221,6 +231,21 @@ function applyRetirementAgePatch(
     Math.min(70, statePensionAge)
   );
   next.requirementAge = normalizeSetting("requirementAge", retirementAge);
+
+  if (
+    next.spendingStrategyType === "SPENDING_SMILE" &&
+    next.spendingSmile.slowGoStartAge <= next.requirementAge
+  ) {
+    const slowGoStartAge = Math.min(119, next.requirementAge + 1);
+    next.spendingSmile = {
+      ...next.spendingSmile,
+      slowGoStartAge,
+      noGoStartAge: Math.max(
+        next.spendingSmile.noGoStartAge,
+        slowGoStartAge + 1
+      ),
+    };
+  }
 
   if (alphaDrawAgeWasAligned && next.requirementAge > previousRetirementAge) {
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(

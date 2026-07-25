@@ -17,8 +17,13 @@
   --surface-accent: linear-gradient(145deg, #116466 0%, #0b3c5d 100%);
   --border: rgba(18, 32, 51, 0.08);
   --text-muted: #44556b;
+  --text: #122033;
   --accent: #116466;
   --accent-strong: #0b3c5d;
+  --accent-soft: #e7f3f1;
+  --focus-ring: #118ab2;
+  --warning: #a65f00;
+  --warning-soft: #fff8e6;
   --shadow: 0 20px 50px rgba(18, 32, 51, 0.08);
   --shadow-soft: 0 12px 30px rgba(18, 32, 51, 0.06);
   --font-size-body: 1rem;
@@ -171,6 +176,194 @@ h3 {
   display: grid;
   gap: 1rem;
   margin-top: 1.75rem;
+}
+
+.spending-smile-editor {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.spending-smile-heading h3,
+.spending-phase-card h4 {
+  margin-bottom: 0.35rem;
+}
+
+.spending-strategy-options,
+.segmented-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.spending-strategy-options legend,
+.segmented-control legend {
+  width: 100%;
+}
+
+.spending-smile-toolbar {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  align-items: end;
+}
+
+.segmented-control label {
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.segmented-control input {
+  position: absolute;
+  opacity: 0;
+}
+
+.segmented-control span {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface-strong);
+}
+
+.segmented-control input:checked + span {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.segmented-control input:focus-visible + span {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.spending-smile-household,
+.spending-phase-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.spending-smile-household select,
+.spending-phase-field input {
+  width: 100%;
+}
+
+.spending-smile-presets,
+.spending-phase-presets {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.spending-smile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.spending-phase-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.spending-phase-card {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+
+.spending-phase-range,
+.spending-phase-derived,
+.spending-phase-classification {
+  margin: 0;
+}
+
+.spending-phase-classification {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.currency-input-control,
+.percentage-input-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.spending-smile-warning {
+  margin: 0;
+  border-left: 0.25rem solid var(--warning);
+  padding: 0.7rem 0.8rem;
+  background: var(--warning-soft);
+  color: var(--text);
+  font-size: var(--font-size-body-sm);
+}
+
+.spending-smile-results {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-strong);
+}
+
+.spending-profile-chart {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: var(--surface-strong);
+}
+
+.spending-profile-chart figcaption {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--text-muted);
+}
+
+.spending-profile-chart svg {
+  display: block;
+  width: 100%;
+  max-height: 15rem;
+  margin-top: 0.75rem;
+}
+
+.profile-axis {
+  stroke: #6b7788;
+}
+
+.profile-boundary {
+  stroke: #aab3bf;
+  stroke-dasharray: 4 4;
+}
+
+.profile-target-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.spending-profile-chart text {
+  fill: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.spending-smile-result-messages,
+.spending-smile-recommendations {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.spending-smile-result-messages p,
+.spending-smile-recommendations p {
+  margin: 0;
 }
 
 .field-card {

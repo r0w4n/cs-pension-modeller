@@ -21,6 +21,7 @@ import {
   type ProjectionBasis,
   type CsAvcWithdrawalStrategy,
   type SippWithdrawalStrategy,
+  type SpendingStrategyType,
   type StoredPensionSettings,
   type PensionSettings,
 } from "./settings-types";
@@ -159,6 +160,15 @@ function coerceSettings(
     ),
     fullSalary: coerceNumber(input.fullSalary),
     desiredRetirementIncome: coerceNumber(input.desiredRetirementIncome),
+    spendingStrategyType: coerceString(input.spendingStrategyType) as
+      | SpendingStrategyType
+      | undefined,
+    spendingSmile:
+      input.spendingSmile &&
+      typeof input.spendingSmile === "object" &&
+      !Array.isArray(input.spendingSmile)
+        ? input.spendingSmile
+        : undefined,
     applyPensionIncreases: coerceBoolean(input.applyPensionIncreases),
     assumedCpiPercent: coerceNumber(input.assumedCpiPercent),
     alphaPensionAbsDate: coerceString(input.alphaPensionAbsDate),

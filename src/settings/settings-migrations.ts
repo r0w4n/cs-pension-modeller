@@ -113,11 +113,23 @@ export function migrateFromV4ToV5(data: unknown) {
   };
 }
 
+export function migrateFromV5ToV6(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    spendingStrategyType: "FLAT",
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
   3: migrateFromV3ToV4,
   4: migrateFromV4ToV5,
+  5: migrateFromV5ToV6,
 };
 
 export function migrateSettingsToLatest(

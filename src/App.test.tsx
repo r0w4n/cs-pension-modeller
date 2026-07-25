@@ -570,6 +570,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     fullSalary: defaultSettings.fullSalary,
     currentStatePension: defaultSettings.currentStatePension,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
+    spendingStrategyType: defaultSettings.spendingStrategyType,
+    spendingSmile: defaultSettings.spendingSmile,
     statePensionDrawDate: defaultSettings.statePensionDrawDate,
     statePensionApplyFutureGrowth:
       defaultSettings.statePensionApplyFutureGrowth,

@@ -923,6 +923,41 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Expert Spending Smile methodology</h2>
+        <p className="section-copy">
+          The expert journey can replace the flat retirement spending target
+          with three real annual household expenditure targets: Go-go from the
+          target retirement age, Slow-go from its selected start age, and No-go
+          from its selected start age. The Slow-go target applies at its start
+          age, and the No-go target applies at its start age.
+        </p>
+        <p className="section-copy">
+          Annual amounts in today&apos;s money are the stored calculation
+          values. Percentage entry is an editing aid: Slow-go and No-go
+          percentages are measured against the Go-go amount. In nominal mode,
+          each applicable phase target is increased from the model start date
+          using the existing inflation assumption. The phase target changes only
+          the spending requirement; pension dates, tax, withdrawal order, growth
+          and life expectancy continue to use the existing model.
+        </p>
+        <p className="section-copy">
+          The June 2026 Pensions UK/Loughborough University Retirement Living
+          Standards are available as versioned one-person and two-person
+          household presets. They are net annual expenditure benchmarks rather
+          than gross income figures and exclude rent and mortgage costs. The
+          household choice affects only these presets and comparisons, not
+          pension ownership or tax calculations.
+        </p>
+        <p className="section-copy">
+          Phase funding compares the target with modelled achievable net
+          spending for each projected age. A phase is described as fully funded
+          only when every year represented in that phase meets the target. A
+          phase starting after life expectancy is shown as not reached and does
+          not contribute to its funding totals.
+        </p>
+      </section>
+
+      <section>
         <h2>Bridge funding methodology</h2>
         <p className="section-copy">
           Bridge funding is the use of temporary savings or pension withdrawals

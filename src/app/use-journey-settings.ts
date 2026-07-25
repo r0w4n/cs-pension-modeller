@@ -19,6 +19,7 @@ import {
   mergeSimpleJourneySettings,
 } from "../app-domains/journeys";
 import type { AppMode } from "./app-persistence";
+import { featureFlags } from "../feature-flags";
 
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
 
@@ -46,13 +47,16 @@ export function useJourneySettings({
     saveSettings(settings);
   }, [settings]);
 
-  const effectiveSettings = useMemo(
-    () =>
+  const effectiveSettings = useMemo(() => {
+    const journeySettings =
       activeJourneyMode === "simple"
         ? applySimpleJourneyAssumptions(settings)
-        : settings,
-    [activeJourneyMode, settings]
-  );
+        : settings;
+
+    return activeJourneyMode === "expert" && featureFlags.spendingSmileStrategy
+      ? journeySettings
+      : { ...journeySettings, spendingStrategyType: "FLAT" as const };
+  }, [activeJourneyMode, settings]);
 
   const setActiveJourneySettings = useCallback(
     (

@@ -1,4 +1,5 @@
 import { DEFAULT_ALPHA_ABS_YEAR, type PensionSettings } from "./settings-types";
+import { createDefaultSpendingSmile } from "../spending-smile";
 import { classicDefaults } from "./settings-domains/classic";
 import { inflationDefaults } from "./settings-domains/inflation";
 import { personalDetailsDefaults } from "./settings-domains/personal-details";
@@ -45,6 +46,10 @@ export const defaultSettings: PensionSettings = {
   fullSalary: 42000,
   currentStatePension: statePensionDefaults.currentStatePension,
   desiredRetirementIncome: personalDetailsDefaults.desiredRetirementIncome,
+  spendingStrategyType: "FLAT",
+  spendingSmile: createDefaultSpendingSmile(
+    personalDetailsDefaults.desiredRetirementIncome
+  ),
   statePensionDrawDate: statePensionDefaults.statePensionDrawDate,
   statePensionApplyFutureGrowth:
     statePensionDefaults.statePensionApplyFutureGrowth,

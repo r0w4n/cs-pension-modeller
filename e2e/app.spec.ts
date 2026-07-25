@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 
 test.describe("app end-to-end journeys", () => {
   test("acknowledges first run, switches modes, and keeps expert mode usable", async ({
@@ -191,6 +191,77 @@ test.describe("app end-to-end journeys", () => {
     await assertFooterPage(page, "Acceptance criteria", "What this page shows");
     await assertFooterPage(page, "About", "What it is");
   });
+
+  test("configures, persists, and reports an expert Spending Smile", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+    await page.getByRole("button", { name: "Next" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Spending strategy" })
+    ).toBeVisible();
+    await fillExactNumber(page, "Life Expectancy (Age) exact value", "95");
+    await page.getByRole("radio", { name: "Spending Smile — Expert" }).check();
+    await page.getByRole("button", { name: "RLS tiered profile" }).click();
+    await page.getByRole("radio", { name: "Percentages" }).check();
+
+    const slowGoPercentage = page.getByRole("spinbutton", {
+      name: "Slow-go percentage of Go-go spending",
+    });
+    await slowGoPercentage.fill("80");
+    await expect(
+      page.getByText("£36,320 per year", { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /Retirement Living Standards exclude rent and mortgage payments/
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "Spending Smile profile" })
+    ).toBeVisible();
+
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"spendingStrategyType":"SPENDING_SMILE"');
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Optional sections" })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("radio", { name: "Spending Smile — Expert" })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Slow-go percentage of Go-go spending",
+      })
+    ).toHaveValue("80");
+
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Spending Smile" })
+    ).toBeVisible();
+
+    const results = page.locator(".spending-smile-results");
+    await expect(results.getByRole("row", { name: /Go-go/ })).toContainText(
+      "£45,400"
+    );
+    await expect(results.getByRole("row", { name: /Slow-go/ })).toContainText(
+      "£36,320"
+    );
+    await expect(results.getByRole("row", { name: /No-go/ })).toContainText(
+      "£13,900"
+    );
+
+    const targetPath = page.locator(".bridge-target-line").first();
+    await expect(targetPath).toHaveAttribute("d", /.+/);
+    expect(await countDistinctPathYValues(targetPath)).toBeGreaterThanOrEqual(
+      3
+    );
+  });
 });
 
 async function startFirstRun(page: Page) {
@@ -255,6 +326,43 @@ async function clickNextAndExpectStep(page: Page, heading: string) {
   await expect(
     page.getByRole("heading", { level: 3, name: heading })
   ).toBeVisible();
+}
+
+async function navigateToJourneyResult(page: Page) {
+  for (let index = 0; index < 20; index += 1) {
+    const resultHeading = page.getByRole("heading", {
+      level: 3,
+      name: "Your results",
+    });
+
+    if (await resultHeading.isVisible().catch(() => false)) {
+      return;
+    }
+
+    const next = page.getByRole("button", {
+      name: /^(Next|Show my answer)$/,
+    });
+    await next.click();
+  }
+
+  throw new Error("Expert result step was not reached");
+}
+
+async function countDistinctPathYValues(targetPath: Locator) {
+  return targetPath.evaluate((element) => {
+    const path = element.getAttribute("d") ?? "";
+    const coordinatePairs = Array.from(
+      path.matchAll(/(?:M|L)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)
+    );
+    const verticalCoordinates = Array.from(
+      path.matchAll(/V(-?\d+(?:\.\d+)?)/g)
+    );
+
+    return new Set([
+      ...coordinatePairs.map((match) => match[2]),
+      ...verticalCoordinates.map((match) => match[1]),
+    ]).size;
+  });
 }
 
 async function addAdditionalIncome(

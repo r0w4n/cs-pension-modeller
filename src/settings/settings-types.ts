@@ -46,6 +46,34 @@ export type ProjectionBasis = "real" | "nominal";
 export type ClassicCalculationMode = "estimate" | "manual";
 export type ClassicFinalSalaryLink = "maintained" | "broken";
 export type AdditionalGuaranteedIncomeIndexation = "none" | "cpi" | "fixed";
+export type SpendingStrategyType = "FLAT" | "SPENDING_SMILE";
+export type SpendingSmileInputMode = "ANNUAL_AMOUNT" | "PERCENTAGE_OF_GO_GO";
+export type RetirementHouseholdType = "ONE_PERSON" | "TWO_PERSON";
+export type SpendingTargetSource =
+  | "EXISTING_TARGET"
+  | "RLS_MINIMUM"
+  | "RLS_MODERATE"
+  | "RLS_COMFORTABLE"
+  | "PERCENTAGE_DEFAULT"
+  | "CUSTOM";
+
+export type SpendingPhaseTarget = {
+  annualAmountReal: number;
+  percentageOfGoGo: number;
+  source: SpendingTargetSource;
+};
+
+export type SpendingSmileStrategy = {
+  initialized: boolean;
+  inputMode: SpendingSmileInputMode;
+  householdType: RetirementHouseholdType;
+  slowGoStartAge: number;
+  noGoStartAge: number;
+  goGo: SpendingPhaseTarget;
+  slowGo: SpendingPhaseTarget;
+  noGo: SpendingPhaseTarget;
+  rlsVersion: string;
+};
 
 export type AdditionalGuaranteedIncome = {
   id: string;
@@ -85,6 +113,8 @@ export type PensionSettings = {
   fullSalary: number;
   currentStatePension: number;
   desiredRetirementIncome: number;
+  spendingStrategyType: SpendingStrategyType;
+  spendingSmile: SpendingSmileStrategy;
   statePensionDrawDate: string;
   statePensionApplyFutureGrowth: boolean;
   statePensionCpiPercent: number;

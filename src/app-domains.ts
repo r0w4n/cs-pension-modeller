@@ -103,6 +103,15 @@ export {
 } from "./app-domains/retirement-income";
 
 export {
+  aggregateSpendingPhaseOutcomes,
+  createBridgeSpendingPhaseOutcomes,
+  createAnnualSpendingOutcomes,
+  type AnnualSpendingOutcome,
+  type SpendingPhaseOutcome,
+  type SpendingPhaseOutcomeStatus,
+} from "./app-domains/spending-smile-outcomes";
+
+export {
   getSippEffectiveRangeField,
   isSippFieldDisabled,
   shouldRenderSippField,

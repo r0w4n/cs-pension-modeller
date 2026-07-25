@@ -9829,6 +9829,525 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/spending-smile.feature",
+    name: "Expert Spending Smile retirement strategy",
+    description:
+      "As an expert retirement modeller user\n  I want different spending targets across retirement phases\n  So that the projection reflects the lifestyle I want to model",
+    tags: [],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-10",
+        keyword: "Scenario Outline",
+        name: "The applicable phase target changes at each boundary",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-11",
+            keyword: "When",
+            text: "the Spending Smile target is resolved at age <age>",
+          },
+          {
+            id: "line-12",
+            keyword: "Then",
+            text: 'the spending phase is "<phase>"',
+          },
+          {
+            id: "line-13",
+            keyword: "And",
+            text: "the real annual spending target is £<target>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-15",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-16",
+                cells: [
+                  {
+                    id: "line-16-column-9",
+                    value: "age",
+                  },
+                  {
+                    id: "line-16-column-15",
+                    value: "phase",
+                  },
+                  {
+                    id: "line-16-column-25",
+                    value: "target",
+                  },
+                ],
+              },
+              {
+                id: "line-17",
+                cells: [
+                  {
+                    id: "line-17-column-9",
+                    value: "60",
+                  },
+                  {
+                    id: "line-17-column-15",
+                    value: "GO_GO",
+                  },
+                  {
+                    id: "line-17-column-25",
+                    value: "40000",
+                  },
+                ],
+              },
+              {
+                id: "line-18",
+                cells: [
+                  {
+                    id: "line-18-column-9",
+                    value: "74",
+                  },
+                  {
+                    id: "line-18-column-15",
+                    value: "GO_GO",
+                  },
+                  {
+                    id: "line-18-column-25",
+                    value: "40000",
+                  },
+                ],
+              },
+              {
+                id: "line-19",
+                cells: [
+                  {
+                    id: "line-19-column-9",
+                    value: "75",
+                  },
+                  {
+                    id: "line-19-column-15",
+                    value: "SLOW_GO",
+                  },
+                  {
+                    id: "line-19-column-25",
+                    value: "34000",
+                  },
+                ],
+              },
+              {
+                id: "line-20",
+                cells: [
+                  {
+                    id: "line-20-column-9",
+                    value: "84",
+                  },
+                  {
+                    id: "line-20-column-15",
+                    value: "SLOW_GO",
+                  },
+                  {
+                    id: "line-20-column-25",
+                    value: "34000",
+                  },
+                ],
+              },
+              {
+                id: "line-21",
+                cells: [
+                  {
+                    id: "line-21-column-9",
+                    value: "85",
+                  },
+                  {
+                    id: "line-21-column-15",
+                    value: "NO_GO",
+                  },
+                  {
+                    id: "line-21-column-25",
+                    value: "30000",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-23",
+        keyword: "Scenario",
+        name: "Percentage editing keeps annual amounts canonical",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-24",
+            keyword: "Given",
+            text: "Spending Smile percentage input is selected",
+          },
+          {
+            id: "line-25",
+            keyword: "When",
+            text: "the Go-go target changes to £50000",
+          },
+          {
+            id: "line-26",
+            keyword: "Then",
+            text: "the Slow-go annual target is £42500",
+          },
+          {
+            id: "line-27",
+            keyword: "And",
+            text: "the No-go annual target is £37500",
+          },
+          {
+            id: "line-28",
+            keyword: "And",
+            text: "the stored Slow-go percentage is 85%",
+          },
+          {
+            id: "line-29",
+            keyword: "And",
+            text: "the stored No-go percentage is 75%",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-31",
+        keyword: "Scenario",
+        name: "An annual target updates its displayed percentage",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-32",
+            keyword: "When",
+            text: "the Slow-go annual target changes to £30000",
+          },
+          {
+            id: "line-33",
+            keyword: "Then",
+            text: "the Slow-go annual target is £30000",
+          },
+          {
+            id: "line-34",
+            keyword: "And",
+            text: "the stored Slow-go percentage is 75%",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-36",
+        keyword: "Scenario Outline",
+        name: "Current one-person Retirement Living Standards can initialise a phase",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-37",
+            keyword: "When",
+            text: 'the user applies the "<standard>" one-person RLS target to "<phase>"',
+          },
+          {
+            id: "line-38",
+            keyword: "Then",
+            text: "the selected phase annual target is £<amount>",
+          },
+          {
+            id: "line-39",
+            keyword: "And",
+            text: 'the selected phase source is "<source>"',
+          },
+        ],
+        examples: [
+          {
+            id: "line-41",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-42",
+                cells: [
+                  {
+                    id: "line-42-column-9",
+                    value: "standard",
+                  },
+                  {
+                    id: "line-42-column-23",
+                    value: "phase",
+                  },
+                  {
+                    id: "line-42-column-33",
+                    value: "amount",
+                  },
+                  {
+                    id: "line-42-column-42",
+                    value: "source",
+                  },
+                ],
+              },
+              {
+                id: "line-43",
+                cells: [
+                  {
+                    id: "line-43-column-9",
+                    value: "Minimum",
+                  },
+                  {
+                    id: "line-43-column-23",
+                    value: "noGo",
+                  },
+                  {
+                    id: "line-43-column-33",
+                    value: "13900",
+                  },
+                  {
+                    id: "line-43-column-42",
+                    value: "RLS_MINIMUM",
+                  },
+                ],
+              },
+              {
+                id: "line-44",
+                cells: [
+                  {
+                    id: "line-44-column-9",
+                    value: "Moderate",
+                  },
+                  {
+                    id: "line-44-column-23",
+                    value: "slowGo",
+                  },
+                  {
+                    id: "line-44-column-33",
+                    value: "32700",
+                  },
+                  {
+                    id: "line-44-column-42",
+                    value: "RLS_MODERATE",
+                  },
+                ],
+              },
+              {
+                id: "line-45",
+                cells: [
+                  {
+                    id: "line-45-column-9",
+                    value: "Comfortable",
+                  },
+                  {
+                    id: "line-45-column-23",
+                    value: "goGo",
+                  },
+                  {
+                    id: "line-45-column-33",
+                    value: "45400",
+                  },
+                  {
+                    id: "line-45-column-42",
+                    value: "RLS_COMFORTABLE",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-47",
+        keyword: "Scenario Outline",
+        name: "A phase target is classified against real RLS expenditure",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-48",
+            keyword: "When",
+            text: "an annual target of £<target> is classified for one person",
+          },
+          {
+            id: "line-49",
+            keyword: "Then",
+            text: 'its RLS classification is "<classification>"',
+          },
+        ],
+        examples: [
+          {
+            id: "line-51",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-52",
+                cells: [
+                  {
+                    id: "line-52-column-9",
+                    value: "target",
+                  },
+                  {
+                    id: "line-52-column-18",
+                    value: "classification",
+                  },
+                ],
+              },
+              {
+                id: "line-53",
+                cells: [
+                  {
+                    id: "line-53-column-9",
+                    value: "12000",
+                  },
+                  {
+                    id: "line-53-column-18",
+                    value: "BELOW_MINIMUM",
+                  },
+                ],
+              },
+              {
+                id: "line-54",
+                cells: [
+                  {
+                    id: "line-54-column-9",
+                    value: "20000",
+                  },
+                  {
+                    id: "line-54-column-18",
+                    value: "MINIMUM_TO_MODERATE",
+                  },
+                ],
+              },
+              {
+                id: "line-55",
+                cells: [
+                  {
+                    id: "line-55-column-9",
+                    value: "40000",
+                  },
+                  {
+                    id: "line-55-column-18",
+                    value: "MODERATE_TO_COMFORTABLE",
+                  },
+                ],
+              },
+              {
+                id: "line-56",
+                cells: [
+                  {
+                    id: "line-56-column-9",
+                    value: "50000",
+                  },
+                  {
+                    id: "line-56-column-18",
+                    value: "COMFORTABLE_OR_ABOVE",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-58",
+        keyword: "Scenario",
+        name: "Invalid phase ordering is rejected by validation",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-59",
+            keyword: "When",
+            text: "the No-go phase is configured to start at age 74",
+          },
+          {
+            id: "line-60",
+            keyword: "Then",
+            text: 'validation reports "No-go years must start after the Slow-go years."',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-62",
+        keyword: "Scenario",
+        name: "A phase after life expectancy is not reached",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-63",
+            keyword: "Given",
+            text: "life expectancy is 82",
+          },
+          {
+            id: "line-64",
+            keyword: "When",
+            text: "Spending Smile phase outcomes are calculated",
+          },
+          {
+            id: "line-65",
+            keyword: "Then",
+            text: 'the No-go phase result is "NOT_REACHED"',
+          },
+          {
+            id: "line-66",
+            keyword: "And",
+            text: "the No-go phase contributes £0 to target expenditure",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-68",
+        keyword: "Scenario",
+        name: "Flat spending remains unchanged",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-69",
+            keyword: "Given",
+            text: "the Spending Smile strategy is not active",
+          },
+          {
+            id: "line-70",
+            keyword: "When",
+            text: "the Spending Smile target is resolved at age 85",
+          },
+          {
+            id: "line-71",
+            keyword: "Then",
+            text: 'the spending phase is "FLAT"',
+          },
+          {
+            id: "line-72",
+            keyword: "And",
+            text: "the real annual spending target is £40000",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
     path: "features/state-pension.feature",
     name: "State Pension modelling",
     description:

@@ -33,6 +33,7 @@ type ProjectionTableColumn = TableColumn & {
     | "showPremium"
     | "showStatePension"
     | "showSipp"
+    | "showCsAvc"
     | "showIsa"
     | "showLisa"
     | "taxationEnabled";
@@ -208,6 +209,18 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     setting: "showSipp",
   },
   {
+    key: "monthlyCsAvcPension",
+    label: "Monthly CS AVC",
+    width: "7rem",
+    setting: "showCsAvc",
+  },
+  {
+    key: "csAvcPot",
+    label: "CS AVC balance",
+    width: "7rem",
+    setting: "showCsAvc",
+  },
+  {
     key: "monthlyIsaPension",
     label: "ISA",
     width: "7rem",
@@ -232,6 +245,15 @@ const projectionTableColumns: ProjectionTableColumn[] = [
     setting: "showLisa",
   },
 ] as const;
+
+export function getVisibleProjectionTableColumns(settings: PensionSettings) {
+  return projectionTableColumns
+    .filter((column) => !column.setting || settings[column.setting])
+    .map((column) => ({
+      ...column,
+      label: getProjectionTableColumnLabel(column, settings),
+    }));
+}
 
 export function ProjectionTableSectionContainer({
   children,
@@ -279,9 +301,7 @@ export function ProjectionTableSection({
 
 export function ProjectionTable({ rows, settings }: ProjectionTableProps) {
   const [showMilestonesOnly, setShowMilestonesOnly] = useState(true);
-  const visibleColumns = projectionTableColumns.filter(
-    (column) => !column.setting || settings[column.setting]
-  );
+  const visibleColumns = getVisibleProjectionTableColumns(settings);
   const visibleRows = showMilestonesOnly
     ? rows.filter((row) => row.milestones.length > 0)
     : rows;
@@ -293,7 +313,6 @@ export function ProjectionTable({ rows, settings }: ProjectionTableProps) {
     <ProjectionTableFrame
       columns={visibleColumns.map((column) => ({
         ...column,
-        label: getProjectionTableColumnLabel(column, settings),
       }))}
       rows={visibleRows}
       emptyMessage="No projection rows are available for the current settings."
@@ -563,6 +582,10 @@ function renderProjectionTableCell(
       return formatCurrencyDetailed(row.monthlySippPension);
     case "sippPot":
       return formatCurrencyDetailed(row.sippPot);
+    case "monthlyCsAvcPension":
+      return formatCurrencyDetailed(row.monthlyCsAvcPension);
+    case "csAvcPot":
+      return formatCurrencyDetailed(row.csAvcPot);
     case "monthlyIsaPension":
       return formatCurrencyDetailed(row.monthlyIsaPension);
     case "isaPot":

@@ -63,6 +63,7 @@ export type ComparisonResult = {
   isaDepletedAge: number | null;
   lisaDepletedAge: number | null;
   sippDepletedAge: number | null;
+  csAvcDepletedAge: number | null;
   retirementAnnualIncome: number;
   statePensionAnnualIncome: number;
   lifeExpectancyAnnualIncome: number;
@@ -224,6 +225,7 @@ export function createComparisonResult(
   const bridgePensionRows = createProjectionTable({
     ...bridgeSettings,
     showSipp: false,
+    showCsAvc: false,
     showIsa: false,
     showLisa: false,
   });
@@ -270,6 +272,15 @@ export function createComparisonResult(
       scenario.settings.showSipp &&
         scenario.settings.sippWithdrawalStrategy === "use_by_age"
         ? scenario.settings.sippWithdrawalTargetAge
+        : null
+    ),
+    csAvcDepletedAge: findPotDepletedAge(
+      rows,
+      "csAvcPot",
+      scenario.settings.csAvcDrawAge,
+      scenario.settings.showCsAvc &&
+        scenario.settings.csAvcWithdrawalStrategy === "use_by_age"
+        ? scenario.settings.csAvcWithdrawalTargetAge
         : null
     ),
     lisaDepletedAge: findPotDepletedAge(
@@ -684,6 +695,9 @@ export function buildComparisonDetailedRows(
   const anyScenarioUsesSipp = results.some(
     (result) => result.scenario.settings.showSipp
   );
+  const anyScenarioUsesCsAvc = results.some(
+    (result) => result.scenario.settings.showCsAvc
+  );
   const anyScenarioUsesNuvos = results.some(
     (result) => result.scenario.settings.showNuvos
   );
@@ -977,23 +991,82 @@ export function buildComparisonDetailedRows(
           ]),
         ]
       : []),
+    ...(anyScenarioUsesCsAvc
+      ? [
+          createComparisonSection("CS AVC bridge details", results, [
+            [
+              "Current CS AVC balance",
+              (result) =>
+                result.scenario.settings.showCsAvc
+                  ? formatCurrencyDetailed(
+                      result.scenario.settings.csAvcCurrentPot
+                    )
+                  : "n/a",
+            ],
+            [
+              "CS AVC use-by age",
+              (result) => formatUseByAge(result.scenario.settings, "csAvc"),
+            ],
+            [
+              "CS AVC protected pension age",
+              (result) =>
+                result.scenario.settings.showCsAvc
+                  ? formatCsAvcProtectedPensionAge(result.scenario.settings)
+                  : "n/a",
+            ],
+            [
+              "Total CS AVC withdrawals",
+              (result) =>
+                result.scenario.settings.showCsAvc
+                  ? formatCurrencyDetailed(
+                      getTotalWithdrawals(result.rows, "monthlyCsAvcPension")
+                    )
+                  : "n/a",
+            ],
+            [
+              "CS AVC depleted age",
+              (result) =>
+                result.scenario.settings.showCsAvc
+                  ? renderComparisonToneCell(
+                      formatDepletionAgeOrNa(result.csAvcDepletedAge),
+                      getPotDepletionTone(
+                        result.csAvcDepletedAge,
+                        result.scenario.settings
+                      )
+                    )
+                  : "n/a",
+            ],
+            [
+              "Final CS AVC balance",
+              (result) =>
+                result.scenario.settings.showCsAvc
+                  ? formatCurrencyDetailed(
+                      getFinalPotBalance(result.rows, "csAvcPot")
+                    )
+                  : "n/a",
+            ],
+          ]),
+        ]
+      : []),
     createComparisonSection("Flexible assets details", results, [
       [
-        "Total ISA + LISA + SIPP withdrawals",
+        "Total ISA + LISA + SIPP + CS AVC withdrawals",
         (result) =>
           formatCurrencyDetailed(
             getTotalWithdrawals(result.rows, "monthlyIsaPension") +
               getTotalWithdrawals(result.rows, "monthlyLisaPension") +
-              getTotalWithdrawals(result.rows, "monthlySippPension")
+              getTotalWithdrawals(result.rows, "monthlySippPension") +
+              getTotalWithdrawals(result.rows, "monthlyCsAvcPension")
           ),
       ],
       [
-        "Final ISA + LISA + SIPP balance",
+        "Final ISA + LISA + SIPP + CS AVC balance",
         (result) =>
           formatCurrencyDetailed(
             getFinalPotBalance(result.rows, "isaPot") +
               getFinalPotBalance(result.rows, "lisaPot") +
-              getFinalPotBalance(result.rows, "sippPot")
+              getFinalPotBalance(result.rows, "sippPot") +
+              getFinalPotBalance(result.rows, "csAvcPot")
           ),
       ],
     ]),
@@ -1052,6 +1125,22 @@ export function buildComparisonDetailedRows(
           ),
       ],
       [
+        "CS AVC nominal return",
+        (result) =>
+          formatPercent(
+            deriveInflationAssumptions(result.scenario.settings)
+              .csAvcNominalReturnAnnual
+          ),
+      ],
+      [
+        "CS AVC modelled real return",
+        (result) =>
+          formatPercent(
+            deriveInflationAssumptions(result.scenario.settings)
+              .csAvcModelledReturnAnnual
+          ),
+      ],
+      [
         "State Pension growth projected",
         (result) =>
           formatYesNo(result.scenario.settings.statePensionApplyFutureGrowth),
@@ -1068,6 +1157,12 @@ export function buildComparisonDetailedRows(
 
 function formatSippProtectedPensionAge(settings: PensionSettings) {
   return settings.sippHasProtectedPensionAge
+    ? "Provider-confirmed age 50"
+    : "Not confirmed";
+}
+
+function formatCsAvcProtectedPensionAge(settings: PensionSettings) {
+  return settings.csAvcHasProtectedPensionAge
     ? "Provider-confirmed age 50"
     : "Not confirmed";
 }
@@ -1402,7 +1497,7 @@ function areAllValuesNa(values: ReactNode[]) {
 
 function findPotDepletedAge(
   rows: ProjectionRow[],
-  potKey: "isaPot" | "lisaPot" | "sippPot",
+  potKey: "isaPot" | "lisaPot" | "sippPot" | "csAvcPot",
   drawAge: number,
   targetAge: number | null = null
 ) {
@@ -1489,14 +1584,18 @@ function getTotalLifetimeShortfall(
 
 function getFinalPotBalance(
   rows: ProjectionRow[],
-  key: "isaPot" | "lisaPot" | "sippPot"
+  key: "isaPot" | "lisaPot" | "sippPot" | "csAvcPot"
 ) {
   return rows.at(-1)?.[key] ?? 0;
 }
 
 function getTotalWithdrawals(
   rows: ProjectionRow[],
-  key: "monthlyIsaPension" | "monthlyLisaPension" | "monthlySippPension"
+  key:
+    | "monthlyIsaPension"
+    | "monthlyLisaPension"
+    | "monthlySippPension"
+    | "monthlyCsAvcPension"
 ) {
   return rows.reduce((total, row) => total + row[key], 0);
 }
@@ -1526,6 +1625,9 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
       : Number.POSITIVE_INFINITY,
     result.scenario.settings.showSipp
       ? result.scenario.settings.sippDrawAge
+      : Number.POSITIVE_INFINITY,
+    result.scenario.settings.showCsAvc
+      ? result.scenario.settings.csAvcDrawAge
       : Number.POSITIVE_INFINITY
   );
 
@@ -1535,7 +1637,10 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 
   const depletionRow = result.rows.find((row) => {
     const rowAge = row.age + row.ageMonths / 12;
-    return rowAge >= startAge && row.isaPot + row.lisaPot + row.sippPot <= 0;
+    return (
+      rowAge >= startAge &&
+      row.isaPot + row.lisaPot + row.sippPot + row.csAvcPot <= 0
+    );
   });
 
   return depletionRow ? depletionRow.age + depletionRow.ageMonths / 12 : null;
@@ -1639,7 +1744,7 @@ function formatYearsBelowTarget(months: number) {
 
 function formatUseByAge(
   settings: PensionSettings,
-  pot: "isa" | "lisa" | "sipp"
+  pot: "isa" | "lisa" | "sipp" | "csAvc"
 ) {
   if (pot === "isa") {
     if (!settings.showIsa) {
@@ -1658,6 +1763,16 @@ function formatUseByAge(
 
     return settings.lisaWithdrawalStrategy === "use_by_age"
       ? formatDecimalAge(settings.lisaWithdrawalTargetAge)
+      : "n/a";
+  }
+
+  if (pot === "csAvc") {
+    if (!settings.showCsAvc) {
+      return "n/a";
+    }
+
+    return settings.csAvcWithdrawalStrategy === "use_by_age"
+      ? formatDecimalAge(settings.csAvcWithdrawalTargetAge)
       : "n/a";
   }
 

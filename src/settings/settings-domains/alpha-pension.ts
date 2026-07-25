@@ -284,7 +284,7 @@ export function validateAlphaPensionRules({
     issues.push({
       field: "alphaPensionAbsDate",
       message:
-        "Last Annual Benefits Statement must be on or before the calculation start date.",
+        "Last Annual Benefits Statement must be on or before the current date.",
     });
   }
 
@@ -296,7 +296,7 @@ export function validateAlphaPensionRules({
     issues.push({
       field: "alphaAddedPensionMonthly",
       message:
-        "Monthly added pension purchases must stop before age 68 because the factor table does not include age 68 or later.",
+        "Monthly added pension purchases must stop before age 68 because purchases are only supported through age 67.",
     });
   }
 

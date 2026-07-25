@@ -107,7 +107,7 @@ function App() {
 
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">Civil Service</p>
+            <p className="eyebrow">Civil Service Pensions</p>
             <h1>Retirement Income Modeller</h1>
             <p className="lead">
               Work through a Civil Service pension journey, then review your

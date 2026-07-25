@@ -66,6 +66,10 @@ export function createRetirementIncomeSeries(
     settings.dateOfBirth,
     settings.sippDrawAge
   );
+  const csAvcDrawDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.csAvcDrawAge
+  );
   const isaDrawDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.isaDrawAge
@@ -77,6 +81,10 @@ export function createRetirementIncomeSeries(
   const sippUseByDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.sippWithdrawalTargetAge
+  );
+  const csAvcUseByDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.csAvcWithdrawalTargetAge
   );
   const isaUseByDate = addYearsToIsoDate(
     settings.dateOfBirth,
@@ -116,6 +124,19 @@ export function createRetirementIncomeSeries(
           monthlyIncome: row.monthlySippPension,
           previousMonthlyIncome: previousRow?.monthlySippPension ?? 0,
           nextMonthlyIncome: nextRow?.monthlySippPension ?? 0,
+        })
+      : 0;
+    const csAvcIncomeAnnual = settings.showCsAvc
+      ? getBridgePotIncomeAnnual({
+          rowDate: row.date,
+          drawDate: csAvcDrawDate,
+          stopDate:
+            settings.csAvcWithdrawalStrategy === "use_by_age"
+              ? csAvcUseByDate
+              : null,
+          monthlyIncome: row.monthlyCsAvcPension,
+          previousMonthlyIncome: previousRow?.monthlyCsAvcPension ?? 0,
+          nextMonthlyIncome: nextRow?.monthlyCsAvcPension ?? 0,
         })
       : 0;
     const lisaIncomeAnnual = settings.showLisa
@@ -171,6 +192,7 @@ export function createRetirementIncomeSeries(
       isaIncomeAnnual +
       lisaIncomeAnnual +
       sippIncomeAnnual +
+      csAvcIncomeAnnual +
       partialRetirementIncomeAnnual +
       alphaIncomeAnnual +
       classicIncomeAnnual +
@@ -188,6 +210,7 @@ export function createRetirementIncomeSeries(
       monthlyPremiumPension: premiumIncomeAnnual / 12,
       monthlyStatePension: statePensionIncomeAnnual / 12,
       monthlySippPension: sippIncomeAnnual / 12,
+      monthlyCsAvcPension: csAvcIncomeAnnual / 12,
       monthlyAdditionalGuaranteedIncomeTaxable:
         additionalGuaranteedIncomeTaxableAnnual / 12,
     });
@@ -200,6 +223,7 @@ export function createRetirementIncomeSeries(
       isaIncomeAnnual,
       lisaIncomeAnnual,
       sippIncomeAnnual,
+      csAvcIncomeAnnual,
       partialRetirementIncomeAnnual,
       alphaIncomeAnnual,
       classicIncomeAnnual,
@@ -218,6 +242,7 @@ export function createRetirementIncomeSeries(
       isaBalance: row.isaPot,
       lisaBalance: row.lisaPot,
       sippBalance: row.sippPot,
+      csAvcBalance: row.csAvcPot,
       phase: getRetirementIncomePhase(age, settings, statePensionAge),
     };
   });
@@ -384,6 +409,21 @@ function insertChartTransitionPoints(
             settings.sippWithdrawalTargetAge
           ),
           age: settings.sippWithdrawalTargetAge,
+        }
+      : null,
+    settings.showCsAvc
+      ? {
+          date: addYearsToIsoDate(settings.dateOfBirth, settings.csAvcDrawAge),
+          age: settings.csAvcDrawAge,
+        }
+      : null,
+    settings.showCsAvc && settings.csAvcWithdrawalStrategy === "use_by_age"
+      ? {
+          date: addYearsToIsoDate(
+            settings.dateOfBirth,
+            settings.csAvcWithdrawalTargetAge
+          ),
+          age: settings.csAvcWithdrawalTargetAge,
         }
       : null,
     settings.showLisa

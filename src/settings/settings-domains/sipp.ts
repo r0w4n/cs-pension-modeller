@@ -106,7 +106,7 @@ export function validateSippRules({
   if (settings.showSipp && sippDrawDate <= settings.startDate) {
     issues.push({
       field: "sippDrawAge",
-      message: "SIPP draw start age must be after the calculation start date.",
+      message: "SIPP draw start age must be after the current date.",
     });
   }
 

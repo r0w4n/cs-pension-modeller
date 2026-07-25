@@ -72,4 +72,47 @@ describe("projection bridge analysis domain", () => {
     ).toBe(true);
     expect(analysis.stableAnnualGuaranteedIncome).toBeCloseTo(12000, 6);
   });
+
+  it("grosses up taxable CS AVC bridge withdrawals to meet a net target", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2025-12-01",
+      dateOfBirth: "1966-01-01",
+      requirementAge: 60,
+      lifeExpectancy: 60.25,
+      desiredRetirementIncome: 12000,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: true,
+      showIsa: false,
+      showLisa: false,
+      showAdditionalGuaranteedIncome: false,
+      csAvcCurrentPot: 5000,
+      csAvcMonthlyContribution: 0,
+      csAvcDrawAge: 60,
+      csAvcRealInterestPercent: 0,
+      taxationEnabled: true,
+      taxPersonalAllowance: 0,
+      taxBasicRatePercent: 20,
+      taxHigherRatePercent: 20,
+      taxAdditionalRatePercent: 20,
+      taxCsAvcTaxFreeWithdrawalPercent: 0,
+    });
+    const pensionRows = createProjectionTable({
+      ...settings,
+      showCsAvc: false,
+    });
+
+    const firstRow = generateRetirementBridgeAnalysis(pensionRows, settings)
+      .potProjection[0];
+
+    expect(firstRow?.monthlyTargetIncome).toBe(1000);
+    expect(firstRow?.csAvcDrawdown).toBeCloseTo(1250, 6);
+    expect(firstRow?.unfundedShortfall).toBeCloseTo(0, 6);
+  });
 });

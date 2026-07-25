@@ -10,6 +10,7 @@ export const taxDefaults = {
   taxHigherRatePercent: 40,
   taxAdditionalRatePercent: 45,
   taxSippTaxFreeWithdrawalPercent: 25,
+  taxCsAvcTaxFreeWithdrawalPercent: 25,
 } as const;
 
 export const taxNumericSettingRules = {
@@ -21,6 +22,7 @@ export const taxNumericSettingRules = {
   taxHigherRatePercent: { min: 0, max: 100, step: 0.1 },
   taxAdditionalRatePercent: { min: 0, max: 100, step: 0.1 },
   taxSippTaxFreeWithdrawalPercent: { min: 0, max: 25, step: 0.1 },
+  taxCsAvcTaxFreeWithdrawalPercent: { min: 0, max: 25, step: 0.1 },
 } as const;
 
 export function normalizeTaxationBooleanSetting(value: unknown) {
@@ -52,6 +54,9 @@ export function coerceTaxSettings(
     taxAdditionalRatePercent: coerceNumber(input.taxAdditionalRatePercent),
     taxSippTaxFreeWithdrawalPercent: coerceNumber(
       input.taxSippTaxFreeWithdrawalPercent
+    ),
+    taxCsAvcTaxFreeWithdrawalPercent: coerceNumber(
+      input.taxCsAvcTaxFreeWithdrawalPercent
     ),
   };
 }

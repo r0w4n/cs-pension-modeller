@@ -6,7 +6,7 @@ import {
 import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
 import { getModelledMonthlyGrowthRate } from "./inflation";
 
-export function calculateSippPotAtDate(input: {
+export function calculateCsAvcPotAtDate(input: {
   settings: PensionSettings;
   rowDate: string;
   drawDate: string;
@@ -14,20 +14,20 @@ export function calculateSippPotAtDate(input: {
 }) {
   const { settings, rowDate, drawDate } = input;
 
-  if (!settings.showSipp) {
+  if (!settings.showCsAvc) {
     return 0;
   }
 
-  return calculateSippProjectionRow({
+  return calculateCsAvcProjectionRow({
     settings,
     rowDate,
     drawDate,
     endDate:
       input.endDate ?? addYears(settings.dateOfBirth, settings.lifeExpectancy),
-  }).sippPot;
+  }).csAvcPot;
 }
 
-export function calculateSippPotBeforeWithdrawalAtDate(input: {
+export function calculateCsAvcPotBeforeWithdrawalAtDate(input: {
   settings: PensionSettings;
   rowDate: string;
   drawDate: string;
@@ -35,7 +35,7 @@ export function calculateSippPotBeforeWithdrawalAtDate(input: {
 }) {
   const { settings, rowDate, drawDate } = input;
 
-  if (!settings.showSipp) {
+  if (!settings.showCsAvc) {
     return 0;
   }
 
@@ -45,25 +45,23 @@ export function calculateSippPotBeforeWithdrawalAtDate(input: {
     drawDate,
     endDate:
       input.endDate ?? addYears(settings.dateOfBirth, settings.lifeExpectancy),
-    showPot: settings.showSipp,
-    currentPot: settings.sippCurrentPot,
-    monthlyContribution: settings.sippMonthlyContribution,
-    lumpSums: settings.sippLumpSums,
-    realInterestPercent: settings.sippRealInterestPercent,
-    withdrawalStrategy: settings.sippWithdrawalStrategy,
-    withdrawalPercent: settings.sippWithdrawalPercent,
-    withdrawalTargetAge: settings.sippWithdrawalTargetAge,
-    contributionMultiplier: getSippContributionMultiplier(
-      settings.sippTaxReliefRate
-    ),
+    showPot: settings.showCsAvc,
+    currentPot: settings.csAvcCurrentPot,
+    monthlyContribution: settings.csAvcMonthlyContribution,
+    lumpSums: settings.csAvcLumpSums,
+    realInterestPercent: settings.csAvcRealInterestPercent,
+    withdrawalStrategy: settings.csAvcWithdrawalStrategy,
+    withdrawalPercent: settings.csAvcWithdrawalPercent,
+    withdrawalTargetAge: settings.csAvcWithdrawalTargetAge,
+    contributionMultiplier: 1,
   }).potBeforeWithdrawal;
 }
 
-export function calculateMonthlySippPension(input: {
+export function calculateMonthlyCsAvcPension(input: {
   potAtDraw: number;
   drawDate: string;
   endDate: string;
-  strategy: PensionSettings["sippWithdrawalStrategy"];
+  strategy: PensionSettings["csAvcWithdrawalStrategy"];
   withdrawalPercent: number;
   targetDate?: string;
 }) {
@@ -91,11 +89,11 @@ export function calculateMonthlySippPension(input: {
   return potAtDraw / drawdownMonths;
 }
 
-export function calculateTotalSippContributionsAfterTaxRelief(
+export function calculateTotalCsAvcContributions(
   settings: PensionSettings,
   drawDate: string
 ) {
-  if (!settings.showSipp) {
+  if (!settings.showCsAvc) {
     return 0;
   }
 
@@ -104,10 +102,6 @@ export function calculateTotalSippContributionsAfterTaxRelief(
   if (contributionStopDate <= settings.startDate) {
     return 0;
   }
-
-  const contributionMultiplier = getSippContributionMultiplier(
-    settings.sippTaxReliefRate
-  );
 
   let regularContributions = 0;
 
@@ -118,8 +112,7 @@ export function calculateTotalSippContributionsAfterTaxRelief(
   ) {
     const contributionDate = addMonths(settings.startDate, monthIndex);
     regularContributions +=
-      settings.sippMonthlyContribution *
-      contributionMultiplier *
+      settings.csAvcMonthlyContribution *
       getPartialRetirementSavingsContributionMultiplier(
         settings,
         contributionDate
@@ -127,13 +120,12 @@ export function calculateTotalSippContributionsAfterTaxRelief(
   }
 
   return (
-    calculateLumpSumsBeforeDate(settings.sippLumpSums, contributionStopDate) *
-      contributionMultiplier +
+    calculateLumpSumsThroughDate(settings.csAvcLumpSums, contributionStopDate) +
     regularContributions
   );
 }
 
-export function calculateSippProjectionRow(input: {
+export function calculateCsAvcProjectionRow(input: {
   settings: PensionSettings;
   rowDate: string;
   drawDate: string;
@@ -145,22 +137,20 @@ export function calculateSippProjectionRow(input: {
     rowDate,
     drawDate,
     endDate,
-    showPot: settings.showSipp,
-    currentPot: settings.sippCurrentPot,
-    monthlyContribution: settings.sippMonthlyContribution,
-    lumpSums: settings.sippLumpSums,
-    realInterestPercent: settings.sippRealInterestPercent,
-    withdrawalStrategy: settings.sippWithdrawalStrategy,
-    withdrawalPercent: settings.sippWithdrawalPercent,
-    withdrawalTargetAge: settings.sippWithdrawalTargetAge,
-    contributionMultiplier: getSippContributionMultiplier(
-      settings.sippTaxReliefRate
-    ),
+    showPot: settings.showCsAvc,
+    currentPot: settings.csAvcCurrentPot,
+    monthlyContribution: settings.csAvcMonthlyContribution,
+    lumpSums: settings.csAvcLumpSums,
+    realInterestPercent: settings.csAvcRealInterestPercent,
+    withdrawalStrategy: settings.csAvcWithdrawalStrategy,
+    withdrawalPercent: settings.csAvcWithdrawalPercent,
+    withdrawalTargetAge: settings.csAvcWithdrawalTargetAge,
+    contributionMultiplier: 1,
   });
 
   return {
-    sippPot: projection.pot,
-    monthlySippPension: projection.monthlyWithdrawal,
+    csAvcPot: projection.pot,
+    monthlyCsAvcPension: projection.monthlyWithdrawal,
   };
 }
 
@@ -174,7 +164,7 @@ function calculatePotProjectionAtDate(input: {
   monthlyContribution: number;
   lumpSums: AddedPensionLumpSum[];
   realInterestPercent: number;
-  withdrawalStrategy: PensionSettings["sippWithdrawalStrategy"];
+  withdrawalStrategy: PensionSettings["csAvcWithdrawalStrategy"];
   withdrawalPercent: number;
   withdrawalTargetAge: number;
   contributionMultiplier: number;
@@ -247,7 +237,7 @@ function calculatePotProjectionAtDate(input: {
       previousRowDate: previousProjectionMonthDate,
       rowDate: projectionMonthDate,
       contributionMultiplier,
-      latestPaymentDateExclusive: contributionStopDate,
+      latestPaymentDateInclusive: contributionStopDate,
     });
     potBeforeWithdrawal = pot;
 
@@ -291,7 +281,7 @@ function calculateMonthlyWithdrawalFromPot(input: {
   rowDate: string;
   drawDate: string;
   endDate: string;
-  strategy: PensionSettings["sippWithdrawalStrategy"];
+  strategy: PensionSettings["csAvcWithdrawalStrategy"];
   withdrawalPercent: number;
 }) {
   const { pot, rowDate, drawDate, endDate, strategy, withdrawalPercent } =
@@ -377,33 +367,19 @@ function getPotContributionStopDate(
   );
 }
 
-function getSippContributionMultiplier(
-  taxReliefRate: PensionSettings["sippTaxReliefRate"]
-) {
-  if (taxReliefRate === "20") {
-    return 1 / 0.8;
-  }
-
-  if (taxReliefRate === "40") {
-    return 1 / 0.6;
-  }
-
-  return 1;
-}
-
 function calculateScheduledPotLumpSums(input: {
   lumpSums: AddedPensionLumpSum[];
   previousRowDate?: string;
   rowDate: string;
   contributionMultiplier: number;
-  latestPaymentDateExclusive: string;
+  latestPaymentDateInclusive: string;
 }) {
   const {
     lumpSums,
     previousRowDate,
     rowDate,
     contributionMultiplier,
-    latestPaymentDateExclusive,
+    latestPaymentDateInclusive,
   } = input;
 
   return lumpSums.reduce((total, lumpSum) => {
@@ -411,7 +387,7 @@ function calculateScheduledPotLumpSums(input: {
       lumpSum,
       previousRowDate,
       rowDate
-    ).filter((paymentDate) => paymentDate < latestPaymentDateExclusive);
+    ).filter((paymentDate) => paymentDate <= latestPaymentDateInclusive);
 
     return (
       total +
@@ -420,7 +396,7 @@ function calculateScheduledPotLumpSums(input: {
   }, 0);
 }
 
-function calculateLumpSumsBeforeDate(
+function calculateLumpSumsThroughDate(
   lumpSums: AddedPensionLumpSum[],
   rowDate: string
 ) {
@@ -428,7 +404,7 @@ function calculateLumpSumsBeforeDate(
     (total, lumpSum) =>
       total +
       getScheduledPaymentDates(lumpSum).filter(
-        (paymentDate) => paymentDate < rowDate
+        (paymentDate) => paymentDate <= rowDate
       ).length *
         lumpSum.amount,
     0

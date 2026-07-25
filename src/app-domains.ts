@@ -109,6 +109,12 @@ export {
 } from "./app-domains/sipp";
 
 export {
+  getCsAvcEffectiveRangeField,
+  isCsAvcFieldDisabled,
+  shouldRenderCsAvcField,
+} from "./app-domains/cs-avc";
+
+export {
   getStatePensionDateYearRange,
   getStatePensionDefaultDrawDate,
   isStatePensionGrowthField,

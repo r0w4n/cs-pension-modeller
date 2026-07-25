@@ -1,5 +1,9 @@
 import { DataTable, Given, Then, When } from "@cucumber/cucumber";
-import { calculatePremiumPension } from "../../src/projection-domains/premium";
+import {
+  calculateAnnualPremiumPensionAtDate,
+  calculatePremiumPension,
+} from "../../src/projection-domains/premium";
+import { defaultSettings } from "../../src/settings";
 
 const PREMIUM_ACCRUAL_DENOMINATOR = 60;
 const PREMIUM_COMMUTATION_FACTOR = 12;
@@ -119,6 +123,12 @@ function calculateProjectedSalary(
   years: number
 ) {
   return salary * (1 + salaryIncreasePercent / 100) ** years;
+}
+
+function addWholeYears(date: string, years: number) {
+  const [year, month, day] = date.split("-");
+
+  return `${Number(year) + years}-${month}-${day}`;
 }
 
 function calculatePremiumPayable(
@@ -692,11 +702,16 @@ When(
   function (this: PremiumWorld) {
     assertCondition(this.pensionAtDeferral !== undefined);
     assertCondition(this.deferredYears !== undefined);
-    const cpiFactor = this.cpiEnabled
-      ? (1 + (this.cpiRate ?? 0) / 100) ** this.deferredYears
-      : 1;
+    const result = calculatePremiumPension({
+      annualPensionAtValuationDate: this.pensionAtDeferral,
+      valuationDate: ACCEPTANCE_VALUATION_DATE,
+      dateOfBirth: ACCEPTANCE_DATE_OF_BIRTH,
+      drawAge: 56 + this.deferredYears,
+      normalPensionAge: this.premiumNormalPensionAge ?? 60,
+      cpiAssumption: this.cpiEnabled ? (this.cpiRate ?? 0) / 100 : 0,
+    });
 
-    this.deferredPremiumPensionAtDrawAge = this.pensionAtDeferral * cpiFactor;
+    this.deferredPremiumPensionAtDrawAge = result.cpiRevaluedPensionAtDrawAge;
   }
 );
 
@@ -718,9 +733,23 @@ When(
   "the pension is increased for {int} year in payment",
   function (this: PremiumWorld, years: number) {
     assertCondition(this.annualPremiumPensionPayable !== undefined);
+    const settings = {
+      ...defaultSettings,
+      showPremium: true,
+      projectionBasis: this.cpiEnabled
+        ? ("nominal" as const)
+        : ("real" as const),
+      inflationRateAnnual: this.cpiRate ?? 0,
+      premiumAnnualPensionAtValuationDate: this.annualPremiumPensionPayable,
+      premiumValuationDate: ACCEPTANCE_VALUATION_DATE,
+    };
+
     this.annualPremiumPensionAfterIncrease =
-      this.annualPremiumPensionPayable *
-      (1 + (this.cpiEnabled ? (this.cpiRate ?? 0) / 100 : 0)) ** years;
+      calculateAnnualPremiumPensionAtDate({
+        settings,
+        premiumDrawDate: ACCEPTANCE_VALUATION_DATE,
+        rowDate: addWholeYears(ACCEPTANCE_VALUATION_DATE, years),
+      });
     this.monthlyGrossPremiumPension =
       this.annualPremiumPensionAfterIncrease / 12;
   }

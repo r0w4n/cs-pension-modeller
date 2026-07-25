@@ -25,6 +25,7 @@ export type RetirementIncomePoint = {
   isaIncomeAnnual: number;
   lisaIncomeAnnual: number;
   sippIncomeAnnual: number;
+  csAvcIncomeAnnual: number;
   alphaIncomeAnnual: number;
   classicIncomeAnnual: number;
   classicPlusIncomeAnnual: number;
@@ -40,6 +41,7 @@ export type RetirementIncomePoint = {
   isaBalance?: number;
   lisaBalance?: number;
   sippBalance?: number;
+  csAvcBalance?: number;
   phase:
     | "build-up"
     | "isa-bridge"
@@ -131,6 +133,7 @@ type IncomeKey =
   | "isaIncomeAnnual"
   | "lisaIncomeAnnual"
   | "sippIncomeAnnual"
+  | "csAvcIncomeAnnual"
   | "alphaIncomeAnnual"
   | "classicIncomeAnnual"
   | "classicPlusIncomeAnnual"
@@ -194,6 +197,7 @@ const incomeKeys: IncomeKey[] = [
   "isaIncomeAnnual",
   "lisaIncomeAnnual",
   "sippIncomeAnnual",
+  "csAvcIncomeAnnual",
   "partialRetirementIncomeAnnual",
   "alphaIncomeAnnual",
   "classicIncomeAnnual",
@@ -238,6 +242,11 @@ const sourceMeta: Record<
     label: "SIPP",
     shortLabel: "SIPP",
     colour: "#148c55",
+  },
+  csAvcIncomeAnnual: {
+    label: "Civil Service AVC",
+    shortLabel: "CS AVC",
+    colour: "#0f766e",
   },
   partialRetirementIncomeAnnual: {
     label: "Partial retirement income",

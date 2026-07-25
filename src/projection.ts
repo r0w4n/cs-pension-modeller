@@ -7,6 +7,7 @@ export * from "./projection-domains/premium";
 export * from "./projection-domains/state-pension";
 export * from "./projection-domains/additional-guaranteed-income";
 export * from "./projection-domains/sipp";
+export * from "./projection-domains/cs-avc";
 export * from "./projection-domains/isa";
 export * from "./projection-domains/tax";
 export * from "./projection-domains/inflation";

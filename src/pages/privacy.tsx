@@ -9,7 +9,7 @@ function PrivacyPage() {
 
   return (
     <StaticPageLayout
-      eyebrow="Civil Service"
+      eyebrow="Civil Service Pensions"
       title="Privacy"
       lead="This modeller runs entirely in your browser."
       description="See what the modeller stores locally in your browser and what it does not collect or transmit."

@@ -57,6 +57,10 @@ import {
   normalizeSippWithdrawalStrategy,
 } from "./settings-domains/sipp";
 import {
+  normalizeCsAvcBooleanSetting,
+  normalizeCsAvcWithdrawalStrategy,
+} from "./settings-domains/cs-avc";
+import {
   normalizeTaxationBooleanSetting,
   taxNumericSettingRules,
 } from "./settings-domains/tax";
@@ -96,6 +100,13 @@ const numericSettingRules = {
   sippRealInterestPercent: { min: -10, max: 10, step: 0.1 },
   sippWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
   sippWithdrawalTargetAge: { min: 55, max: 100, step: 1 },
+  csAvcCurrentPot: { min: 0, max: 2_000_000, step: 1 },
+  csAvcMonthlyContribution: { min: 0, max: 5000, step: 25 },
+  csAvcProtectedPensionAge: { min: 0, max: 56, step: 1 },
+  csAvcDrawAge: { min: 0, max: 100, step: 1 },
+  csAvcRealInterestPercent: { min: -10, max: 10, step: 0.1 },
+  csAvcWithdrawalPercent: { min: 0, max: 15, step: 0.1 },
+  csAvcWithdrawalTargetAge: { min: 55, max: 100, step: 1 },
   isaCurrentPot: { min: 0, max: 2_000_000, step: 1 },
   isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
   isaDrawAge: { min: 0, max: 100, step: 1 },
@@ -171,6 +182,13 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
   sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
   sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+  csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+  csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+  csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+  csAvcDrawAge: defaultSettings.csAvcDrawAge,
+  csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+  csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+  csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
   isaCurrentPot: defaultSettings.isaCurrentPot,
   isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
   isaDrawAge: defaultSettings.isaDrawAge,
@@ -193,6 +211,8 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
   taxSippTaxFreeWithdrawalPercent:
     defaultSettings.taxSippTaxFreeWithdrawalPercent,
+  taxCsAvcTaxFreeWithdrawalPercent:
+    defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
 };
 
 const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
@@ -208,6 +228,8 @@ const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
   "premiumDrawAge",
   "sippDrawAge",
   "sippWithdrawalTargetAge",
+  "csAvcDrawAge",
+  "csAvcWithdrawalTargetAge",
   "isaDrawAge",
   "isaWithdrawalTargetAge",
   "lisaDrawAge",
@@ -276,6 +298,9 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "showSipp":
     case "sippHasProtectedPensionAge":
       return normalizeSippBooleanSetting(value) as PensionSettings[K];
+    case "showCsAvc":
+    case "csAvcHasProtectedPensionAge":
+      return normalizeCsAvcBooleanSetting(value) as PensionSettings[K];
     case "showIsa":
       return normalizeIsaBooleanSetting(value) as PensionSettings[K];
     case "showLisa":
@@ -308,6 +333,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeClassicFinalSalaryLink(value) as PensionSettings[K];
     case "sippWithdrawalStrategy":
       return normalizeSippWithdrawalStrategy(value) as PensionSettings[K];
+    case "csAvcWithdrawalStrategy":
+      return normalizeCsAvcWithdrawalStrategy(value) as PensionSettings[K];
     case "isaWithdrawalStrategy":
       return normalizeIsaWithdrawalStrategy(value) as PensionSettings[K];
     case "lisaWithdrawalStrategy":
@@ -333,6 +360,7 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       }) as PensionSettings[K];
     case "isaLumpSums":
     case "sippLumpSums":
+    case "csAvcLumpSums":
     case "lisaLumpSums":
       return normalizeAddedPensionLumpSums(
         value as AddedPensionLumpSum[]
@@ -377,6 +405,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.showStatePension
     ),
     showSipp: Boolean(settings.showSipp),
+    showCsAvc: Boolean(settings.showCsAvc),
     showIsa: Boolean(settings.showIsa),
     showLisa: Boolean(settings.showLisa),
     showAdditionalGuaranteedIncome:
@@ -625,6 +654,39 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "sippWithdrawalTargetAge",
       settings.sippWithdrawalTargetAge
     ),
+    csAvcCurrentPot: normalizeSetting(
+      "csAvcCurrentPot",
+      settings.csAvcCurrentPot
+    ),
+    csAvcMonthlyContribution: normalizeSetting(
+      "csAvcMonthlyContribution",
+      settings.csAvcMonthlyContribution
+    ),
+    csAvcHasProtectedPensionAge: normalizeCsAvcBooleanSetting(
+      settings.csAvcHasProtectedPensionAge
+    ),
+    csAvcProtectedPensionAge: normalizeSetting(
+      "csAvcProtectedPensionAge",
+      settings.csAvcProtectedPensionAge
+    ),
+    csAvcDrawAge: normalizeSippDrawAge(settings.csAvcDrawAge, dateOfBirth),
+    csAvcLumpSums: normalizeSetting("csAvcLumpSums", settings.csAvcLumpSums),
+    csAvcRealInterestPercent: normalizeSetting(
+      "csAvcRealInterestPercent",
+      settings.csAvcRealInterestPercent
+    ),
+    csAvcWithdrawalStrategy: normalizeSetting(
+      "csAvcWithdrawalStrategy",
+      settings.csAvcWithdrawalStrategy
+    ),
+    csAvcWithdrawalPercent: normalizeSetting(
+      "csAvcWithdrawalPercent",
+      settings.csAvcWithdrawalPercent
+    ),
+    csAvcWithdrawalTargetAge: normalizeSetting(
+      "csAvcWithdrawalTargetAge",
+      settings.csAvcWithdrawalTargetAge
+    ),
     isaCurrentPot: normalizeSetting("isaCurrentPot", settings.isaCurrentPot),
     isaMonthlyContribution: normalizeSetting(
       "isaMonthlyContribution",
@@ -702,6 +764,10 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     taxSippTaxFreeWithdrawalPercent: normalizeSetting(
       "taxSippTaxFreeWithdrawalPercent",
       settings.taxSippTaxFreeWithdrawalPercent
+    ),
+    taxCsAvcTaxFreeWithdrawalPercent: normalizeSetting(
+      "taxCsAvcTaxFreeWithdrawalPercent",
+      settings.taxCsAvcTaxFreeWithdrawalPercent
     ),
   };
 }

@@ -14,6 +14,7 @@ const PROJECTED_SOURCES = [
   "State Pension",
   "Additional guaranteed income entered by the user",
   "SIPP pension savings",
+  "Civil Service Additional Voluntary Contribution (CS AVC) pension savings",
   "ISA savings",
   "Lifetime ISA (LISA) savings",
   "Optional bridge funding before defined-benefit or State Pension income starts",
@@ -36,9 +37,11 @@ const KEY_DATES = [
   "nuvos final pensionable-service date",
   "Premium pension draw age",
   "SIPP access age",
+  "CS AVC access age",
   "ISA draw start age",
   "LISA draw start age",
   "SIPP draw start age",
+  "CS AVC draw start age",
   "planning end age or life expectancy",
 ] as const;
 
@@ -63,6 +66,16 @@ const SIPP_WITHDRAWAL_APPROACHES = [
   "fixed annual withdrawal percentage",
   "depletion over life expectancy",
   "use-by-age strategy",
+] as const;
+
+const CS_AVC_PROJECTS = [
+  "starting CS AVC balance",
+  "regular CS AVC contributions",
+  "lump-sum CS AVC contributions",
+  "investment growth",
+  "selected CS AVC draw age",
+  "selected withdrawal strategy",
+  "tax-free and taxable withdrawal proportions",
 ] as const;
 
 const ISA_PROJECTS = [
@@ -91,7 +104,8 @@ const BRIDGE_SENSITIVITIES = [
   "Premium draw age",
   "State Pension age",
   "SIPP access age",
-  "ISA, LISA and SIPP balances",
+  "CS AVC access age",
+  "ISA, LISA, SIPP and CS AVC balances",
   "withdrawal order",
   "investment returns",
   "inflation",
@@ -102,6 +116,7 @@ const BRIDGE_SENSITIVITIES = [
 const PARTIAL_RETIREMENT_EFFECTS = [
   "future Alpha accrual",
   "SIPP contributions",
+  "CS AVC contributions",
   "ISA contributions",
   "LISA contributions",
 ] as const;
@@ -113,6 +128,7 @@ const TAXABLE_INCOME_SOURCES = [
   "State Pension",
   "taxable additional guaranteed income",
   "taxable SIPP withdrawals",
+  "taxable CS AVC withdrawals",
 ] as const;
 
 const TAX_ASSUMPTIONS = [
@@ -122,6 +138,7 @@ const TAX_ASSUMPTIONS = [
   "higher-rate band",
   "additional-rate threshold",
   "taxable share of SIPP withdrawals",
+  "taxable share of CS AVC withdrawals",
 ] as const;
 
 const COMPARISON_OUTPUTS = [
@@ -129,8 +146,8 @@ const COMPARISON_OUTPUTS = [
   "lowest projected income",
   "years and lifetime amount below target",
   "secure pension income at key ages",
-  "bridge-funding gaps before and after SIPP and LISA access",
-  "ISA, LISA and SIPP depletion ages",
+  "bridge-funding gaps before and after pension-pot and LISA access",
+  "ISA, LISA, SIPP and CS AVC depletion ages",
 ] as const;
 
 function FormulaBlock({ children }: { children: string }) {
@@ -140,7 +157,7 @@ function FormulaBlock({ children }: { children: string }) {
 export function MethodologyPage() {
   return (
     <StaticPageLayout
-      eyebrow="Civil Service"
+      eyebrow="Civil Service Pensions"
       title="Methodology"
       lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, drawdown, tax and bridge funding."
       description="Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."
@@ -243,6 +260,17 @@ export function MethodologyPage() {
             are enabled.
           </li>
           <li>
+            The modeller does not calculate Alpha ill-health retirement, death
+            benefits, survivor benefits, transfers, pension sharing, scheme pays
+            adjustments, or remedy-specific benefit choices.
+          </li>
+          <li>
+            Alpha partial retirement in the planning journey changes future
+            earnings, accrual and saving assumptions. It does not currently add
+            a separately selected partial-retirement pension payment to the
+            income timeline.
+          </li>
+          <li>
             Additional guaranteed income is a simple gross annual amount entered
             by the user. It does not model provider-specific rules, early
             retirement factors, commutation, survivor benefits, GMP, or scheme
@@ -326,7 +354,23 @@ export function MethodologyPage() {
         <FormulaBlock>{"CPI"}</FormulaBlock>
         <p className="section-copy">
           Leaving the scheme stops future 2.32% accrual. The model applies CPI
-          revaluation to accrued Alpha pension.
+          revaluation to accrued Alpha pension. The scheme&apos;s annual price
+          adjustment can be positive or negative, and pension in payment
+          continues to receive the applicable annual pension increase.
+          Projection inputs remain assumptions rather than forecasts.
+        </p>
+        <p className="section-copy">
+          Members leaving with at least two years of qualifying service will
+          normally retain preserved Alpha benefits. Shorter service can instead
+          lead to refund or transfer options. See the{" "}
+          <a
+            href={knowledgeLinks.alphaLeavingService}
+            target="_blank"
+            rel="noreferrer"
+          >
+            official leaving-service guidance
+          </a>
+          .
         </p>
 
         <h3>Alpha EPA</h3>
@@ -349,6 +393,16 @@ export function MethodologyPage() {
           portion is not reduced for early payment. The standard Alpha portion
           continues to use the normal Alpha reduction test against Normal
           Pension Age.
+        </p>
+        <p className="section-copy">
+          An EPA cannot provide an unreduced age below 65. EPA accrual is
+          revalued like the main Alpha pension, and a change to State Pension
+          age can change both Normal Pension Age and the corresponding EPA age.
+          See the{" "}
+          <a href={knowledgeLinks.alphaEpa} target="_blank" rel="noreferrer">
+            official EPA guidance
+          </a>
+          .
         </p>
 
         <h3>Alpha draw age and early retirement</h3>
@@ -389,9 +443,36 @@ export function MethodologyPage() {
           revise the workbook or factors, so important decisions should be
           checked against an official pension quotation or statement.
         </p>
+        <h3>Alpha late retirement</h3>
         <p className="section-copy">
-          The model does not add a late-retirement enhancement when Alpha is
-          drawn after Normal Pension Age; it treats the reduction factor as 1.
+          The Alpha calculation domain distinguishes members remaining in active
+          service from members retiring from deferred status. Active opening
+          balances use GAD age-addition tables 0-415 and 0-416. Deferred opening
+          balances use late-payment-supplement tables 0-419 and 0-420. Self-only
+          Added Pension uses its separate table.
+        </p>
+        <p className="section-copy">
+          The factor is selected for age in completed years and months. A
+          cumulative multiplier for an opening balance is calculated by dividing
+          the factor at payment age by the factor at Normal Pension Age.
+          Active-member age-addition percentages are rounded to four decimal
+          places as directed by GAD. GAD&apos;s full active-member calculation
+          applies additions to scheme-year opening balances and may include an
+          assumed age addition on leaving or retirement. See the{" "}
+          <a
+            href={knowledgeLinks.alphaLateRetirementMethodology}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GAD Alpha age-addition methodology
+          </a>
+          .
+        </p>
+        <p className="section-copy">
+          The main projection timeline does not yet reconstruct every
+          scheme-year age addition across pension earned after Normal Pension
+          Age. Late-retirement examples therefore cover a stated opening balance
+          and should not be treated as an official late-retirement quotation.
         </p>
 
         <h3>Alpha added pension</h3>
@@ -408,16 +489,48 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
-          The model uses age-based added-pension factor tables to estimate the
-          extra annual pension purchased.
+          The model uses the Government Actuary&apos;s Department consolidated
+          Civil Service factors workbook
+          CS_GB_Consolidated_Factors_2026-01.xlsx, issued on 29 May 2026. Lump
+          sums use tables 0-714 to 0-717 and regular contributions use tables
+          0-718 to 0-721, covering Normal Pension Ages 65 to 68. The source is
+          available from the{" "}
+          <a
+            href={knowledgeLinks.alphaAddedPensionFactors}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GAD Alpha added-pension factor tables
+          </a>
+          .
         </p>
         <p className="section-copy">
-          Known simplification: added-pension revaluation is currently
-          simplified. The purchase revaluation factor used in the added-pension
-          factor calculation is currently 1. Purchased added pension is then
-          tracked alongside the standard Alpha portion for annual revaluation in
-          the projection. This may understate or misstate the final value of
-          added pension in some scenarios.
+          For a lump sum, the model uses the member&apos;s age on the payment
+          date. For regular contributions, it uses the age at the start of the
+          scheme year or payment period. If Normal Pension Age is not a whole
+          year, the factor is interpolated between the adjacent published
+          tables. The purchase calculation also applies GAD table 0-728 using
+          the number of 1 Aprils after the calculation date up to Normal Pension
+          Age. The purchased amount is then tracked alongside standard Alpha for
+          the projection&apos;s annual CPI revaluation.
+        </p>
+
+        <h3>Alpha retirement lump sum</h3>
+        <p className="section-copy">
+          Alpha does not provide an automatic retirement lump sum. Subject to
+          the scheme and tax limits, a member can exchange annual pension for a
+          lump sum at £12 of lump sum for each £1 of annual pension exchanged.
+          The calculation domain captures that exchange rule, but the main
+          projection journey does not currently include a commutation amount
+          control. See the{" "}
+          <a
+            href={knowledgeLinks.alphaCommutation}
+            target="_blank"
+            rel="noreferrer"
+          >
+            official lump-sum guidance
+          </a>
+          .
         </p>
       </section>
 
@@ -519,10 +632,14 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The entered Premium amount is increased by CPI from the valuation or
-          statement date to the selected draw age. In real-terms mode this CPI
-          increase is removed, so the preserved Premium amount is flat in
-          today&apos;s spending power. In nominal mode it compounds using the
-          main inflation assumption.
+          statement date and continues to receive CPI-linked increases after
+          payment begins. In real-terms mode these CPI increases are removed, so
+          the Premium amount is flat in today&apos;s spending power. In nominal
+          mode it compounds using the main inflation assumption. The model uses
+          simplified whole-year compounding from the valuation date; it does not
+          reproduce the scheme&apos;s April increase date or the proportionate
+          first increase for a pension that has been in payment for less than a
+          year.
         </p>
         <p className="section-copy">
           If Premium is taken before its Normal Pension Age, a Premium
@@ -703,6 +820,41 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>CS AVC methodology</h2>
+        <p className="section-copy">
+          Civil Service AVC is modelled as a separate invested defined
+          contribution pension pot. It does not increase Alpha, classic, premium
+          or nuvos defined benefit pension in the model.
+        </p>
+        <p className="section-copy">The model projects:</p>
+        <ul className="section-copy">
+          {CS_AVC_PROJECTS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="section-copy">
+          Regular CS AVC contributions and scheduled lump sums are included
+          until the earlier of the CS AVC draw date and target retirement age.
+          The entered contribution is treated as the amount added to the CS AVC
+          pot. The model does not add employer contributions and does not apply
+          the SIPP tax-relief gross-up setting to CS AVC contributions.
+        </p>
+        <p className="section-copy">
+          CS AVC drawdown uses the same withdrawal strategies as SIPP:
+          percentage, zero at death, or use by a selected age. Withdrawals can
+          be split between tax-free and taxable portions using the separate CS
+          AVC tax-free withdrawal setting.
+        </p>
+        <p className="section-copy">
+          The model applies standard registered pension access-age assumptions:
+          age 55 before 6 April 2028 and age 57 from that date, unless the user
+          marks the CS AVC as having provider-confirmed protected access. Users
+          should check access age, provider terms, charges and retirement
+          options against their CS AVC provider statement.
+        </p>
+      </section>
+
+      <section>
         <h2>ISA methodology</h2>
         <p className="section-copy">
           The ISA is modelled as a tax-free investment pot.
@@ -779,15 +931,15 @@ export function MethodologyPage() {
         <p className="section-copy">
           The retirement income summary starts with an outcome banner showing
           whether the scenario appears to meet the selected income target.
-          Temporary ISA, LISA and SIPP withdrawals that run in a bridge period
-          are not treated as permanent pension income. The detailed summary
-          groups projected income by age range, with each range starting when
-          the active income sources change.
+          Temporary ISA, LISA, SIPP and CS AVC withdrawals that run in a bridge
+          period are not treated as permanent pension income. The detailed
+          summary groups projected income by age range, with each range starting
+          when the active income sources change.
         </p>
         <p className="section-copy">
           The model can show where income is below the selected
-          retirement-income target and whether ISA, LISA or SIPP drawdown can
-          cover that gap.
+          retirement-income target and whether ISA, LISA, SIPP or CS AVC
+          drawdown can cover that gap.
         </p>
         <p className="section-copy">
           Bridge analysis first prepares a retirement scenario where Alpha
@@ -800,19 +952,21 @@ export function MethodologyPage() {
           projection.
         </p>
         <p className="section-copy">
-          ISA, LISA and SIPP bridge balances start from the retirement-date
-          balance immediately before any configured main-projection withdrawal.
-          That balance includes applicable investment growth, regular saving,
-          scheduled lump sums and partial-retirement saving reductions up to
-          retirement. The bridge calculation then applies only the temporary
-          withdrawal needed for that month's modelled shortfall. Investment
-          growth during the bridge uses the same real or nominal growth
-          conversion as the main pot projections.
+          ISA, LISA, SIPP and CS AVC bridge balances start from the
+          retirement-date balance immediately before any configured
+          main-projection withdrawal. That balance includes applicable
+          investment growth, regular saving, scheduled lump sums and
+          partial-retirement saving reductions up to retirement. The bridge
+          calculation then applies only the temporary withdrawal needed for that
+          month's modelled shortfall. Investment growth during the bridge uses
+          the same real or nominal growth conversion as the main pot
+          projections.
         </p>
         <p className="section-copy">
-          Before SIPP and LISA access, any shortfall is tracked as an ISA-only
-          bridge requirement. From SIPP access onwards, the bridge calculation
-          draws from SIPP first. From LISA access onwards, it can then draw from
+          Before pension-pot and LISA access, any shortfall is tracked as an
+          ISA-only bridge requirement. From SIPP access onwards, the bridge
+          calculation draws from SIPP first. From CS AVC access onwards, it can
+          then draw from CS AVC. From LISA access onwards, it can then draw from
           LISA before ISA, limited by the balances available. Any remaining gap
           is recorded as an unfunded shortfall. The comparison view also
           estimates the extra monthly saving that would be needed to cover any
@@ -821,7 +975,7 @@ export function MethodologyPage() {
         <p className="section-copy">A typical bridge scenario might be:</p>
         <FormulaBlock>
           {
-            "Retire early → use ISA → use SIPP/LISA → Alpha starts → State Pension starts"
+            "Retire early -> use ISA -> use SIPP/CS AVC/LISA -> Alpha starts -> State Pension starts"
           }
         </FormulaBlock>
         <p className="section-copy">The bridge analysis is sensitive to:</p>
@@ -876,6 +1030,23 @@ export function MethodologyPage() {
           State Pension, or the current ISA and SIPP balances already entered.
           It changes future accrual and regular saving assumptions from the
           selected start age.
+        </p>
+        <p className="section-copy">
+          Under the Alpha scheme rules, partial retirement also requires
+          employer agreement, the member to have reached minimum pension age,
+          and a reduction in pensionable earnings of at least 20%. A member may
+          take some or all of their accrued pension and continue building
+          further pension. The current planning controls model reduced future
+          work and saving only; they do not place a selected portion of accrued
+          Alpha pension into payment. See the{" "}
+          <a
+            href={knowledgeLinks.alphaPartialRetirement}
+            target="_blank"
+            rel="noreferrer"
+          >
+            official partial-retirement guidance
+          </a>
+          .
         </p>
       </section>
 

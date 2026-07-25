@@ -221,14 +221,32 @@ Feature: Premium Civil Service pension modelling
       | 12500.00          | 3             | 2.00%   | off        | 12500.00              |
 
   @cpi @in-payment
-  Scenario: Increase Premium pension in payment using CPI
+  Scenario Outline: Apply the CPI setting to Premium pension increases in payment
     Given the member has a Premium pension in payment
     And the annual Premium pension payable is 12000.00
     And the annual CPI assumption is 3.00%
-    And CPI revaluation is on
+    And CPI revaluation is <cpiEnabled>
     When the pension is increased for 1 year in payment
-    Then the annual Premium pension after increase should be 12360.00
-    And the monthly gross Premium pension should be 1030.00
+    Then the annual Premium pension after increase should be <expectedAnnualPension>
+    And the monthly gross Premium pension should be <expectedMonthlyPension>
+
+    Examples:
+      | cpiEnabled | expectedAnnualPension | expectedMonthlyPension |
+      | on         | 12360.00              | 1030.00                |
+      | off        | 12000.00              | 1000.00                |
+
+  @cpi @in-payment @early-retirement
+  Scenario: Increase an early-reduced Premium pension in payment without removing the reduction
+    Given the member has a Premium pension record
+    And the member has Premium normal pension age 60
+    And the member has unreduced annual Premium pension of 12000.00
+    And the annual CPI assumption is 3.00%
+    And CPI revaluation is on
+    When the member draws Premium pension at age 55
+    Then the annual Premium pension payable should be 9672.00
+    When the pension is increased for 1 year in payment
+    Then the annual Premium pension after increase should be 9962.16
+    And the monthly gross Premium pension should be 830.18
 
 
   # ---------------------------------------------------------------------------

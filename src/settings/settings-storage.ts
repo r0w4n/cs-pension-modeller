@@ -19,6 +19,7 @@ import {
   type IsaWithdrawalStrategy,
   type LisaWithdrawalStrategy,
   type ProjectionBasis,
+  type CsAvcWithdrawalStrategy,
   type SippWithdrawalStrategy,
   type StoredPensionSettings,
   type PensionSettings,
@@ -142,6 +143,7 @@ function coerceSettings(
       | undefined,
     inflationRateAnnual: coerceNumber(input.inflationRateAnnual),
     showSipp: coerceBoolean(input.showSipp),
+    showCsAvc: coerceBoolean(input.showCsAvc),
     showIsa: coerceBoolean(input.showIsa),
     showLisa: coerceBoolean(input.showLisa),
     showAdditionalGuaranteedIncome: coerceBoolean(
@@ -197,6 +199,20 @@ function coerceSettings(
       | undefined,
     sippWithdrawalPercent: coerceNumber(input.sippWithdrawalPercent),
     sippWithdrawalTargetAge: coerceNumber(input.sippWithdrawalTargetAge),
+    csAvcCurrentPot: coerceNumber(input.csAvcCurrentPot),
+    csAvcMonthlyContribution: coerceNumber(input.csAvcMonthlyContribution),
+    csAvcHasProtectedPensionAge: coerceBoolean(
+      input.csAvcHasProtectedPensionAge
+    ),
+    csAvcProtectedPensionAge: coerceNumber(input.csAvcProtectedPensionAge),
+    csAvcDrawAge: coerceNumber(input.csAvcDrawAge),
+    csAvcLumpSums: coerceAddedPensionLumpSums(input.csAvcLumpSums),
+    csAvcRealInterestPercent: coerceNumber(input.csAvcRealInterestPercent),
+    csAvcWithdrawalStrategy: coerceString(input.csAvcWithdrawalStrategy) as
+      | CsAvcWithdrawalStrategy
+      | undefined,
+    csAvcWithdrawalPercent: coerceNumber(input.csAvcWithdrawalPercent),
+    csAvcWithdrawalTargetAge: coerceNumber(input.csAvcWithdrawalTargetAge),
     isaCurrentPot: coerceNumber(input.isaCurrentPot),
     isaMonthlyContribution: coerceNumber(input.isaMonthlyContribution),
     isaDrawAge: coerceNumber(input.isaDrawAge),

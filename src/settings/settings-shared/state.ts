@@ -237,6 +237,7 @@ export type SippAccessAgeSettings = Pick<
 >;
 
 export const PROVIDER_CONFIRMED_PROTECTED_SIPP_ACCESS_AGE = 50;
+export const PROVIDER_CONFIRMED_PROTECTED_CS_AVC_ACCESS_AGE = 50;
 
 export function resolveSippMinimumAccessAge(settings: SippAccessAgeSettings) {
   if (settings.sippHasProtectedPensionAge) {
@@ -269,6 +270,48 @@ export function calculateMinimumSippAccessAge(
     sippDrawAge: 55,
     sippHasProtectedPensionAge: settings?.sippHasProtectedPensionAge ?? false,
     sippProtectedPensionAge: settings?.sippProtectedPensionAge ?? 55,
+  });
+}
+
+export type CsAvcAccessAgeSettings = Pick<
+  PensionSettings,
+  | "dateOfBirth"
+  | "csAvcDrawAge"
+  | "csAvcHasProtectedPensionAge"
+  | "csAvcProtectedPensionAge"
+>;
+
+export function resolveCsAvcMinimumAccessAge(settings: CsAvcAccessAgeSettings) {
+  if (settings.csAvcHasProtectedPensionAge) {
+    return PROVIDER_CONFIRMED_PROTECTED_CS_AVC_ACCESS_AGE;
+  }
+
+  const normalizedDateOfBirth = normalizeIsoDate(
+    settings.dateOfBirth,
+    DEFAULT_DATE_OF_BIRTH
+  );
+  const csAvcDrawDate = addYearsToIsoDate(
+    normalizedDateOfBirth,
+    settings.csAvcDrawAge
+  );
+
+  return csAvcDrawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE ? 57 : 55;
+}
+
+export function calculateMinimumCsAvcAccessAge(
+  dateOfBirth: string,
+  settings?: Partial<
+    Pick<
+      PensionSettings,
+      "csAvcHasProtectedPensionAge" | "csAvcProtectedPensionAge"
+    >
+  >
+) {
+  return resolveCsAvcMinimumAccessAge({
+    dateOfBirth,
+    csAvcDrawAge: 55,
+    csAvcHasProtectedPensionAge: settings?.csAvcHasProtectedPensionAge ?? false,
+    csAvcProtectedPensionAge: settings?.csAvcProtectedPensionAge ?? 55,
   });
 }
 

@@ -89,7 +89,7 @@ export function validatePersonalDetailsRules(
   ) {
     issues.push({
       field: "dateOfBirth",
-      message: "Date of birth must be before the calculation start date.",
+      message: "Date of birth must be before the current date.",
     });
   }
 

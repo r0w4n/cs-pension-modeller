@@ -4,6 +4,10 @@ import { calculateTotalLisaContributionsWithBonus } from "./projection-domains/l
 import { NUVOS_FINAL_PENSIONABLE_SERVICE_DATE } from "./projection-domains/nuvos";
 import { calculatePremiumPension } from "./projection-domains/premium";
 import { calculateTotalSippContributionsAfterTaxRelief } from "./projection-domains/sipp";
+import {
+  calculateCsAvcPotBeforeWithdrawalAtDate,
+  calculateTotalCsAvcContributions,
+} from "./projection-domains/cs-avc";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
 import { calculateRetirementIncomeTargetAtDate } from "./projection-domains/inflation";
 import {
@@ -89,6 +93,8 @@ export function generatePensionSummary(
       premiumFactorUnavailable: false,
       sippPotAtDraw: 0,
       sippMonthlyAtDraw: 0,
+      csAvcPotAtDraw: 0,
+      csAvcMonthlyAtDraw: 0,
       isaPotAtDraw: 0,
       isaMonthlyAtDraw: 0,
       lisaPotAtDraw: 0,
@@ -104,6 +110,7 @@ export function generatePensionSummary(
         nuvosMonthlyIncome: 0,
         premiumMonthlyIncome: 0,
         sippMonthlyIncome: 0,
+        csAvcMonthlyIncome: 0,
         isaMonthlyIncome: 0,
         lisaMonthlyIncome: 0,
         additionalGuaranteedIncomeMonthlyIncome: 0,
@@ -145,6 +152,7 @@ function buildSummaryDates(
   return {
     ...dates,
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
+    csAvcDrawDate: addYears(settings.dateOfBirth, settings.csAvcDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     premiumDrawDate: dates.premiumDrawDate,
@@ -186,6 +194,7 @@ function buildRowSummaryContext(
     nuvosPensionDrawDate: string;
     premiumDrawDate: string;
     sippDrawDate: string;
+    csAvcDrawDate: string;
     isaDrawDate: string;
     lisaDrawDate: string;
     statePensionStartDate: string;
@@ -224,6 +233,11 @@ function buildRowSummaryContext(
       input.sippDrawDate,
       "monthlySippPension"
     ),
+    csAvcIncomeRow: findFirstDrawdownRowAtOrAfterDate(
+      tableData,
+      input.csAvcDrawDate,
+      "monthlyCsAvcPension"
+    ),
     isaIncomeRow: findFirstDrawdownRowAtOrAfterDate(
       tableData,
       input.isaDrawDate,
@@ -243,6 +257,7 @@ function buildRowSummaryContext(
     premiumPensionDrawDate: input.premiumDrawDate,
     statePensionStartDate: input.statePensionStartDate,
     sippIncomeRow: flexibleIncomeRows.sippIncomeRow,
+    csAvcIncomeRow: flexibleIncomeRows.csAvcIncomeRow,
     isaIncomeRow: flexibleIncomeRows.isaIncomeRow,
     lisaIncomeRow: flexibleIncomeRows.lisaIncomeRow,
   });
@@ -309,6 +324,17 @@ function buildRowSummaryContext(
     flexibleIncomeRows.sippIncomeRow,
     "monthlySippPension"
   );
+  const csAvcPotAtDraw = settings.showCsAvc
+    ? calculateCsAvcPotBeforeWithdrawalAtDate({
+        settings,
+        rowDate: input.csAvcDrawDate,
+        drawDate: input.csAvcDrawDate,
+      })
+    : 0;
+  const csAvcMonthlyAtDraw = getProjectionRowValue(
+    flexibleIncomeRows.csAvcIncomeRow,
+    "monthlyCsAvcPension"
+  );
   const isaPotAtDraw = getProjectionRowValue(drawRows.isaDrawRow, "isaPot");
   const isaMonthlyAtDraw = getProjectionRowValue(
     flexibleIncomeRows.isaIncomeRow,
@@ -372,6 +398,8 @@ function buildRowSummaryContext(
     premiumFactorUnavailable: premiumCalculation.factorUnavailable,
     sippPotAtDraw,
     sippMonthlyAtDraw,
+    csAvcPotAtDraw,
+    csAvcMonthlyAtDraw,
     isaPotAtDraw,
     isaMonthlyAtDraw,
     lisaPotAtDraw,
@@ -395,7 +423,11 @@ function getProjectionRowValue<K extends keyof ProjectionRow>(
 function findFirstDrawdownRowAtOrAfterDate(
   tableData: ProjectionRow[],
   date: string,
-  incomeKey: "monthlySippPension" | "monthlyIsaPension" | "monthlyLisaPension"
+  incomeKey:
+    | "monthlySippPension"
+    | "monthlyCsAvcPension"
+    | "monthlyIsaPension"
+    | "monthlyLisaPension"
 ) {
   return (
     tableData.find((row) => row.date >= date && row[incomeKey] > 0) ??
@@ -416,6 +448,7 @@ function buildRowRetirementIncomeSummary(
     isaDrawRow: ProjectionRow | undefined;
     lisaDrawRow: ProjectionRow | undefined;
     sippIncomeRow: ProjectionRow | undefined;
+    csAvcIncomeRow: ProjectionRow | undefined;
     isaIncomeRow: ProjectionRow | undefined;
     lisaIncomeRow: ProjectionRow | undefined;
     summaryRow: ProjectionRow | undefined;
@@ -435,11 +468,13 @@ function buildRowRetirementIncomeSummary(
   const additionalGuaranteedIncomeTaxableMonthlyIncome =
     summaryRow?.monthlyAdditionalGuaranteedIncomeTaxable ?? 0;
   const sippMonthlyIncome = summaryRow?.monthlySippPension ?? 0;
+  const csAvcMonthlyIncome = summaryRow?.monthlyCsAvcPension ?? 0;
   const isaMonthlyIncome = summaryRow?.monthlyIsaPension ?? 0;
   const lisaMonthlyIncome = summaryRow?.monthlyLisaPension ?? 0;
   const bridgeWithdrawals = buildBridgeWithdrawalSources(settings, {
     summaryRow,
     sippIncomeRow: drawRows.sippIncomeRow,
+    csAvcIncomeRow: drawRows.csAvcIncomeRow,
     isaIncomeRow: drawRows.isaIncomeRow,
     lisaIncomeRow: drawRows.lisaIncomeRow,
   });
@@ -452,6 +487,7 @@ function buildRowRetirementIncomeSummary(
     nuvosMonthlyIncome,
     premiumMonthlyIncome,
     sippMonthlyIncome,
+    csAvcMonthlyIncome,
     isaMonthlyIncome,
     lisaMonthlyIncome,
     additionalGuaranteedIncomeMonthlyIncome,
@@ -465,6 +501,7 @@ function buildRowRetirementIncomeSummary(
       monthlyPremiumPension: premiumMonthlyIncome,
       monthlyStatePension: statePensionMonthlyIncome,
       monthlySippPension: sippMonthlyIncome,
+      monthlyCsAvcPension: csAvcMonthlyIncome,
       monthlyAdditionalGuaranteedIncomeTaxable:
         additionalGuaranteedIncomeTaxableMonthlyIncome,
     }),
@@ -588,6 +625,11 @@ function getActiveIncomeSourceLabels(
       "SIPP withdrawal"
     ),
     createActiveIncomeSourceLabel(
+      settings.showCsAvc,
+      row.monthlyCsAvcPension,
+      "Civil Service AVC withdrawal"
+    ),
+    createActiveIncomeSourceLabel(
       settings.showIsa,
       row.monthlyIsaPension,
       "ISA withdrawal"
@@ -635,6 +677,7 @@ function findRetirementIncomeSummaryRow(
     premiumPensionDrawDate: string;
     statePensionStartDate: string;
     sippIncomeRow: ProjectionRow | undefined;
+    csAvcIncomeRow: ProjectionRow | undefined;
     isaIncomeRow: ProjectionRow | undefined;
     lisaIncomeRow: ProjectionRow | undefined;
   }
@@ -649,6 +692,7 @@ function findRetirementIncomeSummaryRow(
   ];
   const flexibleIncomeDates = [
     input.sippIncomeRow,
+    input.csAvcIncomeRow,
     input.isaIncomeRow,
     input.lisaIncomeRow,
   ]
@@ -667,72 +711,95 @@ function buildBridgeWithdrawalSources(
   rows: {
     summaryRow: ProjectionRow | undefined;
     sippIncomeRow: ProjectionRow | undefined;
+    csAvcIncomeRow: ProjectionRow | undefined;
     isaIncomeRow: ProjectionRow | undefined;
     lisaIncomeRow: ProjectionRow | undefined;
   }
 ): BridgeWithdrawalSource[] {
   return [
-    settings.showSipp
-      ? createBridgeWithdrawalSource({
-          key: "sipp",
-          label: "SIPP",
-          monthlyIncome: rows.sippIncomeRow?.monthlySippPension ?? 0,
-          summaryMonthlyIncome: rows.summaryRow?.monthlySippPension ?? 0,
-          incomeRow: rows.sippIncomeRow,
-          summaryRow: rows.summaryRow,
-          startAge: settings.sippDrawAge,
-          endAge:
-            settings.sippWithdrawalStrategy === "use_by_age"
-              ? settings.sippWithdrawalTargetAge
-              : null,
-          startDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
-          endDate:
-            settings.sippWithdrawalStrategy === "use_by_age"
-              ? addYears(settings.dateOfBirth, settings.sippWithdrawalTargetAge)
-              : null,
-        })
-      : null,
-    settings.showIsa
-      ? createBridgeWithdrawalSource({
-          key: "isa",
-          label: "ISA",
-          monthlyIncome: rows.isaIncomeRow?.monthlyIsaPension ?? 0,
-          summaryMonthlyIncome: rows.summaryRow?.monthlyIsaPension ?? 0,
-          incomeRow: rows.isaIncomeRow,
-          summaryRow: rows.summaryRow,
-          startAge: settings.isaDrawAge,
-          endAge:
-            settings.isaWithdrawalStrategy === "use_by_age"
-              ? settings.isaWithdrawalTargetAge
-              : null,
-          startDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
-          endDate:
-            settings.isaWithdrawalStrategy === "use_by_age"
-              ? addYears(settings.dateOfBirth, settings.isaWithdrawalTargetAge)
-              : null,
-        })
-      : null,
-    settings.showLisa
-      ? createBridgeWithdrawalSource({
-          key: "lisa",
-          label: "LISA",
-          monthlyIncome: rows.lisaIncomeRow?.monthlyLisaPension ?? 0,
-          summaryMonthlyIncome: rows.summaryRow?.monthlyLisaPension ?? 0,
-          incomeRow: rows.lisaIncomeRow,
-          summaryRow: rows.summaryRow,
-          startAge: settings.lisaDrawAge,
-          endAge:
-            settings.lisaWithdrawalStrategy === "use_by_age"
-              ? settings.lisaWithdrawalTargetAge
-              : null,
-          startDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
-          endDate:
-            settings.lisaWithdrawalStrategy === "use_by_age"
-              ? addYears(settings.dateOfBirth, settings.lisaWithdrawalTargetAge)
-              : null,
-        })
-      : null,
+    createFlexibleBridgeWithdrawalSource(settings, rows, {
+      show: settings.showSipp,
+      key: "sipp",
+      label: "SIPP",
+      monthlyIncome: rows.sippIncomeRow?.monthlySippPension ?? 0,
+      summaryMonthlyIncome: rows.summaryRow?.monthlySippPension ?? 0,
+      incomeRow: rows.sippIncomeRow,
+      startAge: settings.sippDrawAge,
+      withdrawalStrategy: settings.sippWithdrawalStrategy,
+      withdrawalTargetAge: settings.sippWithdrawalTargetAge,
+    }),
+    createFlexibleBridgeWithdrawalSource(settings, rows, {
+      show: settings.showCsAvc,
+      key: "csAvc",
+      label: "Civil Service AVC",
+      monthlyIncome: rows.csAvcIncomeRow?.monthlyCsAvcPension ?? 0,
+      summaryMonthlyIncome: rows.summaryRow?.monthlyCsAvcPension ?? 0,
+      incomeRow: rows.csAvcIncomeRow,
+      startAge: settings.csAvcDrawAge,
+      withdrawalStrategy: settings.csAvcWithdrawalStrategy,
+      withdrawalTargetAge: settings.csAvcWithdrawalTargetAge,
+    }),
+    createFlexibleBridgeWithdrawalSource(settings, rows, {
+      show: settings.showIsa,
+      key: "isa",
+      label: "ISA",
+      monthlyIncome: rows.isaIncomeRow?.monthlyIsaPension ?? 0,
+      summaryMonthlyIncome: rows.summaryRow?.monthlyIsaPension ?? 0,
+      incomeRow: rows.isaIncomeRow,
+      startAge: settings.isaDrawAge,
+      withdrawalStrategy: settings.isaWithdrawalStrategy,
+      withdrawalTargetAge: settings.isaWithdrawalTargetAge,
+    }),
+    createFlexibleBridgeWithdrawalSource(settings, rows, {
+      show: settings.showLisa,
+      key: "lisa",
+      label: "LISA",
+      monthlyIncome: rows.lisaIncomeRow?.monthlyLisaPension ?? 0,
+      summaryMonthlyIncome: rows.summaryRow?.monthlyLisaPension ?? 0,
+      incomeRow: rows.lisaIncomeRow,
+      startAge: settings.lisaDrawAge,
+      withdrawalStrategy: settings.lisaWithdrawalStrategy,
+      withdrawalTargetAge: settings.lisaWithdrawalTargetAge,
+    }),
   ].filter((source): source is BridgeWithdrawalSource => Boolean(source));
+}
+
+function createFlexibleBridgeWithdrawalSource(
+  settings: PensionSettings,
+  rows: { summaryRow: ProjectionRow | undefined },
+  input: {
+    show: boolean;
+    key: BridgeWithdrawalSource["key"];
+    label: string;
+    monthlyIncome: number;
+    summaryMonthlyIncome: number;
+    incomeRow: ProjectionRow | undefined;
+    startAge: number;
+    withdrawalStrategy: PensionSettings["sippWithdrawalStrategy"];
+    withdrawalTargetAge: number;
+  }
+) {
+  if (!input.show) {
+    return null;
+  }
+
+  const endAge =
+    input.withdrawalStrategy === "use_by_age"
+      ? input.withdrawalTargetAge
+      : null;
+
+  return createBridgeWithdrawalSource({
+    key: input.key,
+    label: input.label,
+    monthlyIncome: input.monthlyIncome,
+    summaryMonthlyIncome: input.summaryMonthlyIncome,
+    incomeRow: input.incomeRow,
+    summaryRow: rows.summaryRow,
+    startAge: input.startAge,
+    endAge,
+    startDate: addYears(settings.dateOfBirth, input.startAge),
+    endDate: endAge === null ? null : addYears(settings.dateOfBirth, endAge),
+  });
 }
 
 function createBridgeWithdrawalSource(input: {
@@ -798,6 +865,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     ),
     premiumDrawDate: addYears(settings.dateOfBirth, settings.premiumDrawAge),
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
+    csAvcDrawDate: addYears(settings.dateOfBirth, settings.csAvcDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     statePensionStartDate: settings.statePensionDrawDate,
@@ -826,6 +894,8 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
     premiumFactorUnavailable: false,
     sippPotAtDraw: 0,
     sippMonthlyAtDraw: 0,
+    csAvcPotAtDraw: 0,
+    csAvcMonthlyAtDraw: 0,
     isaPotAtDraw: 0,
     isaMonthlyAtDraw: 0,
     lisaPotAtDraw: 0,
@@ -841,6 +911,7 @@ function createEmptySummary(settings: PensionSettings): PensionSummary {
       nuvosMonthlyIncome: 0,
       premiumMonthlyIncome: 0,
       sippMonthlyIncome: 0,
+      csAvcMonthlyIncome: 0,
       isaMonthlyIncome: 0,
       lisaMonthlyIncome: 0,
       statePensionMonthlyIncome: 0,
@@ -863,6 +934,7 @@ function createSummaryResponse(input: {
   nuvosPensionDrawDate: string;
   premiumDrawDate: string;
   sippDrawDate: string;
+  csAvcDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
   statePensionStartDate: string;
@@ -891,6 +963,8 @@ function createSummaryResponse(input: {
   premiumFactorUnavailable: boolean;
   sippPotAtDraw: number;
   sippMonthlyAtDraw: number;
+  csAvcPotAtDraw: number;
+  csAvcMonthlyAtDraw: number;
   isaPotAtDraw: number;
   isaMonthlyAtDraw: number;
   lisaPotAtDraw: number;
@@ -910,6 +984,7 @@ function createSummaryResponse(input: {
     nuvosPensionDrawDate,
     premiumDrawDate,
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     statePensionStartDate,
@@ -938,6 +1013,8 @@ function createSummaryResponse(input: {
     premiumFactorUnavailable,
     sippPotAtDraw,
     sippMonthlyAtDraw,
+    csAvcPotAtDraw,
+    csAvcMonthlyAtDraw,
     isaPotAtDraw,
     isaMonthlyAtDraw,
     lisaPotAtDraw,
@@ -958,6 +1035,7 @@ function createSummaryResponse(input: {
       startsNuvosPension: nuvosPensionDrawDate,
       startsPremiumPension: premiumDrawDate,
       startsSippDraw: sippDrawDate,
+      startsCsAvcDraw: csAvcDrawDate,
       startsIsaDraw: isaDrawDate,
       startsLisaDraw: lisaDrawDate,
       startsStatePension: statePensionStartDate,
@@ -998,6 +1076,14 @@ function createSummaryResponse(input: {
       monthlyAtDraw: sippMonthlyAtDraw,
       totalContributionsAfterTaxRelief:
         calculateTotalSippContributionsAfterTaxRelief(settings, sippDrawDate),
+    },
+    csAvcPension: {
+      potAtDraw: csAvcPotAtDraw,
+      monthlyAtDraw: csAvcMonthlyAtDraw,
+      totalContributions: calculateTotalCsAvcContributions(
+        settings,
+        csAvcDrawDate
+      ),
     },
     isaPension: {
       potAtDraw: isaPotAtDraw,
@@ -1048,6 +1134,7 @@ function buildRetirementIncomeSummary({
   nuvosMonthlyIncome,
   premiumMonthlyIncome,
   sippMonthlyIncome,
+  csAvcMonthlyIncome,
   isaMonthlyIncome,
   lisaMonthlyIncome,
   additionalGuaranteedIncomeMonthlyIncome,
@@ -1064,6 +1151,7 @@ function buildRetirementIncomeSummary({
   nuvosMonthlyIncome: number;
   premiumMonthlyIncome: number;
   sippMonthlyIncome: number;
+  csAvcMonthlyIncome: number;
   isaMonthlyIncome: number;
   lisaMonthlyIncome: number;
   additionalGuaranteedIncomeMonthlyIncome: number;
@@ -1121,6 +1209,15 @@ function buildRetirementIncomeSummary({
       : []),
     ...(settings.showSipp
       ? [createRetirementIncomeSource("sipp", "SIPP", sippMonthlyIncome)]
+      : []),
+    ...(settings.showCsAvc
+      ? [
+          createRetirementIncomeSource(
+            "csAvc",
+            "Civil Service AVC",
+            csAvcMonthlyIncome
+          ),
+        ]
       : []),
     ...(settings.showIsa
       ? [createRetirementIncomeSource("isa", "ISA", isaMonthlyIncome)]

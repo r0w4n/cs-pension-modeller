@@ -29,6 +29,10 @@ export type SippWithdrawalStrategy =
   | "zero_at_death"
   | "percentage"
   | "use_by_age";
+export type CsAvcWithdrawalStrategy =
+  | "zero_at_death"
+  | "percentage"
+  | "use_by_age";
 export type IsaWithdrawalStrategy =
   | "zero_at_death"
   | "percentage"
@@ -69,6 +73,7 @@ export type PensionSettings = {
   showPremium: boolean;
   showStatePension: boolean;
   showSipp: boolean;
+  showCsAvc: boolean;
   showIsa: boolean;
   showLisa: boolean;
   showAdditionalGuaranteedIncome: boolean;
@@ -142,6 +147,16 @@ export type PensionSettings = {
   sippWithdrawalStrategy: SippWithdrawalStrategy;
   sippWithdrawalPercent: number;
   sippWithdrawalTargetAge: number;
+  csAvcCurrentPot: number;
+  csAvcMonthlyContribution: number;
+  csAvcHasProtectedPensionAge: boolean;
+  csAvcProtectedPensionAge: number;
+  csAvcDrawAge: number;
+  csAvcLumpSums: AddedPensionLumpSum[];
+  csAvcRealInterestPercent: number;
+  csAvcWithdrawalStrategy: CsAvcWithdrawalStrategy;
+  csAvcWithdrawalPercent: number;
+  csAvcWithdrawalTargetAge: number;
   isaCurrentPot: number;
   isaMonthlyContribution: number;
   isaDrawAge: number;
@@ -166,6 +181,7 @@ export type PensionSettings = {
   taxHigherRatePercent: number;
   taxAdditionalRatePercent: number;
   taxSippTaxFreeWithdrawalPercent: number;
+  taxCsAvcTaxFreeWithdrawalPercent: number;
 };
 
 export type PensionValidationIssue = {

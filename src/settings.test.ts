@@ -41,6 +41,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showPremium: defaultSettings.showPremium,
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
+    showCsAvc: defaultSettings.showCsAvc,
     showIsa: defaultSettings.showIsa,
     showLisa: defaultSettings.showLisa,
     showAdditionalGuaranteedIncome:
@@ -128,6 +129,16 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
     sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
     sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+    csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+    csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+    csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+    csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+    csAvcDrawAge: defaultSettings.csAvcDrawAge,
+    csAvcLumpSums: defaultSettings.csAvcLumpSums,
+    csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+    csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+    csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+    csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
     isaCurrentPot: defaultSettings.isaCurrentPot,
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
     isaDrawAge: defaultSettings.isaDrawAge,
@@ -154,6 +165,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
     taxSippTaxFreeWithdrawalPercent:
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
+    taxCsAvcTaxFreeWithdrawalPercent:
+      defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     ...overrides,
   };
 }
@@ -335,6 +348,7 @@ describe("settings unit tests", () => {
       showPremium: defaultSettings.showPremium,
       showStatePension: defaultSettings.showStatePension,
       showSipp: defaultSettings.showSipp,
+      showCsAvc: defaultSettings.showCsAvc,
       showIsa: defaultSettings.showIsa,
       showLisa: defaultSettings.showLisa,
       showAdditionalGuaranteedIncome:
@@ -434,6 +448,16 @@ describe("settings unit tests", () => {
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
       sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+      csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+      csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+      csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+      csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+      csAvcDrawAge: defaultSettings.csAvcDrawAge,
+      csAvcLumpSums: defaultSettings.csAvcLumpSums,
+      csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+      csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+      csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+      csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
       isaCurrentPot: defaultSettings.isaCurrentPot,
       isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
       isaDrawAge: defaultSettings.isaDrawAge,
@@ -460,6 +484,8 @@ describe("settings unit tests", () => {
       taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
       taxSippTaxFreeWithdrawalPercent:
         defaultSettings.taxSippTaxFreeWithdrawalPercent,
+      taxCsAvcTaxFreeWithdrawalPercent:
+        defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     });
   });
 
@@ -607,7 +633,7 @@ describe("settings unit tests", () => {
         expect.objectContaining({
           field: "alphaAddedPensionMonthly",
           message:
-            "Monthly added pension purchases must stop before age 68 because the factor table does not include age 68 or later.",
+            "Monthly added pension purchases must stop before age 68 because purchases are only supported through age 67.",
         }),
         expect.objectContaining({
           field: "alphaAddedPensionLumpSums",
@@ -655,7 +681,7 @@ describe("settings unit tests", () => {
     );
   });
 
-  it("reports when date of birth is not before the calculation start date", () => {
+  it("reports when date of birth is not before the current date", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
       startDate: "2026-05-01",
@@ -666,7 +692,7 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "dateOfBirth",
-          message: "Date of birth must be before the calculation start date.",
+          message: "Date of birth must be before the current date.",
         }),
       ])
     );
@@ -707,7 +733,7 @@ describe("settings unit tests", () => {
         expect.objectContaining({
           field: "alphaPensionAbsDate",
           message:
-            "Last Annual Benefits Statement must be on or before the calculation start date.",
+            "Last Annual Benefits Statement must be on or before the current date.",
         }),
       ])
     );
@@ -748,13 +774,11 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "sippDrawAge",
-          message:
-            "SIPP draw start age must be after the calculation start date.",
+          message: "SIPP draw start age must be after the current date.",
         }),
         expect.objectContaining({
           field: "isaDrawAge",
-          message:
-            "ISA draw start age must be after the calculation start date.",
+          message: "ISA draw start age must be after the current date.",
         }),
       ])
     );
@@ -885,7 +909,7 @@ describe("settings unit tests", () => {
           field: "isaLumpSums",
           itemId: "isa-lump",
           message:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         }),
       ])
     );
@@ -925,13 +949,13 @@ describe("settings unit tests", () => {
           field: "sippLumpSums",
           itemId: "sipp-after-retirement",
           message:
-            "SIPP lump sums must fall between the calculation start date and the earlier of retirement age and SIPP draw start.",
+            "SIPP lump sums must fall between the current date and the earlier of retirement age and SIPP draw start.",
         }),
         expect.objectContaining({
           field: "isaLumpSums",
           itemId: "isa-after-retirement",
           message:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         }),
       ])
     );

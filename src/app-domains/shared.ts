@@ -119,6 +119,10 @@ export function isSettingsGroupVisible(
     return settings.showSipp;
   }
 
+  if (groupId === "cs-avc") {
+    return settings.showCsAvc;
+  }
+
   if (groupId === "isa") {
     return settings.showIsa;
   }

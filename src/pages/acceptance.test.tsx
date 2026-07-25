@@ -21,7 +21,10 @@ describe("AcceptancePage", () => {
       screen.getByText("Build alpha pension while active")
     ).toBeInTheDocument();
     expect(screen.getAllByText("Covered by tests").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Under review").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("region", { name: "Acceptance summary" })
+    ).toHaveTextContent("0 scenarios under review");
+    expect(screen.queryByText("Under review")).not.toBeInTheDocument();
   });
 
   it("shows scenario steps and example tables from the feature file", () => {

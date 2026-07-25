@@ -8,11 +8,10 @@ export function useSavedFeedback() {
   > | null>(null);
 
   useEffect(() => {
-    const savedFeedbackTimeout = savedFeedbackTimerRef.current;
-
     return () => {
-      if (savedFeedbackTimeout) {
-        window.clearTimeout(savedFeedbackTimeout);
+      if (savedFeedbackTimerRef.current) {
+        window.clearTimeout(savedFeedbackTimerRef.current);
+        savedFeedbackTimerRef.current = null;
       }
     };
   }, []);

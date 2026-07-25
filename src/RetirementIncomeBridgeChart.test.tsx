@@ -13,6 +13,7 @@ const basePoint: RetirementIncomePoint = {
   isaIncomeAnnual: 0,
   lisaIncomeAnnual: 0,
   sippIncomeAnnual: 0,
+  csAvcIncomeAnnual: 0,
   partialRetirementIncomeAnnual: 0,
   alphaIncomeAnnual: 0,
   classicIncomeAnnual: 0,
@@ -1173,6 +1174,23 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(
       screen.getByRole("slider", { name: "Start Nuvos, age 66" })
     ).toBeInTheDocument();
+  });
+
+  it("emits a Premium start-age patch for keyboard changes to its milestone", () => {
+    const onChangeParameters = vi.fn();
+
+    renderChart({
+      showPremium: true,
+      premiumStartAge: 60,
+      onChangeParameters,
+    });
+
+    fireEvent.keyDown(
+      screen.getByRole("slider", { name: "Start Premium, age 60" }),
+      { key: "ArrowLeft" }
+    );
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ premiumStartAge: 59 });
   });
 
   it("aligns the ISA area boundaries with the ISA markers", () => {

@@ -1,9 +1,11 @@
 import {
+  NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE,
   type PensionSettings,
   type PensionValidationIssue,
   type SippTaxReliefRate,
   type SippWithdrawalStrategy,
 } from "../settings-types";
+import { resolveSippMinimumAccessAge } from "../settings-shared/state";
 
 export function normalizeSippWithdrawalStrategy(
   value: unknown
@@ -64,6 +66,21 @@ export function validateSippRules({
     });
   }
 
+  if (settings.showSipp) {
+    const minimumSippAccessAge = resolveSippMinimumAccessAge(settings);
+
+    if (settings.sippDrawAge < minimumSippAccessAge) {
+      issues.push({
+        field: "sippDrawAge",
+        message: createSippAccessAgeValidationMessage(
+          settings,
+          sippDrawDate,
+          minimumSippAccessAge
+        ),
+      });
+    }
+  }
+
   if (
     settings.showSipp &&
     settings.sippWithdrawalStrategy === "use_by_age" &&
@@ -89,9 +106,25 @@ export function validateSippRules({
   if (settings.showSipp && sippDrawDate <= settings.startDate) {
     issues.push({
       field: "sippDrawAge",
-      message: "SIPP draw start age must be after the calculation start date.",
+      message: "SIPP draw start age must be after the current date.",
     });
   }
 
   return issues;
+}
+
+function createSippAccessAgeValidationMessage(
+  settings: PensionSettings,
+  sippDrawDate: string,
+  minimumSippAccessAge: number
+) {
+  if (settings.sippHasProtectedPensionAge) {
+    return `SIPP draw start age must not be earlier than the provider-confirmed protected SIPP access age of ${minimumSippAccessAge}.`;
+  }
+
+  if (sippDrawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE) {
+    return "SIPP draw start age must be at least 57 for access dates on or after 6 April 2028, unless your provider has confirmed a protected pension age.";
+  }
+
+  return "SIPP draw start age must be at least 55 before 6 April 2028, unless your provider has confirmed an earlier protected pension age.";
 }

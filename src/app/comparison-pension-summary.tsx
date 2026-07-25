@@ -54,6 +54,22 @@ export function PensionSummarySection({
       }
       footer={
         <>
+          {activeResult.summary.premiumPension.factorUnavailable ? (
+            <section
+              className="summary-outcome-banner summary-outcome-banner--atRisk"
+              aria-label="Premium factor unavailable"
+            >
+              <div className="summary-outcome-status">
+                Premium factor unavailable
+              </div>
+              <p>
+                This Premium case is outside the published factors currently
+                modelled, so Premium income is excluded. Use a whole-year draw
+                age from 55 with Normal Pension Age 60 or 65, or check the
+                amount against an official pension quotation.
+              </p>
+            </section>
+          ) : null}
           <RetirementOutcomeBannerView outcome={outcomeBanner} />
           {incomeAgeRangeItems.length > 0 ? (
             <div className="summary-status-block">

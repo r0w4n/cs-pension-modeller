@@ -57,6 +57,12 @@ export const OPTIONAL_SECTION_TOGGLES = [
       "Models a SIPP pot, contributions, growth, lump sums, and flexible withdrawals.",
   },
   {
+    key: "showCsAvc",
+    label: "Civil Service AVC",
+    description:
+      "Models a Civil Service Additional Voluntary Contribution pot as a separate invested pension pot.",
+  },
+  {
     key: "showIsa",
     label: "ISA",
     description:
@@ -159,12 +165,9 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 2",
         title: "Your personal details",
         description:
-          "Set the dates that define current age, access ages, and the length of the bridge.",
+          "Set the details that define current age, access ages, and the length of the bridge.",
         kind: "fields",
-        fieldIds: ["startDate", "dateOfBirth", "lifeExpectancy"],
-        fieldLabels: {
-          startDate: "Start modelling from",
-        },
+        fieldIds: ["dateOfBirth", "lifeExpectancy"],
       },
       {
         id: "include",
@@ -179,6 +182,7 @@ export const JOURNEY_DEFINITIONS = [
           "showClassicPlus",
           "showNuvos",
           "showPremium",
+          "showCsAvc",
         ],
       },
       {
@@ -310,7 +314,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 5",
         title: "Your bridging pots",
         description:
-          "Bridge pots are flexible savings used to cover income gaps before pension income fully starts. Keep ISA, LISA and SIPP separate so the model respects tax relief, access ages, bonuses, and drawdown timing.",
+          "Bridge pots are flexible savings and pensions used to cover income gaps before pension income fully starts. Keep Civil Service AVC, ISA, LISA and SIPP separate so the model respects tax relief, access ages, bonuses, and drawdown timing.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
@@ -324,8 +328,14 @@ export const JOURNEY_DEFINITIONS = [
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
+          "sippHasProtectedPensionAge",
           "sippTaxReliefRate",
           "sippRealInterestPercent",
+          "csAvcCurrentPot",
+          "csAvcMonthlyContribution",
+          "csAvcDrawAge",
+          "csAvcHasProtectedPensionAge",
+          "csAvcRealInterestPercent",
         ],
         fieldLabels: {
           isaCurrentPot: "Current ISA balance (£)",
@@ -339,6 +349,10 @@ export const JOURNEY_DEFINITIONS = [
           sippMonthlyContribution:
             "Planned monthly SIPP contribution before retirement",
           sippDrawAge: "SIPP access age",
+          csAvcCurrentPot: "Current CS AVC balance (£)",
+          csAvcMonthlyContribution:
+            "Planned monthly CS AVC contribution before retirement",
+          csAvcDrawAge: "CS AVC access age",
         },
       },
       {
@@ -384,6 +398,7 @@ export const JOURNEY_DEFINITIONS = [
           "showClassicPlus",
           "showNuvos",
           "showPremium",
+          "showCsAvc",
         ],
       },
       {
@@ -527,38 +542,25 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showPremium,
       },
       {
-        id: "pots",
+        id: "cs-avc",
         eyebrow: "Optional",
-        title: "ISA, LISA and SIPP",
+        title: "Civil Service AVC",
         description:
-          "Add personal pots only if you want the chart to show how they help bridge the gap to secure pension income.",
+          "Add your Civil Service Additional Voluntary Contribution pot if it should be part of the projection.",
         kind: "fields",
         fieldIds: [
-          "isaCurrentPot",
-          "isaMonthlyContribution",
-          "isaRealInterestPercent",
-          "lisaCurrentPot",
-          "lisaMonthlyContribution",
-          "lisaDrawAge",
-          "lisaRealInterestPercent",
-          "sippCurrentPot",
-          "sippMonthlyContribution",
-          "sippDrawAge",
-          "sippTaxReliefRate",
-          "sippRealInterestPercent",
+          "csAvcCurrentPot",
+          "csAvcMonthlyContribution",
+          "csAvcDrawAge",
+          "csAvcHasProtectedPensionAge",
+          "csAvcRealInterestPercent",
         ],
         fieldLabels: {
-          isaCurrentPot: "Current ISA balance (£)",
-          isaMonthlyContribution: "Monthly ISA contribution (£)",
-          lisaCurrentPot: "Current LISA balance (£)",
-          lisaMonthlyContribution: "Monthly LISA contribution (£)",
-          lisaDrawAge: "LISA access age",
-          sippCurrentPot: "Current SIPP balance (£)",
-          sippMonthlyContribution: "Monthly SIPP contribution (£)",
-          sippDrawAge: "SIPP access age",
+          csAvcCurrentPot: "Current CS AVC balance (£)",
+          csAvcMonthlyContribution: "Monthly CS AVC contribution (£)",
+          csAvcDrawAge: "CS AVC access age",
         },
-        visible: (settings) =>
-          settings.showIsa || settings.showLisa || settings.showSipp,
+        visible: (settings) => settings.showCsAvc,
       },
       {
         id: "additional-income",
@@ -639,6 +641,7 @@ function isExpertJourneyGroupVisible(groupId: string) {
     groupId === "premium" ||
     groupId === "state" ||
     groupId === "sipp" ||
+    groupId === "cs-avc" ||
     groupId === "isa" ||
     groupId === "lisa" ||
     groupId === "tax" ||
@@ -659,9 +662,11 @@ export function applyBridgeJourneyDefaults(
     ...settings,
     showStatePension: true,
     showSipp: true,
+    showCsAvc: settings.showCsAvc,
     showIsa: true,
     showLisa: true,
     sippWithdrawalStrategy: "use_by_age",
+    csAvcWithdrawalStrategy: "use_by_age",
     isaWithdrawalStrategy: "use_by_age",
     lisaWithdrawalStrategy: "use_by_age",
     taxationEnabled: false,
@@ -696,6 +701,7 @@ export function applySimpleJourneyAssumptions(
     ...settings,
     showStatePension: true,
     showSipp: false,
+    showCsAvc: settings.showCsAvc,
     showIsa: false,
     showLisa: false,
     showNuvos: settings.showNuvos,

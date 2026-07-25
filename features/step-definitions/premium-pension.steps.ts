@@ -1,16 +1,14 @@
 import { DataTable, Given, Then, When } from "@cucumber/cucumber";
-import { calculatePremiumPension } from "../../src/projection-domains/premium";
+import {
+  calculateAnnualPremiumPensionAtDate,
+  calculatePremiumPension,
+} from "../../src/projection-domains/premium";
+import { defaultSettings } from "../../src/settings";
 
 const PREMIUM_ACCRUAL_DENOMINATOR = 60;
 const PREMIUM_COMMUTATION_FACTOR = 12;
 const ACCEPTANCE_DATE_OF_BIRTH = "1970-04-01";
 const ACCEPTANCE_VALUATION_DATE = "2026-04-01";
-const ACCEPTANCE_PREMIUM_EARLY_RETIREMENT_FACTORS = {
-  60: {
-    55: 0.75,
-    58: 0.9,
-  },
-};
 
 type ServiceHistoryRow = {
   period: string;
@@ -127,6 +125,12 @@ function calculateProjectedSalary(
   return salary * (1 + salaryIncreasePercent / 100) ** years;
 }
 
+function addWholeYears(date: string, years: number) {
+  const [year, month, day] = date.split("-");
+
+  return `${Number(year) + years}-${month}-${day}`;
+}
+
 function calculatePremiumPayable(
   annualPension: number,
   drawAge: number,
@@ -139,7 +143,6 @@ function calculatePremiumPayable(
     drawAge,
     normalPensionAge,
     cpiAssumption: 0,
-    earlyRetirementFactors: ACCEPTANCE_PREMIUM_EARLY_RETIREMENT_FACTORS,
   }).annualPensionPayableAtDrawAge;
 }
 
@@ -202,7 +205,7 @@ function parseExpectedRows(table: DataTable) {
 Given(
   "Civil Service pension factor tables version {string} are loaded",
   function (version: string) {
-    assertEqual(version, "acceptance-v1");
+    assertEqual(version, "GAD-2026-01");
   }
 );
 
@@ -624,29 +627,40 @@ Given(
 When(
   "the member draws Premium pension at age {int}",
   function (this: PremiumWorld, drawAge: number) {
-    this.premiumDrawAge = drawAge;
-    const unreducedAnnualPremiumPension =
-      this.unreducedAnnualPremiumPension ??
-      calculatePremiumFinalSalaryPension(
-        this.finalPensionableEarnings ??
-          this.preservedFinalPensionableEarnings ??
-          0,
-        this.reckonableServiceYears ?? 0
-      );
-    this.unreducedAnnualPremiumPension = unreducedAnnualPremiumPension;
-    this.annualPremiumPensionPayable = calculatePremiumPayable(
-      unreducedAnnualPremiumPension,
-      drawAge,
-      this.premiumNormalPensionAge ?? 60
-    );
-    this.annualPremiumPensionAfterEarlyRetirement =
-      this.annualPremiumPensionPayable;
-    this.annualPremiumPensionAtAge60BeforeIncreases =
-      this.annualPremiumPensionPayable;
-    this.annualReduction =
-      unreducedAnnualPremiumPension - this.annualPremiumPensionPayable;
+    drawPremiumPensionAtAge(this, drawAge);
   }
 );
+
+When(
+  "the member draws Premium pension at age {int} and {int} months",
+  function (this: PremiumWorld, drawAge: number, drawAgeMonths: number) {
+    drawPremiumPensionAtAge(this, drawAge + drawAgeMonths / 12);
+  }
+);
+
+function drawPremiumPensionAtAge(world: PremiumWorld, drawAge: number) {
+  world.premiumDrawAge = drawAge;
+  const unreducedAnnualPremiumPension =
+    world.unreducedAnnualPremiumPension ??
+    calculatePremiumFinalSalaryPension(
+      world.finalPensionableEarnings ??
+        world.preservedFinalPensionableEarnings ??
+        0,
+      world.reckonableServiceYears ?? 0
+    );
+  world.unreducedAnnualPremiumPension = unreducedAnnualPremiumPension;
+  world.annualPremiumPensionPayable = calculatePremiumPayable(
+    unreducedAnnualPremiumPension,
+    drawAge,
+    world.premiumNormalPensionAge ?? 60
+  );
+  world.annualPremiumPensionAfterEarlyRetirement =
+    world.annualPremiumPensionPayable;
+  world.annualPremiumPensionAtAge60BeforeIncreases =
+    world.annualPremiumPensionPayable;
+  world.annualReduction =
+    unreducedAnnualPremiumPension - world.annualPremiumPensionPayable;
+}
 
 Then(
   "the annual Premium pension payable should be {float}",
@@ -688,11 +702,16 @@ When(
   function (this: PremiumWorld) {
     assertCondition(this.pensionAtDeferral !== undefined);
     assertCondition(this.deferredYears !== undefined);
-    const cpiFactor = this.cpiEnabled
-      ? (1 + (this.cpiRate ?? 0) / 100) ** this.deferredYears
-      : 1;
+    const result = calculatePremiumPension({
+      annualPensionAtValuationDate: this.pensionAtDeferral,
+      valuationDate: ACCEPTANCE_VALUATION_DATE,
+      dateOfBirth: ACCEPTANCE_DATE_OF_BIRTH,
+      drawAge: 56 + this.deferredYears,
+      normalPensionAge: this.premiumNormalPensionAge ?? 60,
+      cpiAssumption: this.cpiEnabled ? (this.cpiRate ?? 0) / 100 : 0,
+    });
 
-    this.deferredPremiumPensionAtDrawAge = this.pensionAtDeferral * cpiFactor;
+    this.deferredPremiumPensionAtDrawAge = result.cpiRevaluedPensionAtDrawAge;
   }
 );
 
@@ -714,9 +733,23 @@ When(
   "the pension is increased for {int} year in payment",
   function (this: PremiumWorld, years: number) {
     assertCondition(this.annualPremiumPensionPayable !== undefined);
+    const settings = {
+      ...defaultSettings,
+      showPremium: true,
+      projectionBasis: this.cpiEnabled
+        ? ("nominal" as const)
+        : ("real" as const),
+      inflationRateAnnual: this.cpiRate ?? 0,
+      premiumAnnualPensionAtValuationDate: this.annualPremiumPensionPayable,
+      premiumValuationDate: ACCEPTANCE_VALUATION_DATE,
+    };
+
     this.annualPremiumPensionAfterIncrease =
-      this.annualPremiumPensionPayable *
-      (1 + (this.cpiEnabled ? (this.cpiRate ?? 0) / 100 : 0)) ** years;
+      calculateAnnualPremiumPensionAtDate({
+        settings,
+        premiumDrawDate: ACCEPTANCE_VALUATION_DATE,
+        rowDate: addWholeYears(ACCEPTANCE_VALUATION_DATE, years),
+      });
     this.monthlyGrossPremiumPension =
       this.annualPremiumPensionAfterIncrease / 12;
   }

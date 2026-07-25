@@ -1,4 +1,5 @@
 import type { PensionSettings } from "../settings";
+import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
 
 export function calculateRealAnnualRate(
   nominalRateAnnual: number,
@@ -54,17 +55,4 @@ export function calculateRetirementIncomeTargetAtDate(
     settings.desiredRetirementIncome *
     (1 + monthlyInflationRate) ** monthsUntilRow
   );
-}
-
-function calculateWholeMonthDifference(startDate: string, endDate: string) {
-  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
-  const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
-
-  let monthDifference = (endYear - startYear) * 12 + (endMonth - startMonth);
-
-  if (endDay < startDay) {
-    monthDifference -= 1;
-  }
-
-  return monthDifference;
 }

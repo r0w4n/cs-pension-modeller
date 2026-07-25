@@ -8,6 +8,10 @@ export function shouldRenderSippField(
   fieldId: FieldDefinition["id"],
   settings: PensionSettings
 ) {
+  if (fieldId === "sippHasProtectedPensionAge") {
+    return false;
+  }
+
   return (
     (fieldId !== "sippWithdrawalPercent" ||
       (settings.showSipp &&
@@ -35,7 +39,8 @@ export function getSippEffectiveRangeField(
 ): RangeField {
   if (field.id === "sippDrawAge") {
     const minimumSippAccessAge = calculateMinimumSippAccessAge(
-      settings.dateOfBirth
+      settings.dateOfBirth,
+      settings
     );
 
     return {

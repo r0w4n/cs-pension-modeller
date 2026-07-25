@@ -100,6 +100,27 @@ describe("PensionSummarySection", () => {
       "Shortfall from age 74. This plan does not meet your target income of £31,350/year through to age 80. The first shortfall is £4,200/year in today's money."
     );
   });
+
+  it("warns when a Premium factor is unavailable and income is excluded", () => {
+    const result = createComparisonResultFixture();
+    result.summary.premiumPension.factorUnavailable = true;
+
+    render(
+      <PensionSummarySection
+        activeResult={result}
+        description="Summary description"
+        retirementIncomeDisplay="annual"
+        incomeAgeRangeItems={[]}
+        statusItems={[]}
+      />
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Premium factor unavailable" })
+    ).toHaveTextContent(
+      "This Premium case is outside the published factors currently modelled, so Premium income is excluded."
+    );
+  });
 });
 
 function createComparisonResultFixture({
@@ -161,6 +182,9 @@ function createComparisonResultFixture({
         ageRanges,
         totalMonthlyIncome: 3055.63,
         totalAnnualIncome: 36667.6,
+      },
+      premiumPension: {
+        factorUnavailable: false,
       },
     },
     bridgeAnalysis: {},

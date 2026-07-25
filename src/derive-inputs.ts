@@ -10,7 +10,10 @@ import {
   getModelledAnnualGrowthRate,
   getModelledPensionInflationPercent,
 } from "./projection-domains/inflation";
-import { getAlphaEarlyRetirementFactor } from "./projection-domains/alpha";
+import {
+  calculateAlphaLateRetirementMultiplier,
+  getAlphaEarlyRetirementFactor,
+} from "./projection-domains/alpha";
 import {
   calculateClassicEarlyRetirementFactor,
   CLASSIC_NORMAL_PENSION_AGE,
@@ -55,6 +58,8 @@ export type DerivedInflationAssumptions = {
   inflationRateMonthly: number;
   sippNominalReturnAnnual: number;
   sippModelledReturnAnnual: number;
+  csAvcNominalReturnAnnual: number;
+  csAvcModelledReturnAnnual: number;
   isaNominalReturnAnnual: number;
   isaModelledReturnAnnual: number;
   lisaNominalReturnAnnual: number;
@@ -71,6 +76,7 @@ export type DerivedInflationAssumptions = {
 
 export type ProjectionRuntimeDates = {
   sippDrawDate: string;
+  csAvcDrawDate: string;
   isaDrawDate: string;
   lisaDrawDate: string;
   alphaAbsDate: string;
@@ -84,6 +90,7 @@ export function deriveInflationAssumptions(
   const inflationRateAnnual = settings.inflationRateAnnual / 100;
   const inflationRateMonthly = (1 + inflationRateAnnual) ** (1 / 12) - 1;
   const sippNominalReturnAnnual = settings.sippRealInterestPercent / 100;
+  const csAvcNominalReturnAnnual = settings.csAvcRealInterestPercent / 100;
   const isaNominalReturnAnnual = settings.isaRealInterestPercent / 100;
   const lisaNominalReturnAnnual = settings.lisaRealInterestPercent / 100;
   const alphaNominalInServiceRevaluationAnnual = inflationRateAnnual;
@@ -98,6 +105,11 @@ export function deriveInflationAssumptions(
     sippModelledReturnAnnual: getModelledAnnualGrowthRate(
       settings,
       sippNominalReturnAnnual
+    ),
+    csAvcNominalReturnAnnual,
+    csAvcModelledReturnAnnual: getModelledAnnualGrowthRate(
+      settings,
+      csAvcNominalReturnAnnual
     ),
     isaNominalReturnAnnual,
     isaModelledReturnAnnual: getModelledAnnualGrowthRate(
@@ -216,9 +228,15 @@ export function deriveProjectionInputs(
   const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
   const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const epaDate = getAlphaEpaDate(settings);
+  const lateRetirementStatus =
+    alphaStopDate >= drawDate ? "active" : "deferred";
   const reductionFactor =
     drawDate > npaDate
-      ? 1
+      ? (calculateAlphaLateRetirementMultiplier({
+          normalPensionAge,
+          retirementAge: settings.alphaPensionDrawAge,
+          status: lateRetirementStatus,
+        }) ?? 1)
       : getAlphaEarlyRetirementFactor(
           normalPensionAge,
           settings.alphaPensionDrawAge
@@ -260,6 +278,7 @@ export function createProjectionRuntimeDates(
 ): ProjectionRuntimeDates {
   return {
     sippDrawDate: addYears(settings.dateOfBirth, settings.sippDrawAge),
+    csAvcDrawDate: addYears(settings.dateOfBirth, settings.csAvcDrawAge),
     isaDrawDate: addYears(settings.dateOfBirth, settings.isaDrawAge),
     lisaDrawDate: addYears(settings.dateOfBirth, settings.lisaDrawAge),
     alphaAbsDate: resolveAlphaAbsDate(settings.alphaPensionAbsDate),
@@ -277,11 +296,13 @@ export function getLifeExpectancyDate(
 
 export function generateMonthlyDateRange(startDate: string, endDate: string) {
   const dates: string[] = [];
-  let currentDate = startDate;
+  let monthIndex = 0;
+  let currentDate = addMonths(startDate, monthIndex);
 
   while (currentDate <= endDate) {
     dates.push(currentDate);
-    currentDate = addMonths(currentDate, 1);
+    monthIndex += 1;
+    currentDate = addMonths(startDate, monthIndex);
   }
 
   if (dates.at(-1) !== endDate) {

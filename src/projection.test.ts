@@ -341,6 +341,76 @@ describe("projection calculations", () => {
     ]);
   });
 
+  it("keeps month-end rows and flexible-pot projections anchored after a shorter month", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-01-31",
+      dateOfBirth: "1986-01-31",
+      lifeExpectancy: 61,
+      requirementAge: 60,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
+      applyPensionIncreases: false,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: true,
+      showCsAvc: true,
+      showIsa: true,
+      showLisa: true,
+      showAdditionalGuaranteedIncome: false,
+      sippCurrentPot: 10000,
+      sippMonthlyContribution: 100,
+      sippDrawAge: 60,
+      sippRealInterestPercent: 0,
+      sippTaxReliefRate: "none",
+      sippLumpSums: [],
+      sippWithdrawalStrategy: "percentage",
+      csAvcCurrentPot: 10000,
+      csAvcMonthlyContribution: 100,
+      csAvcDrawAge: 60,
+      csAvcRealInterestPercent: 0,
+      csAvcLumpSums: [],
+      csAvcWithdrawalStrategy: "percentage",
+      isaCurrentPot: 10000,
+      isaMonthlyContribution: 100,
+      isaDrawAge: 60,
+      isaRealInterestPercent: 0,
+      isaLumpSums: [],
+      isaWithdrawalStrategy: "percentage",
+      lisaCurrentPot: 10000,
+      lisaMonthlyContribution: 100,
+      lisaDrawAge: 60,
+      lisaRealInterestPercent: 0,
+      lisaLumpSums: [],
+      lisaWithdrawalStrategy: "percentage",
+    };
+
+    const rows = createProjectionTable(settings)
+      .filter((row) => row.date >= settings.startDate)
+      .slice(0, 4);
+
+    expect(rows.map((row) => row.date)).toEqual([
+      "2026-01-31",
+      "2026-02-28",
+      "2026-03-31",
+      "2026-04-30",
+    ]);
+    expect(rows.map((row) => row.sippPot)).toEqual([
+      10100, 10200, 10300, 10400,
+    ]);
+    expect(rows.map((row) => row.csAvcPot)).toEqual([
+      10100, 10200, 10300, 10400,
+    ]);
+    expect(rows.map((row) => row.isaPot)).toEqual([10100, 10200, 10300, 10400]);
+    expect(rows.map((row) => row.lisaPot)).toEqual([
+      10125, 10250, 10375, 10500,
+    ]);
+  });
+
   it("preserves month-end semantics across shorter months and leap years", () => {
     expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
     expect(addMonths("2024-01-31", 1)).toBe("2024-02-29");
@@ -389,13 +459,14 @@ describe("projection calculations", () => {
 
     const rows = createProjectionTable(settings);
     const partialRow = findRowByDate(rows, "2042-04-01");
+    const expectedAddedPension = 64.1 / (10.6 * 1.29);
 
     expect(partialRow?.monthlyAddedPension).toBeCloseTo(
-      64.1 / getAddedPensionFactorForAge(54),
+      expectedAddedPension,
       6
     );
     expect(partialRow?.annualAccruedAlphaPension).toBeCloseTo(
-      (12000 * 0.0232) / 12 / 2 + 64.1 / getAddedPensionFactorForAge(54),
+      (12000 * 0.0232) / 12 / 2 + expectedAddedPension,
       6
     );
   });
@@ -501,6 +572,60 @@ describe("projection calculations", () => {
     );
   });
 
+  it.each([
+    {
+      status: "active member",
+      alphaPensionLeaveAge: 68,
+      expectedAnnualPension: 12729.6,
+    },
+    {
+      status: "deferred member",
+      alphaPensionLeaveAge: 67,
+      expectedAnnualPension: 12671.48,
+    },
+  ])(
+    "applies the Alpha late-retirement factor for an $status",
+    ({ status, alphaPensionLeaveAge, expectedAnnualPension }) => {
+      const settings: PensionSettings = {
+        ...defaultSettings,
+        startDate: "2044-01-01",
+        dateOfBirth: "1977-01-01",
+        lifeExpectancy: 70,
+        requirementAge: 68,
+        projectionBasis: "nominal",
+        inflationRateAnnual: 0,
+        applyPensionIncreases: false,
+        showAlpha: true,
+        showClassic: false,
+        showClassicPlus: false,
+        showNuvos: false,
+        showPremium: false,
+        showStatePension: false,
+        showSipp: false,
+        showCsAvc: false,
+        showIsa: false,
+        showLisa: false,
+        showAdditionalGuaranteedIncome: false,
+        alphaPensionAbsDate: "2043",
+        accruedPensionAtLastAbs: 12000,
+        pensionableEarnings: 0,
+        alphaPensionLeaveAge,
+        alphaPensionDrawAge: 68,
+        alphaAddedPensionMonthly: 0,
+        alphaAddedPensionLumpSums: [],
+        alphaEpaEnabled: false,
+      };
+
+      const rows = createProjectionTable(settings);
+      const summary = generatePensionSummary(rows, settings);
+
+      expect(
+        summary.alphaPension.annualAtDraw,
+        `${status} annual Alpha pension at draw`
+      ).toBeCloseTo(expectedAnnualPension, 2);
+    }
+  );
+
   it("uses whole-month differences and ignores days", () => {
     expect(calculateWholeMonthDifference("2025-04-01", "2025-04-30")).toBe(0);
     expect(calculateWholeMonthDifference("2025-04-01", "2025-05-31")).toBe(1);
@@ -588,19 +713,19 @@ describe("projection calculations", () => {
     ).toBeCloseTo(2320, 6);
   });
 
-  it("loads the added pension factor from JSON", () => {
-    expect(getAddedPensionFactorForAge(60)).toBe(12.82);
+  it("loads current GAD added-pension factors from JSON", () => {
+    expect(getAddedPensionFactorForAge(60)).toBe(12.91);
     expect(getAddedPensionFactorForAge(60, "self_plus_beneficiaries")).toBe(
-      13.77
+      14.17
     );
   });
 
-  it("handles blank added pension factors safely", () => {
-    expect(getAddedPensionFactorForAge(68)).toBe(0);
+  it("handles unsupported added pension ages safely", () => {
+    expect(getAddedPensionFactorForAge(69)).toBe(0);
     expect(
       calculateMonthlyAddedPension({
-        rowDate: "2055-06-15",
-        stopDate: "2055-06-15",
+        rowDate: "2056-06-15",
+        stopDate: "2056-06-15",
         dateOfBirth: "1987-06-15",
         addedPensionMonthlyContribution: 150,
       })
@@ -615,7 +740,7 @@ describe("projection calculations", () => {
         dateOfBirth: "1987-06-15",
         addedPensionMonthlyContribution: 150,
       })
-    ).toBeCloseTo(11.7004680187, 6);
+    ).toBeCloseTo(150 / (12.91 * 1.17), 6);
   });
 
   it("calculates monthly added pension with the self and dependants factor", () => {
@@ -627,7 +752,7 @@ describe("projection calculations", () => {
         addedPensionMonthlyContribution: 137.7,
         factorType: "self_plus_beneficiaries",
       })
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(137.7 / (14.17 * 1.17), 6);
   });
 
   it("carries regular monthly added pension purchases into accrued Alpha pension", () => {
@@ -649,18 +774,19 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
+    const expectedAddedPension = 128.2 / (12.91 * 1.17);
 
     expect(findRowByDate(rows, "2047-04-01")?.monthlyAddedPension).toBeCloseTo(
-      10,
+      expectedAddedPension,
       6
     );
     expect(
       findRowByDate(rows, "2047-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
     expect(findRowByDate(rows, "2047-05-01")?.monthlyAddedPension).toBe(0);
     expect(
       findRowByDate(rows, "2047-05-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
   });
 
   it("uses the selected added pension factor in projected monthly purchases", () => {
@@ -683,14 +809,15 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
+    const expectedAddedPension = 137.7 / (14.17 * 1.17);
 
     expect(findRowByDate(rows, "2047-04-01")?.monthlyAddedPension).toBeCloseTo(
-      10,
+      expectedAddedPension,
       6
     );
     expect(
       findRowByDate(rows, "2047-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
   });
 
   it("tracks regular monthly added pension purchases with Alpha revaluation", () => {
@@ -714,13 +841,14 @@ describe("projection calculations", () => {
     };
 
     const rows = createProjectionTable(settings);
+    const expectedAddedPension = 128.2 / (12.91 * 1.17);
 
     expect(
       findRowByDate(rows, "2047-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
     expect(
       findRowByDate(rows, "2048-04-01")?.annualAccruedAlphaPension
-    ).toBeCloseTo(10, 6);
+    ).toBeCloseTo(expectedAddedPension, 6);
   });
 
   it("calculates a one-off lump sum added pension purchase on its payment date", () => {
@@ -738,7 +866,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(12820 / (12.66 * 1.17), 6);
   });
 
   it("calculates lump sum added pension with the self and dependants factor", () => {
@@ -757,7 +885,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(13770 / (13.89 * 1.17), 6);
   });
 
   it("uses a lump sum's own added pension factor independently from monthly purchases", () => {
@@ -792,8 +920,14 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
     const purchaseRow = findRowByDate(rows, "2047-04-01");
 
-    expect(purchaseRow?.monthlyAddedPension).toBeCloseTo(10, 6);
-    expect(purchaseRow?.lumpSumAddedPension).toBeCloseTo(1000, 6);
+    expect(purchaseRow?.monthlyAddedPension).toBeCloseTo(
+      128.2 / (12.91 * 1.17),
+      6
+    );
+    expect(purchaseRow?.lumpSumAddedPension).toBeCloseTo(
+      13770 / (13.89 * 1.17),
+      6
+    );
   });
 
   it("applies a lump sum on the first projection row after its payment date", () => {
@@ -812,7 +946,7 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(1000, 6);
+    ).toBeCloseTo(12820 / (12.66 * 1.17), 6);
   });
 
   it("calculates yearly recurring lump sum added pension purchases", () => {
@@ -831,24 +965,21 @@ describe("projection calculations", () => {
           },
         ],
       })
-    ).toBeCloseTo(12820 / getAddedPensionFactorForAge(62), 6);
+    ).toBeCloseTo(12820 / (13.55 * 1.13), 6);
   });
 
   it("loads Alpha early retirement reduction factors from JSON", () => {
-    expect(getAlphaEarlyRetirementFactor(68, 60)).toBe(0.648);
+    expect(getAlphaEarlyRetirementFactor(68, 60)).toBe(0.661);
   });
 
-  it("interpolates Alpha early retirement reduction factors for decimal ages", () => {
-    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBeCloseTo(
-      (0.648 + 0.68) / 2,
-      6
-    );
+  it("uses published Alpha factors for completed months", () => {
+    expect(getAlphaEarlyRetirementFactor(68, 60.5)).toBe(0.677);
   });
 
   it("interpolates Alpha early retirement reduction factors for decimal normal pension ages", () => {
     expect(getAlphaEarlyRetirementFactor(66 + 1 / 12, 60)).toBeCloseTo(
-      0.729 + (0.687 - 0.729) / 12,
-      6
+      0.741 + (0.7 - 0.741) / 12,
+      10
     );
   });
 
@@ -903,7 +1034,7 @@ describe("projection calculations", () => {
       accrualStopDate: "2047-06-01",
       addedPensionStopDate: "2047-06-01",
       npaDate: "2055-06-01",
-      reductionFactor: 0.648,
+      reductionFactor: 0.661,
     });
   });
 
@@ -927,8 +1058,8 @@ describe("projection calculations", () => {
 
     expect(derivedInputs?.npaDate).toBe("2026-05-06");
     expect(derivedInputs?.reductionFactor).toBeCloseTo(
-      0.729 + (0.687 - 0.729) / 12,
-      6
+      0.741 + (0.7 - 0.741) / 12,
+      10
     );
   });
 
@@ -1603,24 +1734,27 @@ describe("projection calculations", () => {
       ...defaultSettings,
       projectionBasis: "nominal",
       startDate: "2025-12-01",
-      dateOfBirth: "1986-01-01",
+      dateOfBirth: "1976-01-01",
       lifeExpectancy: 75,
-      requirementAge: 40,
-      alphaPensionDrawAge: 40,
-      alphaPensionLeaveAge: 40,
+      requirementAge: 50,
+      alphaPensionDrawAge: 50,
+      alphaPensionLeaveAge: 50,
+      showAlpha: false,
       showStatePension: false,
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 50,
       sippRealInterestPercent: 0,
       sippCurrentPot: 60000,
       sippMonthlyContribution: 0,
-      sippDrawAge: 40,
+      sippDrawAge: 50,
       sippWithdrawalStrategy: "use_by_age",
-      sippWithdrawalTargetAge: 45,
+      sippWithdrawalTargetAge: 55,
       isaRealInterestPercent: 0,
       isaCurrentPot: 30000,
       isaMonthlyContribution: 0,
-      isaDrawAge: 40,
+      isaDrawAge: 50,
       isaWithdrawalStrategy: "use_by_age",
-      isaWithdrawalTargetAge: 45,
+      isaWithdrawalTargetAge: 55,
     };
 
     const rows = createProjectionTable(settings);
@@ -1691,23 +1825,26 @@ describe("projection calculations", () => {
       ...defaultSettings,
       projectionBasis: "nominal",
       startDate: "2025-12-01",
-      dateOfBirth: "1986-01-01",
+      dateOfBirth: "1976-01-01",
       lifeExpectancy: 75,
-      requirementAge: 40,
-      alphaPensionDrawAge: 40,
-      alphaPensionLeaveAge: 40,
+      requirementAge: 50,
+      alphaPensionDrawAge: 50,
+      alphaPensionLeaveAge: 50,
+      showAlpha: false,
       showStatePension: false,
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 50,
       sippCurrentPot: 60000,
       sippMonthlyContribution: 0,
-      sippDrawAge: 40,
+      sippDrawAge: 50,
       sippWithdrawalStrategy: "use_by_age",
-      sippWithdrawalTargetAge: 45,
+      sippWithdrawalTargetAge: 55,
       sippRealInterestPercent: 6,
       isaCurrentPot: 30000,
       isaMonthlyContribution: 0,
-      isaDrawAge: 40,
+      isaDrawAge: 50,
       isaWithdrawalStrategy: "use_by_age",
-      isaWithdrawalTargetAge: 45,
+      isaWithdrawalTargetAge: 55,
       isaRealInterestPercent: 6,
     };
 
@@ -1915,19 +2052,22 @@ describe("projection calculations", () => {
       ...defaultSettings,
       projectionBasis: "nominal",
       startDate: "2025-12-01",
-      dateOfBirth: "1986-01-01",
+      dateOfBirth: "1976-01-01",
       lifeExpectancy: 75,
-      requirementAge: 40,
-      alphaPensionDrawAge: 40,
-      alphaPensionLeaveAge: 40,
+      requirementAge: 50,
+      alphaPensionDrawAge: 50,
+      alphaPensionLeaveAge: 50,
+      showAlpha: false,
       showStatePension: false,
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 50,
       sippCurrentPot: 60000,
       sippMonthlyContribution: 0,
-      sippDrawAge: 40,
+      sippDrawAge: 50,
       sippWithdrawalStrategy: "zero_at_death",
       isaCurrentPot: 30000,
       isaMonthlyContribution: 0,
-      isaDrawAge: 40,
+      isaDrawAge: 50,
       isaWithdrawalStrategy: "zero_at_death",
     };
     const settingsWithGrowth: PensionSettings = {
@@ -2108,14 +2248,14 @@ describe("projection calculations", () => {
     const rows = createProjectionTable(settings);
     expect(
       findRowByDate(rows, "2047-05-15")?.annualAlphaPensionIncludingReduction
-    ).toBeCloseTo(5451.2352, 6);
+    ).toBeCloseTo(5560.5964, 6);
     expect(findRowByDate(rows, "2047-05-15")?.monthlyAlphaPensionGross).toBe(0);
     expect(
       findRowByDate(rows, "2047-06-15")?.monthlyAlphaPensionGross
-    ).toBeCloseTo(458.6544, 6);
+    ).toBeCloseTo(467.8558, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.totalMonthlyNetIncome
-    ).toBeCloseTo(458.6544, 6);
+    ).toBeCloseTo(467.8558, 6);
   });
 
   it("applies Alpha pension increases in the projection table", () => {
@@ -2271,7 +2411,7 @@ describe("projection calculations", () => {
       alphaAddedPensionMonthly: 0,
       sippCurrentPot: 0,
       sippMonthlyContribution: 825,
-      sippDrawAge: 55,
+      sippDrawAge: 57,
       sippRealInterestPercent: 5,
       sippWithdrawalStrategy: "use_by_age",
       sippWithdrawalTargetAge: 64,
@@ -2338,7 +2478,7 @@ describe("projection calculations", () => {
     expect(row?.annualStandardAlphaPension).toBeCloseTo(81.2, 6);
     expect(row?.annualEpaAlphaPension).toBeCloseTo(162.4, 6);
     expect(row?.annualAccruedAlphaPension).toBeCloseTo(243.6, 6);
-    expect(row?.annualAlphaPensionIncludingReduction).toBeCloseTo(230.608, 6);
+    expect(row?.annualAlphaPensionIncludingReduction).toBeCloseTo(231.0952, 6);
   });
 
   it("still projects rows when EPA is enabled before the EPA age", () => {
@@ -2423,7 +2563,7 @@ describe("projection calculations", () => {
 
     expect(findRowByDate(rows, "2047-05-15")?.lumpSumAddedPension).toBe(0);
     expect(findRowByDate(rows, "2047-06-15")?.lumpSumAddedPension).toBeCloseTo(
-      1000,
+      12820 / (12.66 * 1.17),
       6
     );
     expect(findRowByDate(rows, "2047-07-15")?.lumpSumAddedPension).toBe(0);
@@ -2432,13 +2572,13 @@ describe("projection calculations", () => {
     ).toBeCloseTo(8412.4, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.annualAccruedAlphaPension
-    ).toBeCloseTo(9493.6, 6);
+    ).toBeCloseTo(9359.102761237358, 6);
     expect(
       findRowByDate(rows, "2047-07-15")?.annualAccruedAlphaPension
-    ).toBeCloseTo(9493.6, 6);
+    ).toBeCloseTo(9359.102761237358, 6);
     expect(
       findRowByDate(rows, "2047-06-15")?.monthlyAlphaPensionGross
-    ).toBeCloseTo(512.6544, 6);
+    ).toBeCloseTo(515.5305770981578, 6);
   });
 
   it("uses the calculated starting Alpha pension at the projection start instead of the raw ABS value", () => {
@@ -2937,6 +3077,43 @@ describe("projection calculations", () => {
     );
   });
 
+  it("reports the CS AVC pot at draw before the first withdrawal", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2025-01-01",
+      dateOfBirth: "1965-01-01",
+      lifeExpectancy: 70,
+      requirementAge: 60,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: true,
+      showIsa: false,
+      showLisa: false,
+      showAdditionalGuaranteedIncome: false,
+      csAvcCurrentPot: 120000,
+      csAvcMonthlyContribution: 0,
+      csAvcDrawAge: 61,
+      csAvcRealInterestPercent: 0,
+      csAvcWithdrawalStrategy: "percentage",
+      csAvcWithdrawalPercent: 4,
+    };
+
+    const rows = createProjectionTable(settings);
+    const summary = generatePensionSummary(rows, settings);
+    const drawRow = rows.find((row) => row.date === "2026-01-01");
+
+    expect(drawRow?.monthlyCsAvcPension).toBe(400);
+    expect(drawRow?.csAvcPot).toBe(119600);
+    expect(summary.csAvcPension.potAtDraw).toBe(120000);
+  });
+
   it("uses active flexible pot income in the summary when draw ages land on month-start rows", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
@@ -3019,6 +3196,8 @@ describe("projection calculations", () => {
       alphaPensionDrawAge: 67,
       sippCurrentPot: 0,
       sippMonthlyContribution: 0,
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 55,
       sippDrawAge: 55,
       sippWithdrawalStrategy: "use_by_age",
       sippWithdrawalTargetAge: 64,
@@ -3526,6 +3705,73 @@ describe("projection calculations", () => {
     expect(analysis.stableAnnualGuaranteedIncome).toBeCloseTo(15000, 6);
     expect(analysis.stableAnnualGuaranteedSurplus).toBeCloseTo(3000, 6);
     expect(statePensionPhase?.annualSurplus).toBeCloseTo(3000, 6);
+  });
+
+  it("finds the earliest sustainable Alpha draw age using projected pension income", () => {
+    const dateOfBirth = "1971-01-01";
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2025-04-01",
+      dateOfBirth,
+      requirementAge: 55,
+      normalPensionAge: calculateNormalPensionAge(dateOfBirth),
+      alphaPensionDrawAge: calculateNormalPensionAge(dateOfBirth),
+      lifeExpectancy: 56,
+      desiredRetirementIncome: 5000,
+      inflationRateAnnual: 0,
+      showAlpha: true,
+      accruedPensionAtLastAbs: 20000,
+      pensionableEarnings: 0,
+      alphaAddedPensionMonthly: 0,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      showLisa: false,
+    });
+    const pensionRows = createProjectionTable(settings);
+
+    const analysis = generateRetirementBridgeAnalysis(pensionRows, settings, {
+      calculateSafeDrawAge: true,
+    });
+
+    expect(analysis.earliestSustainablePensionDrawAge).toBe(55);
+  });
+
+  it("returns the first whole-year draw age whose projected Alpha income meets the target", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      dateOfBirth: "1987-06-01",
+      requirementAge: 57,
+      normalPensionAge: 68,
+      alphaPensionDrawAge: 68,
+      lifeExpectancy: 59,
+      desiredRetirementIncome: 12000,
+      inflationRateAnnual: 0,
+      showAlpha: true,
+      accruedPensionAtLastAbs: 20000,
+      pensionableEarnings: 0,
+      alphaAddedPensionMonthly: 0,
+      showNuvos: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: true,
+      isaCurrentPot: 20000,
+      isaMonthlyContribution: 0,
+      isaRealInterestPercent: 0,
+      showLisa: false,
+    });
+    const pensionRows = createProjectionTable({
+      ...settings,
+      showIsa: false,
+    });
+
+    const analysis = generateRetirementBridgeAnalysis(pensionRows, settings, {
+      calculateSafeDrawAge: true,
+    });
+
+    expect(analysis.earliestSustainablePensionDrawAge).toBe(58);
   });
 
   it("does not mark an early Alpha draw sustainable when later income falls below target", () => {

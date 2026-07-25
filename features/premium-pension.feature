@@ -11,7 +11,7 @@ Feature: Premium Civil Service pension modelling
   Service pension pots.
 
   Background:
-    Given Civil Service pension factor tables version "acceptance-v1" are loaded
+    Given Civil Service pension factor tables version "GAD-2026-01" are loaded
     And Civil Service pension commutation tables version "acceptance-v1" are loaded
     And pension outputs are rounded to 2 decimal places
 
@@ -170,20 +170,23 @@ Feature: Premium Civil Service pension modelling
   # ---------------------------------------------------------------------------
 
   @early-retirement
-  Scenario Outline: Reduce Premium pension when drawn before age 60
+  Scenario Outline: Reduce Premium pension when drawn before its normal pension age
     Given the member has a Premium pension record
-    And the member has Premium normal pension age 60
+    And the member has Premium normal pension age <normalPensionAge>
     And the member has unreduced annual Premium pension of <unreducedAnnualPension>
-    When the member draws Premium pension at age <drawAge>
+    When the member draws Premium pension at age <drawAge> and <drawAgeMonths> months
     Then the annual Premium pension payable should be <expectedAnnualPension>
     And the annual reduction should be <expectedAnnualReduction>
 
     Examples:
-      | unreducedAnnualPension | drawAge | expectedAnnualPension | expectedAnnualReduction |
-      | 12000.00               | 60      | 12000.00              | 0.00                    |
-      | 12000.00               | 58      | 10800.00              | 1200.00                 |
-      | 12000.00               | 55      | 9000.00               | 3000.00                 |
-      | 18000.00               | 55      | 13500.00              | 4500.00                 |
+      | normalPensionAge | unreducedAnnualPension | drawAge | drawAgeMonths | expectedAnnualPension | expectedAnnualReduction |
+      | 60               | 12000.00               | 60      | 0             | 12000.00              | 0.00                    |
+      | 60               | 12000.00               | 58      | 0             | 10992.00              | 1008.00                 |
+      | 60               | 12000.00               | 58      | 6             | 11232.00              | 768.00                  |
+      | 60               | 18000.00               | 55      | 0             | 14508.00              | 3492.00                 |
+      | 65               | 12000.00               | 60      | 0             | 9396.00               | 2604.00                 |
+      | 65               | 12000.00               | 60      | 6             | 9612.00               | 2388.00                 |
+      | 65               | 12000.00               | 65      | 0             | 12000.00              | 0.00                    |
 
   @early-retirement
   Scenario: Premium early retirement reduction is permanent
@@ -191,8 +194,8 @@ Feature: Premium Civil Service pension modelling
     And the member has Premium normal pension age 60
     And the member has unreduced annual Premium pension of 12000.00
     When the member draws Premium pension at age 55
-    Then the annual Premium pension payable at age 55 should be 9000.00
-    And the annual Premium pension payable at age 60 before pension increases should still be 9000.00
+    Then the annual Premium pension payable at age 55 should be 9672.00
+    And the annual Premium pension payable at age 60 before pension increases should still be 9672.00
     And the model should not remove the early retirement reduction at normal pension age
 
 
@@ -218,14 +221,32 @@ Feature: Premium Civil Service pension modelling
       | 12500.00          | 3             | 2.00%   | off        | 12500.00              |
 
   @cpi @in-payment
-  Scenario: Increase Premium pension in payment using CPI
+  Scenario Outline: Apply the CPI setting to Premium pension increases in payment
     Given the member has a Premium pension in payment
     And the annual Premium pension payable is 12000.00
     And the annual CPI assumption is 3.00%
-    And CPI revaluation is on
+    And CPI revaluation is <cpiEnabled>
     When the pension is increased for 1 year in payment
-    Then the annual Premium pension after increase should be 12360.00
-    And the monthly gross Premium pension should be 1030.00
+    Then the annual Premium pension after increase should be <expectedAnnualPension>
+    And the monthly gross Premium pension should be <expectedMonthlyPension>
+
+    Examples:
+      | cpiEnabled | expectedAnnualPension | expectedMonthlyPension |
+      | on         | 12360.00              | 1030.00                |
+      | off        | 12000.00              | 1000.00                |
+
+  @cpi @in-payment @early-retirement
+  Scenario: Increase an early-reduced Premium pension in payment without removing the reduction
+    Given the member has a Premium pension record
+    And the member has Premium normal pension age 60
+    And the member has unreduced annual Premium pension of 12000.00
+    And the annual CPI assumption is 3.00%
+    And CPI revaluation is on
+    When the member draws Premium pension at age 55
+    Then the annual Premium pension payable should be 9672.00
+    When the pension is increased for 1 year in payment
+    Then the annual Premium pension after increase should be 9962.16
+    And the monthly gross Premium pension should be 830.18
 
 
   # ---------------------------------------------------------------------------
@@ -299,12 +320,12 @@ Feature: Premium Civil Service pension modelling
     When the member draws Premium pension at age 55
     And the member chooses an optional lump sum of 9000.00
     Then the unreduced annual Premium pension before early retirement should be 12000.00
-    And the annual Premium pension after early retirement reduction should be 9000.00
-    And the annual Premium pension after commutation should be 8250.00
+    And the annual Premium pension after early retirement reduction should be 9672.00
+    And the annual Premium pension after commutation should be 8922.00
     And the optional lump sum payable should be 9000.00
     And the result should show:
       | component                       | annualAmount |
       | premiumBeforeEarlyRetirement    | 12000.00     |
-      | premiumAfterEarlyRetirement     | 9000.00      |
+      | premiumAfterEarlyRetirement     | 9672.00      |
       | pensionGivenUpForOptionalLumpSum | 750.00       |
-      | premiumAfterCommutation         | 8250.00      |
+      | premiumAfterCommutation         | 8922.00      |

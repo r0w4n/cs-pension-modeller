@@ -6,6 +6,8 @@ import type {
 } from "../fieldDefinitions";
 import { clampNumber, getEffectiveRangeField } from "../app-domains";
 import {
+  calculateMinimumCsAvcAccessAge,
+  calculateMinimumSippAccessAge,
   defaultSettings,
   formatCurrency,
   type PensionSettings,
@@ -269,6 +271,8 @@ export function RangeSettingField({
   validationIssue?: PensionValidationIssue;
 }) {
   const effectiveField = getEffectiveRangeField(field, settings);
+  const preservesBelowMinimumValue =
+    field.id === "sippDrawAge" || field.id === "csAvcDrawAge";
   const [draftValue, setDraftValue] = useState<number | null>(null);
   const [draftExactValue, setDraftExactValue] = useState<string | null>(null);
   const parsedDraftExactValue =
@@ -285,7 +289,11 @@ export function RangeSettingField({
         effectiveField.max,
         Math.max(effectiveField.min, draftValue ?? value)
       );
-  const displayedExactValue = draftExactValue ?? displayedRangeValue.toString();
+  const displayedExactValue =
+    draftExactValue ??
+    (preservesBelowMinimumValue && value < effectiveField.min
+      ? value.toString()
+      : displayedRangeValue.toString());
   const validationId = validationIssue ? `${field.id}-validation` : undefined;
   const resetValue = defaultSettings[field.id];
   const resetLabel =
@@ -296,7 +304,7 @@ export function RangeSettingField({
   const commitValue = (nextValue: number) => {
     const normalizedValue = clampNumber(
       nextValue,
-      effectiveField.min,
+      preservesBelowMinimumValue ? field.min : effectiveField.min,
       effectiveField.max
     );
     onChange(field.id, normalizedValue);
@@ -328,6 +336,9 @@ export function RangeSettingField({
             disabled={disabled}
             aria-invalid={Boolean(validationIssue) || undefined}
             aria-describedby={validationId}
+            onPointerDown={(event) => {
+              event.currentTarget.focus({ preventScroll: true });
+            }}
             onChange={(event) => {
               const nextValue = Number(event.target.value);
               setDraftValue(nextValue);
@@ -401,6 +412,22 @@ export function RangeSettingField({
           }}
         />
       </div>
+      {field.id === "sippDrawAge" ? (
+        <SippProtectedAgeInlineControls
+          settings={settings}
+          onChange={onChange}
+          disabled={disabled}
+          showGuidanceNotes={showGuidanceNotes}
+        />
+      ) : null}
+      {field.id === "csAvcDrawAge" ? (
+        <CsAvcProtectedAgeInlineControls
+          settings={settings}
+          onChange={onChange}
+          disabled={disabled}
+          showGuidanceNotes={showGuidanceNotes}
+        />
+      ) : null}
       <button
         type="button"
         className="secondary-button field-reset-button"
@@ -417,6 +444,110 @@ export function RangeSettingField({
       </button>
       <FieldHelp field={effectiveField} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
+    </div>
+  );
+}
+
+function SippProtectedAgeInlineControls({
+  settings,
+  onChange,
+  disabled = false,
+  showGuidanceNotes,
+}: {
+  settings: PensionSettings;
+  onChange: SettingsFieldOnChange;
+  disabled?: boolean;
+  showGuidanceNotes: boolean;
+}) {
+  const checkboxId = "sippHasProtectedPensionAge-inline";
+  const descriptionId = "sippHasProtectedPensionAge-inline-description";
+  const updateProtectedPensionAge = (hasProtectedPensionAge: boolean) => {
+    onChange("sippHasProtectedPensionAge", hasProtectedPensionAge);
+
+    if (!hasProtectedPensionAge) {
+      const standardMinimumSippAccessAge = calculateMinimumSippAccessAge(
+        settings.dateOfBirth,
+        { sippHasProtectedPensionAge: false }
+      );
+
+      if (settings.sippDrawAge < standardMinimumSippAccessAge) {
+        onChange("sippDrawAge", standardMinimumSippAccessAge);
+      }
+    }
+  };
+
+  return (
+    <div className="sipp-protected-age-panel">
+      <label className="checkbox-row" htmlFor={checkboxId}>
+        <input
+          id={checkboxId}
+          type="checkbox"
+          checked={settings.sippHasProtectedPensionAge}
+          disabled={disabled}
+          aria-describedby={showGuidanceNotes ? descriptionId : undefined}
+          onChange={(event) => updateProtectedPensionAge(event.target.checked)}
+        />
+        <span>I have a provider-confirmed protected SIPP age</span>
+      </label>
+      {showGuidanceNotes ? (
+        <p id={descriptionId} className="field-help">
+          Only use this if your provider or scheme administrator has confirmed
+          that these scheme-specific pension rights can be accessed from age 50
+          before the standard private pension access age.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function CsAvcProtectedAgeInlineControls({
+  settings,
+  onChange,
+  disabled = false,
+  showGuidanceNotes,
+}: {
+  settings: PensionSettings;
+  onChange: SettingsFieldOnChange;
+  disabled?: boolean;
+  showGuidanceNotes: boolean;
+}) {
+  const checkboxId = "csAvcHasProtectedPensionAge-inline";
+  const descriptionId = "csAvcHasProtectedPensionAge-inline-description";
+  const updateProtectedPensionAge = (hasProtectedPensionAge: boolean) => {
+    onChange("csAvcHasProtectedPensionAge", hasProtectedPensionAge);
+
+    if (!hasProtectedPensionAge) {
+      const standardMinimumCsAvcAccessAge = calculateMinimumCsAvcAccessAge(
+        settings.dateOfBirth,
+        { csAvcHasProtectedPensionAge: false }
+      );
+
+      if (settings.csAvcDrawAge < standardMinimumCsAvcAccessAge) {
+        onChange("csAvcDrawAge", standardMinimumCsAvcAccessAge);
+      }
+    }
+  };
+
+  return (
+    <div className="sipp-protected-age-panel">
+      <label className="checkbox-row" htmlFor={checkboxId}>
+        <input
+          id={checkboxId}
+          type="checkbox"
+          checked={settings.csAvcHasProtectedPensionAge}
+          disabled={disabled}
+          aria-describedby={showGuidanceNotes ? descriptionId : undefined}
+          onChange={(event) => updateProtectedPensionAge(event.target.checked)}
+        />
+        <span>I have a provider-confirmed protected CS AVC age</span>
+      </label>
+      {showGuidanceNotes ? (
+        <p id={descriptionId} className="field-help">
+          Only use this if your CS AVC provider or scheme administrator has
+          confirmed that these scheme-specific pension rights can be accessed
+          from age 50 before the standard private pension access age.
+        </p>
+      ) : null}
     </div>
   );
 }

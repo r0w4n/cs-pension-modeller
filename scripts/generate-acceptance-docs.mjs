@@ -76,6 +76,22 @@ const mapScenario = (scenario, featureTags) => {
   };
 };
 
+const mapScenariosFromChildren = (children, inheritedTags) =>
+  children.flatMap((child) => {
+    if (child.scenario) {
+      return [mapScenario(child.scenario, inheritedTags)];
+    }
+
+    if (child.rule) {
+      return mapScenariosFromChildren(child.rule.children, [
+        ...inheritedTags,
+        ...tagsFrom(child.rule),
+      ]);
+    }
+
+    return [];
+  });
+
 const buildFeature = async (fileName) => {
   const relativePath = path.posix.join("features", fileName);
   const source = await readFile(path.join(featuresDir, fileName), "utf8");
@@ -92,9 +108,7 @@ const buildFeature = async (fileName) => {
   }
 
   const featureTags = tagsFrom(feature);
-  const scenarios = feature.children
-    .flatMap((child) => (child.scenario ? [child.scenario] : []))
-    .map((scenario) => mapScenario(scenario, featureTags));
+  const scenarios = mapScenariosFromChildren(feature.children, featureTags);
 
   return {
     path: relativePath,

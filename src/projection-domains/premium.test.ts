@@ -6,12 +6,6 @@ import {
   getPremiumEarlyRetirementFactor,
 } from "./premium";
 
-const premiumTestFactors = {
-  60: {
-    58: 0.91,
-  },
-};
-
 describe("projection Premium domain", () => {
   it("revalues Premium by CPI only with no early reduction at NPA", () => {
     const result = calculatePremiumPension({
@@ -21,7 +15,6 @@ describe("projection Premium domain", () => {
       drawAge: 60,
       normalPensionAge: 60,
       cpiAssumption: 0.025,
-      earlyRetirementFactors: premiumTestFactors,
     });
 
     expect(result.scheme).toBe("premium");
@@ -45,16 +38,15 @@ describe("projection Premium domain", () => {
       drawAge: 58,
       normalPensionAge: 60,
       cpiAssumption: 0.025,
-      earlyRetirementFactors: premiumTestFactors,
     });
 
     expect(result.cpiRevaluedPensionAtDrawAge).toBeCloseTo(
       5000 * 1.025 ** 8,
       6
     );
-    expect(result.earlyRetirementFactor).toBe(0.91);
+    expect(result.earlyRetirementFactor).toBe(0.916);
     expect(result.annualPensionPayableAtDrawAge).toBeCloseTo(
-      5000 * 1.025 ** 8 * 0.91,
+      5000 * 1.025 ** 8 * 0.916,
       6
     );
     expect(result.isReducedForEarlyPayment).toBe(true);
@@ -68,7 +60,6 @@ describe("projection Premium domain", () => {
       drawAge: 62,
       normalPensionAge: 60,
       cpiAssumption: 0.025,
-      earlyRetirementFactors: premiumTestFactors,
     });
 
     expect(result.earlyRetirementFactor).toBe(1);
@@ -82,26 +73,59 @@ describe("projection Premium domain", () => {
     const alphaFactor = getAlphaEarlyRetirementFactor(60, 58);
     const nuvosFactor = calculateNuvosEarlyRetirementFactor(2, 0);
 
-    expect(getPremiumEarlyRetirementFactor(58, 60, premiumTestFactors)).toBe(
-      0.91
-    );
-    expect(alphaFactor).not.toBe(0.91);
-    expect(nuvosFactor).not.toBe(0.91);
+    expect(getPremiumEarlyRetirementFactor(58, 60)).toBe(0.916);
+    expect(alphaFactor).not.toBe(0.916);
+    expect(nuvosFactor).not.toBe(0.916);
   });
 
-  it("returns factor unavailable instead of estimating a missing Premium factor", () => {
+  it("loads the published whole-year NPA 60 and NPA 65 factors", () => {
+    expect(getPremiumEarlyRetirementFactor(55, 60)).toBe(0.806);
+    expect(getPremiumEarlyRetirementFactor(59, 60)).toBe(0.957);
+    expect(getPremiumEarlyRetirementFactor(55, 65)).toBe(0.632);
+    expect(getPremiumEarlyRetirementFactor(64, 65)).toBe(0.95);
+  });
+
+  it("uses published completed-month Premium factors without annual interpolation", () => {
+    expect(getPremiumEarlyRetirementFactor(58.5, 60)).toBe(0.936);
+    expect(getPremiumEarlyRetirementFactor(58 + 6.9 / 12, 60)).toBe(0.936);
+    expect(getPremiumEarlyRetirementFactor(60.5, 65)).toBe(0.801);
+
+    const result = calculatePremiumPension({
+      annualPensionAtValuationDate: 12000,
+      valuationDate: "2026-04-01",
+      dateOfBirth: "1970-04-01",
+      drawAge: 58.5,
+      normalPensionAge: 60,
+      cpiAssumption: 0,
+    });
+
+    expect(result.earlyRetirementFactor).toBe(0.936);
+    expect(result.annualPensionPayableAtDrawAge).toBe(11232);
+  });
+
+  it("uses the final published monthly Premium factor immediately before NPA", () => {
+    expect(getPremiumEarlyRetirementFactor(59 + 11 / 12, 60)).toBe(0.998);
+    expect(getPremiumEarlyRetirementFactor(64 + 11 / 12, 65)).toBe(0.998);
+    expect(getPremiumEarlyRetirementFactor(60, 60)).toBe(1);
+    expect(getPremiumEarlyRetirementFactor(65, 65)).toBe(1);
+  });
+
+  it("returns factor unavailable for an under-55 case needing additional scheme inputs", () => {
     const result = calculatePremiumPension({
       annualPensionAtValuationDate: 5000,
       valuationDate: "2020-04-01",
       dateOfBirth: "1970-04-01",
-      drawAge: 57,
+      drawAge: 54,
       normalPensionAge: 60,
       cpiAssumption: 0.025,
-      earlyRetirementFactors: premiumTestFactors,
     });
 
     expect(result.earlyRetirementFactor).toBeNull();
     expect(result.factorUnavailable).toBe(true);
     expect(result.annualPensionPayableAtDrawAge).toBe(0);
+  });
+
+  it("does not estimate a personal Premium NPA factor", () => {
+    expect(getPremiumEarlyRetirementFactor(58, 63)).toBeNull();
   });
 });

@@ -41,6 +41,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     showPremium: defaultSettings.showPremium,
     showStatePension: defaultSettings.showStatePension,
     showSipp: defaultSettings.showSipp,
+    showCsAvc: defaultSettings.showCsAvc,
     showIsa: defaultSettings.showIsa,
     showLisa: defaultSettings.showLisa,
     showAdditionalGuaranteedIncome:
@@ -119,6 +120,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     premiumHasNpa65: defaultSettings.premiumHasNpa65,
     sippCurrentPot: defaultSettings.sippCurrentPot,
     sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+    sippHasProtectedPensionAge: defaultSettings.sippHasProtectedPensionAge,
+    sippProtectedPensionAge: defaultSettings.sippProtectedPensionAge,
     sippDrawAge: defaultSettings.sippDrawAge,
     sippLumpSums: defaultSettings.sippLumpSums,
     sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
@@ -126,6 +129,16 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
     sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
     sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+    csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+    csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+    csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+    csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+    csAvcDrawAge: defaultSettings.csAvcDrawAge,
+    csAvcLumpSums: defaultSettings.csAvcLumpSums,
+    csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+    csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+    csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+    csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
     isaCurrentPot: defaultSettings.isaCurrentPot,
     isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
     isaDrawAge: defaultSettings.isaDrawAge,
@@ -152,6 +165,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
     taxSippTaxFreeWithdrawalPercent:
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
+    taxCsAvcTaxFreeWithdrawalPercent:
+      defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     ...overrides,
   };
 }
@@ -241,8 +256,10 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("alphaPensionLeaveAge", 20)).toBe(20);
     expect(normalizeSetting("alphaPensionDrawAge", 60.5)).toBe(60.5);
     expect(normalizeSetting("alphaPensionDrawAge", 200)).toBe(70);
-    expect(normalizeSippDrawAge(55, "1987-06-15")).toBe(55);
-    expect(normalizeSippDrawAge(55, "1970-04-05")).toBe(55);
+    expect(normalizeSetting("sippProtectedPensionAge", 50.5)).toBe(51);
+    expect(normalizeSetting("sippProtectedPensionAge", 57)).toBe(56);
+    expect(normalizeSippDrawAge(50, "1987-06-15")).toBe(50);
+    expect(normalizeSippDrawAge(-1, "1970-04-05")).toBe(0);
   });
 
   it("normalizes invalid dates back to defaults", () => {
@@ -331,6 +348,7 @@ describe("settings unit tests", () => {
       showPremium: defaultSettings.showPremium,
       showStatePension: defaultSettings.showStatePension,
       showSipp: defaultSettings.showSipp,
+      showCsAvc: defaultSettings.showCsAvc,
       showIsa: defaultSettings.showIsa,
       showLisa: defaultSettings.showLisa,
       showAdditionalGuaranteedIncome:
@@ -421,6 +439,8 @@ describe("settings unit tests", () => {
       premiumHasNpa65: defaultSettings.premiumHasNpa65,
       sippCurrentPot: defaultSettings.sippCurrentPot,
       sippMonthlyContribution: defaultSettings.sippMonthlyContribution,
+      sippHasProtectedPensionAge: defaultSettings.sippHasProtectedPensionAge,
+      sippProtectedPensionAge: defaultSettings.sippProtectedPensionAge,
       sippDrawAge: defaultSettings.sippDrawAge,
       sippLumpSums: defaultSettings.sippLumpSums,
       sippRealInterestPercent: defaultSettings.sippRealInterestPercent,
@@ -428,6 +448,16 @@ describe("settings unit tests", () => {
       sippWithdrawalStrategy: defaultSettings.sippWithdrawalStrategy,
       sippWithdrawalPercent: defaultSettings.sippWithdrawalPercent,
       sippWithdrawalTargetAge: defaultSettings.sippWithdrawalTargetAge,
+      csAvcCurrentPot: defaultSettings.csAvcCurrentPot,
+      csAvcMonthlyContribution: defaultSettings.csAvcMonthlyContribution,
+      csAvcHasProtectedPensionAge: defaultSettings.csAvcHasProtectedPensionAge,
+      csAvcProtectedPensionAge: defaultSettings.csAvcProtectedPensionAge,
+      csAvcDrawAge: defaultSettings.csAvcDrawAge,
+      csAvcLumpSums: defaultSettings.csAvcLumpSums,
+      csAvcRealInterestPercent: defaultSettings.csAvcRealInterestPercent,
+      csAvcWithdrawalStrategy: defaultSettings.csAvcWithdrawalStrategy,
+      csAvcWithdrawalPercent: defaultSettings.csAvcWithdrawalPercent,
+      csAvcWithdrawalTargetAge: defaultSettings.csAvcWithdrawalTargetAge,
       isaCurrentPot: defaultSettings.isaCurrentPot,
       isaMonthlyContribution: defaultSettings.isaMonthlyContribution,
       isaDrawAge: defaultSettings.isaDrawAge,
@@ -454,6 +484,8 @@ describe("settings unit tests", () => {
       taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
       taxSippTaxFreeWithdrawalPercent:
         defaultSettings.taxSippTaxFreeWithdrawalPercent,
+      taxCsAvcTaxFreeWithdrawalPercent:
+        defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
     });
   });
 
@@ -601,7 +633,7 @@ describe("settings unit tests", () => {
         expect.objectContaining({
           field: "alphaAddedPensionMonthly",
           message:
-            "Monthly added pension purchases must stop before age 68 because the factor table does not include age 68 or later.",
+            "Monthly added pension purchases must stop before age 68 because purchases are only supported through age 67.",
         }),
         expect.objectContaining({
           field: "alphaAddedPensionLumpSums",
@@ -649,7 +681,7 @@ describe("settings unit tests", () => {
     );
   });
 
-  it("reports when date of birth is not before the calculation start date", () => {
+  it("reports when date of birth is not before the current date", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
       startDate: "2026-05-01",
@@ -660,7 +692,7 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "dateOfBirth",
-          message: "Date of birth must be before the calculation start date.",
+          message: "Date of birth must be before the current date.",
         }),
       ])
     );
@@ -701,7 +733,7 @@ describe("settings unit tests", () => {
         expect.objectContaining({
           field: "alphaPensionAbsDate",
           message:
-            "Last Annual Benefits Statement must be on or before the calculation start date.",
+            "Last Annual Benefits Statement must be on or before the current date.",
         }),
       ])
     );
@@ -742,22 +774,20 @@ describe("settings unit tests", () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: "sippDrawAge",
-          message:
-            "SIPP draw start age must be after the calculation start date.",
+          message: "SIPP draw start age must be after the current date.",
         }),
         expect.objectContaining({
           field: "isaDrawAge",
-          message:
-            "ISA draw start age must be after the calculation start date.",
+          message: "ISA draw start age must be after the current date.",
         }),
       ])
     );
   });
 
-  it("allows SIPP draw ages from 55 regardless of the 2028 rule change", () => {
+  it("allows standard SIPP access at 55 when the planned draw date is before 6 April 2028", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
-      dateOfBirth: "1977-11-23",
+      dateOfBirth: "1972-08-01",
       sippDrawAge: 55,
       showSipp: true,
     });
@@ -765,6 +795,63 @@ describe("settings unit tests", () => {
     expect(issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ field: "sippDrawAge" }),
+      ])
+    );
+  });
+
+  it("reports standard SIPP draw ages before 57 when the planned draw date is on or after 6 April 2028", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1972-08-01",
+      sippDrawAge: 56,
+      showSipp: true,
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "sippDrawAge",
+          message:
+            "SIPP draw start age must be at least 57 for access dates on or after 6 April 2028, unless your provider has confirmed a protected pension age.",
+        }),
+      ])
+    );
+  });
+
+  it("uses provider-confirmed SIPP protected access as age 50 minimum", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1980-08-01",
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 50,
+      sippDrawAge: 50,
+      showSipp: true,
+    });
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "sippDrawAge" }),
+      ])
+    );
+  });
+
+  it("reports planned SIPP draw ages before provider-confirmed protected access", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1980-08-01",
+      sippHasProtectedPensionAge: true,
+      sippProtectedPensionAge: 55,
+      sippDrawAge: 49,
+      showSipp: true,
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "sippDrawAge",
+          message:
+            "SIPP draw start age must not be earlier than the provider-confirmed protected SIPP access age of 50.",
+        }),
       ])
     );
   });
@@ -822,7 +909,7 @@ describe("settings unit tests", () => {
           field: "isaLumpSums",
           itemId: "isa-lump",
           message:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         }),
       ])
     );
@@ -862,13 +949,13 @@ describe("settings unit tests", () => {
           field: "sippLumpSums",
           itemId: "sipp-after-retirement",
           message:
-            "SIPP lump sums must fall between the calculation start date and the earlier of retirement age and SIPP draw start.",
+            "SIPP lump sums must fall between the current date and the earlier of retirement age and SIPP draw start.",
         }),
         expect.objectContaining({
           field: "isaLumpSums",
           itemId: "isa-after-retirement",
           message:
-            "ISA lump sums must fall between the calculation start date and the earlier of retirement age and ISA draw start.",
+            "ISA lump sums must fall between the current date and the earlier of retirement age and ISA draw start.",
         }),
       ])
     );
@@ -935,15 +1022,19 @@ describe("settings unit tests", () => {
     );
   });
 
-  it("derives the earliest Alpha access age from the 2028 minimum pension age change and keeps SIPP at 55", () => {
+  it("derives the earliest Alpha and SIPP access ages from the 2028 minimum pension age change", () => {
     expect(calculateMinimumPensionAccessAge("1971-04-05")).toBe(55);
     expect(calculateMinimumPensionAccessAge("1973-04-05")).toBe(55);
     expect(calculateMinimumPensionAccessAge("1973-04-06")).toBe(57);
     expect(calculateMinimumPensionAccessAge("1977-11-23")).toBe(57);
-    expect(calculateMinimumSippAccessAge("1971-04-05")).toBe(55);
-    expect(calculateMinimumSippAccessAge("1973-04-05")).toBe(55);
-    expect(calculateMinimumSippAccessAge("1973-04-06")).toBe(55);
-    expect(calculateMinimumSippAccessAge("1977-11-23")).toBe(55);
+    expect(calculateMinimumSippAccessAge("1972-08-01")).toBe(55);
+    expect(calculateMinimumSippAccessAge("1973-04-06")).toBe(57);
+    expect(
+      calculateMinimumSippAccessAge("1973-04-06", {
+        sippHasProtectedPensionAge: true,
+        sippProtectedPensionAge: 55,
+      })
+    ).toBe(50);
   });
 
   it("normalizes Alpha draw ages that would fall after the 2028 rule change but before age 57", () => {
@@ -952,16 +1043,49 @@ describe("settings unit tests", () => {
     expect(normalizeAlphaPensionDrawAge(55, "1972-08-01")).toBe(55);
   });
 
-  it("normalizes SIPP draw ages with age 55 as the minimum", () => {
-    expect(normalizeSippDrawAge(55, "1977-11-23")).toBe(55);
+  it("normalizes SIPP draw ages within application numeric bounds", () => {
+    expect(normalizeSippDrawAge(50, "1977-11-23")).toBe(50);
     expect(normalizeSippDrawAge(56, "1972-08-01")).toBe(56);
-    expect(normalizeSippDrawAge(55, "1972-08-01")).toBe(55);
+    expect(normalizeSippDrawAge(-1, "1972-08-01")).toBe(0);
   });
 
-  it("derives SIPP access age as 55", () => {
-    expect(calculateMinimumSippAccessAge("1970-04-05")).toBe(55);
-    expect(calculateMinimumSippAccessAge("1973-04-06")).toBe(55);
-    expect(calculateMinimumSippAccessAge("1987-06-15")).toBe(55);
+  it("uses the planned draw date to resolve the applicable standard SIPP minimum", () => {
+    const baseSettings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1972-08-01",
+      sippHasProtectedPensionAge: false,
+      sippProtectedPensionAge: 55,
+    };
+
+    expect(
+      calculateMinimumSippAccessAge(baseSettings.dateOfBirth, baseSettings)
+    ).toBe(55);
+    expect(
+      validateSettings({
+        ...baseSettings,
+        sippDrawAge: 56,
+        showSipp: true,
+      })
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "sippDrawAge",
+        }),
+      ])
+    );
+    expect(
+      validateSettings({
+        ...baseSettings,
+        sippDrawAge: 57,
+        showSipp: true,
+      })
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "sippDrawAge",
+        }),
+      ])
+    );
   });
 
   it("allows State Pension deferral dates but clamps them to State Pension age", () => {

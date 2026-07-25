@@ -1,21 +1,27 @@
 @alpha-pension
 Feature: Alpha pension modelling
 
-  The modeller should calculate alpha pension outcomes using predefined scheme
-  rules and factor tables.
+  The modeller estimates Alpha outcomes from the member's circumstances and
+  published scheme rules. Factor examples use the current GAD consolidated
+  workbook, and important decisions should be checked against an official
+  pension statement or quotation.
 
-  The scenarios intentionally assert user-visible monetary results rather than
-  exposing actuarial factors in the Gherkin.
+  Rule: Normal Pension Age is linked to State Pension age
 
-  Background:
-    Given alpha pension factor tables version "acceptance-v1" are loaded
-    And alpha pension purchase factor tables version "acceptance-v1" are loaded
-    And pension outputs are rounded to 2 decimal places
+  @alpha @normal-pension-age
+  Scenario Outline: Derive Alpha Normal Pension Age from date of birth
+    Given the member was born on <dateOfBirth>
+    When the Alpha Normal Pension Age is determined
+    Then the Alpha Normal Pension Age should be <years> years and <months> months
 
+    Examples:
+      | dateOfBirth | years | months |
+      | 1954-09-06  | 66    | 0      |
+      | 1960-04-06  | 66    | 1      |
+      | 1977-04-06  | 67    | 1      |
+      | 1978-04-06  | 68    | 0      |
 
-  # ---------------------------------------------------------------------------
-  # Alpha accrual
-  # ---------------------------------------------------------------------------
+  Rule: Active members build career-average pension
 
   @alpha @accrual
   Scenario Outline: Build alpha pension while active
@@ -34,11 +40,10 @@ Feature: Alpha pension modelling
       | 0.00                 | 60000.00       | 0.00%          | 0.00%   | off        | 3           | 4176.00              | 60000.00            |
       | 0.00                 | 60000.00       | 4.00%          | 0.00%   | off        | 3           | 4345.27              | 67491.84            |
 
-    @pending
-    Examples: Pending active revaluation expectation review
+    Examples: Active revaluation examples
       | startingAlphaPension | startingSalary | salaryIncrease | cpiRate | cpiEnabled | activeYears | expectedAlphaPension | expectedFinalSalary |
-      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | on         | 2           | 13572.05             | 55125.00            |
-      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | off        | 2           | 12697.65             | 55125.00            |
+      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | on         | 2           | 12824.40             | 55125.00            |
+      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | off        | 2           | 12378.00             | 55125.00            |
 
   @alpha @accrual @breakdown
   Scenario: Show year-by-year alpha accrual breakdown
@@ -56,10 +61,6 @@ Feature: Alpha pension modelling
       | 3          | 64896.00          | 1505.59       | 4345.27             |
 
 
-  # ---------------------------------------------------------------------------
-  # Salary increase
-  # ---------------------------------------------------------------------------
-
   @alpha @salary-increase
   Scenario Outline: Salary increase affects future alpha accrual
     Given the member is in the alpha scheme
@@ -74,18 +75,28 @@ Feature: Alpha pension modelling
       | 60000.00       | 0.00%          | 3           | 60000.00            | 4176.00                 |
       | 60000.00       | 4.00%          | 3           | 67491.84            | 4345.27                 |
 
-    @pending
-    Examples: Pending salary rounding expectation review
+    Examples: Salary growth over five years
       | startingSalary | salaryIncrease | activeYears | expectedFinalSalary | expectedNewAlphaAccrual |
-      | 70000.00       | 3.00%          | 5           | 81148.19            | 8619.86                 |
+      | 70000.00       | 3.00%          | 5           | 81149.19            | 8622.04                 |
 
 
-  # ---------------------------------------------------------------------------
-  # CPI on/off
-  # ---------------------------------------------------------------------------
+  @alpha @accrual @part-time
+  Scenario: Accrue pension from actual part-time pensionable earnings
+    Given the member has actual pensionable earnings of 21000.00
+    When one year of Alpha pension is accrued
+    Then the new annual Alpha pension should be 487.20
 
-  @alpha @cpi @active-revaluation @pending
-  Scenario Outline: CPI can be switched on or off while active
+  @alpha @accrual @statement
+  Scenario: Include accrual since the last Annual Benefit Statement
+    Given the last statement recorded Alpha pension of 10000.00 on 2026-04-01
+    And the member has actual pensionable earnings of 42000.00
+    When the starting Alpha pension is calculated on 2026-10-01
+    Then the starting Alpha pension should be 10487.20
+
+  Rule: Alpha pension is adjusted for prices
+
+  @alpha @cpi @active-revaluation
+  Scenario Outline: Compare nominal and real-terms active projections
     Given the member is in the alpha scheme
     And the member starts with accrued alpha pension of <startingAlphaPension>
     And the member has pensionable salary of <startingSalary>
@@ -97,13 +108,13 @@ Feature: Alpha pension modelling
 
     Examples:
       | startingAlphaPension | startingSalary | salaryIncrease | cpiRate | cpiEnabled | activeYears | expectedAlphaPension |
-      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | on         | 2           | 13572.05             |
-      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | off        | 2           | 12697.65             |
-      | 20000.00             | 70000.00       | 0.00%          | 2.00%   | on         | 5           | 33134.97             |
-      | 20000.00             | 70000.00       | 0.00%          | 2.00%   | off        | 5           | 30633.41             |
+      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | on         | 2           | 12824.40             |
+      | 10000.00             | 50000.00       | 5.00%          | 4.00%   | off        | 2           | 12378.00             |
+      | 20000.00             | 70000.00       | 0.00%          | 2.00%   | on         | 5           | 30100.00             |
+      | 20000.00             | 70000.00       | 0.00%          | 2.00%   | off        | 5           | 28120.00             |
 
   @alpha @cpi @deferred
-  Scenario Outline: CPI can be switched on or off after leaving service
+  Scenario Outline: Compare nominal and real-terms deferred projections
     Given the member is in the alpha scheme
     And the member leaves pensionable service at age <leaveAge>
     And the member draws pension at age <drawAge>
@@ -119,7 +130,7 @@ Feature: Alpha pension modelling
       | 55       | 60      | 10000.00         | 3.00%   | off        | 10000.00           |
 
   @alpha @cpi @deferred
-  Scenario: Active alpha revaluation premium is not applied after leaving service
+  Scenario: Deferred alpha pension continues to use CPI after leaving service
     Given the member is in the alpha scheme
     And the member leaves pensionable service at age 55
     And the member draws pension at age 60
@@ -128,14 +139,42 @@ Feature: Alpha pension modelling
     And CPI revaluation is on
     When the deferred pension is projected to draw age
     Then the unreduced pension at draw age should be 11592.74
-    And the model should not apply active member revaluation after leaving service
+    And the model should apply CPI revaluation after leaving service
 
 
-  # ---------------------------------------------------------------------------
-  # Added Pension
-  # ---------------------------------------------------------------------------
+  @alpha @cpi
+  Scenario Outline: Apply positive or negative annual price adjustment
+    Given annual Alpha pension of 10000.00
+    When an annual price adjustment of <adjustment> is applied
+    Then the adjusted annual Alpha pension should be <adjustedPension>
 
-  @alpha @added-pension @lump-sum @pending
+    Examples:
+      | adjustment | adjustedPension |
+      | 2.00%      | 10200.00        |
+      | -1.00%     | 9900.00         |
+
+  @alpha @cpi @in-payment
+  Scenario: Continue price adjustment after Alpha pension starts
+    Given annual Alpha pension in payment of 10000.00
+    When an annual price adjustment of 2.00% is applied
+    Then the adjusted annual Alpha pension should be 10200.00
+
+  Rule: Leaving service changes how Alpha benefits are held
+
+  @alpha @leaving-service
+  Scenario Outline: Determine whether benefits are preserved on leaving
+    Given the member has <qualifyingService> years of qualifying service
+    When the member leaves Alpha pensionable service
+    Then the leaving-service outcome should be <outcome>
+
+    Examples:
+      | qualifyingService | outcome            |
+      | 1.99              | refund_or_transfer |
+      | 2.00              | preserved          |
+
+  Rule: Added Pension is a separately purchased Alpha benefit
+
+  @alpha @added-pension @lump-sum
   Scenario Outline: Buy Added Pension using a lump sum
     Given the member is in the alpha scheme
     And the member buys Added Pension using a lump sum of <lumpSumPayment>
@@ -146,11 +185,11 @@ Feature: Alpha pension modelling
 
     Examples:
       | memberAge | purchaseDate | lumpSumPayment | expectedAddedPension |
-      | 45        | 2026-04-01   | 6000.00        | 400.00               |
-      | 45        | 2026-04-01   | 3000.00        | 200.00               |
-      | 50        | 2026-04-01   | 7500.00        | 450.00               |
+      | 45        | 2026-04-01   | 6000.00        | 490.00               |
+      | 45        | 2026-04-01   | 3000.00        | 245.00               |
+      | 50        | 2026-04-01   | 7500.00        | 548.89               |
 
-  @alpha @added-pension @monthly @pending
+  @alpha @added-pension @monthly
   Scenario Outline: Buy Added Pension using monthly contributions
     Given the member is in the alpha scheme
     And the member buys Added Pension using monthly contributions of <monthlyContribution>
@@ -163,9 +202,32 @@ Feature: Alpha pension modelling
 
     Examples:
       | memberAge | purchaseDate | monthlyContribution | monthsPaid | totalContribution | expectedAddedPension |
-      | 45        | 2026-04-01   | 400.00              | 12         | 4800.00           | 300.00               |
-      | 45        | 2026-04-01   | 250.00              | 6          | 1500.00           | 93.75                |
-      | 50        | 2026-04-01   | 100.00              | 12         | 1200.00           | 72.00                |
+      | 45        | 2026-04-01   | 400.00              | 12         | 4800.00           | 384.55               |
+      | 45        | 2026-04-01   | 250.00              | 6          | 1500.00           | 120.17               |
+      | 50        | 2026-04-01   | 100.00              | 12         | 1200.00           | 86.06                |
+
+  @alpha @added-pension @dependants
+  Scenario Outline: Use the factor for the selected Added Pension benefits
+    Given the member selects Added Pension benefits for <benefits>
+    When the lump-sum Added Pension factor is selected for age 45 and NPA 68
+    Then the Added Pension purchase factor should be <factor>
+
+    Examples:
+      | benefits            | factor |
+      | self_only           | 7.75   |
+      | self_and_dependants | 8.56   |
+
+  @alpha @added-pension @interpolation
+  Scenario: Interpolate Added Pension factors for a non-integer NPA
+    Given the member selects Added Pension benefits for self_only
+    When the lump-sum Added Pension factor is selected for age 45 and NPA 67 years 6 months
+    Then the Added Pension purchase factor should be 8.015
+
+  @alpha @added-pension @leaving-service
+  Scenario: Stop regular Added Pension purchases after pensionable service ends
+    Given the member buys Added Pension using monthly contributions of 100.00
+    When the contribution is projected on 2047-06-16 after stopping on 2047-06-15
+    Then the new annual Added Pension should be 0.00
 
   @alpha @added-pension
   Scenario: Added Pension is included in pension payable at normal pension age
@@ -188,19 +250,16 @@ Feature: Alpha pension modelling
     When the member draws pension at age 60 and 0 months
     Then the reduced annual pension breakdown should be:
       | component    | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | alpha        | 12000.00              | 8244.00             | 3756.00         |
-      | addedPension | 400.00                | 274.80              | 125.20          |
-      | total        | 12400.00              | 8518.80             | 3881.20         |
+      | alpha        | 12000.00              | 8400.00             | 3600.00         |
+      | addedPension | 400.00                | 280.00              | 120.00          |
+      | total        | 12400.00              | 8680.00             | 3720.00         |
 
 
-  # ---------------------------------------------------------------------------
-  # Early retirement
-  # ---------------------------------------------------------------------------
+  Rule: Early payment permanently reduces Alpha pension
 
   @alpha @early-retirement
   Scenario Outline: Reduce alpha pension when drawn before normal pension age
     Given the member is in the alpha scheme
-    And the member has date of birth <dateOfBirth>
     And the member has alpha normal pension age <normalPensionAge>
     And the member has unreduced alpha pension of <unreducedAlphaPension>
     When the member draws alpha pension at age <drawAge> and <drawAgeMonths> months
@@ -208,11 +267,12 @@ Feature: Alpha pension modelling
     And the annual reduction should be <expectedAnnualReduction>
 
     Examples:
-      | dateOfBirth | normalPensionAge | unreducedAlphaPension | drawAge | drawAgeMonths | expectedAnnualPension | expectedAnnualReduction |
-      | 1977-05-01  | 67               | 15000.00              | 67      | 0             | 15000.00              | 0.00                    |
-      | 1977-05-01  | 67               | 15000.00              | 65      | 0             | 13380.00              | 1620.00                 |
-      | 1977-05-01  | 67               | 15000.00              | 60      | 0             | 10305.00              | 4695.00                 |
-      | 1977-05-01  | 67               | 10000.00              | 60      | 0             | 6870.00               | 3130.00                 |
+      | normalPensionAge | unreducedAlphaPension | drawAge | drawAgeMonths | expectedAnnualPension | expectedAnnualReduction |
+      | 67               | 15000.00              | 67      | 0             | 15000.00              | 0.00                    |
+      | 65               | 10000.00              | 55      | 0             | 6320.00               | 3680.00                 |
+      | 67               | 15000.00              | 65      | 0             | 13455.00              | 1545.00                 |
+      | 67               | 15000.00              | 60      | 0             | 10500.00              | 4500.00                 |
+      | 68               | 10000.00              | 60      | 6             | 6770.00               | 3230.00                 |
 
   @alpha @early-retirement
   Scenario: Early retirement reduction is permanent
@@ -220,14 +280,26 @@ Feature: Alpha pension modelling
     And the member has alpha normal pension age 67
     And the member has unreduced alpha pension of 15000.00
     When the member draws alpha pension at age 60 and 0 months
-    Then the annual alpha pension payable at age 60 should be 10305.00
-    And the annual alpha pension payable at age 67 before CPI increases should still be 10305.00
+    Then the annual alpha pension payable at age 60 should be 10500.00
+    And the annual alpha pension payable at age 67 before CPI increases should still be 10500.00
     And the model should not remove the early retirement reduction at normal pension age
 
+  Rule: Late payment increases Alpha pension using the member's status
 
-  # ---------------------------------------------------------------------------
-  # EPA
-  # ---------------------------------------------------------------------------
+  @alpha @late-retirement
+  Scenario Outline: Apply the appropriate late-retirement factor
+    Given the member has an Alpha opening balance of 10000.00 at NPA 67
+    And the member retires late from <status> status
+    When the member claims Alpha pension at age 68 and 0 months
+    Then the late-retirement multiplier should be <multiplier>
+    And the annual Alpha opening balance with late increase should be <annualPension>
+
+    Examples:
+      | status   | multiplier | annualPension |
+      | active   | 1.060800   | 10608.00      |
+      | deferred | 1.055957   | 10559.57      |
+
+  Rule: EPA creates a separate Alpha tranche with an earlier payable age
 
   @alpha @epa @validation
   Scenario Outline: Validate EPA option against alpha normal pension age
@@ -256,9 +328,9 @@ Feature: Alpha pension modelling
     When the member draws all alpha pension at age 65 and 0 months
     Then the annual pension breakdown should be:
       | component     | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | standardAlpha | 10000.00              | 8920.00             | 1080.00         |
+      | standardAlpha | 10000.00              | 8970.00             | 1030.00         |
       | epaAlpha      | 1200.00               | 1200.00             | 0.00            |
-      | total         | 11200.00              | 10120.00            | 1080.00         |
+      | total         | 11200.00              | 10170.00            | 1030.00         |
 
   @alpha @epa @early-retirement
   Scenario: Draw before EPA age and reduce both standard and EPA portions
@@ -270,14 +342,67 @@ Feature: Alpha pension modelling
     When the member draws all alpha pension at age 64 and 0 months
     Then the annual pension breakdown should be:
       | component     | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | standardAlpha | 10000.00              | 8440.00             | 1560.00         |
-      | epaAlpha      | 1200.00               | 1137.60             | 62.40           |
-      | total         | 11200.00              | 9577.60             | 1622.40         |
+      | standardAlpha | 10000.00              | 8510.00             | 1490.00         |
+      | epaAlpha      | 1200.00               | 1140.00             | 60.00           |
+      | total         | 11200.00              | 9650.00             | 1550.00         |
 
+  @alpha @epa @accrual
+  Scenario: Route accrual to EPA while an EPA agreement is active
+    Given EPA accrual is active from 2026-04-01 to 2027-03-31
+    And the member has actual pensionable earnings of 42000.00
+    When Alpha accrual is calculated for 2026-06-01
+    Then monthly standard Alpha accrual should be 0.00
+    And monthly EPA Alpha accrual should be 81.20
 
-  # ---------------------------------------------------------------------------
-  # Minimum pension age validation
-  # ---------------------------------------------------------------------------
+  @alpha @epa @normal-pension-age
+  Scenario: Move the EPA date when State Pension age changes Normal Pension Age
+    Given the member was born on 1977-04-06
+    And the member has selected EPA option NPA-2
+    When the EPA payable date is determined
+    Then the EPA payable date should be 2042-05-06
+
+  Rule: Members may exchange Alpha pension for a retirement lump sum
+
+  @alpha @commutation
+  Scenario Outline: Exchange annual Alpha pension at twelve pounds of lump sum per pound
+    Given annual Alpha pension before commutation of 12000.00
+    And annual Alpha pension exchanged of <exchangedPension>
+    When Alpha commutation is calculated
+    Then annual Alpha pension after commutation should be <remainingPension>
+    And the Alpha retirement lump sum should be <retirementLumpSum>
+
+    Examples:
+      | exchangedPension | remainingPension | retirementLumpSum |
+      | 0.00             | 12000.00         | 0.00              |
+      | 1000.00          | 11000.00         | 12000.00          |
+
+  Rule: Eligible members may take some Alpha pension and continue working
+
+  @alpha @partial-retirement
+  Scenario Outline: Check the minimum pay reduction for partial retirement
+    Given the member has accrued Alpha pension of 12000.00
+    And the member chooses to take 50.00% of it
+    And their pensionable earnings reduce by <payReduction>
+    And they have reached minimum pension age
+    And their employer agrees to partial retirement
+    When Alpha partial retirement is calculated
+    Then partial retirement should be <eligibility>
+    And annual Alpha pension released should be <releasedPension>
+    And annual Alpha pension remaining should be <remainingPension>
+
+    Examples:
+      | payReduction | eligibility | releasedPension | remainingPension |
+      | 20.00%       | eligible    | 6000.00         | 6000.00          |
+      | 19.00%       | ineligible  | 0.00            | 12000.00         |
+
+  @alpha @partial-retirement @accrual
+  Scenario: Continue building Alpha pension after partial retirement
+    Given the member has actual pensionable earnings of 42000.00
+    And the member works at 80.00% of their previous hours after partial retirement
+    When one year of Alpha pension is accrued
+    Then the new annual Alpha pension should be 779.52
+
+  Rule: Minimum pension access age is date dependent
 
   @minimum-claim-age
   Scenario Outline: Determine minimum claim age from date of birth
@@ -311,7 +436,7 @@ Feature: Alpha pension modelling
       | 1977-05-01  | 2034-05-01 | 57                | 57            | valid            |
       | 1977-05-01  | 2033-05-01 | 57                | 56            | invalid          |
 
-  @validation @minimum-pension-age @pending
+  @validation @minimum-pension-age
   Scenario: Explain invalid draw age to the user
     Given the member is in the alpha scheme
     And the member was born on 1977-05-01
@@ -320,14 +445,12 @@ Feature: Alpha pension modelling
     When the draw age is validated
     Then the model should show the validation message:
       """
-      You cannot draw this pension at age 56. The minimum pension age for this projection is 57.
+      Alpha pension draw age must be at least 57 for access dates on or after 6 April 2028.
       """
 
-  # ---------------------------------------------------------------------------
-  # End-to-end projection
-  # ---------------------------------------------------------------------------
+  Rule: Combined projections retain the separate Alpha components
 
-  @end-to-end @alpha @added-pension @early-retirement @cpi @pending
+  @end-to-end @alpha @added-pension @early-retirement @cpi
   Scenario: Active alpha member buys Added Pension and retires early
     Given the member is in the alpha scheme
     And the member has date of birth 1977-05-01
@@ -341,49 +464,39 @@ Feature: Alpha pension modelling
     And the member pays those contributions for 12 months
     And the member remains active for 5 scheme years
     When the member draws all alpha pension at age 60 and 0 months
-    Then the unreduced standard alpha pension at draw age should be 27923.03
-    And the purchased annual Added Pension should be 300.00
-    And the combined unreduced annual pension should be 28223.03
+    Then the unreduced standard alpha pension at draw age should be 25962.95
+    And the purchased annual Added Pension should be 362.10
+    And the combined unreduced annual pension should be 26325.05
     And the reduced annual pension breakdown should be:
       | component     | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
-      | standardAlpha | 27923.03              | 20663.04            | 7259.99         |
-      | addedPension  | 300.00                | 222.00              | 78.00           |
-      | total         | 28223.03              | 20885.04            | 7337.99         |
+      | standardAlpha | 25962.95              | 18174.06            | 7788.88         |
+      | addedPension  | 362.10                | 253.47              | 108.63          |
+      | total         | 26325.05              | 18427.53            | 7897.51         |
 
 
-  # ---------------------------------------------------------------------------
-  # Result presentation and explainability
-  # ---------------------------------------------------------------------------
+  Rule: Results explain the material Alpha assumptions and components
 
-  @display @explainability @pending
-  Scenario: Show calculation assumptions used in the result
+  @display @explainability
+  Scenario: Show Alpha revaluation assumptions used in the result
     Given the member has completed an alpha pension projection
     When the pension result is displayed
-    Then the result should show:
-      | assumption                |
-      | scheme                    |
-      | current accrued pension    |
-      | pensionable salary         |
-      | salary increase assumption |
-      | CPI assumption             |
-      | CPI revaluation on or off  |
-      | normal pension age         |
-      | draw age                   |
-      | added pension contribution |
-      | EPA option                 |
+    Then the Alpha revaluation assumptions should include:
+      | assumption                    |
+      | Inflation                     |
+      | Alpha in-service revaluation  |
+      | Deferred Alpha increase       |
 
-  @display @explainability @pending
-  Scenario: Show pension components separately before showing total
+  @display @explainability
+  Scenario: Show Alpha pension components in the projection table
     Given the member has standard alpha pension
     And the member has Added Pension
     And the member has EPA pension
     When the pension result is displayed
-    Then the result should show separate rows for:
-      | component       |
-      | standardAlpha   |
-      | addedPension    |
-      | epaAlpha        |
-      | total           |
-    And each row should show unreduced annual pension
-    And each row should show payable annual pension
-    And each row should show annual reduction where applicable
+    Then the Alpha projection table should include columns:
+      | column                                   |
+      | Monthly Added Pension                    |
+      | Lump sum added pension                   |
+      | Standard Alpha Pension                   |
+      | EPA Alpha Pension                        |
+      | Annual Accrued Alpha Pension             |
+      | Annual Alpha Pension Including Reduction |

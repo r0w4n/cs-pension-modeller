@@ -57,7 +57,7 @@ export function validateNuvosRules({
     issues.push({
       field: "nuvosPensionAbsDate",
       message:
-        "nuvos Annual Benefit Statement must be on or before the calculation start date.",
+        "nuvos Annual Benefit Statement must be on or before the current date.",
     });
   }
 

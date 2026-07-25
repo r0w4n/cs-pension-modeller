@@ -1,8 +1,9 @@
+import premiumEarlyRetirementFactorData from "../data/premium_pension_reduction_factors.json";
 import type { PensionSettings } from "../settings";
 
 export type PremiumEarlyRetirementFactorTable = Record<
   number,
-  Record<number, number>
+  Record<number, readonly number[]>
 >;
 
 export type PremiumCalculationInput = {
@@ -27,13 +28,8 @@ export type PremiumCalculationResult = {
   factorUnavailable: boolean;
 };
 
-// TODO: Populate with authoritative Civil Service/GAD Premium early-retirement
-// factors. Do not approximate Premium reductions using Alpha or nuvos factors.
 export const PREMIUM_EARLY_RETIREMENT_FACTORS: PremiumEarlyRetirementFactorTable =
-  {
-    60: {},
-    65: {},
-  };
+  premiumEarlyRetirementFactorData.factors;
 
 export function calculatePremiumPension(
   input: PremiumCalculationInput
@@ -51,7 +47,8 @@ export function calculatePremiumPension(
   const yearsToDraw = calculateWholeYearDifference(valuationDate, drawDate);
   const cpiRevaluedPensionAtDrawAge =
     annualPensionAtValuationDate * (1 + cpiAssumption) ** yearsToDraw;
-  const isReducedForEarlyPayment = drawAge < normalPensionAge;
+  const isReducedForEarlyPayment =
+    toCompletedAgeMonths(drawAge) < toCompletedAgeMonths(normalPensionAge);
   const earlyRetirementFactor = isReducedForEarlyPayment
     ? getPremiumEarlyRetirementFactor(
         drawAge,
@@ -81,7 +78,7 @@ export function calculateAnnualPremiumPensionAtDate(input: {
   rowDate: string;
   premiumDrawDate: string;
 }) {
-  const { settings, rowDate, premiumDrawDate } = input;
+  const { settings, rowDate } = input;
 
   if (
     !settings.showPremium ||
@@ -91,14 +88,13 @@ export function calculateAnnualPremiumPensionAtDate(input: {
     return 0;
   }
 
-  const calculationDate = rowDate < premiumDrawDate ? rowDate : premiumDrawDate;
   const cpiRate =
     settings.projectionBasis === "real"
       ? 0
       : settings.inflationRateAnnual / 100;
   const revaluationYears = calculateWholeYearDifference(
     settings.premiumValuationDate,
-    calculationDate
+    rowDate
   );
 
   return (
@@ -112,13 +108,27 @@ export function getPremiumEarlyRetirementFactor(
   normalPensionAge: number,
   earlyRetirementFactors: PremiumEarlyRetirementFactorTable = PREMIUM_EARLY_RETIREMENT_FACTORS
 ) {
-  if (drawAge >= normalPensionAge) {
+  const drawAgeInMonths = toCompletedAgeMonths(drawAge);
+  const normalPensionAgeInMonths = toCompletedAgeMonths(normalPensionAge);
+
+  if (drawAgeInMonths >= normalPensionAgeInMonths) {
     return 1;
   }
 
-  const wholeDrawAge = Math.floor(drawAge);
+  // Under-55 cases can require the separate Circumstance 2 formula and
+  // additional scheme-specific inputs, so they remain unsupported.
+  if (drawAgeInMonths < 55 * 12 || !Number.isInteger(normalPensionAge)) {
+    return null;
+  }
 
-  return earlyRetirementFactors[normalPensionAge]?.[wholeDrawAge] ?? null;
+  const drawAgeYears = Math.floor(drawAgeInMonths / 12);
+  const completedMonths = drawAgeInMonths % 12;
+
+  return (
+    earlyRetirementFactors[normalPensionAge]?.[drawAgeYears]?.[
+      completedMonths
+    ] ?? null
+  );
 }
 
 export function calculateAnnualPremiumPensionIncludingReduction(
@@ -134,10 +144,11 @@ export function calculateAnnualPremiumPensionIncludingReduction(
 
 function addYears(date: string, years: number) {
   const parsed = parseIsoDate(date);
+  const completedMonths = toCompletedAgeMonths(years);
   const next = new Date(
     Date.UTC(
-      parsed.getUTCFullYear() + Math.floor(years),
-      parsed.getUTCMonth() + Math.round((years % 1) * 12),
+      parsed.getUTCFullYear() + Math.floor(completedMonths / 12),
+      parsed.getUTCMonth() + (completedMonths % 12),
       parsed.getUTCDate()
     )
   );
@@ -159,4 +170,8 @@ function calculateWholeYearDifference(startDate: string, endDate: string) {
 
 function parseIsoDate(value: string) {
   return new Date(`${value}T00:00:00Z`);
+}
+
+function toCompletedAgeMonths(age: number) {
+  return Math.floor(age * 12 + 1e-8);
 }

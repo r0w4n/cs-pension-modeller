@@ -53,6 +53,7 @@ export function createProjectionTableBase(
   } = derivedInputs;
   const {
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     alphaAbsDate,
@@ -99,12 +100,13 @@ export function createProjectionTableBase(
     settings.startDate,
     endDate
   ).map((rowDate) => {
-    const { sippProjection, isaProjection, lisaProjection } =
+    const { sippProjection, csAvcProjection, isaProjection, lisaProjection } =
       calculateInvestmentProjectionValues({
         settings,
         rowDate,
         endDate,
         sippDrawDate,
+        csAvcDrawDate,
         isaDrawDate,
         lisaDrawDate,
         active: true,
@@ -186,6 +188,7 @@ export function createProjectionTableBase(
       monthlyAddedPension,
       lumpSumAddedPension,
       sippProjection,
+      csAvcProjection,
       isaProjection,
       lisaProjection,
     });
@@ -205,6 +208,7 @@ export function createProjectionTableBase(
     accrualStopDate,
     drawDate,
     sippDrawDate,
+    csAvcDrawDate,
     isaDrawDate,
     lisaDrawDate,
     alphaAbsDate,

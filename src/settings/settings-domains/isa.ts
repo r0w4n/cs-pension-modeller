@@ -65,7 +65,7 @@ export function validateIsaRules({
   if (settings.showIsa && isaDrawDate <= settings.startDate) {
     issues.push({
       field: "isaDrawAge",
-      message: "ISA draw start age must be after the calculation start date.",
+      message: "ISA draw start age must be after the current date.",
     });
   }
 

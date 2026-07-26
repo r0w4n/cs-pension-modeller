@@ -29,6 +29,7 @@ import {
   getUseByAgeBounds,
 } from "./bridge-chart-bounds";
 import { addYearsToIsoDate, clampNumber } from "./shared";
+import { getSpendingSmileStartAgeBounds } from "../spending-smile";
 
 export function createRetirementIncomeSeries(
   rows: ProjectionRow[],
@@ -612,10 +613,13 @@ export function createBridgeChartParameters(
   settings: PensionSettings
 ): RetirementIncomeBridgeParameters {
   return {
-    targetIncomeAnnual:
-      settings.spendingStrategyType === "SPENDING_SMILE"
-        ? settings.spendingSmile.goGo.annualAmountReal
-        : settings.desiredRetirementIncome,
+    targetIncomeAnnual: settings.desiredRetirementIncome,
+    spendingSmileEnabled: settings.spendingStrategyType === "SPENDING_SMILE",
+    goGoPercentage: settings.spendingSmile.goGoPercentage,
+    slowGoStartAge: settings.spendingSmile.slowGoStartAge,
+    slowGoPercentage: settings.spendingSmile.slowGoPercentage,
+    noGoStartAge: settings.spendingSmile.noGoStartAge,
+    noGoPercentage: settings.spendingSmile.noGoPercentage,
     alphaMonthlyAddedPension: settings.alphaAddedPensionMonthly,
     isaMonthlyContribution: settings.isaMonthlyContribution,
     lisaMonthlyContribution: settings.lisaMonthlyContribution,
@@ -721,6 +725,18 @@ export function createBridgeChartLimits(
     defaultStatePensionAge,
     lifeExpectancy: settings.lifeExpectancy,
   });
+  const slowGoStartAgeBounds = getSpendingSmileStartAgeBounds(
+    settings.spendingSmile,
+    "slowGoStartAge",
+    settings.requirementAge,
+    settings.lifeExpectancy
+  );
+  const noGoStartAgeBounds = getSpendingSmileStartAgeBounds(
+    settings.spendingSmile,
+    "noGoStartAge",
+    settings.requirementAge,
+    settings.lifeExpectancy
+  );
 
   return {
     targetIncomeAnnual: { min: 0, max: 200000, step: 600 },
@@ -744,6 +760,14 @@ export function createBridgeChartLimits(
           ? Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
           : ageUpperLimit
       ),
+      step: 1,
+    },
+    slowGoStartAge: {
+      ...slowGoStartAgeBounds,
+      step: 1,
+    },
+    noGoStartAge: {
+      ...noGoStartAgeBounds,
       step: 1,
     },
     alphaLeaveAge: {

@@ -365,7 +365,10 @@ describe("settings unit tests", () => {
       currentStatePension: 0,
       desiredRetirementIncome: 43900,
       spendingStrategyType: defaultSettings.spendingStrategyType,
-      spendingSmile: defaultSettings.spendingSmile,
+      spendingSmile: {
+        ...defaultSettings.spendingSmile,
+        noGoStartAge: 85,
+      },
       statePensionDrawDate: defaultSettings.statePensionDrawDate,
       statePensionApplyFutureGrowth:
         defaultSettings.statePensionApplyFutureGrowth,

@@ -20,6 +20,7 @@ import {
   formatDate,
   formatDecimalAge,
   getSettingsSignature,
+  isSpendingSmileEditorStep,
   type ComparisonResultCache,
   type ComparisonScenario,
   type IncomeAgeRangeItem,
@@ -52,8 +53,6 @@ import {
 } from "./results-summary";
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
 import { SpendingSmileEditor } from "./spending-smile-editor";
-import { featureFlags } from "../feature-flags";
-import { SpendingSmileResults } from "./spending-smile-results";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -318,14 +317,6 @@ function renderExpertAnswerStep(
         {...bridgeChartParameters}
       />
 
-      {featureFlags.spendingSmileStrategy &&
-      settings.spendingStrategyType === "SPENDING_SMILE" ? (
-        <SpendingSmileResults
-          settings={settings}
-          analysis={currentComparisonResult.bridgeAnalysis}
-        />
-      ) : null}
-
       <ComparisonSection>
         <ComparisonPanelFeature
           settings={settings}
@@ -479,11 +470,15 @@ function renderFieldsStep(
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
-      />
-
-      {featureFlags.spendingSmileStrategy && step.id === "expert-personal" ? (
-        <SpendingSmileEditor settings={settings} onChange={onChange} />
-      ) : null}
+      >
+        {isSpendingSmileEditorStep(step.id) ? (
+          <SpendingSmileEditor
+            settings={settings}
+            validationIssues={validationIssues}
+            onChange={onChange}
+          />
+        ) : null}
+      </SettingsFieldsFeature>
 
       {step.groupId ? (
         <SettingsGroupSupplementaryEditor

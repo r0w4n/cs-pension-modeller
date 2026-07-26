@@ -32,6 +32,10 @@ import {
   createRetirementIncomeSeries,
 } from "./retirement-income";
 import {
+  calculateSmilePhaseTarget,
+  type SmilePercentageField,
+} from "../spending-smile";
+import {
   formatAge,
   formatCurrencyDetailed,
   formatDate,
@@ -512,6 +516,7 @@ export function buildComparisonTableRows(
           ),
       ],
     ]),
+    ...createSpendingTargetComparisonRows(results, retirementIncomeDisplay),
     createComparisonSection("Retirement timing", results, [
       [
         "Target retirement age",
@@ -681,6 +686,105 @@ export function buildComparisonTableRows(
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
+}
+
+function createSpendingTargetComparisonRows(
+  results: ComparisonResult[],
+  retirementIncomeDisplay: RetirementIncomeDisplay
+): ComparisonTableRow[] {
+  if (
+    !results.some(
+      (result) =>
+        result.scenario.settings.spendingStrategyType === "SPENDING_SMILE"
+    )
+  ) {
+    return [];
+  }
+
+  return createComparisonSection("Spending target", results, [
+    [
+      "Spending strategy",
+      (result) =>
+        result.scenario.settings.spendingStrategyType === "SPENDING_SMILE"
+          ? "SMILE spending"
+          : "Flat spending",
+    ],
+    [
+      "Underlying target",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          result.scenario.settings.desiredRetirementIncome,
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "Go-go target",
+      (result) =>
+        formatSmilePhaseComparisonTarget(
+          result,
+          "goGoPercentage",
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "Slow-go starts",
+      (result) => formatSmilePhaseStartAge(result, "slowGoStartAge"),
+    ],
+    [
+      "Slow-go target",
+      (result) =>
+        formatSmilePhaseComparisonTarget(
+          result,
+          "slowGoPercentage",
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "No-go starts",
+      (result) => formatSmilePhaseStartAge(result, "noGoStartAge"),
+    ],
+    [
+      "No-go target",
+      (result) =>
+        formatSmilePhaseComparisonTarget(
+          result,
+          "noGoPercentage",
+          retirementIncomeDisplay
+        ),
+    ],
+  ]);
+}
+
+function formatSmilePhaseComparisonTarget(
+  result: ComparisonResult,
+  percentageField: SmilePercentageField,
+  retirementIncomeDisplay: RetirementIncomeDisplay
+) {
+  const settings = result.scenario.settings;
+
+  if (settings.spendingStrategyType !== "SPENDING_SMILE") {
+    return "n/a";
+  }
+
+  const percentage = settings.spendingSmile[percentageField];
+  const annualTarget = calculateSmilePhaseTarget(
+    settings.desiredRetirementIncome,
+    percentage
+  );
+
+  return `${formatRecurringAnnualCurrency(
+    annualTarget,
+    retirementIncomeDisplay
+  )} (${percentage}%)`;
+}
+
+function formatSmilePhaseStartAge(
+  result: ComparisonResult,
+  startAgeField: "slowGoStartAge" | "noGoStartAge"
+) {
+  return result.scenario.settings.spendingStrategyType === "SPENDING_SMILE"
+    ? formatDecimalAge(result.scenario.settings.spendingSmile[startAgeField])
+    : "n/a";
 }
 
 export function buildComparisonDetailedRows(

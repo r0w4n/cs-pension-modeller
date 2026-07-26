@@ -9,7 +9,9 @@ export {
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
   applySimpleJourneyDefaults,
+  isSpendingSmileEditorStep,
   isOptionalSectionToggleKey,
+  SPENDING_SMILE_EDITOR_STEP_ID,
   type JourneyDefinition,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
@@ -101,15 +103,6 @@ export {
   createBridgeChartParameters,
   createRetirementIncomeSeries,
 } from "./app-domains/retirement-income";
-
-export {
-  aggregateSpendingPhaseOutcomes,
-  createBridgeSpendingPhaseOutcomes,
-  createAnnualSpendingOutcomes,
-  type AnnualSpendingOutcome,
-  type SpendingPhaseOutcome,
-  type SpendingPhaseOutcomeStatus,
-} from "./app-domains/spending-smile-outcomes";
 
 export {
   getSippEffectiveRangeField,

@@ -127,24 +127,11 @@ describe("projection bridge analysis domain", () => {
       spendingStrategyType: "SPENDING_SMILE",
       spendingSmile: {
         ...defaultSettings.spendingSmile,
-        initialized: true,
         slowGoStartAge: 61,
         noGoStartAge: 62,
-        goGo: {
-          annualAmountReal: 12_000,
-          percentageOfGoGo: 100,
-          source: "CUSTOM",
-        },
-        slowGo: {
-          annualAmountReal: 6_000,
-          percentageOfGoGo: 50,
-          source: "CUSTOM",
-        },
-        noGo: {
-          annualAmountReal: 3_000,
-          percentageOfGoGo: 25,
-          source: "CUSTOM",
-        },
+        goGoPercentage: 100,
+        slowGoPercentage: 50,
+        noGoPercentage: 25,
       },
       showAlpha: false,
       showClassic: false,

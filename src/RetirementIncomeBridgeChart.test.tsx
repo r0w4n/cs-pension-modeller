@@ -54,6 +54,12 @@ const baseProps: RetirementIncomeBridgeChartProps = {
     },
   ],
   targetIncomeAnnual: 31700,
+  spendingSmileEnabled: false,
+  goGoPercentage: 100,
+  slowGoStartAge: 75,
+  slowGoPercentage: 85,
+  noGoStartAge: 80,
+  noGoPercentage: 70,
   alphaMonthlyAddedPension: 0,
   isaMonthlyContribution: 0,
   lisaMonthlyContribution: 0,
@@ -96,6 +102,8 @@ const baseProps: RetirementIncomeBridgeChartProps = {
     },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
     retirementAge: { min: 40, max: 67, step: 1 },
+    slowGoStartAge: { min: 61, max: 79, step: 1 },
+    noGoStartAge: { min: 76, max: 80, step: 1 },
     alphaLeaveAge: { min: 40, max: 67, step: 1 },
     sippAccessAge: { min: 57, max: 67, step: 1 },
     sippUseByAge: { min: 57.25, max: 80, step: 1 },
@@ -202,7 +210,7 @@ function getBuildUpBandWidth() {
 function getMilestoneHitAreas() {
   return [
     ...document.querySelectorAll(
-      ".bridge-milestone > rect[aria-hidden='true']"
+      ".bridge-milestone-drag-label > rect[aria-hidden='true']"
     ),
   ].map((node) => ({
     height: Number(node.getAttribute("height")),
@@ -211,18 +219,17 @@ function getMilestoneHitAreas() {
 }
 
 function getMilestoneLabelsInRenderOrder() {
-  return [...document.querySelectorAll(".bridge-milestone")].map((node) =>
-    node.getAttribute("aria-label")
+  return [...document.querySelectorAll(".bridge-milestone-drag-label")].map(
+    (node) => node.getAttribute("aria-label")
   );
 }
 
 function getMilestoneLineX(label: RegExp | string) {
-  return Number(
-    screen
-      .getByRole("slider", { name: label })
-      .querySelector("line")
-      ?.getAttribute("x1")
-  );
+  const marker = screen
+    .getByRole("slider", { name: label })
+    .closest(".bridge-milestone");
+
+  return Number(marker?.querySelector("line")?.getAttribute("x1"));
 }
 
 function getIncomeAreaPath(strokeColour: string) {
@@ -369,6 +376,234 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(onChangeParameters).toHaveBeenCalledWith({
       targetIncomeAnnual: 49200,
     });
+  });
+
+  it("lets each SMILE phase update its own percentage", () => {
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+    const smileData = [
+      { ...basePoint, age: 60, targetIncomeAnnual: 31_700 },
+      { ...basePoint, age: 74, targetIncomeAnnual: 31_700 },
+      { ...basePoint, age: 75, targetIncomeAnnual: 26_945 },
+      { ...basePoint, age: 79, targetIncomeAnnual: 26_945 },
+      { ...basePoint, age: 80, targetIncomeAnnual: 22_190 },
+    ];
+
+    renderChart({
+      data: smileData,
+      spendingSmileEnabled: true,
+      onChangeParameters,
+    });
+
+    expect(
+      screen.getByRole("slider", {
+        name: "Go-go SMILE spending percentage",
+      })
+    ).toHaveAttribute("aria-valuenow", "100");
+    const slowGoHandle = screen.getByRole("slider", {
+      name: "Slow-go SMILE spending percentage",
+    });
+    expect(slowGoHandle).toHaveAttribute("aria-valuenow", "85");
+    expect(
+      screen.getByRole("slider", {
+        name: "No-go SMILE spending percentage",
+      })
+    ).toHaveAttribute("aria-valuenow", "70");
+    expect(
+      screen.queryByRole("slider", { name: "Target income line" })
+    ).not.toBeInTheDocument();
+
+    fireEvent.keyDown(slowGoHandle, { key: "ArrowDown" });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({
+      slowGoPercentage: 84,
+    });
+  });
+
+  it("lets SMILE phase boundaries update their own start age", () => {
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+
+    renderChart({
+      spendingSmileEnabled: true,
+      onChangeParameters,
+    });
+
+    const slowGoStartHandle = screen.getByRole("slider", {
+      name: "Start Slow-go, age 75",
+    });
+    const noGoStartHandle = screen.getByRole("slider", {
+      name: "Start No-go, age 80",
+    });
+    expect(slowGoStartHandle).toHaveAttribute("aria-valuemin", "61");
+    expect(slowGoStartHandle).toHaveAttribute("aria-valuemax", "79");
+    expect(noGoStartHandle).toHaveAttribute("aria-valuemin", "76");
+    expect(noGoStartHandle).toHaveAttribute("aria-valuemax", "80");
+
+    fireEvent.keyDown(slowGoStartHandle, { key: "ArrowRight" });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({
+      slowGoStartAge: 76,
+    });
+  });
+
+  it("only starts a SMILE boundary drag from its label", () => {
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+
+    renderChart({
+      spendingSmileEnabled: true,
+      onChangeParameters,
+    });
+
+    const slowGoStartLabel = screen.getByRole("slider", {
+      name: "Start Slow-go, age 75",
+    });
+    const marker = slowGoStartLabel.closest(".bridge-milestone");
+    const guideLine = marker?.querySelector("line");
+
+    if (!guideLine) {
+      throw new Error("Expected the Slow-go guide line to be rendered");
+    }
+
+    fireEvent.pointerDown(guideLine, {
+      button: 0,
+      clientX: 600,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerMove(guideLine, {
+      clientX: 540,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerUp(guideLine, {
+      clientX: 540,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+
+    expect(onChangeParameters).not.toHaveBeenCalled();
+  });
+
+  it("commits a dragged SMILE phase without changing the other phases", () => {
+    mockChartResize(960);
+    const onChangeParameters =
+      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+    const smileData = [
+      { ...basePoint, age: 60, targetIncomeAnnual: 31_700 },
+      { ...basePoint, age: 74, targetIncomeAnnual: 31_700 },
+      { ...basePoint, age: 75, targetIncomeAnnual: 26_945 },
+      { ...basePoint, age: 79, targetIncomeAnnual: 26_945 },
+      { ...basePoint, age: 80, targetIncomeAnnual: 22_190 },
+    ];
+
+    const { rerender } = renderChart({
+      data: smileData,
+      spendingSmileEnabled: true,
+      onChangeParameters,
+    });
+    const svg = document.querySelector(".bridge-chart-svg");
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("Expected bridge chart svg to be rendered");
+    }
+    Object.defineProperty(svg, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 460,
+        height: 460,
+        left: 0,
+        right: 960,
+        top: 0,
+        width: 960,
+        x: 0,
+        y: 0,
+        toJSON: () => "",
+      }),
+    });
+
+    const slowGoHandle = screen.getByRole("slider", {
+      name: "Slow-go SMILE spending percentage",
+    });
+    fireEvent.pointerDown(slowGoHandle, {
+      button: 0,
+      clientX: 600,
+      clientY: 170,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerMove(slowGoHandle, {
+      clientX: 600,
+      clientY: 210,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+    fireEvent.pointerUp(slowGoHandle, {
+      clientX: 600,
+      clientY: 210,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledTimes(1);
+    const patch = onChangeParameters.mock.calls[0]?.[0];
+    expect(Object.keys(patch ?? {})).toEqual(["slowGoPercentage"]);
+    expect(typeof patch?.slowGoPercentage).toBe("number");
+
+    const committedPercentage = patch?.slowGoPercentage;
+    if (typeof committedPercentage !== "number") {
+      throw new Error("Expected the Slow-go percentage to be committed");
+    }
+
+    const releasedPath = slowGoHandle.getAttribute("d");
+    rerender(
+      <RetirementIncomeBridgeChart
+        {...baseProps}
+        data={smileData}
+        spendingSmileEnabled
+        slowGoPercentage={committedPercentage}
+        onChangeParameters={onChangeParameters}
+      />
+    );
+
+    expect(
+      screen.getByRole("slider", {
+        name: "Slow-go SMILE spending percentage",
+      })
+    ).toHaveAttribute("d", releasedPath);
+
+    const recalculatedData = smileData.map((point) =>
+      point.age >= 75 && point.age < 80
+        ? {
+            ...point,
+            targetIncomeAnnual: (31_700 * committedPercentage) / 100,
+          }
+        : point
+    );
+    rerender(
+      <RetirementIncomeBridgeChart
+        {...baseProps}
+        data={recalculatedData}
+        spendingSmileEnabled
+        slowGoPercentage={committedPercentage}
+        onChangeParameters={onChangeParameters}
+      />
+    );
+
+    expect(
+      screen.getByRole("slider", {
+        name: "Slow-go SMILE spending percentage",
+      })
+    ).toHaveAttribute("d", releasedPath);
   });
 
   it("prevents page scrolling while the target income line is changed by touch", () => {
@@ -612,7 +847,8 @@ describe("RetirementIncomeBridgeChart", () => {
 
     const alphaStartX = screen
       .getByRole("slider", { name: /Start Alpha/ })
-      .querySelector("line")
+      .closest(".bridge-milestone")
+      ?.querySelector("line")
       ?.getAttribute("x1");
 
     expect(alphaStartX).toBeDefined();

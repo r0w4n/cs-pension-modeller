@@ -1,72 +1,121 @@
-Feature: Expert Spending Smile retirement strategy
-
-  As an expert retirement modeller user
-  I want different spending targets across retirement phases
-  So that the projection reflects the lifestyle I want to model
+Feature: Configure a retirement spending strategy
 
   Background:
-    Given a Spending Smile plan with retirement at age 60 and a £40000 flat target
+    Given the user is configuring their retirement income target
+    And the Retirement Living Standards target control is displayed
 
-  Scenario Outline: The applicable phase target changes at each boundary
-    When the Spending Smile target is resolved at age <age>
-    Then the spending phase is "<phase>"
-    And the real annual spending target is £<target>
+  Scenario: Retirement Living Standards target is shown before spending strategy
+    Then the Retirement Living Standards target should be displayed first
+    And the spending strategy dropdown should be displayed beneath it
 
-    Examples:
-      | age | phase   | target |
-      | 60  | GO_GO   | 40000  |
-      | 74  | GO_GO   | 40000  |
-      | 75  | SLOW_GO | 34000  |
-      | 84  | SLOW_GO | 34000  |
-      | 85  | NO_GO   | 30000  |
+  Scenario: Flat spending is selected
+    Given the user has selected a Retirement Living Standards target of £30000
+    When the user selects "Flat spending"
+    Then the SMILE configuration fields should not be displayed
+    And the spending target should remain at 100 percent of the selected target
 
-  Scenario: Percentage editing keeps annual amounts canonical
-    Given Spending Smile percentage input is selected
-    When the Go-go target changes to £50000
-    Then the Slow-go annual target is £42500
-    And the No-go annual target is £37500
-    And the stored Slow-go percentage is 85%
-    And the stored No-go percentage is 75%
+  Scenario: SMILE spending is selected
+    Given the user has selected a Retirement Living Standards target of £30000
+    When the user selects "SMILE spending"
+    Then the SMILE configuration fields should be displayed
+    And the stored SMILE configuration should contain percentages and phase ages
 
-  Scenario: An annual target updates its displayed percentage
-    When the Slow-go annual target changes to £30000
-    Then the Slow-go annual target is £30000
-    And the stored Slow-go percentage is 75%
+  Scenario: Separate monetary phase targets are not requested
+    When the user selects "SMILE spending"
+    Then the stored SMILE configuration should not contain monetary phase targets
+    And all phase targets should be calculated from the selected Retirement Living Standards target
 
-  Scenario Outline: Current one-person Retirement Living Standards can initialise a phase
-    When the user applies the "<standard>" one-person RLS target to "<phase>"
-    Then the selected phase annual target is £<amount>
-    And the selected phase source is "<source>"
-
-    Examples:
-      | standard    | phase   | amount | source          |
-      | Minimum     | noGo    | 13900  | RLS_MINIMUM     |
-      | Moderate    | slowGo  | 32700  | RLS_MODERATE    |
-      | Comfortable | goGo    | 45400  | RLS_COMFORTABLE |
-
-  Scenario Outline: A phase target is classified against real RLS expenditure
-    When an annual target of £<target> is classified for one person
-    Then its RLS classification is "<classification>"
+  Scenario Outline: Each SMILE phase target is calculated from the selected target
+    Given the user has selected a Retirement Living Standards target of £30000
+    And the user selected "SMILE spending"
+    And the "<phase>" percentage is <percentage> percent
+    When the spending target is calculated at age <age>
+    Then the spending phase should be "<resolvedPhase>"
+    And the spending target should be £<target> per year
 
     Examples:
-      | target | classification          |
-      | 12000  | BELOW_MINIMUM           |
-      | 20000  | MINIMUM_TO_MODERATE     |
-      | 40000  | MODERATE_TO_COMFORTABLE |
-      | 50000  | COMFORTABLE_OR_ABOVE    |
+      | phase   | percentage | age | resolvedPhase | target |
+      | Go-go   | 100        | 60  | GO_GO        | 30000  |
+      | Slow-go | 85         | 75  | SLOW_GO      | 25500  |
+      | No-go   | 70         | 85  | NO_GO        | 21000  |
 
-  Scenario: Invalid phase ordering is rejected by validation
-    When the No-go phase is configured to start at age 74
-    Then validation reports "No-go years must start after the Slow-go years."
+  Scenario: Go-go phase starts at retirement
+    Given the user's retirement age is 60
+    And the slow-go start age is 70
+    When the spending target is calculated at age 69
+    Then the spending phase should be "GO_GO"
+    When the spending target is calculated at age 70
+    Then the spending phase should be "SLOW_GO"
 
-  Scenario: A phase after life expectancy is not reached
-    Given life expectancy is 82
-    When Spending Smile phase outcomes are calculated
-    Then the No-go phase result is "NOT_REACHED"
-    And the No-go phase contributes £0 to target expenditure
+  Scenario: Slow-go phase ends when no-go begins
+    Given the slow-go start age is 70
+    And the no-go start age is 80
+    When the spending target is calculated at age 79
+    Then the spending phase should be "SLOW_GO"
+    When the spending target is calculated at age 80
+    Then the spending phase should be "NO_GO"
 
-  Scenario: Flat spending remains unchanged
-    Given the Spending Smile strategy is not active
-    When the Spending Smile target is resolved at age 85
-    Then the spending phase is "FLAT"
-    And the real annual spending target is £40000
+  Scenario: Slow-go age is kept after retirement
+    Given the user's retirement age is 60
+    When the slow-go start age is set to 60
+    Then the slow-go start age should be 61
+    And validation should not report a SMILE phase age error
+
+  Scenario: No-go age is kept after slow-go age
+    Given the slow-go start age is 70
+    When the no-go start age is set to 69
+    Then the no-go start age should be 71
+    And validation should not report a SMILE phase age error
+
+  Scenario: No-go age follows a reduced life expectancy
+    Given the no-go start age is 85
+    When the modelled life expectancy is changed to 80
+    Then the no-go start age should be 80
+    And validation should not report a no-go life expectancy error
+
+  Scenario Outline: SMILE percentages must be greater than zero
+    When the "<phase>" percentage is set to 0 percent
+    Then validation reports "<message>"
+
+    Examples:
+      | phase   | message                                      |
+      | Go-go   | Go-go percentage must be greater than 0%.   |
+      | Slow-go | Slow-go percentage must be greater than 0%. |
+      | No-go   | No-go percentage must be greater than 0%.   |
+
+  Scenario Outline: SMILE percentages must be whole numbers
+    When the "<phase>" percentage is set to 82.5 percent
+    Then validation reports "<message>"
+
+    Examples:
+      | phase   | message                                      |
+      | Go-go   | Go-go percentage must be a whole number.   |
+      | Slow-go | Slow-go percentage must be a whole number. |
+      | No-go   | No-go percentage must be a whole number.   |
+
+  Scenario: SMILE fields do not affect flat spending
+    Given the user previously configured a SMILE strategy
+    When the user selects "Flat spending"
+    Then the SMILE configuration fields should not be displayed
+    And the spending target should remain at 100 percent of the selected target
+
+  Scenario: Switching back to SMILE restores the configuration
+    Given the user previously configured a SMILE strategy
+    And the user selected "Flat spending"
+    When the user selects "SMILE spending"
+    Then the previously configured SMILE percentages and ages should be restored
+
+  Scenario: A results-chart phase drag changes only that SMILE phase
+    Given the user previously configured a SMILE strategy
+    When the "Slow-go" results-chart phase is changed to 78 percent
+    Then the "Slow-go" percentage should be 78 percent
+    And the "Go-go" percentage should be 110 percent
+    And the "No-go" percentage should be 68 percent
+
+  Scenario: A results-chart boundary drag changes only that phase start age
+    Given the user's retirement age is 60
+    And the slow-go start age is 70
+    And the no-go start age is 80
+    When the "Slow-go" results-chart start age is changed to 74
+    Then the slow-go start age should be 74
+    And the no-go start age should be 80

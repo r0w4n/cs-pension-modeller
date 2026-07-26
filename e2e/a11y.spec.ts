@@ -44,17 +44,20 @@ test.describe("accessibility", () => {
     await expectNoAxeViolations(page, "expert journey entry screen");
   });
 
-  test("expert Spending Smile editor has no detectable axe violations", async ({
+  test("expert SMILE spending editor has no detectable axe violations", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
     await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("radio", { name: "Spending Smile — Expert" }).check();
+    await page.getByRole("button", { name: "Next" }).click();
+    await page
+      .getByRole("combobox", { name: "Spending strategy" })
+      .selectOption("SPENDING_SMILE");
 
     await expect(
-      page.getByRole("img", { name: "Spending Smile profile" })
+      page.getByRole("img", { name: "SMILE spending profile" })
     ).toBeVisible();
-    await expectNoAxeViolations(page, "expert Spending Smile editor");
+    await expectNoAxeViolations(page, "expert SMILE spending editor");
   });
 
   test("bridge journey results have no detectable axe violations", async ({

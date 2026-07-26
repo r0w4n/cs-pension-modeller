@@ -10,7 +10,14 @@ import {
 } from "react";
 import * as d3 from "d3";
 import { trackAnalyticsEvent } from "./analytics";
-import type { PensionValidationIssue } from "./settings";
+import type { PensionValidationIssue, SpendingSmileStrategy } from "./settings";
+import {
+  MAX_SPENDING_SMILE_PERCENTAGE,
+  MIN_SPENDING_SMILE_PERCENTAGE,
+  getSpendingSmilePercentageField,
+  updateSpendingSmilePercentage,
+  type SmilePercentageField,
+} from "./spending-smile";
 import {
   clampNumber,
   clampToLimit,
@@ -59,6 +66,12 @@ export type RetirementIncomeAdditionalIncomePoint = {
 
 export type RetirementIncomeBridgeParameters = {
   targetIncomeAnnual: number;
+  spendingSmileEnabled: boolean;
+  goGoPercentage: number;
+  slowGoStartAge: number;
+  slowGoPercentage: number;
+  noGoStartAge: number;
+  noGoPercentage: number;
   alphaMonthlyAddedPension: number;
   isaMonthlyContribution: number;
   lisaMonthlyContribution: number;
@@ -112,6 +125,8 @@ export type RetirementIncomeBridgeLimits = {
   lisaMonthlyContribution: NumberLimit;
   sippMonthlyContribution: NumberLimit;
   retirementAge: NumberLimit;
+  slowGoStartAge: NumberLimit;
+  noGoStartAge: NumberLimit;
   alphaLeaveAge: NumberLimit;
   sippAccessAge: NumberLimit;
   sippUseByAge: NumberLimit;
@@ -145,6 +160,8 @@ type IncomeKey =
 
 type MilestoneKey =
   | "retirementAge"
+  | "slowGoStartAge"
+  | "noGoStartAge"
   | "alphaLeaveAge"
   | "sippAccessAge"
   | "sippUseByAge"
@@ -314,9 +331,73 @@ const HANDLE_LABEL_STACK_SPACING = HANDLE_LABEL_HEIGHT + HANDLE_LABEL_STACK_GAP;
 const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
 const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
 const MARKER_DRAG_LEFT_OVERSCAN_RATIO = 0.4;
+const spendingSmilePhaseMeta = [
+  {
+    key: "goGo",
+    label: "Go-go",
+    percentageField: "goGoPercentage",
+  },
+  {
+    key: "slowGo",
+    label: "Slow-go",
+    percentageField: "slowGoPercentage",
+  },
+  {
+    key: "noGo",
+    label: "No-go",
+    percentageField: "noGoPercentage",
+  },
+] as const satisfies readonly {
+  key: SpendingSmilePhaseKey;
+  label: string;
+  percentageField: SmilePercentageField;
+}[];
+
+type SpendingSmilePhaseKey = "goGo" | "slowGo" | "noGo";
+
+type PendingSpendingSmile = {
+  strategy: SpendingSmileStrategy;
+  sourceData: RetirementIncomePoint[];
+  sourceStrategy: SpendingSmileStrategy;
+};
+
+function createSpendingSmileMilestoneMarkers(
+  enabled: boolean,
+  strategy: SpendingSmileStrategy
+): MilestoneMarker[] {
+  if (!enabled) {
+    return [];
+  }
+
+  return [
+    {
+      key: "slowGoStartAge",
+      label: "Start Slow-go",
+      shortLabel: "Slow-go",
+      age: strategy.slowGoStartAge,
+      colour: "#2563a8",
+      editable: true,
+    },
+    {
+      key: "noGoStartAge",
+      label: "Start No-go",
+      shortLabel: "No-go",
+      age: strategy.noGoStartAge,
+      colour: "#0b4dc2",
+      editable: true,
+    },
+  ];
+}
+
 export function RetirementIncomeBridgeChart({
   data,
   targetIncomeAnnual,
+  spendingSmileEnabled,
+  goGoPercentage,
+  slowGoStartAge,
+  slowGoPercentage,
+  noGoStartAge,
+  noGoPercentage,
   alphaMonthlyAddedPension,
   isaMonthlyContribution,
   lisaMonthlyContribution,
@@ -365,6 +446,8 @@ export function RetirementIncomeBridgeChart({
     number
   > | null>(null);
   const activeTargetDragPointerIdRef = useRef<number | null>(null);
+  const activeSmileDragPointerIdRef = useRef<number | null>(null);
+  const activeSmileDragPhaseRef = useRef<SpendingSmilePhaseKey | null>(null);
   const activeAlphaAddedPensionDragPointerIdRef = useRef<number | null>(null);
   const activeMarkerTouchIdentifierRef = useRef<number | null>(null);
   const activeTargetTouchIdentifierRef = useRef<number | null>(null);
@@ -385,6 +468,10 @@ export function RetirementIncomeBridgeChart({
   const [pendingTargetIncomeAnnual, setPendingTargetIncomeAnnual] = useState<
     number | null
   >(null);
+  const [draftSpendingSmile, setDraftSpendingSmile] =
+    useState<SpendingSmileStrategy | null>(null);
+  const [pendingSpendingSmile, setPendingSpendingSmile] =
+    useState<PendingSpendingSmile | null>(null);
   const [draftAlphaMonthlyAddedPension, setDraftAlphaMonthlyAddedPension] =
     useState<number | null>(null);
   const [draftMarkerAges, setDraftMarkerAges] = useState<
@@ -404,6 +491,37 @@ export function RetirementIncomeBridgeChart({
     Math.abs(dataSourceTargetIncomeAnnual - pendingTargetIncomeAnnual) >= 0.001
       ? pendingTargetIncomeAnnual
       : targetIncomeAnnual);
+  const spendingSmile = useMemo<SpendingSmileStrategy>(
+    () => ({
+      goGoPercentage,
+      slowGoStartAge,
+      slowGoPercentage,
+      noGoStartAge,
+      noGoPercentage,
+    }),
+    [
+      goGoPercentage,
+      noGoPercentage,
+      noGoStartAge,
+      slowGoPercentage,
+      slowGoStartAge,
+    ]
+  );
+  const resolvedSpendingSmile = resolveDisplayedSpendingSmile({
+    data,
+    draft: draftSpendingSmile,
+    pending: pendingSpendingSmile,
+    strategy: spendingSmile,
+  });
+  const displayedSpendingSmile = applySpendingSmileMarkerDrafts(
+    resolvedSpendingSmile,
+    draftMarkerAges
+  );
+  const dataSourceSpendingSmile = resolveDataSourceSpendingSmile({
+    data,
+    pending: pendingSpendingSmile,
+    strategy: spendingSmile,
+  });
   const displayedAlphaMonthlyAddedPension =
     draftAlphaMonthlyAddedPension ?? alphaMonthlyAddedPension;
   const divisor = displayMode === "monthly" ? 12 : 1;
@@ -412,36 +530,27 @@ export function RetirementIncomeBridgeChart({
   const axisTargetLabel = formatCurrency(displayedTargetIncomeAnnual / divisor);
   const chartTitleId = "retirement-income-bridge-chart-title";
   const chartDescriptionId = "retirement-income-bridge-chart-description";
-  const displayedData = useMemo(() => {
-    if (dataSourceTargetIncomeAnnual <= 0) {
-      return data.map((point) => ({
-        ...point,
-        targetIncomeAnnual: 0,
-        shortfallAnnual: 0,
-      }));
-    }
-
-    const scaleFactor =
-      displayedTargetIncomeAnnual / dataSourceTargetIncomeAnnual;
-
-    return data.map((point) => {
-      const nextTargetIncomeAnnual = point.targetIncomeAnnual * scaleFactor;
-
-      return {
-        ...point,
-        targetIncomeAnnual: nextTargetIncomeAnnual,
-        shortfallAnnual:
-          point.age >= retirementAge
-            ? Math.max(0, nextTargetIncomeAnnual - point.assessedIncomeAnnual)
-            : 0,
-      };
-    });
-  }, [
-    data,
-    dataSourceTargetIncomeAnnual,
-    displayedTargetIncomeAnnual,
-    retirementAge,
-  ]);
+  const displayedData = useMemo(
+    () =>
+      createDisplayedTargetData({
+        data,
+        dataSourceTargetIncomeAnnual,
+        displayedSpendingSmile,
+        displayedTargetIncomeAnnual,
+        retirementAge,
+        dataSourceSpendingSmile,
+        spendingSmileEnabled,
+      }),
+    [
+      data,
+      dataSourceSpendingSmile,
+      dataSourceTargetIncomeAnnual,
+      displayedSpendingSmile,
+      displayedTargetIncomeAnnual,
+      retirementAge,
+      spendingSmileEnabled,
+    ]
+  );
   const enabledIncomeKeys = useMemo(
     () =>
       incomeKeys.filter((key) =>
@@ -696,6 +805,12 @@ export function RetirementIncomeBridgeChart({
     .x((point) => xScale(point.age))
     .y((point) => yScale(point.targetIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
+  const spendingSmilePhasePaths = createSpendingSmilePhasePaths({
+    enabled: spendingSmileEnabled,
+    displayedSpendingSmile,
+    targetLine,
+    visibleData,
+  });
   const alphaTopLine = d3
     .line<d3.SeriesPoint<RetirementIncomePoint>>()
     .defined((point) => point.data.alphaIncomeAnnual > 0)
@@ -724,6 +839,10 @@ export function RetirementIncomeBridgeChart({
         colour: "#0f6f72",
         editable: true,
       },
+      ...createSpendingSmileMilestoneMarkers(
+        spendingSmileEnabled,
+        resolvedSpendingSmile
+      ),
       ...(showAlpha
         ? [
             {
@@ -881,6 +1000,7 @@ export function RetirementIncomeBridgeChart({
       partialRetirementEnabled,
       partialRetirementStartAge,
       retirementAge,
+      resolvedSpendingSmile,
       showAlpha,
       showNuvos,
       showPremium,
@@ -892,6 +1012,7 @@ export function RetirementIncomeBridgeChart({
       sippUseByAge,
       sippUseByAgeEnabled,
       showStatePension,
+      spendingSmileEnabled,
       sippAccessAge,
       statePensionAge,
       statePensionEditable,
@@ -972,6 +1093,20 @@ export function RetirementIncomeBridgeChart({
       xScale(xDomainMin)
   );
 
+  const commitMarkerAge = (markerKey: MilestoneKey, age: number) => {
+    setPendingSpendingSmile((current) =>
+      updatePendingSpendingSmileForMarker({
+        current,
+        data,
+        dataSourceStrategy: dataSourceSpendingSmile,
+        displayedStrategy: displayedSpendingSmile,
+        markerKey,
+        age,
+      })
+    );
+    onChangeParameters({ [markerKey]: age });
+  };
+
   const handleMarkerKeyDown = (
     event: KeyboardEvent<SVGGElement>,
     marker: MilestoneMarker
@@ -986,12 +1121,13 @@ export function RetirementIncomeBridgeChart({
     event.preventDefault();
     const direction =
       event.key === "ArrowLeft" || event.key === "ArrowDown" ? -1 : 1;
-    onChangeParameters({
-      [marker.key]: snapToLimit(
+    commitMarkerAge(
+      marker.key,
+      snapToLimit(
         marker.age + direction * limits[marker.key].step,
         limits[marker.key]
-      ),
-    });
+      )
+    );
   };
 
   const handleTargetLineKeyDown = (event: KeyboardEvent<SVGPathElement>) => {
@@ -1388,7 +1524,7 @@ export function RetirementIncomeBridgeChart({
       markerKey
     );
 
-    onChangeParameters({ [markerKey]: committedAge });
+    commitMarkerAge(markerKey, committedAge);
   };
 
   const finishMarkerPointerDrag = (
@@ -1419,7 +1555,7 @@ export function RetirementIncomeBridgeChart({
     setActiveMarkerDragKey(null);
 
     if (commit) {
-      onChangeParameters({ [markerKey]: committedAge });
+      commitMarkerAge(markerKey, committedAge);
     }
   };
 
@@ -1434,6 +1570,149 @@ export function RetirementIncomeBridgeChart({
       yScale.invert(clampNumber(pointerPosition.y, 0, plotHeight)) * divisor,
       limits.targetIncomeAnnual
     );
+  };
+
+  const getSpendingSmilePercentageFromPointer = (
+    event: PointerEvent<SVGPathElement>,
+    phase: SpendingSmilePhaseKey
+  ) => {
+    const pointerPosition = getPlotPointerPosition(event);
+    const percentageField = getSpendingSmilePercentageFieldForPhase(phase);
+
+    if (!pointerPosition || targetIncomeAnnual <= 0) {
+      return displayedSpendingSmile[percentageField];
+    }
+
+    const annualTarget =
+      yScale.invert(clampNumber(pointerPosition.y, 0, plotHeight)) * divisor;
+
+    return updateSpendingSmilePercentage(
+      displayedSpendingSmile,
+      percentageField,
+      (annualTarget / targetIncomeAnnual) * 100
+    )[percentageField];
+  };
+
+  const updateDraftSpendingSmile = (
+    event: PointerEvent<SVGPathElement>,
+    phase: SpendingSmilePhaseKey
+  ) => {
+    const percentageField = getSpendingSmilePercentageFieldForPhase(phase);
+    const percentage = getSpendingSmilePercentageFromPointer(event, phase);
+    setDraftSpendingSmile(
+      updateSpendingSmilePercentage(
+        displayedSpendingSmile,
+        percentageField,
+        percentage
+      )
+    );
+  };
+
+  const handleSpendingSmilePointerDown = (
+    event: PointerEvent<SVGPathElement>,
+    phase: SpendingSmilePhaseKey
+  ) => {
+    if (!isPrimaryPointerDragStart(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    activeSmileDragPointerIdRef.current = event.pointerId;
+    activeSmileDragPhaseRef.current = phase;
+
+    if (typeof event.currentTarget.setPointerCapture === "function") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    updateDraftSpendingSmile(event, phase);
+  };
+
+  const handleSpendingSmilePointerMove = (
+    event: PointerEvent<SVGPathElement>,
+    phase: SpendingSmilePhaseKey
+  ) => {
+    if (
+      activeSmileDragPhaseRef.current !== phase ||
+      activeSmileDragPointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+
+    updateDraftSpendingSmile(event, phase);
+  };
+
+  const finishSpendingSmilePointerDrag = (
+    event: PointerEvent<SVGPathElement>,
+    phase: SpendingSmilePhaseKey,
+    commit: boolean
+  ) => {
+    if (
+      activeSmileDragPhaseRef.current !== phase ||
+      activeSmileDragPointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+
+    const percentageField = getSpendingSmilePercentageFieldForPhase(phase);
+    const percentage = getSpendingSmilePercentageFromPointer(event, phase);
+    const committedStrategy = updateSpendingSmilePercentage(
+      draftSpendingSmile ?? displayedSpendingSmile,
+      percentageField,
+      percentage
+    );
+
+    activeSmileDragPointerIdRef.current = null;
+    activeSmileDragPhaseRef.current = null;
+    setDraftSpendingSmile(null);
+
+    if (
+      typeof event.currentTarget.hasPointerCapture === "function" &&
+      event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (commit) {
+      setPendingSpendingSmile({
+        strategy: committedStrategy,
+        sourceData: data,
+        sourceStrategy: spendingSmile,
+      });
+      onChangeParameters({
+        [percentageField]: committedStrategy[percentageField],
+      });
+    }
+  };
+
+  const handleSpendingSmileKeyDown = (
+    event: KeyboardEvent<SVGPathElement>,
+    phase: SpendingSmilePhaseKey
+  ) => {
+    if (
+      !["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight"].includes(event.key)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const direction =
+      event.key === "ArrowDown" || event.key === "ArrowLeft" ? -1 : 1;
+    const percentageField = getSpendingSmilePercentageFieldForPhase(phase);
+    const nextStrategy = updateSpendingSmilePercentage(
+      displayedSpendingSmile,
+      percentageField,
+      displayedSpendingSmile[percentageField] + direction
+    );
+
+    setPendingSpendingSmile({
+      strategy: nextStrategy,
+      sourceData: data,
+      sourceStrategy: spendingSmile,
+    });
+    onChangeParameters({
+      [percentageField]: nextStrategy[percentageField],
+    });
   };
 
   const updateDraftTargetIncome = (event: PointerEvent<SVGPathElement>) => {
@@ -2276,26 +2555,72 @@ export function RetirementIncomeBridgeChart({
               className="bridge-target-line"
               d={targetLine(visibleData) ?? undefined}
             />
-            <path
-              ref={targetLineHitboxRef}
-              className="bridge-target-line-hitbox"
-              d={targetLine(visibleData) ?? undefined}
-              role="slider"
-              tabIndex={0}
-              aria-label="Target income line"
-              aria-valuemin={limits.targetIncomeAnnual.min / divisor}
-              aria-valuemax={limits.targetIncomeAnnual.max / divisor}
-              aria-valuenow={displayedTargetIncomeAnnual / divisor}
-              onKeyDown={handleTargetLineKeyDown}
-              onPointerDown={handleTargetPointerDown}
-              onPointerMove={handleTargetPointerMove}
-              onPointerUp={(event) => finishTargetPointerDrag(event, true)}
-              onPointerCancel={(event) => finishTargetPointerDrag(event, false)}
-              onTouchStart={handleTargetTouchStart}
-              onTouchMove={handleTargetTouchMove}
-              onTouchEnd={(event) => finishTargetTouchDrag(event, true)}
-              onTouchCancel={(event) => finishTargetTouchDrag(event, false)}
-            />
+            {spendingSmileEnabled ? (
+              spendingSmilePhasePaths.map((phase) =>
+                phase.path ? (
+                  <path
+                    key={phase.key}
+                    className="bridge-target-line-hitbox bridge-smile-phase-hitbox"
+                    data-testid={`spending-smile-${phase.key}-target-handle`}
+                    d={phase.path}
+                    role="slider"
+                    tabIndex={0}
+                    aria-label={`${phase.label} SMILE spending percentage`}
+                    aria-valuemin={MIN_SPENDING_SMILE_PERCENTAGE}
+                    aria-valuemax={MAX_SPENDING_SMILE_PERCENTAGE}
+                    aria-valuenow={
+                      displayedSpendingSmile[phase.percentageField]
+                    }
+                    aria-valuetext={`${displayedSpendingSmile[phase.percentageField]}%, ${formatCurrency(
+                      (targetIncomeAnnual *
+                        displayedSpendingSmile[phase.percentageField]) /
+                        100 /
+                        divisor
+                    )} ${displayMode === "monthly" ? "per month" : "per year"}`}
+                    onKeyDown={(event) =>
+                      handleSpendingSmileKeyDown(event, phase.key)
+                    }
+                    onPointerDown={(event) =>
+                      handleSpendingSmilePointerDown(event, phase.key)
+                    }
+                    onPointerMove={(event) =>
+                      handleSpendingSmilePointerMove(event, phase.key)
+                    }
+                    onPointerUp={(event) =>
+                      finishSpendingSmilePointerDrag(event, phase.key, true)
+                    }
+                    onPointerCancel={(event) =>
+                      finishSpendingSmilePointerDrag(event, phase.key, false)
+                    }
+                  >
+                    <title>Drag to adjust {phase.label} SMILE spending</title>
+                  </path>
+                ) : null
+              )
+            ) : (
+              <path
+                ref={targetLineHitboxRef}
+                className="bridge-target-line-hitbox"
+                d={targetLine(visibleData) ?? undefined}
+                role="slider"
+                tabIndex={0}
+                aria-label="Target income line"
+                aria-valuemin={limits.targetIncomeAnnual.min / divisor}
+                aria-valuemax={limits.targetIncomeAnnual.max / divisor}
+                aria-valuenow={displayedTargetIncomeAnnual / divisor}
+                onKeyDown={handleTargetLineKeyDown}
+                onPointerDown={handleTargetPointerDown}
+                onPointerMove={handleTargetPointerMove}
+                onPointerUp={(event) => finishTargetPointerDrag(event, true)}
+                onPointerCancel={(event) =>
+                  finishTargetPointerDrag(event, false)
+                }
+                onTouchStart={handleTargetTouchStart}
+                onTouchMove={handleTargetTouchMove}
+                onTouchEnd={(event) => finishTargetTouchDrag(event, true)}
+                onTouchCancel={(event) => finishTargetTouchDrag(event, false)}
+              />
+            )}
 
             {renderedMarkerLayouts.map((marker) => {
               const x = xScale(marker.plotAge);
@@ -2306,7 +2631,6 @@ export function RetirementIncomeBridgeChart({
                   key={marker.key}
                   className={[
                     "bridge-milestone",
-                    marker.editable ? "bridge-milestone--editable" : "",
                     invalidMarkerKeys.has(marker.key)
                       ? "bridge-milestone--invalid"
                       : "",
@@ -2316,72 +2640,85 @@ export function RetirementIncomeBridgeChart({
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  role={marker.editable ? "slider" : "img"}
-                  tabIndex={0}
-                  aria-label={`${marker.label}, age ${formatAgeValue(marker.age)}`}
-                  aria-valuemin={limits[marker.key].min}
-                  aria-valuemax={limits[marker.key].max}
-                  aria-valuenow={marker.age}
-                  onKeyDown={(event) => handleMarkerKeyDown(event, marker)}
-                  onPointerDown={(event) =>
-                    handleMarkerPointerDown(event, marker.key)
-                  }
-                  onPointerMove={(event) =>
-                    handleMarkerPointerMove(event, marker.key)
-                  }
-                  onPointerUp={(event) =>
-                    finishMarkerPointerDrag(event, marker.key, true)
-                  }
-                  onPointerCancel={(event) =>
-                    finishMarkerPointerDrag(event, marker.key, false)
-                  }
-                  onTouchStart={(event) =>
-                    handleMarkerTouchStart(event, marker.key)
-                  }
-                  onTouchMove={(event) =>
-                    handleMarkerTouchMove(event, marker.key)
-                  }
-                  onTouchEnd={(event) =>
-                    finishMarkerTouchDrag(event, marker.key, true)
-                  }
-                  onTouchCancel={(event) =>
-                    finishMarkerTouchDrag(event, marker.key, false)
-                  }
                 >
-                  <rect
-                    x={x - 22}
-                    y={marker.handleY - HANDLE_LABEL_HEIGHT / 2 - 10}
-                    width={44}
-                    height={HANDLE_LABEL_HEIGHT + 20}
-                    fill="transparent"
-                    aria-hidden="true"
-                  />
                   <line
                     x1={x}
                     x2={x}
                     y1={marker.handleY + HANDLE_LABEL_HEIGHT / 2}
                     y2={plotHeight}
                     stroke={marker.colour}
+                    aria-hidden="true"
                   />
-                  <rect
-                    x={x - HANDLE_LABEL_WIDTH / 2}
-                    y={marker.handleY - HANDLE_LABEL_HEIGHT / 2}
-                    width={HANDLE_LABEL_WIDTH}
-                    height={HANDLE_LABEL_HEIGHT}
-                    rx={HANDLE_LABEL_WIDTH / 2}
-                    className="bridge-milestone-handle"
-                    fill={marker.colour}
-                  />
-                  <text
-                    x={x}
-                    y={marker.handleY}
-                    className="bridge-milestone-handle-label"
-                    dominantBaseline="middle"
-                    textAnchor="middle"
-                    transform={`rotate(90 ${x} ${marker.handleY})`}
+                  <g
+                    className={[
+                      "bridge-milestone-drag-label",
+                      marker.editable
+                        ? "bridge-milestone-drag-label--editable"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    role={marker.editable ? "slider" : "img"}
+                    tabIndex={0}
+                    data-testid={`bridge-marker-${marker.key}`}
+                    aria-label={`${marker.label}, age ${formatAgeValue(marker.age)}`}
+                    aria-valuemin={limits[marker.key].min}
+                    aria-valuemax={limits[marker.key].max}
+                    aria-valuenow={marker.age}
+                    onKeyDown={(event) => handleMarkerKeyDown(event, marker)}
+                    onPointerDown={(event) =>
+                      handleMarkerPointerDown(event, marker.key)
+                    }
+                    onPointerMove={(event) =>
+                      handleMarkerPointerMove(event, marker.key)
+                    }
+                    onPointerUp={(event) =>
+                      finishMarkerPointerDrag(event, marker.key, true)
+                    }
+                    onPointerCancel={(event) =>
+                      finishMarkerPointerDrag(event, marker.key, false)
+                    }
+                    onTouchStart={(event) =>
+                      handleMarkerTouchStart(event, marker.key)
+                    }
+                    onTouchMove={(event) =>
+                      handleMarkerTouchMove(event, marker.key)
+                    }
+                    onTouchEnd={(event) =>
+                      finishMarkerTouchDrag(event, marker.key, true)
+                    }
+                    onTouchCancel={(event) =>
+                      finishMarkerTouchDrag(event, marker.key, false)
+                    }
                   >
-                    {handleLabel}
-                  </text>
+                    <rect
+                      x={x - 22}
+                      y={marker.handleY - HANDLE_LABEL_HEIGHT / 2 - 10}
+                      width={44}
+                      height={HANDLE_LABEL_HEIGHT + 20}
+                      fill="transparent"
+                      aria-hidden="true"
+                    />
+                    <rect
+                      x={x - HANDLE_LABEL_WIDTH / 2}
+                      y={marker.handleY - HANDLE_LABEL_HEIGHT / 2}
+                      width={HANDLE_LABEL_WIDTH}
+                      height={HANDLE_LABEL_HEIGHT}
+                      rx={HANDLE_LABEL_WIDTH / 2}
+                      className="bridge-milestone-handle"
+                      fill={marker.colour}
+                    />
+                    <text
+                      x={x}
+                      y={marker.handleY}
+                      className="bridge-milestone-handle-label"
+                      dominantBaseline="middle"
+                      textAnchor="middle"
+                      transform={`rotate(90 ${x} ${marker.handleY})`}
+                    >
+                      {handleLabel}
+                    </text>
+                  </g>
                 </g>
               );
             })}
@@ -3258,52 +3595,39 @@ function createWholeYearTicks(minAge: number, maxAge: number) {
   );
 }
 
+const validationFieldMarkerKeys: Partial<
+  Record<PensionValidationIssue["field"], MilestoneKey>
+> = {
+  requirementAge: "retirementAge",
+  alphaPensionLeaveAge: "alphaLeaveAge",
+  alphaPensionDrawAge: "alphaStartAge",
+  sippDrawAge: "sippAccessAge",
+  sippWithdrawalTargetAge: "sippUseByAge",
+  isaDrawAge: "isaAccessAge",
+  isaWithdrawalTargetAge: "isaUseByAge",
+  lisaDrawAge: "lisaAccessAge",
+  lisaWithdrawalTargetAge: "lisaUseByAge",
+  partialRetirementStartAge: "partialRetirementStartAge",
+  statePensionDrawDate: "statePensionAge",
+};
+
+const spendingSmileValidationMarkerKeys: Record<string, MilestoneKey> = {
+  slowGoStartAge: "slowGoStartAge",
+  noGoStartAge: "noGoStartAge",
+};
+
 function getInvalidMarkerKeys(validationIssues: PensionValidationIssue[]) {
   const markerKeys = new Set<MilestoneKey>();
 
   for (const issue of validationIssues) {
-    if (issue.field === "requirementAge") {
-      markerKeys.add("retirementAge");
-    }
+    const markerKey =
+      validationFieldMarkerKeys[issue.field] ??
+      (issue.field === "spendingSmile" && issue.itemId
+        ? spendingSmileValidationMarkerKeys[issue.itemId]
+        : undefined);
 
-    if (issue.field === "alphaPensionLeaveAge") {
-      markerKeys.add("alphaLeaveAge");
-    }
-
-    if (issue.field === "alphaPensionDrawAge") {
-      markerKeys.add("alphaStartAge");
-    }
-
-    if (issue.field === "sippDrawAge") {
-      markerKeys.add("sippAccessAge");
-    }
-
-    if (issue.field === "sippWithdrawalTargetAge") {
-      markerKeys.add("sippUseByAge");
-    }
-
-    if (issue.field === "isaDrawAge") {
-      markerKeys.add("isaAccessAge");
-    }
-
-    if (issue.field === "isaWithdrawalTargetAge") {
-      markerKeys.add("isaUseByAge");
-    }
-
-    if (issue.field === "lisaDrawAge") {
-      markerKeys.add("lisaAccessAge");
-    }
-
-    if (issue.field === "lisaWithdrawalTargetAge") {
-      markerKeys.add("lisaUseByAge");
-    }
-
-    if (issue.field === "partialRetirementStartAge") {
-      markerKeys.add("partialRetirementStartAge");
-    }
-
-    if (issue.field === "statePensionDrawDate") {
-      markerKeys.add("statePensionAge");
+    if (markerKey) {
+      markerKeys.add(markerKey);
     }
   }
 
@@ -3625,6 +3949,207 @@ function formatCompactCurrency(value: number) {
 
 function formatAgeValue(value: number) {
   return value.toFixed(2).replace(/\.00$/, "");
+}
+
+function resolveDisplayedSpendingSmile({
+  data,
+  draft,
+  pending,
+  strategy,
+}: {
+  data: RetirementIncomePoint[];
+  draft: SpendingSmileStrategy | null;
+  pending: PendingSpendingSmile | null;
+  strategy: SpendingSmileStrategy;
+}) {
+  if (draft) {
+    return draft;
+  }
+  if (pending?.sourceData === data) {
+    return pending.strategy;
+  }
+  return strategy;
+}
+
+function resolveDataSourceSpendingSmile({
+  data,
+  pending,
+  strategy,
+}: {
+  data: RetirementIncomePoint[];
+  pending: PendingSpendingSmile | null;
+  strategy: SpendingSmileStrategy;
+}) {
+  return pending?.sourceData === data ? pending.sourceStrategy : strategy;
+}
+
+function applySpendingSmileMarkerDrafts(
+  strategy: SpendingSmileStrategy,
+  draftMarkerAges: Partial<
+    Record<MilestoneKey, { age: number; baseAge: number }>
+  >
+): SpendingSmileStrategy {
+  return {
+    ...strategy,
+    slowGoStartAge:
+      draftMarkerAges.slowGoStartAge?.age ?? strategy.slowGoStartAge,
+    noGoStartAge: draftMarkerAges.noGoStartAge?.age ?? strategy.noGoStartAge,
+  };
+}
+
+function updatePendingSpendingSmileForMarker({
+  current,
+  data,
+  dataSourceStrategy,
+  displayedStrategy,
+  markerKey,
+  age,
+}: {
+  current: PendingSpendingSmile | null;
+  data: RetirementIncomePoint[];
+  dataSourceStrategy: SpendingSmileStrategy;
+  displayedStrategy: SpendingSmileStrategy;
+  markerKey: MilestoneKey;
+  age: number;
+}): PendingSpendingSmile | null {
+  if (markerKey !== "slowGoStartAge" && markerKey !== "noGoStartAge") {
+    return current;
+  }
+
+  return {
+    strategy: {
+      ...displayedStrategy,
+      [markerKey]: age,
+    },
+    sourceData: data,
+    sourceStrategy: dataSourceStrategy,
+  };
+}
+
+function createDisplayedTargetData({
+  data,
+  dataSourceSpendingSmile,
+  dataSourceTargetIncomeAnnual,
+  displayedSpendingSmile,
+  displayedTargetIncomeAnnual,
+  retirementAge,
+  spendingSmileEnabled,
+}: {
+  data: RetirementIncomePoint[];
+  dataSourceSpendingSmile: SpendingSmileStrategy;
+  dataSourceTargetIncomeAnnual: number;
+  displayedSpendingSmile: SpendingSmileStrategy;
+  displayedTargetIncomeAnnual: number;
+  retirementAge: number;
+  spendingSmileEnabled: boolean;
+}) {
+  if (dataSourceTargetIncomeAnnual <= 0) {
+    return data.map((point) => ({
+      ...point,
+      targetIncomeAnnual: 0,
+      shortfallAnnual: 0,
+    }));
+  }
+
+  if (spendingSmileEnabled) {
+    return data.map((point) => {
+      const sourcePercentageField = getSpendingSmilePercentageField(
+        point.age,
+        dataSourceSpendingSmile
+      );
+      const displayedPercentageField = getSpendingSmilePercentageField(
+        point.age,
+        displayedSpendingSmile
+      );
+      const sourcePercentage = dataSourceSpendingSmile[sourcePercentageField];
+      const displayedPercentage =
+        displayedSpendingSmile[displayedPercentageField];
+      const scaleFactor =
+        sourcePercentage > 0 ? displayedPercentage / sourcePercentage : 1;
+
+      return updateDisplayedTargetPoint(
+        point,
+        point.targetIncomeAnnual * scaleFactor,
+        retirementAge
+      );
+    });
+  }
+
+  const scaleFactor =
+    displayedTargetIncomeAnnual / dataSourceTargetIncomeAnnual;
+  return data.map((point) =>
+    updateDisplayedTargetPoint(
+      point,
+      point.targetIncomeAnnual * scaleFactor,
+      retirementAge
+    )
+  );
+}
+
+function updateDisplayedTargetPoint(
+  point: RetirementIncomePoint,
+  targetIncomeAnnual: number,
+  retirementAge: number
+): RetirementIncomePoint {
+  return {
+    ...point,
+    targetIncomeAnnual,
+    shortfallAnnual:
+      point.age >= retirementAge
+        ? Math.max(0, targetIncomeAnnual - point.assessedIncomeAnnual)
+        : 0,
+  };
+}
+
+function getSpendingSmilePercentageFieldForPhase(
+  phase: SpendingSmilePhaseKey
+): SmilePercentageField {
+  return phase === "goGo"
+    ? "goGoPercentage"
+    : phase === "slowGo"
+      ? "slowGoPercentage"
+      : "noGoPercentage";
+}
+
+function isAgeInSpendingSmilePhase(
+  age: number,
+  phase: SpendingSmilePhaseKey,
+  strategy: SpendingSmileStrategy
+) {
+  return (
+    getSpendingSmilePercentageField(age, strategy) ===
+    getSpendingSmilePercentageFieldForPhase(phase)
+  );
+}
+
+function createSpendingSmilePhasePaths({
+  enabled,
+  displayedSpendingSmile,
+  targetLine,
+  visibleData,
+}: {
+  enabled: boolean;
+  displayedSpendingSmile: SpendingSmileStrategy;
+  targetLine: d3.Line<RetirementIncomePoint>;
+  visibleData: RetirementIncomePoint[];
+}) {
+  if (!enabled) {
+    return [];
+  }
+
+  return spendingSmilePhaseMeta.map((phase) => ({
+    ...phase,
+    path:
+      targetLine(
+        visibleData.filter((point) =>
+          isAgeInSpendingSmilePhase(
+            point.age,
+            phase.key,
+            displayedSpendingSmile
+          )
+        )
+      ) ?? undefined,
+  }));
 }
 
 function getDisplayMarkerAge(

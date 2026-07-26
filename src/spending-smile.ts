@@ -1,84 +1,149 @@
 import { calculateAnchoredMonthDifference } from "./projection-date";
-import { featureFlags } from "./feature-flags";
 import type {
   PensionSettings,
-  RetirementHouseholdType,
-  SpendingPhaseTarget,
   SpendingSmileStrategy,
-  SpendingTargetSource,
 } from "./settings/settings-types";
 
-export const retirementLivingStandards = {
-  version: "2026-06",
-  publishedDate: "2026-06-03",
-  currency: "GBP",
-  valueBasis: "ANNUAL_NET_HOUSEHOLD_EXPENDITURE",
-  housingCostsIncluded: false,
-  values: {
-    ONE_PERSON: {
-      minimum: 13_900,
-      moderate: 32_700,
-      comfortable: 45_400,
-    },
-    TWO_PERSON: {
-      minimum: 22_500,
-      moderate: 45_400,
-      comfortable: 62_700,
-    },
-  },
-} as const;
-
 export type SpendingPhase = "FLAT" | "GO_GO" | "SLOW_GO" | "NO_GO";
-export type RlsLevel = "minimum" | "moderate" | "comfortable";
-export type RlsClassification =
-  | "BELOW_MINIMUM"
-  | "MINIMUM_TO_MODERATE"
-  | "MODERATE_TO_COMFORTABLE"
-  | "COMFORTABLE_OR_ABOVE";
+export type SmilePercentageField =
+  | "goGoPercentage"
+  | "slowGoPercentage"
+  | "noGoPercentage";
+export type SmileStartAgeField = "slowGoStartAge" | "noGoStartAge";
+export type SmileStartAgeBounds = { min: number; max: number };
 
 export type ResolvedSpendingTarget = {
   phase: SpendingPhase;
+  percentageOfTarget: number;
   annualRealTarget: number;
   annualNominalTarget: number;
 };
 
-const MAX_ANNUAL_SPENDING = 200_000;
-const MAX_PERCENTAGE = 300;
+export const MAX_SPENDING_SMILE_PERCENTAGE = 300;
+export const MIN_SPENDING_SMILE_PERCENTAGE = 1;
+export const MAX_SUPPORTED_MODELLING_AGE = 100;
 
-export function createDefaultSpendingSmile(
-  existingAnnualTarget: number
-): SpendingSmileStrategy {
+export function createDefaultSpendingSmile(): SpendingSmileStrategy {
   return {
-    initialized: false,
-    inputMode: "ANNUAL_AMOUNT",
-    householdType: "ONE_PERSON",
+    goGoPercentage: 100,
     slowGoStartAge: 75,
+    slowGoPercentage: 85,
     noGoStartAge: 85,
-    goGo: createPhaseTarget(existingAnnualTarget, 100, "EXISTING_TARGET"),
-    slowGo: createPhaseTarget(
-      existingAnnualTarget * 0.85,
-      85,
-      "PERCENTAGE_DEFAULT"
-    ),
-    noGo: createPhaseTarget(
-      existingAnnualTarget * 0.75,
-      75,
-      "PERCENTAGE_DEFAULT"
-    ),
-    rlsVersion: retirementLivingStandards.version,
+    noGoPercentage: 70,
   };
 }
 
-export function initializeSpendingSmile(
+export function reconcileSpendingSmilePhaseAges(
   strategy: SpendingSmileStrategy,
-  existingAnnualTarget: number
+  retirementAge: number,
+  lifeExpectancy: number
+): SpendingSmileStrategy {
+  const maximumNoGoStartAge = Math.min(
+    MAX_SUPPORTED_MODELLING_AGE,
+    Math.floor(lifeExpectancy)
+  );
+  const minimumSlowGoStartAge = Math.floor(retirementAge) + 1;
+  const minimumNoGoStartAge = minimumSlowGoStartAge + 1;
+  const noGoStartAge = clampWholeAge(
+    strategy.noGoStartAge,
+    minimumNoGoStartAge,
+    Math.max(minimumNoGoStartAge, maximumNoGoStartAge)
+  );
+
+  return {
+    ...strategy,
+    slowGoStartAge: clampWholeAge(
+      strategy.slowGoStartAge,
+      minimumSlowGoStartAge,
+      noGoStartAge - 1
+    ),
+    noGoStartAge,
+  };
+}
+
+export function updateSpendingSmileStartAge(
+  strategy: SpendingSmileStrategy,
+  field: SmileStartAgeField,
+  age: number,
+  retirementAge: number,
+  lifeExpectancy: number
+): SpendingSmileStrategy {
+  const reconciled = reconcileSpendingSmilePhaseAges(
+    strategy,
+    retirementAge,
+    lifeExpectancy
+  );
+  const bounds = getSpendingSmileStartAgeBounds(
+    reconciled,
+    field,
+    retirementAge,
+    lifeExpectancy
+  );
+
+  return {
+    ...reconciled,
+    [field]: clampWholeAge(age, bounds.min, bounds.max),
+  };
+}
+
+export function getSpendingSmileStartAgeBounds(
+  strategy: SpendingSmileStrategy,
+  field: SmileStartAgeField,
+  retirementAge: number,
+  lifeExpectancy: number
+): SmileStartAgeBounds {
+  const minimumSlowGoStartAge = Math.floor(retirementAge) + 1;
+  const maximumNoGoStartAge = Math.max(
+    minimumSlowGoStartAge + 1,
+    Math.min(MAX_SUPPORTED_MODELLING_AGE, Math.floor(lifeExpectancy))
+  );
+
+  if (field === "slowGoStartAge") {
+    return {
+      min: minimumSlowGoStartAge,
+      max: Math.max(
+        minimumSlowGoStartAge,
+        Math.min(strategy.noGoStartAge - 1, maximumNoGoStartAge - 1)
+      ),
+    };
+  }
+
+  const minimumNoGoStartAge = strategy.slowGoStartAge + 1;
+  return {
+    min: minimumNoGoStartAge,
+    max: Math.max(minimumNoGoStartAge, maximumNoGoStartAge),
+  };
+}
+
+export function calculateSmilePhaseTarget(
+  targetIncome: number,
+  percentage: number
 ) {
-  return strategy.initialized
-    ? strategy
-    : {
-        ...createDefaultSpendingSmile(existingAnnualTarget),
-        initialized: true,
-      };
+  return targetIncome * (percentage / 100);
+}
+
+export function getSpendingSmilePercentageField(
+  age: number,
+  strategy: SpendingSmileStrategy
+): SmilePercentageField {
+  if (age < strategy.slowGoStartAge) {
+    return "goGoPercentage";
+  }
+  if (age < strategy.noGoStartAge) {
+    return "slowGoPercentage";
+  }
+  return "noGoPercentage";
+}
+
+export function updateSpendingSmilePercentage(
+  strategy: SpendingSmileStrategy,
+  field: SmilePercentageField,
+  percentage: number
+): SpendingSmileStrategy {
+  return {
+    ...strategy,
+    [field]: normalizeWholePercentage(percentage, strategy[field]),
+  };
 }
 
 export function resolveAnnualSpendingTarget(input: {
@@ -88,15 +153,17 @@ export function resolveAnnualSpendingTarget(input: {
   const { settings, rowDate } = input;
   const age =
     calculateAnchoredMonthDifference(settings.dateOfBirth, rowDate) / 12;
-  const strategy = settings.spendingSmile;
-  const phaseAndTarget =
-    featureFlags.spendingSmileStrategy &&
+  const phaseAndPercentage =
     settings.spendingStrategyType === "SPENDING_SMILE"
-      ? getSmilePhaseAndTarget(age, strategy)
+      ? getSmilePhaseAndPercentage(age, settings.spendingSmile)
       : {
           phase: "FLAT" as const,
-          annualRealTarget: settings.desiredRetirementIncome,
+          percentageOfTarget: 100,
         };
+  const annualRealTarget = calculateSmilePhaseTarget(
+    settings.desiredRetirementIncome,
+    phaseAndPercentage.percentageOfTarget
+  );
   const monthsFromBase = Math.max(
     0,
     calculateAnchoredMonthDifference(settings.startDate, rowDate)
@@ -105,310 +172,104 @@ export function resolveAnnualSpendingTarget(input: {
     (1 + settings.inflationRateAnnual / 100) ** (1 / 12) - 1;
 
   return {
-    ...phaseAndTarget,
+    ...phaseAndPercentage,
+    annualRealTarget,
     annualNominalTarget:
-      phaseAndTarget.annualRealTarget *
-      (1 + monthlyInflationRate) ** monthsFromBase,
+      annualRealTarget * (1 + monthlyInflationRate) ** monthsFromBase,
   };
-}
-
-export function updateGoGoAnnualAmount(
-  strategy: SpendingSmileStrategy,
-  annualAmountReal: number
-): SpendingSmileStrategy {
-  const amount = clampFinite(annualAmountReal, 0, MAX_ANNUAL_SPENDING);
-  const goGo = createPhaseTarget(amount, 100, "CUSTOM");
-
-  if (strategy.inputMode === "PERCENTAGE_OF_GO_GO") {
-    return {
-      ...strategy,
-      goGo,
-      slowGo: updateTargetFromPercentage(strategy.slowGo, amount),
-      noGo: updateTargetFromPercentage(strategy.noGo, amount),
-    };
-  }
-
-  return {
-    ...strategy,
-    goGo,
-    slowGo: updatePercentageFromAmount(strategy.slowGo, amount),
-    noGo: updatePercentageFromAmount(strategy.noGo, amount),
-  };
-}
-
-export function updatePhaseAnnualAmount(
-  strategy: SpendingSmileStrategy,
-  phase: "slowGo" | "noGo",
-  annualAmountReal: number
-): SpendingSmileStrategy {
-  const target = {
-    ...strategy[phase],
-    annualAmountReal: clampFinite(annualAmountReal, 0, MAX_ANNUAL_SPENDING),
-    source: "CUSTOM" as const,
-  };
-
-  return {
-    ...strategy,
-    [phase]: updatePercentageFromAmount(target, strategy.goGo.annualAmountReal),
-  };
-}
-
-export function updatePhasePercentage(
-  strategy: SpendingSmileStrategy,
-  phase: "slowGo" | "noGo",
-  percentageOfGoGo: number
-): SpendingSmileStrategy {
-  const percentage = clampFinite(percentageOfGoGo, 0, MAX_PERCENTAGE);
-
-  return {
-    ...strategy,
-    [phase]: {
-      annualAmountReal: strategy.goGo.annualAmountReal * (percentage / 100),
-      percentageOfGoGo: percentage,
-      source: "CUSTOM",
-    },
-  };
-}
-
-export function switchSpendingSmileInputMode(
-  strategy: SpendingSmileStrategy,
-  inputMode: SpendingSmileStrategy["inputMode"]
-): SpendingSmileStrategy {
-  if (inputMode === strategy.inputMode) {
-    return strategy;
-  }
-
-  return {
-    ...strategy,
-    inputMode,
-    slowGo: updatePercentageFromAmount(
-      strategy.slowGo,
-      strategy.goGo.annualAmountReal
-    ),
-    noGo: updatePercentageFromAmount(
-      strategy.noGo,
-      strategy.goGo.annualAmountReal
-    ),
-  };
-}
-
-export function applyRlsTarget(
-  strategy: SpendingSmileStrategy,
-  phase: "goGo" | "slowGo" | "noGo",
-  level: RlsLevel
-): SpendingSmileStrategy {
-  const amount =
-    retirementLivingStandards.values[strategy.householdType][level];
-  const source = `RLS_${level.toUpperCase()}` as SpendingTargetSource;
-  const target = createPhaseTarget(
-    amount,
-    calculatePercentage(amount, strategy.goGo.annualAmountReal),
-    source
-  );
-  const next = { ...strategy, [phase]: target };
-
-  if (phase === "goGo") {
-    next.goGo = { ...target, percentageOfGoGo: 100 };
-    next.slowGo =
-      strategy.inputMode === "PERCENTAGE_OF_GO_GO"
-        ? updateTargetFromPercentage(next.slowGo, amount)
-        : updatePercentageFromAmount(next.slowGo, amount);
-    next.noGo =
-      strategy.inputMode === "PERCENTAGE_OF_GO_GO"
-        ? updateTargetFromPercentage(next.noGo, amount)
-        : updatePercentageFromAmount(next.noGo, amount);
-  }
-
-  return next;
-}
-
-export function applySpendingSmileProfile(
-  strategy: SpendingSmileStrategy,
-  profile: "EXISTING_REDUCTIONS" | "RLS_TIERED" | "MODERATE",
-  existingAnnualTarget: number
-): SpendingSmileStrategy {
-  if (profile === "RLS_TIERED") {
-    const values = retirementLivingStandards.values[strategy.householdType];
-    return {
-      ...strategy,
-      goGo: createPhaseTarget(values.comfortable, 100, "RLS_COMFORTABLE"),
-      slowGo: createPhaseTarget(
-        values.moderate,
-        calculatePercentage(values.moderate, values.comfortable),
-        "RLS_MODERATE"
-      ),
-      noGo: createPhaseTarget(
-        values.minimum,
-        calculatePercentage(values.minimum, values.comfortable),
-        "RLS_MINIMUM"
-      ),
-    };
-  }
-
-  const goGoAmount =
-    profile === "MODERATE"
-      ? retirementLivingStandards.values[strategy.householdType].moderate
-      : existingAnnualTarget;
-  const goGoSource =
-    profile === "MODERATE" ? "RLS_MODERATE" : "EXISTING_TARGET";
-
-  return {
-    ...strategy,
-    goGo: createPhaseTarget(goGoAmount, 100, goGoSource),
-    slowGo: createPhaseTarget(goGoAmount * 0.85, 85, "PERCENTAGE_DEFAULT"),
-    noGo: createPhaseTarget(goGoAmount * 0.75, 75, "PERCENTAGE_DEFAULT"),
-  };
-}
-
-export function classifyRlsTarget(
-  target: number,
-  householdType: RetirementHouseholdType
-): RlsClassification {
-  const thresholds = retirementLivingStandards.values[householdType];
-
-  if (target < thresholds.minimum) {
-    return "BELOW_MINIMUM";
-  }
-  if (target < thresholds.moderate) {
-    return "MINIMUM_TO_MODERATE";
-  }
-  if (target < thresholds.comfortable) {
-    return "MODERATE_TO_COMFORTABLE";
-  }
-  return "COMFORTABLE_OR_ABOVE";
-}
-
-export function getRlsClassificationLabel(classification: RlsClassification) {
-  const labels: Record<RlsClassification, string> = {
-    BELOW_MINIMUM: "Below the current Minimum standard",
-    MINIMUM_TO_MODERATE: "Between Minimum and Moderate",
-    MODERATE_TO_COMFORTABLE: "Between Moderate and Comfortable",
-    COMFORTABLE_OR_ABOVE: "At or above Comfortable",
-  };
-
-  return labels[classification];
 }
 
 export function normalizeSpendingSmile(
   value: unknown,
   existingAnnualTarget: number
 ): SpendingSmileStrategy {
-  const fallback = createDefaultSpendingSmile(existingAnnualTarget);
+  const fallback = createDefaultSpendingSmile();
 
   if (!isRecord(value)) {
     return fallback;
   }
 
-  const goGo = normalizePhaseTarget(value.goGo, fallback.goGo);
-  const slowGo = normalizePhaseTarget(value.slowGo, fallback.slowGo);
-  const noGo = normalizePhaseTarget(value.noGo, fallback.noGo);
-
   return {
-    initialized: value.initialized === true,
-    inputMode:
-      value.inputMode === "PERCENTAGE_OF_GO_GO"
-        ? "PERCENTAGE_OF_GO_GO"
-        : "ANNUAL_AMOUNT",
-    householdType:
-      value.householdType === "TWO_PERSON" ? "TWO_PERSON" : "ONE_PERSON",
-    slowGoStartAge: clampFinite(value.slowGoStartAge, 0, 120, 75),
-    noGoStartAge: clampFinite(value.noGoStartAge, 0, 120, 85),
-    goGo: { ...goGo, percentageOfGoGo: 100 },
-    slowGo,
-    noGo,
-    rlsVersion:
-      typeof value.rlsVersion === "string"
-        ? value.rlsVersion
-        : retirementLivingStandards.version,
+    goGoPercentage: normalizePercentage(
+      value.goGoPercentage,
+      getLegacyPercentage(value.goGo, existingAnnualTarget),
+      fallback.goGoPercentage
+    ),
+    slowGoStartAge: clampFinite(
+      value.slowGoStartAge,
+      0,
+      MAX_SUPPORTED_MODELLING_AGE,
+      fallback.slowGoStartAge
+    ),
+    slowGoPercentage: normalizePercentage(
+      value.slowGoPercentage,
+      getLegacyPercentage(value.slowGo, existingAnnualTarget),
+      fallback.slowGoPercentage
+    ),
+    noGoStartAge: clampFinite(
+      value.noGoStartAge,
+      0,
+      MAX_SUPPORTED_MODELLING_AGE,
+      fallback.noGoStartAge
+    ),
+    noGoPercentage: normalizePercentage(
+      value.noGoPercentage,
+      getLegacyPercentage(value.noGo, existingAnnualTarget),
+      fallback.noGoPercentage
+    ),
   };
 }
 
-function getSmilePhaseAndTarget(age: number, strategy: SpendingSmileStrategy) {
-  if (age < strategy.slowGoStartAge) {
-    return {
-      phase: "GO_GO" as const,
-      annualRealTarget: strategy.goGo.annualAmountReal,
-    };
-  }
-  if (age < strategy.noGoStartAge) {
-    return {
-      phase: "SLOW_GO" as const,
-      annualRealTarget: strategy.slowGo.annualAmountReal,
-    };
-  }
-  return {
-    phase: "NO_GO" as const,
-    annualRealTarget: strategy.noGo.annualAmountReal,
-  };
-}
-
-function createPhaseTarget(
-  annualAmountReal: number,
-  percentageOfGoGo: number,
-  source: SpendingTargetSource
-): SpendingPhaseTarget {
-  return { annualAmountReal, percentageOfGoGo, source };
-}
-
-function updateTargetFromPercentage(
-  target: SpendingPhaseTarget,
-  goGoAmount: number
+function getSmilePhaseAndPercentage(
+  age: number,
+  strategy: SpendingSmileStrategy
 ) {
+  const percentageField = getSpendingSmilePercentageField(age, strategy);
+  const phase =
+    percentageField === "goGoPercentage"
+      ? ("GO_GO" as const)
+      : percentageField === "slowGoPercentage"
+        ? ("SLOW_GO" as const)
+        : ("NO_GO" as const);
+
   return {
-    ...target,
-    annualAmountReal: goGoAmount * (target.percentageOfGoGo / 100),
-    source: "CUSTOM" as const,
+    phase,
+    percentageOfTarget: strategy[percentageField],
   };
 }
 
-function updatePercentageFromAmount(
-  target: SpendingPhaseTarget,
-  goGoAmount: number
-) {
-  return {
-    ...target,
-    percentageOfGoGo: calculatePercentage(target.annualAmountReal, goGoAmount),
-  };
-}
-
-function calculatePercentage(amount: number, goGoAmount: number) {
-  return goGoAmount === 0 ? 0 : (amount / goGoAmount) * 100;
-}
-
-function normalizePhaseTarget(
+function normalizePercentage(
   value: unknown,
-  fallback: SpendingPhaseTarget
-): SpendingPhaseTarget {
+  legacyValue: number | undefined,
+  fallback: number
+) {
+  return normalizeWholePercentage(value ?? legacyValue, fallback);
+}
+
+function normalizeWholePercentage(value: unknown, fallback: number) {
+  return Math.round(
+    clampFinite(value, 0, MAX_SPENDING_SMILE_PERCENTAGE, fallback)
+  );
+}
+
+function getLegacyPercentage(
+  value: unknown,
+  existingAnnualTarget: number
+): number | undefined {
   if (!isRecord(value)) {
-    return fallback;
+    return undefined;
   }
 
-  const allowedSources: SpendingTargetSource[] = [
-    "EXISTING_TARGET",
-    "RLS_MINIMUM",
-    "RLS_MODERATE",
-    "RLS_COMFORTABLE",
-    "PERCENTAGE_DEFAULT",
-    "CUSTOM",
-  ];
+  const annualAmount = Number(value.annualAmountReal);
+  if (Number.isFinite(annualAmount) && existingAnnualTarget > 0) {
+    return (
+      Math.round((annualAmount / existingAnnualTarget) * 100 * 1_000_000) /
+      1_000_000
+    );
+  }
 
-  return {
-    annualAmountReal: clampFinite(
-      value.annualAmountReal,
-      0,
-      MAX_ANNUAL_SPENDING,
-      fallback.annualAmountReal
-    ),
-    percentageOfGoGo: clampFinite(
-      value.percentageOfGoGo,
-      0,
-      MAX_PERCENTAGE,
-      fallback.percentageOfGoGo
-    ),
-    source: allowedSources.includes(value.source as SpendingTargetSource)
-      ? (value.source as SpendingTargetSource)
-      : fallback.source,
-  };
+  const percentageOfGoGo = Number(value.percentageOfGoGo);
+  return Number.isFinite(percentageOfGoGo) ? percentageOfGoGo : undefined;
 }
 
 function clampFinite(value: unknown, min: number, max: number, fallback = min) {
@@ -416,6 +277,10 @@ function clampFinite(value: unknown, min: number, max: number, fallback = min) {
   return Number.isFinite(parsed)
     ? Math.min(max, Math.max(min, parsed))
     : fallback;
+}
+
+function clampWholeAge(value: unknown, min: number, max: number) {
+  return Math.round(clampFinite(value, min, max, min));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

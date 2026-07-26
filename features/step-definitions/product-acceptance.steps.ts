@@ -5,6 +5,7 @@ import {
   type JourneyDefinition,
   type JourneyStepDefinition,
 } from "../../src/app-domains/journeys";
+import { fieldGroups } from "../../src/fieldDefinitions";
 import {
   buildComparisonTableRows,
   createComparisonResult,
@@ -823,6 +824,37 @@ Given(
   }
 );
 
+Given(
+  "a retirement scenario named {string} uses SMILE spending",
+  function (this: ProductAcceptanceWorld, name: string) {
+    const currentSettings = createDefaultSettings();
+    const settings = {
+      ...createDefaultSettings(),
+      desiredRetirementIncome: 30_000,
+      spendingStrategyType: "SPENDING_SMILE" as const,
+      spendingSmile: {
+        goGoPercentage: 110,
+        slowGoStartAge: 74,
+        slowGoPercentage: 80,
+        noGoStartAge: 84,
+        noGoPercentage: 65,
+      },
+    };
+    const result = createComparisonResult(
+      {
+        id: name.toLowerCase().replaceAll(" ", "-"),
+        name,
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(currentSettings)
+    );
+
+    this.comparisonResults = [...(this.comparisonResults ?? []), result];
+  }
+);
+
 When(
   "comparison table rows are built",
   function (this: ProductAcceptanceWorld) {
@@ -933,6 +965,30 @@ Then(
   }
 );
 
+Then(
+  "the {string} comparison value for {string} should include {string}",
+  function (
+    this: ProductAcceptanceWorld,
+    metric: string,
+    scenarioName: string,
+    expected: string
+  ) {
+    const scenarioIndex = (this.comparisonResults ?? []).findIndex(
+      (result) => result.scenario.name === scenarioName
+    );
+    assertCondition(
+      scenarioIndex >= 0,
+      `Comparison scenario "${scenarioName}" not found`
+    );
+    assertCondition(
+      nodeText(getComparisonRow(this, metric).values[scenarioIndex]).includes(
+        expected
+      ),
+      `Expected ${metric} for ${scenarioName} to include ${expected}`
+    );
+  }
+);
+
 When(
   "the modeller journeys are loaded",
   function (this: ProductAcceptanceWorld) {
@@ -972,6 +1028,43 @@ Then(
       this.selectedJourney.steps.some((step) => step.title === title),
       `Expected journey step "${title}"`
     );
+  }
+);
+
+Then(
+  "the default visible journey steps should be:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const settings = this.settings ?? createDefaultSettings();
+    const actualTitles = this.selectedJourney.steps
+      .filter((step) => !step.visible || step.visible(settings))
+      .map((step) => step.title);
+    const expectedTitles = table.hashes().map((row) => row.title);
+
+    assertEqual(JSON.stringify(actualTitles), JSON.stringify(expectedTitles));
+  }
+);
+
+Then(
+  "the {string} journey step should contain these fields:",
+  function (this: ProductAcceptanceWorld, stepTitle: string, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields",
+      `Journey step "${stepTitle}" does not contain fields`
+    );
+    const fieldDefinitions = fieldGroups.flatMap((group) => group.fields);
+    const actualFields = step.fieldIds.map(
+      (fieldId) =>
+        fieldDefinitions.find((field) => field.id === fieldId)?.label ?? fieldId
+    );
+    const expectedFields = table.hashes().map((row) => row.field);
+
+    assertEqual(JSON.stringify(actualFields), JSON.stringify(expectedFields));
   }
 );
 

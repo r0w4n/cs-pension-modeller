@@ -27,7 +27,12 @@ import {
   getUseByAgeBounds,
   isOptionalSectionToggleKey,
 } from "../app-domains";
-import { updateGoGoAnnualAmount } from "../spending-smile";
+import {
+  reconcileSpendingSmilePhaseAges,
+  updateSpendingSmileStartAge,
+  updateSpendingSmilePercentage,
+  type SmilePercentageField,
+} from "../spending-smile";
 
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
@@ -82,19 +87,14 @@ function applyIncomeAndContributionPatch(
   context: ChartStateContext
 ) {
   if (patch.targetIncomeAnnual !== undefined) {
-    if (next.spendingStrategyType === "SPENDING_SMILE") {
-      next.spendingSmile = updateGoGoAnnualAmount(
-        next.spendingSmile,
-        patch.targetIncomeAnnual
-      );
-    } else {
-      assignNormalizedNumber(
-        next,
-        "desiredRetirementIncome",
-        patch.targetIncomeAnnual
-      );
-    }
+    assignNormalizedNumber(
+      next,
+      "desiredRetirementIncome",
+      patch.targetIncomeAnnual
+    );
   }
+  applySpendingSmilePercentagePatch(next, patch);
+  applySpendingSmileStartAgePatch(next, patch);
   assignNormalizedNumber(
     next,
     "alphaAddedPensionMonthly",
@@ -140,6 +140,53 @@ function applyIncomeAndContributionPatch(
 
   if (patch.partialRetirementEnabled !== undefined) {
     next.partialRetirementEnabled = patch.partialRetirementEnabled;
+  }
+}
+
+function applySpendingSmilePercentagePatch(
+  next: PensionSettings,
+  patch: Partial<RetirementIncomeBridgeParameters>
+) {
+  (
+    [
+      "goGoPercentage",
+      "slowGoPercentage",
+      "noGoPercentage",
+    ] as const satisfies readonly SmilePercentageField[]
+  ).forEach((field) => {
+    const percentage = patch[field];
+    if (percentage !== undefined) {
+      next.spendingSmile = updateSpendingSmilePercentage(
+        next.spendingSmile,
+        field,
+        percentage
+      );
+    }
+  });
+}
+
+function applySpendingSmileStartAgePatch(
+  next: PensionSettings,
+  patch: Partial<RetirementIncomeBridgeParameters>
+) {
+  if (patch.slowGoStartAge !== undefined) {
+    next.spendingSmile = updateSpendingSmileStartAge(
+      next.spendingSmile,
+      "slowGoStartAge",
+      patch.slowGoStartAge,
+      next.requirementAge,
+      next.lifeExpectancy
+    );
+  }
+
+  if (patch.noGoStartAge !== undefined) {
+    next.spendingSmile = updateSpendingSmileStartAge(
+      next.spendingSmile,
+      "noGoStartAge",
+      patch.noGoStartAge,
+      next.requirementAge,
+      next.lifeExpectancy
+    );
   }
 }
 
@@ -232,19 +279,12 @@ function applyRetirementAgePatch(
   );
   next.requirementAge = normalizeSetting("requirementAge", retirementAge);
 
-  if (
-    next.spendingStrategyType === "SPENDING_SMILE" &&
-    next.spendingSmile.slowGoStartAge <= next.requirementAge
-  ) {
-    const slowGoStartAge = Math.min(119, next.requirementAge + 1);
-    next.spendingSmile = {
-      ...next.spendingSmile,
-      slowGoStartAge,
-      noGoStartAge: Math.max(
-        next.spendingSmile.noGoStartAge,
-        slowGoStartAge + 1
-      ),
-    };
+  if (next.spendingStrategyType === "SPENDING_SMILE") {
+    next.spendingSmile = reconcileSpendingSmilePhaseAges(
+      next.spendingSmile,
+      next.requirementAge,
+      next.lifeExpectancy
+    );
   }
 
   if (alphaDrawAgeWasAligned && next.requirementAge > previousRetirementAge) {
@@ -617,7 +657,7 @@ export function updateSetting({
             ? normalizeSippDrawAge(value as number, current.dateOfBirth)
             : normalizeSetting(key, value);
 
-    return {
+    const next = {
       ...current,
       [key]: normalizedValue,
       ...(key === "dateOfBirth"
@@ -640,6 +680,17 @@ export function updateSetting({
           }
         : {}),
     };
+
+    return key === "lifeExpectancy"
+      ? {
+          ...next,
+          spendingSmile: reconcileSpendingSmilePhaseAges(
+            next.spendingSmile,
+            next.requirementAge,
+            normalizedValue as number
+          ),
+        }
+      : next;
   });
 }
 

@@ -70,7 +70,10 @@ import {
   normalizeSippDrawAge,
   normalizeStatePensionDrawAge,
 } from "./settings-shared/state";
-import { normalizeSpendingSmile } from "../spending-smile";
+import {
+  normalizeSpendingSmile,
+  reconcileSpendingSmilePhaseAges,
+} from "../spending-smile";
 
 const numericSettingRules = {
   ...personalDetailsNumericSettingRules,
@@ -387,15 +390,23 @@ export function normalizeSetting<K extends keyof PensionSettings>(
 
 export function normalizeSettings(settings: PensionSettings): PensionSettings {
   const dateOfBirth = normalizeSetting("dateOfBirth", settings.dateOfBirth);
+  const lifeExpectancy = normalizeSetting(
+    "lifeExpectancy",
+    settings.lifeExpectancy
+  );
   const requirementAge = normalizeSetting(
     "requirementAge",
     settings.requirementAge
+  );
+  const desiredRetirementIncome = normalizeSetting(
+    "desiredRetirementIncome",
+    settings.desiredRetirementIncome
   );
 
   return {
     startDate: normalizeSetting("startDate", settings.startDate),
     dateOfBirth,
-    lifeExpectancy: normalizeSetting("lifeExpectancy", settings.lifeExpectancy),
+    lifeExpectancy,
     requirementAge,
     normalPensionAge: calculateNormalPensionAge(dateOfBirth),
     showAlpha: settings.showAlpha !== false,
@@ -439,20 +450,15 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "currentStatePension",
       settings.currentStatePension
     ),
-    desiredRetirementIncome: normalizeSetting(
-      "desiredRetirementIncome",
-      settings.desiredRetirementIncome
-    ),
+    desiredRetirementIncome,
     spendingStrategyType:
       settings.spendingStrategyType === "SPENDING_SMILE"
         ? "SPENDING_SMILE"
         : "FLAT",
-    spendingSmile: normalizeSpendingSmile(
-      settings.spendingSmile,
-      normalizeSetting(
-        "desiredRetirementIncome",
-        settings.desiredRetirementIncome
-      )
+    spendingSmile: reconcileSpendingSmilePhaseAges(
+      normalizeSpendingSmile(settings.spendingSmile, desiredRetirementIncome),
+      requirementAge,
+      lifeExpectancy
     ),
     statePensionDrawDate: normalizeStatePensionDrawDate(
       settings.statePensionDrawDate,

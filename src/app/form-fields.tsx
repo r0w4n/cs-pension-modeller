@@ -3,6 +3,7 @@ import type {
   FieldDefinition,
   SettingsKey,
 } from "../fieldDefinitions";
+import type { ReactNode } from "react";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import {
   isFieldDisabled,
@@ -36,6 +37,7 @@ type SettingsFieldsProps = {
   onChange: SettingsFieldOnChange;
   showGuidanceNotes: boolean;
   useDropdownDates: boolean;
+  children?: ReactNode;
 };
 
 export {
@@ -53,6 +55,7 @@ export function SettingsFields({
   onChange,
   showGuidanceNotes,
   useDropdownDates,
+  children,
 }: SettingsFieldsProps) {
   const visibleFields = fields.filter((field) =>
     shouldRenderField(field.id, settings)
@@ -77,6 +80,7 @@ export function SettingsFields({
           )}
         />
       ))}
+      {children}
     </div>
   );
 }

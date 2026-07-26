@@ -4,6 +4,7 @@ import {
   migrateFromV3ToV4,
   migrateFromV4ToV5,
   migrateFromV5ToV6,
+  migrateFromV6ToV7,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -103,6 +104,32 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("converts legacy phase amounts to percentages of the selected target", () => {
+    expect(
+      migrateFromV6ToV7({
+        desiredRetirementIncome: 30_000,
+        spendingStrategyType: "SPENDING_SMILE",
+        spendingSmile: {
+          slowGoStartAge: 72,
+          noGoStartAge: 84,
+          goGo: { annualAmountReal: 33_000, percentageOfGoGo: 100 },
+          slowGo: { annualAmountReal: 24_000, percentageOfGoGo: 80 },
+          noGo: { annualAmountReal: 18_000, percentageOfGoGo: 60 },
+        },
+      })
+    ).toEqual({
+      desiredRetirementIncome: 30_000,
+      spendingStrategyType: "SPENDING_SMILE",
+      spendingSmile: {
+        goGoPercentage: 110,
+        slowGoStartAge: 72,
+        slowGoPercentage: 80,
+        noGoStartAge: 84,
+        noGoPercentage: 60,
+      },
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -131,6 +158,13 @@ describe("settings-migrations", () => {
       csAvcWithdrawalTargetAge: 75,
       taxCsAvcTaxFreeWithdrawalPercent: 25,
       spendingStrategyType: "FLAT",
+      spendingSmile: {
+        goGoPercentage: 100,
+        slowGoStartAge: 75,
+        slowGoPercentage: 85,
+        noGoStartAge: 85,
+        noGoPercentage: 70,
+      },
     });
   });
 

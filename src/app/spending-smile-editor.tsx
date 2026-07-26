@@ -1,24 +1,25 @@
 import { useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import {
-  applyRlsTarget,
-  applySpendingSmileProfile,
-  classifyRlsTarget,
-  getRlsClassificationLabel,
-  initializeSpendingSmile,
-  retirementLivingStandards,
-  switchSpendingSmileInputMode,
-  updateGoGoAnnualAmount,
-  updatePhaseAnnualAmount,
-  updatePhasePercentage,
-  type RlsLevel,
+  calculateSmilePhaseTarget,
+  getSpendingSmileStartAgeBounds,
+  MAX_SPENDING_SMILE_PERCENTAGE,
+  MIN_SPENDING_SMILE_PERCENTAGE,
+  updateSpendingSmileStartAge,
+  updateSpendingSmilePercentage,
+  type SmilePercentageField,
 } from "../spending-smile";
 import {
   formatCurrency,
   type PensionSettings,
+  type PensionValidationIssue,
   type SpendingSmileStrategy,
 } from "../settings";
 import type { SettingsFieldOnChange } from "./form-fields";
+import {
+  FieldValidationMessages,
+  getFieldCardClassName,
+} from "./form-fields-shared";
 
 type PhaseKey = "goGo" | "slowGo" | "noGo";
 
@@ -26,270 +27,379 @@ const phaseDetails = {
   goGo: {
     title: "Go-go years",
     description: "Active early retirement",
+    percentageField: "goGoPercentage",
   },
   slowGo: {
     title: "Slow-go years",
     description: "Middle retirement",
+    percentageField: "slowGoPercentage",
   },
   noGo: {
     title: "No-go years",
     description: "Later retirement",
+    percentageField: "noGoPercentage",
   },
-} as const;
+} as const satisfies Record<
+  PhaseKey,
+  {
+    title: string;
+    description: string;
+    percentageField: SmilePercentageField;
+  }
+>;
 
 export function SpendingSmileEditor({
   settings,
+  validationIssues,
   onChange,
 }: {
   settings: PensionSettings;
+  validationIssues: PensionValidationIssue[];
   onChange: SettingsFieldOnChange;
 }) {
-  const [ageError, setAgeError] = useState("");
   const strategy = settings.spendingSmile;
   const enabled = settings.spendingStrategyType === "SPENDING_SMILE";
+  const smileValidationIssues = validationIssues.filter(
+    (issue) => issue.field === "spendingSmile"
+  );
 
   function updateStrategy(next: SpendingSmileStrategy) {
     onChange("spendingSmile", next);
   }
 
   function setStrategyType(type: PensionSettings["spendingStrategyType"]) {
-    if (type === "SPENDING_SMILE") {
-      updateStrategy(
-        initializeSpendingSmile(strategy, settings.desiredRetirementIncome)
-      );
-      trackAnalyticsEvent("spending_smile_enabled", {
-        expert_mode: true,
-      });
-    } else {
-      trackAnalyticsEvent("spending_smile_disabled", {
-        expert_mode: true,
-      });
-    }
+    trackAnalyticsEvent(
+      type === "SPENDING_SMILE"
+        ? "spending_smile_enabled"
+        : "spending_smile_disabled",
+      { expert_mode: true }
+    );
     onChange("spendingStrategyType", type);
   }
 
   function setStartAge(phase: "slowGo" | "noGo", value: number) {
-    if (phase === "slowGo" && value <= settings.requirementAge) {
-      setAgeError("Slow-go years must start after your retirement age.");
-      return;
-    }
-    if (phase === "slowGo" && value >= strategy.noGoStartAge) {
-      setAgeError("Slow-go years must start before the No-go years.");
-      return;
-    }
-    if (phase === "noGo" && value <= strategy.slowGoStartAge) {
-      setAgeError("No-go years must start after the Slow-go years.");
-      return;
-    }
-
-    setAgeError("");
-    updateStrategy({
-      ...strategy,
-      [phase === "slowGo" ? "slowGoStartAge" : "noGoStartAge"]: value,
-    });
+    updateStrategy(
+      updateSpendingSmileStartAge(
+        strategy,
+        phase === "slowGo" ? "slowGoStartAge" : "noGoStartAge",
+        value,
+        settings.requirementAge,
+        settings.lifeExpectancy
+      )
+    );
     trackAnalyticsEvent("spending_smile_phase_age_changed", {
       phase,
       expert_mode: true,
     });
   }
 
-  function applyRls(phase: PhaseKey, level: RlsLevel) {
-    updateStrategy(applyRlsTarget(strategy, phase, level));
-    trackAnalyticsEvent("spending_smile_rls_target_applied", {
-      phase,
-      rls_level: level,
-      household_type: strategy.householdType,
-      expert_mode: true,
-    });
-  }
-
   return (
-    <section className="spending-smile-editor" aria-labelledby="spending-title">
-      <div className="spending-smile-heading">
-        <p className="eyebrow">Expert feature</p>
-        <h3 id="spending-title">Spending strategy</h3>
-        <p className="section-copy">
-          Choose a flat target or set different spending targets for your
-          active, middle and later retirement years.
+    <div className="spending-smile-editor">
+      <div className="field-card spending-strategy-field">
+        <label className="field-label" htmlFor="spending-strategy">
+          Spending strategy
+        </label>
+        <select
+          id="spending-strategy"
+          className="select-input"
+          value={settings.spendingStrategyType}
+          onChange={(event) =>
+            setStrategyType(
+              event.target.value === "SPENDING_SMILE"
+                ? "SPENDING_SMILE"
+                : "FLAT"
+            )
+          }
+        >
+          <option value="FLAT">Flat spending</option>
+          <option value="SPENDING_SMILE">SMILE spending</option>
+        </select>
+        <p className="field-description">
+          Choose whether your retirement income target remains level or reduces
+          during the later stages of retirement.
         </p>
       </div>
 
-      <fieldset className="spending-strategy-options">
-        <legend className="field-label">Spending strategy</legend>
-        <label className="checkbox-row">
-          <input
-            type="radio"
-            name="spending-strategy"
-            value="FLAT"
-            checked={!enabled}
-            onChange={() => setStrategyType("FLAT")}
-          />
-          <span>Flat spending</span>
-        </label>
-        <label className="checkbox-row">
-          <input
-            type="radio"
-            name="spending-strategy"
-            value="SPENDING_SMILE"
-            checked={enabled}
-            onChange={() => setStrategyType("SPENDING_SMILE")}
-          />
-          <span>Spending Smile — Expert</span>
-        </label>
-      </fieldset>
-
       {enabled ? (
         <>
-          <p className="section-copy">
-            Go-go years represent active early retirement, Slow-go years
-            represent middle retirement, and No-go years represent later
-            retirement. You can change both the ages and spending assumptions.
-          </p>
+          <SpendingPhaseCard
+            phase="goGo"
+            settings={settings}
+            strategy={strategy}
+            validationIssues={smileValidationIssues}
+            onStrategyChange={updateStrategy}
+            onStartAgeChange={setStartAge}
+          />
 
-          <div className="spending-smile-toolbar">
-            <fieldset className="segmented-control">
-              <legend className="field-label">Enter spending as</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="spending-input-mode"
-                  checked={strategy.inputMode === "ANNUAL_AMOUNT"}
-                  onChange={() => {
-                    updateStrategy(
-                      switchSpendingSmileInputMode(strategy, "ANNUAL_AMOUNT")
-                    );
-                    trackAnalyticsEvent("spending_smile_input_mode_changed", {
-                      input_mode: "ANNUAL_AMOUNT",
-                      expert_mode: true,
-                    });
-                  }}
-                />
-                <span>Annual amounts</span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="spending-input-mode"
-                  checked={strategy.inputMode === "PERCENTAGE_OF_GO_GO"}
-                  onChange={() => {
-                    updateStrategy(
-                      switchSpendingSmileInputMode(
-                        strategy,
-                        "PERCENTAGE_OF_GO_GO"
-                      )
-                    );
-                    trackAnalyticsEvent("spending_smile_input_mode_changed", {
-                      input_mode: "PERCENTAGE_OF_GO_GO",
-                      expert_mode: true,
-                    });
-                  }}
-                />
-                <span>Percentages</span>
-              </label>
-            </fieldset>
+          {(["slowGo", "noGo"] as const).map((phase) => (
+            <SpendingPhaseCard
+              key={phase}
+              phase={phase}
+              settings={settings}
+              strategy={strategy}
+              validationIssues={smileValidationIssues}
+              onStrategyChange={updateStrategy}
+              onStartAgeChange={setStartAge}
+            />
+          ))}
 
-            <label className="spending-smile-household">
-              <span className="field-label">RLS household type</span>
-              <select
-                value={strategy.householdType}
-                onChange={(event) =>
-                  updateStrategy({
-                    ...strategy,
-                    householdType:
-                      event.target.value === "TWO_PERSON"
-                        ? "TWO_PERSON"
-                        : "ONE_PERSON",
-                  })
-                }
-              >
-                <option value="ONE_PERSON">One-person household</option>
-                <option value="TWO_PERSON">Two-person household</option>
-              </select>
-            </label>
+          <div className="spending-smile-configuration">
+            <SpendingProfileChart settings={settings} strategy={strategy} />
+
+            {isIncreasingProfile(strategy) ? (
+              <p className="spending-smile-warning">
+                A later phase uses a higher percentage than the phase before it.
+                This is valid, but it does not form a conventional spending
+                smile.
+              </p>
+            ) : null}
           </div>
-
-          <p className="field-help">
-            Retirement Living Standards are household expenditure figures.
-            Select the household type whose costs you are modelling.
-          </p>
-
-          <div className="spending-smile-presets">
-            <span className="field-label">Profile presets</span>
-            <div className="spending-smile-actions">
-              <ProfileButton
-                label="Existing target with reductions"
-                onClick={() =>
-                  applyProfile(
-                    "EXISTING_REDUCTIONS",
-                    strategy,
-                    settings,
-                    updateStrategy
-                  )
-                }
-              />
-              <ProfileButton
-                label="RLS tiered profile"
-                onClick={() =>
-                  applyProfile("RLS_TIERED", strategy, settings, updateStrategy)
-                }
-              />
-              <ProfileButton
-                label="Moderate profile"
-                onClick={() =>
-                  applyProfile("MODERATE", strategy, settings, updateStrategy)
-                }
-              />
-            </div>
-            <p className="field-help">
-              These profiles are illustrative starting points, not
-              recommendations.
-            </p>
-          </div>
-
-          {ageError ? (
-            <p className="validation-message" role="alert">
-              {ageError}
-            </p>
-          ) : null}
-
-          <div className="spending-phase-grid">
-            {(["goGo", "slowGo", "noGo"] as const).map((phase) => (
-              <SpendingPhaseCard
-                key={phase}
-                phase={phase}
-                settings={settings}
-                strategy={strategy}
-                onStrategyChange={updateStrategy}
-                onStartAgeChange={setStartAge}
-                onApplyRls={applyRls}
-              />
-            ))}
-          </div>
-
-          <SpendingProfileChart settings={settings} strategy={strategy} />
-
-          {isIncreasingProfile(strategy) ? (
-            <p className="spending-smile-warning">
-              Later-phase spending is higher than earlier-phase spending. This
-              is valid, but it does not form a conventional spending smile.
-            </p>
-          ) : null}
-
-          <p className="spending-smile-warning">
-            Pensions UK/Loughborough University Retirement Living Standards
-            exclude rent and mortgage payments. Add any expected housing costs
-            to your target.
-          </p>
-
-          <p className="visually-hidden" aria-live="polite">
-            Slow-go spending is{" "}
-            {formatCurrency(strategy.slowGo.annualAmountReal)} per year. No-go
-            spending is {formatCurrency(strategy.noGo.annualAmountReal)} per
-            year.
-          </p>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function SpendingPhaseCard({
+  phase,
+  settings,
+  strategy,
+  validationIssues,
+  onStrategyChange,
+  onStartAgeChange,
+}: {
+  phase: PhaseKey;
+  settings: PensionSettings;
+  strategy: SpendingSmileStrategy;
+  validationIssues: PensionValidationIssue[];
+  onStrategyChange: (strategy: SpendingSmileStrategy) => void;
+  onStartAgeChange: (phase: "slowGo" | "noGo", value: number) => void;
+}) {
+  const details = phaseDetails[phase];
+  const percentage = strategy[details.percentageField];
+  const [draftPercentage, setDraftPercentage] = useState<number | null>(null);
+  const displayedPercentage = draftPercentage ?? percentage;
+  const validationItemIds =
+    phase === "goGo"
+      ? ["goGoPercentage"]
+      : phase === "slowGo"
+        ? ["slowGoStartAge", "slowGoPercentage"]
+        : ["noGoStartAge", "noGoPercentage"];
+  const phaseValidationIssues = validationIssues.filter(
+    (issue) => issue.itemId && validationItemIds.includes(issue.itemId)
+  );
+  const validationId =
+    phaseValidationIssues.length > 0
+      ? `spending-smile-${phase}-validation`
+      : undefined;
+  const startAge =
+    phase === "goGo"
+      ? settings.requirementAge
+      : phase === "slowGo"
+        ? strategy.slowGoStartAge
+        : strategy.noGoStartAge;
+  const [draftStartAge, setDraftStartAge] = useState<number | null>(null);
+  const displayedStartAge =
+    phase === "goGo" ? startAge : (draftStartAge ?? startAge);
+  const endAge =
+    phase === "goGo"
+      ? strategy.slowGoStartAge - 1
+      : phase === "slowGo"
+        ? strategy.noGoStartAge - 1
+        : settings.lifeExpectancy;
+  const notReached = startAge > settings.lifeExpectancy;
+  const calculatedTarget = calculateSmilePhaseTarget(
+    settings.desiredRetirementIncome,
+    percentage
+  );
+  const startAgeBounds = getPhaseStartAgeBounds(phase, strategy, settings);
+  const minimumStartAge = startAgeBounds.min;
+  const maximumStartAge = startAgeBounds.max;
+  const sliderStartAge = Math.min(
+    maximumStartAge,
+    Math.max(minimumStartAge, displayedStartAge)
+  );
+
+  function commitStartAge(value: number) {
+    setDraftStartAge(null);
+    if (phase === "goGo" || value === startAge) {
+      return;
+    }
+    onStartAgeChange(phase, value);
+  }
+
+  function commitPercentage(value: number) {
+    setDraftPercentage(null);
+    const nextStrategy = updateSpendingSmilePercentage(
+      strategy,
+      details.percentageField,
+      value
+    );
+    if (nextStrategy[details.percentageField] === percentage) {
+      return;
+    }
+    onStrategyChange(nextStrategy);
+  }
+
+  return (
+    <section
+      className={`${getFieldCardClassName(
+        false,
+        false,
+        phaseValidationIssues.length > 0
+      )} spending-phase-card`}
+    >
+      <h4>
+        {details.title} ({details.description})
+      </h4>
+
+      {phase === "goGo" ? (
+        <p className="spending-phase-range">
+          Starts at your retirement age: {settings.requirementAge}
+        </p>
+      ) : (
+        <div className="spending-phase-field">
+          <span>Start age</span>
+          <div className="range-control-grid">
+            <div className="range-slider-group">
+              <input
+                className="range-input"
+                type="range"
+                aria-label={`${details.title} start age`}
+                aria-valuetext={`Age ${displayedStartAge}`}
+                min={minimumStartAge}
+                max={maximumStartAge}
+                step={1}
+                value={sliderStartAge}
+                aria-invalid={phaseValidationIssues.length > 0 || undefined}
+                aria-describedby={validationId}
+                onChange={(event) =>
+                  setDraftStartAge(Number(event.target.value))
+                }
+                onPointerUp={(event) =>
+                  commitStartAge(Number(event.currentTarget.value))
+                }
+                onKeyUp={(event) =>
+                  commitStartAge(Number(event.currentTarget.value))
+                }
+                onBlur={(event) =>
+                  commitStartAge(Number(event.currentTarget.value))
+                }
+              />
+              <div className="range-scale">
+                <span>Age {minimumStartAge}</span>
+                <span>Age {maximumStartAge}</span>
+              </div>
+            </div>
+            <input
+              className="number-input"
+              type="number"
+              aria-label={`${details.title} start age exact value`}
+              min={minimumStartAge}
+              max={maximumStartAge}
+              step={1}
+              value={displayedStartAge}
+              aria-invalid={phaseValidationIssues.length > 0 || undefined}
+              aria-describedby={validationId}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                setDraftStartAge(value);
+                commitStartAge(value);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <p className="spending-phase-range">
+        {notReached
+          ? "This phase starts after the end of the current projection."
+          : `Age ${startAge} to ${endAge}`}
+      </p>
+
+      <div className="spending-phase-field">
+        <span>Percentage of Retirement Living Standards target</span>
+        <div className="range-control-grid">
+          <div className="range-slider-group">
+            <input
+              className="range-input"
+              type="range"
+              aria-label={`${details.title} percentage of Retirement Living Standards target`}
+              aria-valuetext={`${displayedPercentage}%`}
+              min={MIN_SPENDING_SMILE_PERCENTAGE}
+              max={MAX_SPENDING_SMILE_PERCENTAGE}
+              step={1}
+              value={Math.max(
+                MIN_SPENDING_SMILE_PERCENTAGE,
+                displayedPercentage
+              )}
+              aria-invalid={phaseValidationIssues.length > 0 || undefined}
+              aria-describedby={validationId}
+              onChange={(event) =>
+                setDraftPercentage(Number(event.target.value))
+              }
+              onPointerUp={(event) =>
+                commitPercentage(Number(event.currentTarget.value))
+              }
+              onKeyUp={(event) =>
+                commitPercentage(Number(event.currentTarget.value))
+              }
+              onBlur={(event) =>
+                commitPercentage(Number(event.currentTarget.value))
+              }
+            />
+            <div className="range-scale">
+              <span>{MIN_SPENDING_SMILE_PERCENTAGE}%</span>
+              <span>{MAX_SPENDING_SMILE_PERCENTAGE}%</span>
+            </div>
+          </div>
+          <input
+            className="number-input"
+            type="number"
+            aria-label={`${details.title} percentage exact value`}
+            min={MIN_SPENDING_SMILE_PERCENTAGE}
+            max={MAX_SPENDING_SMILE_PERCENTAGE}
+            step={1}
+            value={displayedPercentage}
+            aria-invalid={phaseValidationIssues.length > 0 || undefined}
+            aria-describedby={validationId}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              setDraftPercentage(value);
+              commitPercentage(value);
+            }}
+          />
+        </div>
+      </div>
+
+      <p className="spending-phase-derived">
+        {percentage}% of your selected retirement income target:{" "}
+        <strong>{formatCurrency(calculatedTarget)} per year</strong>
+      </p>
+      <FieldValidationMessages
+        id={validationId}
+        issues={phaseValidationIssues}
+      />
     </section>
+  );
+}
+
+function getPhaseStartAgeBounds(
+  phase: PhaseKey,
+  strategy: SpendingSmileStrategy,
+  settings: PensionSettings
+) {
+  const minimumStartAge = Math.floor(settings.requirementAge) + 1;
+
+  if (phase === "goGo") {
+    return { min: minimumStartAge, max: minimumStartAge };
+  }
+
+  return getSpendingSmileStartAgeBounds(
+    strategy,
+    phase === "slowGo" ? "slowGoStartAge" : "noGoStartAge",
+    settings.requirementAge,
+    settings.lifeExpectancy
   );
 }
 
@@ -303,61 +413,115 @@ function SpendingProfileChart({
   const startAge = settings.requirementAge;
   const endAge = Math.max(startAge + 1, settings.lifeExpectancy);
   const ageSpan = endAge - startAge;
+  const phaseTargets = {
+    goGo: calculateSmilePhaseTarget(
+      settings.desiredRetirementIncome,
+      strategy.goGoPercentage
+    ),
+    slowGo: calculateSmilePhaseTarget(
+      settings.desiredRetirementIncome,
+      strategy.slowGoPercentage
+    ),
+    noGo: calculateSmilePhaseTarget(
+      settings.desiredRetirementIncome,
+      strategy.noGoPercentage
+    ),
+  };
   const maximumTarget = Math.max(
-    1,
-    strategy.goGo.annualAmountReal,
-    strategy.slowGo.annualAmountReal,
-    strategy.noGo.annualAmountReal
+    0,
+    phaseTargets.goGo,
+    phaseTargets.slowGo,
+    phaseTargets.noGo
   );
+  const yAxis = createProfileYAxis(maximumTarget);
+  const plotLeft = 76;
+  const plotRight = 476;
+  const plotTop = 32;
+  const plotBottom = 150;
   const x = (age: number) =>
-    24 +
-    ((Math.min(endAge, Math.max(startAge, age)) - startAge) / ageSpan) * 452;
-  const y = (amount: number) => 150 - (amount / maximumTarget) * 118;
+    plotLeft +
+    ((Math.min(endAge, Math.max(startAge, age)) - startAge) / ageSpan) *
+      (plotRight - plotLeft);
+  const y = (target: number) =>
+    plotBottom - (target / yAxis.maximum) * (plotBottom - plotTop);
   const slowX = x(strategy.slowGoStartAge);
   const noX = x(strategy.noGoStartAge);
   const endX = x(endAge);
   const slowGoReached = strategy.slowGoStartAge <= endAge;
   const noGoReached = strategy.noGoStartAge <= endAge;
   const path = [
-    `M 24 ${y(strategy.goGo.annualAmountReal)}`,
-    ...(slowGoReached
-      ? [`H ${slowX}`, `V ${y(strategy.slowGo.annualAmountReal)}`]
-      : []),
-    ...(noGoReached
-      ? [`H ${noX}`, `V ${y(strategy.noGo.annualAmountReal)}`]
-      : []),
+    `M ${plotLeft} ${y(phaseTargets.goGo)}`,
+    ...(slowGoReached ? [`H ${slowX}`, `V ${y(phaseTargets.slowGo)}`] : []),
+    ...(noGoReached ? [`H ${noX}`, `V ${y(phaseTargets.noGo)}`] : []),
     `H ${endX}`,
   ].join(" ");
 
   return (
     <figure className="spending-profile-chart">
       <figcaption>
-        <strong>Modelled spending profile</strong>
-        <span> Annual spending in today&apos;s money by age</span>
+        <strong>Modelled SMILE profile</strong>
+        <span>Annual spending target (£ per year) by age</span>
       </figcaption>
       <svg
         viewBox="0 0 500 190"
         role="img"
         aria-labelledby="spending-profile-title spending-profile-description"
       >
-        <title id="spending-profile-title">Spending Smile profile</title>
+        <title id="spending-profile-title">SMILE spending profile</title>
         <desc id="spending-profile-description">
-          Go-go spending is {formatCurrency(strategy.goGo.annualAmountReal)}{" "}
-          from age {startAge}, Slow-go spending is{" "}
-          {formatCurrency(strategy.slowGo.annualAmountReal)} from age{" "}
-          {strategy.slowGoStartAge}, and No-go spending is{" "}
-          {formatCurrency(strategy.noGo.annualAmountReal)} from age{" "}
-          {strategy.noGoStartAge}.
+          Go-go annual spending is {formatCurrency(phaseTargets.goGo)} from age{" "}
+          {startAge}, Slow-go annual spending is{" "}
+          {formatCurrency(phaseTargets.slowGo)} from age{" "}
+          {strategy.slowGoStartAge}, and No-go annual spending is{" "}
+          {formatCurrency(phaseTargets.noGo)} from age {strategy.noGoStartAge}.
         </desc>
-        <line className="profile-axis" x1="24" x2="476" y1="150" y2="150" />
+        <g data-testid="spending-profile-y-axis" aria-hidden="true">
+          {yAxis.ticks.map((tick) => {
+            const tickY = y(tick);
+
+            return (
+              <g key={tick} data-testid="spending-profile-y-axis-tick">
+                <line
+                  className="profile-y-axis-grid-line"
+                  x1={plotLeft}
+                  x2={plotRight}
+                  y1={tickY}
+                  y2={tickY}
+                />
+                <text
+                  className="profile-y-axis-label"
+                  textAnchor="end"
+                  x={plotLeft - 8}
+                  y={tickY + 4}
+                >
+                  {formatCurrency(tick)}
+                </text>
+              </g>
+            );
+          })}
+          <line
+            className="profile-axis"
+            x1={plotLeft}
+            x2={plotLeft}
+            y1={plotTop}
+            y2={plotBottom}
+          />
+        </g>
+        <line
+          className="profile-axis"
+          x1={plotLeft}
+          x2={plotRight}
+          y1={plotBottom}
+          y2={plotBottom}
+        />
         {slowGoReached ? (
           <line
             data-testid="spending-phase-boundary"
             className="profile-boundary"
             x1={slowX}
             x2={slowX}
-            y1="24"
-            y2="150"
+            y1={plotTop}
+            y2={plotBottom}
           />
         ) : null}
         {noGoReached ? (
@@ -366,12 +530,12 @@ function SpendingProfileChart({
             className="profile-boundary"
             x1={noX}
             x2={noX}
-            y1="24"
-            y2="150"
+            y1={plotTop}
+            y2={plotBottom}
           />
         ) : null}
         <path className="profile-target-line" d={path} />
-        <text x="24" y="174">
+        <text x={plotLeft} y="174">
           {startAge}
         </text>
         {slowGoReached ? (
@@ -384,7 +548,7 @@ function SpendingProfileChart({
             {strategy.noGoStartAge}
           </text>
         ) : null}
-        <text textAnchor="end" x="476" y="174">
+        <text textAnchor="end" x={plotRight} y="174">
           {endAge}
         </text>
       </svg>
@@ -392,209 +556,37 @@ function SpendingProfileChart({
   );
 }
 
-function SpendingPhaseCard({
-  phase,
-  settings,
-  strategy,
-  onStrategyChange,
-  onStartAgeChange,
-  onApplyRls,
-}: {
-  phase: PhaseKey;
-  settings: PensionSettings;
-  strategy: SpendingSmileStrategy;
-  onStrategyChange: (strategy: SpendingSmileStrategy) => void;
-  onStartAgeChange: (phase: "slowGo" | "noGo", value: number) => void;
-  onApplyRls: (phase: PhaseKey, level: RlsLevel) => void;
-}) {
-  const target = strategy[phase];
-  const startAge =
-    phase === "goGo"
-      ? settings.requirementAge
-      : phase === "slowGo"
-        ? strategy.slowGoStartAge
-        : strategy.noGoStartAge;
-  const endAge =
-    phase === "goGo"
-      ? strategy.slowGoStartAge - 1
-      : phase === "slowGo"
-        ? strategy.noGoStartAge - 1
-        : settings.lifeExpectancy;
-  const notReached = startAge > settings.lifeExpectancy;
-  const classification = classifyRlsTarget(
-    target.annualAmountReal,
-    strategy.householdType
+function createProfileYAxis(maximumTarget: number) {
+  if (maximumTarget <= 0) {
+    return { maximum: 1, ticks: [0] };
+  }
+
+  const targetIntervals = 5;
+  const roughIncrement = maximumTarget / targetIntervals;
+  const magnitude = 10 ** Math.floor(Math.log10(roughIncrement));
+  const normalizedIncrement = roughIncrement / magnitude;
+  const incrementMultiplier =
+    normalizedIncrement <= 1
+      ? 1
+      : normalizedIncrement <= 2
+        ? 2
+        : normalizedIncrement <= 5
+          ? 5
+          : 10;
+  const increment = incrementMultiplier * magnitude;
+  const maximum = Math.ceil(maximumTarget / increment) * increment;
+  const intervalCount = Math.round(maximum / increment);
+  const ticks = Array.from(
+    { length: intervalCount + 1 },
+    (_, index) => maximum - index * increment
   );
 
-  return (
-    <section className="field-card spending-phase-card">
-      <h4>{phaseDetails[phase].title}</h4>
-      <p>{phaseDetails[phase].description}</p>
-
-      {phase === "goGo" ? (
-        <p className="spending-phase-range">
-          Starts at your retirement age: {settings.requirementAge}
-        </p>
-      ) : (
-        <label className="spending-phase-field">
-          <span>Starts at age</span>
-          <input
-            type="number"
-            aria-label={`${phaseDetails[phase].title} starts at age`}
-            min={settings.requirementAge + 1}
-            max={120}
-            step={1}
-            value={startAge}
-            onChange={(event) =>
-              onStartAgeChange(phase, Number(event.target.value))
-            }
-          />
-        </label>
-      )}
-
-      <p className="spending-phase-range">
-        {notReached
-          ? "This phase starts after the end of the current projection."
-          : `Age ${startAge} to ${endAge}`}
-      </p>
-
-      {phase === "goGo" || strategy.inputMode === "ANNUAL_AMOUNT" ? (
-        <label className="spending-phase-field">
-          <span>
-            {phaseDetails[phase].title.replace(" years", "")} annual spending
-          </span>
-          <span className="currency-input-control">
-            <span aria-hidden="true">£</span>
-            <input
-              type="number"
-              min={0}
-              max={200000}
-              step={100}
-              value={target.annualAmountReal}
-              onChange={(event) => {
-                const amount = Number(event.target.value);
-                onStrategyChange(
-                  phase === "goGo"
-                    ? updateGoGoAnnualAmount(strategy, amount)
-                    : updatePhaseAnnualAmount(strategy, phase, amount)
-                );
-              }}
-            />
-          </span>
-        </label>
-      ) : (
-        <label className="spending-phase-field">
-          <span>
-            {phaseDetails[phase].title.replace(" years", "")} percentage of
-            Go-go spending
-          </span>
-          <span className="percentage-input-control">
-            <input
-              type="number"
-              min={0}
-              max={300}
-              step={1}
-              value={roundPercentage(target.percentageOfGoGo)}
-              onChange={(event) =>
-                onStrategyChange(
-                  updatePhasePercentage(
-                    strategy,
-                    phase,
-                    Number(event.target.value)
-                  )
-                )
-              }
-            />
-            <span aria-hidden="true">%</span>
-          </span>
-        </label>
-      )}
-
-      <p className="spending-phase-derived">
-        {phase === "goGo"
-          ? "100% of Go-go spending"
-          : strategy.inputMode === "ANNUAL_AMOUNT"
-            ? `${roundPercentage(target.percentageOfGoGo)}% of Go-go spending`
-            : `${formatCurrency(target.annualAmountReal)} per year`}
-      </p>
-      <p className="spending-phase-classification">
-        {getRlsClassificationLabel(classification)}
-      </p>
-      {classification === "BELOW_MINIMUM" ? (
-        <p className="spending-smile-warning">
-          This target is below the current Retirement Living Standards Minimum
-          for the selected household type. The standard also excludes rent and
-          mortgage costs.
-        </p>
-      ) : null}
-
-      <div className="spending-phase-presets">
-        <span className="field-label">Use RLS target</span>
-        <div className="spending-smile-actions">
-          {(["minimum", "moderate", "comfortable"] as const).map((level) => (
-            <button
-              key={level}
-              type="button"
-              className="secondary-button"
-              onClick={() => onApplyRls(phase, level)}
-            >
-              {capitalize(level)}
-            </button>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ProfileButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" className="secondary-button" onClick={onClick}>
-      {label}
-    </button>
-  );
-}
-
-function applyProfile(
-  profile: "EXISTING_REDUCTIONS" | "RLS_TIERED" | "MODERATE",
-  strategy: SpendingSmileStrategy,
-  settings: PensionSettings,
-  onStrategyChange: (strategy: SpendingSmileStrategy) => void
-) {
-  onStrategyChange(
-    applySpendingSmileProfile(
-      strategy,
-      profile,
-      settings.desiredRetirementIncome
-    )
-  );
-  trackAnalyticsEvent("spending_smile_profile_preset_applied", {
-    preset: profile,
-    household_type: strategy.householdType,
-    expert_mode: true,
-  });
-}
-
-function roundPercentage(value: number) {
-  return Math.round(value * 10) / 10;
-}
-
-function capitalize(value: string) {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+  return { maximum, ticks };
 }
 
 function isIncreasingProfile(strategy: SpendingSmileStrategy) {
   return (
-    strategy.slowGo.annualAmountReal > strategy.goGo.annualAmountReal ||
-    strategy.noGo.annualAmountReal > strategy.slowGo.annualAmountReal
+    strategy.slowGoPercentage > strategy.goGoPercentage ||
+    strategy.noGoPercentage > strategy.slowGoPercentage
   );
 }
-
-export const currentRetirementLivingStandards =
-  retirementLivingStandards.values;

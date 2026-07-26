@@ -115,4 +115,53 @@ describe("projection bridge analysis domain", () => {
     expect(firstRow?.csAvcDrawdown).toBeCloseTo(1250, 6);
     expect(firstRow?.unfundedShortfall).toBeCloseTo(0, 6);
   });
+
+  it("uses each Spending Smile phase target without changing bridge order", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2019-01-01",
+      dateOfBirth: "1960-01-01",
+      requirementAge: 60,
+      lifeExpectancy: 62,
+      desiredRetirementIncome: 12_000,
+      spendingStrategyType: "SPENDING_SMILE",
+      spendingSmile: {
+        ...defaultSettings.spendingSmile,
+        slowGoStartAge: 61,
+        noGoStartAge: 62,
+        goGoPercentage: 100,
+        slowGoPercentage: 50,
+        noGoPercentage: 25,
+      },
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: true,
+      showLisa: false,
+      showAdditionalGuaranteedIncome: false,
+      isaCurrentPot: 100_000,
+      isaMonthlyContribution: 0,
+      isaRealInterestPercent: 0,
+      taxationEnabled: false,
+    });
+    const pensionRows = createProjectionTable({
+      ...settings,
+      showIsa: false,
+    });
+
+    const rows = generateRetirementBridgeAnalysis(
+      pensionRows,
+      settings
+    ).potProjection;
+
+    expect(rows.find((row) => row.age === 60)?.monthlyTargetIncome).toBe(1000);
+    expect(rows.find((row) => row.age === 61)?.monthlyTargetIncome).toBe(500);
+    expect(rows.find((row) => row.age === 62)?.monthlyTargetIncome).toBe(250);
+    expect(rows.find((row) => row.age === 60)?.isaDrawdown).toBe(1000);
+  });
 });

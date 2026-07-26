@@ -42,6 +42,41 @@ describe("settings-normalize", () => {
     expect(settings.isaDrawAge).toBe(72);
   });
 
+  it("caps stored SMILE phase ages to life expectancy", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      lifeExpectancy: 80,
+      spendingSmile: {
+        ...createDefaultSettings().spendingSmile,
+        slowGoStartAge: 75,
+        noGoStartAge: 85,
+      },
+    });
+
+    expect(settings.spendingSmile).toMatchObject({
+      slowGoStartAge: 75,
+      noGoStartAge: 80,
+    });
+  });
+
+  it("moves stored SMILE phase ages clear of retirement and each other", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      requirementAge: 70,
+      lifeExpectancy: 80,
+      spendingSmile: {
+        ...createDefaultSettings().spendingSmile,
+        slowGoStartAge: 70,
+        noGoStartAge: 70,
+      },
+    });
+
+    expect(settings.spendingSmile).toMatchObject({
+      slowGoStartAge: 71,
+      noGoStartAge: 72,
+    });
+  });
+
   it("defaults missing additional guaranteed incomes to an empty list", () => {
     const settings = normalizeSettings({
       ...createDefaultSettings(),

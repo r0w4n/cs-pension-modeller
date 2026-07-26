@@ -6029,6 +6029,63 @@ export const acceptanceFeatures = [
         ],
         examples: [],
       },
+      {
+        id: "line-48",
+        keyword: "Scenario",
+        name: "Show SMILE phase assumptions when a compared scenario uses them",
+        description: "",
+        tags: ["@spending-smile"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-49",
+            keyword: "Given",
+            text: 'a default retirement scenario named "Flat plan"',
+          },
+          {
+            id: "line-50",
+            keyword: "And",
+            text: 'a retirement scenario named "SMILE plan" uses SMILE spending',
+          },
+          {
+            id: "line-51",
+            keyword: "When",
+            text: "comparison table rows are built",
+          },
+          {
+            id: "line-52",
+            keyword: "Then",
+            text: 'the comparison should include the "Spending target" section',
+          },
+          {
+            id: "line-53",
+            keyword: "And",
+            text: 'the "Spending strategy" comparison value for "Flat plan" should be "Flat spending"',
+          },
+          {
+            id: "line-54",
+            keyword: "And",
+            text: 'the "Spending strategy" comparison value for "SMILE plan" should be "SMILE spending"',
+          },
+          {
+            id: "line-55",
+            keyword: "And",
+            text: 'the "Slow-go target" comparison value for "Flat plan" should be "n/a"',
+          },
+          {
+            id: "line-56",
+            keyword: "And",
+            text: 'the "Slow-go target" comparison value for "SMILE plan" should include "80%"',
+          },
+          {
+            id: "line-57",
+            keyword: "And",
+            text: 'the "No-go starts" comparison value for "SMILE plan" should be "84"',
+          },
+        ],
+        examples: [],
+      },
     ],
   },
   {
@@ -7321,9 +7378,9 @@ export const acceptanceFeatures = [
       {
         id: "line-31",
         keyword: "Scenario",
-        name: "Bridge journey enables bridge pots and disables tax by default",
+        name: "Separate the expert retirement target from personal details",
         description: "",
-        tags: ["@defaults"],
+        tags: ["@expert-journey"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
@@ -7335,20 +7392,216 @@ export const acceptanceFeatures = [
           {
             id: "line-33",
             keyword: "When",
-            text: "bridge journey defaults are applied",
+            text: 'the "Expert journey" journey is loaded',
           },
           {
             id: "line-34",
             keyword: "Then",
+            text: "the default visible journey steps should be:",
+            table: [
+              {
+                id: "line-35",
+                cells: [
+                  {
+                    id: "line-35-column-9",
+                    value: "title",
+                  },
+                ],
+              },
+              {
+                id: "line-36",
+                cells: [
+                  {
+                    id: "line-36-column-9",
+                    value: "Optional sections",
+                  },
+                ],
+              },
+              {
+                id: "line-37",
+                cells: [
+                  {
+                    id: "line-37-column-9",
+                    value: "Personal details",
+                  },
+                ],
+              },
+              {
+                id: "line-38",
+                cells: [
+                  {
+                    id: "line-38-column-9",
+                    value: "Retirement income target",
+                  },
+                ],
+              },
+              {
+                id: "line-39",
+                cells: [
+                  {
+                    id: "line-39-column-9",
+                    value: "Inflation and projection basis",
+                  },
+                ],
+              },
+              {
+                id: "line-40",
+                cells: [
+                  {
+                    id: "line-40-column-9",
+                    value: "State pension details",
+                  },
+                ],
+              },
+              {
+                id: "line-41",
+                cells: [
+                  {
+                    id: "line-41-column-9",
+                    value: "Alpha pension details",
+                  },
+                ],
+              },
+              {
+                id: "line-42",
+                cells: [
+                  {
+                    id: "line-42-column-9",
+                    value: "Additional guaranteed income",
+                  },
+                ],
+              },
+              {
+                id: "line-43",
+                cells: [
+                  {
+                    id: "line-43-column-9",
+                    value: "SIPP details",
+                  },
+                ],
+              },
+              {
+                id: "line-44",
+                cells: [
+                  {
+                    id: "line-44-column-9",
+                    value: "ISA details",
+                  },
+                ],
+              },
+              {
+                id: "line-45",
+                cells: [
+                  {
+                    id: "line-45-column-9",
+                    value: "Your results",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-46",
+            keyword: "And",
+            text: 'the "Personal details" journey step should contain these fields:',
+            table: [
+              {
+                id: "line-47",
+                cells: [
+                  {
+                    id: "line-47-column-9",
+                    value: "field",
+                  },
+                ],
+              },
+              {
+                id: "line-48",
+                cells: [
+                  {
+                    id: "line-48-column-9",
+                    value: "Your Birth Month and Year",
+                  },
+                ],
+              },
+              {
+                id: "line-49",
+                cells: [
+                  {
+                    id: "line-49-column-9",
+                    value: "Life Expectancy (Age)",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-50",
+            keyword: "And",
+            text: 'the "Retirement income target" journey step should contain these fields:',
+            table: [
+              {
+                id: "line-51",
+                cells: [
+                  {
+                    id: "line-51-column-9",
+                    value: "field",
+                  },
+                ],
+              },
+              {
+                id: "line-52",
+                cells: [
+                  {
+                    id: "line-52-column-9",
+                    value: "Retirement Living Standards target (£ per year)",
+                  },
+                ],
+              },
+              {
+                id: "line-53",
+                cells: [
+                  {
+                    id: "line-53-column-9",
+                    value: "Target retirement age",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-56",
+        keyword: "Scenario",
+        name: "Bridge journey enables bridge pots and disables tax by default",
+        description: "",
+        tags: ["@defaults"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-57",
+            keyword: "Given",
+            text: "default modeller settings",
+          },
+          {
+            id: "line-58",
+            keyword: "When",
+            text: "bridge journey defaults are applied",
+          },
+          {
+            id: "line-59",
+            keyword: "Then",
             text: "State Pension, ISA, LISA and SIPP should be included",
           },
           {
-            id: "line-35",
+            id: "line-60",
             keyword: "And",
             text: "Income Tax modelling should be off",
           },
           {
-            id: "line-36",
+            id: "line-61",
             keyword: "And",
             text: "ISA, LISA and SIPP withdrawals should use the use-by-age strategy",
           },
@@ -9822,6 +10075,768 @@ export const acceptanceFeatures = [
             id: "line-46",
             keyword: "And",
             text: "every journey that exposes SIPP draw start age should keep protected SIPP controls after it",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
+    path: "features/spending-smile.feature",
+    name: "Configure a retirement spending strategy",
+    description: "",
+    tags: [],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-7",
+        keyword: "Scenario",
+        name: "Retirement Living Standards target is shown before spending strategy",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-8",
+            keyword: "Then",
+            text: "the Retirement Living Standards target should be displayed first",
+          },
+          {
+            id: "line-9",
+            keyword: "And",
+            text: "the spending strategy dropdown should be displayed beneath it",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-11",
+        keyword: "Scenario",
+        name: "Flat spending is selected",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-12",
+            keyword: "Given",
+            text: "the user has selected a Retirement Living Standards target of £30000",
+          },
+          {
+            id: "line-13",
+            keyword: "When",
+            text: 'the user selects "Flat spending"',
+          },
+          {
+            id: "line-14",
+            keyword: "Then",
+            text: "the SMILE configuration fields should not be displayed",
+          },
+          {
+            id: "line-15",
+            keyword: "And",
+            text: "the spending target should remain at 100 percent of the selected target",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-17",
+        keyword: "Scenario",
+        name: "SMILE spending is selected",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-18",
+            keyword: "Given",
+            text: "the user has selected a Retirement Living Standards target of £30000",
+          },
+          {
+            id: "line-19",
+            keyword: "When",
+            text: 'the user selects "SMILE spending"',
+          },
+          {
+            id: "line-20",
+            keyword: "Then",
+            text: "the SMILE configuration fields should be displayed",
+          },
+          {
+            id: "line-21",
+            keyword: "And",
+            text: "the stored SMILE configuration should contain percentages and phase ages",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-23",
+        keyword: "Scenario",
+        name: "Separate monetary phase targets are not requested",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-24",
+            keyword: "When",
+            text: 'the user selects "SMILE spending"',
+          },
+          {
+            id: "line-25",
+            keyword: "Then",
+            text: "the stored SMILE configuration should not contain monetary phase targets",
+          },
+          {
+            id: "line-26",
+            keyword: "And",
+            text: "all phase targets should be calculated from the selected Retirement Living Standards target",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-28",
+        keyword: "Scenario Outline",
+        name: "Each SMILE phase target is calculated from the selected target",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-29",
+            keyword: "Given",
+            text: "the user has selected a Retirement Living Standards target of £30000",
+          },
+          {
+            id: "line-30",
+            keyword: "And",
+            text: 'the user selected "SMILE spending"',
+          },
+          {
+            id: "line-31",
+            keyword: "And",
+            text: 'the "<phase>" percentage is <percentage> percent',
+          },
+          {
+            id: "line-32",
+            keyword: "When",
+            text: "the spending target is calculated at age <age>",
+          },
+          {
+            id: "line-33",
+            keyword: "Then",
+            text: 'the spending phase should be "<resolvedPhase>"',
+          },
+          {
+            id: "line-34",
+            keyword: "And",
+            text: "the spending target should be £<target> per year",
+          },
+        ],
+        examples: [
+          {
+            id: "line-36",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-37",
+                cells: [
+                  {
+                    id: "line-37-column-9",
+                    value: "phase",
+                  },
+                  {
+                    id: "line-37-column-19",
+                    value: "percentage",
+                  },
+                  {
+                    id: "line-37-column-32",
+                    value: "age",
+                  },
+                  {
+                    id: "line-37-column-38",
+                    value: "resolvedPhase",
+                  },
+                  {
+                    id: "line-37-column-54",
+                    value: "target",
+                  },
+                ],
+              },
+              {
+                id: "line-38",
+                cells: [
+                  {
+                    id: "line-38-column-9",
+                    value: "Go-go",
+                  },
+                  {
+                    id: "line-38-column-19",
+                    value: "100",
+                  },
+                  {
+                    id: "line-38-column-32",
+                    value: "60",
+                  },
+                  {
+                    id: "line-38-column-38",
+                    value: "GO_GO",
+                  },
+                  {
+                    id: "line-38-column-53",
+                    value: "30000",
+                  },
+                ],
+              },
+              {
+                id: "line-39",
+                cells: [
+                  {
+                    id: "line-39-column-9",
+                    value: "Slow-go",
+                  },
+                  {
+                    id: "line-39-column-19",
+                    value: "85",
+                  },
+                  {
+                    id: "line-39-column-32",
+                    value: "75",
+                  },
+                  {
+                    id: "line-39-column-38",
+                    value: "SLOW_GO",
+                  },
+                  {
+                    id: "line-39-column-53",
+                    value: "25500",
+                  },
+                ],
+              },
+              {
+                id: "line-40",
+                cells: [
+                  {
+                    id: "line-40-column-9",
+                    value: "No-go",
+                  },
+                  {
+                    id: "line-40-column-19",
+                    value: "70",
+                  },
+                  {
+                    id: "line-40-column-32",
+                    value: "85",
+                  },
+                  {
+                    id: "line-40-column-38",
+                    value: "NO_GO",
+                  },
+                  {
+                    id: "line-40-column-53",
+                    value: "21000",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-42",
+        keyword: "Scenario",
+        name: "Go-go phase starts at retirement",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-43",
+            keyword: "Given",
+            text: "the user's retirement age is 60",
+          },
+          {
+            id: "line-44",
+            keyword: "And",
+            text: "the slow-go start age is 70",
+          },
+          {
+            id: "line-45",
+            keyword: "When",
+            text: "the spending target is calculated at age 69",
+          },
+          {
+            id: "line-46",
+            keyword: "Then",
+            text: 'the spending phase should be "GO_GO"',
+          },
+          {
+            id: "line-47",
+            keyword: "When",
+            text: "the spending target is calculated at age 70",
+          },
+          {
+            id: "line-48",
+            keyword: "Then",
+            text: 'the spending phase should be "SLOW_GO"',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-50",
+        keyword: "Scenario",
+        name: "Slow-go phase ends when no-go begins",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-51",
+            keyword: "Given",
+            text: "the slow-go start age is 70",
+          },
+          {
+            id: "line-52",
+            keyword: "And",
+            text: "the no-go start age is 80",
+          },
+          {
+            id: "line-53",
+            keyword: "When",
+            text: "the spending target is calculated at age 79",
+          },
+          {
+            id: "line-54",
+            keyword: "Then",
+            text: 'the spending phase should be "SLOW_GO"',
+          },
+          {
+            id: "line-55",
+            keyword: "When",
+            text: "the spending target is calculated at age 80",
+          },
+          {
+            id: "line-56",
+            keyword: "Then",
+            text: 'the spending phase should be "NO_GO"',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-58",
+        keyword: "Scenario",
+        name: "Slow-go age is kept after retirement",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-59",
+            keyword: "Given",
+            text: "the user's retirement age is 60",
+          },
+          {
+            id: "line-60",
+            keyword: "When",
+            text: "the slow-go start age is set to 60",
+          },
+          {
+            id: "line-61",
+            keyword: "Then",
+            text: "the slow-go start age should be 61",
+          },
+          {
+            id: "line-62",
+            keyword: "And",
+            text: "validation should not report a SMILE phase age error",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-64",
+        keyword: "Scenario",
+        name: "No-go age is kept after slow-go age",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-65",
+            keyword: "Given",
+            text: "the slow-go start age is 70",
+          },
+          {
+            id: "line-66",
+            keyword: "When",
+            text: "the no-go start age is set to 69",
+          },
+          {
+            id: "line-67",
+            keyword: "Then",
+            text: "the no-go start age should be 71",
+          },
+          {
+            id: "line-68",
+            keyword: "And",
+            text: "validation should not report a SMILE phase age error",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-70",
+        keyword: "Scenario",
+        name: "No-go age follows a reduced life expectancy",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-71",
+            keyword: "Given",
+            text: "the no-go start age is 85",
+          },
+          {
+            id: "line-72",
+            keyword: "When",
+            text: "the modelled life expectancy is changed to 80",
+          },
+          {
+            id: "line-73",
+            keyword: "Then",
+            text: "the no-go start age should be 80",
+          },
+          {
+            id: "line-74",
+            keyword: "And",
+            text: "validation should not report a no-go life expectancy error",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-76",
+        keyword: "Scenario Outline",
+        name: "SMILE percentages must be greater than zero",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-77",
+            keyword: "When",
+            text: 'the "<phase>" percentage is set to 0 percent',
+          },
+          {
+            id: "line-78",
+            keyword: "Then",
+            text: 'validation reports "<message>"',
+          },
+        ],
+        examples: [
+          {
+            id: "line-80",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-81",
+                cells: [
+                  {
+                    id: "line-81-column-9",
+                    value: "phase",
+                  },
+                  {
+                    id: "line-81-column-19",
+                    value: "message",
+                  },
+                ],
+              },
+              {
+                id: "line-82",
+                cells: [
+                  {
+                    id: "line-82-column-9",
+                    value: "Go-go",
+                  },
+                  {
+                    id: "line-82-column-19",
+                    value: "Go-go percentage must be greater than 0%.",
+                  },
+                ],
+              },
+              {
+                id: "line-83",
+                cells: [
+                  {
+                    id: "line-83-column-9",
+                    value: "Slow-go",
+                  },
+                  {
+                    id: "line-83-column-19",
+                    value: "Slow-go percentage must be greater than 0%.",
+                  },
+                ],
+              },
+              {
+                id: "line-84",
+                cells: [
+                  {
+                    id: "line-84-column-9",
+                    value: "No-go",
+                  },
+                  {
+                    id: "line-84-column-19",
+                    value: "No-go percentage must be greater than 0%.",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-86",
+        keyword: "Scenario Outline",
+        name: "SMILE percentages must be whole numbers",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-87",
+            keyword: "When",
+            text: 'the "<phase>" percentage is set to 82.5 percent',
+          },
+          {
+            id: "line-88",
+            keyword: "Then",
+            text: 'validation reports "<message>"',
+          },
+        ],
+        examples: [
+          {
+            id: "line-90",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-91",
+                cells: [
+                  {
+                    id: "line-91-column-9",
+                    value: "phase",
+                  },
+                  {
+                    id: "line-91-column-19",
+                    value: "message",
+                  },
+                ],
+              },
+              {
+                id: "line-92",
+                cells: [
+                  {
+                    id: "line-92-column-9",
+                    value: "Go-go",
+                  },
+                  {
+                    id: "line-92-column-19",
+                    value: "Go-go percentage must be a whole number.",
+                  },
+                ],
+              },
+              {
+                id: "line-93",
+                cells: [
+                  {
+                    id: "line-93-column-9",
+                    value: "Slow-go",
+                  },
+                  {
+                    id: "line-93-column-19",
+                    value: "Slow-go percentage must be a whole number.",
+                  },
+                ],
+              },
+              {
+                id: "line-94",
+                cells: [
+                  {
+                    id: "line-94-column-9",
+                    value: "No-go",
+                  },
+                  {
+                    id: "line-94-column-19",
+                    value: "No-go percentage must be a whole number.",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-96",
+        keyword: "Scenario",
+        name: "SMILE fields do not affect flat spending",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-97",
+            keyword: "Given",
+            text: "the user previously configured a SMILE strategy",
+          },
+          {
+            id: "line-98",
+            keyword: "When",
+            text: 'the user selects "Flat spending"',
+          },
+          {
+            id: "line-99",
+            keyword: "Then",
+            text: "the SMILE configuration fields should not be displayed",
+          },
+          {
+            id: "line-100",
+            keyword: "And",
+            text: "the spending target should remain at 100 percent of the selected target",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-102",
+        keyword: "Scenario",
+        name: "Switching back to SMILE restores the configuration",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-103",
+            keyword: "Given",
+            text: "the user previously configured a SMILE strategy",
+          },
+          {
+            id: "line-104",
+            keyword: "And",
+            text: 'the user selected "Flat spending"',
+          },
+          {
+            id: "line-105",
+            keyword: "When",
+            text: 'the user selects "SMILE spending"',
+          },
+          {
+            id: "line-106",
+            keyword: "Then",
+            text: "the previously configured SMILE percentages and ages should be restored",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-108",
+        keyword: "Scenario",
+        name: "A results-chart phase drag changes only that SMILE phase",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-109",
+            keyword: "Given",
+            text: "the user previously configured a SMILE strategy",
+          },
+          {
+            id: "line-110",
+            keyword: "When",
+            text: 'the "Slow-go" results-chart phase is changed to 78 percent',
+          },
+          {
+            id: "line-111",
+            keyword: "Then",
+            text: 'the "Slow-go" percentage should be 78 percent',
+          },
+          {
+            id: "line-112",
+            keyword: "And",
+            text: 'the "Go-go" percentage should be 110 percent',
+          },
+          {
+            id: "line-113",
+            keyword: "And",
+            text: 'the "No-go" percentage should be 68 percent',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-115",
+        keyword: "Scenario",
+        name: "A results-chart boundary drag changes only that phase start age",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-116",
+            keyword: "Given",
+            text: "the user's retirement age is 60",
+          },
+          {
+            id: "line-117",
+            keyword: "And",
+            text: "the slow-go start age is 70",
+          },
+          {
+            id: "line-118",
+            keyword: "And",
+            text: "the no-go start age is 80",
+          },
+          {
+            id: "line-119",
+            keyword: "When",
+            text: 'the "Slow-go" results-chart start age is changed to 74',
+          },
+          {
+            id: "line-120",
+            keyword: "Then",
+            text: "the slow-go start age should be 74",
+          },
+          {
+            id: "line-121",
+            keyword: "And",
+            text: "the no-go start age should be 80",
           },
         ],
         examples: [],

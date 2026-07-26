@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 
 test.describe("app end-to-end journeys", () => {
   test("acknowledges first run, switches modes, and keeps expert mode usable", async ({
@@ -49,6 +49,13 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Personal details" })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Retirement income target" })
+    ).toBeVisible();
     await fillExactNumber(page, "Target retirement age exact value", "60");
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
@@ -191,7 +198,467 @@ test.describe("app end-to-end journeys", () => {
     await assertFooterPage(page, "Acceptance criteria", "What this page shows");
     await assertFooterPage(page, "About", "What it is");
   });
+
+  test("configures, persists, and reports expert SMILE spending", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+    await page.getByRole("button", { name: "Next" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Personal details" })
+    ).toBeVisible();
+    await fillExactNumber(page, "Life Expectancy (Age) exact value", "95");
+    await expect(
+      page.getByRole("slider", { name: "Target retirement age" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Retirement Living Standards target (£ per year)",
+      })
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Retirement income target" })
+    ).toBeVisible();
+    await expect(page.locator(".journey-progress")).toHaveText("Step 3 of 10");
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Personal details" })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Retirement income target" })
+    ).toBeVisible();
+    const retirementAgeControl = page.getByRole("slider", {
+      name: "Target retirement age",
+    });
+    await expect(retirementAgeControl).toHaveValue("68");
+
+    await page.getByRole("button", { name: "£45,400" }).click();
+
+    const targetControl = page.getByRole("spinbutton", {
+      name: "Retirement Living Standards target (£ per year)",
+    });
+    const strategyControl = page.getByRole("combobox", {
+      name: "Spending strategy",
+    });
+    await expect(targetControl).toHaveValue("45400");
+    await expect(strategyControl).toHaveValue("FLAT");
+    expect(
+      await targetControl.evaluate(
+        (target, strategy) =>
+          Boolean(
+            target.compareDocumentPosition(strategy as Node) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+          ),
+        await strategyControl.elementHandle()
+      )
+    ).toBe(true);
+
+    await strategyControl.selectOption("SPENDING_SMILE");
+    await assertRetirementTargetGrid(
+      page,
+      retirementAgeControl,
+      targetControl,
+      strategyControl
+    );
+
+    const noGoStartAge = page.getByRole("slider", {
+      name: "No-go years start age",
+    });
+    await noGoStartAge.fill("85");
+    await noGoStartAge.dispatchEvent("pointerup");
+    await expect(noGoStartAge).toHaveValue("85");
+
+    await page.getByRole("button", { name: "Back" }).click();
+    await fillExactNumber(page, "Life Expectancy (Age) exact value", "80");
+    await page.getByRole("button", { name: "Next" }).click();
+    const cappedNoGoStartAge = page.getByRole("slider", {
+      name: "No-go years start age",
+    });
+    await expect(cappedNoGoStartAge).toHaveValue("80");
+    await expect(cappedNoGoStartAge).toHaveAttribute("max", "80");
+    await expect(
+      page.getByText(/No-go age cannot be later than your modelled life/)
+    ).toHaveCount(0);
+
+    const slowGoStartAge = page.getByRole("slider", {
+      name: "Slow-go years start age",
+    });
+    const slowGoStartAgeExact = page.getByRole("spinbutton", {
+      name: "Slow-go years start age exact value",
+    });
+    await slowGoStartAgeExact.fill("68");
+    await expect(slowGoStartAge).toHaveValue("69");
+    await expect(
+      page.getByText("Slow-go years must start after your retirement age.")
+    ).toHaveCount(0);
+    await slowGoStartAgeExact.fill("75");
+    await expect(slowGoStartAge).toHaveValue("75");
+
+    await slowGoStartAge.fill("76");
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Slow-go years start age exact value",
+      })
+    ).toHaveValue("76");
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"slowGoStartAge":75');
+    await slowGoStartAge.dispatchEvent("pointerup");
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"slowGoStartAge":76');
+
+    const slowGoPercentage = page.getByRole("slider", {
+      name: "Slow-go years percentage of Retirement Living Standards target",
+    });
+    await slowGoPercentage.fill("80");
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Slow-go years percentage exact value",
+      })
+    ).toHaveValue("80");
+    await expect(
+      page.getByText("£38,590 per year", { exact: true })
+    ).toBeVisible();
+    await expect(page.locator("#spending-profile-description")).toContainText(
+      "Slow-go annual spending is £38,590"
+    );
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"slowGoPercentage":85');
+    await slowGoPercentage.dispatchEvent("pointerup");
+    await expect(
+      page.getByText("£36,320 per year", { exact: true })
+    ).toBeVisible();
+    await expect(page.locator("#spending-profile-description")).toContainText(
+      "Slow-go annual spending is £36,320"
+    );
+    await expect(
+      page.getByText("Annual spending target (£ per year) by age")
+    ).toBeVisible();
+    await expect(page.getByTestId("spending-profile-y-axis")).toContainText(
+      "£50,000"
+    );
+    await expect(page.getByTestId("spending-profile-y-axis")).toContainText(
+      "£40,000"
+    );
+    await expect(page.getByTestId("spending-profile-y-axis")).toContainText(
+      "£30,000"
+    );
+    await expect(page.getByTestId("spending-profile-y-axis-tick")).toHaveCount(
+      6
+    );
+    await expect(page.getByTestId("spending-profile-y-axis")).not.toContainText(
+      "£45,400"
+    );
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"slowGoPercentage":80');
+    await expect(
+      page.getByRole("img", { name: "SMILE spending profile" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("slider", {
+        name: "Go-go years percentage of Retirement Living Standards target",
+      })
+    ).toHaveValue("100");
+    await expect(page.getByText(/Go-go annual spending/i)).not.toBeVisible();
+
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"spendingStrategyType":"SPENDING_SMILE"');
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Optional sections" })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveValue("SPENDING_SMILE");
+    await expect(
+      page.getByRole("slider", {
+        name: "Slow-go years percentage of Retirement Living Standards target",
+      })
+    ).toHaveValue("80");
+    await expect(
+      page.getByRole("slider", { name: "Slow-go years start age" })
+    ).toHaveValue("76");
+
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("heading", { level: 2, name: "SMILE spending" })
+    ).not.toBeVisible();
+    await expect(page.locator(".spending-smile-results")).toHaveCount(0);
+
+    const comparisonResults = page.getByRole("region", {
+      name: "Comparison results",
+    });
+    await renderDeferredComparisonContent(page);
+    await expect(
+      comparisonResults.getByText("Spending strategy", { exact: true })
+    ).toBeVisible();
+    await expect(
+      comparisonResults.getByText("SMILE spending", { exact: true }).first()
+    ).toBeVisible();
+    await expect(
+      comparisonResults.getByText("Slow-go target", { exact: true })
+    ).toBeVisible();
+    await expect(
+      comparisonResults.getByText("No-go starts", { exact: true })
+    ).toBeVisible();
+
+    const targetPath = page.locator(".bridge-target-line").first();
+    await expect(targetPath).toHaveAttribute("d", /.+/);
+    expect(await countDistinctPathYValues(targetPath)).toBeGreaterThanOrEqual(
+      3
+    );
+
+    const slowGoBoundaryHandle = page.getByTestId(
+      "bridge-marker-slowGoStartAge"
+    );
+    await expect(slowGoBoundaryHandle).toHaveAttribute("aria-valuenow", "76");
+    await slowGoBoundaryHandle.scrollIntoViewIfNeeded();
+    const slowGoBoundaryBox = await requiredBox(slowGoBoundaryHandle);
+    const targetPathBeforeBoundaryDrag = await targetPath.getAttribute("d");
+    await page.mouse.move(
+      slowGoBoundaryBox.x + slowGoBoundaryBox.width / 2,
+      slowGoBoundaryBox.y + slowGoBoundaryBox.height / 2
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      slowGoBoundaryBox.x + slowGoBoundaryBox.width / 2 - 60,
+      slowGoBoundaryBox.y + slowGoBoundaryBox.height / 2
+    );
+    await expect
+      .poll(() => targetPath.getAttribute("d"))
+      .not.toBe(targetPathBeforeBoundaryDrag);
+    await expect
+      .poll(async () => {
+        const stored = await readLocalStorageItem(
+          page,
+          "cs-pension-modeller.settings"
+        );
+        return stored
+          ? (
+              JSON.parse(stored) as {
+                data: { spendingSmile: { slowGoStartAge: number } };
+              }
+            ).data.spendingSmile.slowGoStartAge
+          : null;
+      })
+      .toBe(76);
+    await page.mouse.up();
+    await expect
+      .poll(async () => {
+        const stored = await readLocalStorageItem(
+          page,
+          "cs-pension-modeller.settings"
+        );
+        return stored
+          ? (
+              JSON.parse(stored) as {
+                data: { spendingSmile: { slowGoStartAge: number } };
+              }
+            ).data.spendingSmile.slowGoStartAge
+          : null;
+      })
+      .not.toBe(76);
+
+    const slowGoResultHandle = page.getByRole("slider", {
+      name: "Slow-go SMILE spending percentage",
+    });
+    await expect(
+      page.getByRole("slider", {
+        name: "Go-go SMILE spending percentage",
+      })
+    ).toHaveAttribute("aria-valuenow", "100");
+    await expect(slowGoResultHandle).toHaveAttribute("aria-valuenow", "80");
+    await expect(
+      page.getByRole("slider", {
+        name: "No-go SMILE spending percentage",
+      })
+    ).toHaveAttribute("aria-valuenow", "70");
+    await slowGoResultHandle.scrollIntoViewIfNeeded();
+    const slowGoHandlePoint = await slowGoResultHandle.evaluate((path) => {
+      const svgPath = path as SVGPathElement;
+      const pathPoint = svgPath.getPointAtLength(svgPath.getTotalLength() / 2);
+      const screenMatrix = svgPath.getScreenCTM();
+
+      if (!screenMatrix) {
+        throw new Error("Expected the SMILE chart handle to be rendered");
+      }
+
+      const screenPoint = pathPoint.matrixTransform(screenMatrix);
+
+      return { x: screenPoint.x, y: screenPoint.y };
+    });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          ({ x, y }) =>
+            (document.elementFromPoint(x, y) as SVGPathElement | null)?.dataset
+              .testid ?? null,
+          slowGoHandlePoint
+        )
+      )
+      .toBe("spending-smile-slowGo-target-handle");
+    const initialSlowGoPath = await slowGoResultHandle.getAttribute("d");
+    await page.mouse.move(slowGoHandlePoint.x, slowGoHandlePoint.y);
+    await page.mouse.down();
+    await page.mouse.move(slowGoHandlePoint.x, slowGoHandlePoint.y + 20);
+    await expect
+      .poll(() => slowGoResultHandle.getAttribute("d"))
+      .not.toBe(initialSlowGoPath);
+    const releasedSlowGoPath = await slowGoResultHandle.getAttribute("d");
+    await slowGoResultHandle.evaluate((path) => {
+      const svgPath = path as SVGPathElement;
+      svgPath.dataset.dragPathHistory = JSON.stringify([
+        svgPath.getAttribute("d"),
+      ]);
+      new MutationObserver((records) => {
+        const history = JSON.parse(
+          svgPath.dataset.dragPathHistory ?? "[]"
+        ) as Array<string | null>;
+
+        for (const record of records) {
+          history.push(record.oldValue, svgPath.getAttribute("d"));
+        }
+
+        svgPath.dataset.dragPathHistory = JSON.stringify(history);
+      }).observe(svgPath, {
+        attributeFilter: ["d"],
+        attributeOldValue: true,
+        attributes: true,
+      });
+    });
+    await page.mouse.up();
+    await expect
+      .poll(async () => {
+        const stored = await readLocalStorageItem(
+          page,
+          "cs-pension-modeller.settings"
+        );
+        return stored
+          ? (
+              JSON.parse(stored) as {
+                data: { spendingSmile: { slowGoPercentage: number } };
+              }
+            ).data.spendingSmile.slowGoPercentage
+          : null;
+      })
+      .not.toBe(80);
+    await slowGoResultHandle.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        })
+    );
+    const dragPathHistory = await slowGoResultHandle.evaluate(
+      (path) =>
+        JSON.parse(
+          (path as SVGPathElement).dataset.dragPathHistory ?? "[]"
+        ) as Array<string | null>
+    );
+    expect(dragPathHistory).not.toContain(initialSlowGoPath);
+    await expect(slowGoResultHandle).toHaveAttribute(
+      "d",
+      releasedSlowGoPath ?? ""
+    );
+  });
 });
+
+async function assertRetirementTargetGrid(
+  page: Page,
+  retirementAgeControl: Locator,
+  targetControl: Locator,
+  strategyControl: Locator
+) {
+  const viewport = page.viewportSize();
+  if (!viewport) {
+    throw new Error("The Playwright viewport is unavailable");
+  }
+
+  const captureGrid = targetControl.locator(
+    "xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' field-grid ')][1]"
+  );
+  const columnCount = await captureGrid.evaluate(
+    (element) =>
+      getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean)
+        .length
+  );
+  const boxes = await Promise.all([
+    requiredBox(getFieldCard(targetControl)),
+    requiredBox(getFieldCard(retirementAgeControl)),
+    requiredBox(getFieldCard(strategyControl)),
+    requiredBox(getPhaseCard(page, "Go-go years")),
+    requiredBox(getPhaseCard(page, "Slow-go years")),
+    requiredBox(getPhaseCard(page, "No-go years")),
+    requiredBox(page.locator(".spending-smile-configuration")),
+  ]);
+
+  expect(columnCount).toBe(viewport.width >= 860 ? 2 : 1);
+
+  if (viewport.width >= 860) {
+    assertDesktopRetirementTargetGrid(boxes);
+  } else {
+    const yPositions = boxes.map((box) => box.y);
+    expect(yPositions).toEqual(
+      [...yPositions].sort((left, right) => left - right)
+    );
+  }
+}
+
+function assertDesktopRetirementTargetGrid([
+  target,
+  retirementAge,
+  strategy,
+  goGo,
+  slowGo,
+  noGo,
+  profile,
+]: Awaited<ReturnType<typeof requiredBox>>[]) {
+  expect(Math.abs(retirementAge.width - target.width)).toBeLessThanOrEqual(3);
+  expect(Math.abs(retirementAge.y - target.y)).toBeLessThanOrEqual(3);
+  expect(retirementAge.x).toBeGreaterThan(target.x);
+  expect(Math.abs(strategy.width - target.width)).toBeLessThanOrEqual(3);
+  expect(strategy.y).toBeGreaterThan(target.y);
+  expect(Math.abs(strategy.x - target.x)).toBeLessThanOrEqual(3);
+  expect(Math.abs(strategy.y - goGo.y)).toBeLessThanOrEqual(3);
+  expect(goGo.x).toBeGreaterThan(strategy.x);
+  expect(slowGo.y).toBeGreaterThan(goGo.y);
+  expect(Math.abs(slowGo.x - target.x)).toBeLessThanOrEqual(3);
+  expect(Math.abs(slowGo.y - noGo.y)).toBeLessThanOrEqual(3);
+  expect(noGo.x).toBeGreaterThan(slowGo.x);
+  expect(profile.y).toBeGreaterThan(noGo.y);
+  expect(Math.abs(profile.x - target.x)).toBeLessThanOrEqual(3);
+}
+
+function getFieldCard(control: Locator) {
+  return control.locator(
+    "xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' field-card ')][1]"
+  );
+}
+
+function getPhaseCard(page: Page, heading: string) {
+  return page
+    .getByRole("heading", { name: heading })
+    .locator(
+      "xpath=ancestor::section[contains(concat(' ', normalize-space(@class), ' '), ' field-card ')][1]"
+    );
+}
+
+async function requiredBox(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) {
+    throw new Error(`Expected a layout box for ${locator.toString()}`);
+  }
+  return box;
+}
 
 async function startFirstRun(page: Page) {
   await page.goto("/");
@@ -255,6 +722,43 @@ async function clickNextAndExpectStep(page: Page, heading: string) {
   await expect(
     page.getByRole("heading", { level: 3, name: heading })
   ).toBeVisible();
+}
+
+async function navigateToJourneyResult(page: Page) {
+  for (let index = 0; index < 20; index += 1) {
+    const resultHeading = page.getByRole("heading", {
+      level: 3,
+      name: "Your results",
+    });
+
+    if (await resultHeading.isVisible().catch(() => false)) {
+      return;
+    }
+
+    const next = page.getByRole("button", {
+      name: /^(Next|Show my answer)$/,
+    });
+    await next.click();
+  }
+
+  throw new Error("Expert result step was not reached");
+}
+
+async function countDistinctPathYValues(targetPath: Locator) {
+  return targetPath.evaluate((element) => {
+    const path = element.getAttribute("d") ?? "";
+    const coordinatePairs = Array.from(
+      path.matchAll(/(?:M|L)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)
+    );
+    const verticalCoordinates = Array.from(
+      path.matchAll(/V(-?\d+(?:\.\d+)?)/g)
+    );
+
+    return new Set([
+      ...coordinatePairs.map((match) => match[2]),
+      ...verticalCoordinates.map((match) => match[1]),
+    ]).size;
+  });
 }
 
 async function addAdditionalIncome(

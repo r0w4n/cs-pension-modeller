@@ -27,6 +27,31 @@ Feature: Modeller journeys
       | Simplified retirement journey           | About you and your target   | Your Civil Service pensions | use the shared bridge answer | hide bridge funding details by default  |
       | Work out what I need to retire early    | Your retirement target      | Your bridging pots          | show the projection table    | show bridge funding details by default  |
 
+  @expert-journey
+  Scenario: Separate the expert retirement target from personal details
+    Given default modeller settings
+    When the "Expert journey" journey is loaded
+    Then the default visible journey steps should be:
+      | title                          |
+      | Optional sections              |
+      | Personal details               |
+      | Retirement income target       |
+      | Inflation and projection basis |
+      | State pension details          |
+      | Alpha pension details          |
+      | Additional guaranteed income   |
+      | SIPP details                   |
+      | ISA details                    |
+      | Your results                   |
+    And the "Personal details" journey step should contain these fields:
+      | field                         |
+      | Your Birth Month and Year     |
+      | Life Expectancy (Age)         |
+    And the "Retirement income target" journey step should contain these fields:
+      | field                                                |
+      | Retirement Living Standards target (£ per year)      |
+      | Target retirement age                                |
+
   @defaults
   Scenario: Bridge journey enables bridge pots and disables tax by default
     Given default modeller settings

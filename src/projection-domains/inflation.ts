@@ -1,5 +1,5 @@
 import type { PensionSettings } from "../settings";
-import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
+import { resolveAnnualSpendingTarget } from "../spending-smile";
 
 export function calculateRealAnnualRate(
   nominalRateAnnual: number,
@@ -40,19 +40,8 @@ export function calculateRetirementIncomeTargetAtDate(
   settings: PensionSettings,
   rowDate: string
 ) {
-  if (settings.projectionBasis === "real") {
-    return settings.desiredRetirementIncome;
-  }
-
-  const monthlyInflationRate =
-    (1 + settings.inflationRateAnnual / 100) ** (1 / 12) - 1;
-  const monthsUntilRow = Math.max(
-    0,
-    calculateWholeMonthDifference(settings.startDate, rowDate)
-  );
-
-  return (
-    settings.desiredRetirementIncome *
-    (1 + monthlyInflationRate) ** monthsUntilRow
-  );
+  const target = resolveAnnualSpendingTarget({ settings, rowDate });
+  return settings.projectionBasis === "real"
+    ? target.annualRealTarget
+    : target.annualNominalTarget;
 }

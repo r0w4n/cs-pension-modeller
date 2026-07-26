@@ -29,6 +29,7 @@ import {
   getUseByAgeBounds,
 } from "./bridge-chart-bounds";
 import { addYearsToIsoDate, clampNumber } from "./shared";
+import { getSpendingSmileStartAgeBounds } from "../spending-smile";
 
 export function createRetirementIncomeSeries(
   rows: ProjectionRow[],
@@ -381,6 +382,7 @@ function insertChartTransitionPoints(
       date: addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge),
       age: settings.requirementAge,
     },
+    ...getSpendingSmileTransitionBoundaries(settings),
     settings.showIsa
       ? {
           date: addYearsToIsoDate(settings.dateOfBirth, settings.isaDrawAge),
@@ -528,6 +530,29 @@ function insertChartTransitionPoints(
   return nextPoints;
 }
 
+function getSpendingSmileTransitionBoundaries(settings: PensionSettings) {
+  if (settings.spendingStrategyType !== "SPENDING_SMILE") {
+    return [];
+  }
+
+  return [
+    {
+      date: addYearsToIsoDate(
+        settings.dateOfBirth,
+        settings.spendingSmile.slowGoStartAge
+      ),
+      age: settings.spendingSmile.slowGoStartAge,
+    },
+    {
+      date: addYearsToIsoDate(
+        settings.dateOfBirth,
+        settings.spendingSmile.noGoStartAge
+      ),
+      age: settings.spendingSmile.noGoStartAge,
+    },
+  ];
+}
+
 function insertChartTransitionPoint(
   points: RetirementIncomePoint[],
   transitionBoundary: { date: string; age: number }
@@ -589,6 +614,12 @@ export function createBridgeChartParameters(
 ): RetirementIncomeBridgeParameters {
   return {
     targetIncomeAnnual: settings.desiredRetirementIncome,
+    spendingSmileEnabled: settings.spendingStrategyType === "SPENDING_SMILE",
+    goGoPercentage: settings.spendingSmile.goGoPercentage,
+    slowGoStartAge: settings.spendingSmile.slowGoStartAge,
+    slowGoPercentage: settings.spendingSmile.slowGoPercentage,
+    noGoStartAge: settings.spendingSmile.noGoStartAge,
+    noGoPercentage: settings.spendingSmile.noGoPercentage,
     alphaMonthlyAddedPension: settings.alphaAddedPensionMonthly,
     isaMonthlyContribution: settings.isaMonthlyContribution,
     lisaMonthlyContribution: settings.lisaMonthlyContribution,
@@ -694,6 +725,18 @@ export function createBridgeChartLimits(
     defaultStatePensionAge,
     lifeExpectancy: settings.lifeExpectancy,
   });
+  const slowGoStartAgeBounds = getSpendingSmileStartAgeBounds(
+    settings.spendingSmile,
+    "slowGoStartAge",
+    settings.requirementAge,
+    settings.lifeExpectancy
+  );
+  const noGoStartAgeBounds = getSpendingSmileStartAgeBounds(
+    settings.spendingSmile,
+    "noGoStartAge",
+    settings.requirementAge,
+    settings.lifeExpectancy
+  );
 
   return {
     targetIncomeAnnual: { min: 0, max: 200000, step: 600 },
@@ -717,6 +760,14 @@ export function createBridgeChartLimits(
           ? Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
           : ageUpperLimit
       ),
+      step: 1,
+    },
+    slowGoStartAge: {
+      ...slowGoStartAgeBounds,
+      step: 1,
+    },
+    noGoStartAge: {
+      ...noGoStartAgeBounds,
       step: 1,
     },
     alphaLeaveAge: {

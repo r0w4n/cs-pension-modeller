@@ -27,6 +27,12 @@ import {
   getUseByAgeBounds,
   isOptionalSectionToggleKey,
 } from "../app-domains";
+import {
+  reconcileSpendingSmilePhaseAges,
+  updateSpendingSmileStartAge,
+  updateSpendingSmilePercentage,
+  type SmilePercentageField,
+} from "../spending-smile";
 
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
@@ -80,11 +86,15 @@ function applyIncomeAndContributionPatch(
   patch: Partial<RetirementIncomeBridgeParameters>,
   context: ChartStateContext
 ) {
-  assignNormalizedNumber(
-    next,
-    "desiredRetirementIncome",
-    patch.targetIncomeAnnual
-  );
+  if (patch.targetIncomeAnnual !== undefined) {
+    assignNormalizedNumber(
+      next,
+      "desiredRetirementIncome",
+      patch.targetIncomeAnnual
+    );
+  }
+  applySpendingSmilePercentagePatch(next, patch);
+  applySpendingSmileStartAgePatch(next, patch);
   assignNormalizedNumber(
     next,
     "alphaAddedPensionMonthly",
@@ -130,6 +140,53 @@ function applyIncomeAndContributionPatch(
 
   if (patch.partialRetirementEnabled !== undefined) {
     next.partialRetirementEnabled = patch.partialRetirementEnabled;
+  }
+}
+
+function applySpendingSmilePercentagePatch(
+  next: PensionSettings,
+  patch: Partial<RetirementIncomeBridgeParameters>
+) {
+  (
+    [
+      "goGoPercentage",
+      "slowGoPercentage",
+      "noGoPercentage",
+    ] as const satisfies readonly SmilePercentageField[]
+  ).forEach((field) => {
+    const percentage = patch[field];
+    if (percentage !== undefined) {
+      next.spendingSmile = updateSpendingSmilePercentage(
+        next.spendingSmile,
+        field,
+        percentage
+      );
+    }
+  });
+}
+
+function applySpendingSmileStartAgePatch(
+  next: PensionSettings,
+  patch: Partial<RetirementIncomeBridgeParameters>
+) {
+  if (patch.slowGoStartAge !== undefined) {
+    next.spendingSmile = updateSpendingSmileStartAge(
+      next.spendingSmile,
+      "slowGoStartAge",
+      patch.slowGoStartAge,
+      next.requirementAge,
+      next.lifeExpectancy
+    );
+  }
+
+  if (patch.noGoStartAge !== undefined) {
+    next.spendingSmile = updateSpendingSmileStartAge(
+      next.spendingSmile,
+      "noGoStartAge",
+      patch.noGoStartAge,
+      next.requirementAge,
+      next.lifeExpectancy
+    );
   }
 }
 
@@ -221,6 +278,14 @@ function applyRetirementAgePatch(
     Math.min(70, statePensionAge)
   );
   next.requirementAge = normalizeSetting("requirementAge", retirementAge);
+
+  if (next.spendingStrategyType === "SPENDING_SMILE") {
+    next.spendingSmile = reconcileSpendingSmilePhaseAges(
+      next.spendingSmile,
+      next.requirementAge,
+      next.lifeExpectancy
+    );
+  }
 
   if (alphaDrawAgeWasAligned && next.requirementAge > previousRetirementAge) {
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
@@ -592,7 +657,7 @@ export function updateSetting({
             ? normalizeSippDrawAge(value as number, current.dateOfBirth)
             : normalizeSetting(key, value);
 
-    return {
+    const next = {
       ...current,
       [key]: normalizedValue,
       ...(key === "dateOfBirth"
@@ -615,6 +680,17 @@ export function updateSetting({
           }
         : {}),
     };
+
+    return key === "lifeExpectancy"
+      ? {
+          ...next,
+          spendingSmile: reconcileSpendingSmilePhaseAges(
+            next.spendingSmile,
+            next.requirementAge,
+            normalizedValue as number
+          ),
+        }
+      : next;
   });
 }
 

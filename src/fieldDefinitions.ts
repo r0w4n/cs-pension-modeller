@@ -232,20 +232,18 @@ export const fieldGroups: FieldGroup[] = [
         infoUrl: knowledgeLinks.lifeExpectancy,
         infoLinkText: "Estimate life expectancy",
       },
-      {
-        id: "requirementAge",
-        label: "Target retirement age",
-        type: "range",
-        min: 0,
-        max: 70,
-        step: 1,
-        inputStep: 1,
-        description:
-          "The age from which you want the modeller to assess whether your retirement income target is being met. In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
-      },
+    ],
+  },
+  {
+    id: "retirement-target",
+    eyebrow: "Retirement Income Target",
+    title: "Retirement income target",
+    description:
+      "Choose your target retirement age, the annual income you would like to target, and whether that income remains level or changes as you move through retirement.",
+    fields: [
       {
         id: "desiredRetirementIncome",
-        label: "Retirement living standard target (£ per year)",
+        label: "Retirement Living Standards target (£ per year)",
         type: "currency-input",
         min: 0,
         max: 200000,
@@ -278,9 +276,20 @@ export const fieldGroups: FieldGroup[] = [
           },
         ],
         description:
-          "Your annual spending goal before the modeller applies any tax setting. The presets come from retirement living standard benchmarks, but your own housing, care, travel and family costs may matter more.",
+          "Your underlying annual spending goal before the modeller applies any tax setting or SMILE phase percentage. The presets come from Retirement Living Standards benchmarks, but your own housing, care, travel and family costs may matter more.",
         infoUrl: knowledgeLinks.retirementLivingStandards,
         infoLinkText: "Retirement Living Standards",
+      },
+      {
+        id: "requirementAge",
+        label: "Target retirement age",
+        type: "range",
+        min: 0,
+        max: 70,
+        step: 1,
+        inputStep: 1,
+        description:
+          "The age from which you want the modeller to assess whether your retirement income target is being met. In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
       },
     ],
   },

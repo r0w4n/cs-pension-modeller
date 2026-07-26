@@ -72,7 +72,10 @@ For each projection month, the model can calculate values such as:
 
 The current app is driven by inputs grouped around:
 
-- personal details: birth month/year, retirement target, and planning horizon
+- personal details: birth month/year and planning horizon
+- retirement income target: the selected Retirement Living Standards baseline
+  and either flat spending or expert SMILE percentages for the Go-go, Slow-go,
+  and No-go phases
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,

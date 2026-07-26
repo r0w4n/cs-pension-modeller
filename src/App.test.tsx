@@ -570,6 +570,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     fullSalary: defaultSettings.fullSalary,
     currentStatePension: defaultSettings.currentStatePension,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
+    spendingStrategyType: defaultSettings.spendingStrategyType,
+    spendingSmile: defaultSettings.spendingSmile,
     statePensionDrawDate: defaultSettings.statePensionDrawDate,
     statePensionApplyFutureGrowth:
       defaultSettings.statePensionApplyFutureGrowth,
@@ -1919,21 +1921,33 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Life Expectancy (Age)")).toHaveValue(
       defaultSettings.lifeExpectancy.toString()
     );
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
-      defaultSettings.requirementAge.toString()
-    );
     expect(
-      screen.getByLabelText("Retirement living standard target (£ per year)")
-    ).toHaveValue(defaultSettings.desiredRetirementIncome);
+      screen.queryByLabelText("Target retirement age")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Retirement Living Standards target (£ per year)")
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Estimate life expectancy" })
     ).toHaveAttribute(
       "href",
       "https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/healthandlifeexpectancies/articles/lifeexpectancycalculator/2019-06-07"
     );
+
+    openJourneyStep(/Retirement income target/i);
+
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
+      defaultSettings.requirementAge.toString()
+    );
+    expect(
+      screen.getByLabelText("Retirement Living Standards target (£ per year)")
+    ).toHaveValue(defaultSettings.desiredRetirementIncome);
     expect(
       screen.getByRole("link", { name: "Retirement Living Standards" })
     ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+    expect(
+      screen.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveValue("FLAT");
 
     openJourneyStep(/Inflation and projection basis/i);
 
@@ -2437,6 +2451,9 @@ describe("App settings form", () => {
     fireEvent.change(screen.getByLabelText("Your Birth Month and Year year"), {
       target: { value: "1990" },
     });
+
+    openJourneyStep(/Retirement income target/i);
+
     fireEvent.click(
       screen.getByRole("button", {
         name: "£45,400",
@@ -2467,10 +2484,10 @@ describe("App settings form", () => {
   it("allows a custom retirement living standard target", () => {
     renderAcknowledgedApp();
 
-    openJourneyStep(/Personal details/i);
+    openJourneyStep(/Retirement income target/i);
 
     const targetInput = screen.getByLabelText(
-      "Retirement living standard target (£ per year)"
+      "Retirement Living Standards target (£ per year)"
     );
 
     fireEvent.change(targetInput, {

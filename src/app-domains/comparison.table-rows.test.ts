@@ -34,6 +34,96 @@ describe("comparison table rows", () => {
     expect(rows.some((row) => row.metric === "Section")).toBe(false);
     expect(rows.some((row) => row.metric === "Overall status")).toBe(false);
     expect(rows.some((row) => row.metric === "Target income")).toBe(true);
+    expect(
+      rows.some(
+        (row) => row.isSectionDivider && row.section === "Spending target"
+      )
+    ).toBe(false);
+  });
+
+  it("shows SMILE phase assumptions when a compared scenario uses them", () => {
+    const flatSettings = {
+      ...createDefaultSettings(),
+      desiredRetirementIncome: 30_000,
+    };
+    const smileSettings = {
+      ...createDefaultSettings(),
+      desiredRetirementIncome: 30_000,
+      spendingStrategyType: "SPENDING_SMILE" as const,
+      spendingSmile: {
+        goGoPercentage: 110,
+        slowGoStartAge: 74,
+        slowGoPercentage: 80,
+        noGoStartAge: 84,
+        noGoPercentage: 65,
+      },
+    };
+    const results = [
+      createComparisonResult(
+        {
+          id: "flat",
+          name: "Flat plan",
+          settings: flatSettings,
+          createdAt: "",
+          updatedAt: "",
+        },
+        JSON.stringify(flatSettings)
+      ),
+      createComparisonResult(
+        {
+          id: "smile",
+          name: "SMILE plan",
+          settings: smileSettings,
+          createdAt: "",
+          updatedAt: "",
+        },
+        JSON.stringify(flatSettings)
+      ),
+    ];
+
+    const rows = buildComparisonTableRows(results);
+
+    expect(
+      rows.some(
+        (row) => row.isSectionDivider && row.section === "Spending target"
+      )
+    ).toBe(true);
+    expect(getComparisonRow(rows, "Spending strategy").values).toEqual([
+      "Flat spending",
+      "SMILE spending",
+    ]);
+    expect(getComparisonRow(rows, "Underlying target").values).toEqual([
+      "£30,000.00/year",
+      "£30,000.00/year",
+    ]);
+    expect(getComparisonRow(rows, "Go-go target").values).toEqual([
+      "n/a",
+      "£33,000.00/year (110%)",
+    ]);
+    expect(getComparisonRow(rows, "Slow-go starts").values).toEqual([
+      "n/a",
+      "74",
+    ]);
+    expect(getComparisonRow(rows, "Slow-go target").values).toEqual([
+      "n/a",
+      "£24,000.00/year (80%)",
+    ]);
+    expect(getComparisonRow(rows, "No-go starts").values).toEqual([
+      "n/a",
+      "84",
+    ]);
+    expect(getComparisonRow(rows, "No-go target").values).toEqual([
+      "n/a",
+      "£19,500.00/year (65%)",
+    ]);
+    expect(
+      getComparisonRow(
+        buildComparisonTableRows(results, {
+          retirementIncomeDisplay: "monthly",
+        }),
+        "Slow-go target"
+      ).values
+    ).toEqual(["n/a", "£2,000.00/month (80%)"]);
   });
 
   it("can show recurring comparison values monthly or annually", () => {

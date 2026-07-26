@@ -25,6 +25,7 @@ import {
   type PensionSettings,
   type PensionValidationIssue,
 } from "./settings-types";
+import { MAX_SUPPORTED_MODELLING_AGE } from "../spending-smile";
 
 type ValidationContext = {
   settings: PensionSettings;
@@ -176,8 +177,83 @@ export function validateSettings(
     ...validateLisaRules(context),
     ...validatePartialRetirementRules(context),
     ...validateAdditionalGuaranteedIncomeRules(settings),
+    ...validateSpendingSmileRules(settings),
     ...validateLumpSumRules(context),
   ];
+}
+
+function validateSpendingSmileRules(
+  settings: PensionSettings
+): PensionValidationIssue[] {
+  if (settings.spendingStrategyType !== "SPENDING_SMILE") {
+    return [];
+  }
+
+  const issues: PensionValidationIssue[] = [];
+
+  (
+    [
+      ["Go-go", "goGoPercentage", settings.spendingSmile.goGoPercentage],
+      ["Slow-go", "slowGoPercentage", settings.spendingSmile.slowGoPercentage],
+      ["No-go", "noGoPercentage", settings.spendingSmile.noGoPercentage],
+    ] as const
+  ).forEach(([phase, itemId, percentage]) => {
+    if (percentage <= 0) {
+      issues.push({
+        field: "spendingSmile",
+        itemId,
+        message: `${phase} percentage must be greater than 0%.`,
+      });
+    } else if (!Number.isInteger(percentage)) {
+      issues.push({
+        field: "spendingSmile",
+        itemId,
+        message: `${phase} percentage must be a whole number.`,
+      });
+    }
+  });
+
+  if (settings.spendingSmile.slowGoStartAge <= settings.requirementAge) {
+    issues.push({
+      field: "spendingSmile",
+      itemId: "slowGoStartAge",
+      message: "Slow-go years must start after your retirement age.",
+    });
+  }
+
+  if (
+    settings.spendingSmile.noGoStartAge <= settings.spendingSmile.slowGoStartAge
+  ) {
+    issues.push({
+      field: "spendingSmile",
+      itemId: "noGoStartAge",
+      message: "No-go years must start after the Slow-go years.",
+    });
+  }
+
+  const maximumPhaseAge = Math.min(
+    MAX_SUPPORTED_MODELLING_AGE,
+    settings.lifeExpectancy
+  );
+  (
+    [
+      ["Slow-go", "slowGoStartAge", settings.spendingSmile.slowGoStartAge],
+      ["No-go", "noGoStartAge", settings.spendingSmile.noGoStartAge],
+    ] as const
+  ).forEach(([phase, itemId, startAge]) => {
+    if (startAge > maximumPhaseAge) {
+      issues.push({
+        field: "spendingSmile",
+        itemId,
+        message:
+          maximumPhaseAge < MAX_SUPPORTED_MODELLING_AGE
+            ? `${phase} age cannot be later than your modelled life expectancy of age ${maximumPhaseAge}.`
+            : `${phase} age cannot be later than age ${MAX_SUPPORTED_MODELLING_AGE}.`,
+      });
+    }
+  });
+
+  return issues;
 }
 
 function validateLumpSums(

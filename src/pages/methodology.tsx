@@ -923,6 +923,33 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Expert SMILE spending methodology</h2>
+        <p className="section-copy">
+          The expert journey can replace the flat retirement spending target
+          with three percentage phases. Go-go starts at the target retirement
+          age, Slow-go starts at its selected age, and No-go starts at its
+          selected age. The selected Retirement Living Standards target remains
+          the only monetary target.
+        </p>
+        <p className="section-copy">
+          The stored SMILE values are a percentage for each phase and the two
+          later-phase start ages. The applicable percentage is multiplied by the
+          selected target in today&apos;s money. In nominal mode, that
+          phase-adjusted target is increased from the model start date using the
+          existing inflation assumption. The strategy changes only the spending
+          requirement; pension dates, tax, withdrawal order, growth and life
+          expectancy continue to use the existing model.
+        </p>
+        <p className="section-copy">
+          Retirement Living Standards values are selected through the existing
+          retirement target control. SMILE does not create separate standards or
+          monetary targets for individual phases. These values are annual
+          expenditure benchmarks rather than gross income figures and exclude
+          rent and mortgage costs.
+        </p>
+      </section>
+
+      <section>
         <h2>Bridge funding methodology</h2>
         <p className="section-copy">
           Bridge funding is the use of temporary savings or pension withdrawals

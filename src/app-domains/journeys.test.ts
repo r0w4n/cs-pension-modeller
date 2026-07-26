@@ -37,6 +37,35 @@ describe("journey definitions", () => {
     }
   });
 
+  it("gives the default expert journey a dedicated retirement target step", () => {
+    const journey = JOURNEY_DEFINITIONS.find(
+      (entry) => entry.id === "expert-journey"
+    );
+    const visibleSteps =
+      journey?.steps.filter(
+        (step) => !step.visible || step.visible(defaultSettings)
+      ) ?? [];
+
+    expect(visibleSteps.map((step) => step.id)).toEqual([
+      "optional-sections",
+      "expert-personal",
+      "expert-retirement-target",
+      "expert-inflation",
+      "expert-state",
+      "expert-alpha",
+      "expert-additional-income",
+      "expert-sipp",
+      "expert-isa",
+      "answer",
+    ]);
+    expect(getJourneyStepFieldIds("expert-journey", "expert-personal")).toEqual(
+      new Set(["dateOfBirth", "lifeExpectancy"])
+    );
+    expect([
+      ...getJourneyStepFieldIds("expert-journey", "expert-retirement-target"),
+    ]).toEqual(["desiredRetirementIncome", "requirementAge"]);
+  });
+
   it("keeps the Alpha pay-rise control in the expert journey only", () => {
     const alphaPayRiseFieldIds = [
       "alphaPayRisePercent",
@@ -138,6 +167,15 @@ describe("journey definitions", () => {
         alphaEpaEnabled: true,
       })
     );
+  });
+
+  it("uses flat spending for simple journey calculations", () => {
+    expect(
+      applySimpleJourneyAssumptions({
+        ...defaultSettings,
+        spendingStrategyType: "SPENDING_SMILE",
+      }).spendingStrategyType
+    ).toBe("FLAT");
   });
 
   it("keeps an enabled CS AVC visible in simple journey assumptions", () => {

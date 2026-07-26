@@ -20,6 +20,7 @@ import {
   formatDate,
   formatDecimalAge,
   getSettingsSignature,
+  isSpendingSmileEditorStep,
   type ComparisonResultCache,
   type ComparisonScenario,
   type IncomeAgeRangeItem,
@@ -51,6 +52,7 @@ import {
   ResultsSummarySection,
 } from "./results-summary";
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
+import { SpendingSmileEditor } from "./spending-smile-editor";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -468,7 +470,15 @@ function renderFieldsStep(
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
-      />
+      >
+        {isSpendingSmileEditorStep(step.id) ? (
+          <SpendingSmileEditor
+            settings={settings}
+            validationIssues={validationIssues}
+            onChange={onChange}
+          />
+        ) : null}
+      </SettingsFieldsFeature>
 
       {step.groupId ? (
         <SettingsGroupSupplementaryEditor

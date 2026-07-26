@@ -140,6 +140,12 @@ export type JourneyDefinition = {
   steps: readonly JourneyStepDefinition[];
 };
 
+export const SPENDING_SMILE_EDITOR_STEP_ID = "expert-retirement-target";
+
+export function isSpendingSmileEditorStep(stepId: string) {
+  return stepId === SPENDING_SMILE_EDITOR_STEP_ID;
+}
+
 export const JOURNEY_DEFINITIONS = [
   {
     id: "early-retirement-bridge",
@@ -711,6 +717,7 @@ export function applySimpleJourneyAssumptions(
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     assumedCpiPercent: 0,
+    spendingStrategyType: "FLAT",
     taxationEnabled: false,
     partialRetirementEnabled: false,
     alphaAddedPensionLumpSums: [],

@@ -46,6 +46,15 @@ export type ProjectionBasis = "real" | "nominal";
 export type ClassicCalculationMode = "estimate" | "manual";
 export type ClassicFinalSalaryLink = "maintained" | "broken";
 export type AdditionalGuaranteedIncomeIndexation = "none" | "cpi" | "fixed";
+export type SpendingStrategyType = "FLAT" | "SPENDING_SMILE";
+
+export type SpendingSmileStrategy = {
+  goGoPercentage: number;
+  slowGoStartAge: number;
+  slowGoPercentage: number;
+  noGoStartAge: number;
+  noGoPercentage: number;
+};
 
 export type AdditionalGuaranteedIncome = {
   id: string;
@@ -85,6 +94,8 @@ export type PensionSettings = {
   fullSalary: number;
   currentStatePension: number;
   desiredRetirementIncome: number;
+  spendingStrategyType: SpendingStrategyType;
+  spendingSmile: SpendingSmileStrategy;
   statePensionDrawDate: string;
   statePensionApplyFutureGrowth: boolean;
   statePensionCpiPercent: number;

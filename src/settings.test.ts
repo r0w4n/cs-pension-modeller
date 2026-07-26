@@ -54,6 +54,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     fullSalary: defaultSettings.fullSalary,
     currentStatePension: defaultSettings.currentStatePension,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
+    spendingStrategyType: defaultSettings.spendingStrategyType,
+    spendingSmile: defaultSettings.spendingSmile,
     statePensionDrawDate: defaultSettings.statePensionDrawDate,
     statePensionApplyFutureGrowth:
       defaultSettings.statePensionApplyFutureGrowth,
@@ -362,6 +364,11 @@ describe("settings unit tests", () => {
       fullSalary: defaultSettings.fullSalary,
       currentStatePension: 0,
       desiredRetirementIncome: 43900,
+      spendingStrategyType: defaultSettings.spendingStrategyType,
+      spendingSmile: {
+        ...defaultSettings.spendingSmile,
+        noGoStartAge: 85,
+      },
       statePensionDrawDate: defaultSettings.statePensionDrawDate,
       statePensionApplyFutureGrowth:
         defaultSettings.statePensionApplyFutureGrowth,

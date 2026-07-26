@@ -113,11 +113,68 @@ export function migrateFromV4ToV5(data: unknown) {
   };
 }
 
+export function migrateFromV5ToV6(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    spendingStrategyType: "FLAT",
+  };
+}
+
+export function migrateFromV6ToV7(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  const legacyStrategy = isRecord(data.spendingSmile) ? data.spendingSmile : {};
+  const targetIncome =
+    typeof data.desiredRetirementIncome === "number"
+      ? data.desiredRetirementIncome
+      : 0;
+
+  return {
+    ...data,
+    spendingSmile: {
+      goGoPercentage: getMigratedPercentage(
+        legacyStrategy.goGoPercentage,
+        legacyStrategy.goGo,
+        targetIncome,
+        100
+      ),
+      slowGoStartAge:
+        typeof legacyStrategy.slowGoStartAge === "number"
+          ? legacyStrategy.slowGoStartAge
+          : 75,
+      slowGoPercentage: getMigratedPercentage(
+        legacyStrategy.slowGoPercentage,
+        legacyStrategy.slowGo,
+        targetIncome,
+        85
+      ),
+      noGoStartAge:
+        typeof legacyStrategy.noGoStartAge === "number"
+          ? legacyStrategy.noGoStartAge
+          : 85,
+      noGoPercentage: getMigratedPercentage(
+        legacyStrategy.noGoPercentage,
+        legacyStrategy.noGo,
+        targetIncome,
+        70
+      ),
+    },
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
   3: migrateFromV3ToV4,
   4: migrateFromV4ToV5,
+  5: migrateFromV5ToV6,
+  6: migrateFromV6ToV7,
 };
 
 export function migrateSettingsToLatest(
@@ -151,4 +208,28 @@ export function migrateSettingsToLatest(
   }
 
   return migratedData;
+}
+
+function getMigratedPercentage(
+  currentValue: unknown,
+  legacyPhase: unknown,
+  targetIncome: number,
+  fallback: number
+) {
+  if (typeof currentValue === "number") {
+    return currentValue;
+  }
+  if (!isRecord(legacyPhase)) {
+    return fallback;
+  }
+  if (typeof legacyPhase.annualAmountReal === "number" && targetIncome > 0) {
+    return roundPercentage((legacyPhase.annualAmountReal / targetIncome) * 100);
+  }
+  return typeof legacyPhase.percentageOfGoGo === "number"
+    ? legacyPhase.percentageOfGoGo
+    : fallback;
+}
+
+function roundPercentage(value: number) {
+  return Math.round(value * 1_000_000) / 1_000_000;
 }

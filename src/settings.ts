@@ -21,6 +21,8 @@ export type {
   LisaWithdrawalStrategy,
   SippTaxReliefRate,
   ProjectionBasis,
+  SpendingSmileStrategy,
+  SpendingStrategyType,
   ClassicCalculationMode,
   ClassicFinalSalaryLink,
   PensionSettings,

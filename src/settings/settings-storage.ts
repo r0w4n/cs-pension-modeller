@@ -158,8 +158,7 @@ function coerceSettings(
     requirementAge: coerceNumber(input.requirementAge),
     showAlpha: coerceBoolean(input.showAlpha),
     projectionBasis: coerceString(input.projectionBasis) as
-      | ProjectionBasis
-      | undefined,
+      ProjectionBasis | undefined,
     inflationRateAnnual: coerceNumber(input.inflationRateAnnual),
     showSipp: coerceBoolean(input.showSipp),
     showCsAvc: coerceBoolean(input.showCsAvc),
@@ -179,8 +178,7 @@ function coerceSettings(
     fullSalary: coerceNumber(input.fullSalary),
     desiredRetirementIncome: coerceNumber(input.desiredRetirementIncome),
     spendingStrategyType: coerceString(input.spendingStrategyType) as
-      | SpendingStrategyType
-      | undefined,
+      SpendingStrategyType | undefined,
     spendingSmile:
       input.spendingSmile &&
       typeof input.spendingSmile === "object" &&
@@ -226,8 +224,7 @@ function coerceSettings(
       (input as { sippApplyTaxRelief?: unknown }).sippApplyTaxRelief
     ),
     sippWithdrawalStrategy: coerceString(input.sippWithdrawalStrategy) as
-      | SippWithdrawalStrategy
-      | undefined,
+      SippWithdrawalStrategy | undefined,
     sippWithdrawalPercent: coerceNumber(input.sippWithdrawalPercent),
     sippWithdrawalTargetAge: coerceNumber(input.sippWithdrawalTargetAge),
     csAvcCurrentPot: coerceNumber(input.csAvcCurrentPot),
@@ -240,8 +237,7 @@ function coerceSettings(
     csAvcLumpSums: coerceAddedPensionLumpSums(input.csAvcLumpSums),
     csAvcRealInterestPercent: coerceNumber(input.csAvcRealInterestPercent),
     csAvcWithdrawalStrategy: coerceString(input.csAvcWithdrawalStrategy) as
-      | CsAvcWithdrawalStrategy
-      | undefined,
+      CsAvcWithdrawalStrategy | undefined,
     csAvcWithdrawalPercent: coerceNumber(input.csAvcWithdrawalPercent),
     csAvcWithdrawalTargetAge: coerceNumber(input.csAvcWithdrawalTargetAge),
     isaCurrentPot: coerceNumber(input.isaCurrentPot),
@@ -250,8 +246,7 @@ function coerceSettings(
     isaLumpSums: coerceAddedPensionLumpSums(input.isaLumpSums),
     isaRealInterestPercent: coerceNumber(input.isaRealInterestPercent),
     isaWithdrawalStrategy: coerceString(input.isaWithdrawalStrategy) as
-      | IsaWithdrawalStrategy
-      | undefined,
+      IsaWithdrawalStrategy | undefined,
     isaWithdrawalPercent: coerceNumber(input.isaWithdrawalPercent),
     isaWithdrawalTargetAge: coerceNumber(input.isaWithdrawalTargetAge),
     lisaCurrentPot: coerceNumber(input.lisaCurrentPot),
@@ -260,8 +255,7 @@ function coerceSettings(
     lisaLumpSums: coerceAddedPensionLumpSums(input.lisaLumpSums),
     lisaRealInterestPercent: coerceNumber(input.lisaRealInterestPercent),
     lisaWithdrawalStrategy: coerceString(input.lisaWithdrawalStrategy) as
-      | LisaWithdrawalStrategy
-      | undefined,
+      LisaWithdrawalStrategy | undefined,
     lisaWithdrawalPercent: coerceNumber(input.lisaWithdrawalPercent),
     lisaWithdrawalTargetAge: coerceNumber(input.lisaWithdrawalTargetAge),
     ...coerceClassicSettings(input),

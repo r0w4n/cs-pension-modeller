@@ -8,10 +8,7 @@ export const FLEXIBLE_FUND_ACCOUNT_IDS = [
 export type FlexibleFundAccountId = (typeof FLEXIBLE_FUND_ACCOUNT_IDS)[number];
 
 export type FlexibleWithdrawalStrategy =
-  | "zero_at_death"
-  | "percentage"
-  | "use_by_age"
-  | "meet_income_target";
+  "zero_at_death" | "percentage" | "use_by_age" | "meet_income_target";
 
 export const FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS: ReadonlyArray<{
   value: FlexibleWithdrawalStrategy;

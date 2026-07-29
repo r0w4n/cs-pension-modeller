@@ -145,8 +145,7 @@ class AlphaPensionWorld {
   epaPayableDate = "";
   alphaStatementDate = "";
   validationResult:
-    | { ageAtDrawDate: number; valid: boolean; messages: string[] }
-    | undefined;
+    { ageAtDrawDate: number; valid: boolean; messages: string[] } | undefined;
   epaValidation: { valid: boolean; payableAge: number | undefined } | undefined;
 }
 

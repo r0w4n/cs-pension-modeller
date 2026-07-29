@@ -6,9 +6,7 @@ import type {
 
 export type SpendingPhase = "FLAT" | "GO_GO" | "SLOW_GO" | "NO_GO";
 export type SmilePercentageField =
-  | "goGoPercentage"
-  | "slowGoPercentage"
-  | "noGoPercentage";
+  "goGoPercentage" | "slowGoPercentage" | "noGoPercentage";
 export type SmileStartAgeField = "slowGoStartAge" | "noGoStartAge";
 export type SmileStartAgeBounds = { min: number; max: number };
 

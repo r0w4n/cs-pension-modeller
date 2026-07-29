@@ -39,8 +39,7 @@ type AlphaEarlyRetirementFactorTable = Record<
 
 type AlphaLateRetirementStatus = "active" | "deferred";
 type AlphaLateRetirementFactorType =
-  | "standard_and_dependants"
-  | "self_only_added_pension";
+  "standard_and_dependants" | "self_only_added_pension";
 type AlphaLateRetirementFactorTable = Record<
   AlphaLateRetirementFactorType,
   Record<number, readonly number[]>

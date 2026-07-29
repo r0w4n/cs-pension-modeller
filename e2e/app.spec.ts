@@ -924,11 +924,7 @@ async function expectProjectionTableForViewport(
 async function assertFooterPage(
   page: Page,
   pageName:
-    | "About"
-    | "Acceptance criteria"
-    | "Methodology"
-    | "Privacy"
-    | "Settings",
+    "About" | "Acceptance criteria" | "Methodology" | "Privacy" | "Settings",
   sectionHeading: string
 ) {
   const pathSegment =

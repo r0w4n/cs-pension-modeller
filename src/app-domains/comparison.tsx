@@ -1429,8 +1429,7 @@ function buildOnTrackOutcomeMessage(result: ComparisonResult) {
 function buildShortfallOutcomeMessage(
   result: ComparisonResult,
   shortfallRange:
-    | PensionSummary["retirementIncome"]["ageRanges"][number]
-    | undefined
+    PensionSummary["retirementIncome"]["ageRanges"][number] | undefined
 ) {
   const settings = result.scenario.settings;
   const firstShortfallAge = shortfallRange?.startAge ?? settings.requirementAge;

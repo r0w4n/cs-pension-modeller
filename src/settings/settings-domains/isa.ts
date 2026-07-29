@@ -3,16 +3,12 @@ import type {
   PensionSettings,
   PensionValidationIssue,
 } from "../settings-types";
+import { normalizeFlexibleWithdrawalStrategy } from "../settings-types";
 
 export function normalizeIsaWithdrawalStrategy(
   value: unknown
 ): IsaWithdrawalStrategy {
-  return value === "percentage" ||
-    value === "zero_at_death" ||
-    value === "use_by_age" ||
-    value === "meet_income_target"
-    ? value
-    : "use_by_age";
+  return normalizeFlexibleWithdrawalStrategy(value);
 }
 
 export function normalizeIsaBooleanSetting(value: unknown) {

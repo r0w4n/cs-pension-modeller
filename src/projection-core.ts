@@ -56,7 +56,6 @@ export type ProjectionRow = {
   totalMonthlyIncomeBeforeTax: number;
   monthlyIncomeTax: number;
   totalMonthlyNetIncome: number;
-  monthlyActiveIncomeTarget?: number;
   monthlyGuaranteedNetIncome?: number;
   monthlyUnavoidableSurplus?: number;
   monthlyAvoidableFlexibleSurplus?: number;
@@ -67,7 +66,6 @@ export type ProjectionRow = {
       net: number;
     }
   >;
-  cumulativeAvoidableFlexibleSurplus?: number;
 };
 
 export type PensionSummary = {

@@ -1,5 +1,6 @@
 import {
   NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE,
+  normalizeFlexibleWithdrawalStrategy,
   type PensionSettings,
   type PensionValidationIssue,
   type SippTaxReliefRate,
@@ -10,12 +11,7 @@ import { resolveSippMinimumAccessAge } from "../settings-shared/state";
 export function normalizeSippWithdrawalStrategy(
   value: unknown
 ): SippWithdrawalStrategy {
-  return value === "percentage" ||
-    value === "zero_at_death" ||
-    value === "use_by_age" ||
-    value === "meet_income_target"
-    ? value
-    : "use_by_age";
+  return normalizeFlexibleWithdrawalStrategy(value);
 }
 
 export function normalizeSippBooleanSetting(value: unknown) {

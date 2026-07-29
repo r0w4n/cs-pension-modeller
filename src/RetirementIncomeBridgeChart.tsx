@@ -25,6 +25,7 @@ import {
   snapToLimit,
   type ChartNumberLimit,
 } from "./app/chart-drag-constraints";
+import type { ResidualFlexibleFundInsight } from "./app-domains/flexible-withdrawals";
 
 export type RetirementIncomePoint = {
   date: string;
@@ -109,13 +110,10 @@ export type RetirementIncomeBridgeParameters = {
   showIsa: boolean;
   showLisa: boolean;
   showSipp: boolean;
-  sippTargetBasedWithdrawalEnabled: boolean;
   sippUseByAgeEnabled: boolean;
   showNuvos: boolean;
   showPremium: boolean;
-  isaTargetBasedWithdrawalEnabled: boolean;
   isaUseByAgeEnabled: boolean;
-  lisaTargetBasedWithdrawalEnabled: boolean;
   lisaUseByAgeEnabled: boolean;
   showStatePension: boolean;
 };
@@ -126,6 +124,7 @@ export type RetirementIncomeBridgeChartProps =
     alphaLabel?: string;
     hideInactiveLegendItems?: boolean;
     showFlexibleWithdrawalInsights?: boolean;
+    residualFlexibleFundInsights?: ResidualFlexibleFundInsight[];
     limits: RetirementIncomeBridgeLimits;
     statePensionEditable?: boolean;
     validationIssues?: PensionValidationIssue[];
@@ -439,18 +438,16 @@ export function RetirementIncomeBridgeChart({
   showIsa,
   showLisa,
   showSipp,
-  sippTargetBasedWithdrawalEnabled,
   sippUseByAgeEnabled,
   showNuvos,
   showPremium,
-  isaTargetBasedWithdrawalEnabled,
   isaUseByAgeEnabled,
-  lisaTargetBasedWithdrawalEnabled,
   lisaUseByAgeEnabled,
   showStatePension,
   alphaLabel = "Alpha pension",
   hideInactiveLegendItems = false,
   showFlexibleWithdrawalInsights = false,
+  residualFlexibleFundInsights = [],
   limits,
   statePensionEditable = false,
   validationIssues = [],
@@ -844,40 +841,12 @@ export function RetirementIncomeBridgeChart({
       point.flexibleWithdrawalInsights.map((insight) => insight.accountId)
     )
   );
-  const residualTargetBasedAccounts = getResidualTargetBasedAccounts({
-    data: visibleData,
-    enabled: showFlexibleWithdrawalInsights,
-    accounts: [
-      {
-        accountId: "isa",
-        balanceKey: "isaBalance",
-        contribution: isaMonthlyContribution,
-        incomeKey: "isaIncomeAnnual",
-        label: "ISA",
-        targetBasedWithdrawalEnabled: isaTargetBasedWithdrawalEnabled,
-      },
-      {
-        accountId: "lisa",
-        balanceKey: "lisaBalance",
-        contribution: lisaMonthlyContribution,
-        incomeKey: "lisaIncomeAnnual",
-        label: "LISA",
-        targetBasedWithdrawalEnabled: lisaTargetBasedWithdrawalEnabled,
-      },
-      {
-        accountId: "sipp",
-        balanceKey: "sippBalance",
-        contribution: sippMonthlyContribution,
-        incomeKey: "sippIncomeAnnual",
-        label: "SIPP",
-        targetBasedWithdrawalEnabled: sippTargetBasedWithdrawalEnabled,
-      },
-    ],
-  });
-  const flexibleAccountWarnings = createFlexibleAccountWarnings(
-    reducibleFlexibleAccounts,
-    residualTargetBasedAccounts
-  );
+  const flexibleAccountWarnings = showFlexibleWithdrawalInsights
+    ? createFlexibleAccountWarnings(
+        reducibleFlexibleAccounts,
+        residualFlexibleFundInsights
+      )
+    : new Map<string, string>();
   const hasUnavoidableSurplus = flexibleSurplusData.some(
     (point) => point.unavoidableSurplusAnnual > 0
   );
@@ -3005,65 +2974,9 @@ export function RetirementIncomeBridgeChart({
   );
 }
 
-type ResidualTargetBasedAccount = {
-  age: number;
-  balance: number;
-  label: string;
-  wasUsed: boolean;
-};
-
-type ResidualTargetBasedAccountConfig = {
-  accountId: "isa" | "lisa" | "sipp";
-  balanceKey: "isaBalance" | "lisaBalance" | "sippBalance";
-  contribution: number;
-  incomeKey: "isaIncomeAnnual" | "lisaIncomeAnnual" | "sippIncomeAnnual";
-  label: string;
-  targetBasedWithdrawalEnabled: boolean;
-};
-
-const MINIMUM_DISPLAYED_RESIDUAL_BALANCE = 1;
-
-function getResidualTargetBasedAccounts({
-  accounts,
-  data,
-  enabled,
-}: {
-  accounts: ResidualTargetBasedAccountConfig[];
-  data: RetirementIncomePoint[];
-  enabled: boolean;
-}) {
-  const residualAccounts = new Map<string, ResidualTargetBasedAccount>();
-  const finalPoint = data.at(-1);
-
-  if (!enabled || !finalPoint) {
-    return residualAccounts;
-  }
-
-  accounts.forEach((account) => {
-    const balance = finalPoint[account.balanceKey] ?? 0;
-
-    if (
-      !account.targetBasedWithdrawalEnabled ||
-      account.contribution <= 0 ||
-      balance < MINIMUM_DISPLAYED_RESIDUAL_BALANCE
-    ) {
-      return;
-    }
-
-    residualAccounts.set(account.accountId, {
-      age: finalPoint.age,
-      balance,
-      label: account.label,
-      wasUsed: data.some((point) => point[account.incomeKey] > 0),
-    });
-  });
-
-  return residualAccounts;
-}
-
 function createFlexibleAccountWarnings(
   reducibleAccounts: Set<string>,
-  residualAccounts: Map<string, ResidualTargetBasedAccount>
+  residualAccounts: ResidualFlexibleFundInsight[]
 ) {
   const warnings = new Map<string, string>();
   const labels: Record<"isa" | "lisa" | "sipp", string> = {
@@ -3081,18 +2994,20 @@ function createFlexibleAccountWarnings(
       return;
     }
 
-    const residualAccount = residualAccounts.get(accountId);
+    const residualAccount = residualAccounts.find(
+      (account) => account.accountId === accountId
+    );
 
     if (!residualAccount) {
       return;
     }
 
     const explanation = residualAccount.wasUsed
-      ? `the model leaves ${formatCurrency(residualAccount.balance)} in the ${residualAccount.label}`
-      : `the ${residualAccount.label} is not used for modelled income and retains ${formatCurrency(residualAccount.balance)}`;
+      ? `the model leaves ${formatCurrency(residualAccount.endingBalance)} in the ${residualAccount.label}`
+      : `the ${residualAccount.label} is not used for modelled income and retains ${formatCurrency(residualAccount.endingBalance)}`;
     warnings.set(
       accountId,
-      `Potential over-saving: ${explanation} at age ${formatAgeValue(residualAccount.age)}. You may want to compare a lower contribution.`
+      `Potential over-saving: ${explanation} at age ${formatAgeValue(residualAccount.planningHorizonAge)}. You may want to compare a lower contribution.`
     );
   });
 

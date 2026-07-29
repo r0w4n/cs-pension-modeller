@@ -443,6 +443,7 @@ function createViewModel(): JourneyStepViewModel {
     derivedInflationAssumptions: deriveInflationAssumptions(settings),
     flexibleWithdrawalSummary: {
       accounts: [],
+      residualAccounts: [],
       affectedAges: [],
       totalReducibleGrossWithdrawal: 0,
       totalAvoidableNetSurplus: 0,

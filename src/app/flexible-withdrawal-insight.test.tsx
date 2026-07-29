@@ -18,6 +18,7 @@ describe("FlexibleWithdrawalInsightPanel", () => {
               avoidableNetSurplus: 37_900,
             },
           ],
+          residualAccounts: [],
           affectedAges: [65, 66, 67, 68],
           totalReducibleGrossWithdrawal: 42_600,
           totalAvoidableNetSurplus: 37_900,

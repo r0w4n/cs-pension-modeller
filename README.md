@@ -44,8 +44,8 @@ It supports:
   sums, investment growth, explicit withdrawal strategies, and coordinated
   target-based drawdown
 - avoidable flexible-fund surplus insights with gross reducible withdrawals,
-  estimated unallocated net surplus, account attribution, and non-destructive
-  target-based previews
+  estimated unallocated net surplus, residual-balance warnings, account
+  attribution, and non-destructive target-based previews
 - bridge analysis for the period before secure pension income starts
 - simplified UK Income Tax estimates for gross and take-home income comparison
 - real-terms and nominal-terms projection bases

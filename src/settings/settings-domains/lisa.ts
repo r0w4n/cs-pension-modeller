@@ -3,6 +3,7 @@ import type {
   PensionSettings,
   PensionValidationIssue,
 } from "../settings-types";
+import { normalizeFlexibleWithdrawalStrategy } from "../settings-types";
 import { addYearsToIsoDate } from "../settings-shared/date";
 
 export const LISA_ACCESS_AGE = 60;
@@ -14,12 +15,7 @@ export const LISA_GOVERNMENT_BONUS_RATE = 0.25;
 export function normalizeLisaWithdrawalStrategy(
   value: unknown
 ): LisaWithdrawalStrategy {
-  return value === "percentage" ||
-    value === "zero_at_death" ||
-    value === "use_by_age" ||
-    value === "meet_income_target"
-    ? value
-    : "use_by_age";
+  return normalizeFlexibleWithdrawalStrategy(value);
 }
 
 export function normalizeLisaBooleanSetting(value: unknown) {

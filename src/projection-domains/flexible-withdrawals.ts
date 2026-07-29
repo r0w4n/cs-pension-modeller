@@ -1,4 +1,5 @@
 import {
+  FLEXIBLE_FUND_ACCOUNT_CONFIG,
   FLEXIBLE_FUND_ACCOUNT_IDS,
   type FlexibleFundAccountId,
   type PensionSettings,
@@ -15,6 +16,7 @@ type MonthlyWithdrawals = Record<FlexibleFundAccountId, number>;
 type FlexibleBalances = Record<FlexibleFundAccountId, number>;
 
 const MONEY_TOLERANCE = 0.005;
+const BINARY_SEARCH_ITERATIONS = 50;
 
 export function coordinateFlexibleWithdrawals(
   rows: ProjectionRow[],
@@ -29,7 +31,6 @@ export function coordinateFlexibleWithdrawals(
   const growthRates = getMonthlyGrowthRates(settings);
   const accessDates = getAccessDates(settings);
   let balancesInitialized = false;
-  let cumulativeAvoidableFlexibleSurplus = 0;
 
   return rows.map((sourceRow) => {
     const row = cloneProjectionRow(sourceRow);
@@ -60,14 +61,9 @@ export function coordinateFlexibleWithdrawals(
       });
     }
 
-    const analysis = analyseFlexibleSurplus(row, settings);
-    cumulativeAvoidableFlexibleSurplus +=
-      analysis.monthlyAvoidableFlexibleSurplus;
-
     return {
       ...row,
-      ...analysis,
-      cumulativeAvoidableFlexibleSurplus,
+      ...analyseFlexibleSurplus(row, settings),
     };
   });
 }
@@ -170,7 +166,6 @@ export function analyseFlexibleSurplus(
   });
 
   return {
-    monthlyActiveIncomeTarget,
     monthlyGuaranteedNetIncome,
     monthlyUnavoidableSurplus,
     monthlyAvoidableFlexibleSurplus,
@@ -273,29 +268,24 @@ function solveGrossReduction(input: {
   settings: PensionSettings;
   withdrawals: MonthlyWithdrawals;
 }) {
-  let lowerReduction = 0;
-  let upperReduction = input.grossWithdrawal;
+  return findMinimumSufficientValue({
+    upperBound: input.grossWithdrawal,
+    isSufficient: (candidateReduction) => {
+      const candidateNetIncome = calculateMonthlyNetIncome({
+        row: input.row,
+        settings: input.settings,
+        withdrawals: {
+          ...input.withdrawals,
+          [input.accountId]: input.grossWithdrawal - candidateReduction,
+        },
+      });
 
-  for (let iteration = 0; iteration < 50; iteration += 1) {
-    const candidateReduction = (lowerReduction + upperReduction) / 2;
-    const candidateNetIncome = calculateMonthlyNetIncome({
-      row: input.row,
-      settings: input.settings,
-      withdrawals: {
-        ...input.withdrawals,
-        [input.accountId]: input.grossWithdrawal - candidateReduction,
-      },
-    });
-    const netReduction = input.currentNetIncome - candidateNetIncome;
-
-    if (netReduction < input.requiredNetReduction) {
-      lowerReduction = candidateReduction;
-    } else {
-      upperReduction = candidateReduction;
-    }
-  }
-
-  return upperReduction;
+      return (
+        input.currentNetIncome - candidateNetIncome >=
+        input.requiredNetReduction
+      );
+    },
+  });
 }
 
 function solveGrossWithdrawal(input: {
@@ -324,21 +314,36 @@ function solveGrossWithdrawal(input: {
     return input.availableBalance;
   }
 
-  let lowerWithdrawal = 0;
-  let upperWithdrawal = input.availableBalance;
+  return findMinimumSufficientValue({
+    upperBound: input.availableBalance,
+    isSufficient: (candidateWithdrawal) =>
+      input.calculateNetIncome(candidateWithdrawal) >=
+      input.remainingNetRequirement,
+  });
+}
 
-  for (let iteration = 0; iteration < 50; iteration += 1) {
-    const candidateWithdrawal = (lowerWithdrawal + upperWithdrawal) / 2;
-    const candidateNetIncome = input.calculateNetIncome(candidateWithdrawal);
+function findMinimumSufficientValue(input: {
+  upperBound: number;
+  isSufficient: (candidate: number) => boolean;
+}) {
+  let lowerBound = 0;
+  let upperBound = input.upperBound;
 
-    if (candidateNetIncome < input.remainingNetRequirement) {
-      lowerWithdrawal = candidateWithdrawal;
+  for (
+    let iteration = 0;
+    iteration < BINARY_SEARCH_ITERATIONS;
+    iteration += 1
+  ) {
+    const candidate = (lowerBound + upperBound) / 2;
+
+    if (input.isSufficient(candidate)) {
+      upperBound = candidate;
     } else {
-      upperWithdrawal = candidateWithdrawal;
+      lowerBound = candidate;
     }
   }
 
-  return upperWithdrawal;
+  return upperBound;
 }
 
 function updateRowIncomeTotals(
@@ -427,66 +432,36 @@ function getWithdrawalStrategy(
   settings: PensionSettings,
   accountId: FlexibleFundAccountId
 ) {
-  switch (accountId) {
-    case "sipp":
-      return settings.sippWithdrawalStrategy;
-    case "csAvc":
-      return settings.csAvcWithdrawalStrategy;
-    case "lisa":
-      return settings.lisaWithdrawalStrategy;
-    case "isa":
-      return settings.isaWithdrawalStrategy;
-  }
+  return settings[FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].strategyField];
 }
 
 function isAccountShown(
   settings: PensionSettings,
   accountId: FlexibleFundAccountId
 ) {
-  switch (accountId) {
-    case "sipp":
-      return settings.showSipp;
-    case "csAvc":
-      return settings.showCsAvc;
-    case "lisa":
-      return settings.showLisa;
-    case "isa":
-      return settings.showIsa;
-  }
+  return settings[FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].showField];
 }
 
 function getAccessDates(
   settings: PensionSettings
 ): Record<FlexibleFundAccountId, string> {
-  return {
-    sipp: addYears(settings.dateOfBirth, settings.sippDrawAge),
-    csAvc: addYears(settings.dateOfBirth, settings.csAvcDrawAge),
-    lisa: addYears(settings.dateOfBirth, settings.lisaDrawAge),
-    isa: addYears(settings.dateOfBirth, settings.isaDrawAge),
-  };
+  return mapFlexibleFundAccounts((accountId) =>
+    addYears(
+      settings.dateOfBirth,
+      settings[FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].drawAgeField]
+    )
+  );
 }
 
 function getMonthlyGrowthRates(
   settings: PensionSettings
 ): Record<FlexibleFundAccountId, number> {
-  return {
-    sipp: getModelledMonthlyGrowthRate(
+  return mapFlexibleFundAccounts((accountId) =>
+    getModelledMonthlyGrowthRate(
       settings,
-      settings.sippRealInterestPercent / 100
-    ),
-    csAvc: getModelledMonthlyGrowthRate(
-      settings,
-      settings.csAvcRealInterestPercent / 100
-    ),
-    lisa: getModelledMonthlyGrowthRate(
-      settings,
-      settings.lisaRealInterestPercent / 100
-    ),
-    isa: getModelledMonthlyGrowthRate(
-      settings,
-      settings.isaRealInterestPercent / 100
-    ),
-  };
+      settings[FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].realInterestField] / 100
+    )
+  );
 }
 
 function setAccountProjectionValues(
@@ -494,33 +469,24 @@ function setAccountProjectionValues(
   accountId: FlexibleFundAccountId,
   values: { balance: number; withdrawal: number }
 ) {
-  switch (accountId) {
-    case "sipp":
-      row.sippPot = values.balance;
-      row.monthlySippPension = values.withdrawal;
-      break;
-    case "csAvc":
-      row.csAvcPot = values.balance;
-      row.monthlyCsAvcPension = values.withdrawal;
-      break;
-    case "lisa":
-      row.lisaPot = values.balance;
-      row.monthlyLisaPension = values.withdrawal;
-      break;
-    case "isa":
-      row.isaPot = values.balance;
-      row.monthlyIsaPension = values.withdrawal;
-      break;
-  }
+  const account = FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId];
+  row[account.balanceField] = values.balance;
+  row[account.withdrawalField] = values.withdrawal;
 }
 
 function createZeroAccountRecord(): FlexibleBalances {
-  return {
-    sipp: 0,
-    csAvc: 0,
-    lisa: 0,
-    isa: 0,
-  };
+  return mapFlexibleFundAccounts(() => 0);
+}
+
+function mapFlexibleFundAccounts<T>(
+  getValue: (accountId: FlexibleFundAccountId) => T
+) {
+  return Object.fromEntries(
+    FLEXIBLE_FUND_ACCOUNT_IDS.map((accountId) => [
+      accountId,
+      getValue(accountId),
+    ])
+  ) as Record<FlexibleFundAccountId, T>;
 }
 
 function createZeroInsightRecord(): NonNullable<

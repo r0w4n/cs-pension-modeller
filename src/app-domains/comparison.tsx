@@ -23,6 +23,7 @@ import {
   readStorageItem,
   removeStorageItem,
   writeStorageItem,
+  type FlexibleWithdrawalStrategy,
   type PensionSettings,
 } from "../settings";
 import {
@@ -1964,11 +1965,7 @@ function getExpectedFlexibleAssetsExhaustionAge(settings: PensionSettings) {
 }
 
 function getExpectedPotExhaustionAge(
-  strategy:
-    | "use_by_age"
-    | "zero_at_death"
-    | "percentage"
-    | "meet_income_target",
+  strategy: FlexibleWithdrawalStrategy,
   targetAge: number,
   lifeExpectancy: number
 ) {

@@ -1,3 +1,19 @@
+import type {
+  FlexibleFundAccountId,
+  FlexibleWithdrawalStrategy,
+} from "../flexible-funds";
+
+export {
+  FLEXIBLE_FUND_ACCOUNT_CONFIG,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
+  FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
+  normalizeFlexibleWithdrawalStrategy,
+} from "../flexible-funds";
+export type {
+  FlexibleFundAccountId,
+  FlexibleWithdrawalStrategy,
+} from "../flexible-funds";
+
 export const SETTINGS_STORAGE_KEY = "cs-pension-modeller.settings";
 export const LOCAL_STORAGE_ENABLED_KEY =
   "cs-pension-modeller.localStorageEnabled";
@@ -25,19 +41,6 @@ export type AddedPensionLumpSum = {
   factorType?: AddedPensionFactorType;
 };
 
-export const FLEXIBLE_FUND_ACCOUNT_IDS = [
-  "sipp",
-  "csAvc",
-  "lisa",
-  "isa",
-] as const;
-
-export type FlexibleFundAccountId = (typeof FLEXIBLE_FUND_ACCOUNT_IDS)[number];
-export type FlexibleWithdrawalStrategy =
-  | "zero_at_death"
-  | "percentage"
-  | "use_by_age"
-  | "meet_income_target";
 export type SippWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type CsAvcWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type IsaWithdrawalStrategy = FlexibleWithdrawalStrategy;

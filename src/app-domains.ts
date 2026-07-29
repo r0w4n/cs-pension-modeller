@@ -107,7 +107,9 @@ export {
 } from "./app-domains/retirement-income";
 
 export {
+  createTargetBasedWithdrawalPreview,
   getBalanceForAccount,
+  getFlexibleFundAccountIdForStrategyField,
   getFlexibleFundAccountLabel,
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
@@ -118,6 +120,7 @@ export {
   summarizeFlexibleWithdrawalInsights,
   type FlexibleWithdrawalAccountInsight,
   type FlexibleWithdrawalSummary,
+  type ResidualFlexibleFundInsight,
   type TargetBasedWithdrawalPreview,
 } from "./app-domains/flexible-withdrawals";
 

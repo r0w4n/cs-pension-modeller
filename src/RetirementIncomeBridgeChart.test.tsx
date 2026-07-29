@@ -89,13 +89,10 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   showIsa: false,
   showLisa: false,
   showSipp: false,
-  sippTargetBasedWithdrawalEnabled: false,
   sippUseByAgeEnabled: false,
   showNuvos: false,
   showPremium: false,
-  isaTargetBasedWithdrawalEnabled: false,
   isaUseByAgeEnabled: false,
-  lisaTargetBasedWithdrawalEnabled: false,
   lisaUseByAgeEnabled: false,
   showStatePension: true,
   limits: {
@@ -304,7 +301,15 @@ describe("RetirementIncomeBridgeChart", () => {
         {...baseProps}
         targetIncomeAnnual={24_000}
         isaMonthlyContribution={175}
-        isaTargetBasedWithdrawalEnabled
+        residualFlexibleFundInsights={[
+          {
+            accountId: "isa",
+            label: "ISA",
+            endingBalance: 20_000,
+            planningHorizonAge: 80,
+            wasUsed: false,
+          },
+        ]}
         showIsa
         data={[
           {
@@ -403,8 +408,22 @@ describe("RetirementIncomeBridgeChart", () => {
         showSipp
         lisaMonthlyContribution={225}
         sippMonthlyContribution={175}
-        lisaTargetBasedWithdrawalEnabled
-        sippTargetBasedWithdrawalEnabled
+        residualFlexibleFundInsights={[
+          {
+            accountId: "lisa",
+            label: "LISA",
+            endingBalance: 86_924,
+            planningHorizonAge: 80,
+            wasUsed: false,
+          },
+          {
+            accountId: "sipp",
+            label: "SIPP",
+            endingBalance: 88_253,
+            planningHorizonAge: 80,
+            wasUsed: false,
+          },
+        ]}
         data={[
           {
             ...basePoint,

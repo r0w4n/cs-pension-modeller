@@ -694,21 +694,12 @@ export function createBridgeChartParameters(
     showIsa: settings.showIsa,
     showLisa: settings.showLisa,
     showSipp: settings.showSipp,
-    sippTargetBasedWithdrawalEnabled:
-      settings.showSipp &&
-      settings.sippWithdrawalStrategy === "meet_income_target",
     sippUseByAgeEnabled:
       settings.showSipp && settings.sippWithdrawalStrategy === "use_by_age",
     showNuvos: settings.showNuvos,
     showPremium: settings.showPremium,
-    isaTargetBasedWithdrawalEnabled:
-      settings.showIsa &&
-      settings.isaWithdrawalStrategy === "meet_income_target",
     isaUseByAgeEnabled:
       settings.showIsa && settings.isaWithdrawalStrategy === "use_by_age",
-    lisaTargetBasedWithdrawalEnabled:
-      settings.showLisa &&
-      settings.lisaWithdrawalStrategy === "meet_income_target",
     lisaUseByAgeEnabled:
       settings.showLisa && settings.lisaWithdrawalStrategy === "use_by_age",
     showStatePension: settings.showStatePension,

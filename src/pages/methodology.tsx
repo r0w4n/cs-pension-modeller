@@ -963,6 +963,13 @@ export function MethodologyPage() {
           including later growth, tax, withdrawals, shortfalls and ending
           balances.
         </p>
+        <p className="section-copy">
+          In expert results, a target-based account with ongoing contributions
+          is also marked as potential over-saving when the model leaves at least
+          £1 in it at the selected planning horizon. This is a prompt to compare
+          assumptions, not a conclusion that the remaining balance is unwanted
+          or that contributions should be reduced.
+        </p>
       </section>
 
       <section>

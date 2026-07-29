@@ -3,6 +3,7 @@ import {
   SETTINGS_SCHEMA_VERSION,
   type StoredSettingsEnvelope,
 } from "./settings-versions";
+import { FLEXIBLE_FUND_ACCOUNT_IDS } from "./settings-types";
 
 type SettingsMigration = (data: unknown) => unknown;
 
@@ -175,7 +176,7 @@ export function migrateFromV7ToV8(data: unknown) {
 
   return {
     ...data,
-    flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
+    flexibleWithdrawalPriority: [...FLEXIBLE_FUND_ACCOUNT_IDS],
   };
 }
 

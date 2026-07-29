@@ -447,6 +447,7 @@ function SpendingProfileChart({
   const slowX = x(strategy.slowGoStartAge);
   const noX = x(strategy.noGoStartAge);
   const endX = x(endAge);
+  const xAxisTicks = createProfileXAxisTicks(startAge, endAge);
   const slowGoReached = strategy.slowGoStartAge <= endAge;
   const noGoReached = strategy.noGoStartAge <= endAge;
   const path = [
@@ -514,6 +515,30 @@ function SpendingProfileChart({
           y1={plotBottom}
           y2={plotBottom}
         />
+        <g data-testid="spending-profile-x-axis" aria-hidden="true">
+          {xAxisTicks.map((tick) => {
+            const tickX = x(tick);
+
+            return (
+              <g
+                key={tick}
+                data-age={tick}
+                data-testid="spending-profile-x-axis-tick"
+              >
+                <line
+                  className="profile-axis"
+                  x1={tickX}
+                  x2={tickX}
+                  y1={plotBottom}
+                  y2={plotBottom + 5}
+                />
+                <text textAnchor="middle" x={tickX} y="174">
+                  {tick}
+                </text>
+              </g>
+            );
+          })}
+        </g>
         {slowGoReached ? (
           <line
             data-testid="spending-phase-boundary"
@@ -535,24 +560,23 @@ function SpendingProfileChart({
           />
         ) : null}
         <path className="profile-target-line" d={path} />
-        <text x={plotLeft} y="174">
-          {startAge}
-        </text>
-        {slowGoReached ? (
-          <text textAnchor="middle" x={slowX} y="174">
-            {strategy.slowGoStartAge}
-          </text>
-        ) : null}
-        {noGoReached ? (
-          <text textAnchor="middle" x={noX} y="174">
-            {strategy.noGoStartAge}
-          </text>
-        ) : null}
-        <text textAnchor="end" x={plotRight} y="174">
-          {endAge}
-        </text>
       </svg>
     </figure>
+  );
+}
+
+function createProfileXAxisTicks(startAge: number, endAge: number) {
+  const interval = 5;
+  const firstTick = Math.ceil(startAge / interval) * interval;
+  const lastTick = Math.floor(endAge / interval) * interval;
+
+  if (firstTick > lastTick) {
+    return [];
+  }
+
+  return Array.from(
+    { length: (lastTick - firstTick) / interval + 1 },
+    (_, index) => firstTick + index * interval
   );
 }
 

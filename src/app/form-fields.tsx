@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import {
   type FlexibleWithdrawalSummary,
+  getFlexibleFundAccountIdForStrategyField,
   isFieldDisabled,
   isFieldHiddenOnMobile,
   shouldRenderField,
@@ -253,16 +254,7 @@ function getFlexibleWithdrawalFieldWarning(
   fieldId: SettingsKey,
   summary?: FlexibleWithdrawalSummary
 ) {
-  const accountId =
-    fieldId === "sippWithdrawalStrategy"
-      ? "sipp"
-      : fieldId === "csAvcWithdrawalStrategy"
-        ? "csAvc"
-        : fieldId === "lisaWithdrawalStrategy"
-          ? "lisa"
-          : fieldId === "isaWithdrawalStrategy"
-            ? "isa"
-            : null;
+  const accountId = getFlexibleFundAccountIdForStrategyField(fieldId);
 
   if (!accountId || !summary) {
     return undefined;

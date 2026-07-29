@@ -287,31 +287,6 @@ describe("flexible withdrawal surplus analysis", () => {
     expect(insight?.gross).toBeCloseTo(1_000, 6);
     expect(insight?.net).toBeCloseTo(850, 6);
   });
-
-  it("accumulates unspent net surplus outside the original accounts", () => {
-    const rows = createProjectionTable(
-      createSettings({
-        desiredRetirementIncome: 12_000,
-        showAdditionalGuaranteedIncome: true,
-        additionalGuaranteedIncomes: [
-          createGuaranteedIncome(12_000, "guaranteed-income"),
-        ],
-        showIsa: true,
-        isaCurrentPot: 120_000,
-        isaWithdrawalStrategy: "percentage",
-        isaWithdrawalPercent: 10,
-      })
-    );
-    const retirementIndex = rows.findIndex((row) => row.date === "2027-01-01");
-    const firstRow = rows[retirementIndex];
-    const secondRow = rows[retirementIndex + 1];
-
-    expect(secondRow?.cumulativeAvoidableFlexibleSurplus).toBeCloseTo(
-      (firstRow?.monthlyAvoidableFlexibleSurplus ?? 0) +
-        (secondRow?.monthlyAvoidableFlexibleSurplus ?? 0),
-      6
-    );
-  });
 });
 
 function createSettings(overrides: Partial<PensionSettings>): PensionSettings {

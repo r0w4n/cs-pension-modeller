@@ -80,6 +80,7 @@ describe("form-fields module", () => {
               avoidableNetSurplus: 18_400,
             },
           ],
+          residualAccounts: [],
           affectedAges: [65, 66, 67],
           totalReducibleGrossWithdrawal: 18_400,
           totalAvoidableNetSurplus: 18_400,

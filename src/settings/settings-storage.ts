@@ -15,6 +15,7 @@ import { normalizeSettings } from "./settings-normalize";
 import {
   LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
   type AddedPensionFactorType,
   type FlexibleFundAccountId,
   type IsaWithdrawalStrategy,
@@ -111,12 +112,7 @@ function coerceFlexibleWithdrawalPriority(
     return undefined;
   }
 
-  const allowed = new Set<FlexibleFundAccountId>([
-    "sipp",
-    "csAvc",
-    "lisa",
-    "isa",
-  ]);
+  const allowed = new Set<FlexibleFundAccountId>(FLEXIBLE_FUND_ACCOUNT_IDS);
   const priority = value.filter(
     (item): item is FlexibleFundAccountId =>
       typeof item === "string" && allowed.has(item as FlexibleFundAccountId)

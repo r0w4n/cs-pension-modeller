@@ -234,6 +234,28 @@ describe("SpendingSmileEditor", () => {
     );
   });
 
+  it("labels the profile x-axis at regular five-year ages", () => {
+    renderEditor({
+      requirementAge: 54,
+      lifeExpectancy: 81,
+      spendingStrategyType: "SPENDING_SMILE",
+      spendingSmile: {
+        ...createDefaultSettings().spendingSmile,
+        slowGoStartAge: 63,
+        noGoStartAge: 77,
+      },
+    });
+
+    const xAxis = screen.getByTestId("spending-profile-x-axis");
+
+    expect(screen.getAllByTestId("spending-profile-x-axis-tick")).toHaveLength(
+      6
+    );
+    expect(
+      Array.from(xAxis.querySelectorAll("text"), (label) => label.textContent)
+    ).toEqual(["55", "60", "65", "70", "75", "80"]);
+  });
+
   it("shows SMILE validation beside the affected phase controls", () => {
     const settings = {
       ...createDefaultSettings(),

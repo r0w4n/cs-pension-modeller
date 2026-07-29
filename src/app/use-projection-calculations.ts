@@ -11,11 +11,8 @@ import {
   createBridgeChartLimits,
   createBridgeChartParameters,
   createRetirementIncomeSeries,
-  getBalanceForAccount,
-  getWithdrawalForAccount,
-  getWithdrawalStrategyFieldId,
+  createTargetBasedWithdrawalPreview,
   summarizeFlexibleWithdrawalInsights,
-  type TargetBasedWithdrawalPreview,
 } from "../app-domains";
 
 export function useProjectionCalculations({
@@ -89,51 +86,5 @@ export function useProjectionCalculations({
     retirementIncomeSeries,
     targetBasedWithdrawalPreviews,
     validationIssues,
-  };
-}
-
-function createTargetBasedWithdrawalPreview(input: {
-  accountId: TargetBasedWithdrawalPreview["accountId"];
-  currentRows: ReturnType<typeof createProjectionTable>;
-  settings: PensionSettings;
-}): TargetBasedWithdrawalPreview {
-  const strategyField = getWithdrawalStrategyFieldId(input.accountId);
-  const previewRows = createProjectionTable({
-    ...input.settings,
-    [strategyField]: "meet_income_target",
-  });
-  const currentDisplayedRows = input.currentRows.filter(
-    (row) => row.date >= input.settings.startDate
-  );
-  const previewDisplayedRows = previewRows.filter(
-    (row) => row.date >= input.settings.startDate
-  );
-  const currentEndingRow = currentDisplayedRows.at(-1);
-  const previewEndingRow = previewDisplayedRows.at(-1);
-
-  return {
-    accountId: input.accountId,
-    currentGrossWithdrawals: currentDisplayedRows.reduce(
-      (total, row) => total + getWithdrawalForAccount(row, input.accountId),
-      0
-    ),
-    targetBasedGrossWithdrawals: previewDisplayedRows.reduce(
-      (total, row) => total + getWithdrawalForAccount(row, input.accountId),
-      0
-    ),
-    currentUnallocatedSurplus: currentDisplayedRows.reduce(
-      (total, row) => total + (row.monthlyAvoidableFlexibleSurplus ?? 0),
-      0
-    ),
-    targetBasedUnallocatedSurplus: previewDisplayedRows.reduce(
-      (total, row) => total + (row.monthlyAvoidableFlexibleSurplus ?? 0),
-      0
-    ),
-    currentEndingBalance: currentEndingRow
-      ? getBalanceForAccount(currentEndingRow, input.accountId)
-      : 0,
-    targetBasedEndingBalance: previewEndingRow
-      ? getBalanceForAccount(previewEndingRow, input.accountId)
-      : 0,
   };
 }

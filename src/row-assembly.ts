@@ -422,7 +422,6 @@ export function buildProjectionRow(input: {
     totalMonthlyIncomeBeforeTax,
     monthlyIncomeTax,
     totalMonthlyNetIncome: totalMonthlyIncomeBeforeTax - monthlyIncomeTax,
-    monthlyActiveIncomeTarget: 0,
     monthlyGuaranteedNetIncome: 0,
     monthlyUnavoidableSurplus: 0,
     monthlyAvoidableFlexibleSurplus: 0,
@@ -432,7 +431,6 @@ export function buildProjectionRow(input: {
       lisa: { gross: 0, net: 0 },
       isa: { gross: 0, net: 0 },
     },
-    cumulativeAvoidableFlexibleSurplus: 0,
   };
 }
 

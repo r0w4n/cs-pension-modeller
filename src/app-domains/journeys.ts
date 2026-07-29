@@ -146,9 +146,7 @@ export function isSpendingSmileEditorStep(stepId: string) {
   return stepId === SPENDING_SMILE_EDITOR_STEP_ID;
 }
 
-export function isExpertRetirementIncomeTargetStep(stepId: string) {
-  return stepId === SPENDING_SMILE_EDITOR_STEP_ID;
-}
+export const isExpertRetirementIncomeTargetStep = isSpendingSmileEditorStep;
 
 export const JOURNEY_DEFINITIONS = [
   {

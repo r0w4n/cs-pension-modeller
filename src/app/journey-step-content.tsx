@@ -331,6 +331,9 @@ function renderExpertAnswerStep(
         data={retirementIncomeSeries}
         alphaLabel="Alpha pension"
         showFlexibleWithdrawalInsights
+        residualFlexibleFundInsights={
+          flexibleWithdrawalSummary.residualAccounts
+        }
         limits={bridgeChartLimits}
         statePensionEditable
         validationIssues={validationIssues}

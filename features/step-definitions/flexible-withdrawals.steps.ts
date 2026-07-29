@@ -4,13 +4,15 @@ import {
   applyBridgeJourneyDefaults,
   applySimpleJourneyAssumptions,
   createRetirementIncomeSeries,
-  getBalanceForAccount,
+  createTargetBasedWithdrawalPreview,
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
   isExpertRetirementIncomeTargetStep,
   JOURNEY_DEFINITIONS,
   reorderFlexibleWithdrawalAccounts,
   shouldShowFlexibleWithdrawalPriority,
+  summarizeFlexibleWithdrawalInsights,
+  type TargetBasedWithdrawalPreview,
 } from "../../src/app-domains";
 import {
   createProjectionTable,
@@ -30,6 +32,7 @@ type FlexibleWithdrawalWorld = {
   chartSeries?: ReturnType<typeof createRetirementIncomeSeries>;
   restoredSettings?: PensionSettings;
   selectors?: Array<{ options?: readonly { value: string; label: string }[] }>;
+  targetBasedPreview?: TargetBasedWithdrawalPreview;
 };
 
 Given(
@@ -315,6 +318,22 @@ Given(
 );
 
 Given(
+  /monthly (SIPP|LISA) contributions are ([\d.]+)/,
+  function (
+    this: FlexibleWithdrawalWorld,
+    accountLabel: string,
+    amount: string
+  ) {
+    if (accountLabel === "SIPP") {
+      getSettings(this).sippMonthlyContribution = Number(amount);
+      return;
+    }
+
+    getSettings(this).lisaMonthlyContribution = Number(amount);
+  }
+);
+
+Given(
   "a target-based SIPP hands over to a LISA",
   function (this: FlexibleWithdrawalWorld) {
     Object.assign(getSettings(this), {
@@ -453,6 +472,19 @@ When(
 );
 
 When(
+  "target-based ISA withdrawals are previewed",
+  function (this: FlexibleWithdrawalWorld) {
+    const settings = getSettings(this);
+    const rows = createProjectionTable(settings);
+    this.targetBasedPreview = createTargetBasedWithdrawalPreview({
+      accountId: "isa",
+      currentRows: rows,
+      settings,
+    });
+  }
+);
+
+When(
   "the flexible withdrawal settings are exported and parsed",
   function (this: FlexibleWithdrawalWorld) {
     this.restoredSettings =
@@ -543,12 +575,16 @@ Then(
 );
 
 Then(
-  /(.+) should retain funds at the planning horizon/,
+  /(.+) should be identified as potential over-saving/,
   function (this: FlexibleWithdrawalWorld, accountLabel: string) {
-    const finalRow = getRows(this).at(-1);
-    assertCondition(finalRow);
+    const summary = summarizeFlexibleWithdrawalInsights(
+      getRows(this),
+      getSettings(this)
+    );
     assertCondition(
-      getBalanceForAccount(finalRow, accountIdFromLabel(accountLabel)) > 0
+      summary.residualAccounts.some(
+        (account) => account.accountId === accountIdFromLabel(accountLabel)
+      )
     );
   }
 );
@@ -561,22 +597,29 @@ Then(
 );
 
 Then(
-  /(.+) should remain before (.+) in the target-based priority/,
-  function (
-    this: FlexibleWithdrawalWorld,
-    firstLabel: string,
-    secondLabel: string
-  ) {
-    const priority = getSettings(this).flexibleWithdrawalPriority;
+  "the preview should reduce ISA withdrawals",
+  function (this: FlexibleWithdrawalWorld) {
+    assertCondition(this.targetBasedPreview);
     assertCondition(
-      priority.indexOf(accountIdFromLabel(firstLabel)) <
-        priority.indexOf(accountIdFromLabel(secondLabel))
+      this.targetBasedPreview.targetBasedGrossWithdrawals <
+        this.targetBasedPreview.currentGrossWithdrawals
     );
   }
 );
 
 Then(
-  /(.+) should be before (.+) in the target-based priority/,
+  "the preview should reduce unallocated surplus",
+  function (this: FlexibleWithdrawalWorld) {
+    assertCondition(this.targetBasedPreview);
+    assertCondition(
+      this.targetBasedPreview.targetBasedUnallocatedSurplus <
+        this.targetBasedPreview.currentUnallocatedSurplus
+    );
+  }
+);
+
+Then(
+  /(.+) should (?:remain|be) before (.+) in the target-based priority/,
   function (
     this: FlexibleWithdrawalWorld,
     firstLabel: string,

@@ -39,12 +39,14 @@ Feature: Target-based flexible-fund withdrawals
     And an ISA with 50000.00 uses the target-based strategy
     And a SIPP with 20000.00 uses the target-based strategy
     And a LISA with 20000.00 uses the target-based strategy from age 61
+    And monthly SIPP contributions are 175.00
+    And monthly LISA contributions are 225.00
     And ISA is before SIPP in the target-based priority
     When the flexible withdrawal projection is calculated
     Then annual SIPP withdrawals at retirement should be 0.00
     And annual LISA withdrawals at retirement should be 0.00
-    And SIPP should retain funds at the planning horizon
-    And LISA should retain funds at the planning horizon
+    And SIPP should be identified as potential over-saving
+    And LISA should be identified as potential over-saving
 
   Scenario: Avoid a chart spike when target funding moves between accounts
     Given a target-based SIPP hands over to a LISA
@@ -117,6 +119,15 @@ Feature: Target-based flexible-fund withdrawals
     When the flexible withdrawal projection is calculated
     Then avoidable flexible-fund surplus at retirement should be 8000.00
     And the annual ISA withdrawal identified as reducible should be 8000.00
+    And the ISA strategy should remain Annual percentage
+
+  Scenario: Preview target-based withdrawals without changing the saved strategy
+    Given the flat annual income target is 24000.00
+    And guaranteed annual net income is 20000.00
+    And an ISA explicitly withdraws 12000.00 per year
+    When target-based ISA withdrawals are previewed
+    Then the preview should reduce ISA withdrawals
+    And the preview should reduce unallocated surplus
     And the ISA strategy should remain Annual percentage
 
   Scenario: Do not blame flexible funds for guaranteed-income surplus

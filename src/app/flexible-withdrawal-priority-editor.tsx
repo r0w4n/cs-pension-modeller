@@ -14,21 +14,12 @@ import {
   shouldShowFlexibleWithdrawalPriority,
 } from "../app-domains";
 import {
+  FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
   type FlexibleFundAccountId,
   type FlexibleWithdrawalStrategy,
   type PensionSettings,
 } from "../settings";
 import type { SettingsFieldOnChange } from "./form-fields";
-
-const WITHDRAWAL_STRATEGY_OPTIONS: Array<{
-  value: FlexibleWithdrawalStrategy;
-  label: string;
-}> = [
-  { value: "zero_at_death", label: "Zero at death" },
-  { value: "percentage", label: "Annual percentage" },
-  { value: "use_by_age", label: "Use by age" },
-  { value: "meet_income_target", label: "Use to meet income target" },
-];
 
 export function FlexibleWithdrawalPriorityEditor({
   settings,
@@ -434,7 +425,7 @@ function WithdrawalStrategyControl({
           )
         }
       >
-        {WITHDRAWAL_STRATEGY_OPTIONS.map((option) => (
+        {FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>

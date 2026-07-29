@@ -122,9 +122,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
   });
 
-  test("completes the bridge journey and opens the footer information pages", async ({
-    page,
-  }, testInfo) => {
+  test("completes the bridge journey", async ({ page }, testInfo) => {
     await acknowledgeAndOpenMode(page, "bridge");
 
     await fillExactNumber(page, "Target retirement age exact value", "58");
@@ -210,6 +208,14 @@ test.describe("app end-to-end journeys", () => {
       page.locator(
         '.comparison-saved-section input[value="Bridge journey check"]'
       )
+    ).toBeVisible();
+  });
+
+  test("opens the footer information pages", async ({ page }) => {
+    await startFirstRun(page);
+    await page.getByRole("button", { name: "I understand" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Choose the level of detail" })
     ).toBeVisible();
 
     await assertFooterPage(page, "Settings", "Export parameters");

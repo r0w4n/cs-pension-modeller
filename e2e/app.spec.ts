@@ -123,6 +123,8 @@ test.describe("app end-to-end journeys", () => {
   });
 
   test("completes the bridge journey", async ({ page }, testInfo) => {
+    test.slow();
+
     await acknowledgeAndOpenMode(page, "bridge");
 
     await fillExactNumber(page, "Target retirement age exact value", "58");

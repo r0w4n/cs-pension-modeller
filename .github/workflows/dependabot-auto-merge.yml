@@ -9,11 +9,6 @@ on:
       - ready_for_review
     branches:
       - main
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
 
 permissions:
   contents: write
@@ -23,72 +18,24 @@ jobs:
   auto-merge:
     runs-on: ubuntu-latest
     if: >
-      (github.event_name == 'pull_request_target' &&
-      github.event.pull_request.user.login == 'dependabot[bot]') ||
-      (github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success')
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.draft == false
     steps:
-      - name: Enable auto-merge for Dependabot PRs
-        run: |
-          set -euo pipefail
+      - name: Read Dependabot update metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7
+        with:
+          github-token: ${{ secrets.dependabot_pat || github.token }}
 
-          if [ -z "$DEPENDABOT_PAT" ]; then
-            echo "::notice::dependabot_pat is not set, so this workflow will use GITHUB_TOKEN. Dependabot PRs that change workflow files may need a PAT with workflow-writing permission."
-          else
-            echo "Using dependabot_pat for Dependabot auto-merge."
-          fi
-
-          if [ "$EVENT_NAME" = "pull_request_target" ]; then
-            pr_urls=("$PR_URL")
-          else
-            mapfile -t pr_urls < <(
-              gh pr list \
-                --repo "$GITHUB_REPOSITORY" \
-                --state open \
-                --author "dependabot[bot]" \
-                --json url,headRefOid \
-                --jq ".[] | select(.headRefOid == \"$WORKFLOW_RUN_HEAD_SHA\") | .url"
-            )
-          fi
-
-          if [ "${#pr_urls[@]}" -eq 0 ]; then
-            echo "::notice::No open Dependabot PR matched this workflow run."
-            exit 0
-          fi
-
-          for pr_url in "${pr_urls[@]}"; do
-            auto_merge_request="$(gh pr view "$pr_url" --json autoMergeRequest --jq '.autoMergeRequest')"
-            is_draft="$(gh pr view "$pr_url" --json isDraft --jq '.isDraft')"
-            merge_state="$(gh pr view "$pr_url" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-            if [ "$is_draft" = "true" ]; then
-              echo "::notice::Skipping draft Dependabot PR $pr_url."
-              continue
-            fi
-
-            if [ "$merge_state" = "DIRTY" ]; then
-              echo "::notice::Skipping Dependabot PR $pr_url because it has merge conflicts."
-              continue
-            fi
-
-            if [ "$EVENT_NAME" = "workflow_run" ]; then
-              echo "CI passed for $pr_url; attempting merge."
-              if ! gh pr merge --merge --delete-branch "$pr_url"; then
-                echo "::notice::Could not merge $pr_url yet. It may still be blocked by branch protection, review requirements, or pending checks."
-              fi
-              continue
-            fi
-
-            if [ "$auto_merge_request" != "null" ]; then
-              echo "Auto-merge is already enabled for $pr_url."
-              continue
-            fi
-
-            gh pr merge --auto --merge --delete-branch "$pr_url"
-          done
+      - name: Enable auto-merge for patch and minor updates
+        if: >
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --merge --delete-branch "$PR_URL"
         env:
-          DEPENDABOT_PAT: ${{ secrets.dependabot_pat }}
-          EVENT_NAME: ${{ github.event_name }}
           GH_TOKEN: ${{ secrets.dependabot_pat || github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Leave major updates for review
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: echo "::notice::Major dependency updates require manual review."

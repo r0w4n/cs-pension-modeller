@@ -189,11 +189,7 @@ export type SelectField = {
 };
 
 export type FieldDefinition =
-  | DateField
-  | RangeField
-  | CurrencyInputField
-  | CheckboxField
-  | SelectField;
+  DateField | RangeField | CurrencyInputField | CheckboxField | SelectField;
 
 export type FieldGroup = {
   id: string;

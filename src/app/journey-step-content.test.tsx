@@ -397,8 +397,7 @@ describe("JourneyStepContent", () => {
     const summaryProps = journeyContentMocks.pensionSummary.mock
       .calls[0]?.[0] as Record<string, unknown>;
     const chartProps = journeyContentMocks.bridgeChart.mock.calls[0]?.[0] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
     expect(chartProps?.showFlexibleWithdrawalInsights).not.toBe(true);

@@ -1,5 +1,6 @@
 import {
   NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE,
+  normalizeFlexibleWithdrawalStrategy,
   type PensionSettings,
   type PensionValidationIssue,
   type CsAvcWithdrawalStrategy,
@@ -9,11 +10,7 @@ import { resolveCsAvcMinimumAccessAge } from "../settings-shared/state";
 export function normalizeCsAvcWithdrawalStrategy(
   value: unknown
 ): CsAvcWithdrawalStrategy {
-  return value === "percentage" ||
-    value === "zero_at_death" ||
-    value === "use_by_age"
-    ? value
-    : "use_by_age";
+  return normalizeFlexibleWithdrawalStrategy(value);
 }
 
 export function normalizeCsAvcBooleanSetting(value: unknown) {

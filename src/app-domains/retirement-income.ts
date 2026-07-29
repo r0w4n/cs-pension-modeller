@@ -4,6 +4,7 @@ import type {
   RetirementIncomePoint,
 } from "../RetirementIncomeBridgeChart";
 import {
+  addMonths,
   calculateAdditionalGuaranteedIncomeStreamForDate,
   calculateMonthlyIncomeTax,
   calculateRetirementIncomeTargetAtDate,
@@ -17,6 +18,7 @@ import {
   calculateStatePensionDrawAge,
   getAdditionalGuaranteedIncomeDisplayName,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
   LISA_MONTHLY_CONTRIBUTION_MAX,
   type PensionSettings,
 } from "../settings";
@@ -30,6 +32,7 @@ import {
 } from "./bridge-chart-bounds";
 import { addYearsToIsoDate, clampNumber } from "./shared";
 import { getSpendingSmileStartAgeBounds } from "../spending-smile";
+import { getFlexibleFundAccountLabel } from "./flexible-withdrawals";
 
 export function createRetirementIncomeSeries(
   rows: ProjectionRow[],
@@ -101,6 +104,11 @@ export function createRetirementIncomeSeries(
     const age = row.age + row.ageMonths / 12;
     const previousRow = displayedRows[index - 1];
     const nextRow = displayedRows[index + 1];
+    const currentFlexibleMonthlyIncome =
+      row.monthlyIsaPension +
+      row.monthlyLisaPension +
+      row.monthlySippPension +
+      row.monthlyCsAvcPension;
     const isaIncomeAnnual = settings.showIsa
       ? getBridgePotIncomeAnnual({
           rowDate: row.date,
@@ -110,6 +118,7 @@ export function createRetirementIncomeSeries(
               ? isaUseByDate
               : null,
           monthlyIncome: row.monthlyIsaPension,
+          currentFlexibleMonthlyIncome,
           previousMonthlyIncome: previousRow?.monthlyIsaPension ?? 0,
           nextMonthlyIncome: nextRow?.monthlyIsaPension ?? 0,
         })
@@ -123,6 +132,7 @@ export function createRetirementIncomeSeries(
               ? sippUseByDate
               : null,
           monthlyIncome: row.monthlySippPension,
+          currentFlexibleMonthlyIncome,
           previousMonthlyIncome: previousRow?.monthlySippPension ?? 0,
           nextMonthlyIncome: nextRow?.monthlySippPension ?? 0,
         })
@@ -136,6 +146,7 @@ export function createRetirementIncomeSeries(
               ? csAvcUseByDate
               : null,
           monthlyIncome: row.monthlyCsAvcPension,
+          currentFlexibleMonthlyIncome,
           previousMonthlyIncome: previousRow?.monthlyCsAvcPension ?? 0,
           nextMonthlyIncome: nextRow?.monthlyCsAvcPension ?? 0,
         })
@@ -149,6 +160,7 @@ export function createRetirementIncomeSeries(
               ? lisaUseByDate
               : null,
           monthlyIncome: row.monthlyLisaPension,
+          currentFlexibleMonthlyIncome,
           previousMonthlyIncome: previousRow?.monthlyLisaPension ?? 0,
           nextMonthlyIncome: nextRow?.monthlyLisaPension ?? 0,
         })
@@ -240,6 +252,8 @@ export function createRetirementIncomeSeries(
         row.date >= requirementDate
           ? Math.max(0, targetIncomeAnnual - assessedIncomeAnnual)
           : 0,
+      ...createFlexibleWithdrawalDiagnostics(row),
+      flexibleWithdrawalInsights: createFlexibleWithdrawalInsights(row),
       isaBalance: row.isaPot,
       lisaBalance: row.lisaPot,
       sippBalance: row.sippPot,
@@ -249,6 +263,32 @@ export function createRetirementIncomeSeries(
   });
 
   return insertChartTransitionPoints(baseSeries, settings);
+}
+
+function createFlexibleWithdrawalDiagnostics(row: ProjectionRow) {
+  return {
+    guaranteedNetIncomeAnnual: (row.monthlyGuaranteedNetIncome ?? 0) * 12,
+    unavoidableSurplusAnnual: (row.monthlyUnavoidableSurplus ?? 0) * 12,
+    avoidableFlexibleSurplusAnnual:
+      (row.monthlyAvoidableFlexibleSurplus ?? 0) * 12,
+  };
+}
+
+function createFlexibleWithdrawalInsights(row: ProjectionRow) {
+  return FLEXIBLE_FUND_ACCOUNT_IDS.flatMap((accountId) => {
+    const insight = row.monthlyReducibleFlexibleWithdrawals?.[accountId];
+
+    return insight && insight.gross > 0
+      ? [
+          {
+            accountId,
+            label: getFlexibleFundAccountLabel(accountId),
+            reducibleGrossAnnual: insight.gross * 12,
+            avoidableNetAnnual: insight.net * 12,
+          },
+        ]
+      : [];
+  });
 }
 
 function getSecureIncomeAnnual(input: {
@@ -331,6 +371,7 @@ function getBridgePotIncomeAnnual(input: {
   drawDate: string;
   stopDate: string | null;
   monthlyIncome: number;
+  currentFlexibleMonthlyIncome: number;
   previousMonthlyIncome: number;
   nextMonthlyIncome: number;
 }) {
@@ -339,6 +380,7 @@ function getBridgePotIncomeAnnual(input: {
     drawDate,
     stopDate,
     monthlyIncome,
+    currentFlexibleMonthlyIncome,
     previousMonthlyIncome,
     nextMonthlyIncome,
   } = input;
@@ -349,8 +391,10 @@ function getBridgePotIncomeAnnual(input: {
 
   if (
     rowDate >= drawDate &&
+    rowDate <= addMonths(drawDate, 1) &&
     (!stopDate || rowDate < stopDate) &&
     monthlyIncome <= 0 &&
+    currentFlexibleMonthlyIncome <= 0 &&
     nextMonthlyIncome > 0
   ) {
     return nextMonthlyIncome * 12;
@@ -358,8 +402,10 @@ function getBridgePotIncomeAnnual(input: {
 
   if (
     stopDate &&
+    rowDate >= addMonths(stopDate, -1) &&
     rowDate < stopDate &&
     monthlyIncome <= 0 &&
+    currentFlexibleMonthlyIncome <= 0 &&
     previousMonthlyIncome > 0
   ) {
     return previousMonthlyIncome * 12;

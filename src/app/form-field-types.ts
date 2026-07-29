@@ -20,6 +20,7 @@ export type FieldProps = {
   disabled?: boolean;
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
+  warning?: { id: string; message: string };
 };
 
 export type DateParts = {

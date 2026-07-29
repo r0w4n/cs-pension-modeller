@@ -2,8 +2,10 @@ import type { RetirementIncomeDisplay } from "../projection";
 import {
   buildRetirementOutcomeBanner,
   type ComparisonResult,
+  type FlexibleWithdrawalSummary,
   type IncomeAgeRangeItem,
   type RetirementOutcomeBanner,
+  type TargetBasedWithdrawalPreview,
 } from "../app-domains";
 import {
   AssumptionsVersionStrip,
@@ -11,6 +13,8 @@ import {
   SummarySection,
   type SummaryItem,
 } from "./results-summary";
+import type { FlexibleFundAccountId } from "../settings";
+import { FlexibleWithdrawalInsightPanel } from "./flexible-withdrawal-insight";
 
 export type PensionSummarySectionProps = {
   activeResult: ComparisonResult | null;
@@ -20,6 +24,10 @@ export type PensionSummarySectionProps = {
   incomeAgeRangeItems: IncomeAgeRangeItem[];
   statusItems: SummaryItem[];
   headingLevel?: 2 | 3;
+  flexibleWithdrawalSummary?: FlexibleWithdrawalSummary;
+  targetBasedWithdrawalPreviews?: TargetBasedWithdrawalPreview[];
+  onApplyTargetBasedStrategy?: (accountId: FlexibleFundAccountId) => void;
+  onReviewWithdrawalStrategy?: (accountId: FlexibleFundAccountId) => void;
 };
 
 export function PensionSummarySection({
@@ -30,6 +38,10 @@ export function PensionSummarySection({
   incomeAgeRangeItems,
   statusItems,
   headingLevel = 3,
+  flexibleWithdrawalSummary,
+  targetBasedWithdrawalPreviews = [],
+  onApplyTargetBasedStrategy,
+  onReviewWithdrawalStrategy,
 }: PensionSummarySectionProps) {
   if (!activeResult || !retirementIncomeDisplay) {
     return null;
@@ -71,6 +83,16 @@ export function PensionSummarySection({
             </section>
           ) : null}
           <RetirementOutcomeBannerView outcome={outcomeBanner} />
+          {flexibleWithdrawalSummary &&
+          onApplyTargetBasedStrategy &&
+          onReviewWithdrawalStrategy ? (
+            <FlexibleWithdrawalInsightPanel
+              summary={flexibleWithdrawalSummary}
+              previews={targetBasedWithdrawalPreviews}
+              onApplyTargetBasedStrategy={onApplyTargetBasedStrategy}
+              onReviewStrategy={onReviewWithdrawalStrategy}
+            />
+          ) : null}
           {incomeAgeRangeItems.length > 0 ? (
             <div className="summary-status-block">
               <h3>Income by age range</h3>

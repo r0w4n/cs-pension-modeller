@@ -1,4 +1,8 @@
-import { DEFAULT_ALPHA_ABS_YEAR, type PensionSettings } from "./settings-types";
+import {
+  DEFAULT_ALPHA_ABS_YEAR,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
+  type PensionSettings,
+} from "./settings-types";
 import {
   createDefaultSpendingSmile,
   reconcileSpendingSmilePhaseAges,
@@ -55,6 +59,7 @@ export const defaultSettings: PensionSettings = {
     personalDetailsDefaults.requirementAge,
     personalDetailsDefaults.lifeExpectancy
   ),
+  flexibleWithdrawalPriority: [...FLEXIBLE_FUND_ACCOUNT_IDS],
   statePensionDrawDate: statePensionDefaults.statePensionDrawDate,
   statePensionApplyFutureGrowth:
     statePensionDefaults.statePensionApplyFutureGrowth,

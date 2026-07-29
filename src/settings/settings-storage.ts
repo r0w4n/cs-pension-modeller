@@ -15,7 +15,9 @@ import { normalizeSettings } from "./settings-normalize";
 import {
   LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
   type AddedPensionFactorType,
+  type FlexibleFundAccountId,
   type IsaWithdrawalStrategy,
   type LisaWithdrawalStrategy,
   type ProjectionBasis,
@@ -103,6 +105,22 @@ function coerceBoolean(value: unknown) {
   return typeof value === "boolean" ? value : undefined;
 }
 
+function coerceFlexibleWithdrawalPriority(
+  value: unknown
+): FlexibleFundAccountId[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const allowed = new Set<FlexibleFundAccountId>(FLEXIBLE_FUND_ACCOUNT_IDS);
+  const priority = value.filter(
+    (item): item is FlexibleFundAccountId =>
+      typeof item === "string" && allowed.has(item as FlexibleFundAccountId)
+  );
+
+  return priority.length > 0 ? priority : undefined;
+}
+
 function removeUndefinedValues<T extends object>(input: T) {
   return Object.fromEntries(
     Object.entries(input).filter(([, value]) => value !== undefined)
@@ -169,6 +187,9 @@ function coerceSettings(
       !Array.isArray(input.spendingSmile)
         ? input.spendingSmile
         : undefined,
+    flexibleWithdrawalPriority: coerceFlexibleWithdrawalPriority(
+      input.flexibleWithdrawalPriority
+    ),
     applyPensionIncreases: coerceBoolean(input.applyPensionIncreases),
     assumedCpiPercent: coerceNumber(input.assumedCpiPercent),
     alphaPensionAbsDate: coerceString(input.alphaPensionAbsDate),

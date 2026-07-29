@@ -4,6 +4,9 @@ import { normalizeIsaWithdrawalStrategy, validateIsaRules } from "./isa";
 describe("isa settings module", () => {
   it("normalizes isa withdrawal strategy", () => {
     expect(normalizeIsaWithdrawalStrategy("percentage")).toBe("percentage");
+    expect(normalizeIsaWithdrawalStrategy("meet_income_target")).toBe(
+      "meet_income_target"
+    );
     expect(normalizeIsaWithdrawalStrategy("bad")).toBe("use_by_age");
   });
 

@@ -76,6 +76,10 @@ export function calculateMonthlySippPension(input: {
     targetDate,
   } = input;
 
+  if (strategy === "meet_income_target") {
+    return 0;
+  }
+
   if (strategy === "percentage") {
     return (potAtDraw * (withdrawalPercent / 100)) / 12;
   }
@@ -298,6 +302,10 @@ function calculateMonthlyWithdrawalFromPot(input: {
     input;
 
   if (pot <= 0 || rowDate < drawDate) {
+    return 0;
+  }
+
+  if (strategy === "meet_income_target") {
     return 0;
   }
 

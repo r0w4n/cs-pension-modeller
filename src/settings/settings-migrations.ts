@@ -3,6 +3,7 @@ import {
   SETTINGS_SCHEMA_VERSION,
   type StoredSettingsEnvelope,
 } from "./settings-versions";
+import { FLEXIBLE_FUND_ACCOUNT_IDS } from "./settings-types";
 
 type SettingsMigration = (data: unknown) => unknown;
 
@@ -168,6 +169,17 @@ export function migrateFromV6ToV7(data: unknown) {
   };
 }
 
+export function migrateFromV7ToV8(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    flexibleWithdrawalPriority: [...FLEXIBLE_FUND_ACCOUNT_IDS],
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -175,6 +187,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   4: migrateFromV4ToV5,
   5: migrateFromV5ToV6,
   6: migrateFromV6ToV7,
+  7: migrateFromV7ToV8,
 };
 
 export function migrateSettingsToLatest(

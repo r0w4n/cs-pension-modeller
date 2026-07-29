@@ -66,6 +66,51 @@ describe("settings-storage", () => {
     expect(loaded.startDate).toBe("2026-04-25");
   });
 
+  it("persists target-based withdrawal strategies and account priority", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      isaWithdrawalStrategy: "meet_income_target" as const,
+      sippWithdrawalStrategy: "meet_income_target" as const,
+      flexibleWithdrawalPriority: [
+        "isa" as const,
+        "sipp" as const,
+        "csAvc" as const,
+        "lisa" as const,
+      ],
+    };
+
+    saveSettings(settings);
+
+    const loaded = loadStoredSettings();
+    expect(loaded.isaWithdrawalStrategy).toBe("meet_income_target");
+    expect(loaded.sippWithdrawalStrategy).toBe("meet_income_target");
+    expect(loaded.flexibleWithdrawalPriority).toEqual([
+      "isa",
+      "sipp",
+      "csAvc",
+      "lisa",
+    ]);
+  });
+
+  it("defensively restores missing and invalid priority entries", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: SETTINGS_SCHEMA_VERSION,
+        data: {
+          flexibleWithdrawalPriority: ["isa", "unknown", "isa"],
+        },
+      })
+    );
+
+    expect(loadStoredSettings().flexibleWithdrawalPriority).toEqual([
+      "isa",
+      "sipp",
+      "csAvc",
+      "lisa",
+    ]);
+  });
+
   it("migrates legacy unversioned settings when loading", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,

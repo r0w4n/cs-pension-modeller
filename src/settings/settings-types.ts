@@ -1,3 +1,19 @@
+import type {
+  FlexibleFundAccountId,
+  FlexibleWithdrawalStrategy,
+} from "../flexible-funds";
+
+export {
+  FLEXIBLE_FUND_ACCOUNT_CONFIG,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
+  FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
+  normalizeFlexibleWithdrawalStrategy,
+} from "../flexible-funds";
+export type {
+  FlexibleFundAccountId,
+  FlexibleWithdrawalStrategy,
+} from "../flexible-funds";
+
 export const SETTINGS_STORAGE_KEY = "cs-pension-modeller.settings";
 export const LOCAL_STORAGE_ENABLED_KEY =
   "cs-pension-modeller.localStorageEnabled";
@@ -25,22 +41,10 @@ export type AddedPensionLumpSum = {
   factorType?: AddedPensionFactorType;
 };
 
-export type SippWithdrawalStrategy =
-  | "zero_at_death"
-  | "percentage"
-  | "use_by_age";
-export type CsAvcWithdrawalStrategy =
-  | "zero_at_death"
-  | "percentage"
-  | "use_by_age";
-export type IsaWithdrawalStrategy =
-  | "zero_at_death"
-  | "percentage"
-  | "use_by_age";
-export type LisaWithdrawalStrategy =
-  | "zero_at_death"
-  | "percentage"
-  | "use_by_age";
+export type SippWithdrawalStrategy = FlexibleWithdrawalStrategy;
+export type CsAvcWithdrawalStrategy = FlexibleWithdrawalStrategy;
+export type IsaWithdrawalStrategy = FlexibleWithdrawalStrategy;
+export type LisaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type SippTaxReliefRate = "none" | "20" | "40";
 export type ProjectionBasis = "real" | "nominal";
 export type ClassicCalculationMode = "estimate" | "manual";
@@ -96,6 +100,7 @@ export type PensionSettings = {
   desiredRetirementIncome: number;
   spendingStrategyType: SpendingStrategyType;
   spendingSmile: SpendingSmileStrategy;
+  flexibleWithdrawalPriority: FlexibleFundAccountId[];
   statePensionDrawDate: string;
   statePensionApplyFutureGrowth: boolean;
   statePensionCpiPercent: number;

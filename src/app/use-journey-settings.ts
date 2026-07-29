@@ -22,6 +22,18 @@ import type { AppMode } from "./app-persistence";
 
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
 
+export function formatParameterExportTimestamp(date: Date) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+  ].join("-");
+}
+
 export function useJourneySettings({
   activeJourneyMode,
   initialAppMode,
@@ -105,14 +117,14 @@ export function useJourneySettings({
 
   function exportParameters() {
     const snapshot = getStoredSettingsSnapshot(effectiveSettings);
-    const fileDate = new Date().toISOString().slice(0, 10);
+    const exportTimestamp = formatParameterExportTimestamp(new Date());
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
     });
     const objectUrl = window.URL.createObjectURL(blob);
     const link = window.document.createElement("a");
     link.href = objectUrl;
-    link.download = `cs-pension-parameters-${fileDate}.json`;
+    link.download = `cs-pension-parameters-${exportTimestamp}.json`;
     window.document.body.append(link);
     link.click();
     link.remove();

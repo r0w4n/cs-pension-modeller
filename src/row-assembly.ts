@@ -422,6 +422,15 @@ export function buildProjectionRow(input: {
     totalMonthlyIncomeBeforeTax,
     monthlyIncomeTax,
     totalMonthlyNetIncome: totalMonthlyIncomeBeforeTax - monthlyIncomeTax,
+    monthlyGuaranteedNetIncome: 0,
+    monthlyUnavoidableSurplus: 0,
+    monthlyAvoidableFlexibleSurplus: 0,
+    monthlyReducibleFlexibleWithdrawals: {
+      sipp: { gross: 0, net: 0 },
+      csAvc: { gross: 0, net: 0 },
+      lisa: { gross: 0, net: 0 },
+      isa: { gross: 0, net: 0 },
+    },
   };
 }
 

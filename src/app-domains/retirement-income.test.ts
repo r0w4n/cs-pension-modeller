@@ -202,6 +202,70 @@ describe("retirement-income transition points", () => {
     );
   });
 
+  it("does not carry a target-based account handover into the previous month", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1987-06-01",
+      startDate: "2048-01-01",
+      lifeExpectancy: 62,
+      showAlpha: false,
+      showNuvos: false,
+      showStatePension: false,
+      showIsa: false,
+      showSipp: true,
+      showLisa: true,
+      sippDrawAge: 60,
+      lisaDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target" as const,
+      lisaWithdrawalStrategy: "meet_income_target" as const,
+    };
+    const series = createRetirementIncomeSeries(
+      [
+        {
+          ...baseRow,
+          date: "2048-01-01",
+          age: 60,
+          ageMonths: 7,
+          monthlySippPension: 1000,
+        },
+        {
+          ...baseRow,
+          date: "2048-02-01",
+          age: 60,
+          ageMonths: 8,
+          monthlySippPension: 1000,
+        },
+        {
+          ...baseRow,
+          date: "2048-03-01",
+          age: 60,
+          ageMonths: 9,
+          monthlySippPension: 500,
+          monthlyLisaPension: 500,
+        },
+      ],
+      settings
+    );
+    const preHandoverPoint = series.find(
+      (point) => point.date === "2048-02-01"
+    );
+
+    expect(preHandoverPoint).toEqual(
+      expect.objectContaining({
+        sippIncomeAnnual: 12000,
+        lisaIncomeAnnual: 0,
+        totalIncomeAnnual: 12000,
+      })
+    );
+    expect(series.find((point) => point.date === "2048-03-01")).toEqual(
+      expect.objectContaining({
+        sippIncomeAnnual: 6000,
+        lisaIncomeAnnual: 6000,
+        totalIncomeAnnual: 12000,
+      })
+    );
+  });
+
   it("preserves exact additional guaranteed income start and stop ages in the chart series", () => {
     const settings = {
       ...createDefaultSettings(),

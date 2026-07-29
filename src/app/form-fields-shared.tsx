@@ -4,13 +4,15 @@ import type { PensionValidationIssue } from "../settings";
 export function getFieldCardClassName(
   disabled: boolean,
   hideOnMobile: boolean,
-  hasValidationIssue = false
+  hasValidationIssue = false,
+  hasWarning = false
 ) {
   return [
     "field-card",
     disabled ? "field-card--disabled" : "",
     hideOnMobile ? "field-card--mobile-hidden" : "",
     hasValidationIssue ? "field-card--invalid" : "",
+    hasWarning ? "field-card--warning" : "",
   ]
     .filter(Boolean)
     .join(" ");

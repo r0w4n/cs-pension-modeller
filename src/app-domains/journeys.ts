@@ -146,6 +146,8 @@ export function isSpendingSmileEditorStep(stepId: string) {
   return stepId === SPENDING_SMILE_EDITOR_STEP_ID;
 }
 
+export const isExpertRetirementIncomeTargetStep = isSpendingSmileEditorStep;
+
 export const JOURNEY_DEFINITIONS = [
   {
     id: "early-retirement-bridge",
@@ -718,6 +720,10 @@ export function applySimpleJourneyAssumptions(
     statePensionApplyFutureGrowth: false,
     assumedCpiPercent: 0,
     spendingStrategyType: "FLAT",
+    sippWithdrawalStrategy: "use_by_age",
+    csAvcWithdrawalStrategy: "use_by_age",
+    isaWithdrawalStrategy: "use_by_age",
+    lisaWithdrawalStrategy: "use_by_age",
     taxationEnabled: false,
     partialRetirementEnabled: false,
     alphaAddedPensionLumpSums: [],

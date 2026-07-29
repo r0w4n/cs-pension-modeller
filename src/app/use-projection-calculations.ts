@@ -11,6 +11,8 @@ import {
   createBridgeChartLimits,
   createBridgeChartParameters,
   createRetirementIncomeSeries,
+  createTargetBasedWithdrawalPreview,
+  summarizeFlexibleWithdrawalInsights,
 } from "../app-domains";
 
 export function useProjectionCalculations({
@@ -36,6 +38,21 @@ export function useProjectionCalculations({
   const retirementIncomeSeries = useMemo(
     () => createRetirementIncomeSeries(projectionRows, deferredSettings),
     [projectionRows, deferredSettings]
+  );
+  const flexibleWithdrawalSummary = useMemo(
+    () => summarizeFlexibleWithdrawalInsights(projectionRows, deferredSettings),
+    [deferredSettings, projectionRows]
+  );
+  const targetBasedWithdrawalPreviews = useMemo(
+    () =>
+      flexibleWithdrawalSummary.accounts.map((account) =>
+        createTargetBasedWithdrawalPreview({
+          accountId: account.accountId,
+          currentRows: projectionRows,
+          settings: deferredSettings,
+        })
+      ),
+    [deferredSettings, flexibleWithdrawalSummary.accounts, projectionRows]
   );
   const bridgeChartParameters = useMemo(
     () => createBridgeChartParameters(effectiveSettings),
@@ -63,9 +80,11 @@ export function useProjectionCalculations({
     deferredSettings,
     derivedInflationAssumptions,
     incomeAgeRangeItems,
+    flexibleWithdrawalSummary,
     pensionSummary,
     projectionRows,
     retirementIncomeSeries,
+    targetBasedWithdrawalPreviews,
     validationIssues,
   };
 }

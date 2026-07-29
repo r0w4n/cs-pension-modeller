@@ -192,6 +192,7 @@ export function JourneyFlow({
               className={`journey-step-button journey-step-button--${stepState}`}
               aria-current={step.id === activeStep.id ? "step" : undefined}
               data-step-state={stepState}
+              data-step-id={step.id}
               onClick={() => goToStep(index)}
             >
               <span>{index + 1}</span>
@@ -245,6 +246,7 @@ export function JourneyFlow({
                       step.id === activeStep.id ? "step" : undefined
                     }
                     data-step-state={stepState}
+                    data-step-id={step.id}
                     onClick={() => goToStep(index)}
                   >
                     <span>{index + 1}</span>

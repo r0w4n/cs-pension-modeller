@@ -4,6 +4,9 @@ import { normalizeCsAvcWithdrawalStrategy, validateCsAvcRules } from "./cs-avc";
 describe("CS AVC settings module", () => {
   it("normalizes CS AVC withdrawal strategy", () => {
     expect(normalizeCsAvcWithdrawalStrategy("percentage")).toBe("percentage");
+    expect(normalizeCsAvcWithdrawalStrategy("meet_income_target")).toBe(
+      "meet_income_target"
+    );
     expect(normalizeCsAvcWithdrawalStrategy("bad")).toBe("use_by_age");
   });
 

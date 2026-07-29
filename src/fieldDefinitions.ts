@@ -1,9 +1,13 @@
 import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
   LISA_MONTHLY_CONTRIBUTION_MAX,
   type PensionSettings,
 } from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
+
+const FLEXIBLE_WITHDRAWAL_STRATEGY_DESCRIPTION =
+  "Choose a fixed drawdown instruction, or withdraw only what is needed to help meet your annual retirement income target after higher-priority accounts.";
 
 export type FieldInfoLink = {
   href: string;
@@ -167,7 +171,7 @@ export type SelectField = {
     | "premiumEarliestAccessAge";
   label: string;
   type: "select";
-  options: {
+  options: readonly {
     value:
       | PensionSettings["sippTaxReliefRate"]
       | PensionSettings["projectionBasis"]
@@ -175,9 +179,6 @@ export type SelectField = {
       | PensionSettings["classicCalculationMode"]
       | PensionSettings["classicFinalSalaryLink"]
       | PensionSettings["sippWithdrawalStrategy"]
-      | PensionSettings["csAvcWithdrawalStrategy"]
-      | PensionSettings["isaWithdrawalStrategy"]
-      | PensionSettings["lisaWithdrawalStrategy"]
       | PensionSettings["premiumEarliestAccessAge"];
     label: string;
   }[];
@@ -1022,13 +1023,8 @@ export const fieldGroups: FieldGroup[] = [
         id: "sippWithdrawalStrategy",
         label: "SIPP withdrawal strategy",
         type: "select",
-        options: [
-          { value: "zero_at_death", label: "Zero at death" },
-          { value: "percentage", label: "Annual percentage" },
-          { value: "use_by_age", label: "Use by age" },
-        ],
-        description:
-          "Controls how the SIPP pot is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+        options: [...FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS],
+        description: FLEXIBLE_WITHDRAWAL_STRATEGY_DESCRIPTION,
       },
       {
         id: "sippWithdrawalPercent",
@@ -1119,13 +1115,8 @@ export const fieldGroups: FieldGroup[] = [
         id: "csAvcWithdrawalStrategy",
         label: "CS AVC withdrawal strategy",
         type: "select",
-        options: [
-          { value: "zero_at_death", label: "Zero at death" },
-          { value: "percentage", label: "Annual percentage" },
-          { value: "use_by_age", label: "Use by age" },
-        ],
-        description:
-          "Controls how the CS AVC pot is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+        options: [...FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS],
+        description: FLEXIBLE_WITHDRAWAL_STRATEGY_DESCRIPTION,
       },
       {
         id: "csAvcWithdrawalPercent",
@@ -1207,13 +1198,8 @@ export const fieldGroups: FieldGroup[] = [
         id: "isaWithdrawalStrategy",
         label: "ISA withdrawal strategy",
         type: "select",
-        options: [
-          { value: "zero_at_death", label: "Zero at death" },
-          { value: "percentage", label: "Annual percentage" },
-          { value: "use_by_age", label: "Use by age" },
-        ],
-        description:
-          "Controls how the ISA bridge is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+        options: [...FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS],
+        description: FLEXIBLE_WITHDRAWAL_STRATEGY_DESCRIPTION,
       },
       {
         id: "isaWithdrawalPercent",
@@ -1297,13 +1283,8 @@ export const fieldGroups: FieldGroup[] = [
         id: "lisaWithdrawalStrategy",
         label: "LISA withdrawal strategy",
         type: "select",
-        options: [
-          { value: "zero_at_death", label: "Zero at death" },
-          { value: "percentage", label: "Annual percentage" },
-          { value: "use_by_age", label: "Use by age" },
-        ],
-        description:
-          "Controls how the Lifetime ISA bridge is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+        options: [...FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS],
+        description: FLEXIBLE_WITHDRAWAL_STRATEGY_DESCRIPTION,
       },
       {
         id: "lisaWithdrawalPercent",

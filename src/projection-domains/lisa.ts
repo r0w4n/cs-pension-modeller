@@ -306,6 +306,10 @@ function calculateMonthlyWithdrawalFromPot(input: {
     return 0;
   }
 
+  if (strategy === "meet_income_target") {
+    return 0;
+  }
+
   if (strategy === "percentage") {
     return Math.min(pot, (pot * (withdrawalPercent / 100)) / 12);
   }

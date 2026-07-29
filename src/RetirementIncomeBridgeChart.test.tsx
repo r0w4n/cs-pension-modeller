@@ -25,6 +25,10 @@ const basePoint: RetirementIncomePoint = {
   totalIncomeAnnual: 0,
   assessedIncomeAnnual: 0,
   shortfallAnnual: 0,
+  guaranteedNetIncomeAnnual: 0,
+  unavoidableSurplusAnnual: 0,
+  avoidableFlexibleSurplusAnnual: 0,
+  flexibleWithdrawalInsights: [],
   phase: "build-up",
 };
 
@@ -291,6 +295,210 @@ function getPathYSpan(path: string) {
 }
 
 describe("RetirementIncomeBridgeChart", () => {
+  it("hides flexible-fund surplus presentation unless explicitly enabled", () => {
+    render(
+      <RetirementIncomeBridgeChart
+        {...baseProps}
+        targetIncomeAnnual={24_000}
+        isaMonthlyContribution={175}
+        residualFlexibleFundInsights={[
+          {
+            accountId: "isa",
+            label: "ISA",
+            endingBalance: 20_000,
+            planningHorizonAge: 80,
+            wasUsed: false,
+          },
+        ]}
+        showIsa
+        data={[
+          {
+            ...basePoint,
+            age: 66,
+            date: "2052-01-01",
+            targetIncomeAnnual: 24_000,
+            totalIncomeAnnual: 31_000,
+            assessedIncomeAnnual: 31_000,
+            guaranteedNetIncomeAnnual: 25_000,
+            unavoidableSurplusAnnual: 1_000,
+            avoidableFlexibleSurplusAnnual: 6_000,
+            flexibleWithdrawalInsights: [
+              {
+                accountId: "isa",
+                label: "ISA",
+                reducibleGrossAnnual: 6_000,
+                avoidableNetAnnual: 6_000,
+              },
+            ],
+            isaBalance: 20_000,
+            phase: "alpha-state",
+          },
+        ]}
+      />
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Inspect surplus at age 66" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Avoidable flexible-fund surplus", { exact: true })
+    ).not.toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("slider", { name: "ISA contribution" })
+        .closest(".bridge-control-card")
+    ).not.toHaveClass("bridge-control-card--surplus");
+  });
+
+  it("highlights the relevant adjustment control without graph circles", () => {
+    render(
+      <RetirementIncomeBridgeChart
+        {...baseProps}
+        targetIncomeAnnual={24_000}
+        showFlexibleWithdrawalInsights
+        showIsa
+        data={[
+          {
+            ...basePoint,
+            age: 66,
+            date: "2052-01-01",
+            targetIncomeAnnual: 24_000,
+            totalIncomeAnnual: 31_000,
+            assessedIncomeAnnual: 31_000,
+            guaranteedNetIncomeAnnual: 25_000,
+            unavoidableSurplusAnnual: 1_000,
+            avoidableFlexibleSurplusAnnual: 6_000,
+            flexibleWithdrawalInsights: [
+              {
+                accountId: "isa",
+                label: "ISA",
+                reducibleGrossAnnual: 6_000,
+                avoidableNetAnnual: 6_000,
+              },
+            ],
+            phase: "alpha-state",
+          },
+        ]}
+      />
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Inspect surplus at age 66" })
+    ).not.toBeInTheDocument();
+    const isaControl = screen.getByRole("slider", {
+      name: "ISA contribution",
+    });
+    expect(isaControl.closest(".bridge-control-card")).toHaveClass(
+      "bridge-control-card--surplus"
+    );
+    expect(isaControl).toHaveAccessibleDescription(
+      "Potential overspend: modelled ISA withdrawals could be reduced at some ages."
+    );
+    expect(
+      screen.getByText(/Age 66: £1,000 unavoidable surplus/)
+    ).toBeInTheDocument();
+  });
+
+  it("highlights target-based contributions that remain unused at the planning horizon", () => {
+    render(
+      <RetirementIncomeBridgeChart
+        {...baseProps}
+        showFlexibleWithdrawalInsights
+        showLisa
+        showSipp
+        lisaMonthlyContribution={225}
+        sippMonthlyContribution={175}
+        residualFlexibleFundInsights={[
+          {
+            accountId: "lisa",
+            label: "LISA",
+            endingBalance: 86_924,
+            planningHorizonAge: 80,
+            wasUsed: false,
+          },
+          {
+            accountId: "sipp",
+            label: "SIPP",
+            endingBalance: 88_253,
+            planningHorizonAge: 80,
+            wasUsed: false,
+          },
+        ]}
+        data={[
+          {
+            ...basePoint,
+            age: 60,
+            date: "2047-01-01",
+            lisaBalance: 40_000,
+            sippBalance: 42_000,
+          },
+          {
+            ...basePoint,
+            age: 80,
+            date: "2067-01-01",
+            lisaBalance: 86_924,
+            sippBalance: 88_253,
+            phase: "alpha-state",
+          },
+        ]}
+      />
+    );
+
+    const lisaControl = screen.getByRole("slider", {
+      name: "LISA contribution",
+    });
+    const sippControl = screen.getByRole("slider", {
+      name: "SIPP contribution",
+    });
+
+    expect(lisaControl.closest(".bridge-control-card")).toHaveClass(
+      "bridge-control-card--surplus"
+    );
+    expect(sippControl.closest(".bridge-control-card")).toHaveClass(
+      "bridge-control-card--surplus"
+    );
+    expect(lisaControl).toHaveAccessibleDescription(
+      "Potential over-saving: the LISA is not used for modelled income and retains £86,924 at age 80. You may want to compare a lower contribution."
+    );
+    expect(sippControl).toHaveAccessibleDescription(
+      "Potential over-saving: the SIPP is not used for modelled income and retains £88,253 at age 80. You may want to compare a lower contribution."
+    );
+  });
+
+  it("highlights added Alpha pension when guaranteed income exceeds the target", () => {
+    render(
+      <RetirementIncomeBridgeChart
+        {...baseProps}
+        targetIncomeAnnual={24_000}
+        alphaMonthlyAddedPension={475}
+        showFlexibleWithdrawalInsights
+        data={[
+          {
+            ...basePoint,
+            age: 68,
+            date: "2055-01-01",
+            targetIncomeAnnual: 24_000,
+            totalIncomeAnnual: 28_000,
+            assessedIncomeAnnual: 28_000,
+            guaranteedNetIncomeAnnual: 28_000,
+            unavoidableSurplusAnnual: 4_000,
+            phase: "alpha-state",
+          },
+        ]}
+      />
+    );
+
+    const alphaControl = screen.getByRole("slider", {
+      name: "Added Alpha pension",
+    });
+    expect(alphaControl.closest(".bridge-control-card")).toHaveClass(
+      "bridge-control-card--surplus"
+    );
+    expect(alphaControl).toHaveAccessibleDescription(
+      "Potential overspend: guaranteed income exceeds the target at some ages. Added Alpha pension is one adjustable contributor."
+    );
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });

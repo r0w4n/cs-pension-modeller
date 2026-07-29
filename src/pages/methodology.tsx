@@ -66,6 +66,7 @@ const SIPP_WITHDRAWAL_APPROACHES = [
   "fixed annual withdrawal percentage",
   "depletion over life expectancy",
   "use-by-age strategy",
+  "withdraw only what is needed to help meet the active income target",
 ] as const;
 
 const CS_AVC_PROJECTS = [
@@ -919,6 +920,48 @@ export function MethodologyPage() {
           early-withdrawal charges, provider-specific mechanics, or interactions
           with the wider ISA subscription allowance. It treats the LISA as a
           separate tax-free retirement balance.
+        </p>
+      </section>
+
+      <section>
+        <h2>Target-based flexible withdrawals and surplus</h2>
+        <p className="section-copy">
+          ISA, LISA, SIPP and Civil Service AVC accounts can use “Use to meet
+          income target”. From the target retirement age, the model first
+          calculates guaranteed income and any withdrawals required by Annual
+          percentage, Use by age or Zero at death. It then considers eligible
+          target-based accounts in the saved priority order and withdraws only
+          enough to close the remaining net-income gap.
+        </p>
+        <p className="section-copy">
+          The coordinator consumes the active target produced by the target
+          engine, whether that target is flat or phase-adjusted by SMILE. It
+          does not calculate SMILE phases inside the account logic. Inaccessible
+          or empty accounts are skipped for that month without changing their
+          saved priority.
+        </p>
+        <p className="section-copy">
+          ISA and LISA withdrawals meet a net gap directly. For taxable SIPP and
+          Civil Service AVC withdrawals, the model repeatedly recalculates
+          Income Tax to estimate the gross amount needed. This includes the
+          selected tax-free withdrawal share and the modelled allowance and tax
+          bands.
+        </p>
+        <p className="section-copy">
+          Existing withdrawal strategies remain explicit instructions and are
+          not silently reduced. Where they produce income above the active
+          target, the model separates unavoidable guaranteed-income surplus from
+          avoidable flexible-fund surplus. Reducible withdrawals are attributed
+          in reverse saved priority order, with tax recalculated after each
+          reduction.
+        </p>
+        <p className="section-copy">
+          Estimated unspent income is accumulated as unallocated cash with no
+          assumed return. It is not placed back into a tax-advantaged account.
+          The non-destructive target-based preview instead recalculates the
+          projection with avoided withdrawals left in the original account,
+          including later growth, tax, withdrawals, shortfalls and ending
+          balances.
         </p>
       </section>
 

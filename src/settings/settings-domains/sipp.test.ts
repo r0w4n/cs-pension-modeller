@@ -11,6 +11,9 @@ describe("sipp settings module", () => {
     expect(normalizeSippTaxReliefRate("40")).toBe("40");
     expect(normalizeSippTaxReliefRate("bad")).toBe("20");
     expect(normalizeSippWithdrawalStrategy("percentage")).toBe("percentage");
+    expect(normalizeSippWithdrawalStrategy("meet_income_target")).toBe(
+      "meet_income_target"
+    );
     expect(normalizeSippWithdrawalStrategy("bad")).toBe("use_by_age");
   });
 

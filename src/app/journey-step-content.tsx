@@ -12,7 +12,11 @@ import {
   type RetirementIncomeBridgeParameters,
   type RetirementIncomePoint,
 } from "../RetirementIncomeBridgeChart";
-import { type PensionSettings, type PensionValidationIssue } from "../settings";
+import {
+  type FlexibleFundAccountId,
+  type PensionSettings,
+  type PensionValidationIssue,
+} from "../settings";
 import {
   buildComparisonStatusItems,
   clonePensionSettings,
@@ -20,10 +24,14 @@ import {
   formatDate,
   formatDecimalAge,
   getSettingsSignature,
+  getWithdrawalStrategyFieldId,
+  isExpertRetirementIncomeTargetStep,
   isSpendingSmileEditorStep,
   type ComparisonResultCache,
   type ComparisonScenario,
   type IncomeAgeRangeItem,
+  type FlexibleWithdrawalSummary,
+  type TargetBasedWithdrawalPreview,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyStepDefinition,
@@ -53,6 +61,7 @@ import {
 } from "./results-summary";
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
 import { SpendingSmileEditor } from "./spending-smile-editor";
+import { FlexibleWithdrawalPriorityEditor } from "./flexible-withdrawal-priority-editor";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -62,6 +71,8 @@ export type JourneyStepViewModel = {
   bridgeChartParameters: RetirementIncomeBridgeParameters;
   bridgeChartLimits: RetirementIncomeBridgeLimits;
   derivedInflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
+  flexibleWithdrawalSummary: FlexibleWithdrawalSummary;
+  targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
   projectionRows: ProjectionRow[];
   retirementIncomeDisplay: RetirementIncomeDisplay;
   incomeAgeRangeItems: IncomeAgeRangeItem[];
@@ -273,6 +284,8 @@ function renderExpertAnswerStep(
     bridgeChartParameters,
     bridgeChartLimits,
     derivedInflationAssumptions,
+    flexibleWithdrawalSummary,
+    targetBasedWithdrawalPreviews,
     projectionRows,
     retirementIncomeDisplay,
     incomeAgeRangeItems,
@@ -284,6 +297,7 @@ function renderExpertAnswerStep(
     onRetirementIncomeDisplayChange,
     onComparisonRetirementIncomeDisplayChange,
     onChangeChartParameters,
+    onChange,
   } = viewModel;
 
   return (
@@ -299,6 +313,12 @@ function renderExpertAnswerStep(
           onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
           incomeAgeRangeItems={incomeAgeRangeItems}
           statusItems={buildStatusItems(currentComparisonResult)}
+          flexibleWithdrawalSummary={flexibleWithdrawalSummary}
+          targetBasedWithdrawalPreviews={targetBasedWithdrawalPreviews}
+          onApplyTargetBasedStrategy={(accountId) =>
+            applyTargetBasedStrategy(onChange, accountId)
+          }
+          onReviewWithdrawalStrategy={reviewWithdrawalStrategy}
         />
       </ResultsSummarySection>
 
@@ -310,6 +330,7 @@ function renderExpertAnswerStep(
       <RetirementIncomeBridgeChart
         data={retirementIncomeSeries}
         alphaLabel="Alpha pension"
+        showFlexibleWithdrawalInsights
         limits={bridgeChartLimits}
         statePensionEditable
         validationIssues={validationIssues}
@@ -470,11 +491,22 @@ function renderFieldsStep(
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         useDropdownDates={useDropdownDates}
+        flexibleWithdrawalSummary={
+          step.id.startsWith("expert-")
+            ? viewModel.flexibleWithdrawalSummary
+            : undefined
+        }
       >
         {isSpendingSmileEditorStep(step.id) ? (
           <SpendingSmileEditor
             settings={settings}
             validationIssues={validationIssues}
+            onChange={onChange}
+          />
+        ) : null}
+        {isExpertRetirementIncomeTargetStep(step.id) ? (
+          <FlexibleWithdrawalPriorityEditor
+            settings={settings}
             onChange={onChange}
           />
         ) : null}
@@ -501,6 +533,37 @@ function ValidationSummary({
   return validationIssues.length > 0 ? (
     <ValidationIssuesSectionFeature validationIssues={validationIssues} />
   ) : null;
+}
+
+function applyTargetBasedStrategy(
+  onChange: SettingsFieldOnChange,
+  accountId: FlexibleFundAccountId
+) {
+  const fieldId = getWithdrawalStrategyFieldId(accountId);
+  onChange(fieldId, "meet_income_target");
+}
+
+function reviewWithdrawalStrategy(accountId: FlexibleFundAccountId) {
+  const fieldId = getWithdrawalStrategyFieldId(accountId);
+  const groupId = accountId === "csAvc" ? "cs-avc" : accountId;
+  const existingField = document.getElementById(fieldId);
+
+  if (existingField) {
+    existingField.focus();
+    existingField.scrollIntoView({ block: "center" });
+    return;
+  }
+
+  const stepButton = document.querySelector<HTMLButtonElement>(
+    `.journey-step-button[data-step-id="expert-${groupId}"]`
+  );
+
+  stepButton?.click();
+  window.requestAnimationFrame(() => {
+    const field = document.getElementById(fieldId);
+    field?.focus();
+    field?.scrollIntoView({ block: "center" });
+  });
 }
 
 function buildStatusItems(

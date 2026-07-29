@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -45,6 +46,10 @@ export type RetirementIncomePoint = {
   totalIncomeAnnual: number;
   assessedIncomeAnnual: number;
   shortfallAnnual: number;
+  guaranteedNetIncomeAnnual: number;
+  unavoidableSurplusAnnual: number;
+  avoidableFlexibleSurplusAnnual: number;
+  flexibleWithdrawalInsights: RetirementIncomeFlexibleWithdrawalInsight[];
   isaBalance?: number;
   lisaBalance?: number;
   sippBalance?: number;
@@ -56,6 +61,13 @@ export type RetirementIncomePoint = {
     | "alpha-only"
     | "alpha-sipp"
     | "alpha-state";
+};
+
+export type RetirementIncomeFlexibleWithdrawalInsight = {
+  accountId: string;
+  label: string;
+  reducibleGrossAnnual: number;
+  avoidableNetAnnual: number;
 };
 
 export type RetirementIncomeAdditionalIncomePoint = {
@@ -97,10 +109,13 @@ export type RetirementIncomeBridgeParameters = {
   showIsa: boolean;
   showLisa: boolean;
   showSipp: boolean;
+  sippTargetBasedWithdrawalEnabled: boolean;
   sippUseByAgeEnabled: boolean;
   showNuvos: boolean;
   showPremium: boolean;
+  isaTargetBasedWithdrawalEnabled: boolean;
   isaUseByAgeEnabled: boolean;
+  lisaTargetBasedWithdrawalEnabled: boolean;
   lisaUseByAgeEnabled: boolean;
   showStatePension: boolean;
 };
@@ -110,6 +125,7 @@ export type RetirementIncomeBridgeChartProps =
     data: RetirementIncomePoint[];
     alphaLabel?: string;
     hideInactiveLegendItems?: boolean;
+    showFlexibleWithdrawalInsights?: boolean;
     limits: RetirementIncomeBridgeLimits;
     statePensionEditable?: boolean;
     validationIssues?: PensionValidationIssue[];
@@ -423,14 +439,18 @@ export function RetirementIncomeBridgeChart({
   showIsa,
   showLisa,
   showSipp,
+  sippTargetBasedWithdrawalEnabled,
   sippUseByAgeEnabled,
   showNuvos,
   showPremium,
+  isaTargetBasedWithdrawalEnabled,
   isaUseByAgeEnabled,
+  lisaTargetBasedWithdrawalEnabled,
   lisaUseByAgeEnabled,
   showStatePension,
   alphaLabel = "Alpha pension",
   hideInactiveLegendItems = false,
+  showFlexibleWithdrawalInsights = false,
   limits,
   statePensionEditable = false,
   validationIssues = [],
@@ -799,6 +819,68 @@ export function RetirementIncomeBridgeChart({
     )
     .y1((point) => yScale(point.targetIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
+  const avoidableSurplusArea = d3
+    .area<RetirementIncomePoint>()
+    .defined(
+      (point) =>
+        point.age >= retirementAge && point.avoidableFlexibleSurplusAnnual > 0
+    )
+    .x((point) => xScale(point.age))
+    .y0((point) => yScale(point.targetIncomeAnnual / divisor))
+    .y1((point) =>
+      yScale(
+        (point.targetIncomeAnnual + point.avoidableFlexibleSurplusAnnual) /
+          divisor
+      )
+    )
+    .curve(d3.curveStepAfter);
+  const flexibleSurplusData = getFlexibleSurplusData(
+    visibleData,
+    showFlexibleWithdrawalInsights
+  );
+  const surplusSummaryPoints = createSurplusSummaryPoints(flexibleSurplusData);
+  const reducibleFlexibleAccounts = new Set(
+    flexibleSurplusData.flatMap((point) =>
+      point.flexibleWithdrawalInsights.map((insight) => insight.accountId)
+    )
+  );
+  const residualTargetBasedAccounts = getResidualTargetBasedAccounts({
+    data: visibleData,
+    enabled: showFlexibleWithdrawalInsights,
+    accounts: [
+      {
+        accountId: "isa",
+        balanceKey: "isaBalance",
+        contribution: isaMonthlyContribution,
+        incomeKey: "isaIncomeAnnual",
+        label: "ISA",
+        targetBasedWithdrawalEnabled: isaTargetBasedWithdrawalEnabled,
+      },
+      {
+        accountId: "lisa",
+        balanceKey: "lisaBalance",
+        contribution: lisaMonthlyContribution,
+        incomeKey: "lisaIncomeAnnual",
+        label: "LISA",
+        targetBasedWithdrawalEnabled: lisaTargetBasedWithdrawalEnabled,
+      },
+      {
+        accountId: "sipp",
+        balanceKey: "sippBalance",
+        contribution: sippMonthlyContribution,
+        incomeKey: "sippIncomeAnnual",
+        label: "SIPP",
+        targetBasedWithdrawalEnabled: sippTargetBasedWithdrawalEnabled,
+      },
+    ],
+  });
+  const flexibleAccountWarnings = createFlexibleAccountWarnings(
+    reducibleFlexibleAccounts,
+    residualTargetBasedAccounts
+  );
+  const hasUnavoidableSurplus = flexibleSurplusData.some(
+    (point) => point.unavoidableSurplusAnnual > 0
+  );
   const targetLine = d3
     .line<RetirementIncomePoint>()
     .defined((point) => point.targetIncomeAnnual > 0)
@@ -2444,6 +2526,22 @@ export function RetirementIncomeBridgeChart({
                 strokeWidth="2"
               />
             </pattern>
+            <pattern
+              id="avoidable-surplus-hatch"
+              width="7"
+              height="7"
+              patternUnits="userSpaceOnUse"
+              patternTransform="rotate(45)"
+            >
+              <line
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="7"
+                stroke="#8a5200"
+                strokeWidth="2"
+              />
+            </pattern>
             {enabledIncomeSeries.map((series) => (
               <linearGradient
                 key={series.key}
@@ -2511,9 +2609,16 @@ export function RetirementIncomeBridgeChart({
             })}
 
             <path
+              d={toSvgPath(avoidableSurplusArea(flexibleSurplusData))}
+              className="bridge-avoidable-surplus-fill"
+              fill="url(#avoidable-surplus-hatch)"
+            />
+
+            <path
               d={shortfallArea(visibleData) ?? undefined}
               className="bridge-shortfall-fill"
             />
+
             <path
               d={shortfallArea(visibleData) ?? undefined}
               fill="url(#shortfall-hatch)"
@@ -2848,8 +2953,11 @@ export function RetirementIncomeBridgeChart({
             <span className="bridge-shortfall-key" />
             Shortfall
           </span>
+          <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
         </div>
       </div>
+
+      <SurplusTextEquivalent points={surplusSummaryPoints} />
 
       <BridgeMobileNavigation
         isCompact={isCompact}
@@ -2877,70 +2985,229 @@ export function RetirementIncomeBridgeChart({
         }}
       />
 
-      <div className="bridge-control-grid">
-        {showAlpha ? (
-          <BridgeMetricControl
-            label="Added Alpha pension"
-            value={displayedAlphaMonthlyAddedPension}
-            suffix="/ month"
-            limit={limits.alphaMonthlyAddedPension}
-            colour="#7353bf"
-            onChange={(value) =>
-              onChangeParameters({ alphaMonthlyAddedPension: value })
-            }
-          />
-        ) : null}
-        {showIsa ? (
-          <BridgeMetricControl
-            label="ISA contribution"
-            value={isaMonthlyContribution}
-            suffix="/ month"
-            limit={limits.isaMonthlyContribution}
-            colour="#155ea8"
-            onChange={(value) =>
-              onChangeParameters({ isaMonthlyContribution: value })
-            }
-          />
-        ) : null}
-        {showLisa ? (
-          <BridgeMetricControl
-            label="LISA contribution"
-            value={lisaMonthlyContribution}
-            suffix="/ month"
-            limit={limits.lisaMonthlyContribution}
-            colour={sourceMeta.lisaIncomeAnnual.colour}
-            onChange={(value) =>
-              onChangeParameters({ lisaMonthlyContribution: value })
-            }
-          />
-        ) : null}
-        {showSipp ? (
-          <BridgeMetricControl
-            label="SIPP contribution"
-            value={sippMonthlyContribution}
-            suffix="/ month"
-            limit={limits.sippMonthlyContribution}
-            colour="#0d6b40"
-            onChange={(value) =>
-              onChangeParameters({ sippMonthlyContribution: value })
-            }
-          />
-        ) : null}
-        {partialRetirementEnabled ? (
-          <BridgeMetricControl
-            label="Partial work"
-            value={partialRetirementWorkPercent}
-            suffix="%"
-            limit={limits.partialRetirementWorkPercent}
-            colour="#c2410c"
-            formatValue={(value) => String(Math.round(value))}
-            onChange={(value) =>
-              onChangeParameters({ partialRetirementWorkPercent: value })
-            }
-          />
-        ) : null}
-      </div>
+      <BridgeControlGrid
+        displayedAlphaMonthlyAddedPension={displayedAlphaMonthlyAddedPension}
+        flexibleAccountWarnings={flexibleAccountWarnings}
+        hasUnavoidableSurplus={hasUnavoidableSurplus}
+        isaMonthlyContribution={isaMonthlyContribution}
+        lisaMonthlyContribution={lisaMonthlyContribution}
+        limits={limits}
+        onChangeParameters={onChangeParameters}
+        partialRetirementEnabled={partialRetirementEnabled}
+        partialRetirementWorkPercent={partialRetirementWorkPercent}
+        showAlpha={showAlpha}
+        showIsa={showIsa}
+        showLisa={showLisa}
+        showSipp={showSipp}
+        sippMonthlyContribution={sippMonthlyContribution}
+      />
     </section>
+  );
+}
+
+type ResidualTargetBasedAccount = {
+  age: number;
+  balance: number;
+  label: string;
+  wasUsed: boolean;
+};
+
+type ResidualTargetBasedAccountConfig = {
+  accountId: "isa" | "lisa" | "sipp";
+  balanceKey: "isaBalance" | "lisaBalance" | "sippBalance";
+  contribution: number;
+  incomeKey: "isaIncomeAnnual" | "lisaIncomeAnnual" | "sippIncomeAnnual";
+  label: string;
+  targetBasedWithdrawalEnabled: boolean;
+};
+
+const MINIMUM_DISPLAYED_RESIDUAL_BALANCE = 1;
+
+function getResidualTargetBasedAccounts({
+  accounts,
+  data,
+  enabled,
+}: {
+  accounts: ResidualTargetBasedAccountConfig[];
+  data: RetirementIncomePoint[];
+  enabled: boolean;
+}) {
+  const residualAccounts = new Map<string, ResidualTargetBasedAccount>();
+  const finalPoint = data.at(-1);
+
+  if (!enabled || !finalPoint) {
+    return residualAccounts;
+  }
+
+  accounts.forEach((account) => {
+    const balance = finalPoint[account.balanceKey] ?? 0;
+
+    if (
+      !account.targetBasedWithdrawalEnabled ||
+      account.contribution <= 0 ||
+      balance < MINIMUM_DISPLAYED_RESIDUAL_BALANCE
+    ) {
+      return;
+    }
+
+    residualAccounts.set(account.accountId, {
+      age: finalPoint.age,
+      balance,
+      label: account.label,
+      wasUsed: data.some((point) => point[account.incomeKey] > 0),
+    });
+  });
+
+  return residualAccounts;
+}
+
+function createFlexibleAccountWarnings(
+  reducibleAccounts: Set<string>,
+  residualAccounts: Map<string, ResidualTargetBasedAccount>
+) {
+  const warnings = new Map<string, string>();
+  const labels: Record<"isa" | "lisa" | "sipp", string> = {
+    isa: "ISA",
+    lisa: "LISA",
+    sipp: "SIPP",
+  };
+
+  Object.entries(labels).forEach(([accountId, label]) => {
+    if (reducibleAccounts.has(accountId)) {
+      warnings.set(
+        accountId,
+        `Potential overspend: modelled ${label} withdrawals could be reduced at some ages.`
+      );
+      return;
+    }
+
+    const residualAccount = residualAccounts.get(accountId);
+
+    if (!residualAccount) {
+      return;
+    }
+
+    const explanation = residualAccount.wasUsed
+      ? `the model leaves ${formatCurrency(residualAccount.balance)} in the ${residualAccount.label}`
+      : `the ${residualAccount.label} is not used for modelled income and retains ${formatCurrency(residualAccount.balance)}`;
+    warnings.set(
+      accountId,
+      `Potential over-saving: ${explanation} at age ${formatAgeValue(residualAccount.age)}. You may want to compare a lower contribution.`
+    );
+  });
+
+  return warnings;
+}
+
+function BridgeControlGrid({
+  displayedAlphaMonthlyAddedPension,
+  flexibleAccountWarnings,
+  hasUnavoidableSurplus,
+  isaMonthlyContribution,
+  lisaMonthlyContribution,
+  limits,
+  onChangeParameters,
+  partialRetirementEnabled,
+  partialRetirementWorkPercent,
+  showAlpha,
+  showIsa,
+  showLisa,
+  showSipp,
+  sippMonthlyContribution,
+}: Pick<
+  RetirementIncomeBridgeParameters,
+  | "isaMonthlyContribution"
+  | "lisaMonthlyContribution"
+  | "partialRetirementEnabled"
+  | "partialRetirementWorkPercent"
+  | "showAlpha"
+  | "showIsa"
+  | "showLisa"
+  | "showSipp"
+  | "sippMonthlyContribution"
+> & {
+  displayedAlphaMonthlyAddedPension: number;
+  flexibleAccountWarnings: Map<string, string>;
+  hasUnavoidableSurplus: boolean;
+  limits: RetirementIncomeBridgeLimits;
+  onChangeParameters: (
+    patch: Partial<RetirementIncomeBridgeParameters>
+  ) => void;
+}) {
+  return (
+    <div className="bridge-control-grid">
+      {showAlpha ? (
+        <BridgeMetricControl
+          label="Added Alpha pension"
+          value={displayedAlphaMonthlyAddedPension}
+          suffix="/ month"
+          limit={limits.alphaMonthlyAddedPension}
+          colour="#7353bf"
+          surplusWarning={
+            hasUnavoidableSurplus &&
+            displayedAlphaMonthlyAddedPension >
+              limits.alphaMonthlyAddedPension.min
+              ? "Potential overspend: guaranteed income exceeds the target at some ages. Added Alpha pension is one adjustable contributor."
+              : undefined
+          }
+          onChange={(value) =>
+            onChangeParameters({ alphaMonthlyAddedPension: value })
+          }
+        />
+      ) : null}
+      {showIsa ? (
+        <BridgeMetricControl
+          label="ISA contribution"
+          value={isaMonthlyContribution}
+          suffix="/ month"
+          limit={limits.isaMonthlyContribution}
+          colour="#155ea8"
+          surplusWarning={flexibleAccountWarnings.get("isa")}
+          onChange={(value) =>
+            onChangeParameters({ isaMonthlyContribution: value })
+          }
+        />
+      ) : null}
+      {showLisa ? (
+        <BridgeMetricControl
+          label="LISA contribution"
+          value={lisaMonthlyContribution}
+          suffix="/ month"
+          limit={limits.lisaMonthlyContribution}
+          colour={sourceMeta.lisaIncomeAnnual.colour}
+          surplusWarning={flexibleAccountWarnings.get("lisa")}
+          onChange={(value) =>
+            onChangeParameters({ lisaMonthlyContribution: value })
+          }
+        />
+      ) : null}
+      {showSipp ? (
+        <BridgeMetricControl
+          label="SIPP contribution"
+          value={sippMonthlyContribution}
+          suffix="/ month"
+          limit={limits.sippMonthlyContribution}
+          colour="#0d6b40"
+          surplusWarning={flexibleAccountWarnings.get("sipp")}
+          onChange={(value) =>
+            onChangeParameters({ sippMonthlyContribution: value })
+          }
+        />
+      ) : null}
+      {partialRetirementEnabled ? (
+        <BridgeMetricControl
+          label="Partial work"
+          value={partialRetirementWorkPercent}
+          suffix="%"
+          limit={limits.partialRetirementWorkPercent}
+          colour="#c2410c"
+          formatValue={(value) => String(Math.round(value))}
+          onChange={(value) =>
+            onChangeParameters({ partialRetirementWorkPercent: value })
+          }
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -2950,6 +3217,7 @@ function BridgeMetricControl({
   suffix,
   limit,
   colour,
+  surplusWarning,
   formatValue = formatCurrency,
   onChange,
 }: {
@@ -2958,6 +3226,7 @@ function BridgeMetricControl({
   suffix: string;
   limit: NumberLimit;
   colour: string;
+  surplusWarning?: string;
   formatValue?: (value: number) => string;
   onChange: (value: number) => void;
 }) {
@@ -2965,6 +3234,7 @@ function BridgeMetricControl({
   const [draftValue, setDraftValue] = useState<number | null>(null);
   const displayedValue = draftValue ?? boundedValue;
   const roundedValue = Math.round(displayedValue);
+  const surplusWarningId = useId();
 
   const commitDraftValue = (nextValue: number) => {
     if (draftValue === null) {
@@ -2977,7 +3247,9 @@ function BridgeMetricControl({
 
   return (
     <div
-      className="bridge-control-card"
+      className={`bridge-control-card${
+        surplusWarning ? " bridge-control-card--surplus" : ""
+      }`}
       style={{ "--control-colour": colour } as React.CSSProperties}
     >
       <span>{label}</span>
@@ -2987,6 +3259,7 @@ function BridgeMetricControl({
       <div className="bridge-control-row">
         <input
           aria-label={label}
+          aria-describedby={surplusWarning ? surplusWarningId : undefined}
           type="range"
           min={limit.min}
           max={limit.max}
@@ -3009,6 +3282,11 @@ function BridgeMetricControl({
           }
         />
       </div>
+      {surplusWarning ? (
+        <p id={surplusWarningId} className="bridge-control-surplus-warning">
+          {surplusWarning}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -3725,6 +4003,80 @@ function createMobileBridgeSummary({
   ];
 }
 
+function getFlexibleSurplusData(
+  data: RetirementIncomePoint[],
+  visible: boolean
+) {
+  return visible ? data : [];
+}
+
+function FlexibleSurplusLegend({ visible }: { visible: boolean }) {
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <span>
+      <span className="bridge-avoidable-surplus-key" />
+      Avoidable flexible-fund surplus
+    </span>
+  );
+}
+
+function toSvgPath(path: string | null) {
+  return path ?? undefined;
+}
+
+function SurplusTextEquivalent({
+  points,
+}: {
+  points: RetirementIncomePoint[];
+}) {
+  if (points.length === 0) {
+    return null;
+  }
+
+  return (
+    <details className="bridge-surplus-text-equivalent">
+      <summary>Flexible-fund surplus by age</summary>
+      <ul>
+        {points.map((point) => (
+          <li key={`surplus-text-${point.date}-${point.age}`}>
+            Age {Math.floor(point.age)}:{" "}
+            {formatCurrency(point.unavoidableSurplusAnnual)} unavoidable surplus
+            and {formatCurrency(point.avoidableFlexibleSurplusAnnual)} avoidable
+            flexible-fund surplus.
+            {point.flexibleWithdrawalInsights.map(
+              (insight) =>
+                ` ${insight.label} could be reduced by ${formatCurrency(
+                  insight.reducibleGrossAnnual
+                )} gross.`
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function createSurplusSummaryPoints(data: RetirementIncomePoint[]) {
+  const seenAges = new Set<number>();
+
+  return data.filter((point) => {
+    const age = Math.floor(point.age);
+    const hasSurplus =
+      point.unavoidableSurplusAnnual > 0 ||
+      point.avoidableFlexibleSurplusAnnual > 0;
+
+    if (!hasSurplus || seenAges.has(age)) {
+      return false;
+    }
+
+    seenAges.add(age);
+    return true;
+  });
+}
+
 type BridgeMobileNavigationProps = {
   isCompact: boolean;
   isVisible: boolean;
@@ -4091,6 +4443,19 @@ function updateDisplayedTargetPoint(
   targetIncomeAnnual: number,
   retirementAge: number
 ): RetirementIncomePoint {
+  const totalSurplus = Math.max(
+    0,
+    point.assessedIncomeAnnual - targetIncomeAnnual
+  );
+  const unavoidableSurplusAnnual = Math.max(
+    0,
+    point.guaranteedNetIncomeAnnual - targetIncomeAnnual
+  );
+  const flexibleNetIncome = Math.max(
+    0,
+    point.assessedIncomeAnnual - point.guaranteedNetIncomeAnnual
+  );
+
   return {
     ...point,
     targetIncomeAnnual,
@@ -4098,6 +4463,8 @@ function updateDisplayedTargetPoint(
       point.age >= retirementAge
         ? Math.max(0, targetIncomeAnnual - point.assessedIncomeAnnual)
         : 0,
+    unavoidableSurplusAnnual,
+    avoidableFlexibleSurplusAnnual: Math.min(flexibleNetIncome, totalSurplus),
   };
 }
 

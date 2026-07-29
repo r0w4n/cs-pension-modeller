@@ -1,4 +1,4 @@
-import type { PensionSettings } from "./settings";
+import type { FlexibleFundAccountId, PensionSettings } from "./settings";
 import {
   generateRetirementBridgeAnalysis as generateRetirementBridgeAnalysisDomain,
   prepareBridgeProjectionSettings as prepareBridgeProjectionSettingsDomain,
@@ -10,6 +10,7 @@ import {
 } from "./derive-inputs";
 import { createProjectionTableBase } from "./row-engine-base";
 import { createProjectionTableWithPensionIncreases } from "./row-engine-with-pension-increases";
+import { coordinateFlexibleWithdrawals } from "./projection-domains/flexible-withdrawals";
 import { generatePensionSummary as generatePensionSummaryFromSummary } from "./summary";
 
 export type ProjectionRow = {
@@ -55,6 +56,18 @@ export type ProjectionRow = {
   totalMonthlyIncomeBeforeTax: number;
   monthlyIncomeTax: number;
   totalMonthlyNetIncome: number;
+  monthlyActiveIncomeTarget?: number;
+  monthlyGuaranteedNetIncome?: number;
+  monthlyUnavoidableSurplus?: number;
+  monthlyAvoidableFlexibleSurplus?: number;
+  monthlyReducibleFlexibleWithdrawals?: Record<
+    FlexibleFundAccountId,
+    {
+      gross: number;
+      net: number;
+    }
+  >;
+  cumulativeAvoidableFlexibleSurplus?: number;
 };
 
 export type PensionSummary = {
@@ -276,15 +289,15 @@ export function createProjectionTable(
 
   const runtimeDates = createProjectionRuntimeDates(settings);
 
-  if (settings.showAlpha) {
-    return createProjectionTableWithPensionIncreases(
-      settings,
-      derivedInputs,
-      runtimeDates
-    );
-  }
+  const rows = settings.showAlpha
+    ? createProjectionTableWithPensionIncreases(
+        settings,
+        derivedInputs,
+        runtimeDates
+      )
+    : createProjectionTableBase(settings, derivedInputs, runtimeDates);
 
-  return createProjectionTableBase(settings, derivedInputs, runtimeDates);
+  return coordinateFlexibleWithdrawals(rows, settings);
 }
 
 export function prepareBridgeProjectionSettings(

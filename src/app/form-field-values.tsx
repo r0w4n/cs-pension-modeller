@@ -29,6 +29,7 @@ export function SelectSettingField({
   disabled = false,
   hideOnMobile = false,
   validationIssue,
+  warning,
 }: {
   field: SelectField;
   value: string;
@@ -37,15 +38,18 @@ export function SelectSettingField({
   disabled?: boolean;
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
+  warning?: { id: string; message: string };
 }) {
   const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const describedBy = [validationId, warning?.id].filter(Boolean).join(" ");
 
   return (
     <div
       className={getFieldCardClassName(
         disabled,
         hideOnMobile,
-        Boolean(validationIssue)
+        Boolean(validationIssue),
+        Boolean(warning)
       )}
     >
       <span className="field-header">
@@ -55,7 +59,7 @@ export function SelectSettingField({
         field={field}
         value={value}
         disabled={disabled}
-        describedBy={validationId}
+        describedBy={describedBy || undefined}
         hasValidationIssue={Boolean(validationIssue)}
         onChange={(nextValue) =>
           onChange(field.id, nextValue as PensionSettings[typeof field.id])
@@ -63,6 +67,11 @@ export function SelectSettingField({
       />
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
+      {warning ? (
+        <p id={warning.id} className="field-warning" role="status">
+          {warning.message}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -84,6 +93,7 @@ function SelectSettingFieldEditor({
 }) {
   return (
     <select
+      id={field.id}
       aria-label={field.label}
       className="select-input"
       value={value}

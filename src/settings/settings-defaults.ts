@@ -55,6 +55,7 @@ export const defaultSettings: PensionSettings = {
     personalDetailsDefaults.requirementAge,
     personalDetailsDefaults.lifeExpectancy
   ),
+  flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
   statePensionDrawDate: statePensionDefaults.statePensionDrawDate,
   statePensionApplyFutureGrowth:
     statePensionDefaults.statePensionApplyFutureGrowth,

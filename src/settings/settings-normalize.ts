@@ -1,6 +1,8 @@
 import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
   type AddedPensionLumpSum,
+  type FlexibleFundAccountId,
   type PensionSettings,
 } from "./settings-types";
 import { normalizeAdditionalGuaranteedIncomes } from "./settings-domains/additional-guaranteed-income";
@@ -240,6 +242,22 @@ const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
   "lisaWithdrawalTargetAge",
 ];
 
+export function normalizeFlexibleWithdrawalPriority(
+  value: unknown
+): FlexibleFundAccountId[] {
+  const supplied = Array.isArray(value) ? value : [];
+  const valid = supplied.filter(
+    (item, index): item is FlexibleFundAccountId =>
+      FLEXIBLE_FUND_ACCOUNT_IDS.includes(item as FlexibleFundAccountId) &&
+      supplied.indexOf(item) === index
+  );
+
+  return [
+    ...valid,
+    ...FLEXIBLE_FUND_ACCOUNT_IDS.filter((item) => !valid.includes(item)),
+  ];
+}
+
 function normalizeNumericSetting(key: NumericSettingKey, value: unknown) {
   const parsed = Number(value);
 
@@ -328,6 +346,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         value,
         defaultSettings.desiredRetirementIncome
       ) as PensionSettings[K];
+    case "flexibleWithdrawalPriority":
+      return normalizeFlexibleWithdrawalPriority(value) as PensionSettings[K];
     case "inflationRateAnnual":
       return normalizeInflationSetting(
         "inflationRateAnnual",
@@ -459,6 +479,9 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       normalizeSpendingSmile(settings.spendingSmile, desiredRetirementIncome),
       requirementAge,
       lifeExpectancy
+    ),
+    flexibleWithdrawalPriority: normalizeFlexibleWithdrawalPriority(
+      settings.flexibleWithdrawalPriority
     ),
     statePensionDrawDate: normalizeStatePensionDrawDate(
       settings.statePensionDrawDate,

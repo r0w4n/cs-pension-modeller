@@ -66,6 +66,7 @@ export function ComparisonBridgeChart({
   bridgeChartParameters,
   bridgeChartLimits,
   hideInactiveLegendItems = false,
+  showFlexibleWithdrawalInsights = false,
   validationIssues,
   onChangeChartParameters,
 }: {
@@ -73,6 +74,7 @@ export function ComparisonBridgeChart({
   bridgeChartParameters?: RetirementIncomeBridgeParameters;
   bridgeChartLimits?: RetirementIncomeBridgeLimits;
   hideInactiveLegendItems?: boolean;
+  showFlexibleWithdrawalInsights?: boolean;
   validationIssues?: PensionValidationIssue[];
   onChangeChartParameters?: (
     patch: Partial<RetirementIncomeBridgeParameters>
@@ -92,6 +94,7 @@ export function ComparisonBridgeChart({
       data={retirementIncomeSeries}
       alphaLabel="Alpha pension"
       hideInactiveLegendItems={hideInactiveLegendItems}
+      showFlexibleWithdrawalInsights={showFlexibleWithdrawalInsights}
       limits={bridgeChartLimits}
       statePensionEditable
       validationIssues={validationIssues}

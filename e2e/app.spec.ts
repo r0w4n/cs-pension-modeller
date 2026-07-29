@@ -165,6 +165,18 @@ test.describe("app end-to-end journeys", () => {
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
     await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("combobox", { name: "SIPP withdrawal strategy" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("combobox", {
+        name: "ISA withdrawal strategy",
+        exact: true,
+      })
+    ).toHaveCount(0);
+    await expect(
       page.getByRole("button", { name: "Show my answer" })
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
@@ -173,6 +185,14 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("region", { name: "Comparison results" })
     ).toBeVisible();
+    await expect(
+      page.getByText("Avoidable flexible-fund surplus", { exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", {
+        name: "Your flexible withdrawals may be higher than needed",
+      })
+    ).toHaveCount(0);
     await expectProjectionTableForViewport(page, testInfo.project.name);
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })
@@ -570,6 +590,116 @@ test.describe("app end-to-end journeys", () => {
       releasedSlowGoPath ?? ""
     );
   });
+
+  test("shows income-target funding priority only in the expert target step", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await page.locator('[data-step-id="expert-sipp"]:visible').click();
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toHaveCount(0);
+
+    await page
+      .locator('[data-step-id="expert-retirement-target"]:visible')
+      .click();
+    await page
+      .getByRole("combobox", { name: "Spending strategy" })
+      .selectOption("SPENDING_SMILE");
+    const priorityEditor = page.getByRole("region", {
+      name: "Income-target funding priority",
+    });
+    const otherStrategies = priorityEditor.getByRole("region", {
+      name: "Other withdrawal strategies",
+    });
+    await expect(otherStrategies).toContainText("SIPP");
+    await expect(otherStrategies).toContainText("ISA");
+    await expect(priorityEditor.locator("[data-priority-account]")).toHaveCount(
+      0
+    );
+    const sippStrategy = priorityEditor.getByRole("combobox", {
+      name: "SIPP withdrawal strategy",
+    });
+    const isaStrategy = priorityEditor.getByRole("combobox", {
+      name: "ISA withdrawal strategy",
+    });
+    await expect(sippStrategy).toHaveValue("use_by_age");
+    await expect(isaStrategy).toHaveValue("use_by_age");
+    await sippStrategy.selectOption("meet_income_target");
+    await isaStrategy.selectOption("meet_income_target");
+    const isaHandle = priorityEditor.getByRole("button", {
+      name: "Reorder ISA. Priority 2 of 2.",
+    });
+    const sippRow = priorityEditor.locator('[data-priority-account="sipp"]');
+    await isaHandle.scrollIntoViewIfNeeded();
+    const isaHandleBox = await requiredBox(isaHandle);
+    const sippRowBox = await requiredBox(sippRow);
+    await page.mouse.move(
+      isaHandleBox.x + isaHandleBox.width / 2,
+      isaHandleBox.y + isaHandleBox.height / 2
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      sippRowBox.x + sippRowBox.width / 2,
+      sippRowBox.y + 2,
+      { steps: 5 }
+    );
+    await page.mouse.up();
+    await expect(
+      priorityEditor.locator("li").first().getByText("ISA")
+    ).toBeVisible();
+    await priorityEditor
+      .getByRole("combobox", { name: "SIPP withdrawal strategy" })
+      .selectOption("use_by_age");
+    await expect(
+      priorityEditor.locator('[data-priority-account="sipp"]')
+    ).toHaveCount(0);
+    await expect(
+      priorityEditor.locator('[data-priority-account="isa"]')
+    ).toHaveCount(1);
+    await expect(
+      otherStrategies.locator('[data-other-account="sipp"]')
+    ).toBeVisible();
+  });
+
+  test("keeps accounts visible when flat-target strategies move below the priority", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+    await page
+      .locator('[data-step-id="expert-retirement-target"]:visible')
+      .click();
+
+    const priorityEditor = page.getByRole("region", {
+      name: "Income-target funding priority",
+    });
+    await priorityEditor
+      .getByRole("combobox", { name: "SIPP withdrawal strategy" })
+      .selectOption("meet_income_target");
+    await priorityEditor
+      .getByRole("combobox", { name: "ISA withdrawal strategy" })
+      .selectOption("meet_income_target");
+
+    await priorityEditor
+      .getByRole("combobox", { name: "SIPP withdrawal strategy" })
+      .selectOption("use_by_age");
+    await expect(
+      priorityEditor.locator('[data-priority-account="isa"]')
+    ).toBeVisible();
+    await expect(
+      priorityEditor.locator('[data-other-account="sipp"]')
+    ).toBeVisible();
+
+    await priorityEditor
+      .getByRole("combobox", { name: "ISA withdrawal strategy" })
+      .selectOption("percentage");
+    await expect(priorityEditor).toBeVisible();
+    await expect(priorityEditor.locator("[data-priority-account]")).toHaveCount(
+      0
+    );
+    await expect(priorityEditor.locator("[data-other-account]")).toHaveCount(2);
+  });
 });
 
 async function assertRetirementTargetGrid(
@@ -849,7 +979,7 @@ async function assertFooterPage(
     await exportButton.click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(
-      /^cs-pension-parameters-\d{4}-\d{2}-\d{2}\.json$/
+      /^cs-pension-parameters-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/
     );
     await expect(page.getByRole("status")).toHaveText("Parameters exported");
 

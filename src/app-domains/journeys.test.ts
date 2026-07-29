@@ -1,6 +1,7 @@
 import {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
+  applyBridgeJourneyDefaults,
   applySimpleJourneyAssumptions,
   mergeSimpleJourneySettings,
 } from "./journeys";
@@ -64,6 +65,55 @@ describe("journey definitions", () => {
     expect([
       ...getJourneyStepFieldIds("expert-journey", "expert-retirement-target"),
     ]).toEqual(["desiredRetirementIncome", "requirementAge"]);
+  });
+
+  it("keeps flexible withdrawal strategy controls exclusive to expert mode", () => {
+    const strategyFieldIds = [
+      "sippWithdrawalStrategy",
+      "csAvcWithdrawalStrategy",
+      "isaWithdrawalStrategy",
+      "lisaWithdrawalStrategy",
+    ] satisfies FieldDefinition["id"][];
+
+    for (const fieldId of strategyFieldIds) {
+      expect(getJourneyFieldIds("expert-journey")).toContain(fieldId);
+      expect(getJourneyFieldIds("early-retirement-bridge")).not.toContain(
+        fieldId
+      );
+      expect(getJourneyFieldIds("simple-early-retirement")).not.toContain(
+        fieldId
+      );
+    }
+  });
+
+  it("keeps target-based drawdown out of simplified projections", () => {
+    const settings = applySimpleJourneyAssumptions({
+      ...defaultSettings,
+      sippWithdrawalStrategy: "meet_income_target",
+      csAvcWithdrawalStrategy: "meet_income_target",
+      isaWithdrawalStrategy: "meet_income_target",
+      lisaWithdrawalStrategy: "meet_income_target",
+    });
+
+    expect(settings.sippWithdrawalStrategy).toBe("use_by_age");
+    expect(settings.csAvcWithdrawalStrategy).toBe("use_by_age");
+    expect(settings.isaWithdrawalStrategy).toBe("use_by_age");
+    expect(settings.lisaWithdrawalStrategy).toBe("use_by_age");
+  });
+
+  it("keeps target-based drawdown out of bridge projections", () => {
+    const settings = applyBridgeJourneyDefaults({
+      ...defaultSettings,
+      sippWithdrawalStrategy: "meet_income_target",
+      csAvcWithdrawalStrategy: "meet_income_target",
+      isaWithdrawalStrategy: "meet_income_target",
+      lisaWithdrawalStrategy: "meet_income_target",
+    });
+
+    expect(settings.sippWithdrawalStrategy).toBe("use_by_age");
+    expect(settings.csAvcWithdrawalStrategy).toBe("use_by_age");
+    expect(settings.isaWithdrawalStrategy).toBe("use_by_age");
+    expect(settings.lisaWithdrawalStrategy).toBe("use_by_age");
   });
 
   it("keeps the Alpha pay-rise control in the expert journey only", () => {

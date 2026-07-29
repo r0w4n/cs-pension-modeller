@@ -11,7 +11,8 @@ export function normalizeCsAvcWithdrawalStrategy(
 ): CsAvcWithdrawalStrategy {
   return value === "percentage" ||
     value === "zero_at_death" ||
-    value === "use_by_age"
+    value === "use_by_age" ||
+    value === "meet_income_target"
     ? value
     : "use_by_age";
 }

@@ -95,6 +95,13 @@ test.describe("accessibility", () => {
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
     await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("combobox", { name: "SIPP withdrawal strategy" })
+    ).toHaveCount(0);
+    await expectNoAxeViolations(page, "bridge account controls");
+    await expect(
       page.getByRole("button", { name: "Show my answer" })
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
@@ -106,6 +113,27 @@ test.describe("accessibility", () => {
     await expectProjectionTableForViewport(page, testInfo.project.name);
 
     await expectNoAxeViolations(page, "bridge journey results");
+  });
+
+  test("expert target-based withdrawal priority has no detectable axe violations", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await page
+      .locator('[data-step-id="expert-retirement-target"]:visible')
+      .click();
+    await page
+      .getByRole("combobox", { name: "Spending strategy" })
+      .selectOption("SPENDING_SMILE");
+
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeVisible();
+    await expectNoAxeViolations(
+      page,
+      "expert target-based withdrawal priority"
+    );
   });
 
   for (const staticPage of [

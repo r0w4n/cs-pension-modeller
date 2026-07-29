@@ -1902,6 +1902,10 @@ function formatSippWithdrawalStrategy(settings: PensionSettings) {
     return formatWholePercent(settings.sippWithdrawalPercent / 100);
   }
 
+  if (settings.sippWithdrawalStrategy === "meet_income_target") {
+    return "Use to meet income target";
+  }
+
   return "Life expectancy";
 }
 
@@ -1960,7 +1964,11 @@ function getExpectedFlexibleAssetsExhaustionAge(settings: PensionSettings) {
 }
 
 function getExpectedPotExhaustionAge(
-  strategy: "use_by_age" | "zero_at_death" | "percentage",
+  strategy:
+    | "use_by_age"
+    | "zero_at_death"
+    | "percentage"
+    | "meet_income_target",
   targetAge: number,
   lifeExpectancy: number
 ) {

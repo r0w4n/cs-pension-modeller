@@ -15,6 +15,8 @@ export type {
   AddedPensionLumpSum,
   AdditionalGuaranteedIncome,
   AdditionalGuaranteedIncomeIndexation,
+  FlexibleFundAccountId,
+  FlexibleWithdrawalStrategy,
   SippWithdrawalStrategy,
   CsAvcWithdrawalStrategy,
   IsaWithdrawalStrategy,
@@ -28,6 +30,7 @@ export type {
   PensionSettings,
   PensionValidationIssue,
 } from "./settings/settings-types";
+export { FLEXIBLE_FUND_ACCOUNT_IDS } from "./settings/settings-types";
 
 export {
   defaultSettings,

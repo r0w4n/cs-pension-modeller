@@ -175,9 +175,6 @@ export type SelectField = {
       | PensionSettings["classicCalculationMode"]
       | PensionSettings["classicFinalSalaryLink"]
       | PensionSettings["sippWithdrawalStrategy"]
-      | PensionSettings["csAvcWithdrawalStrategy"]
-      | PensionSettings["isaWithdrawalStrategy"]
-      | PensionSettings["lisaWithdrawalStrategy"]
       | PensionSettings["premiumEarliestAccessAge"];
     label: string;
   }[];
@@ -1026,9 +1023,10 @@ export const fieldGroups: FieldGroup[] = [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
           { value: "use_by_age", label: "Use by age" },
+          { value: "meet_income_target", label: "Use to meet income target" },
         ],
         description:
-          "Controls how the SIPP pot is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+          "Choose a fixed drawdown instruction, or withdraw only what is needed to help meet your annual retirement income target after higher-priority accounts.",
       },
       {
         id: "sippWithdrawalPercent",
@@ -1123,9 +1121,10 @@ export const fieldGroups: FieldGroup[] = [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
           { value: "use_by_age", label: "Use by age" },
+          { value: "meet_income_target", label: "Use to meet income target" },
         ],
         description:
-          "Controls how the CS AVC pot is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+          "Choose a fixed drawdown instruction, or withdraw only what is needed to help meet your annual retirement income target after higher-priority accounts.",
       },
       {
         id: "csAvcWithdrawalPercent",
@@ -1211,9 +1210,10 @@ export const fieldGroups: FieldGroup[] = [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
           { value: "use_by_age", label: "Use by age" },
+          { value: "meet_income_target", label: "Use to meet income target" },
         ],
         description:
-          "Controls how the ISA bridge is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+          "Choose a fixed drawdown instruction, or withdraw only what is needed to help meet your annual retirement income target after higher-priority accounts.",
       },
       {
         id: "isaWithdrawalPercent",
@@ -1301,9 +1301,10 @@ export const fieldGroups: FieldGroup[] = [
           { value: "zero_at_death", label: "Zero at death" },
           { value: "percentage", label: "Annual percentage" },
           { value: "use_by_age", label: "Use by age" },
+          { value: "meet_income_target", label: "Use to meet income target" },
         ],
         description:
-          "Controls how the Lifetime ISA bridge is drawn down: spread to life expectancy, draw a fixed percentage, or run down by a chosen age.",
+          "Choose a fixed drawdown instruction, or withdraw only what is needed to help meet your annual retirement income target after higher-priority accounts.",
       },
       {
         id: "lisaWithdrawalPercent",

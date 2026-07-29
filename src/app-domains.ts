@@ -8,8 +8,10 @@ export {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
+  applySimpleJourneyAssumptions,
   applySimpleJourneyDefaults,
   isSpendingSmileEditorStep,
+  isExpertRetirementIncomeTargetStep,
   isOptionalSectionToggleKey,
   SPENDING_SMILE_EDITOR_STEP_ID,
   type JourneyDefinition,
@@ -103,6 +105,21 @@ export {
   createBridgeChartParameters,
   createRetirementIncomeSeries,
 } from "./app-domains/retirement-income";
+
+export {
+  getBalanceForAccount,
+  getFlexibleFundAccountLabel,
+  getFlexibleWithdrawalNonPriorityAccounts,
+  getFlexibleWithdrawalPriorityAccounts,
+  getWithdrawalForAccount,
+  getWithdrawalStrategyFieldId,
+  reorderFlexibleWithdrawalAccounts,
+  shouldShowFlexibleWithdrawalPriority,
+  summarizeFlexibleWithdrawalInsights,
+  type FlexibleWithdrawalAccountInsight,
+  type FlexibleWithdrawalSummary,
+  type TargetBasedWithdrawalPreview,
+} from "./app-domains/flexible-withdrawals";
 
 export {
   getSippEffectiveRangeField,

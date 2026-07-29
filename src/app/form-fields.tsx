@@ -6,6 +6,7 @@ import type {
 import type { ReactNode } from "react";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import {
+  type FlexibleWithdrawalSummary,
   isFieldDisabled,
   isFieldHiddenOnMobile,
   shouldRenderField,
@@ -38,6 +39,7 @@ type SettingsFieldsProps = {
   showGuidanceNotes: boolean;
   useDropdownDates: boolean;
   children?: ReactNode;
+  flexibleWithdrawalSummary?: FlexibleWithdrawalSummary;
 };
 
 export {
@@ -56,6 +58,7 @@ export function SettingsFields({
   showGuidanceNotes,
   useDropdownDates,
   children,
+  flexibleWithdrawalSummary,
 }: SettingsFieldsProps) {
   const visibleFields = fields.filter((field) =>
     shouldRenderField(field.id, settings)
@@ -77,6 +80,10 @@ export function SettingsFields({
           validationIssue={getValidationIssueForField(
             validationIssues,
             field.id
+          )}
+          warning={getFlexibleWithdrawalFieldWarning(
+            field.id,
+            flexibleWithdrawalSummary
           )}
         />
       ))}
@@ -102,6 +109,7 @@ function Field({
   disabled = false,
   hideOnMobile = false,
   validationIssue,
+  warning,
 }: FieldProps) {
   if (field.id === "statePensionDrawDate") {
     return (
@@ -187,6 +195,7 @@ function Field({
         disabled={disabled}
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
+        warning={warning}
       />
     );
   }
@@ -238,6 +247,51 @@ function Field({
   }
 
   return null;
+}
+
+function getFlexibleWithdrawalFieldWarning(
+  fieldId: SettingsKey,
+  summary?: FlexibleWithdrawalSummary
+) {
+  const accountId =
+    fieldId === "sippWithdrawalStrategy"
+      ? "sipp"
+      : fieldId === "csAvcWithdrawalStrategy"
+        ? "csAvc"
+        : fieldId === "lisaWithdrawalStrategy"
+          ? "lisa"
+          : fieldId === "isaWithdrawalStrategy"
+            ? "isa"
+            : null;
+
+  if (!accountId || !summary) {
+    return undefined;
+  }
+
+  const insight = summary.accounts.find(
+    (candidate) => candidate.accountId === accountId
+  );
+
+  if (!insight) {
+    return undefined;
+  }
+
+  const firstAge = insight.affectedAges[0];
+  const lastAge = insight.affectedAges.at(-1);
+  const ageRange =
+    firstAge === lastAge
+      ? `at age ${firstAge}`
+      : `between ages ${firstAge} and ${lastAge}`;
+  const formattedAmount = new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(insight.reducibleGrossWithdrawal);
+
+  return {
+    id: `${fieldId}-withdrawal-warning`,
+    message: `This strategy is projected to withdraw approximately ${formattedAmount} more than is needed to meet the income target ${ageRange}. Consider “Use to meet income target”.`,
+  };
 }
 
 function getValidationIssueForField(

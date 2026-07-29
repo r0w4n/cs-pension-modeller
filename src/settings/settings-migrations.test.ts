@@ -5,6 +5,7 @@ import {
   migrateFromV4ToV5,
   migrateFromV5ToV6,
   migrateFromV6ToV7,
+  migrateFromV7ToV8,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -130,6 +131,13 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("adds a stable flexible-account priority during v7 migration", () => {
+    expect(migrateFromV7ToV8({ requirementAge: 60 })).toEqual({
+      requirementAge: 60,
+      flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -165,6 +173,7 @@ describe("settings-migrations", () => {
         noGoStartAge: 85,
         noGoPercentage: 70,
       },
+      flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
     });
   });
 

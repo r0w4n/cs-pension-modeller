@@ -1050,7 +1050,6 @@ h3 {
   stroke-width: 2.5;
 }
 
-.bridge-milestone--selected circle,
 .bridge-milestone--selected .bridge-milestone-handle {
   stroke: #122033;
   stroke-width: 2.5;
@@ -1106,6 +1105,12 @@ h3 {
   gap: 0.55rem;
 }
 
+.bridge-control-card--surplus {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  box-shadow: 0 0 0 2px rgba(166, 95, 0, 0.12);
+}
+
 .bridge-control-card > span {
   color: var(--text-muted);
   font-size: var(--font-size-label);
@@ -1134,6 +1139,13 @@ h3 {
 .bridge-control-row input {
   min-width: 0;
   accent-color: var(--control-colour);
+}
+
+.bridge-control-surplus-warning {
+  margin: 0;
+  color: #704300;
+  font-size: var(--font-size-body-sm);
+  font-weight: 700;
 }
 
 .bridge-control-row button {
@@ -1226,6 +1238,30 @@ h3 {
   );
 }
 
+.bridge-avoidable-surplus-fill {
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.bridge-avoidable-surplus-key {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--warning-soft),
+    var(--warning-soft) 4px,
+    var(--warning) 4px,
+    var(--warning) 6px
+  );
+}
+
+.bridge-surplus-text-equivalent {
+  margin-top: 0.9rem;
+}
+
+.bridge-surplus-text-equivalent summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .bridge-build-up-key {
   border-radius: 0.15rem;
   background: rgba(199, 139, 29, 0.45);
@@ -1289,6 +1325,174 @@ h3 {
 .field-card--invalid .select-input,
 .field-card--invalid .number-input {
   border-color: rgba(184, 47, 47, 0.58);
+}
+
+.field-card--warning {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.field-warning {
+  margin: 0.75rem 0 0;
+  color: #704300;
+  font-weight: 650;
+}
+
+.flexible-withdrawal-priority {
+  grid-column: 1 / -1;
+}
+
+.flexible-withdrawal-priority h4,
+.flexible-withdrawal-priority h5 {
+  margin: 0;
+}
+
+.flexible-withdrawal-priority > h5 {
+  margin-top: 1rem;
+}
+
+.flexible-withdrawal-priority-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flexible-withdrawal-priority-list li,
+.flexible-withdrawal-priority-account {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+}
+
+.flexible-withdrawal-priority-list li {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.flexible-withdrawal-priority-account strong {
+  display: inline-grid;
+  min-width: 1.8rem;
+  min-height: 1.8rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.flexible-withdrawal-priority-item--dragging {
+  border-color: var(--accent) !important;
+  box-shadow: var(--shadow-soft);
+  transform: scale(1.01);
+}
+
+.flexible-withdrawal-priority-controls {
+  display: flex;
+  flex: 1 1 22rem;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.flexible-withdrawal-strategy-control {
+  display: grid;
+  flex: 1 1 14rem;
+  gap: 0.25rem;
+  max-width: 22rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.flexible-withdrawal-strategy-control .select-input {
+  width: 100%;
+}
+
+.flexible-withdrawal-other-strategies {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.flexible-withdrawal-drag-handle {
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.flexible-withdrawal-drag-handle:active {
+  cursor: grabbing;
+}
+
+.flexible-withdrawal-drag-handle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.flexible-withdrawal-drag-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.flexible-withdrawal-insight {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: 1.1rem;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+}
+
+.flexible-withdrawal-insight h3,
+.flexible-withdrawal-insight h4,
+.flexible-withdrawal-insight p {
+  margin-top: 0;
+}
+
+.flexible-withdrawal-account-insights {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.flexible-withdrawal-account-insights article {
+  padding: 1rem;
+  border: 1px solid rgba(166, 95, 0, 0.3);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.flexible-withdrawal-account-insights details {
+  margin: 0.8rem 0;
+}
+
+.flexible-withdrawal-account-insights summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.flexible-withdrawal-insight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .field-error {

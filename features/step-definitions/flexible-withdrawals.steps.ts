@@ -124,10 +124,21 @@ Given(
   }
 );
 
+Given("SMILE spending is enabled", function (this: FlexibleWithdrawalWorld) {
+  getSettings(this).spendingStrategyType = "SPENDING_SMILE";
+});
+
 Then(
   "the funding priority should remain available",
   function (this: FlexibleWithdrawalWorld) {
     assertCondition(shouldShowFlexibleWithdrawalPriority(getSettings(this)));
+  }
+);
+
+Then(
+  "the funding priority should not be available",
+  function (this: FlexibleWithdrawalWorld) {
+    assertCondition(!shouldShowFlexibleWithdrawalPriority(getSettings(this)));
   }
 );
 

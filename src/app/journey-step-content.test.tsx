@@ -162,6 +162,7 @@ describe("JourneyStepContent", () => {
     const viewModel = createViewModel();
     viewModel.settings = {
       ...viewModel.settings,
+      spendingStrategyType: "SPENDING_SMILE",
       sippWithdrawalStrategy: "meet_income_target",
       isaWithdrawalStrategy: "meet_income_target",
     };
@@ -255,6 +256,7 @@ describe("JourneyStepContent", () => {
     const viewModel = createViewModel();
     viewModel.settings = {
       ...viewModel.settings,
+      spendingStrategyType: "SPENDING_SMILE",
       sippWithdrawalStrategy: "meet_income_target",
       isaWithdrawalStrategy: "meet_income_target",
     };
@@ -346,7 +348,7 @@ describe("JourneyStepContent", () => {
       <StatefulPriorityEditor
         initialSettings={{
           ...createDefaultSettings(),
-          spendingStrategyType: "FLAT",
+          spendingStrategyType: "SPENDING_SMILE",
           sippWithdrawalStrategy: "meet_income_target",
           isaWithdrawalStrategy: "meet_income_target",
         }}
@@ -376,6 +378,36 @@ describe("JourneyStepContent", () => {
       0
     );
     expect(document.querySelectorAll("[data-other-account]")).toHaveLength(2);
+  });
+
+  it("hides income-target funding priority for flat spending", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      spendingStrategyType: "FLAT",
+      sippWithdrawalStrategy: "meet_income_target",
+      isaWithdrawalStrategy: "meet_income_target",
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "expert-retirement-target",
+          eyebrow: "Pension planning",
+          title: "Retirement income target",
+          description: "Set the income target.",
+          kind: "fields",
+          groupId: "retirement-target",
+          fieldIds: ["desiredRetirementIncome", "requirementAge"],
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.queryByRole("region", { name: "Income-target funding priority" })
+    ).not.toBeInTheDocument();
   });
 
   it("keeps flexible withdrawal results and chart presentation out of bridge answers", () => {

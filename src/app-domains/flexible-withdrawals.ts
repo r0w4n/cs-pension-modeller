@@ -64,10 +64,7 @@ export function getFlexibleWithdrawalNonPriorityAccounts(
 export function shouldShowFlexibleWithdrawalPriority(
   settings: PensionSettings
 ) {
-  return (
-    settings.spendingStrategyType === "SPENDING_SMILE" ||
-    getIncludedFlexibleWithdrawalAccounts(settings).length > 0
-  );
+  return settings.spendingStrategyType === "SPENDING_SMILE";
 }
 
 function getIncludedFlexibleWithdrawalAccounts(settings: PensionSettings) {

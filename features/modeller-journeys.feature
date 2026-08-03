@@ -52,6 +52,14 @@ Feature: Modeller journeys
       | Retirement Living Standards target (£ per year)      |
       | Target retirement age                                |
 
+  @expert-journey @optional-sections
+  Scenario: Exclude Alpha pension from an expert scenario
+    Given default modeller settings
+    When the "Expert journey" journey is loaded
+    Then the expert optional sections should allow Alpha pension to be disabled
+    When Alpha pension is disabled
+    Then the "Alpha pension details" journey step should not be visible
+
   @defaults
   Scenario: Bridge journey enables bridge pots and disables tax by default
     Given default modeller settings

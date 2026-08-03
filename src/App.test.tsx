@@ -3699,6 +3699,41 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Current ISA pot (£)")).toHaveValue(12000);
   });
 
+  it("lets expert mode disable Alpha pension modelling", async () => {
+    renderAcknowledgedApp();
+
+    const alphaToggle = screen.getByRole("checkbox", { name: "Alpha" });
+
+    expect(alphaToggle).toBeChecked();
+    fireEvent.click(alphaToggle);
+
+    expect(alphaToggle).not.toBeChecked();
+    expect(
+      screen.queryByRole("button", { name: /Alpha pension details/i })
+    ).not.toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({ showAlpha: false })
+    );
+
+    advanceJourneyToResult();
+
+    expect(
+      screen.queryByLabelText(/Start Alpha, age \d+/)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Monthly Alpha pension")).not.toBeInTheDocument();
+    const ageRangeTable = await screen.findByLabelText(
+      "Income by age range table"
+    );
+    expect(
+      within(ageRangeTable).queryByText(/Alpha pension/)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", {
+        name: "Monthly Alpha pension before tax",
+      })
+    ).not.toBeInTheDocument();
+  });
+
   it("can toggle additional guaranteed income in expert optional sections", () => {
     renderAcknowledgedApp();
 

@@ -185,6 +185,31 @@ describe("journey definitions", () => {
     );
   });
 
+  it("lets expert mode disable Alpha pension modelling", () => {
+    const expertJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "expert-journey"
+    );
+    const optionalSectionsStep = expertJourney?.steps.find(
+      (step) => step.id === "optional-sections"
+    );
+
+    expect(optionalSectionsStep?.kind).toBe("optional-sections");
+    if (optionalSectionsStep?.kind !== "optional-sections") {
+      throw new Error("Expected the expert optional sections step");
+    }
+    expect(optionalSectionsStep.toggleKeys).toContain("showAlpha");
+
+    const settingsWithoutAlpha = {
+      ...defaultSettings,
+      showAlpha: false,
+    };
+    const visibleStepIds = expertJourney?.steps
+      .filter((step) => !step.visible || step.visible(settingsWithoutAlpha))
+      .map((step) => step.id);
+
+    expect(visibleStepIds).not.toContain("expert-alpha");
+  });
+
   it("keeps additional guaranteed income in the simple and bridge journeys", () => {
     expect(getJourneyStepIds("early-retirement-bridge")).toContain(
       "additional-income"

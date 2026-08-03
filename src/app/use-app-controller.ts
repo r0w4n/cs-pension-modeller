@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
@@ -148,7 +148,6 @@ export function useAppController() {
       key,
       value,
       showSavedLabel,
-      startTransition,
       setChartUndoStack,
       setSettings: setActiveJourneySettings,
     });

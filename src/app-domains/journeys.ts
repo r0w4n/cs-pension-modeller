@@ -612,6 +612,7 @@ function createExpertJourneySteps(): JourneyStepDefinition[] {
       description:
         "Choose which parts of the modeller are in this scenario. Hidden sections keep their saved values, and later stages update automatically when you include or remove a section.",
       kind: "optional-sections",
+      toggleKeys: OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key),
     },
     ...fieldGroups.map(createExpertJourneyFieldStep),
     {

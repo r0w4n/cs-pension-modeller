@@ -2,6 +2,7 @@ import { DataTable, Given, Then, When } from "@cucumber/cucumber";
 import {
   applyBridgeJourneyDefaults,
   JOURNEY_DEFINITIONS,
+  OPTIONAL_SECTION_TOGGLES,
   type JourneyDefinition,
   type JourneyStepDefinition,
 } from "../../src/app-domains/journeys";
@@ -1065,6 +1066,50 @@ Then(
     const expectedFields = table.hashes().map((row) => row.field);
 
     assertEqual(JSON.stringify(actualFields), JSON.stringify(expectedFields));
+  }
+);
+
+Then(
+  "the expert optional sections should allow Alpha pension to be disabled",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const optionalSectionsStep = this.selectedJourney.steps.find(
+      (step) => step.id === "optional-sections"
+    );
+
+    assertCondition(
+      optionalSectionsStep?.kind === "optional-sections",
+      "Expected an optional sections step"
+    );
+    const toggleKeys =
+      optionalSectionsStep.toggleKeys ??
+      OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key);
+
+    assertCondition(
+      toggleKeys.includes("showAlpha"),
+      "Expected expert optional sections to include Alpha pension"
+    );
+  }
+);
+
+When("Alpha pension is disabled", function (this: ProductAcceptanceWorld) {
+  updateSettings(this, { showAlpha: false });
+});
+
+Then(
+  "the {string} journey step should not be visible",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const settings = getSettings(this);
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.visible && !step.visible(settings),
+      `Expected journey step "${stepTitle}" to be hidden`
+    );
   }
 );
 

@@ -122,6 +122,31 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
   });
 
+  test("expert mode can exclude Alpha pension", async ({ page }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    const alphaToggle = page.getByRole("checkbox", { name: "Alpha" });
+    await expect(alphaToggle).toBeChecked();
+    await alphaToggle.uncheck();
+
+    await expect(alphaToggle).not.toBeChecked();
+    await expect(
+      page.getByRole("button", { name: /Alpha pension details/i })
+    ).toHaveCount(0);
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"showAlpha":false');
+
+    await navigateToJourneyResult(page);
+    await renderDeferredComparisonContent(page);
+
+    await expect(page.getByLabel(/Start Alpha, age \d+/)).toHaveCount(0);
+    await expect(page.getByText("Monthly Alpha pension")).toHaveCount(0);
+    await expect(
+      page.getByLabel("Income by age range table").getByText(/Alpha pension/)
+    ).toHaveCount(0);
+  });
+
   test("completes the bridge journey", async ({ page }, testInfo) => {
     test.slow();
 

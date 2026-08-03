@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction, TransitionStartFunction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
@@ -611,14 +611,12 @@ export function updateSetting({
   key,
   value,
   showSavedLabel,
-  startTransition,
   setChartUndoStack,
   setSettings,
 }: {
   key: SettingsKey;
   value: PensionSettings[SettingsKey];
   showSavedLabel: () => void;
-  startTransition: TransitionStartFunction;
   setChartUndoStack: SetChartUndoStack;
   setSettings: SetSettings;
 }) {
@@ -628,12 +626,10 @@ export function updateSetting({
   if (isOptionalSectionToggleKey(key)) {
     const nextValue = value as boolean;
 
-    startTransition(() => {
-      setSettings((current) => ({
-        ...current,
-        [key]: nextValue,
-      }));
-    });
+    setSettings((current) => ({
+      ...current,
+      [key]: nextValue,
+    }));
 
     return;
   }

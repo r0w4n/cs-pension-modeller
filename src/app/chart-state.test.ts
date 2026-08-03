@@ -18,7 +18,6 @@ describe("chart-state", () => {
       key: "lifeExpectancy",
       value: 80,
       showSavedLabel: vi.fn(),
-      startTransition: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {
         next = typeof update === "function" ? update(next) : update;
@@ -30,6 +29,23 @@ describe("chart-state", () => {
       slowGoStartAge: 75,
       noGoStartAge: 80,
     });
+  });
+
+  it("updates optional section controls synchronously", () => {
+    const current = createDefaultSettings();
+    let next = current;
+
+    updateSetting({
+      key: "showAlpha",
+      value: false,
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.showAlpha).toBe(false);
   });
 
   it("updates one SMILE percentage from a chart patch", () => {

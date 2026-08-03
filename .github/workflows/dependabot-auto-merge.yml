@@ -23,9 +23,21 @@ jobs:
     steps:
       - name: Read Dependabot update metadata
         id: metadata
-        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98
         with:
-          github-token: ${{ secrets.dependabot_pat || github.token }}
+          github-token: ${{ github.token }}
+
+      - name: Check repository auto-merge setting
+        if: >
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.allow_auto_merge')" != "true" ]; then
+            echo "::error::Dependabot auto-merge requires Settings > General > Pull Requests > Allow auto-merge to be enabled for this repository."
+            exit 1
+          fi
 
       - name: Enable auto-merge for patch and minor updates
         if: >
@@ -33,7 +45,7 @@ jobs:
           steps.metadata.outputs.update-type == 'version-update:semver-minor'
         run: gh pr merge --auto --merge --delete-branch "$PR_URL"
         env:
-          GH_TOKEN: ${{ secrets.dependabot_pat || github.token }}
+          GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
 
       - name: Leave major updates for review

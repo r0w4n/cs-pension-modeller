@@ -375,6 +375,15 @@ changes are checked before merge. `npm audit` runs in `npm run check:full` for
 local verification and in a scheduled/manual GitHub Actions workflow, rather
 than blocking every pull request on transient advisory noise.
 
+Dependabot groups `react` and `react-dom` updates because React requires those
+runtime packages to use exactly the same version. Patch and minor updates are
+eligible for auto-merge after the required checks pass; major updates and any
+update with a failing check remain open for review. Repository auto-merge must
+be enabled under **Settings > General > Pull Requests > Allow auto-merge** for
+that workflow to work. The current `main` ruleset does not require pull request
+branches to be updated before merging, so no separate branch-refresh workflow
+or personal access token is required.
+
 ## Purpose
 
 The goal of the project is to make pension timing and retirement-income

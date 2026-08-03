@@ -8320,9 +8320,9 @@ export const acceptanceFeatures = [
       {
         id: "line-56",
         keyword: "Scenario",
-        name: "Bridge journey enables bridge pots and disables tax by default",
+        name: "Exclude Alpha pension from an expert scenario",
         description: "",
-        tags: ["@defaults"],
+        tags: ["@expert-journey", "@optional-sections"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
@@ -8334,20 +8334,57 @@ export const acceptanceFeatures = [
           {
             id: "line-58",
             keyword: "When",
-            text: "bridge journey defaults are applied",
+            text: 'the "Expert journey" journey is loaded',
           },
           {
             id: "line-59",
             keyword: "Then",
-            text: "State Pension, ISA, LISA and SIPP should be included",
+            text: "the expert optional sections should allow Alpha pension to be disabled",
           },
           {
             id: "line-60",
+            keyword: "When",
+            text: "Alpha pension is disabled",
+          },
+          {
+            id: "line-61",
+            keyword: "Then",
+            text: 'the "Alpha pension details" journey step should not be visible',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-64",
+        keyword: "Scenario",
+        name: "Bridge journey enables bridge pots and disables tax by default",
+        description: "",
+        tags: ["@defaults"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-65",
+            keyword: "Given",
+            text: "default modeller settings",
+          },
+          {
+            id: "line-66",
+            keyword: "When",
+            text: "bridge journey defaults are applied",
+          },
+          {
+            id: "line-67",
+            keyword: "Then",
+            text: "State Pension, ISA, LISA and SIPP should be included",
+          },
+          {
+            id: "line-68",
             keyword: "And",
             text: "Income Tax modelling should be off",
           },
           {
-            id: "line-61",
+            id: "line-69",
             keyword: "And",
             text: "ISA, LISA and SIPP withdrawals should use the use-by-age strategy",
           },

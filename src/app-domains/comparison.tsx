@@ -707,7 +707,7 @@ function createSpendingTargetComparisonRows(
       "Spending strategy",
       (result) =>
         result.scenario.settings.spendingStrategyType === "SPENDING_SMILE"
-          ? "SMILE spending"
+          ? "Go-Go, Slow-Go, No-Go"
           : "Flat spending",
     ],
     [

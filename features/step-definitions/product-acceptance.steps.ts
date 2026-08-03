@@ -825,7 +825,7 @@ Given(
 );
 
 Given(
-  "a retirement scenario named {string} uses SMILE spending",
+  "a retirement scenario named {string} uses Go-Go, Slow-Go, No-Go spending",
   function (this: ProductAcceptanceWorld, name: string) {
     const currentSettings = createDefaultSettings();
     const settings = {

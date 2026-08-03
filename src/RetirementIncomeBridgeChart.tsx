@@ -2639,7 +2639,7 @@ export function RetirementIncomeBridgeChart({
                     d={phase.path}
                     role="slider"
                     tabIndex={0}
-                    aria-label={`${phase.label} SMILE spending percentage`}
+                    aria-label={`${phase.label} spending percentage`}
                     aria-valuemin={MIN_SPENDING_SMILE_PERCENTAGE}
                     aria-valuemax={MAX_SPENDING_SMILE_PERCENTAGE}
                     aria-valuenow={
@@ -2667,7 +2667,7 @@ export function RetirementIncomeBridgeChart({
                       finishSpendingSmilePointerDrag(event, phase.key, false)
                     }
                   >
-                    <title>Drag to adjust {phase.label} SMILE spending</title>
+                    <title>Drag to adjust {phase.label} spending</title>
                   </path>
                 ) : null
               )

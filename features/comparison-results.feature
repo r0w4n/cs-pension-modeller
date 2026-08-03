@@ -45,13 +45,13 @@ Feature: Scenario comparison results
     And the "nuvos start" comparison value for "Saved with nuvos" should be "65"
 
   @spending-smile
-  Scenario: Show SMILE phase assumptions when a compared scenario uses them
+  Scenario: Show phased-spending assumptions when a compared scenario uses them
     Given a default retirement scenario named "Flat plan"
-    And a retirement scenario named "SMILE plan" uses SMILE spending
+    And a retirement scenario named "Phased plan" uses Go-Go, Slow-Go, No-Go spending
     When comparison table rows are built
     Then the comparison should include the "Spending target" section
     And the "Spending strategy" comparison value for "Flat plan" should be "Flat spending"
-    And the "Spending strategy" comparison value for "SMILE plan" should be "SMILE spending"
+    And the "Spending strategy" comparison value for "Phased plan" should be "Go-Go, Slow-Go, No-Go"
     And the "Slow-go target" comparison value for "Flat plan" should be "n/a"
-    And the "Slow-go target" comparison value for "SMILE plan" should include "80%"
-    And the "No-go starts" comparison value for "SMILE plan" should be "84"
+    And the "Slow-go target" comparison value for "Phased plan" should include "80%"
+    And the "No-go starts" comparison value for "Phased plan" should be "84"

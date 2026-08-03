@@ -6032,7 +6032,7 @@ export const acceptanceFeatures = [
       {
         id: "line-48",
         keyword: "Scenario",
-        name: "Show SMILE phase assumptions when a compared scenario uses them",
+        name: "Show phased-spending assumptions when a compared scenario uses them",
         description: "",
         tags: ["@spending-smile"],
         status: "covered",
@@ -6046,7 +6046,7 @@ export const acceptanceFeatures = [
           {
             id: "line-50",
             keyword: "And",
-            text: 'a retirement scenario named "SMILE plan" uses SMILE spending',
+            text: 'a retirement scenario named "Phased plan" uses Go-Go, Slow-Go, No-Go spending',
           },
           {
             id: "line-51",
@@ -6066,7 +6066,7 @@ export const acceptanceFeatures = [
           {
             id: "line-54",
             keyword: "And",
-            text: 'the "Spending strategy" comparison value for "SMILE plan" should be "SMILE spending"',
+            text: 'the "Spending strategy" comparison value for "Phased plan" should be "Go-Go, Slow-Go, No-Go"',
           },
           {
             id: "line-55",
@@ -6076,12 +6076,12 @@ export const acceptanceFeatures = [
           {
             id: "line-56",
             keyword: "And",
-            text: 'the "Slow-go target" comparison value for "SMILE plan" should include "80%"',
+            text: 'the "Slow-go target" comparison value for "Phased plan" should include "80%"',
           },
           {
             id: "line-57",
             keyword: "And",
-            text: 'the "No-go starts" comparison value for "SMILE plan" should be "84"',
+            text: 'the "No-go starts" comparison value for "Phased plan" should be "84"',
           },
         ],
         examples: [],
@@ -7120,7 +7120,7 @@ export const acceptanceFeatures = [
       {
         id: "line-69",
         keyword: "Scenario",
-        name: "Keep the funding controls visible for one account under SMILE",
+        name: "Keep the funding controls visible for one account under phased spending",
         description: "",
         tags: [],
         status: "covered",
@@ -7129,7 +7129,7 @@ export const acceptanceFeatures = [
           {
             id: "line-70",
             keyword: "Given",
-            text: "SMILE spending is enabled with only a SIPP included",
+            text: "Go-Go, Slow-Go, No-Go spending is enabled with only a SIPP included",
           },
           {
             id: "line-71",
@@ -10878,7 +10878,7 @@ export const acceptanceFeatures = [
           {
             id: "line-14",
             keyword: "Then",
-            text: "the SMILE configuration fields should not be displayed",
+            text: "the Go-Go, Slow-Go, No-Go configuration fields should not be displayed",
           },
           {
             id: "line-15",
@@ -10891,7 +10891,7 @@ export const acceptanceFeatures = [
       {
         id: "line-17",
         keyword: "Scenario",
-        name: "SMILE spending is selected",
+        name: "Go-Go, Slow-Go, No-Go spending is selected",
         description: "",
         tags: [],
         status: "covered",
@@ -10905,17 +10905,17 @@ export const acceptanceFeatures = [
           {
             id: "line-19",
             keyword: "When",
-            text: 'the user selects "SMILE spending"',
+            text: 'the user selects "Go-Go, Slow-Go, No-Go"',
           },
           {
             id: "line-20",
             keyword: "Then",
-            text: "the SMILE configuration fields should be displayed",
+            text: "the Go-Go, Slow-Go, No-Go configuration fields should be displayed",
           },
           {
             id: "line-21",
             keyword: "And",
-            text: "the stored SMILE configuration should contain percentages and phase ages",
+            text: "the stored phased-spending configuration should contain percentages and phase ages",
           },
         ],
         examples: [],
@@ -10932,12 +10932,12 @@ export const acceptanceFeatures = [
           {
             id: "line-24",
             keyword: "When",
-            text: 'the user selects "SMILE spending"',
+            text: 'the user selects "Go-Go, Slow-Go, No-Go"',
           },
           {
             id: "line-25",
             keyword: "Then",
-            text: "the stored SMILE configuration should not contain monetary phase targets",
+            text: "the stored phased-spending configuration should not contain monetary phase targets",
           },
           {
             id: "line-26",
@@ -10950,7 +10950,7 @@ export const acceptanceFeatures = [
       {
         id: "line-28",
         keyword: "Scenario Outline",
-        name: "Each SMILE phase target is calculated from the selected target",
+        name: "Each phased-spending target is calculated from the selected target",
         description: "",
         tags: [],
         status: "covered",
@@ -10964,7 +10964,7 @@ export const acceptanceFeatures = [
           {
             id: "line-30",
             keyword: "And",
-            text: 'the user selected "SMILE spending"',
+            text: 'the user selected "Go-Go, Slow-Go, No-Go"',
           },
           {
             id: "line-31",
@@ -11209,7 +11209,7 @@ export const acceptanceFeatures = [
           {
             id: "line-62",
             keyword: "And",
-            text: "validation should not report a SMILE phase age error",
+            text: "validation should not report a phased-spending age error",
           },
         ],
         examples: [],
@@ -11241,7 +11241,7 @@ export const acceptanceFeatures = [
           {
             id: "line-68",
             keyword: "And",
-            text: "validation should not report a SMILE phase age error",
+            text: "validation should not report a phased-spending age error",
           },
         ],
         examples: [],
@@ -11281,7 +11281,7 @@ export const acceptanceFeatures = [
       {
         id: "line-76",
         keyword: "Scenario Outline",
-        name: "SMILE percentages must be greater than zero",
+        name: "Phase percentages must be greater than zero",
         description: "",
         tags: [],
         status: "covered",
@@ -11364,7 +11364,7 @@ export const acceptanceFeatures = [
       {
         id: "line-86",
         keyword: "Scenario Outline",
-        name: "SMILE percentages must be whole numbers",
+        name: "Phase percentages must be whole numbers",
         description: "",
         tags: [],
         status: "covered",
@@ -11447,7 +11447,7 @@ export const acceptanceFeatures = [
       {
         id: "line-96",
         keyword: "Scenario",
-        name: "SMILE fields do not affect flat spending",
+        name: "Phased-spending fields do not affect flat spending",
         description: "",
         tags: [],
         status: "covered",
@@ -11456,7 +11456,7 @@ export const acceptanceFeatures = [
           {
             id: "line-97",
             keyword: "Given",
-            text: "the user previously configured a SMILE strategy",
+            text: "the user previously configured a Go-Go, Slow-Go, No-Go strategy",
           },
           {
             id: "line-98",
@@ -11466,7 +11466,7 @@ export const acceptanceFeatures = [
           {
             id: "line-99",
             keyword: "Then",
-            text: "the SMILE configuration fields should not be displayed",
+            text: "the Go-Go, Slow-Go, No-Go configuration fields should not be displayed",
           },
           {
             id: "line-100",
@@ -11479,7 +11479,7 @@ export const acceptanceFeatures = [
       {
         id: "line-102",
         keyword: "Scenario",
-        name: "Switching back to SMILE restores the configuration",
+        name: "Switching back to Go-Go, Slow-Go, No-Go restores the configuration",
         description: "",
         tags: [],
         status: "covered",
@@ -11488,7 +11488,7 @@ export const acceptanceFeatures = [
           {
             id: "line-103",
             keyword: "Given",
-            text: "the user previously configured a SMILE strategy",
+            text: "the user previously configured a Go-Go, Slow-Go, No-Go strategy",
           },
           {
             id: "line-104",
@@ -11498,12 +11498,12 @@ export const acceptanceFeatures = [
           {
             id: "line-105",
             keyword: "When",
-            text: 'the user selects "SMILE spending"',
+            text: 'the user selects "Go-Go, Slow-Go, No-Go"',
           },
           {
             id: "line-106",
             keyword: "Then",
-            text: "the previously configured SMILE percentages and ages should be restored",
+            text: "the previously configured phase percentages and ages should be restored",
           },
         ],
         examples: [],
@@ -11511,7 +11511,7 @@ export const acceptanceFeatures = [
       {
         id: "line-108",
         keyword: "Scenario",
-        name: "A results-chart phase drag changes only that SMILE phase",
+        name: "A results-chart phase drag changes only that spending phase",
         description: "",
         tags: [],
         status: "covered",
@@ -11520,7 +11520,7 @@ export const acceptanceFeatures = [
           {
             id: "line-109",
             keyword: "Given",
-            text: "the user previously configured a SMILE strategy",
+            text: "the user previously configured a Go-Go, Slow-Go, No-Go strategy",
           },
           {
             id: "line-110",

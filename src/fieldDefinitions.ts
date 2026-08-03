@@ -273,7 +273,7 @@ export const fieldGroups: FieldGroup[] = [
           },
         ],
         description:
-          "Your underlying annual spending goal before the modeller applies any tax setting or SMILE phase percentage. The presets come from Retirement Living Standards benchmarks, but your own housing, care, travel and family costs may matter more.",
+          "Your underlying annual spending goal before the modeller applies any tax setting or Go-Go, Slow-Go, No-Go phase percentage. The presets come from Retirement Living Standards benchmarks, but your own housing, care, travel and family costs may matter more.",
         infoUrl: knowledgeLinks.retirementLivingStandards,
         infoLinkText: "Retirement Living Standards",
       },

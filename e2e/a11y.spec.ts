@@ -44,7 +44,7 @@ test.describe("accessibility", () => {
     await expectNoAxeViolations(page, "expert journey entry screen");
   });
 
-  test("expert SMILE spending editor has no detectable axe violations", async ({
+  test("expert Go-Go, Slow-Go, No-Go editor has no detectable axe violations", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
@@ -55,9 +55,11 @@ test.describe("accessibility", () => {
       .selectOption("SPENDING_SMILE");
 
     await expect(
-      page.getByRole("img", { name: "SMILE spending profile" })
+      page.getByRole("img", {
+        name: "Go-Go, Slow-Go, No-Go spending profile",
+      })
     ).toBeVisible();
-    await expectNoAxeViolations(page, "expert SMILE spending editor");
+    await expectNoAxeViolations(page, "expert phased spending editor");
   });
 
   test("bridge journey results have no detectable axe violations", async ({

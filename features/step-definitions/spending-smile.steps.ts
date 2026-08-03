@@ -130,7 +130,7 @@ Given(
 );
 
 Given(
-  "the user previously configured a SMILE strategy",
+  "the user previously configured a Go-Go, Slow-Go, No-Go strategy",
   function (this: SpendingSmileWorld) {
     const settings = getSettings(this);
     settings.spendingSmile = {
@@ -232,21 +232,21 @@ Then(
 );
 
 Then(
-  "the SMILE configuration fields should not be displayed",
+  "the Go-Go, Slow-Go, No-Go configuration fields should not be displayed",
   function (this: SpendingSmileWorld) {
     assertEqual(getSettings(this).spendingStrategyType, "FLAT");
   }
 );
 
 Then(
-  "the SMILE configuration fields should be displayed",
+  "the Go-Go, Slow-Go, No-Go configuration fields should be displayed",
   function (this: SpendingSmileWorld) {
     assertEqual(getSettings(this).spendingStrategyType, "SPENDING_SMILE");
   }
 );
 
 Then(
-  "the stored SMILE configuration should contain percentages and phase ages",
+  "the stored phased-spending configuration should contain percentages and phase ages",
   function (this: SpendingSmileWorld) {
     const configuration = getSettings(this).spendingSmile;
     assertEqual(typeof configuration.goGoPercentage, "number");
@@ -258,7 +258,7 @@ Then(
 );
 
 Then(
-  "the stored SMILE configuration should not contain monetary phase targets",
+  "the stored phased-spending configuration should not contain monetary phase targets",
   function (this: SpendingSmileWorld) {
     const configuration = getSettings(this).spendingSmile as unknown as Record<
       string,
@@ -352,7 +352,7 @@ Then(
 );
 
 Then(
-  "validation should not report a SMILE phase age error",
+  "validation should not report a phased-spending age error",
   function (this: SpendingSmileWorld) {
     const hasPhaseAgeError = validateSettings(getSettings(this)).some(
       (issue) =>
@@ -376,7 +376,7 @@ Then(
 );
 
 Then(
-  "the previously configured SMILE percentages and ages should be restored",
+  "the previously configured phase percentages and ages should be restored",
   function (this: SpendingSmileWorld) {
     assertEqual(getSettings(this).spendingSmile, this.savedSmileConfiguration);
   }
@@ -437,7 +437,7 @@ Then(
 
 function selectStrategy(settings: PensionSettings, selection: string) {
   settings.spendingStrategyType =
-    selection === "SMILE spending" ? "SPENDING_SMILE" : "FLAT";
+    selection === "Go-Go, Slow-Go, No-Go" ? "SPENDING_SMILE" : "FLAT";
 }
 
 function setPercentage(

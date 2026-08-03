@@ -227,7 +227,7 @@ test.describe("app end-to-end journeys", () => {
     await assertFooterPage(page, "About", "What it is");
   });
 
-  test("configures, persists, and reports expert SMILE spending", async ({
+  test("configures, persists, and reports Go-Go, Slow-Go, No-Go spending", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
@@ -386,7 +386,9 @@ test.describe("app end-to-end journeys", () => {
       .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
       .toContain('"slowGoPercentage":80');
     await expect(
-      page.getByRole("img", { name: "SMILE spending profile" })
+      page.getByRole("img", {
+        name: "Go-Go, Slow-Go, No-Go spending profile",
+      })
     ).toBeVisible();
     await expect(
       page.getByRole("slider", {
@@ -419,7 +421,10 @@ test.describe("app end-to-end journeys", () => {
 
     await navigateToJourneyResult(page);
     await expect(
-      page.getByRole("heading", { level: 2, name: "SMILE spending" })
+      page.getByRole("heading", {
+        level: 2,
+        name: "Go-Go, Slow-Go, No-Go",
+      })
     ).not.toBeVisible();
     await expect(page.locator(".spending-smile-results")).toHaveCount(0);
 
@@ -431,7 +436,9 @@ test.describe("app end-to-end journeys", () => {
       comparisonResults.getByText("Spending strategy", { exact: true })
     ).toBeVisible();
     await expect(
-      comparisonResults.getByText("SMILE spending", { exact: true }).first()
+      comparisonResults
+        .getByText("Go-Go, Slow-Go, No-Go", { exact: true })
+        .first()
     ).toBeVisible();
     await expect(
       comparisonResults.getByText("Slow-go target", { exact: true })
@@ -498,17 +505,17 @@ test.describe("app end-to-end journeys", () => {
       .not.toBe(76);
 
     const slowGoResultHandle = page.getByRole("slider", {
-      name: "Slow-go SMILE spending percentage",
+      name: "Slow-go spending percentage",
     });
     await expect(
       page.getByRole("slider", {
-        name: "Go-go SMILE spending percentage",
+        name: "Go-go spending percentage",
       })
     ).toHaveAttribute("aria-valuenow", "100");
     await expect(slowGoResultHandle).toHaveAttribute("aria-valuenow", "80");
     await expect(
       page.getByRole("slider", {
-        name: "No-go SMILE spending percentage",
+        name: "No-go spending percentage",
       })
     ).toHaveAttribute("aria-valuenow", "70");
     await slowGoResultHandle.scrollIntoViewIfNeeded();

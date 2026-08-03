@@ -605,16 +605,16 @@ describe("RetirementIncomeBridgeChart", () => {
 
     expect(
       screen.getByRole("slider", {
-        name: "Go-go SMILE spending percentage",
+        name: "Go-go spending percentage",
       })
     ).toHaveAttribute("aria-valuenow", "100");
     const slowGoHandle = screen.getByRole("slider", {
-      name: "Slow-go SMILE spending percentage",
+      name: "Slow-go spending percentage",
     });
     expect(slowGoHandle).toHaveAttribute("aria-valuenow", "85");
     expect(
       screen.getByRole("slider", {
-        name: "No-go SMILE spending percentage",
+        name: "No-go spending percentage",
       })
     ).toHaveAttribute("aria-valuenow", "70");
     expect(
@@ -737,7 +737,7 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     const slowGoHandle = screen.getByRole("slider", {
-      name: "Slow-go SMILE spending percentage",
+      name: "Slow-go spending percentage",
     });
     fireEvent.pointerDown(slowGoHandle, {
       button: 0,
@@ -785,7 +785,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
     expect(
       screen.getByRole("slider", {
-        name: "Slow-go SMILE spending percentage",
+        name: "Slow-go spending percentage",
       })
     ).toHaveAttribute("d", releasedPath);
 
@@ -809,7 +809,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
     expect(
       screen.getByRole("slider", {
-        name: "Slow-go SMILE spending percentage",
+        name: "Slow-go spending percentage",
       })
     ).toHaveAttribute("d", releasedPath);
   });

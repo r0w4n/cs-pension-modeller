@@ -90,7 +90,7 @@ describe("comparison table rows", () => {
     ).toBe(true);
     expect(getComparisonRow(rows, "Spending strategy").values).toEqual([
       "Flat spending",
-      "SMILE spending",
+      "Go-Go, Slow-Go, No-Go",
     ]);
     expect(getComparisonRow(rows, "Underlying target").values).toEqual([
       "£30,000.00/year",

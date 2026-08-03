@@ -112,7 +112,7 @@ export function SpendingSmileEditor({
           }
         >
           <option value="FLAT">Flat spending</option>
-          <option value="SPENDING_SMILE">SMILE spending</option>
+          <option value="SPENDING_SMILE">Go-Go, Slow-Go, No-Go</option>
         </select>
         <p className="field-description">
           Choose whether your retirement income target remains level or reduces
@@ -460,7 +460,7 @@ function SpendingProfileChart({
   return (
     <figure className="spending-profile-chart">
       <figcaption>
-        <strong>Modelled SMILE profile</strong>
+        <strong>Modelled Go-Go, Slow-Go, No-Go profile</strong>
         <span>Annual spending target (£ per year) by age</span>
       </figcaption>
       <svg
@@ -468,7 +468,9 @@ function SpendingProfileChart({
         role="img"
         aria-labelledby="spending-profile-title spending-profile-description"
       >
-        <title id="spending-profile-title">SMILE spending profile</title>
+        <title id="spending-profile-title">
+          Go-Go, Slow-Go, No-Go spending profile
+        </title>
         <desc id="spending-profile-description">
           Go-go annual spending is {formatCurrency(phaseTargets.goGo)} from age{" "}
           {startAge}, Slow-go annual spending is{" "}

@@ -111,7 +111,7 @@ Then(
 );
 
 Given(
-  "SMILE spending is enabled with only a SIPP included",
+  "Go-Go, Slow-Go, No-Go spending is enabled with only a SIPP included",
   function (this: FlexibleWithdrawalWorld) {
     Object.assign(getSettings(this), {
       spendingStrategyType: "SPENDING_SMILE",

@@ -935,10 +935,10 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The coordinator consumes the active target produced by the target
-          engine, whether that target is flat or phase-adjusted by SMILE. It
-          does not calculate SMILE phases inside the account logic. Inaccessible
-          or empty accounts are skipped for that month without changing their
-          saved priority.
+          engine, whether that target is flat or adjusted by the Go-Go, Slow-Go,
+          No-Go phases. It does not calculate those phases inside the account
+          logic. Inaccessible or empty accounts are skipped for that month
+          without changing their saved priority.
         </p>
         <p className="section-copy">
           ISA and LISA withdrawals meet a net gap directly. For taxable SIPP and
@@ -973,7 +973,7 @@ export function MethodologyPage() {
       </section>
 
       <section>
-        <h2>Expert SMILE spending methodology</h2>
+        <h2>Go-Go, Slow-Go, No-Go spending methodology</h2>
         <p className="section-copy">
           The expert journey can replace the flat retirement spending target
           with three percentage phases. Go-go starts at the target retirement
@@ -982,7 +982,7 @@ export function MethodologyPage() {
           the only monetary target.
         </p>
         <p className="section-copy">
-          The stored SMILE values are a percentage for each phase and the two
+          The stored values are a percentage for each phase and the two
           later-phase start ages. The applicable percentage is multiplied by the
           selected target in today&apos;s money. In nominal mode, that
           phase-adjusted target is increased from the model start date using the
@@ -992,10 +992,10 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           Retirement Living Standards values are selected through the existing
-          retirement target control. SMILE does not create separate standards or
-          monetary targets for individual phases. These values are annual
-          expenditure benchmarks rather than gross income figures and exclude
-          rent and mortgage costs.
+          retirement target control. Go-Go, Slow-Go, No-Go does not create
+          separate standards or monetary targets for individual phases. These
+          values are annual expenditure benchmarks rather than gross income
+          figures and exclude rent and mortgage costs.
         </p>
       </section>
 

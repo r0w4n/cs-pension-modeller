@@ -11,6 +11,9 @@ describe("SpendingSmileEditor", () => {
       screen.getByRole("combobox", { name: "Spending strategy" })
     ).toHaveValue("FLAT");
     expect(
+      screen.getByRole("option", { name: "Go-Go, Slow-Go, No-Go" })
+    ).toBeInTheDocument();
+    expect(
       screen.queryByRole("heading", { name: "SMILE phase configuration" })
     ).not.toBeInTheDocument();
     expect(

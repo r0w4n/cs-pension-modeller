@@ -66,8 +66,8 @@ Feature: Target-based flexible-fund withdrawals
     When ISA is moved to target-based priority 1
     Then ISA should be before SIPP in the target-based priority
 
-  Scenario: Keep the funding controls visible for one account under SMILE
-    Given SMILE spending is enabled with only a SIPP included
+  Scenario: Keep the funding controls visible for one account under phased spending
+    Given Go-Go, Slow-Go, No-Go spending is enabled with only a SIPP included
     Then the funding priority should remain available
     And the target-based priority should be empty
     And the other-strategy accounts should include only SIPP

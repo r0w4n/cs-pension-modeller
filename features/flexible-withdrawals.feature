@@ -73,8 +73,7 @@ Feature: Target-based flexible-fund withdrawals
     And the other-strategy accounts should include only SIPP
 
   Scenario: Move non-target strategies below the draggable priority
-    Given SMILE spending is enabled
-    And an ISA with 20000.00 uses the target-based strategy
+    Given an ISA with 20000.00 uses the target-based strategy
     And a SIPP with 20000.00 uses the target-based strategy
     When SIPP changes to the use-by-age strategy
     Then the funding priority should remain available
@@ -82,20 +81,13 @@ Feature: Target-based flexible-fund withdrawals
     And the other-strategy accounts should include only SIPP
 
   Scenario: Keep the controls visible after the final target strategy changes
-    Given SMILE spending is enabled
-    And an ISA with 20000.00 uses the target-based strategy
+    Given an ISA with 20000.00 uses the target-based strategy
     And a SIPP with 20000.00 uses the target-based strategy
     When SIPP changes to the use-by-age strategy
     And ISA changes to the annual-percentage strategy
     Then the funding priority should remain available
     And the target-based priority should be empty
     And the other-strategy accounts should include SIPP and ISA
-
-  Scenario: Hide the funding priority for flat spending
-    Given the flat annual income target is 24000.00
-    And an ISA with 20000.00 uses the target-based strategy
-    And a SIPP with 20000.00 uses the target-based strategy
-    Then the funding priority should not be available
 
   Scenario: Keep flexible withdrawal controls out of non-expert journeys
     Then non-expert journey steps should not expose flexible withdrawal strategy controls

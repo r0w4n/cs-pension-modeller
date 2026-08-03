@@ -671,7 +671,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
   });
 
-  test("hides income-target funding priority until SMILE spending is enabled", async ({
+  test("keeps accounts visible when flat-target strategies move below the priority", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
@@ -682,12 +682,31 @@ test.describe("app end-to-end journeys", () => {
     const priorityEditor = page.getByRole("region", {
       name: "Income-target funding priority",
     });
-    await expect(priorityEditor).toHaveCount(0);
+    await priorityEditor
+      .getByRole("combobox", { name: "SIPP withdrawal strategy" })
+      .selectOption("meet_income_target");
+    await priorityEditor
+      .getByRole("combobox", { name: "ISA withdrawal strategy" })
+      .selectOption("meet_income_target");
 
-    await page
-      .getByRole("combobox", { name: "Spending strategy" })
-      .selectOption("SPENDING_SMILE");
+    await priorityEditor
+      .getByRole("combobox", { name: "SIPP withdrawal strategy" })
+      .selectOption("use_by_age");
+    await expect(
+      priorityEditor.locator('[data-priority-account="isa"]')
+    ).toBeVisible();
+    await expect(
+      priorityEditor.locator('[data-other-account="sipp"]')
+    ).toBeVisible();
+
+    await priorityEditor
+      .getByRole("combobox", { name: "ISA withdrawal strategy" })
+      .selectOption("percentage");
     await expect(priorityEditor).toBeVisible();
+    await expect(priorityEditor.locator("[data-priority-account]")).toHaveCount(
+      0
+    );
+    await expect(priorityEditor.locator("[data-other-account]")).toHaveCount(2);
   });
 });
 

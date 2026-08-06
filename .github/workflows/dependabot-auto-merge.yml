@@ -1,53 +1,173 @@
 name: Dependabot auto-merge
 
 on:
-  pull_request_target:
+  workflow_run:
+    workflows:
+      - CI
     types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
+      - completed
+  push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
+concurrency:
+  group: dependabot-auto-merge
+  cancel-in-progress: false
+
 jobs:
   auto-merge:
-    runs-on: ubuntu-latest
     if: >
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.event.pull_request.draft == false
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Read Dependabot update metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98
+      - name: Merge Dependabot PRs whose exact head passed CI
+        id: merge
+        uses: actions/github-script@v9
         with:
-          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            let candidates;
 
-      - name: Check repository auto-merge setting
-        if: >
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.allow_auto_merge')" != "true" ]; then
-            echo "::error::Dependabot auto-merge requires Settings > General > Pull Requests > Allow auto-merge to be enabled for this repository."
-            exit 1
-          fi
+            if (context.eventName === "workflow_run") {
+              const headSha = context.payload.workflow_run.head_sha;
+              candidates = await github.paginate(
+                github.rest.repos.listPullRequestsAssociatedWithCommit,
+                {
+                  owner,
+                  repo,
+                  commit_sha: headSha,
+                  per_page: 100,
+                },
+              );
+            } else {
+              candidates = await github.paginate(github.rest.pulls.list, {
+                owner,
+                repo,
+                state: "open",
+                base: "main",
+                per_page: 100,
+              });
+            }
 
-      - name: Enable auto-merge for patch and minor updates
-        if: >
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
-        run: gh pr merge --auto --merge --delete-branch "$PR_URL"
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+            const dependabotPulls = candidates.filter(
+              (pull) =>
+                pull.state === "open" &&
+                pull.base.ref === "main" &&
+                pull.user?.login === "dependabot[bot]" &&
+                pull.draft === false &&
+                (context.eventName !== "workflow_run" ||
+                  pull.head.sha === context.payload.workflow_run.head_sha),
+            );
 
-      - name: Leave major updates for review
-        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
-        run: echo "::notice::Major dependency updates require manual review."
+            let mergedCount = 0;
+
+            for (const pull of dependabotPulls) {
+              if (context.eventName !== "workflow_run") {
+                const runs = await github.paginate(
+                  github.rest.actions.listWorkflowRuns,
+                  {
+                    owner,
+                    repo,
+                    workflow_id: "ci.yml",
+                    event: "pull_request",
+                    branch: pull.head.ref,
+                    per_page: 100,
+                  },
+                );
+                const testedRun = runs.find(
+                  (run) => run.head_sha === pull.head.sha,
+                );
+
+                if (
+                  testedRun?.status !== "completed" ||
+                  testedRun.conclusion !== "success"
+                ) {
+                  core.notice(
+                    `Skipped PR #${pull.number}: its exact head has not passed the complete CI workflow.`,
+                  );
+                  continue;
+                }
+              }
+
+              const { data: currentPull } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: pull.number,
+              });
+
+              if (
+                currentPull.state !== "open" ||
+                currentPull.head.sha !== pull.head.sha ||
+                currentPull.user?.login !== "dependabot[bot]"
+              ) {
+                core.notice(
+                  `Skipped PR #${pull.number}: it changed after CI was checked.`,
+                );
+                continue;
+              }
+
+              try {
+                const { data: result } = await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: currentPull.number,
+                  sha: currentPull.head.sha,
+                  merge_method: "merge",
+                  commit_title: `${currentPull.title} (#${currentPull.number})`,
+                });
+
+                if (!result.merged) {
+                  core.notice(
+                    `Skipped PR #${currentPull.number}: ${result.message}`,
+                  );
+                  continue;
+                }
+
+                mergedCount += 1;
+                console.log(`Merged Dependabot PR #${currentPull.number}.`);
+
+                try {
+                  await github.rest.git.deleteRef({
+                    owner,
+                    repo,
+                    ref: `heads/${currentPull.head.ref}`,
+                  });
+                } catch (error) {
+                  core.notice(
+                    `Merged PR #${currentPull.number}, but could not delete its branch: ${error.message}`,
+                  );
+                }
+              } catch (error) {
+                if ([405, 409, 422].includes(error.status)) {
+                  core.notice(
+                    `Could not merge PR #${currentPull.number}: ${error.message}`,
+                  );
+                  continue;
+                }
+
+                throw error;
+              }
+            }
+
+            core.setOutput("merged-count", String(mergedCount));
+
+      - name: Run CI on the updated main branch
+        if: steps.merge.outputs.merged-count != '0'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              ...context.repo,
+              workflow_id: "ci.yml",
+              ref: "main",
+            });
+            console.log("Dispatched CI for the updated main branch.");

@@ -16,6 +16,11 @@ updates:
         patterns:
           - react
           - react-dom
+    ignore:
+      # typescript-eslint 8.x currently requires TypeScript below 6.1.
+      - dependency-name: typescript
+        versions:
+          - ">=7.0.0 <8.0.0"
 
   - package-ecosystem: github-actions
     directory: /

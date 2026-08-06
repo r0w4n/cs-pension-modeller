@@ -67,7 +67,7 @@ vi.mock("./results-summary", () => ({
 }));
 
 describe("JourneyStepContent", () => {
-  const originalMatchMedia = window.matchMedia;
+  const originalMatchMedia = window.matchMedia?.bind(window);
 
   const mockMatchMedia = (matches: boolean) => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({

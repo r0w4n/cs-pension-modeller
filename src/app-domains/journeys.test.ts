@@ -3,9 +3,11 @@ import {
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
   applySimpleJourneyAssumptions,
+  applySimpleJourneyDefaults,
   mergeSimpleJourneySettings,
 } from "./journeys";
 import type { FieldDefinition } from "../fieldDefinitions";
+import { knowledgeLinks } from "../knowledgeLinks";
 import { defaultSettings } from "../settings";
 
 function getJourneyFieldIds(journeyId: string) {
@@ -208,6 +210,98 @@ describe("journey definitions", () => {
       .map((step) => step.id);
 
     expect(visibleStepIds).not.toContain("expert-alpha");
+  });
+
+  it("keeps Alpha fixed and gives other pension choices simple-specific copy", () => {
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+    const pensionChoicesStep = simpleJourney?.steps.find(
+      (step) => step.id === "include"
+    );
+
+    expect(pensionChoicesStep?.kind).toBe("optional-sections");
+    if (pensionChoicesStep?.kind !== "optional-sections") {
+      throw new Error("Expected the simple pension choices step");
+    }
+
+    expect(pensionChoicesStep.toggleKeys).toEqual([
+      "showClassic",
+      "showClassicPlus",
+      "showNuvos",
+      "showPremium",
+      "showCsAvc",
+    ]);
+    expect(
+      pensionChoicesStep.toggleKeys?.map(
+        (key) => pensionChoicesStep.toggleCopy?.[key]?.label
+      )
+    ).toEqual([
+      "classic pension",
+      "classic plus pension",
+      "nuvos pension",
+      "premium pension",
+      "Civil Service AVC savings",
+    ]);
+
+    const stepIds = simpleJourney?.steps.map((step) => step.id) ?? [];
+    expect(stepIds.indexOf("alpha-epa")).toBeLessThan(
+      stepIds.indexOf("include")
+    );
+    expect(stepIds.indexOf("include")).toBeLessThan(stepIds.indexOf("classic"));
+    expect(stepIds.indexOf("cs-avc")).toBeLessThan(
+      stepIds.indexOf("additional-income")
+    );
+  });
+
+  it("forces Alpha on throughout the simple journey only", () => {
+    const settingsWithoutAlpha = {
+      ...defaultSettings,
+      showAlpha: false,
+    };
+
+    expect(applySimpleJourneyDefaults(settingsWithoutAlpha).showAlpha).toBe(
+      true
+    );
+    expect(applySimpleJourneyAssumptions(settingsWithoutAlpha).showAlpha).toBe(
+      true
+    );
+    expect(
+      mergeSimpleJourneySettings(settingsWithoutAlpha, settingsWithoutAlpha)
+        .showAlpha
+    ).toBe(true);
+    expect(applyBridgeJourneyDefaults(settingsWithoutAlpha).showAlpha).toBe(
+      false
+    );
+  });
+
+  it("guides simple journey users to copy the three Alpha statement figures", () => {
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+    const alphaStep = simpleJourney?.steps.find((step) => step.id === "alpha");
+
+    expect(alphaStep?.kind).toBe("fields");
+    if (alphaStep?.kind !== "fields") {
+      throw new Error("Expected the simple Alpha details step");
+    }
+
+    expect(alphaStep.title).toBe("Add your Alpha pension details");
+    expect(alphaStep.fieldLabels).toEqual({
+      alphaPensionAbsDate: "What year is your latest pension statement?",
+      accruedPensionAtLastAbs: "Yearly Alpha pension built up so far (£)",
+      pensionableEarnings: "Yearly pay used to build your Alpha pension (£)",
+    });
+    expect(alphaStep.fieldDescriptions?.accruedPensionAtLastAbs).toContain(
+      "not the value of a pension pot"
+    );
+    expect(alphaStep.fieldDescriptions?.pensionableEarnings).toContain(
+      "pensionable earnings"
+    );
+    expect(alphaStep.hideFieldInfoLinks).toBe(true);
+    expect(alphaStep.supportLink?.href).toBe(
+      knowledgeLinks.annualBenefitStatement
+    );
   });
 
   it("keeps additional guaranteed income in the simple and bridge journeys", () => {

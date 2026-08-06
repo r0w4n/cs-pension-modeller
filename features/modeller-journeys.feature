@@ -23,9 +23,43 @@ Feature: Modeller journeys
     And the journey should <bridgeFundingExpectation>
 
     Examples:
-      | journey                                 | targetStep                  | planningStep                | resultExpectation            | bridgeFundingExpectation                |
-      | Simplified retirement journey           | About you and your target   | Your Civil Service pensions | use the shared bridge answer | hide bridge funding details by default  |
-      | Work out what I need to retire early    | Your retirement target      | Your bridging pots          | show the projection table    | show bridge funding details by default  |
+      | journey                              | targetStep                        | planningStep                | resultExpectation            | bridgeFundingExpectation               |
+      | Simplified retirement journey        | What yearly income would you like? | Do you have any other Civil Service pensions? | use the shared bridge answer | hide bridge funding details by default |
+      | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default |
+
+  @simple-journey
+  Scenario: Introduce Alpha before asking simple planning questions
+    When the "Simplified retirement journey" journey is loaded
+    Then the first journey step should be titled "Alpha pension: the basics"
+    And the "Alpha pension: the basics" journey step should describe Alpha as a defined benefit pension
+    And the journey should include a step titled "What yearly income would you like?"
+    And the "What yearly income would you like?" journey step should link to the Retirement Living Standards
+
+  @simple-journey @optional-sections
+  Scenario: Explain other Civil Service pensions while keeping Alpha included
+    Given default modeller settings
+    When the "Simplified retirement journey" journey is loaded
+    Then the simplified pension choices should not offer Alpha as an optional pension
+    And the simplified pension choices should explain:
+      | choice                    |
+      | classic pension           |
+      | classic plus pension      |
+      | nuvos pension             |
+      | premium pension           |
+      | Civil Service AVC savings |
+
+  @simple-journey
+  Scenario: Guide users to enter figures from their Alpha pension statement
+    When the "Simplified retirement journey" journey is loaded
+    Then the journey should include a step titled "Add your Alpha pension details"
+    And the "Add your Alpha pension details" journey step should contain these fields:
+      | field                                              |
+      | What year is your latest pension statement?        |
+      | Yearly Alpha pension built up so far (£)            |
+      | Yearly pay used to build your Alpha pension (£)     |
+    And the "Add your Alpha pension details" journey step should link to Annual Benefit Statement help
+    And the "Add your Alpha pension details" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
+    And the "Do you have any other Civil Service pensions?" journey step should appear before the "Additional guaranteed income" journey step
 
   @expert-journey
   Scenario: Separate the expert retirement target from personal details

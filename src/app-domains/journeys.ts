@@ -4,6 +4,7 @@ import {
   type FieldGroup,
   type SettingsKey,
 } from "../fieldDefinitions";
+import { knowledgeLinks } from "../knowledgeLinks";
 import type { PensionSettings } from "../settings";
 import { isSettingsGroupVisible } from "./shared";
 
@@ -105,8 +106,36 @@ export type JourneyFieldLabels = Partial<Record<FieldDefinition["id"], string>>;
 export type JourneyFieldDescriptions = Partial<
   Record<FieldDefinition["id"], string>
 >;
+export type JourneyOptionalSectionCopy = Partial<
+  Record<
+    OptionalSectionToggleKey,
+    {
+      label: string;
+      description: string;
+    }
+  >
+>;
+
+export type JourneySupportLink = {
+  heading: string;
+  description: string;
+  href: string;
+  label: string;
+};
 
 export type JourneyStepDefinition =
+  | {
+      id: string;
+      eyebrow: string;
+      title: string;
+      description: string;
+      kind: "information";
+      sections: readonly {
+        heading: string;
+        description: string;
+      }[];
+      visible?: (settings: PensionSettings) => boolean;
+    }
   | {
       id: string;
       eyebrow: string;
@@ -118,6 +147,7 @@ export type JourneyStepDefinition =
       hideFlexibleAssetsSection?: boolean;
       showProjectionTable?: boolean;
       toggleKeys?: readonly OptionalSectionToggleKey[];
+      toggleCopy?: JourneyOptionalSectionCopy;
       visible?: (settings: PensionSettings) => boolean;
     }
   | {
@@ -130,6 +160,8 @@ export type JourneyStepDefinition =
       groupId?: FieldGroup["id"];
       fieldLabels?: JourneyFieldLabels;
       fieldDescriptions?: JourneyFieldDescriptions;
+      hideFieldInfoLinks?: boolean;
+      supportLink?: JourneySupportLink;
       visible?: (settings: PensionSettings) => boolean;
     };
 
@@ -378,43 +410,76 @@ export const JOURNEY_DEFINITIONS = [
     id: "simple-early-retirement",
     title: "Simplified retirement journey",
     description:
-      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, and assumptions.",
+      "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like.",
     steps: [
       {
-        id: "basics",
+        id: "introduction",
         eyebrow: "Step 1",
-        title: "About you and your target",
+        title: "Alpha pension: the basics",
         description:
-          "Start with your date of birth and the income you want the plan to support. The simplified journey assumes retirement at your Normal Pension Age.",
-        kind: "fields",
-        fieldIds: ["dateOfBirth", "desiredRetirementIncome"],
-        fieldLabels: {
-          dateOfBirth: "Date of birth",
-          desiredRetirementIncome: "Target retirement income (£ per year)",
-        },
-      },
-      {
-        id: "include",
-        eyebrow: "Step 2",
-        title: "Your Civil Service pensions",
-        description:
-          "Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
-        kind: "optional-sections",
-        toggleKeys: [
-          "showAlpha",
-          "showClassic",
-          "showClassicPlus",
-          "showNuvos",
-          "showPremium",
-          "showCsAvc",
+          "Let’s start with the basics. You do not need to know about pensions to use this journey.",
+        kind: "information",
+        sections: [
+          {
+            heading: "What is the Alpha pension?",
+            description:
+              "Alpha is a defined benefit Civil Service pension. This means it is not an investment pot. Each year you work as an Alpha member, you build up a set amount of yearly pension based on your pensionable pay and the scheme rules.",
+          },
+          {
+            heading: "Why does that matter?",
+            description:
+              "Because Alpha is not dependent on investment performance, it can give you a more predictable starting point than a pension pot. Your Annual Benefit Statement shows the yearly pension you have built up so far, and this is adjusted in line with prices. Taking it before or after your Normal Pension Age changes the amount. Understanding what you have built up can help you make informed retirement decisions.",
+          },
+          {
+            heading: "What will I do here?",
+            description:
+              "You will tell us the income you would like, a little about you, and the figures from your latest Annual Benefit Statement. We will then show an estimate of what your retirement income could look like. It is only a guide.",
+          },
         ],
       },
       {
-        id: "alpha",
-        eyebrow: "Step 3",
-        title: "Your Alpha pension",
+        id: "target",
+        eyebrow: "Step 2",
+        title: "What yearly income would you like?",
         description:
-          "Enter the main figures from your latest statement. The simplified journey assumes you leave and draw Alpha at your Normal Pension Age.",
+          "Think about the money you would like to have coming in each year when you stop working. A rough answer is fine. You can change it later.",
+        kind: "fields",
+        fieldIds: ["desiredRetirementIncome"],
+        fieldLabels: {
+          desiredRetirementIncome:
+            "How much would you like each year in retirement?",
+        },
+        fieldDescriptions: {
+          desiredRetirementIncome:
+            "Enter a yearly amount in today’s money. This is a planning target, not a promise of what you will receive.",
+        },
+        hideFieldInfoLinks: true,
+        supportLink: {
+          heading: "Not sure what amount to choose?",
+          description:
+            "The Retirement Living Standards show examples of what different retirement lifestyles could cost each year. They show spending, not the income you need before tax. Use them as a starting point and think about your own costs too.",
+          href: knowledgeLinks.retirementLivingStandards,
+          label: "Help me choose a retirement income",
+        },
+      },
+      {
+        id: "personal",
+        eyebrow: "Step 3",
+        title: "A little about you",
+        description:
+          "We use your date of birth to work out when your Alpha pension can normally start. The simplified journey assumes you retire at that age.",
+        kind: "fields",
+        fieldIds: ["dateOfBirth"],
+        fieldLabels: {
+          dateOfBirth: "Your date of birth",
+        },
+      },
+      {
+        id: "alpha",
+        eyebrow: "Step 4",
+        title: "Add your Alpha pension details",
+        description:
+          "Use the Alpha section of your latest Annual Benefit Statement. You only need three figures, and you can change them later.",
         kind: "fields",
         fieldIds: [
           "alphaPensionAbsDate",
@@ -422,15 +487,32 @@ export const JOURNEY_DEFINITIONS = [
           "pensionableEarnings",
         ],
         fieldLabels: {
-          alphaPensionAbsDate: "Annual Benefits Statement year",
-          accruedPensionAtLastAbs: "Accrued pension to date (£ per year)",
-          pensionableEarnings: "Pensionable earnings (£ per year)",
+          alphaPensionAbsDate: "What year is your latest pension statement?",
+          accruedPensionAtLastAbs: "Yearly Alpha pension built up so far (£)",
+          pensionableEarnings:
+            "Yearly pay used to build your Alpha pension (£)",
+        },
+        fieldDescriptions: {
+          alphaPensionAbsDate:
+            "Choose the year printed on your latest Annual Benefit Statement. We use this as the starting point for your estimate.",
+          accruedPensionAtLastAbs:
+            "Your statement may call this your accrued Alpha pension. Enter the yearly amount, not a monthly amount. This is pension income you have built up, not the value of a pension pot.",
+          pensionableEarnings:
+            "Your statement or employer may call this pensionable earnings. It is the part of your pay Alpha uses to work out the pension you build each year. It is usually your basic pay plus any pensionable allowances.",
+        },
+        hideFieldInfoLinks: true,
+        supportLink: {
+          heading: "Where can I find these figures?",
+          description:
+            "Look for the Alpha section of your latest Annual Benefit Statement. If you cannot find your current pensionable pay, your employer can tell you which parts of your pay count towards Alpha.",
+          href: knowledgeLinks.annualBenefitStatement,
+          label: "Help me find my Annual Benefit Statement",
         },
         visible: (settings) => settings.showAlpha,
       },
       {
         id: "alpha-options",
-        eyebrow: "Step 4",
+        eyebrow: "Step 5",
         title: "Added pension",
         description:
           "Add monthly added pension purchases you want reflected in the plan. Lump sum purchases are not included in the simplified journey.",
@@ -474,6 +556,48 @@ export const JOURNEY_DEFINITIONS = [
           partialRetirementWorkPercent: "Reduced hours percentage",
         },
         visible: (settings) => settings.partialRetirementEnabled,
+      },
+      {
+        id: "include",
+        eyebrow: "Step 6",
+        title: "Do you have any other Civil Service pensions?",
+        description:
+          "Alpha is always included in this simplified journey. Select any older Civil Service pension or Civil Service AVC savings shown on your pension statement. If you are not sure, leave it off for now — you can come back later.",
+        kind: "optional-sections",
+        toggleKeys: [
+          "showClassic",
+          "showClassicPlus",
+          "showNuvos",
+          "showPremium",
+          "showCsAvc",
+        ],
+        toggleCopy: {
+          showClassic: {
+            label: "classic pension",
+            description:
+              "Choose this if your pension statement says classic. It is an older pension based on your salary and usually includes a lump sum when you take it.",
+          },
+          showClassicPlus: {
+            label: "classic plus pension",
+            description:
+              "Choose this if your pension statement says classic plus. It uses one set of rules for your earlier service and another for your later service, so the modeller asks for both.",
+          },
+          showNuvos: {
+            label: "nuvos pension",
+            description:
+              "Choose this if your pension statement says nuvos. It is an older pension that built up a little at a time from your pay each year.",
+          },
+          showPremium: {
+            label: "premium pension",
+            description:
+              "Choose this if your pension statement says premium. It is an older pension based on your salary. It does not normally pay a lump sum automatically, although you can usually choose to take one by giving up some yearly pension.",
+          },
+          showCsAvc: {
+            label: "Civil Service AVC savings",
+            description:
+              "Choose this if you made extra pension payments called Additional Voluntary Contributions. This money went into a separate pension pot, and its value depends on how much was paid in and how its investments performed.",
+          },
+        },
       },
       {
         id: "classic",
@@ -690,6 +814,7 @@ export function applySimpleJourneyDefaults(
 
   return {
     ...settings,
+    showAlpha: true,
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
@@ -708,6 +833,7 @@ export function applySimpleJourneyAssumptions(
 ): PensionSettings {
   return {
     ...settings,
+    showAlpha: true,
     showStatePension: true,
     showSipp: false,
     showCsAvc: settings.showCsAvc,
@@ -737,6 +863,7 @@ export function mergeSimpleJourneySettings(
 ): PensionSettings {
   return {
     ...nextSettings,
+    showAlpha: true,
     showSipp: currentSettings.showSipp,
     showIsa: currentSettings.showIsa,
     showLisa: currentSettings.showLisa,

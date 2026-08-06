@@ -165,6 +165,29 @@ export function JourneyFlow({
     }
   };
 
+  const renderMobileStepList = () => (
+    <nav className="journey-mobile-step-list" aria-label="Journey steps">
+      {visibleSteps.map((step, index) => {
+        const stepState = getStepState(index);
+
+        return (
+          <button
+            key={step.id}
+            type="button"
+            className={`journey-step-button journey-step-button--${stepState}`}
+            aria-current={step.id === activeStep.id ? "step" : undefined}
+            data-step-state={stepState}
+            data-step-id={step.id}
+            onClick={() => goToStep(index)}
+          >
+            <span>{index + 1}</span>
+            {step.title}
+          </button>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <section className="panel journey-panel" aria-labelledby="journey-title">
       <div ref={topBookmarkRef} id="journey-top-bookmark" />
@@ -230,31 +253,14 @@ export function JourneyFlow({
                 }}
               />
             </div>
-            <nav
-              className="journey-mobile-step-list"
-              aria-label="Journey steps"
-            >
-              {visibleSteps.map((step, index) => {
-                const stepState = getStepState(index);
-
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    className={`journey-step-button journey-step-button--${stepState}`}
-                    aria-current={
-                      step.id === activeStep.id ? "step" : undefined
-                    }
-                    data-step-state={stepState}
-                    data-step-id={step.id}
-                    onClick={() => goToStep(index)}
-                  >
-                    <span>{index + 1}</span>
-                    {step.title}
-                  </button>
-                );
-              })}
-            </nav>
+            {journey.id === "simple-early-retirement" ? (
+              <details className="journey-mobile-step-disclosure">
+                <summary>View all steps</summary>
+                {renderMobileStepList()}
+              </details>
+            ) : (
+              renderMobileStepList()
+            )}
           </div>
         ) : null}
 

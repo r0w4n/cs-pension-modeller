@@ -17,6 +17,7 @@ export {
   type JourneyDefinition,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
+  type JourneyOptionalSectionCopy,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "./app-domains/journeys";

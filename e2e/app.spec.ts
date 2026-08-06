@@ -24,7 +24,7 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("heading", { name: "Simplified retirement journey" })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "About you and your target" })
+      page.getByRole("heading", { name: "Alpha pension: the basics" })
     ).toBeVisible();
 
     await page
@@ -69,6 +69,7 @@ test.describe("app end-to-end journeys", () => {
     await fillCurrency(page, "Current LISA pot (£)", "10000");
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
+    await expectProjectionBasisBelowResultsChart(page);
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
@@ -87,18 +88,49 @@ test.describe("app end-to-end journeys", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "simple");
 
-    await fillCurrency(page, "Target retirement income (£ per year)", "32000");
-    await clickNextAndExpectStep(page, "Your Civil Service pensions");
-    await clickNextAndExpectStep(page, "Your Alpha pension");
+    await clickNextAndExpectStep(page, "What yearly income would you like?");
+    await expect(
+      page.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+    await fillCurrency(
+      page,
+      "How much would you like each year in retirement?",
+      "32000"
+    );
+    await clickNextAndExpectStep(page, "A little about you");
+    await clickNextAndExpectStep(page, "Add your Alpha pension details");
 
-    await fillCurrency(page, "Accrued pension to date (£ per year)", "17500");
+    await expect(
+      page.getByRole("link", {
+        name: /Help me find my Annual Benefit Statement/i,
+      })
+    ).toBeVisible();
+    await fillCurrency(
+      page,
+      "Yearly Alpha pension built up so far (£)",
+      "17500"
+    );
     await clickNextAndExpectStep(page, "Added pension");
     await clickNextAndExpectStep(page, "Alpha EPA");
-
+    await clickNextAndExpectStep(
+      page,
+      "Do you have any other Civil Service pensions?"
+    );
+    await expect(
+      page.getByText(/Alpha is always included in this simplified journey/i)
+    ).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Alpha" })).toHaveCount(0);
+    await expect(
+      page.getByRole("checkbox", { name: "classic pension" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("checkbox", { name: "Civil Service AVC savings" })
+    ).toBeVisible();
     await clickNextAndExpectStep(page, "Additional guaranteed income");
     await addAdditionalIncome(page, "Simple journey annuity", "4000", "67");
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
+    await expectProjectionBasisBelowResultsChart(page);
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
@@ -206,6 +238,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
+    await expectProjectionBasisBelowResultsChart(page);
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
@@ -848,7 +881,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "About you and your target" })
+      page.getByRole("heading", { name: "Alpha pension: the basics" })
     ).toBeVisible();
     return;
   }
@@ -1116,4 +1149,20 @@ async function renderDeferredComparisonContent(page: Page) {
       await new Promise((resolve) => window.setTimeout(resolve, 100));
     }
   });
+}
+
+async function expectProjectionBasisBelowResultsChart(page: Page) {
+  const chartComesFirst = await page.evaluate(() => {
+    const chart = document.querySelector(".bridge-chart-panel");
+    const projectionBasis = document.querySelector(".inflation-panel");
+
+    return Boolean(
+      chart &&
+      projectionBasis &&
+      chart.compareDocumentPosition(projectionBasis) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    );
+  });
+
+  expect(chartComesFirst).toBe(true);
 }

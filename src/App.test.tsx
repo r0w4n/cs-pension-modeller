@@ -826,8 +826,9 @@ describe("App settings form", () => {
       previous_journey_mode: "simple",
     });
 
+    openJourneyStep(/What yearly income would you like/i);
     const targetIncomeInput = screen.getByLabelText(
-      "Target retirement income (£ per year)"
+      "How much would you like each year in retirement?"
     );
 
     fireEvent.change(targetIncomeInput, {
@@ -973,16 +974,28 @@ describe("App settings form", () => {
     );
     expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
       "content",
-      "Answer a smaller set of questions to see what your retirement could look like financially, then review your projected income, key dates, and assumptions."
+      "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like."
     );
     expect(
-      screen.getByRole("heading", { name: "About you and your target" })
+      screen.getByRole("heading", { name: "Alpha pension: the basics" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /About you and your target/i })
+      screen.getByRole("button", { name: /Alpha pension: the basics/i })
     ).toHaveAttribute("aria-current", "step");
     expect(
-      screen.getByRole("button", { name: /Your Alpha pension/i })
+      screen.getByRole("heading", { name: "What is the Alpha pension?" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/defined benefit Civil Service pension/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/help you make informed retirement decisions/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "What will I do here?" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Add your Alpha pension details/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Added pension/i })
@@ -991,16 +1004,29 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Alpha EPA/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+      screen.getByRole("button", {
+        name: /Do you have any other Civil Service pensions/i,
+      })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Your results/i })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Date of birth month")).toHaveValue("06");
-    expect(screen.getByLabelText("Date of birth year")).toHaveValue("1987");
+    openJourneyStep(/What yearly income would you like/i);
     expect(
-      screen.getByLabelText("Target retirement income (£ per year)")
+      screen.getByLabelText("How much would you like each year in retirement?")
     ).toHaveValue(defaultSettings.desiredRetirementIncome);
+    expect(
+      screen.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+    expect(
+      screen.queryByRole("link", { name: "Retirement Living Standards" })
+    ).not.toBeInTheDocument();
+
+    openJourneyStep(/A little about you/i);
+    expect(screen.getByLabelText("Your date of birth month")).toHaveValue("06");
+    expect(screen.getByLabelText("Your date of birth year")).toHaveValue(
+      "1987"
+    );
     expect(screen.queryByLabelText("Retirement age")).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Age you leave Alpha")
@@ -1013,9 +1039,35 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Your Alpha pension/i })
+      screen.getByRole("button", { name: /Add your Alpha pension details/i })
     );
 
+    expect(
+      screen.getByRole("heading", { name: "Add your Alpha pension details" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("What year is your latest pension statement?")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Yearly Alpha pension built up so far (£)")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/pension income you have built up, not the value/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Yearly pay used to build your Alpha pension (£)")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/employer may call this pensionable earnings/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: /Help me find my Annual Benefit Statement/i,
+      })
+    ).toHaveAttribute(
+      "href",
+      "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/"
+    );
     expect(
       screen.queryByLabelText("Apply Alpha pension increases")
     ).not.toBeInTheDocument();
@@ -1034,10 +1086,14 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+      screen.getByRole("button", {
+        name: /Do you have any other Civil Service pensions/i,
+      })
     );
 
-    const includeNuvosToggle = screen.getByRole("checkbox", { name: "nuvos" });
+    const includeNuvosToggle = screen.getByRole("checkbox", {
+      name: "nuvos pension",
+    });
 
     expect(includeNuvosToggle).not.toBeChecked();
 
@@ -1057,32 +1113,27 @@ describe("App settings form", () => {
 
   it.each([
     {
-      toggleName: "Alpha",
-      stepName: /Your Alpha pension/i,
-      headingName: "Your Alpha pension",
-    },
-    {
-      toggleName: "classic",
+      toggleName: "classic pension",
       stepName: /classic pension/i,
       headingName: "classic pension",
     },
     {
-      toggleName: "classic plus",
+      toggleName: "classic plus pension",
       stepName: /classic plus pension/i,
       headingName: "classic plus pension",
     },
     {
-      toggleName: "nuvos",
+      toggleName: "nuvos pension",
       stepName: /nuvos pension/i,
       headingName: "nuvos pension",
     },
     {
-      toggleName: "Premium",
+      toggleName: "premium pension",
       stepName: /Premium pension/i,
       headingName: "Premium pension",
     },
     {
-      toggleName: "Civil Service AVC",
+      toggleName: "Civil Service AVC savings",
       stepName: /Civil Service AVC/i,
       headingName: "Civil Service AVC",
     },
@@ -1090,7 +1141,7 @@ describe("App settings form", () => {
     "lets the simple journey exercise the $toggleName optional checkbox",
     ({ toggleName, stepName, headingName }) => {
       renderAcknowledgedApp({ mode: "simple" });
-      openJourneyStep(/Your Civil Service pensions/i);
+      openJourneyStep(/Do you have any other Civil Service pensions/i);
 
       const toggle = screen.getByRole("checkbox", { name: toggleName });
 
@@ -1122,10 +1173,10 @@ describe("App settings form", () => {
 
   it("keeps ISA, LISA and SIPP off when simple journey CS AVC is enabled", () => {
     renderAcknowledgedApp({ mode: "simple" });
-    openJourneyStep(/Your Civil Service pensions/i);
+    openJourneyStep(/Do you have any other Civil Service pensions/i);
 
     fireEvent.click(
-      screen.getByRole("checkbox", { name: "Civil Service AVC" })
+      screen.getByRole("checkbox", { name: "Civil Service AVC savings" })
     );
     openJourneyStep(/Civil Service AVC/i);
 
@@ -1154,56 +1205,63 @@ describe("App settings form", () => {
     ).toBe(true);
   });
 
-  it("lets the simple journey hide Alpha-specific steps from the Civil Service pensions step", () => {
+  it("keeps Alpha mandatory and explains the other pension choices in the simple journey", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(expectedStoredSettings({ showAlpha: false }))
+    );
+
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+      screen.getByRole("button", {
+        name: /Do you have any other Civil Service pensions/i,
+      })
     );
 
-    const includeAlphaToggle = screen.getByRole("checkbox", { name: "Alpha" });
-
-    expect(includeAlphaToggle).toBeChecked();
+    expect(
+      screen.getByText(/Alpha is always included in this simplified journey/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("checkbox", { name: "Alpha" })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("checkbox", { name: "EPA" })
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/classic.*older pension based on your salary/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/nuvos.*built up a little at a time from your pay/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Additional Voluntary Contributions.*separate pension pot/i
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Add your Alpha pension details/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Added pension/i })
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Alpha EPA/i })
     ).toBeInTheDocument();
-
-    fireEvent.click(includeAlphaToggle);
-
-    expect(includeAlphaToggle).not.toBeChecked();
-    expect(
-      screen.queryByRole("checkbox", { name: "EPA" })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /Your Alpha pension/i })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /Added pension/i })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /Alpha EPA/i })
-    ).not.toBeInTheDocument();
-
-    fireEvent.click(includeAlphaToggle);
-
-    expect(
-      screen.queryByRole("checkbox", { name: "EPA" })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Alpha EPA/i })
-    ).toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({ showAlpha: true })
+    );
   });
 
   it("defaults the simple journey nuvos draw age to age 65", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+      screen.getByRole("button", {
+        name: /Do you have any other Civil Service pensions/i,
+      })
     );
-    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos pension" }));
 
     openJourneyStep(/nuvos pension/i);
 
@@ -1216,9 +1274,11 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+      screen.getByRole("button", {
+        name: /Do you have any other Civil Service pensions/i,
+      })
     );
-    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "nuvos pension" }));
 
     advanceJourneyToResult();
 
@@ -1254,26 +1314,23 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Start Nuvos, age 67")).toBeInTheDocument();
   });
 
-  it("hides Alpha from the simple journey result chart when Alpha is disabled", async () => {
-    renderAcknowledgedApp({ mode: "simple" });
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /Your Civil Service pensions/i })
+  it("restores Alpha in simple journey results when older settings had disabled it", async () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(expectedStoredSettings({ showAlpha: false }))
     );
-    fireEvent.click(screen.getByRole("checkbox", { name: "Alpha" }));
+
+    renderAcknowledgedApp({ mode: "simple" });
 
     advanceJourneyToResult();
 
-    expect(
-      screen.queryByLabelText(/Start Alpha, age \d+/)
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText("Monthly Alpha pension")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Start Alpha, age \d+/)).toBeInTheDocument();
     const ageRangeTable = await screen.findByLabelText(
       "Income by age range table"
     );
     expect(
-      within(ageRangeTable).queryByText(/Alpha pension/)
-    ).not.toBeInTheDocument();
+      within(ageRangeTable).getByText(/Alpha pension/)
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Income by age range" })
     ).toBeInTheDocument();
@@ -1537,11 +1594,12 @@ describe("App settings form", () => {
 
   it("re-derives simple-mode retirement markers when the birth date changes to an NPA of 67", () => {
     renderAcknowledgedApp({ mode: "simple" });
+    openJourneyStep(/A little about you/i);
 
-    fireEvent.change(screen.getByLabelText("Date of birth month"), {
+    fireEvent.change(screen.getByLabelText("Your date of birth month"), {
       target: { value: "03" },
     });
-    fireEvent.change(screen.getByLabelText("Date of birth year"), {
+    fireEvent.change(screen.getByLabelText("Your date of birth year"), {
       target: { value: "1977" },
     });
 

@@ -34,6 +34,7 @@ import {
   type TargetBasedWithdrawalPreview,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
+  type JourneyOptionalSectionCopy,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "../app-domains";
@@ -127,9 +128,14 @@ export function JourneyStepContent({
       step as JourneyStepDefinition & {
         kind: "optional-sections";
         toggleKeys?: readonly OptionalSectionToggleKey[];
+        toggleCopy?: JourneyOptionalSectionCopy;
       },
       viewModel
     );
+  }
+
+  if (step.kind === "information") {
+    return renderInformationStep(step);
   }
 
   if (step.kind === "answer") {
@@ -163,10 +169,26 @@ export function JourneyStepContent({
   return null;
 }
 
+function renderInformationStep(
+  step: JourneyStepDefinition & { kind: "information" }
+) {
+  return (
+    <section className="journey-information" aria-label="About Alpha pension">
+      {step.sections.map((section) => (
+        <div key={section.heading} className="journey-information-section">
+          <h4>{section.heading}</h4>
+          <p>{section.description}</p>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function renderOptionalSectionsStep(
   step: JourneyStepDefinition & {
     kind: "optional-sections";
     toggleKeys?: readonly OptionalSectionToggleKey[];
+    toggleCopy?: JourneyOptionalSectionCopy;
   },
   viewModel: JourneyStepViewModel
 ) {
@@ -181,6 +203,7 @@ function renderOptionalSectionsStep(
         settings={settings}
         onChange={onChange}
         toggleKeys={toggleKeys}
+        toggleCopy={step.toggleCopy}
       />
     </>
   );
@@ -228,11 +251,6 @@ function renderAnswerStep(
         statusItems={buildStatusItems(currentComparisonResult)}
       />
 
-      <InflationBasisPanelFeature
-        settings={settings}
-        assumptions={derivedInflationAssumptions}
-      />
-
       <SummarySectionFeature
         title="Key dates"
         items={buildKeyDateItems(settings, pensionSummary)}
@@ -247,6 +265,11 @@ function renderAnswerStep(
         validationIssues={validationIssues}
         onChangeParameters={onChangeChartParameters}
         {...bridgeChartParameters}
+      />
+
+      <InflationBasisPanelFeature
+        settings={settings}
+        assumptions={derivedInflationAssumptions}
       />
 
       <ComparisonPanelFeature
@@ -322,11 +345,6 @@ function renderExpertAnswerStep(
         />
       </ResultsSummarySection>
 
-      <InflationBasisPanelFeature
-        settings={settings}
-        assumptions={derivedInflationAssumptions}
-      />
-
       <RetirementIncomeBridgeChart
         data={retirementIncomeSeries}
         alphaLabel="Alpha pension"
@@ -339,6 +357,11 @@ function renderExpertAnswerStep(
         validationIssues={validationIssues}
         onChangeParameters={onChangeChartParameters}
         {...bridgeChartParameters}
+      />
+
+      <InflationBasisPanelFeature
+        settings={settings}
+        assumptions={derivedInflationAssumptions}
       />
 
       <ComparisonSection>
@@ -416,11 +439,6 @@ function renderBridgeAnswerStep(
         />
       </ResultsSummarySection>
 
-      <InflationBasisPanelFeature
-        settings={settings}
-        assumptions={derivedInflationAssumptions}
-      />
-
       <ComparisonBridgeChart
         retirementIncomeSeries={retirementIncomeSeries}
         bridgeChartParameters={bridgeChartParameters}
@@ -428,6 +446,11 @@ function renderBridgeAnswerStep(
         hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
         validationIssues={validationIssues}
         onChangeChartParameters={onChangeChartParameters}
+      />
+
+      <InflationBasisPanelFeature
+        settings={settings}
+        assumptions={derivedInflationAssumptions}
       />
 
       <ComparisonSection>
@@ -483,11 +506,26 @@ function renderFieldsStep(
     <>
       <ValidationSummary validationIssues={validationIssues} />
 
+      {step.supportLink ? (
+        <aside
+          className="journey-support-callout"
+          aria-labelledby={`journey-support-${step.id}`}
+        >
+          <h4 id={`journey-support-${step.id}`}>{step.supportLink.heading}</h4>
+          <p>{step.supportLink.description}</p>
+          <a href={step.supportLink.href} target="_blank" rel="noreferrer">
+            {step.supportLink.label}
+            <span className="visually-hidden"> (opens in a new tab)</span>
+          </a>
+        </aside>
+      ) : null}
+
       <SettingsFieldsFeature
         fields={getFieldsByIds(
           step.fieldIds,
           step.fieldLabels,
-          step.fieldDescriptions
+          step.fieldDescriptions,
+          step.hideFieldInfoLinks
         )}
         settings={settings}
         validationIssues={validationIssues}
@@ -609,7 +647,8 @@ function buildKeyDateItems(
 function getFieldsByIds(
   fieldIds: readonly FieldDefinition["id"][],
   fieldLabels: JourneyFieldLabels = {},
-  fieldDescriptions: JourneyFieldDescriptions = {}
+  fieldDescriptions: JourneyFieldDescriptions = {},
+  hideFieldInfoLinks = false
 ) {
   return fieldIds
     .map((fieldId) => {
@@ -626,6 +665,9 @@ function getFieldsByIds(
         ...(fieldLabels[fieldId] ? { label: fieldLabels[fieldId] } : {}),
         ...(fieldDescriptions[fieldId]
           ? { description: fieldDescriptions[fieldId] }
+          : {}),
+        ...(hideFieldInfoLinks
+          ? { infoUrl: undefined, infoLinks: undefined }
           : {}),
       };
     })

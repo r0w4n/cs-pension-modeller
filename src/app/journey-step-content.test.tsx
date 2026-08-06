@@ -93,6 +93,64 @@ describe("JourneyStepContent", () => {
     window.matchMedia = originalMatchMedia;
   });
 
+  it("renders a plain-language information step", () => {
+    mockMatchMedia(false);
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "introduction",
+          eyebrow: "Step 1",
+          title: "Alpha pension: the basics",
+          description: "A short introduction.",
+          kind: "information",
+          sections: [
+            {
+              heading: "What is Alpha?",
+              description: "It gives you a yearly pension.",
+            },
+          ],
+        }}
+        viewModel={createViewModel()}
+      />
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "What is Alpha?" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("It gives you a yearly pension.")
+    ).toBeInTheDocument();
+  });
+
+  it("renders a supporting link for a fields step", () => {
+    mockMatchMedia(false);
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "target",
+          eyebrow: "Step 2",
+          title: "What yearly income would you like?",
+          description: "Choose a target.",
+          kind: "fields",
+          fieldIds: ["desiredRetirementIncome"],
+          supportLink: {
+            heading: "Not sure what amount to choose?",
+            description: "Use this guide as a starting point.",
+            href: "https://www.retirementlivingstandards.org.uk/",
+            label: "Help me choose a retirement income",
+          },
+        }}
+        viewModel={createViewModel()}
+      />
+    );
+
+    expect(
+      screen.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+  });
+
   it("renders the projection table for desktop expert results", () => {
     mockMatchMedia(false);
 
@@ -156,6 +214,43 @@ describe("JourneyStepContent", () => {
     ).not.toBeInTheDocument();
     expect(projectionTableMocks.section).not.toHaveBeenCalled();
   });
+
+  it.each([
+    {
+      kind: "bridge-answer" as const,
+      chartText: "Comparison bridge chart",
+    },
+    {
+      kind: "expert-answer" as const,
+      chartText: "Bridge chart",
+    },
+  ])(
+    "places the projection basis below the results chart for $kind results",
+    ({ kind, chartText }) => {
+      mockMatchMedia(false);
+
+      render(
+        <JourneyStepContent
+          step={{
+            id: "results",
+            eyebrow: "Results",
+            title: "Results",
+            description: "Review results",
+            kind,
+          }}
+          viewModel={createViewModel()}
+        />
+      );
+
+      const chart = screen.getByText(chartText);
+      const projectionBasis = screen.getByText("Inflation basis");
+
+      expect(
+        chart.compareDocumentPosition(projectionBasis) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    }
+  );
 
   it("places flexible-fund priority in the retirement income target step", () => {
     mockMatchMedia(false);

@@ -1,12 +1,14 @@
 import { DataTable, Given, Then, When } from "@cucumber/cucumber";
 import {
   applyBridgeJourneyDefaults,
+  applySimpleJourneyDefaults,
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   type JourneyDefinition,
   type JourneyStepDefinition,
 } from "../../src/app-domains/journeys";
 import { fieldGroups } from "../../src/fieldDefinitions";
+import { knowledgeLinks } from "../../src/knowledgeLinks";
 import {
   buildComparisonTableRows,
   createComparisonResult,
@@ -1033,6 +1035,50 @@ Then(
 );
 
 Then(
+  "the first journey step should be titled {string}",
+  function (this: ProductAcceptanceWorld, title: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    assertEqual(this.selectedJourney.steps[0]?.title, title);
+  }
+);
+
+Then(
+  "the {string} journey step should describe Alpha as a defined benefit pension",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "information" &&
+        step.sections.some((section) =>
+          section.description.toLowerCase().includes("defined benefit")
+        ),
+      `Expected journey step "${stepTitle}" to describe Alpha as a defined benefit pension`
+    );
+  }
+);
+
+Then(
+  "the {string} journey step should link to the Retirement Living Standards",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields" &&
+        step.supportLink?.href === knowledgeLinks.retirementLivingStandards,
+      `Expected journey step "${stepTitle}" to link to the Retirement Living Standards`
+    );
+  }
+);
+
+Then(
   "the default visible journey steps should be:",
   function (this: ProductAcceptanceWorld, table: DataTable) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1061,11 +1107,112 @@ Then(
     const fieldDefinitions = fieldGroups.flatMap((group) => group.fields);
     const actualFields = step.fieldIds.map(
       (fieldId) =>
-        fieldDefinitions.find((field) => field.id === fieldId)?.label ?? fieldId
+        step.fieldLabels?.[fieldId] ??
+        fieldDefinitions.find((field) => field.id === fieldId)?.label ??
+        fieldId
     );
     const expectedFields = table.hashes().map((row) => row.field);
 
     assertEqual(JSON.stringify(actualFields), JSON.stringify(expectedFields));
+  }
+);
+
+Then(
+  "the {string} journey step should link to Annual Benefit Statement help",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields" &&
+        step.supportLink?.href === knowledgeLinks.annualBenefitStatement,
+      `Expected journey step "${stepTitle}" to link to Annual Benefit Statement help`
+    );
+  }
+);
+
+Then(
+  "the {string} journey step should appear before the {string} journey step",
+  function (
+    this: ProductAcceptanceWorld,
+    earlierStepTitle: string,
+    laterStepTitle: string
+  ) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const stepTitles = this.selectedJourney.steps.map((step) => step.title);
+    const earlierStepIndex = stepTitles.indexOf(earlierStepTitle);
+    const laterStepIndex = stepTitles.indexOf(laterStepTitle);
+
+    assertCondition(
+      earlierStepIndex >= 0,
+      `Journey step "${earlierStepTitle}" not found`
+    );
+    assertCondition(
+      laterStepIndex >= 0,
+      `Journey step "${laterStepTitle}" not found`
+    );
+    assertCondition(
+      earlierStepIndex < laterStepIndex,
+      `Expected journey step "${earlierStepTitle}" to appear before "${laterStepTitle}"`
+    );
+  }
+);
+
+Then(
+  "the simplified pension choices should not offer Alpha as an optional pension",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const pensionChoicesStep = this.selectedJourney.steps.find(
+      (step) => step.id === "include"
+    );
+
+    assertCondition(
+      pensionChoicesStep?.kind === "optional-sections",
+      "Expected a simplified pension choices step"
+    );
+    assertCondition(
+      !pensionChoicesStep.toggleKeys?.includes("showAlpha"),
+      "Expected Alpha not to be an optional simplified pension choice"
+    );
+    assertCondition(
+      applySimpleJourneyDefaults({
+        ...createDefaultSettings(),
+        showAlpha: false,
+      }).showAlpha,
+      "Expected the simplified journey to include Alpha"
+    );
+  }
+);
+
+Then(
+  "the simplified pension choices should explain:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const pensionChoicesStep = this.selectedJourney.steps.find(
+      (step) => step.id === "include"
+    );
+
+    assertCondition(
+      pensionChoicesStep?.kind === "optional-sections",
+      "Expected a simplified pension choices step"
+    );
+    const actualChoices = pensionChoicesStep.toggleKeys?.map((key) => {
+      const copy = pensionChoicesStep.toggleCopy?.[key];
+
+      assertCondition(copy, `Expected simple copy for ${key}`);
+      assertCondition(
+        copy.description.length > 30,
+        `Expected a useful plain-English explanation for ${copy.label}`
+      );
+
+      return copy.label;
+    });
+    const expectedChoices = table.hashes().map((row) => row.choice);
+
+    assertEqual(JSON.stringify(actualChoices), JSON.stringify(expectedChoices));
   }
 );
 

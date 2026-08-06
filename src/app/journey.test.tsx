@@ -88,7 +88,7 @@ describe("journey module", () => {
     render(
       <JourneyFlow
         journey={{
-          id: "test",
+          id: "simple-early-retirement",
           title: "Test journey",
           description: "Journey description",
           steps: [
@@ -107,8 +107,14 @@ describe("journey module", () => {
     );
 
     const mobileStepList = document.querySelector(".journey-mobile-step-list");
+    const stepDisclosure = screen.getByText("View all steps");
 
     expect(mobileStepList).toBeInTheDocument();
+    expect(stepDisclosure.closest("details")).not.toHaveAttribute("open");
+
+    fireEvent.click(stepDisclosure);
+
+    expect(stepDisclosure.closest("details")).toHaveAttribute("open");
     expect(
       within(mobileStepList as HTMLElement).getByRole("button", {
         name: /First step/,

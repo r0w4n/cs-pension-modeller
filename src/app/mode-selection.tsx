@@ -30,10 +30,9 @@ export function ModeSelection({
           <span className="card-label">Simple journey</span>
           <strong>Simplified retirement journey</strong>
           <span>
-            Answer a smaller set of questions to see what your retirement could
-            look like financially. This journey keeps the main assumptions
-            simple and shows your projected income, key dates, and assumptions
-            at the end.
+            Start with a short Alpha pension explanation, then answer a few
+            simple questions. At the end, see an estimate of your retirement
+            income, key dates, and assumptions.
           </span>
         </button>
 

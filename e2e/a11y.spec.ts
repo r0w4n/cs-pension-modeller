@@ -28,12 +28,34 @@ test.describe("accessibility", () => {
     await expectNoAxeViolations(page, "mode selection screen");
   });
 
-  test("simple journey entry screen has no detectable axe violations", async ({
+  test("simple journey opening pages have no detectable axe violations", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "simple");
 
     await expectNoAxeViolations(page, "simple journey entry screen");
+
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", {
+        name: "What yearly income would you like?",
+      })
+    ).toBeVisible();
+
+    await expectNoAxeViolations(page, "simple journey income target screen");
+
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "A little about you" })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", {
+        name: "Add your Alpha pension details",
+      })
+    ).toBeVisible();
+
+    await expectNoAxeViolations(page, "simple journey Alpha details screen");
   });
 
   test("expert journey entry screen has no detectable axe violations", async ({
@@ -218,7 +240,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "About you and your target" })
+      page.getByRole("heading", { name: "Alpha pension: the basics" })
     ).toBeVisible();
     return;
   }

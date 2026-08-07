@@ -535,6 +535,8 @@ import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
   SETTINGS_STORAGE_KEY,
+  calculateDefaultIsaDrawAge,
+  calculateDefaultSippDrawAge,
   calculateDateAge,
   calculateNormalPensionAge,
   defaultSettings,
@@ -2684,7 +2686,12 @@ describe("App settings form", () => {
     expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-11-01",
-        sippDrawAge: calculateNormalPensionAge("1977-11-01"),
+        isaDrawAge: calculateDefaultIsaDrawAge(
+          calculateNormalPensionAge("1977-11-01")
+        ),
+        sippDrawAge: calculateDefaultSippDrawAge(
+          calculateNormalPensionAge("1977-11-01")
+        ),
         statePensionDrawDate: "2045-08-01",
       })
     );
@@ -2954,7 +2961,9 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByLabelText("ISA start, age 68")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(`ISA start, age ${defaultSettings.isaDrawAge}`)
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("SIPP stop, age 75")).toBeInTheDocument();
     expect(screen.getByLabelText("ISA stop, age 75")).toBeInTheDocument();
   });

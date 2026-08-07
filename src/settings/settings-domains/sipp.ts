@@ -8,6 +8,10 @@ import {
 } from "../settings-types";
 import { resolveSippMinimumAccessAge } from "../settings-shared/state";
 
+export function calculateDefaultSippDrawAge(normalPensionAge: number) {
+  return Math.floor(normalPensionAge);
+}
+
 export function normalizeSippWithdrawalStrategy(
   value: unknown
 ): SippWithdrawalStrategy {

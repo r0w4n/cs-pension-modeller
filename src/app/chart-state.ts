@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
+  calculateDefaultIsaDrawAge,
+  calculateDefaultSippDrawAge,
   calculateMinimumStatePensionDrawAge,
   calculateMinimumPensionAccessAge,
   calculateMinimumSippAccessAge,
@@ -668,11 +670,19 @@ export function updateSetting({
               normalizedValue as string
             ),
             sippDrawAge: normalizeSippDrawAge(
-              current.sippDrawAge === current.normalPensionAge
-                ? updatedNormalPensionAge
+              current.sippDrawAge === current.normalPensionAge ||
+                current.sippDrawAge ===
+                  calculateDefaultSippDrawAge(current.normalPensionAge)
+                ? calculateDefaultSippDrawAge(updatedNormalPensionAge)
                 : current.sippDrawAge,
               normalizedValue as string
             ),
+            isaDrawAge:
+              current.isaDrawAge ===
+                calculateDefaultIsaDrawAge(current.normalPensionAge) ||
+              current.isaDrawAge === current.normalPensionAge - 10
+                ? calculateDefaultIsaDrawAge(updatedNormalPensionAge)
+                : current.isaDrawAge,
             statePensionDrawDate: calculateStatePensionDrawDateFromAge(
               normalizedValue as string,
               calculateMinimumStatePensionDrawAge(normalizedValue as string)

@@ -9,9 +9,11 @@ import {
 } from "../spending-smile";
 import { classicDefaults } from "./settings-domains/classic";
 import { inflationDefaults } from "./settings-domains/inflation";
+import { calculateDefaultIsaDrawAge } from "./settings-domains/isa";
 import { personalDetailsDefaults } from "./settings-domains/personal-details";
 import { nuvosDefaults } from "./settings-domains/nuvos";
 import { premiumDefaults } from "./settings-domains/premium";
+import { calculateDefaultSippDrawAge } from "./settings-domains/sipp";
 import { statePensionDefaults } from "./settings-domains/state-pension";
 import { taxDefaults } from "./settings-domains/tax";
 import {
@@ -26,12 +28,14 @@ import {
   normalizeSippDrawAge,
 } from "./settings-shared/state";
 
+const DEFAULT_NORMAL_PENSION_AGE = 68;
+
 export const defaultSettings: PensionSettings = {
   startDate: personalDetailsDefaults.startDate,
   dateOfBirth: personalDetailsDefaults.dateOfBirth,
   lifeExpectancy: personalDetailsDefaults.lifeExpectancy,
   requirementAge: personalDetailsDefaults.requirementAge,
-  normalPensionAge: 68,
+  normalPensionAge: DEFAULT_NORMAL_PENSION_AGE,
   showAlpha: true,
   projectionBasis: inflationDefaults.projectionBasis,
   inflationRateAnnual: inflationDefaults.inflationRateAnnual,
@@ -144,7 +148,7 @@ export const defaultSettings: PensionSettings = {
   csAvcWithdrawalTargetAge: 75,
   isaCurrentPot: 0,
   isaMonthlyContribution: 0,
-  isaDrawAge: personalDetailsDefaults.requirementAge,
+  isaDrawAge: calculateDefaultIsaDrawAge(DEFAULT_NORMAL_PENSION_AGE),
   isaLumpSums: [],
   isaRealInterestPercent: 5,
   isaWithdrawalStrategy: "use_by_age",
@@ -186,13 +190,14 @@ export function createDefaultSettings(): PensionSettings {
     nuvosPensionDrawAge: nuvosDefaults.nuvosPensionDrawAge,
     premiumDrawAge: premiumDefaults.premiumNormalPensionAge,
     sippDrawAge: normalizeSippDrawAge(
-      normalPensionAge,
+      calculateDefaultSippDrawAge(normalPensionAge),
       defaultSettings.dateOfBirth
     ),
     csAvcDrawAge: normalizeSippDrawAge(
       normalPensionAge,
       defaultSettings.dateOfBirth
     ),
+    isaDrawAge: calculateDefaultIsaDrawAge(normalPensionAge),
     lisaDrawAge: Math.max(60, normalPensionAge),
     statePensionDrawDate: calculateStatePensionDrawDateFromAge(
       defaultSettings.dateOfBirth,

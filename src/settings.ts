@@ -105,4 +105,11 @@ export {
   getAdditionalGuaranteedIncomeDisplayName,
 } from "./settings/settings-domains/additional-guaranteed-income";
 
+export {
+  calculateDefaultIsaDrawAge,
+  ISA_DEFAULT_YEARS_BEFORE_NPA,
+} from "./settings/settings-domains/isa";
+
+export { calculateDefaultSippDrawAge } from "./settings/settings-domains/sipp";
+
 export { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings/settings-domains/lisa";

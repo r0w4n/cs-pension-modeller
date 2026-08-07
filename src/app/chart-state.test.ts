@@ -54,7 +54,7 @@ describe("chart-state", () => {
 
     updateSetting({
       key: "dateOfBirth",
-      value: "1970-01-01",
+      value: "1977-06-01",
       showSavedLabel: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {
@@ -62,8 +62,8 @@ describe("chart-state", () => {
       },
     });
 
-    expect(next.normalPensionAge).toBe(67);
-    expect(next.sippDrawAge).toBe(next.normalPensionAge);
+    expect(next.normalPensionAge).toBeCloseTo(67.1666666667);
+    expect(next.sippDrawAge).toBe(67);
   });
 
   it("preserves a custom SIPP draw age when date of birth changes", () => {
@@ -85,6 +85,45 @@ describe("chart-state", () => {
 
     expect(next.normalPensionAge).toBe(67);
     expect(next.sippDrawAge).toBe(65);
+  });
+
+  it("keeps the untouched ISA draw age ten years before NPA when date of birth changes", () => {
+    const current = createDefaultSettings();
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1977-06-01",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.normalPensionAge).toBeCloseTo(67.1666666667);
+    expect(next.isaDrawAge).toBe(57);
+  });
+
+  it("preserves a custom ISA draw age when date of birth changes", () => {
+    const current = {
+      ...createDefaultSettings(),
+      isaDrawAge: 60,
+    };
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1970-01-01",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.normalPensionAge).toBe(67);
+    expect(next.isaDrawAge).toBe(60);
   });
 
   it("updates one SMILE percentage from a chart patch", () => {

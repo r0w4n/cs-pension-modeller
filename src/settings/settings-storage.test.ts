@@ -3,6 +3,7 @@ import {
   clearStoredSettings,
   isLocalStorageEnabled,
   loadStoredSettings,
+  parseStoredSettings,
   saveLocalStoragePreference,
   readStorageItem,
   saveSettings,
@@ -162,6 +163,28 @@ describe("settings-storage", () => {
 
     expect(loaded.requirementAge).toBe(62);
     expect(loaded.desiredRetirementIncome).toBe(61000);
+  });
+
+  it("rounds legacy linked ISA and SIPP defaults down on import", () => {
+    const imported = parseStoredSettings({
+      dateOfBirth: "1977-06-01",
+      sippDrawAge: 67.16666666666667,
+      isaDrawAge: 57.16666666666667,
+    });
+
+    expect(imported?.sippDrawAge).toBe(67);
+    expect(imported?.isaDrawAge).toBe(57);
+  });
+
+  it("preserves custom ISA and SIPP draw ages on import", () => {
+    const imported = parseStoredSettings({
+      dateOfBirth: "1977-06-01",
+      sippDrawAge: 66.5,
+      isaDrawAge: 68,
+    });
+
+    expect(imported?.sippDrawAge).toBe(66.5);
+    expect(imported?.isaDrawAge).toBe(68);
   });
 
   it("falls back to defaults for settings from a newer schema version", () => {

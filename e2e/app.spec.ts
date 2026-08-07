@@ -543,29 +543,7 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toHaveAttribute("aria-valuenow", "70");
     await slowGoResultHandle.scrollIntoViewIfNeeded();
-    const slowGoHandlePoint = await slowGoResultHandle.evaluate((path) => {
-      const svgPath = path as SVGPathElement;
-      const pathPoint = svgPath.getPointAtLength(svgPath.getTotalLength() / 2);
-      const screenMatrix = svgPath.getScreenCTM();
-
-      if (!screenMatrix) {
-        throw new Error("Expected the SMILE chart handle to be rendered");
-      }
-
-      const screenPoint = pathPoint.matrixTransform(screenMatrix);
-
-      return { x: screenPoint.x, y: screenPoint.y };
-    });
-    await expect
-      .poll(() =>
-        page.evaluate(
-          ({ x, y }) =>
-            (document.elementFromPoint(x, y) as SVGPathElement | null)?.dataset
-              .testid ?? null,
-          slowGoHandlePoint
-        )
-      )
-      .toBe("spending-smile-slowGo-target-handle");
+    const slowGoHandlePoint = await findExposedSvgPathPoint(slowGoResultHandle);
     const initialSlowGoPath = await slowGoResultHandle.getAttribute("d");
     await page.mouse.move(slowGoHandlePoint.x, slowGoHandlePoint.y);
     await page.mouse.down();
@@ -827,6 +805,33 @@ async function requiredBox(locator: Locator) {
     throw new Error(`Expected a layout box for ${locator.toString()}`);
   }
   return box;
+}
+
+async function findExposedSvgPathPoint(locator: Locator) {
+  return locator.evaluate((path) => {
+    const svgPath = path as SVGPathElement;
+    const screenMatrix = svgPath.getScreenCTM();
+
+    if (!screenMatrix) {
+      throw new Error("Expected the SVG path to be rendered");
+    }
+
+    const totalLength = svgPath.getTotalLength();
+    const sampleFractions = [
+      0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9, 0.05, 0.95,
+    ];
+
+    for (const fraction of sampleFractions) {
+      const pathPoint = svgPath.getPointAtLength(totalLength * fraction);
+      const screenPoint = pathPoint.matrixTransform(screenMatrix);
+
+      if (document.elementFromPoint(screenPoint.x, screenPoint.y) === svgPath) {
+        return { x: screenPoint.x, y: screenPoint.y };
+      }
+    }
+
+    throw new Error("Expected an exposed point on the SVG path");
+  });
 }
 
 async function startFirstRun(page: Page) {

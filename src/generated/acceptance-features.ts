@@ -8213,7 +8213,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-42-column-9",
-                    value: "Additional guaranteed income",
+                    value: "SIPP details",
                   },
                 ],
               },
@@ -8222,7 +8222,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-43-column-9",
-                    value: "SIPP details",
+                    value: "ISA details",
                   },
                 ],
               },
@@ -8231,15 +8231,6 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-44-column-9",
-                    value: "ISA details",
-                  },
-                ],
-              },
-              {
-                id: "line-45",
-                cells: [
-                  {
-                    id: "line-45-column-9",
                     value: "Your results",
                   },
                 ],
@@ -8247,16 +8238,25 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-46",
+            id: "line-45",
             keyword: "And",
             text: 'the "Personal details" journey step should contain these fields:',
             table: [
+              {
+                id: "line-46",
+                cells: [
+                  {
+                    id: "line-46-column-9",
+                    value: "field",
+                  },
+                ],
+              },
               {
                 id: "line-47",
                 cells: [
                   {
                     id: "line-47-column-9",
-                    value: "field",
+                    value: "Your Birth Month and Year",
                   },
                 ],
               },
@@ -8265,15 +8265,6 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-48-column-9",
-                    value: "Your Birth Month and Year",
-                  },
-                ],
-              },
-              {
-                id: "line-49",
-                cells: [
-                  {
-                    id: "line-49-column-9",
                     value: "Life Expectancy (Age)",
                   },
                 ],
@@ -8281,16 +8272,25 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-50",
+            id: "line-49",
             keyword: "And",
             text: 'the "Retirement income target" journey step should contain these fields:',
             table: [
+              {
+                id: "line-50",
+                cells: [
+                  {
+                    id: "line-50-column-9",
+                    value: "field",
+                  },
+                ],
+              },
               {
                 id: "line-51",
                 cells: [
                   {
                     id: "line-51-column-9",
-                    value: "field",
+                    value: "Retirement Living Standards target (£ per year)",
                   },
                 ],
               },
@@ -8299,15 +8299,6 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-52-column-9",
-                    value: "Retirement Living Standards target (£ per year)",
-                  },
-                ],
-              },
-              {
-                id: "line-53",
-                cells: [
-                  {
-                    id: "line-53-column-9",
                     value: "Target retirement age",
                   },
                 ],
@@ -8318,7 +8309,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-56",
+        id: "line-55",
         keyword: "Scenario",
         name: "Exclude Alpha pension from an expert scenario",
         description: "",
@@ -8327,27 +8318,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-57",
+            id: "line-56",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-58",
+            id: "line-57",
             keyword: "When",
             text: 'the "Expert journey" journey is loaded',
           },
           {
-            id: "line-59",
+            id: "line-58",
             keyword: "Then",
             text: "the expert optional sections should allow Alpha pension to be disabled",
           },
           {
-            id: "line-60",
+            id: "line-59",
             keyword: "When",
             text: "Alpha pension is disabled",
           },
           {
-            id: "line-61",
+            id: "line-60",
             keyword: "Then",
             text: 'the "Alpha pension details" journey step should not be visible',
           },
@@ -8355,7 +8346,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-64",
+        id: "line-63",
         keyword: "Scenario",
         name: "Bridge journey enables bridge pots and disables tax by default",
         description: "",
@@ -8364,27 +8355,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-65",
+            id: "line-64",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-66",
+            id: "line-65",
             keyword: "When",
             text: "bridge journey defaults are applied",
           },
           {
-            id: "line-67",
+            id: "line-66",
             keyword: "Then",
             text: "State Pension, ISA, LISA and SIPP should be included",
           },
           {
-            id: "line-68",
+            id: "line-67",
             keyword: "And",
             text: "Income Tax modelling should be off",
           },
           {
-            id: "line-69",
+            id: "line-68",
             keyword: "And",
             text: "ISA, LISA and SIPP withdrawals should use the use-by-age strategy",
           },

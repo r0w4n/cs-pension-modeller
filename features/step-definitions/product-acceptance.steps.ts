@@ -679,6 +679,7 @@ When(
       previousAnalysis.totalBridgeRequired +
       previousAnalysis.totalUnfundedShortfall;
     updateSettings(this, {
+      showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "bdd-guaranteed-income",

@@ -30,8 +30,8 @@ describe("settings-defaults", () => {
     expect(settings.nuvosPensionDrawAge).toBe(65);
   });
 
-  it("includes additional guaranteed income by default", () => {
-    expect(createDefaultSettings().showAdditionalGuaranteedIncome).toBe(true);
+  it("excludes additional guaranteed income by default", () => {
+    expect(createDefaultSettings().showAdditionalGuaranteedIncome).toBe(false);
   });
 
   it("formats local date parts", () => {

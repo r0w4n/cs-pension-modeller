@@ -376,13 +376,19 @@ local verification and in a scheduled/manual GitHub Actions workflow, rather
 than blocking every pull request on transient advisory noise.
 
 Dependabot groups `react` and `react-dom` updates because React requires those
-runtime packages to use exactly the same version. Patch and minor updates are
-eligible for auto-merge after the required checks pass; major updates and any
-update with a failing check remain open for review. Repository auto-merge must
-be enabled under **Settings > General > Pull Requests > Allow auto-merge** for
-that workflow to work. The current `main` ruleset does not require pull request
-branches to be updated before merging, so no separate branch-refresh workflow
-or personal access token is required.
+runtime packages to use exactly the same version. Dependabot pull requests,
+including major updates, are merged only after the exact pull request head has
+passed the complete CI workflow. The merger then explicitly dispatches CI on
+the updated `main` branch so deployment checks still run when GitHub suppresses
+normal `push` events created by `GITHUB_TOKEN`. Updates with failing checks or
+merge conflicts remain open. The workflow also sweeps already-open, successful
+Dependabot pull requests after pushes to `main` and when manually dispatched.
+It does not require repository auto-merge, a branch-refresh workflow, or a
+personal access token.
+
+TypeScript 7 updates are temporarily ignored because the current
+`typescript-eslint` peer range requires TypeScript below 6.1. Remove that
+constraint once the lint toolchain officially supports TypeScript 7.
 
 ## Purpose
 

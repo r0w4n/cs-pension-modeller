@@ -4,9 +4,7 @@ import { createDefaultSettings } from "../settings";
 import { GuidanceNotesToggle, JourneyFlow, JourneySection } from "./journey";
 
 describe("journey module", () => {
-  const originalMatchMedia = window.matchMedia
-    ? window.matchMedia.bind(window)
-    : undefined;
+  const originalMatchMedia = window.matchMedia?.bind(window);
 
   const mockMatchMedia = (matches: boolean) => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({

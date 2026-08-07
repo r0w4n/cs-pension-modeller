@@ -5,6 +5,7 @@ import {
   applySimpleJourneyAssumptions,
   applySimpleJourneyDefaults,
   mergeSimpleJourneySettings,
+  type JourneyStepDefinition,
 } from "./journeys";
 import type { FieldDefinition } from "../fieldDefinitions";
 import { knowledgeLinks } from "../knowledgeLinks";
@@ -25,6 +26,15 @@ function getJourneyStepFieldIds(journeyId: string, stepId: string) {
   const step = journey?.steps.find((entry) => entry.id === stepId);
 
   return new Set(step?.kind === "fields" ? step.fieldIds : []);
+}
+
+function getJourneyStep(
+  journeyId: string,
+  stepId: string
+): JourneyStepDefinition | undefined {
+  const journey = JOURNEY_DEFINITIONS.find((entry) => entry.id === journeyId);
+
+  return journey?.steps.find((entry) => entry.id === stepId);
 }
 
 function getJourneyStepIds(journeyId: string) {
@@ -144,7 +154,6 @@ describe("journey definitions", () => {
 
     for (const [journeyId, stepId] of [
       ["early-retirement-bridge", "alpha"],
-      ["simple-early-retirement", "alpha-epa"],
       ["expert-journey", "expert-alpha"],
     ] as const) {
       const epaFields = getJourneyStepFieldIds(journeyId, stepId);
@@ -153,6 +162,21 @@ describe("journey definitions", () => {
         expect(epaFields).toContain(fieldId);
       }
     }
+
+    const simpleEpaStep = getJourneyStep(
+      "simple-early-retirement",
+      "alpha-epa"
+    );
+
+    if (!simpleEpaStep || simpleEpaStep.kind !== "fields") {
+      throw new Error("Expected the simple EPA step to contain fields");
+    }
+    expect(simpleEpaStep.optionalQuestion?.setting.id).toBe("alphaEpaEnabled");
+    expect(simpleEpaStep.fieldIds).toEqual([
+      "alphaEpaYearsBeforeNpa",
+      "alphaEpaStartDate",
+      "alphaEpaEndDate",
+    ]);
 
     expect(
       getJourneyStepFieldIds("simple-early-retirement", "alpha-options")
@@ -301,6 +325,23 @@ describe("journey definitions", () => {
     expect(alphaStep.hideFieldInfoLinks).toBe(true);
     expect(alphaStep.supportLink?.href).toBe(
       knowledgeLinks.annualBenefitStatement
+    );
+  });
+
+  it("asks for retirement age after the income target and before Alpha details", () => {
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+    const stepIds = simpleJourney?.steps.map((step) => step.id) ?? [];
+
+    expect(
+      getJourneyStepFieldIds("simple-early-retirement", "retirement-age")
+    ).toEqual(new Set(["requirementAge"]));
+    expect(stepIds.indexOf("target")).toBeLessThan(
+      stepIds.indexOf("retirement-age")
+    );
+    expect(stepIds.indexOf("retirement-age")).toBeLessThan(
+      stepIds.indexOf("alpha")
     );
   });
 

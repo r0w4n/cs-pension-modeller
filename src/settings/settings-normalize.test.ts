@@ -9,6 +9,7 @@ import { createDefaultSettings } from "./settings-defaults";
 describe("settings-normalize", () => {
   it("normalizes ranges and enum values", () => {
     expect(normalizeSetting("desiredRetirementIncome", 43899.6)).toBe(43900);
+    expect(normalizeSetting("pensionableEarnings", 0)).toBe(0);
     expect(normalizeSetting("isaDrawAge", 85)).toBe(85);
     expect(normalizeSetting("isaDrawAge", 120)).toBe(100);
     expect(normalizeSetting("projectionBasis", "bad" as never)).toBe("real");

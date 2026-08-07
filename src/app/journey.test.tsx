@@ -4,7 +4,9 @@ import { createDefaultSettings } from "../settings";
 import { GuidanceNotesToggle, JourneyFlow, JourneySection } from "./journey";
 
 describe("journey module", () => {
-  const originalMatchMedia = window.matchMedia;
+  const originalMatchMedia = window.matchMedia
+    ? window.matchMedia.bind(window)
+    : undefined;
 
   const mockMatchMedia = (matches: boolean) => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -20,7 +22,11 @@ describe("journey module", () => {
   };
 
   afterEach(() => {
-    window.matchMedia = originalMatchMedia;
+    if (originalMatchMedia) {
+      window.matchMedia = originalMatchMedia;
+    } else {
+      Reflect.deleteProperty(window, "matchMedia");
+    }
   });
 
   it("renders journey section wrapper", () => {

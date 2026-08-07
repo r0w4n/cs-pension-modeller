@@ -299,11 +299,13 @@ export function RangeSettingField({
         effectiveField.max,
         Math.max(effectiveField.min, draftValue ?? value)
       );
-  const displayedExactValue =
-    draftExactValue ??
-    (preservesBelowMinimumValue && value < effectiveField.min
-      ? value.toString()
-      : displayedRangeValue.toString());
+  const displayedExactValue = getDisplayedRangeExactValue({
+    field: effectiveField,
+    value,
+    draftExactValue,
+    displayedRangeValue,
+    preservesBelowMinimumValue,
+  });
   const validationId = validationIssue ? `${field.id}-validation` : undefined;
   const resetValue = defaultSettings[field.id];
   const resetLabel =
@@ -438,24 +440,54 @@ export function RangeSettingField({
           showGuidanceNotes={showGuidanceNotes}
         />
       ) : null}
-      <button
-        type="button"
-        className="secondary-button field-reset-button"
-        aria-label={resetLabel}
-        disabled={disabled}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => {
-          onChange(field.id, resetValue);
-          setDraftValue(null);
-          setDraftExactValue(null);
-        }}
-      >
-        {`Reset to default (${formatFieldValue(resetValue, effectiveField.format)})`}
-      </button>
+      {field.emptyWhenZero ? null : (
+        <button
+          type="button"
+          className="secondary-button field-reset-button"
+          aria-label={resetLabel}
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            onChange(field.id, resetValue);
+            setDraftValue(null);
+            setDraftExactValue(null);
+          }}
+        >
+          {`Reset to default (${formatFieldValue(resetValue, effectiveField.format)})`}
+        </button>
+      )}
       <FieldHelp field={effectiveField} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
   );
+}
+
+function getDisplayedRangeExactValue({
+  field,
+  value,
+  draftExactValue,
+  displayedRangeValue,
+  preservesBelowMinimumValue,
+}: {
+  field: RangeField;
+  value: number;
+  draftExactValue: string | null;
+  displayedRangeValue: number;
+  preservesBelowMinimumValue: boolean;
+}) {
+  if (draftExactValue !== null) {
+    return draftExactValue;
+  }
+
+  if (field.emptyWhenZero && value === 0) {
+    return "";
+  }
+
+  if (preservesBelowMinimumValue && value < field.min) {
+    return value.toString();
+  }
+
+  return displayedRangeValue.toString();
 }
 
 function SippProtectedAgeInlineControls({

@@ -510,10 +510,13 @@ export function MethodologyPage() {
           date. For regular contributions, it uses the age at the start of the
           scheme year or payment period. If Normal Pension Age is not a whole
           year, the factor is interpolated between the adjacent published
-          tables. The purchase calculation also applies GAD table 0-728 using
-          the number of 1 Aprils after the calculation date up to Normal Pension
-          Age. The purchased amount is then tracked alongside standard Alpha for
-          the projection&apos;s annual CPI revaluation.
+          tables. Regular purchases stop at the earlier of the end of Alpha
+          pensionable service or the last age supported by those tables; this
+          does not stop ordinary Alpha accrual. The purchase calculation also
+          applies GAD table 0-728 using the number of 1 Aprils after the
+          calculation date up to Normal Pension Age. The purchased amount is
+          then tracked alongside standard Alpha for the projection&apos;s annual
+          CPI revaluation.
         </p>
 
         <h3>Alpha retirement lump sum</h3>

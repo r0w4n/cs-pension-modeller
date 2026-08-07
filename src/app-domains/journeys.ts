@@ -123,19 +123,23 @@ export type JourneySupportLink = {
   label: string;
 };
 
+export type JourneyOptionalQuestion = {
+  prompt: string;
+  yesLabel: string;
+  noLabel: string;
+  showPrompt?: boolean;
+  setting:
+    | {
+        id: "alphaAddedPensionMonthly";
+        enabledWhen: "positive";
+      }
+    | {
+        id: "alphaEpaEnabled";
+        enabledWhen: "true";
+      };
+};
+
 export type JourneyStepDefinition =
-  | {
-      id: string;
-      eyebrow: string;
-      title: string;
-      description: string;
-      kind: "information";
-      sections: readonly {
-        heading: string;
-        description: string;
-      }[];
-      visible?: (settings: PensionSettings) => boolean;
-    }
   | {
       id: string;
       eyebrow: string;
@@ -162,6 +166,9 @@ export type JourneyStepDefinition =
       fieldDescriptions?: JourneyFieldDescriptions;
       hideFieldInfoLinks?: boolean;
       supportLink?: JourneySupportLink;
+      supportLinkLayout?: "inline";
+      optionalQuestion?: JourneyOptionalQuestion;
+      addedPensionIncomeGoal?: boolean;
       visible?: (settings: PensionSettings) => boolean;
     };
 
@@ -413,29 +420,16 @@ export const JOURNEY_DEFINITIONS = [
       "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like.",
     steps: [
       {
-        id: "introduction",
+        id: "personal",
         eyebrow: "Step 1",
-        title: "Alpha pension: the basics",
+        title: "A little about you",
         description:
-          "Let’s start with the basics. You do not need to know about pensions to use this journey.",
-        kind: "information",
-        sections: [
-          {
-            heading: "What is the Alpha pension?",
-            description:
-              "Alpha is a defined benefit Civil Service pension. This means it is not an investment pot. Each year you work as an Alpha member, you build up a set amount of yearly pension based on your pensionable pay and the scheme rules.",
-          },
-          {
-            heading: "Why does that matter?",
-            description:
-              "Because Alpha is not dependent on investment performance, it can give you a more predictable starting point than a pension pot. Your Annual Benefit Statement shows the yearly pension you have built up so far, and this is adjusted in line with prices. Taking it before or after your Normal Pension Age changes the amount. Understanding what you have built up can help you make informed retirement decisions.",
-          },
-          {
-            heading: "What will I do here?",
-            description:
-              "You will tell us the income you would like, a little about you, and the figures from your latest Annual Benefit Statement. We will then show an estimate of what your retirement income could look like. It is only a guide.",
-          },
-        ],
+          "We use your date of birth to work out your current age and when your Alpha pension can normally start.",
+        kind: "fields",
+        fieldIds: ["dateOfBirth"],
+        fieldLabels: {
+          dateOfBirth: "Your date of birth",
+        },
       },
       {
         id: "target",
@@ -454,6 +448,7 @@ export const JOURNEY_DEFINITIONS = [
             "Enter a yearly amount in today’s money. This is a planning target, not a promise of what you will receive.",
         },
         hideFieldInfoLinks: true,
+        supportLinkLayout: "inline",
         supportLink: {
           heading: "Not sure what amount to choose?",
           description:
@@ -463,16 +458,21 @@ export const JOURNEY_DEFINITIONS = [
         },
       },
       {
-        id: "personal",
+        id: "retirement-age",
         eyebrow: "Step 3",
-        title: "A little about you",
+        title: "What age would you like to retire?",
         description:
-          "We use your date of birth to work out when your Alpha pension can normally start. The simplified journey assumes you retire at that age.",
+          "Choose the age when you would like to stop working. This can be earlier than the age your Alpha pension can normally start.",
         kind: "fields",
-        fieldIds: ["dateOfBirth"],
+        fieldIds: ["requirementAge"],
         fieldLabels: {
-          dateOfBirth: "Your date of birth",
+          requirementAge: "How old would you like to be when you retire?",
         },
+        fieldDescriptions: {
+          requirementAge:
+            "The model uses this as the age you stop building up Alpha pension and start needing your retirement income. If your Alpha pension starts later, the results will show the gap between those ages.",
+        },
+        hideFieldInfoLinks: true,
       },
       {
         id: "alpha",
@@ -511,31 +511,39 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showAlpha,
       },
       {
-        id: "alpha-options",
-        eyebrow: "Step 5",
-        title: "Added pension",
-        description:
-          "Add monthly added pension purchases you want reflected in the plan. Lump sum purchases are not included in the simplified journey.",
-        kind: "fields",
-        fieldIds: ["alphaAddedPensionMonthly"],
-        fieldLabels: {
-          alphaAddedPensionMonthly: "Monthly added pension payments (£)",
-        },
-        visible: (settings) => settings.showAlpha,
-      },
-      {
         id: "alpha-epa",
         eyebrow: "Optional",
-        title: "Alpha EPA",
+        title: "Do you have an Alpha EPA?",
         description:
-          "Set the EPA period and the number of years before Normal Pension Age that the EPA portion is intended to be available without early-payment reduction.",
+          "An Effective Pension Age (EPA) is an optional extra you pay for so that part of your Alpha pension can normally be taken one, two or three years earlier without a reduction. If you do not recognise EPA from your pension statement or payslip, choose No.",
         kind: "fields",
         fieldIds: [
-          "alphaEpaEnabled",
           "alphaEpaYearsBeforeNpa",
           "alphaEpaStartDate",
           "alphaEpaEndDate",
         ],
+        fieldLabels: {
+          alphaEpaYearsBeforeNpa: "How many years early does your EPA cover?",
+          alphaEpaStartDate: "When did your EPA payments start?",
+          alphaEpaEndDate: "When will your EPA payments stop?",
+        },
+        fieldDescriptions: {
+          alphaEpaYearsBeforeNpa:
+            "Choose one, two or three years, as shown in your EPA details.",
+          alphaEpaStartDate: "Enter the date you started paying for this EPA.",
+          alphaEpaEndDate:
+            "Enter the date you expect to stop paying for this EPA.",
+        },
+        hideFieldInfoLinks: true,
+        optionalQuestion: {
+          prompt: "Do you have an Alpha EPA?",
+          noLabel: "No, I do not have an EPA",
+          yesLabel: "Yes, I have an EPA",
+          setting: {
+            id: "alphaEpaEnabled",
+            enabledWhen: "true",
+          },
+        },
         visible: (settings) => settings.showAlpha,
       },
       {
@@ -703,6 +711,28 @@ export const JOURNEY_DEFINITIONS = [
         kind: "fields",
         groupId: "additional-income",
         fieldIds: [],
+      },
+      {
+        id: "alpha-options",
+        eyebrow: "Projection so far",
+        title: "Could Added Pension close the gap?",
+        description:
+          "Compare the retirement income you asked for with the model's projection before Added Pension. If there is a gap, the modeller can estimate the Added Pension payment that could close it.",
+        kind: "fields",
+        fieldIds: ["alphaAddedPensionMonthly"],
+        hideFieldInfoLinks: true,
+        addedPensionIncomeGoal: true,
+        optionalQuestion: {
+          prompt: "Would you like Added Pension to try to close this gap?",
+          noLabel: "No, keep this projection",
+          yesLabel: "Yes, estimate the Added Pension needed",
+          showPrompt: true,
+          setting: {
+            id: "alphaAddedPensionMonthly",
+            enabledWhen: "positive",
+          },
+        },
+        visible: (settings) => settings.showAlpha,
       },
       {
         id: "answer",

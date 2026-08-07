@@ -46,8 +46,13 @@ test.describe("accessibility", () => {
 
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "A little about you" })
+      page.getByRole("heading", {
+        name: "What age would you like to retire?",
+      })
     ).toBeVisible();
+
+    await expectNoAxeViolations(page, "simple journey retirement age screen");
+
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
       page.getByRole("heading", {
@@ -56,6 +61,26 @@ test.describe("accessibility", () => {
     ).toBeVisible();
 
     await expectNoAxeViolations(page, "simple journey Alpha details screen");
+
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Do you have an Alpha EPA?" })
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "simple journey EPA question");
+
+    const mobileStepDisclosure = page.getByText("View all steps", {
+      exact: true,
+    });
+    if (await mobileStepDisclosure.isVisible()) {
+      await mobileStepDisclosure.click();
+    }
+    await page
+      .getByRole("button", { name: "Could Added Pension close the gap?" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Could Added Pension close the gap?" })
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "simple journey Added Pension gap");
   });
 
   test("expert journey entry screen has no detectable axe violations", async ({
@@ -240,7 +265,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Alpha pension: the basics" })
+      page.getByRole("heading", { name: "A little about you" })
     ).toBeVisible();
     return;
   }

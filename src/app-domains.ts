@@ -5,6 +5,13 @@ export {
 } from "./app-domains/alpha";
 
 export {
+  calculateAddedPensionMonthlyIncome,
+  createAddedPensionGoalBasis,
+  estimateAddedPensionMonthlyContribution,
+  type AddedPensionGoalBasis,
+} from "./app-domains/added-pension-goal";
+
+export {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
@@ -17,6 +24,7 @@ export {
   type JourneyDefinition,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
+  type JourneyOptionalQuestion,
   type JourneyOptionalSectionCopy,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,

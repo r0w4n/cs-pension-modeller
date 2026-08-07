@@ -977,25 +977,21 @@ describe("App settings form", () => {
       "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like."
     );
     expect(
-      screen.getByRole("heading", { name: "Alpha pension: the basics" })
+      screen.getByRole("heading", { name: "A little about you" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Alpha pension: the basics/i })
+      screen.getByRole("button", { name: /A little about you/i })
     ).toHaveAttribute("aria-current", "step");
     expect(
-      screen.getByRole("heading", { name: "What is the Alpha pension?" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/defined benefit Civil Service pension/)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/help you make informed retirement decisions/)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "What will I do here?" })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /Alpha pension: the basics/i })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Add your Alpha pension details/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /What age would you like to retire\?/i,
+      })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Added pension/i })
@@ -1038,6 +1034,11 @@ describe("App settings form", () => {
       screen.queryByRole("heading", { name: "State Pension" })
     ).not.toBeInTheDocument();
 
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue(defaultSettings.normalPensionAge.toString());
+
     fireEvent.click(
       screen.getByRole("button", { name: /Add your Alpha pension details/i })
     );
@@ -1057,6 +1058,11 @@ describe("App settings form", () => {
     expect(
       screen.getByLabelText("Yearly pay used to build your Alpha pension (£)")
     ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(
+        "Yearly pay used to build your Alpha pension (£) exact value"
+      )
+    ).toHaveValue(null);
     expect(
       screen.getByText(/employer may call this pensionable earnings/i)
     ).toBeInTheDocument();
@@ -1342,33 +1348,45 @@ describe("App settings form", () => {
     fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
 
     expect(
-      screen.getByRole("heading", { name: "Alpha EPA" })
+      screen.getByRole("heading", { name: "Do you have an Alpha EPA?" })
     ).toBeInTheDocument();
 
-    const addEpaCheckbox = screen.getByLabelText("Add EPA");
-    const epaYearsInput = screen.getByLabelText("EPA years before NPA");
-    const epaStartDateInput = screen.getByLabelText("EPA Start Date");
-    const epaEndDateInput = screen.getByLabelText("EPA End Date");
+    const noEpaAnswer = screen.getByRole("radio", {
+      name: "No, I do not have an EPA",
+    });
 
-    expect(addEpaCheckbox).not.toBeChecked();
-    expect(epaYearsInput).toBeDisabled();
-    expect(epaStartDateInput).toBeDisabled();
-    expect(epaEndDateInput).toBeDisabled();
+    expect(noEpaAnswer).toBeChecked();
+    expect(
+      screen.queryByLabelText("How many years early does your EPA cover?")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("When did your EPA payments start?")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("When will your EPA payments stop?")
+    ).not.toBeInTheDocument();
 
     vi.mocked(createProjectionTable).mockClear();
-    fireEvent.click(addEpaCheckbox);
+    fireEvent.click(screen.getByRole("radio", { name: "Yes, I have an EPA" }));
 
-    expect(addEpaCheckbox).toBeChecked();
-    expect(epaYearsInput).not.toBeDisabled();
-    expect(epaStartDateInput).not.toBeDisabled();
-    expect(epaEndDateInput).not.toBeDisabled();
+    expect(
+      screen.getByLabelText("How many years early does your EPA cover?")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("When did your EPA payments start?")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("When will your EPA payments stop?")
+    ).toBeInTheDocument();
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
       })
     );
     expect(
-      screen.queryByLabelText("Monthly added pension payments (£)")
+      screen.queryByRole("heading", {
+        name: "Estimated Added Pension needed",
+      })
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Lump sum purchases" })
@@ -1379,6 +1397,26 @@ describe("App settings form", () => {
     expect(
       screen.queryByLabelText("Added pension type")
     ).not.toBeInTheDocument();
+  });
+
+  it("shows the retirement target and projection before asking about Added Pension", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Could Added Pension close the gap/i })
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Your projection before Added Pension",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Your retirement income target")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Current projected retirement income")
+    ).toBeInTheDocument();
   });
 
   it("applies simple-mode NPA defaults to the shared settings", () => {
@@ -1568,7 +1606,7 @@ describe("App settings form", () => {
     fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
 
     expect(
-      screen.queryByLabelText("EPA years before NPA")
+      screen.queryByLabelText("How many years early does your EPA cover?")
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Add lump sum purchase" })
@@ -1576,7 +1614,9 @@ describe("App settings form", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
 
-    expect(screen.getByLabelText("EPA years before NPA")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("How many years early does your EPA cover?")
+    ).toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
@@ -1609,6 +1649,39 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
     expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
     expect(screen.getByLabelText("Start State, age 67")).toBeInTheDocument();
+  });
+
+  it("uses the chosen simple retirement age as the income target and Alpha leaving age", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+    openJourneyStep(/What age would you like to retire\?/i);
+
+    const exactRetirementAge = screen.getByLabelText(
+      "How old would you like to be when you retire? exact value"
+    );
+
+    fireEvent.focus(exactRetirementAge);
+    fireEvent.change(exactRetirementAge, { target: { value: "60" } });
+    fireEvent.blur(exactRetirementAge);
+
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        requirementAge: 60,
+        alphaPensionLeaveAge: 60,
+        alphaPensionDrawAge: 68,
+      })
+    );
+
+    fireEvent.focus(exactRetirementAge);
+    fireEvent.change(exactRetirementAge, { target: { value: "65" } });
+    fireEvent.blur(exactRetirementAge);
+
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        requirementAge: 65,
+        alphaPensionLeaveAge: 65,
+        alphaPensionDrawAge: 68,
+      })
+    );
   });
 
   it("restores the original early retirement journey as a separate route", () => {

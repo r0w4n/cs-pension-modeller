@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { fieldGroups, type FieldDefinition } from "../fieldDefinitions";
 import {
   deriveInflationAssumptions,
@@ -19,8 +19,11 @@ import {
 } from "../settings";
 import {
   buildComparisonStatusItems,
+  calculateAddedPensionMonthlyIncome,
   clonePensionSettings,
+  createAddedPensionGoalBasis,
   createComparisonResult,
+  estimateAddedPensionMonthlyContribution,
   formatDate,
   formatDecimalAge,
   getSettingsSignature,
@@ -34,6 +37,7 @@ import {
   type TargetBasedWithdrawalPreview,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
+  type JourneyOptionalQuestion,
   type JourneyOptionalSectionCopy,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
@@ -99,11 +103,16 @@ export type JourneyStepContentProps = {
   viewModel: JourneyStepViewModel;
 };
 
+type OptionalQuestionSettingId = JourneyOptionalQuestion["setting"]["id"];
+
 export function JourneyStepContent({
   step,
   viewModel,
 }: JourneyStepContentProps) {
   const { settings, comparisonResultCache } = viewModel;
+  const [optionalQuestionAnswers, setOptionalQuestionAnswers] = useState<
+    Partial<Record<OptionalQuestionSettingId, boolean>>
+  >({});
   const shouldRenderProjectionTable =
     !useMobileDateDropdowns("(max-width: 640px)");
 
@@ -134,10 +143,6 @@ export function JourneyStepContent({
     );
   }
 
-  if (step.kind === "information") {
-    return renderInformationStep(step);
-  }
-
   if (step.kind === "answer") {
     return renderAnswerStep(viewModel, currentComparisonResult);
   }
@@ -163,25 +168,23 @@ export function JourneyStepContent({
   }
 
   if (step.kind === "fields") {
-    return renderFieldsStep(step, viewModel);
+    const optionalQuestionSettingId = step.optionalQuestion?.setting.id;
+
+    return renderFieldsStep(
+      step,
+      viewModel,
+      optionalQuestionSettingId
+        ? optionalQuestionAnswers[optionalQuestionSettingId]
+        : undefined,
+      (settingId, enabled) =>
+        setOptionalQuestionAnswers((current) => ({
+          ...current,
+          [settingId]: enabled,
+        }))
+    );
   }
 
   return null;
-}
-
-function renderInformationStep(
-  step: JourneyStepDefinition & { kind: "information" }
-) {
-  return (
-    <section className="journey-information" aria-label="About Alpha pension">
-      {step.sections.map((section) => (
-        <div key={section.heading} className="journey-information-section">
-          <h4>{section.heading}</h4>
-          <p>{section.description}</p>
-        </div>
-      ))}
-    </section>
-  );
 }
 
 function renderOptionalSectionsStep(
@@ -491,8 +494,15 @@ function renderFieldsStep(
     fieldLabels?: JourneyFieldLabels;
     fieldDescriptions?: JourneyFieldDescriptions;
     groupId?: string;
+    optionalQuestion?: JourneyOptionalQuestion;
+    addedPensionIncomeGoal?: boolean;
   },
-  viewModel: JourneyStepViewModel
+  viewModel: JourneyStepViewModel,
+  optionalQuestionAnswer: boolean | undefined,
+  onOptionalQuestionAnswer: (
+    settingId: OptionalQuestionSettingId,
+    enabled: boolean
+  ) => void
 ) {
   const {
     settings,
@@ -502,56 +512,84 @@ function renderFieldsStep(
     onChange,
   } = viewModel;
 
+  if (step.addedPensionIncomeGoal && step.optionalQuestion) {
+    return (
+      <>
+        <ValidationSummary validationIssues={validationIssues} />
+        <AddedPensionGapEditor
+          question={step.optionalQuestion}
+          settings={settings}
+          answer={optionalQuestionAnswer}
+          onChange={onChange}
+          onAnswer={onOptionalQuestionAnswer}
+        />
+      </>
+    );
+  }
+
+  const settingsFields = (
+    <SettingsFieldsFeature
+      fields={getFieldsByIds(
+        step.fieldIds,
+        step.fieldLabels,
+        step.fieldDescriptions,
+        step.hideFieldInfoLinks
+      )}
+      settings={settings}
+      validationIssues={validationIssues}
+      onChange={onChange}
+      showGuidanceNotes={showGuidanceNotes}
+      useDropdownDates={useDropdownDates}
+      flexibleWithdrawalSummary={
+        step.id.startsWith("expert-")
+          ? viewModel.flexibleWithdrawalSummary
+          : undefined
+      }
+    >
+      {isSpendingSmileEditorStep(step.id) ? (
+        <SpendingSmileEditor
+          settings={settings}
+          validationIssues={validationIssues}
+          onChange={onChange}
+        />
+      ) : null}
+      {isExpertRetirementIncomeTargetStep(step.id) ? (
+        <FlexibleWithdrawalPriorityEditor
+          settings={settings}
+          onChange={onChange}
+        />
+      ) : null}
+      {step.supportLinkLayout === "inline" && step.supportLink ? (
+        <JourneySupportPanel
+          stepId={step.id}
+          supportLink={step.supportLink}
+          inline
+        />
+      ) : null}
+    </SettingsFieldsFeature>
+  );
+
   return (
     <>
       <ValidationSummary validationIssues={validationIssues} />
 
-      {step.supportLink ? (
-        <aside
-          className="journey-support-callout"
-          aria-labelledby={`journey-support-${step.id}`}
-        >
-          <h4 id={`journey-support-${step.id}`}>{step.supportLink.heading}</h4>
-          <p>{step.supportLink.description}</p>
-          <a href={step.supportLink.href} target="_blank" rel="noreferrer">
-            {step.supportLink.label}
-            <span className="visually-hidden"> (opens in a new tab)</span>
-          </a>
-        </aside>
+      {step.supportLink && step.supportLinkLayout !== "inline" ? (
+        <JourneySupportPanel stepId={step.id} supportLink={step.supportLink} />
       ) : null}
 
-      <SettingsFieldsFeature
-        fields={getFieldsByIds(
-          step.fieldIds,
-          step.fieldLabels,
-          step.fieldDescriptions,
-          step.hideFieldInfoLinks
-        )}
-        settings={settings}
-        validationIssues={validationIssues}
-        onChange={onChange}
-        showGuidanceNotes={showGuidanceNotes}
-        useDropdownDates={useDropdownDates}
-        flexibleWithdrawalSummary={
-          step.id.startsWith("expert-")
-            ? viewModel.flexibleWithdrawalSummary
-            : undefined
-        }
-      >
-        {isSpendingSmileEditorStep(step.id) ? (
-          <SpendingSmileEditor
-            settings={settings}
-            validationIssues={validationIssues}
-            onChange={onChange}
-          />
-        ) : null}
-        {isExpertRetirementIncomeTargetStep(step.id) ? (
-          <FlexibleWithdrawalPriorityEditor
-            settings={settings}
-            onChange={onChange}
-          />
-        ) : null}
-      </SettingsFieldsFeature>
+      {step.optionalQuestion ? (
+        <OptionalFieldsQuestion
+          question={step.optionalQuestion}
+          settings={settings}
+          answer={optionalQuestionAnswer}
+          onChange={onChange}
+          onAnswer={onOptionalQuestionAnswer}
+        >
+          {settingsFields}
+        </OptionalFieldsQuestion>
+      ) : (
+        settingsFields
+      )}
 
       {step.groupId ? (
         <SettingsGroupSupplementaryEditor
@@ -564,6 +602,297 @@ function renderFieldsStep(
       ) : null}
     </>
   );
+}
+
+function JourneySupportPanel({
+  stepId,
+  supportLink,
+  inline = false,
+}: {
+  stepId: string;
+  supportLink: NonNullable<
+    Extract<JourneyStepDefinition, { kind: "fields" }>["supportLink"]
+  >;
+  inline?: boolean;
+}) {
+  return (
+    <aside
+      className={
+        inline ? "field-card journey-support-field" : "journey-support-callout"
+      }
+      aria-labelledby={`journey-support-${stepId}`}
+    >
+      <h4
+        id={`journey-support-${stepId}`}
+        className={inline ? "field-label" : undefined}
+      >
+        {supportLink.heading}
+      </h4>
+      <p className={inline ? "field-help" : undefined}>
+        {supportLink.description}
+      </p>
+      <a href={supportLink.href} target="_blank" rel="noreferrer">
+        {supportLink.label}
+        <span className="visually-hidden"> (opens in a new tab)</span>
+      </a>
+    </aside>
+  );
+}
+
+function AddedPensionGapEditor({
+  question,
+  settings,
+  answer,
+  onChange,
+  onAnswer,
+}: {
+  question: JourneyOptionalQuestion;
+  settings: PensionSettings;
+  answer: boolean | undefined;
+  onChange: SettingsFieldOnChange;
+  onAnswer: (settingId: OptionalQuestionSettingId, enabled: boolean) => void;
+}) {
+  const basis = useMemo(
+    () => createAddedPensionGoalBasis(settings),
+    [settings]
+  );
+  const monthlyGap = Math.max(
+    0,
+    basis.targetMonthlyIncome - basis.projectedMonthlyIncome
+  );
+  const estimatedMonthlyContribution = estimateAddedPensionMonthlyContribution(
+    basis,
+    monthlyGap
+  );
+  const estimatedMonthlyIncrease = calculateAddedPensionMonthlyIncome(
+    basis,
+    estimatedMonthlyContribution
+  );
+  const remainingMonthlyGap = Math.max(
+    0,
+    monthlyGap - estimatedMonthlyIncrease
+  );
+
+  useEffect(() => {
+    if (monthlyGap <= 0 && settings.alphaAddedPensionMonthly > 0) {
+      onAnswer(question.setting.id, false);
+      onChange("alphaAddedPensionMonthly", 0);
+    }
+  }, [
+    monthlyGap,
+    onAnswer,
+    onChange,
+    question.setting.id,
+    settings.alphaAddedPensionMonthly,
+  ]);
+
+  return (
+    <div className="added-pension-gap">
+      <section
+        className="added-pension-gap-summary"
+        aria-labelledby="added-pension-gap-heading"
+      >
+        <h4 id="added-pension-gap-heading">
+          Your projection before Added Pension
+        </h4>
+        <dl>
+          <div>
+            <dt>Your retirement income target</dt>
+            <dd>{formatWholePounds(basis.targetMonthlyIncome)} a month</dd>
+          </div>
+          <div>
+            <dt>Current projected retirement income</dt>
+            <dd>{formatWholePounds(basis.projectedMonthlyIncome)} a month</dd>
+          </div>
+          <div>
+            <dt>Difference</dt>
+            <dd>{formatWholePounds(monthlyGap)} a month</dd>
+          </div>
+        </dl>
+        <p>
+          These are modelled amounts before tax, based on the information and
+          assumptions entered.
+        </p>
+      </section>
+
+      {monthlyGap <= 0 ? (
+        <p className="added-pension-gap-message">
+          This projection already meets or exceeds the retirement income target,
+          so the modeller has not added an Added Pension payment.
+        </p>
+      ) : basis.monthlyIncomePerContributionPound <= 0 ? (
+        <p className="added-pension-gap-message" role="status">
+          The modeller cannot estimate an Added Pension payment from the current
+          details. Review the dates and Alpha pension information entered.
+        </p>
+      ) : (
+        <OptionalFieldsQuestion
+          question={question}
+          settings={settings}
+          answer={answer}
+          onChange={onChange}
+          onAnswer={onAnswer}
+        >
+          <AddedPensionGapEstimate
+            settings={settings}
+            monthlyGap={monthlyGap}
+            estimatedMonthlyContribution={estimatedMonthlyContribution}
+            estimatedMonthlyIncrease={estimatedMonthlyIncrease}
+            remainingMonthlyGap={remainingMonthlyGap}
+            projectedMonthlyIncome={basis.projectedMonthlyIncome}
+            onChange={onChange}
+          />
+        </OptionalFieldsQuestion>
+      )}
+    </div>
+  );
+}
+
+function AddedPensionGapEstimate({
+  settings,
+  monthlyGap,
+  estimatedMonthlyContribution,
+  estimatedMonthlyIncrease,
+  remainingMonthlyGap,
+  projectedMonthlyIncome,
+  onChange,
+}: {
+  settings: PensionSettings;
+  monthlyGap: number;
+  estimatedMonthlyContribution: number;
+  estimatedMonthlyIncrease: number;
+  remainingMonthlyGap: number;
+  projectedMonthlyIncome: number;
+  onChange: SettingsFieldOnChange;
+}) {
+  useEffect(() => {
+    if (settings.alphaAddedPensionMonthly !== estimatedMonthlyContribution) {
+      onChange("alphaAddedPensionMonthly", estimatedMonthlyContribution);
+    }
+  }, [
+    estimatedMonthlyContribution,
+    onChange,
+    settings.alphaAddedPensionMonthly,
+  ]);
+
+  return (
+    <section className="added-pension-gap-estimate" aria-live="polite">
+      <h4>Estimated Added Pension needed</h4>
+      <p>
+        To try to close the {formatWholePounds(monthlyGap)} monthly difference,
+        the model estimates an extra payment of approximately{" "}
+        <strong>
+          {formatWholePounds(estimatedMonthlyContribution)} a month
+        </strong>
+        .
+      </p>
+      <p>
+        That payment is estimated to add{" "}
+        {formatWholePounds(estimatedMonthlyIncrease)} a month of pension income,
+        giving a projected total of{" "}
+        {formatWholePounds(projectedMonthlyIncome + estimatedMonthlyIncrease)} a
+        month before tax.
+      </p>
+      {remainingMonthlyGap > 0 ? (
+        <p>
+          This does not close the whole gap. About{" "}
+          {formatWholePounds(remainingMonthlyGap)} a month remains because the
+          estimated payment has reached the modeller's supported limit.
+        </p>
+      ) : null}
+      <p className="field-help">
+        This is an illustration, not a scheme quote. Check the amount, purchase
+        limits and eligibility with the official Civil Service Added Pension
+        calculator before making a decision.
+      </p>
+    </section>
+  );
+}
+
+function formatWholePounds(value: number) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function OptionalFieldsQuestion({
+  question,
+  settings,
+  answer,
+  onChange,
+  onAnswer,
+  children,
+}: {
+  question: JourneyOptionalQuestion;
+  settings: PensionSettings;
+  answer: boolean | undefined;
+  onChange: SettingsFieldOnChange;
+  onAnswer: (settingId: OptionalQuestionSettingId, enabled: boolean) => void;
+  children: ReactNode;
+}) {
+  const isEnabled = answer ?? isOptionalQuestionEnabled(question, settings);
+
+  const chooseAnswer = (enabled: boolean) => {
+    onAnswer(question.setting.id, enabled);
+
+    if (question.setting.id === "alphaEpaEnabled") {
+      onChange("alphaEpaEnabled", enabled);
+      return;
+    }
+
+    if (!enabled) {
+      onChange("alphaAddedPensionMonthly", 0);
+    }
+  };
+
+  return (
+    <div className="journey-optional-question">
+      <fieldset>
+        <legend
+          className={
+            question.showPrompt ? "journey-question-prompt" : "visually-hidden"
+          }
+        >
+          {question.prompt}
+        </legend>
+        <div className="journey-optional-question-answers">
+          <label>
+            <input
+              type="radio"
+              name={`journey-question-${question.setting.id}`}
+              checked={!isEnabled}
+              onChange={() => chooseAnswer(false)}
+            />
+            <span>{question.noLabel}</span>
+          </label>
+          <label>
+            <input
+              type="radio"
+              name={`journey-question-${question.setting.id}`}
+              checked={isEnabled}
+              onChange={() => chooseAnswer(true)}
+            />
+            <span>{question.yesLabel}</span>
+          </label>
+        </div>
+      </fieldset>
+
+      {isEnabled ? children : null}
+    </div>
+  );
+}
+
+function isOptionalQuestionEnabled(
+  question: JourneyOptionalQuestion,
+  settings: PensionSettings
+) {
+  if (question.setting.id === "alphaEpaEnabled") {
+    return settings.alphaEpaEnabled;
+  }
+
+  return settings.alphaAddedPensionMonthly > 0;
 }
 
 function ValidationSummary({

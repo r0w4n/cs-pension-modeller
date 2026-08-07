@@ -28,12 +28,23 @@ Feature: Modeller journeys
       | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default |
 
   @simple-journey
-  Scenario: Introduce Alpha before asking simple planning questions
+  Scenario: Start the simplified journey with personal details
     When the "Simplified retirement journey" journey is loaded
-    Then the first journey step should be titled "Alpha pension: the basics"
-    And the "Alpha pension: the basics" journey step should describe Alpha as a defined benefit pension
+    Then the first journey step should be titled "A little about you"
+    And the journey should not include a step titled "Alpha pension: the basics"
     And the journey should include a step titled "What yearly income would you like?"
     And the "What yearly income would you like?" journey step should link to the Retirement Living Standards
+    And the "What yearly income would you like?" journey step should place its support link beside the field
+
+  @simple-journey @alpha
+  Scenario: Ask when the member would like to retire
+    When the "Simplified retirement journey" journey is loaded
+    Then the journey should include a step titled "What age would you like to retire?"
+    And the "What age would you like to retire?" journey step should contain these fields:
+      | field                                            |
+      | How old would you like to be when you retire?    |
+    And the "What yearly income would you like?" journey step should appear before the "What age would you like to retire?" journey step
+    And the "What age would you like to retire?" journey step should appear before the "Add your Alpha pension details" journey step
 
   @simple-journey @optional-sections
   Scenario: Explain other Civil Service pensions while keeping Alpha included
@@ -60,6 +71,20 @@ Feature: Modeller journeys
     And the "Add your Alpha pension details" journey step should link to Annual Benefit Statement help
     And the "Add your Alpha pension details" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
     And the "Do you have any other Civil Service pensions?" journey step should appear before the "Additional guaranteed income" journey step
+
+  @simple-journey @alpha
+  Scenario: Do not assume pensionable earnings before the member enters them
+    Given default modeller settings
+    Then pensionable earnings should not have a pre-filled amount
+
+  @simple-journey @optional-sections
+  Scenario: Use the retirement target to estimate Added Pension after the basic projection
+    When the "Simplified retirement journey" journey is loaded
+    Then the journey should include a step titled "Could Added Pension close the gap?"
+    And the "Could Added Pension close the gap?" journey step should use a yes or no question
+    And the "Additional guaranteed income" journey step should appear before the "Could Added Pension close the gap?" journey step
+    And the journey should include a step titled "Do you have an Alpha EPA?"
+    And the "Do you have an Alpha EPA?" journey step should use a yes or no question
 
   @expert-journey
   Scenario: Separate the expert retirement target from personal details

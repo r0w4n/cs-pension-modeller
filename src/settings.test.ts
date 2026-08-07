@@ -610,7 +610,7 @@ describe("settings unit tests", () => {
     );
   });
 
-  it("limits Alpha added pension purchases to supported factor ages", () => {
+  it("limits Alpha added pension lump sums to supported factor ages", () => {
     expect(getLatestAlphaAddedPensionPurchaseDate("1987-06-15")).toBe(
       "2055-06-14"
     );
@@ -640,14 +640,16 @@ describe("settings unit tests", () => {
     expect(issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          field: "alphaAddedPensionMonthly",
-          message:
-            "Monthly added pension purchases must stop before age 68 because purchases are only supported through age 67.",
-        }),
-        expect.objectContaining({
           field: "alphaAddedPensionLumpSums",
           message:
             "Alpha lump sums must fall between the last Annual Benefits Statement and the supported added pension factor ages.",
+        }),
+      ])
+    );
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "alphaAddedPensionMonthly",
         }),
       ])
     );

@@ -24,7 +24,7 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("heading", { name: "Simplified retirement journey" })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Alpha pension: the basics" })
+      page.getByRole("heading", { name: "A little about you" })
     ).toBeVisible();
 
     await page
@@ -97,7 +97,12 @@ test.describe("app end-to-end journeys", () => {
       "How much would you like each year in retirement?",
       "32000"
     );
-    await clickNextAndExpectStep(page, "A little about you");
+    await clickNextAndExpectStep(page, "What age would you like to retire?");
+    await fillExactNumber(
+      page,
+      "How old would you like to be when you retire? exact value",
+      "68"
+    );
     await clickNextAndExpectStep(page, "Add your Alpha pension details");
 
     await expect(
@@ -110,8 +115,13 @@ test.describe("app end-to-end journeys", () => {
       "Yearly Alpha pension built up so far (£)",
       "17500"
     );
-    await clickNextAndExpectStep(page, "Added pension");
-    await clickNextAndExpectStep(page, "Alpha EPA");
+    await clickNextAndExpectStep(page, "Do you have an Alpha EPA?");
+    await expect(
+      page.getByRole("radio", { name: "No, I do not have an EPA" })
+    ).toBeChecked();
+    await expect(
+      page.getByLabel("How many years early does your EPA cover?")
+    ).toHaveCount(0);
     await clickNextAndExpectStep(
       page,
       "Do you have any other Civil Service pensions?"
@@ -128,6 +138,18 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
     await clickNextAndExpectStep(page, "Additional guaranteed income");
     await addAdditionalIncome(page, "Simple journey annuity", "4000", "67");
+    await clickNextAndExpectStep(page, "Could Added Pension close the gap?");
+    await expect(
+      page.getByRole("heading", {
+        name: "Your projection before Added Pension",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Current projected retirement income")
+    ).toBeVisible();
+    await expect(
+      page.getByText(/already meets or exceeds the retirement income target/i)
+    ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
     await expectProjectionBasisBelowResultsChart(page);
@@ -881,7 +903,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Alpha pension: the basics" })
+      page.getByRole("heading", { name: "A little about you" })
     ).toBeVisible();
     return;
   }

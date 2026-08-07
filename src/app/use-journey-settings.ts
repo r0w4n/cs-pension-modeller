@@ -79,8 +79,15 @@ export function useJourneySettings({
             nextSettings.dateOfBirth !== current.dateOfBirth
               ? applySimpleJourneyDefaults(nextSettings)
               : nextSettings;
+          const retirementAlignedSettings =
+            sharedSettings.requirementAge !== baseSettings.requirementAge
+              ? {
+                  ...sharedSettings,
+                  alphaPensionLeaveAge: sharedSettings.requirementAge,
+                }
+              : sharedSettings;
 
-          return mergeSimpleJourneySettings(current, sharedSettings);
+          return mergeSimpleJourneySettings(current, retirementAlignedSettings);
         });
         return;
       }

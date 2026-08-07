@@ -239,7 +239,6 @@ export function validateAlphaPensionRules({
   alphaAccrualStopDate,
   alphaAbsDate,
   alphaEpaAgeDate,
-  latestAlphaAddedPensionPurchaseDate,
 }: AlphaPensionValidationContext): PensionValidationIssue[] {
   const issues: PensionValidationIssue[] = [];
 
@@ -285,18 +284,6 @@ export function validateAlphaPensionRules({
       field: "alphaPensionAbsDate",
       message:
         "Last Annual Benefits Statement must be on or before the current date.",
-    });
-  }
-
-  if (
-    settings.showAlpha &&
-    settings.alphaAddedPensionMonthly > 0 &&
-    alphaAccrualStopDate > latestAlphaAddedPensionPurchaseDate
-  ) {
-    issues.push({
-      field: "alphaAddedPensionMonthly",
-      message:
-        "Monthly added pension purchases must stop before age 68 because purchases are only supported through age 67.",
     });
   }
 

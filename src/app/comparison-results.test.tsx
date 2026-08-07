@@ -7,7 +7,9 @@ import { createDefaultSettings } from "../settings";
 import { ComparisonResults } from "./comparison-results";
 
 describe("comparison results", () => {
-  const originalMatchMedia = window.matchMedia;
+  const originalMatchMedia = window.matchMedia
+    ? window.matchMedia.bind(window)
+    : undefined;
 
   const mockMatchMedia = (matches: boolean) => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -23,7 +25,11 @@ describe("comparison results", () => {
   };
 
   afterEach(() => {
-    window.matchMedia = originalMatchMedia;
+    if (originalMatchMedia) {
+      window.matchMedia = originalMatchMedia;
+    } else {
+      Reflect.deleteProperty(window, "matchMedia");
+    }
   });
 
   it("keeps the mobile comparison view card-based without section divider cards", () => {

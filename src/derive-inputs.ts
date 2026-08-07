@@ -1,6 +1,7 @@
 import {
   calculateNormalPensionAge,
   getAlphaEpaDate,
+  getLatestAlphaAddedPensionPurchaseDate,
   isValidIsoDate,
   resolveAlphaAbsDate,
   validateSettings,
@@ -224,7 +225,13 @@ export function deriveProjectionInputs(
           settings.premiumDrawAge,
           settings.premiumNormalPensionAge
         );
-  const addedPensionStopDate = accrualStopDate;
+  const latestAddedPensionPurchaseDate = getLatestAlphaAddedPensionPurchaseDate(
+    settings.dateOfBirth
+  );
+  const addedPensionStopDate =
+    accrualStopDate <= latestAddedPensionPurchaseDate
+      ? accrualStopDate
+      : latestAddedPensionPurchaseDate;
   const normalPensionAge = calculateNormalPensionAge(settings.dateOfBirth);
   const npaDate = addYears(settings.dateOfBirth, normalPensionAge);
   const epaDate = getAlphaEpaDate(settings);

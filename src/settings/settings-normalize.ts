@@ -92,7 +92,7 @@ const numericSettingRules = {
   },
   alphaPensionLeaveAge: { min: 0, max: 70, step: 1 },
   accruedPensionAtLastAbs: { min: 0, max: 50000, step: 1 },
-  pensionableEarnings: { min: 10000, max: 150000, step: 500 },
+  pensionableEarnings: { min: 0, max: 150000, step: 500 },
   alphaPayRisePercent: { min: 0, max: 15, step: 0.1 },
   alphaPensionDrawAge: { min: 55, max: 70, step: 1 },
   alphaEpaYearsBeforeNpa: { min: 1, max: 3, step: 1 },

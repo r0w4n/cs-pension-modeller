@@ -21,7 +21,10 @@ describe("saved scenarios", () => {
   });
 
   it("renders saved results and wires rename, load, and remove actions", () => {
-    const settings = createDefaultSettings();
+    const settings = {
+      ...createDefaultSettings(),
+      pensionableEarnings: 42000,
+    };
     const matchingResult = createComparisonResult(
       {
         id: "scenario-1",

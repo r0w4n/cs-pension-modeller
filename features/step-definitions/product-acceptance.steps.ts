@@ -1043,20 +1043,12 @@ Then(
 );
 
 Then(
-  "the {string} journey step should describe Alpha as a defined benefit pension",
-  function (this: ProductAcceptanceWorld, stepTitle: string) {
+  "the journey should not include a step titled {string}",
+  function (this: ProductAcceptanceWorld, title: string) {
     assertCondition(this.selectedJourney, "No journey has been selected");
-    const step = this.selectedJourney.steps.find(
-      (candidate) => candidate.title === stepTitle
-    );
-
-    assertCondition(step, `Journey step "${stepTitle}" not found`);
     assertCondition(
-      step.kind === "information" &&
-        step.sections.some((section) =>
-          section.description.toLowerCase().includes("defined benefit")
-        ),
-      `Expected journey step "${stepTitle}" to describe Alpha as a defined benefit pension`
+      !this.selectedJourney.steps.some((step) => step.title === title),
+      `Did not expect journey step "${title}"`
     );
   }
 );
@@ -1074,6 +1066,22 @@ Then(
       step.kind === "fields" &&
         step.supportLink?.href === knowledgeLinks.retirementLivingStandards,
       `Expected journey step "${stepTitle}" to link to the Retirement Living Standards`
+    );
+  }
+);
+
+Then(
+  "the {string} journey step should place its support link beside the field",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields" && step.supportLinkLayout === "inline",
+      `Expected journey step "${stepTitle}" to use an inline support link`
     );
   }
 );
@@ -1114,6 +1122,22 @@ Then(
     const expectedFields = table.hashes().map((row) => row.field);
 
     assertEqual(JSON.stringify(actualFields), JSON.stringify(expectedFields));
+  }
+);
+
+Then(
+  "the {string} journey step should use a yes or no question",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields" && step.optionalQuestion,
+      `Expected journey step "${stepTitle}" to use a yes or no question`
+    );
   }
 );
 
@@ -1303,6 +1327,13 @@ Then(
 Given("default modeller settings", function (this: ProductAcceptanceWorld) {
   this.settings = createDefaultSettings();
 });
+
+Then(
+  "pensionable earnings should not have a pre-filled amount",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(getSettings(this).pensionableEarnings, 0);
+  }
+);
 
 When(
   "bridge journey defaults are applied",

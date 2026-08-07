@@ -98,6 +98,7 @@ export type RangeField = {
   infoLinkText?: string;
   infoLinks?: FieldInfoLink[];
   valuePrefix?: string;
+  emptyWhenZero?: boolean;
 };
 
 export type CheckboxField = {
@@ -474,10 +475,11 @@ export const fieldGroups: FieldGroup[] = [
         id: "pensionableEarnings",
         label: "Current Pensionable Earnings (£ per year)",
         type: "range",
-        min: 10000,
+        min: 0,
         max: 150000,
         step: 500,
         format: "currency",
+        emptyWhenZero: true,
         description:
           "Used for Alpha pension accrual and modelling. Each full scheme year adds 2.32% of actual pensionable earnings to your annual Alpha pension, so £42,000 of pensionable earnings adds £974.40 before later revaluation. Member contributions are a separate payroll cost; the modeller does not multiply your pension by your employee contribution rate, and paying about 5% or 7% does not make the pension accrue at 5% or 7%.",
         infoUrl: knowledgeLinks.alphaAccrual,

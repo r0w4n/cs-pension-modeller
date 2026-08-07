@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { deriveInflationAssumptions } from "../projection";
 import { createDefaultSettings, type PensionSettings } from "../settings";
@@ -67,7 +67,9 @@ vi.mock("./results-summary", () => ({
 }));
 
 describe("JourneyStepContent", () => {
-  const originalMatchMedia = window.matchMedia;
+  const originalMatchMedia = window.matchMedia
+    ? window.matchMedia.bind(window)
+    : undefined;
 
   const mockMatchMedia = (matches: boolean) => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -90,40 +92,14 @@ describe("JourneyStepContent", () => {
   });
 
   afterEach(() => {
-    window.matchMedia = originalMatchMedia;
+    if (originalMatchMedia) {
+      window.matchMedia = originalMatchMedia;
+    } else {
+      Reflect.deleteProperty(window, "matchMedia");
+    }
   });
 
-  it("renders a plain-language information step", () => {
-    mockMatchMedia(false);
-
-    render(
-      <JourneyStepContent
-        step={{
-          id: "introduction",
-          eyebrow: "Step 1",
-          title: "Alpha pension: the basics",
-          description: "A short introduction.",
-          kind: "information",
-          sections: [
-            {
-              heading: "What is Alpha?",
-              description: "It gives you a yearly pension.",
-            },
-          ],
-        }}
-        viewModel={createViewModel()}
-      />
-    );
-
-    expect(
-      screen.getByRole("heading", { name: "What is Alpha?" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("It gives you a yearly pension.")
-    ).toBeInTheDocument();
-  });
-
-  it("renders a supporting link for a fields step", () => {
+  it("places inline support beside its field using matching cards", () => {
     mockMatchMedia(false);
 
     render(
@@ -135,6 +111,11 @@ describe("JourneyStepContent", () => {
           description: "Choose a target.",
           kind: "fields",
           fieldIds: ["desiredRetirementIncome"],
+          fieldLabels: {
+            desiredRetirementIncome:
+              "How much would you like each year in retirement?",
+          },
+          supportLinkLayout: "inline",
           supportLink: {
             heading: "Not sure what amount to choose?",
             description: "Use this guide as a starting point.",
@@ -146,9 +127,151 @@ describe("JourneyStepContent", () => {
       />
     );
 
+    const supportLink = screen.getByRole("link", {
+      name: /Help me choose a retirement income/i,
+    });
+    const incomeInput = screen.getByLabelText(
+      "How much would you like each year in retirement?"
+    );
+    const supportCard = supportLink.closest(".field-card");
+    const incomeCard = incomeInput.closest(".field-card");
+
+    expect(supportLink).toHaveAttribute(
+      "href",
+      "https://www.retirementlivingstandards.org.uk/"
+    );
+    expect(supportCard).not.toBeNull();
+    expect(incomeCard).not.toBeNull();
+    expect(supportCard?.parentElement).toBe(incomeCard?.parentElement);
+    expect(supportCard?.parentElement).toHaveClass("field-grid");
+  });
+
+  it("shows the income gap before estimating Added Pension needed", async () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      desiredRetirementIncome: 60000,
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "alpha-options",
+          eyebrow: "Projection so far",
+          title: "Could Added Pension close the gap?",
+          description: "Compare the target with the projection.",
+          kind: "fields",
+          fieldIds: ["alphaAddedPensionMonthly"],
+          addedPensionIncomeGoal: true,
+          optionalQuestion: {
+            prompt: "Would you like Added Pension to try to close this gap?",
+            noLabel: "No, keep this projection",
+            yesLabel: "Yes, estimate the Added Pension needed",
+            showPrompt: true,
+            setting: {
+              id: "alphaAddedPensionMonthly",
+              enabledWhen: "positive",
+            },
+          },
+        }}
+        viewModel={viewModel}
+      />
+    );
+
     expect(
-      screen.getByRole("link", { name: /Help me choose a retirement income/i })
-    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+      screen.getByRole("radio", {
+        name: "No, keep this projection",
+      })
+    ).toBeChecked();
+    expect(
+      screen.getByRole("heading", {
+        name: "Your projection before Added Pension",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Your retirement income target")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Current projected retirement income")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Difference")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "Yes, estimate the Added Pension needed",
+      })
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Estimated Added Pension needed" })
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(viewModel.onChange).toHaveBeenCalledWith(
+        "alphaAddedPensionMonthly",
+        expect.any(Number)
+      )
+    );
+
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: "No, keep this projection",
+      })
+    );
+
+    expect(viewModel.onChange).toHaveBeenCalledWith(
+      "alphaAddedPensionMonthly",
+      0
+    );
+  });
+
+  it("reveals EPA fields only after a plain-English yes answer", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "alpha-epa",
+          eyebrow: "Optional",
+          title: "Do you have an Alpha EPA?",
+          description: "Choose whether to include an EPA.",
+          kind: "fields",
+          fieldIds: [
+            "alphaEpaYearsBeforeNpa",
+            "alphaEpaStartDate",
+            "alphaEpaEndDate",
+          ],
+          fieldLabels: {
+            alphaEpaYearsBeforeNpa: "How many years early does your EPA cover?",
+          },
+          optionalQuestion: {
+            prompt: "Do you have an Alpha EPA?",
+            noLabel: "No, I do not have an EPA",
+            yesLabel: "Yes, I have an EPA",
+            setting: {
+              id: "alphaEpaEnabled",
+              enabledWhen: "true",
+            },
+          },
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.getByRole("radio", { name: "No, I do not have an EPA" })
+    ).toBeChecked();
+    expect(
+      screen.queryByLabelText("How many years early does your EPA cover?")
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Yes, I have an EPA" }));
+
+    expect(viewModel.onChange).toHaveBeenCalledWith("alphaEpaEnabled", true);
+    expect(
+      screen.getByLabelText("How many years early does your EPA cover?")
+    ).toBeInTheDocument();
   });
 
   it("renders the projection table for desktop expert results", () => {

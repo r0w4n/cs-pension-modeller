@@ -223,11 +223,16 @@ Feature: Alpha pension modelling
     When the lump-sum Added Pension factor is selected for age 45 and NPA 67 years 6 months
     Then the Added Pension purchase factor should be 8.015
 
-  @alpha @added-pension @leaving-service
-  Scenario: Stop regular Added Pension purchases after pensionable service ends
+  @alpha @added-pension @purchase-end
+  Scenario Outline: Stop regular Added Pension purchases at the applicable purchase end date
     Given the member buys Added Pension using monthly contributions of 100.00
-    When the contribution is projected on 2047-06-16 after stopping on 2047-06-15
+    When the contribution is projected on <projectionDate> after stopping on <purchaseEndDate>
     Then the new annual Added Pension should be 0.00
+
+    Examples:
+      | reason                       | projectionDate | purchaseEndDate |
+      | Pensionable service ended    | 2047-06-16     | 2047-06-15      |
+      | Supported factor ages ended  | 2055-06-15     | 2055-06-14      |
 
   @alpha @added-pension
   Scenario: Added Pension is included in pension payable at normal pension age

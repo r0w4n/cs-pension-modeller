@@ -1038,6 +1038,26 @@ describe("projection calculations", () => {
     });
   });
 
+  it("stops monthly Added Pension purchases at the last supported factor date while Alpha service continues", () => {
+    expect(
+      deriveProjectionInputs({
+        ...defaultSettings,
+        startDate: "2026-04-25",
+        dateOfBirth: "1987-06-15",
+        alphaPensionAbsDate: "2025",
+        lifeExpectancy: 90,
+        requirementAge: 70,
+        alphaPensionDrawAge: 70,
+        alphaPensionLeaveAge: 70,
+        alphaAddedPensionMonthly: 150,
+        showStatePension: false,
+      })
+    ).toMatchObject({
+      accrualStopDate: "2057-06-15",
+      addedPensionStopDate: "2055-06-14",
+    });
+  });
+
   it("keeps transitional normal pension ages at month precision", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
@@ -2485,6 +2505,7 @@ describe("projection calculations", () => {
     const rows = createProjectionTable({
       ...defaultSettings,
       requirementAge: 60,
+      pensionableEarnings: 42000,
       alphaEpaEnabled: true,
       alphaEpaYearsBeforeNpa: 3,
       alphaPensionDrawAge: 60,
@@ -3304,10 +3325,14 @@ describe("projection calculations", () => {
   });
 
   it("updates the summary when pension parameters change", () => {
-    const baseRows = createProjectionTable(defaultSettings);
-    const baseSummary = generatePensionSummary(baseRows, defaultSettings);
-    const updatedSettings: PensionSettings = {
+    const baseSettings = {
       ...defaultSettings,
+      pensionableEarnings: 42000,
+    };
+    const baseRows = createProjectionTable(baseSettings);
+    const baseSummary = generatePensionSummary(baseRows, baseSettings);
+    const updatedSettings: PensionSettings = {
+      ...baseSettings,
       currentStatePension: 12000,
       requirementAge: 61,
       alphaPensionDrawAge: 61,
@@ -3515,6 +3540,7 @@ describe("projection calculations", () => {
       dateOfBirth: "1980-04-01",
       requirementAge: 55,
       alphaPensionDrawAge: 57,
+      pensionableEarnings: 42000,
       lifeExpectancy: 58,
       desiredRetirementIncome: 30000,
       showAlpha: true,

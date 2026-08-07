@@ -596,15 +596,6 @@ h3 {
   min-width: 0;
 }
 
-.journey-information {
-  display: grid;
-  width: 100%;
-  border: 1px solid rgba(17, 100, 102, 0.18);
-  border-radius: 1rem;
-  padding: 1.2rem 1.3rem;
-  background: #f4fbf9;
-}
-
 .journey-support-callout {
   border: 1px solid rgba(17, 100, 102, 0.18);
   border-radius: 1rem;
@@ -612,20 +603,11 @@ h3 {
   background: #f4fbf9;
 }
 
-.journey-information-section + .journey-information-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(17, 100, 102, 0.14);
-}
-
-.journey-information h4,
-.journey-information p,
 .journey-support-callout h4,
 .journey-support-callout p {
   margin: 0;
 }
 
-.journey-information p,
 .journey-support-callout p {
   margin-top: 0.4rem;
   color: var(--text-muted);
@@ -643,6 +625,124 @@ h3 {
   color: var(--accent-strong);
   font-weight: 700;
   text-underline-offset: 0.18em;
+}
+
+.journey-support-field {
+  align-content: start;
+}
+
+.journey-support-field h4,
+.journey-support-field p {
+  margin: 0;
+}
+
+.journey-support-field a {
+  align-self: end;
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-underline-offset: 0.18em;
+}
+
+.journey-optional-question {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.added-pension-gap {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.added-pension-gap-summary,
+.added-pension-gap-estimate {
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: var(--surface-strong);
+}
+
+.added-pension-gap-summary h4,
+.added-pension-gap-summary p,
+.added-pension-gap-estimate h4,
+.added-pension-gap-estimate p,
+.added-pension-gap-message {
+  margin: 0;
+}
+
+.added-pension-gap-summary dl {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.added-pension-gap-summary dl div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.added-pension-gap-summary dt {
+  color: var(--text-muted);
+}
+
+.added-pension-gap-summary dd {
+  margin: 0;
+  font-weight: 800;
+}
+
+.added-pension-gap-summary p,
+.added-pension-gap-estimate p,
+.added-pension-gap-message {
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+}
+
+.added-pension-gap-estimate {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.journey-question-prompt {
+  margin-bottom: 0.75rem;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.journey-optional-question fieldset {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.journey-optional-question-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.journey-optional-question-answers label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--surface-strong);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.journey-optional-question-answers input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
 }
 
 .journey-mobile-steps {

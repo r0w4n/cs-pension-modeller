@@ -26,8 +26,13 @@ import type {
   RetirementIncomeSource,
   RetirementIncomeSummary,
 } from "./projection-core";
+import {
+  calculateMoneyShortfall,
+  calculateMoneySurplus,
+  MONEY_TOLERANCE,
+} from "./money";
 
-const ACTIVE_INCOME_EPSILON = 0.005;
+const ACTIVE_INCOME_EPSILON = MONEY_TOLERANCE;
 
 export function generatePensionSummary(
   tableData: ProjectionRow[],
@@ -584,8 +589,14 @@ function createAgeRangeSnapshot(
     annualIncomeBeforeTax,
     annualIncomeAfterTax,
     annualTargetIncome,
-    annualShortfall: Math.max(0, annualTargetIncome - annualAssessedIncome),
-    annualSurplus: Math.max(0, annualAssessedIncome - annualTargetIncome),
+    annualShortfall: calculateMoneyShortfall(
+      annualTargetIncome,
+      annualAssessedIncome
+    ),
+    annualSurplus: calculateMoneySurplus(
+      annualTargetIncome,
+      annualAssessedIncome
+    ),
   };
 }
 

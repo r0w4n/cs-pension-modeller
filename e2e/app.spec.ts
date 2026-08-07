@@ -61,7 +61,6 @@ test.describe("app end-to-end journeys", () => {
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current SIPP pot (£)", "125000");
     await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current ISA pot (£)", "40000");

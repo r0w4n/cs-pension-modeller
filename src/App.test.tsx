@@ -536,6 +536,7 @@ import { createProjectionTable } from "./projection";
 import {
   SETTINGS_STORAGE_KEY,
   calculateDateAge,
+  calculateNormalPensionAge,
   defaultSettings,
   getTodayIsoDate,
 } from "./settings";
@@ -2683,6 +2684,7 @@ describe("App settings form", () => {
     expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-11-01",
+        sippDrawAge: calculateNormalPensionAge("1977-11-01"),
         statePensionDrawDate: "2045-08-01",
       })
     );
@@ -3737,6 +3739,16 @@ describe("App settings form", () => {
   it("can toggle additional guaranteed income in expert optional sections", () => {
     renderAcknowledgedApp();
 
+    const additionalGuaranteedIncomeToggle = screen.getByLabelText(
+      "Additional guaranteed income"
+    );
+
+    expect(additionalGuaranteedIncomeToggle).not.toBeChecked();
+    expect(
+      screen.queryByRole("button", { name: /Additional guaranteed income/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(additionalGuaranteedIncomeToggle);
     openJourneyStep(/Additional guaranteed income/i);
     fireEvent.click(
       screen.getByRole("button", { name: "Add additional income" })
@@ -3852,6 +3864,8 @@ describe("App settings form", () => {
   it("keeps a newly added blank additional income row as a draft", () => {
     renderAcknowledgedExpertResult();
 
+    openJourneyStep(/Optional sections/i);
+    fireEvent.click(screen.getByLabelText("Additional guaranteed income"));
     openJourneyStep(/Additional guaranteed income/i);
     fireEvent.click(
       screen.getByRole("button", { name: "Add additional income" })

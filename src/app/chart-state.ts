@@ -652,21 +652,25 @@ export function updateSetting({
           : key === "sippDrawAge"
             ? normalizeSippDrawAge(value as number, current.dateOfBirth)
             : normalizeSetting(key, value);
+    const updatedNormalPensionAge =
+      key === "dateOfBirth"
+        ? calculateNormalPensionAge(normalizedValue as string)
+        : current.normalPensionAge;
 
     const next = {
       ...current,
       [key]: normalizedValue,
       ...(key === "dateOfBirth"
         ? {
-            normalPensionAge: calculateNormalPensionAge(
-              normalizedValue as string
-            ),
+            normalPensionAge: updatedNormalPensionAge,
             alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
               current.alphaPensionDrawAge,
               normalizedValue as string
             ),
             sippDrawAge: normalizeSippDrawAge(
-              current.sippDrawAge,
+              current.sippDrawAge === current.normalPensionAge
+                ? updatedNormalPensionAge
+                : current.sippDrawAge,
               normalizedValue as string
             ),
             statePensionDrawDate: calculateStatePensionDrawDateFromAge(

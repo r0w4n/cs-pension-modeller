@@ -271,6 +271,7 @@ describe("retirement-income transition points", () => {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
       startDate: "2026-06-01",
+      showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "previous-employer-db",
@@ -338,6 +339,7 @@ describe("retirement-income transition points", () => {
       ...createDefaultSettings(),
       dateOfBirth: "1987-06-01",
       startDate: "2026-06-01",
+      showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "previous-employer-db",

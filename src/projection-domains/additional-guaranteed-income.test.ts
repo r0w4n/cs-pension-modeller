@@ -14,6 +14,7 @@ function createBaseSettings(
     lifeExpectancy: 70,
     projectionBasis: "real",
     inflationRateAnnual: 2.5,
+    showAdditionalGuaranteedIncome: true,
     additionalGuaranteedIncomes: [],
     ...patch,
   };

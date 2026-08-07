@@ -273,7 +273,7 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("heading", { name: "Retirement income target" })
     ).toBeVisible();
-    await expect(page.locator(".journey-progress")).toHaveText("Step 3 of 10");
+    await expect(page.locator(".journey-progress")).toHaveText("Step 3 of 9");
     await page.getByRole("button", { name: "Back" }).click();
     await expect(
       page.getByRole("heading", { name: "Personal details" })

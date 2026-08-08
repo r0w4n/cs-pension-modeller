@@ -53,6 +53,7 @@ export const defaultSettings: PensionSettings = {
   fullSalary: 42000,
   currentStatePension: statePensionDefaults.currentStatePension,
   desiredRetirementIncome: personalDetailsDefaults.desiredRetirementIncome,
+  retirementIncomeTargetBasis: "gross",
   spendingStrategyType: "FLAT",
   spendingSmile: reconcileSpendingSmilePhaseAges(
     createDefaultSpendingSmile(),

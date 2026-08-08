@@ -24,7 +24,7 @@ Feature: Modeller journeys
 
     Examples:
       | journey                              | targetStep                        | planningStep                | resultExpectation            | bridgeFundingExpectation               |
-      | Simplified retirement journey        | What yearly income would you like? | Do you have any other Civil Service pensions? | use the shared bridge answer | hide bridge funding details by default |
+      | Simplified retirement journey        | What would you like to spend each month? | Do you have any other Civil Service pensions? | use the shared bridge answer | hide bridge funding details by default |
       | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default |
 
   @simple-journey
@@ -32,9 +32,12 @@ Feature: Modeller journeys
     When the "Simplified retirement journey" journey is loaded
     Then the first journey step should be titled "A little about you"
     And the journey should not include a step titled "Alpha pension: the basics"
-    And the journey should include a step titled "What yearly income would you like?"
-    And the "What yearly income would you like?" journey step should link to the Retirement Living Standards
-    And the "What yearly income would you like?" journey step should place its support link beside the field
+    And the journey should include a step titled "What would you like to spend each month?"
+    And the "What would you like to spend each month?" journey step should contain these fields:
+      | field                                                              |
+      | How much would you like available to spend each month after tax?   |
+    And the "What would you like to spend each month?" journey step should link to the Retirement Living Standards
+    And the "What would you like to spend each month?" journey step should place its support link beside the field
 
   @simple-journey @alpha
   Scenario: Ask when the member would like to retire
@@ -43,7 +46,7 @@ Feature: Modeller journeys
     And the "What age would you like to retire?" journey step should contain these fields:
       | field                                            |
       | How old would you like to be when you retire?    |
-    And the "What yearly income would you like?" journey step should appear before the "What age would you like to retire?" journey step
+    And the "What would you like to spend each month?" journey step should appear before the "What age would you like to retire?" journey step
     And the "What age would you like to retire?" journey step should appear before the "Add your Alpha pension details" journey step
 
   @simple-journey @optional-sections
@@ -76,6 +79,15 @@ Feature: Modeller journeys
   Scenario: Do not assume pensionable earnings before the member enters them
     Given default modeller settings
     Then pensionable earnings should not have a pre-filled amount
+
+  @simple-journey @tax
+  Scenario: Compare a simple spending target with take-home pension income
+    Given a retirement spending target of 2000.00 per month after estimated tax
+    And projected taxable pension income of 25000.00 per year before tax
+    When the retirement outcome is assessed
+    Then the gross pension income should exceed the spending target
+    But the estimated take-home pension income should be below the spending target
+    And the scenario should report a shortfall against the spending target
 
   @simple-journey @optional-sections
   Scenario: Use the retirement target to estimate Added Pension after the basic projection
@@ -110,6 +122,7 @@ Feature: Modeller journeys
       | field                                                |
       | Retirement Living Standards target (£ per year)      |
       | Target retirement age                                |
+      | What does your retirement income target mean?        |
 
   @expert-journey @optional-sections
   Scenario: Exclude Alpha pension from an expert scenario

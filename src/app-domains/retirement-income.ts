@@ -227,7 +227,11 @@ export function createRetirementIncomeSeries(
       monthlyAdditionalGuaranteedIncomeTaxable:
         additionalGuaranteedIncomeTaxableAnnual / 12,
     });
-    const assessedIncomeAnnual = totalIncomeAnnual - monthlyIncomeTax * 12;
+    const assessedIncomeAnnual = getTargetBasisIncomeAnnual(
+      totalIncomeAnnual,
+      monthlyIncomeTax,
+      settings
+    );
 
     return {
       date: row.date,
@@ -263,6 +267,16 @@ export function createRetirementIncomeSeries(
   });
 
   return insertChartTransitionPoints(baseSeries, settings);
+}
+
+function getTargetBasisIncomeAnnual(
+  totalIncomeAnnual: number,
+  monthlyIncomeTax: number,
+  settings: PensionSettings
+) {
+  return settings.retirementIncomeTargetBasis === "after_tax"
+    ? totalIncomeAnnual - monthlyIncomeTax * 12
+    : totalIncomeAnnual;
 }
 
 function createFlexibleWithdrawalDiagnostics(row: ProjectionRow) {

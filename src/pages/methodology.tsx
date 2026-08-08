@@ -207,6 +207,31 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Retirement target basis</h2>
+        <p className="section-copy">
+          A retirement target has an explicit basis. A gross target is compared
+          with projected income before tax. An after-tax target is compared with
+          projected take-home income after the modeller&apos;s simplified Income
+          Tax estimate. The target, income, shortfall and surplus calculations
+          use the same basis.
+        </p>
+        <p className="section-copy">
+          The simplified journey asks how much spending money should be
+          available each month after estimated tax and shows its yearly
+          equivalent. Existing saved settings and the bridge and expert journey
+          defaults retain a gross target unless the basis is changed explicitly.
+          Selecting an after-tax target enables the tax estimate needed for the
+          comparison.
+        </p>
+        <p className="section-copy">
+          Retirement Living Standards examples describe expenditure rather than
+          gross pension income. They are starting points only: household size,
+          housing costs and personal circumstances can materially change the
+          amount needed.
+        </p>
+      </section>
+
+      <section>
         <h2>Projection basis: real and nominal values</h2>
         <p className="section-copy">
           The model can show values in either real terms or nominal terms.
@@ -934,7 +959,7 @@ export function MethodologyPage() {
           calculates guaranteed income and any withdrawals required by Annual
           percentage, Use by age or Zero at death. It then considers eligible
           target-based accounts in the saved priority order and withdraws only
-          enough to close the remaining net-income gap.
+          enough to close the remaining gap on the selected target basis.
         </p>
         <p className="section-copy">
           The coordinator consumes the active target produced by the target
@@ -944,11 +969,12 @@ export function MethodologyPage() {
           without changing their saved priority.
         </p>
         <p className="section-copy">
-          ISA and LISA withdrawals meet a net gap directly. For taxable SIPP and
-          Civil Service AVC withdrawals, the model repeatedly recalculates
-          Income Tax to estimate the gross amount needed. This includes the
-          selected tax-free withdrawal share and the modelled allowance and tax
-          bands.
+          For an after-tax target, ISA and LISA withdrawals meet the gap
+          directly. For taxable SIPP and Civil Service AVC withdrawals, the
+          model repeatedly recalculates Income Tax to estimate the gross amount
+          needed. This includes the selected tax-free withdrawal share and the
+          modelled allowance and tax bands. A before-tax target is instead
+          compared directly with gross withdrawals.
         </p>
         <p className="section-copy">
           Existing withdrawal strategies remain explicit instructions and are

@@ -1,4 +1,8 @@
-import { createProjectionTable, generatePensionSummary } from "../projection";
+import {
+  createProjectionTable,
+  generatePensionSummary,
+  type PensionSummary,
+} from "../projection";
 import { normalizeSetting, type PensionSettings } from "../settings";
 
 const REFERENCE_MONTHLY_CONTRIBUTION = 100;
@@ -20,10 +24,14 @@ export function createAddedPensionGoalBasis(
     ...settings,
     alphaAddedPensionMonthly: REFERENCE_MONTHLY_CONTRIBUTION,
   });
-  const projectedMonthlyIncome =
-    baselineSummary?.retirementIncome.totalMonthlyIncome ?? 0;
-  const referenceMonthlyIncome =
-    referenceSummary?.retirementIncome.totalMonthlyIncome ?? 0;
+  const projectedMonthlyIncome = getTargetBasisMonthlyIncome(
+    baselineSummary,
+    settings
+  );
+  const referenceMonthlyIncome = getTargetBasisMonthlyIncome(
+    referenceSummary,
+    settings
+  );
 
   return {
     targetMonthlyIncome: settings.desiredRetirementIncome / 12,
@@ -34,6 +42,25 @@ export function createAddedPensionGoalBasis(
         REFERENCE_MONTHLY_CONTRIBUTION
     ),
   };
+}
+
+function getTargetBasisMonthlyIncome(
+  summary: PensionSummary | null,
+  settings: PensionSettings
+) {
+  if (!summary) {
+    return 0;
+  }
+
+  if (settings.retirementIncomeTargetBasis === "after_tax") {
+    return summary.retirementIncome.totalMonthlyIncome;
+  }
+
+  return summary.retirementIncome.sources.reduce(
+    (total, source) =>
+      source.key === "incomeTax" ? total : total + source.monthlyIncome,
+    0
+  );
 }
 
 export function estimateAddedPensionMonthlyContribution(

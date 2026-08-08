@@ -106,6 +106,7 @@ Feature: Target-based flexible-fund withdrawals
 
   Scenario: Gross up a taxable target-based withdrawal
     Given the annual income target is 12000.00
+    And the income target is after estimated tax
     And Income Tax applies with no Personal Allowance
     And a SIPP with 50000.00 uses the target-based strategy
     When the flexible withdrawal projection is calculated

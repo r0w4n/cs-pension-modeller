@@ -629,6 +629,9 @@ export function updateSetting({
     setSettings((current) => ({
       ...current,
       [key]: nextValue,
+      ...(key === "taxationEnabled" && !nextValue
+        ? { retirementIncomeTargetBasis: "gross" as const }
+        : {}),
     }));
 
     return;
@@ -656,6 +659,10 @@ export function updateSetting({
     const next = {
       ...current,
       [key]: normalizedValue,
+      ...(key === "retirementIncomeTargetBasis" &&
+      normalizedValue === "after_tax"
+        ? { taxationEnabled: true }
+        : {}),
       ...(key === "dateOfBirth"
         ? {
             normalPensionAge: calculateNormalPensionAge(

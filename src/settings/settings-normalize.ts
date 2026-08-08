@@ -337,6 +337,10 @@ export function normalizeSetting<K extends keyof PensionSettings>(
         value as PensionSettings["projectionBasis"],
         normalizeNumericSetting
       ) as PensionSettings[K];
+    case "retirementIncomeTargetBasis":
+      return (
+        value === "after_tax" ? "after_tax" : "gross"
+      ) as PensionSettings[K];
     case "spendingStrategyType":
       return (
         value === "SPENDING_SMILE" ? "SPENDING_SMILE" : "FLAT"
@@ -422,6 +426,10 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     "desiredRetirementIncome",
     settings.desiredRetirementIncome
   );
+  const retirementIncomeTargetBasis = normalizeSetting(
+    "retirementIncomeTargetBasis",
+    settings.retirementIncomeTargetBasis
+  );
 
   return {
     startDate: normalizeSetting("startDate", settings.startDate),
@@ -455,7 +463,9 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "additionalGuaranteedIncomes",
       settings.additionalGuaranteedIncomes
     ),
-    taxationEnabled: normalizeTaxationBooleanSetting(settings.taxationEnabled),
+    taxationEnabled:
+      retirementIncomeTargetBasis === "after_tax" ||
+      normalizeTaxationBooleanSetting(settings.taxationEnabled),
     partialRetirementEnabled: Boolean(settings.partialRetirementEnabled),
     partialRetirementStartAge: normalizeSetting(
       "partialRetirementStartAge",
@@ -471,6 +481,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.currentStatePension
     ),
     desiredRetirementIncome,
+    retirementIncomeTargetBasis,
     spendingStrategyType:
       settings.spendingStrategyType === "SPENDING_SMILE"
         ? "SPENDING_SMILE"

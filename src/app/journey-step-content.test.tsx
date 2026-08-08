@@ -150,6 +150,8 @@ describe("JourneyStepContent", () => {
     viewModel.settings = {
       ...viewModel.settings,
       desiredRetirementIncome: 60000,
+      retirementIncomeTargetBasis: "after_tax",
+      taxationEnabled: true,
     };
 
     render(
@@ -188,12 +190,14 @@ describe("JourneyStepContent", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Your retirement income target")
+      screen.getByText("Your target spending after estimated tax")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Current projected retirement income")
+      screen.getByText("Estimated take-home pension income")
     ).toBeInTheDocument();
-    expect(screen.getByText("Difference")).toBeInTheDocument();
+    expect(
+      screen.getByText("Estimated monthly spending gap")
+    ).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("radio", {

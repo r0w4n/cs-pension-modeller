@@ -37,6 +37,7 @@ import {
   type TargetBasedWithdrawalPreview,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
+  type JourneyCurrencyFieldPresentation,
   type JourneyOptionalQuestion,
   type JourneyOptionalSectionCopy,
   type JourneyStepDefinition,
@@ -533,6 +534,7 @@ function renderFieldsStep(
         step.fieldIds,
         step.fieldLabels,
         step.fieldDescriptions,
+        step.currencyFieldPresentation,
         step.hideFieldInfoLinks
       )}
       settings={settings}
@@ -652,6 +654,8 @@ function AddedPensionGapEditor({
   onChange: SettingsFieldOnChange;
   onAnswer: (settingId: OptionalQuestionSettingId, enabled: boolean) => void;
 }) {
+  const usesAfterTaxTarget =
+    settings.retirementIncomeTargetBasis === "after_tax";
   const basis = useMemo(
     () => createAddedPensionGoalBasis(settings),
     [settings]
@@ -697,28 +701,44 @@ function AddedPensionGapEditor({
         </h4>
         <dl>
           <div>
-            <dt>Your retirement income target</dt>
+            <dt>
+              {usesAfterTaxTarget
+                ? "Your target spending after estimated tax"
+                : "Your retirement income target before tax"}
+            </dt>
             <dd>{formatWholePounds(basis.targetMonthlyIncome)} a month</dd>
           </div>
           <div>
-            <dt>Current projected retirement income</dt>
+            <dt>
+              {usesAfterTaxTarget
+                ? "Estimated take-home pension income"
+                : "Current projected retirement income before tax"}
+            </dt>
             <dd>{formatWholePounds(basis.projectedMonthlyIncome)} a month</dd>
           </div>
           <div>
-            <dt>Difference</dt>
+            <dt>
+              {usesAfterTaxTarget
+                ? "Estimated monthly spending gap"
+                : "Monthly income gap before tax"}
+            </dt>
             <dd>{formatWholePounds(monthlyGap)} a month</dd>
           </div>
         </dl>
         <p>
-          These are modelled amounts before tax, based on the information and
-          assumptions entered.
+          {usesAfterTaxTarget
+            ? "These are modelled amounts after estimated Income Tax, based on the information and assumptions entered."
+            : "These are modelled amounts before tax, based on the information and assumptions entered."}
         </p>
       </section>
 
       {monthlyGap <= 0 ? (
         <p className="added-pension-gap-message">
-          This projection already meets or exceeds the retirement income target,
-          so the modeller has not added an Added Pension payment.
+          This projection already meets or exceeds the{" "}
+          {usesAfterTaxTarget
+            ? "target spending after estimated tax"
+            : "retirement income target before tax"}
+          , so the modeller has not added an Added Pension payment.
         </p>
       ) : basis.monthlyIncomePerContributionPound <= 0 ? (
         <p className="added-pension-gap-message" role="status">
@@ -740,6 +760,7 @@ function AddedPensionGapEditor({
             estimatedMonthlyIncrease={estimatedMonthlyIncrease}
             remainingMonthlyGap={remainingMonthlyGap}
             projectedMonthlyIncome={basis.projectedMonthlyIncome}
+            usesAfterTaxTarget={usesAfterTaxTarget}
             onChange={onChange}
           />
         </OptionalFieldsQuestion>
@@ -755,6 +776,7 @@ function AddedPensionGapEstimate({
   estimatedMonthlyIncrease,
   remainingMonthlyGap,
   projectedMonthlyIncome,
+  usesAfterTaxTarget,
   onChange,
 }: {
   settings: PensionSettings;
@@ -763,6 +785,7 @@ function AddedPensionGapEstimate({
   estimatedMonthlyIncrease: number;
   remainingMonthlyGap: number;
   projectedMonthlyIncome: number;
+  usesAfterTaxTarget: boolean;
   onChange: SettingsFieldOnChange;
 }) {
   useEffect(() => {
@@ -791,7 +814,7 @@ function AddedPensionGapEstimate({
         {formatWholePounds(estimatedMonthlyIncrease)} a month of pension income,
         giving a projected total of{" "}
         {formatWholePounds(projectedMonthlyIncome + estimatedMonthlyIncrease)} a
-        month before tax.
+        month {usesAfterTaxTarget ? "after estimated tax" : "before tax"}.
       </p>
       {remainingMonthlyGap > 0 ? (
         <p>
@@ -977,6 +1000,7 @@ function getFieldsByIds(
   fieldIds: readonly FieldDefinition["id"][],
   fieldLabels: JourneyFieldLabels = {},
   fieldDescriptions: JourneyFieldDescriptions = {},
+  currencyFieldPresentation: JourneyCurrencyFieldPresentation = {},
   hideFieldInfoLinks = false
 ) {
   return fieldIds
@@ -991,6 +1015,9 @@ function getFieldsByIds(
 
       return {
         ...field,
+        ...(field.type === "currency-input"
+          ? currencyFieldPresentation[field.id]
+          : {}),
         ...(fieldLabels[fieldId] ? { label: fieldLabels[fieldId] } : {}),
         ...(fieldDescriptions[fieldId]
           ? { description: fieldDescriptions[fieldId] }

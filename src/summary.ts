@@ -571,9 +571,10 @@ function createAgeRangeSnapshot(
   );
   const annualIncomeBeforeTax = row.totalMonthlyIncomeBeforeTax * 12;
   const annualIncomeAfterTax = row.totalMonthlyNetIncome * 12;
-  const annualAssessedIncome = settings.taxationEnabled
-    ? annualIncomeAfterTax
-    : annualIncomeBeforeTax;
+  const annualAssessedIncome =
+    settings.retirementIncomeTargetBasis === "after_tax"
+      ? annualIncomeAfterTax
+      : annualIncomeBeforeTax;
 
   return {
     startAge: row.age + row.ageMonths / 12,
@@ -1243,7 +1244,8 @@ function buildRetirementIncomeSummary({
           ),
         ]
       : []),
-    ...(settings.taxationEnabled
+    ...(settings.taxationEnabled ||
+    settings.retirementIncomeTargetBasis === "after_tax"
       ? [
           createRetirementIncomeSource(
             "incomeTax",

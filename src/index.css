@@ -1511,6 +1511,10 @@ h3 {
   grid-column: 1 / -1;
 }
 
+.field-card--full-width {
+  grid-column: 1 / -1;
+}
+
 .flexible-withdrawal-priority h4,
 .flexible-withdrawal-priority h5 {
   margin: 0;

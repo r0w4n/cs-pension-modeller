@@ -48,6 +48,8 @@ export function PensionSummarySection({
   }
 
   const outcomeBanner = buildRetirementOutcomeBanner(activeResult);
+  const usesAfterTaxTarget =
+    activeResult.scenario.settings.retirementIncomeTargetBasis === "after_tax";
 
   return (
     <SummarySection
@@ -98,7 +100,9 @@ export function PensionSummarySection({
               <h3>Income by age range</h3>
               <p className="section-copy">
                 Each row groups ages where the modelled income sources are the
-                same. Income and target values use the start of the age range.
+                same. Income and target values use the start of the age range
+                and are shown{" "}
+                {usesAfterTaxTarget ? "after estimated tax" : "before tax"}.
               </p>
               <div
                 className="summary-table-shell"
@@ -110,9 +114,21 @@ export function PensionSummarySection({
                     <tr>
                       <th scope="col">Age range</th>
                       <th scope="col">Sources</th>
-                      <th scope="col">Income</th>
-                      <th scope="col">Target</th>
-                      <th scope="col">Difference</th>
+                      <th scope="col">
+                        {usesAfterTaxTarget
+                          ? "Estimated take-home income"
+                          : "Income before tax"}
+                      </th>
+                      <th scope="col">
+                        {usesAfterTaxTarget
+                          ? "Target spending after estimated tax"
+                          : "Target income before tax"}
+                      </th>
+                      <th scope="col">
+                        {usesAfterTaxTarget
+                          ? "Estimated spending difference"
+                          : "Income difference before tax"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

@@ -17,6 +17,21 @@ describe("projection tax domain", () => {
     ).toBe(0);
   });
 
+  it("estimates tax when an after-tax spending target requires it", () => {
+    expect(
+      calculateMonthlyIncomeTax({
+        settings: {
+          ...defaultSettings,
+          taxationEnabled: false,
+          retirementIncomeTargetBasis: "after_tax",
+        },
+        monthlyAlphaPension: 25000 / 12,
+        monthlyStatePension: 0,
+        monthlySippPension: 0,
+      })
+    ).toBeGreaterThan(0);
+  });
+
   it("calculates annual Income Tax using the standard assumptions", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

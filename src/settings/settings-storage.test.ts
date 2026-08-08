@@ -46,6 +46,7 @@ describe("settings-storage", () => {
     const settings = {
       ...createDefaultSettings(),
       desiredRetirementIncome: 60000,
+      retirementIncomeTargetBasis: "after_tax" as const,
       sippHasProtectedPensionAge: true,
       sippProtectedPensionAge: 50,
       startDate: "2026-05-01",
@@ -61,6 +62,7 @@ describe("settings-storage", () => {
 
     const loaded = loadStoredSettings();
     expect(loaded.desiredRetirementIncome).toBe(60000);
+    expect(loaded.retirementIncomeTargetBasis).toBe("after_tax");
     expect(loaded.sippHasProtectedPensionAge).toBe(true);
     expect(loaded.sippProtectedPensionAge).toBe(50);
     expect(loaded.startDate).toBe("2026-04-25");
@@ -124,6 +126,7 @@ describe("settings-storage", () => {
 
     expect(loaded.requirementAge).toBe(61);
     expect(loaded.desiredRetirementIncome).toBe(60000);
+    expect(loaded.retirementIncomeTargetBasis).toBe("gross");
   });
 
   it("does not infer protected SIPP access from legacy SIPP draw age", () => {

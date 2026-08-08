@@ -21,6 +21,7 @@ import {
   type IsaWithdrawalStrategy,
   type LisaWithdrawalStrategy,
   type ProjectionBasis,
+  type RetirementIncomeTargetBasis,
   type CsAvcWithdrawalStrategy,
   type SippWithdrawalStrategy,
   type SpendingStrategyType,
@@ -177,6 +178,9 @@ function coerceSettings(
     ),
     fullSalary: coerceNumber(input.fullSalary),
     desiredRetirementIncome: coerceNumber(input.desiredRetirementIncome),
+    retirementIncomeTargetBasis: coerceString(
+      input.retirementIncomeTargetBasis
+    ) as RetirementIncomeTargetBasis | undefined,
     spendingStrategyType: coerceString(input.spendingStrategyType) as
       SpendingStrategyType | undefined,
     spendingSmile:

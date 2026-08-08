@@ -23,6 +23,7 @@ export type {
   LisaWithdrawalStrategy,
   SippTaxReliefRate,
   ProjectionBasis,
+  RetirementIncomeTargetBasis,
   SpendingSmileStrategy,
   SpendingStrategyType,
   ClassicCalculationMode,
@@ -30,6 +31,7 @@ export type {
   PensionSettings,
   PensionValidationIssue,
 } from "./settings/settings-types";
+export { usesAfterTaxRetirementIncomeTarget } from "./settings/settings-types";
 export {
   FLEXIBLE_FUND_ACCOUNT_CONFIG,
   FLEXIBLE_FUND_ACCOUNT_IDS,

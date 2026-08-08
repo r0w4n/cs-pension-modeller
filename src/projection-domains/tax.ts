@@ -1,4 +1,7 @@
-import type { PensionSettings } from "../settings";
+import {
+  usesAfterTaxRetirementIncomeTarget,
+  type PensionSettings,
+} from "../settings";
 
 export function calculateMonthlyIncomeTax(input: {
   settings: PensionSettings;
@@ -25,7 +28,10 @@ export function calculateMonthlyIncomeTax(input: {
     monthlyAdditionalGuaranteedIncomeTaxable = 0,
   } = input;
 
-  if (!settings.taxationEnabled) {
+  if (
+    !settings.taxationEnabled &&
+    !usesAfterTaxRetirementIncomeTarget(settings)
+  ) {
     return 0;
   }
 
@@ -50,7 +56,11 @@ export function calculateAnnualIncomeTax(
   settings: PensionSettings,
   annualTaxableIncome: number
 ) {
-  if (!settings.taxationEnabled || annualTaxableIncome <= 0) {
+  if (
+    (!settings.taxationEnabled &&
+      !usesAfterTaxRetirementIncomeTarget(settings)) ||
+    annualTaxableIncome <= 0
+  ) {
     return 0;
   }
 

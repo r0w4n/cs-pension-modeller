@@ -82,34 +82,34 @@ function applyTargetBasedWithdrawals(input: {
 
   for (const accountId of targetAccounts) {
     const availableBalance = Math.max(0, balances[accountId]);
-    const currentNetIncome = calculateMonthlyNetIncome({
+    const currentAssessedIncome = calculateMonthlyTargetBasisIncome({
       row,
       settings,
       withdrawals,
     });
-    const remainingNetRequirement = Math.max(
+    const remainingAssessedRequirement = Math.max(
       0,
-      monthlyTarget - currentNetIncome
+      monthlyTarget - currentAssessedIncome
     );
     const canDraw =
       isAccountShown(settings, accountId) &&
       row.date >= accessDates[accountId] &&
       availableBalance > 0 &&
-      remainingNetRequirement > MONEY_TOLERANCE;
+      remainingAssessedRequirement > MONEY_TOLERANCE;
     const grossWithdrawal = canDraw
       ? solveGrossWithdrawal({
           accountId,
           availableBalance,
-          remainingNetRequirement,
+          remainingNetRequirement: remainingAssessedRequirement,
           calculateNetIncome: (candidateWithdrawal) =>
-            calculateMonthlyNetIncome({
+            calculateMonthlyTargetBasisIncome({
               row,
               settings,
               withdrawals: {
                 ...withdrawals,
                 [accountId]: candidateWithdrawal,
               },
-            }) - currentNetIncome,
+            }) - currentAssessedIncome,
         })
       : 0;
 
@@ -377,6 +377,24 @@ function calculateMonthlyNetIncome(input: {
 
   return (
     grossIncome - calculateTax(input.row, input.settings, input.withdrawals)
+  );
+}
+
+function calculateMonthlyTargetBasisIncome(input: {
+  row: ProjectionRow;
+  settings: PensionSettings;
+  withdrawals: MonthlyWithdrawals;
+}) {
+  if (input.settings.retirementIncomeTargetBasis === "after_tax") {
+    return calculateMonthlyNetIncome(input);
+  }
+
+  return (
+    getGuaranteedMonthlyGrossIncome(input.row) +
+    Object.values(input.withdrawals).reduce(
+      (total, withdrawal) => total + withdrawal,
+      0
+    )
   );
 }
 

@@ -70,7 +70,7 @@ export function useProjectionCalculations({
     ? buildIncomeAgeRangeItems(
         pensionSummary,
         retirementIncomeDisplay,
-        effectiveSettings.taxationEnabled
+        effectiveSettings.retirementIncomeTargetBasis
       )
     : [];
 

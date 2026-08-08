@@ -437,6 +437,13 @@ Given(
 );
 
 Given(
+  "the income target is after estimated tax",
+  function (this: FlexibleWithdrawalWorld) {
+    getSettings(this).retirementIncomeTargetBasis = "after_tax";
+  }
+);
+
+Given(
   "guaranteed annual net income is {float}",
   function (this: FlexibleWithdrawalWorld, amount: number) {
     const income = createDefaultAdditionalGuaranteedIncome(61);

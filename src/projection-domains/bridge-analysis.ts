@@ -174,6 +174,10 @@ export function generateRetirementBridgeAnalysis(
   settings: PensionSettings,
   options: RetirementBridgeAnalysisOptions = {}
 ): RetirementBridgeAnalysis {
+  const targetAssessmentSettings = {
+    ...settings,
+    taxationEnabled: settings.retirementIncomeTargetBasis === "after_tax",
+  };
   const retirementDate = addYears(
     settings.dateOfBirth,
     settings.requirementAge
@@ -250,7 +254,7 @@ export function generateRetirementBridgeAnalysis(
       shouldApplyGrowth: index > 0,
     });
     const secureIncome = calculateMonthlySecureIncome({
-      settings,
+      settings: targetAssessmentSettings,
       pensionRows,
       rowDate,
     });
@@ -271,7 +275,7 @@ export function generateRetirementBridgeAnalysis(
       remainingShortfall: shortfall,
       rowDate,
       secureIncome,
-      settings,
+      settings: targetAssessmentSettings,
       sippAccessDate,
     });
 

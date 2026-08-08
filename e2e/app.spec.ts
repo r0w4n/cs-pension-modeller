@@ -88,14 +88,17 @@ test.describe("app end-to-end journeys", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "simple");
 
-    await clickNextAndExpectStep(page, "What yearly income would you like?");
+    await clickNextAndExpectStep(
+      page,
+      "What would you like to spend each month?"
+    );
     await expect(
       page.getByRole("link", { name: /Help me choose a retirement income/i })
     ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
     await fillCurrency(
       page,
-      "How much would you like each year in retirement?",
-      "32000"
+      "How much would you like available to spend each month after tax?",
+      "2000"
     );
     await clickNextAndExpectStep(page, "What age would you like to retire?");
     await fillExactNumber(
@@ -145,10 +148,12 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toBeVisible();
     await expect(
-      page.getByText("Current projected retirement income")
+      page.getByText("Estimated take-home pension income")
     ).toBeVisible();
     await expect(
-      page.getByText(/already meets or exceeds the retirement income target/i)
+      page.getByText(
+        /already meets or exceeds the target spending after estimated tax/i
+      )
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
@@ -343,7 +348,11 @@ test.describe("app end-to-end journeys", () => {
     });
     await expect(retirementAgeControl).toHaveValue("68");
 
-    await page.getByRole("button", { name: "£45,400" }).click();
+    await fillCurrency(
+      page,
+      "Retirement Living Standards target (£ per year)",
+      "45400"
+    );
 
     const targetControl = page.getByRole("spinbutton", {
       name: "Retirement Living Standards target (£ per year)",

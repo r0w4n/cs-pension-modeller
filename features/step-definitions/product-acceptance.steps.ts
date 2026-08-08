@@ -1328,6 +1328,101 @@ Given("default modeller settings", function (this: ProductAcceptanceWorld) {
   this.settings = createDefaultSettings();
 });
 
+Given(
+  "a retirement spending target of {float} per month after estimated tax",
+  function (this: ProductAcceptanceWorld, monthlyTarget: number) {
+    this.settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-06-01",
+      dateOfBirth: "1987-06-01",
+      requirementAge: 68,
+      lifeExpectancy: 80,
+      desiredRetirementIncome: monthlyTarget * 12,
+      retirementIncomeTargetBasis: "after_tax",
+      taxationEnabled: true,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+      showAdditionalGuaranteedIncome: true,
+      additionalGuaranteedIncomes: [],
+    };
+  }
+);
+
+Given(
+  "projected taxable pension income of {float} per year before tax",
+  function (this: ProductAcceptanceWorld, annualIncome: number) {
+    this.settings = {
+      ...getSettings(this),
+      additionalGuaranteedIncomes: [
+        {
+          id: "bdd-taxable-pension",
+          name: "Taxable pension",
+          annualAmount: annualIncome,
+          startAge: 68,
+          endAge: null,
+          indexation: "none",
+          taxable: true,
+        },
+      ],
+    };
+  }
+);
+
+When(
+  "the retirement outcome is assessed",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    const scenario = {
+      id: "bdd-after-tax-target",
+      name: "After-tax target",
+      settings,
+      createdAt: "",
+      updatedAt: "",
+    };
+
+    this.comparisonResults = [
+      createComparisonResult(scenario, JSON.stringify(settings)),
+    ];
+  }
+);
+
+Then(
+  "the gross pension income should exceed the spending target",
+  function (this: ProductAcceptanceWorld) {
+    const range =
+      this.comparisonResults?.[0]?.summary.retirementIncome.ageRanges[0];
+    assertCondition(range, "Expected a retirement income age range");
+    assertCondition(range.annualIncomeBeforeTax > range.annualTargetIncome);
+  }
+);
+
+Then(
+  "the estimated take-home pension income should be below the spending target",
+  function (this: ProductAcceptanceWorld) {
+    const range =
+      this.comparisonResults?.[0]?.summary.retirementIncome.ageRanges[0];
+    assertCondition(range, "Expected a retirement income age range");
+    assertCondition(range.annualIncomeAfterTax < range.annualTargetIncome);
+  }
+);
+
+Then(
+  "the scenario should report a shortfall against the spending target",
+  function (this: ProductAcceptanceWorld) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertCondition(result.targetMissMonths > 0);
+  }
+);
+
 Then(
   "pensionable earnings should not have a pre-filled amount",
   function (this: ProductAcceptanceWorld) {

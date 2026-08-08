@@ -99,6 +99,7 @@ describe("flexible withdrawal coordination", () => {
       createSettings({
         desiredRetirementIncome: 12_000,
         taxationEnabled: true,
+        retirementIncomeTargetBasis: "after_tax",
         taxPersonalAllowance: 0,
         taxPersonalAllowanceTaperThreshold: 200_000,
         taxBasicRateLimit: 100_000,
@@ -124,6 +125,7 @@ describe("flexible withdrawal coordination", () => {
       createSettings({
         desiredRetirementIncome: 12_000,
         taxationEnabled: true,
+        retirementIncomeTargetBasis: "after_tax",
         taxPersonalAllowance: 0,
         taxPersonalAllowanceTaperThreshold: 200_000,
         taxBasicRateLimit: 100_000,

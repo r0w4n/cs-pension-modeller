@@ -22,6 +22,7 @@ export {
   isOptionalSectionToggleKey,
   SPENDING_SMILE_EDITOR_STEP_ID,
   type JourneyDefinition,
+  type JourneyCurrencyFieldPresentation,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyOptionalQuestion,

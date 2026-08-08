@@ -88,7 +88,6 @@ export function useComparisonState({
         retirementIncomeDisplay,
         retirementIncomeSeries,
         scenarios,
-        taxationEnabled: settings.taxationEnabled,
         hideBridgeFundingSection,
       }),
     [
@@ -98,7 +97,6 @@ export function useComparisonState({
       retirementIncomeDisplay,
       retirementIncomeSeries,
       scenarios,
-      settings.taxationEnabled,
       hideBridgeFundingSection,
     ]
   );
@@ -204,7 +202,6 @@ export function buildComparisonPanelData({
   retirementIncomeDisplay,
   retirementIncomeSeries,
   scenarios,
-  taxationEnabled,
   hideBridgeFundingSection = false,
 }: {
   comparisonResultCache: ComparisonResultCache | undefined;
@@ -213,7 +210,6 @@ export function buildComparisonPanelData({
   retirementIncomeDisplay?: RetirementIncomeDisplay;
   retirementIncomeSeries?: RetirementIncomePoint[];
   scenarios: ComparisonScenario[];
-  taxationEnabled: boolean;
   hideBridgeFundingSection?: boolean;
 }): ComparisonPanelData {
   const savedBaseResults = scenarios.map((scenario) =>
@@ -249,7 +245,7 @@ export function buildComparisonPanelData({
     incomeAgeRangeItems: buildIncomeAgeRangeSummary(
       activeResult,
       retirementIncomeDisplay,
-      taxationEnabled
+      activeResult?.scenario.settings.retirementIncomeTargetBasis ?? "gross"
     ),
   };
 }
@@ -257,7 +253,7 @@ export function buildComparisonPanelData({
 function buildIncomeAgeRangeSummary(
   activeResult: ComparisonResult | null,
   retirementIncomeDisplay: RetirementIncomeDisplay | undefined,
-  taxationEnabled: boolean
+  targetBasis: PensionSettings["retirementIncomeTargetBasis"]
 ) {
   if (!activeResult || !retirementIncomeDisplay) {
     return [] as IncomeAgeRangeItem[];
@@ -266,6 +262,6 @@ function buildIncomeAgeRangeSummary(
   return buildIncomeAgeRangeItems(
     activeResult.summary,
     retirementIncomeDisplay,
-    taxationEnabled
+    targetBasis
   );
 }

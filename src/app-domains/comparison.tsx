@@ -25,6 +25,7 @@ import {
   writeStorageItem,
   type FlexibleWithdrawalStrategy,
   type PensionSettings,
+  type RetirementIncomeTargetBasis,
 } from "../settings";
 import {
   addYearsToIsoDate,
@@ -249,7 +250,10 @@ export function createComparisonResult(
     scenario.settings,
     retirementDate
   );
-  const annualIncome = summary.retirementIncome.totalAnnualIncome;
+  const annualIncome = getTargetBasisAnnualIncome(
+    summary,
+    scenario.settings.retirementIncomeTargetBasis
+  );
   const statePensionAge = calculateStatePensionDrawAge(
     scenario.settings.dateOfBirth,
     scenario.settings.statePensionDrawDate
@@ -299,12 +303,18 @@ export function createComparisonResult(
     ),
     retirementAnnualIncome: findAnnualIncomeAtAge(
       rows,
-      scenario.settings.requirementAge
+      scenario.settings.requirementAge,
+      scenario.settings.retirementIncomeTargetBasis
     ),
-    statePensionAnnualIncome: findAnnualIncomeAtAge(rows, statePensionAge),
+    statePensionAnnualIncome: findAnnualIncomeAtAge(
+      rows,
+      statePensionAge,
+      scenario.settings.retirementIncomeTargetBasis
+    ),
     lifeExpectancyAnnualIncome: findAnnualIncomeAtAge(
       rows,
-      scenario.settings.lifeExpectancy
+      scenario.settings.lifeExpectancy,
+      scenario.settings.retirementIncomeTargetBasis
     ),
     targetMissMonths: countTargetMissMonths(rows, scenario.settings),
   };
@@ -681,7 +691,9 @@ export function buildComparisonTableRows(
       [
         "Tax basis",
         (result) =>
-          result.scenario.settings.taxationEnabled ? "After tax" : "Before tax",
+          result.scenario.settings.retirementIncomeTargetBasis === "after_tax"
+            ? "Target spending after estimated tax"
+            : "Target income before tax",
       ],
     ]),
   ]
@@ -1367,15 +1379,15 @@ export function buildRetirementOutcomeBanner(
 export function buildIncomeAgeRangeItems(
   summary: PensionSummary,
   display: RetirementIncomeDisplay,
-  taxationEnabled: boolean
+  targetBasis: RetirementIncomeTargetBasis
 ): IncomeAgeRangeItem[] {
   return summary.retirementIncome.ageRanges.map((range) => {
     const income =
       display === "monthly"
-        ? taxationEnabled
+        ? targetBasis === "after_tax"
           ? range.monthlyIncomeAfterTax
           : range.monthlyIncomeBeforeTax
-        : taxationEnabled
+        : targetBasis === "after_tax"
           ? range.annualIncomeAfterTax
           : range.annualIncomeBeforeTax;
     const target =
@@ -1410,20 +1422,22 @@ export function buildIncomeAgeRangeItems(
 
 function buildOnTrackOutcomeMessage(result: ComparisonResult) {
   const settings = result.scenario.settings;
+  const targetDescription =
+    settings.retirementIncomeTargetBasis === "after_tax"
+      ? "target spending after estimated tax"
+      : "target income before tax";
   const sentences = [
-    `You can retire at ${formatDecimalAge(
-      settings.requirementAge
-    )} and meet your target income of ${formatCurrencyWholePerYear(
+    `Based on the information entered, this scenario appears to provide your ${targetDescription} of ${formatCurrencyWholePerYear(
       result.annualTarget
-    )} ${formatProjectionBasisPhrase(settings)} until age ${formatDecimalAge(
-      settings.lifeExpectancy
-    )}.`,
+    )} ${formatProjectionBasisPhrase(settings)} from age ${formatDecimalAge(
+      settings.requirementAge
+    )} until age ${formatDecimalAge(settings.lifeExpectancy)}.`,
     formatBridgeFundingSentence(result),
     formatCivilServicePensionStartSentence(result),
     formatStatePensionStartSentence(result),
   ];
 
-  return `On track. ${sentences.filter(Boolean).join(" ")}`;
+  return sentences.filter(Boolean).join(" ");
 }
 
 function buildShortfallOutcomeMessage(
@@ -1442,9 +1456,14 @@ function buildShortfallOutcomeMessage(
         )} ${formatProjectionBasisPhrase(settings)}.`
       : "";
 
+  const targetDescription =
+    settings.retirementIncomeTargetBasis === "after_tax"
+      ? "target spending after estimated tax"
+      : "target income before tax";
+
   return `Shortfall from age ${formatDecimalAge(
     firstShortfallAge
-  )}. This plan does not meet your target income of ${formatCurrencyWholePerYear(
+  )}. Based on the information entered, this scenario does not provide your ${targetDescription} of ${formatCurrencyWholePerYear(
     targetIncome
   )} through to age ${formatDecimalAge(
     settings.lifeExpectancy
@@ -1622,10 +1641,35 @@ function findPotDepletedAge(
   return depletionAge;
 }
 
-function findAnnualIncomeAtAge(rows: ProjectionRow[], targetAge: number) {
+function findAnnualIncomeAtAge(
+  rows: ProjectionRow[],
+  targetAge: number,
+  targetBasis: RetirementIncomeTargetBasis
+) {
   const row = findRowAtAge(rows, targetAge);
 
-  return (row?.totalMonthlyNetIncome ?? 0) * 12;
+  return (
+    ((targetBasis === "after_tax"
+      ? row?.totalMonthlyNetIncome
+      : row?.totalMonthlyIncomeBeforeTax) ?? 0) * 12
+  );
+}
+
+function getTargetBasisAnnualIncome(
+  summary: PensionSummary,
+  targetBasis: RetirementIncomeTargetBasis
+) {
+  if (targetBasis === "after_tax") {
+    return summary.retirementIncome.totalAnnualIncome;
+  }
+
+  return (
+    summary.retirementIncome.sources.reduce(
+      (total, source) =>
+        source.key === "incomeTax" ? total : total + source.monthlyIncome,
+      0
+    ) * 12
+  );
 }
 
 function findRowAtAge(rows: ProjectionRow[], targetAge: number) {

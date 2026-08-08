@@ -150,6 +150,8 @@ export type CurrencyInputField = {
     label: string;
     description?: string;
   }[];
+  displayDivisor?: number;
+  showAnnualEquivalent?: boolean;
   description?: string;
   infoUrl?: string;
   infoLinkText?: string;
@@ -159,6 +161,7 @@ export type CurrencyInputField = {
 export type SelectField = {
   id:
     | "projectionBasis"
+    | "retirementIncomeTargetBasis"
     | "alphaAddedPensionFactorType"
     | "classicCalculationMode"
     | "classicFinalSalaryLink"
@@ -176,6 +179,7 @@ export type SelectField = {
     value:
       | PensionSettings["sippTaxReliefRate"]
       | PensionSettings["projectionBasis"]
+      | PensionSettings["retirementIncomeTargetBasis"]
       | PensionSettings["alphaAddedPensionFactorType"]
       | PensionSettings["classicCalculationMode"]
       | PensionSettings["classicFinalSalaryLink"]
@@ -184,6 +188,7 @@ export type SelectField = {
     label: string;
   }[];
   description?: string;
+  fullWidth?: boolean;
   infoUrl?: string;
   infoLinkText?: string;
   infoLinks?: FieldInfoLink[];
@@ -247,34 +252,8 @@ export const fieldGroups: FieldGroup[] = [
         max: 200000,
         step: 1,
         format: "currency",
-        presets: [
-          {
-            value: 11250,
-            label: "£11,250",
-          },
-          {
-            value: 13900,
-            label: "£13,900",
-          },
-          {
-            value: 22700,
-            label: "£22,700",
-          },
-          {
-            value: 31350,
-            label: "£31,350",
-          },
-          {
-            value: 32700,
-            label: "£32,700",
-          },
-          {
-            value: 45400,
-            label: "£45,400",
-          },
-        ],
         description:
-          "Your underlying annual spending goal before the modeller applies any tax setting or Go-Go, Slow-Go, No-Go phase percentage. The presets come from Retirement Living Standards benchmarks, but your own housing, care, travel and family costs may matter more.",
+          "Your underlying annual target before the modeller applies any Go-Go, Slow-Go, No-Go phase percentage. Use the target-basis question to say whether this is income before tax or spending money after estimated tax.",
         infoUrl: knowledgeLinks.retirementLivingStandards,
         infoLinkText: "Retirement Living Standards",
       },
@@ -288,6 +267,24 @@ export const fieldGroups: FieldGroup[] = [
         inputStep: 1,
         description:
           "The age from which you want the modeller to assess whether your retirement income target is being met. In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
+      },
+      {
+        id: "retirementIncomeTargetBasis",
+        label: "What does your retirement income target mean?",
+        type: "select",
+        options: [
+          {
+            value: "gross",
+            label: "Income before estimated tax",
+          },
+          {
+            value: "after_tax",
+            label: "Money available after estimated tax",
+          },
+        ],
+        description:
+          "Choose whether the target is income before tax or spending money available after the model's estimated Income Tax.",
+        fullWidth: true,
       },
     ],
   },

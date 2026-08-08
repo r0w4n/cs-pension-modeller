@@ -6,6 +6,7 @@ import {
   migrateFromV5ToV6,
   migrateFromV6ToV7,
   migrateFromV7ToV8,
+  migrateFromV8ToV9,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -138,6 +139,13 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("preserves the gross meaning of existing targets during v8 migration", () => {
+    expect(migrateFromV8ToV9({ desiredRetirementIncome: 30000 })).toEqual({
+      desiredRetirementIncome: 30000,
+      retirementIncomeTargetBasis: "gross",
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -166,6 +174,7 @@ describe("settings-migrations", () => {
       csAvcWithdrawalTargetAge: 75,
       taxCsAvcTaxFreeWithdrawalPercent: 25,
       spendingStrategyType: "FLAT",
+      retirementIncomeTargetBasis: "gross",
       spendingSmile: {
         goGoPercentage: 100,
         slowGoStartAge: 75,

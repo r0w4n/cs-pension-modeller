@@ -38,7 +38,7 @@ test.describe("accessibility", () => {
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
       page.getByRole("heading", {
-        name: "What yearly income would you like?",
+        name: "What would you like to spend each month?",
       })
     ).toBeVisible();
 

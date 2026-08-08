@@ -45,12 +45,12 @@ export function SelectSettingField({
 
   return (
     <div
-      className={getFieldCardClassName(
+      className={`${getFieldCardClassName(
         disabled,
         hideOnMobile,
         Boolean(validationIssue),
         Boolean(warning)
-      )}
+      )}${field.fullWidth ? " field-card--full-width" : ""}`}
     >
       <span className="field-header">
         <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
@@ -130,6 +130,7 @@ export function CurrencySettingField({
 }) {
   const validationId = validationIssue ? `${field.id}-validation` : undefined;
   const resetValue = defaultSettings[field.id];
+  const displayDivisor = field.displayDivisor ?? 1;
 
   return (
     <div
@@ -143,20 +144,21 @@ export function CurrencySettingField({
         <FieldLabel field={field} showInfoLinks={showGuidanceNotes} />
       </span>
       <CurrencySettingFieldEditor
+        key={`${field.id}-${value}-${displayDivisor}`}
         field={field}
-        initialValue={value}
-        resetValue={resetValue}
+        initialValue={value / displayDivisor}
+        resetValue={resetValue / displayDivisor}
         disabled={disabled}
         describedBy={validationId}
         hasValidationIssue={Boolean(validationIssue)}
         onCommit={(nextValue) => {
           const normalizedValue = clampNumber(
-            nextValue,
+            nextValue * displayDivisor,
             0,
             Number.MAX_SAFE_INTEGER
           );
           onChange(field.id, normalizedValue);
-          return normalizedValue;
+          return normalizedValue / displayDivisor;
         }}
       />
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
@@ -182,7 +184,10 @@ function CurrencySettingFieldEditor({
   hasValidationIssue?: boolean;
   onCommit: (nextValue: number) => number;
 }) {
-  const [draftValue, setDraftValue] = useState(initialValue.toString());
+  const [draftValue, setDraftValue] = useState(() =>
+    formatCurrencyInputValue(initialValue)
+  );
+  const displayDivisor = field.displayDivisor ?? 1;
   const showsResetButton =
     field.id !== "desiredRetirementIncome" &&
     field.id !== "accruedPensionAtLastAbs";
@@ -199,8 +204,9 @@ function CurrencySettingFieldEditor({
   const applyPresetValue = (
     presetValue: NonNullable<CurrencyInputField["presets"]>[number]["value"]
   ) => {
-    setDraftValue(presetValue.toString());
-    onCommit(presetValue);
+    const displayValue = presetValue / displayDivisor;
+    setDraftValue(formatCurrencyInputValue(displayValue));
+    onCommit(displayValue);
   };
 
   return (
@@ -209,9 +215,9 @@ function CurrencySettingFieldEditor({
         aria-label={field.label}
         className="number-input"
         type="number"
-        step={field.step ?? 1}
-        min={field.min ?? 0}
-        max={field.max ?? undefined}
+        step={field.displayDivisor ? 1 : (field.step ?? 1)}
+        min={(field.min ?? 0) / displayDivisor}
+        max={field.max === undefined ? undefined : field.max / displayDivisor}
         value={draftValue}
         disabled={disabled}
         aria-invalid={hasValidationIssue || undefined}
@@ -223,6 +229,12 @@ function CurrencySettingFieldEditor({
           commitValue(event.target.value);
         }}
       />
+      {field.showAnnualEquivalent ? (
+        <p className="field-help" aria-live="polite">
+          Yearly equivalent:{" "}
+          {formatCurrency(Math.round(getAnnualEquivalent(draftValue)))}
+        </p>
+      ) : null}
       {field.presets?.length ? (
         <div className="field-preset-row">
           {field.presets.map((preset) => (
@@ -250,7 +262,7 @@ function CurrencySettingFieldEditor({
           disabled={disabled}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
-            setDraftValue(resetValue.toString());
+            setDraftValue(formatCurrencyInputValue(resetValue));
             onCommit(resetValue);
           }}
         >
@@ -259,6 +271,16 @@ function CurrencySettingFieldEditor({
       ) : null}
     </>
   );
+}
+
+function formatCurrencyInputValue(value: number) {
+  return (Math.round(value * 100) / 100).toString();
+}
+
+function getAnnualEquivalent(draftValue: string) {
+  const parsedValue = Number(draftValue);
+
+  return Number.isFinite(parsedValue) ? parsedValue * 12 : 0;
 }
 
 export function RangeSettingField({

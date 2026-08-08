@@ -36,7 +36,7 @@ describe("PensionSummarySection", () => {
     expect(
       screen.getByRole("region", { name: "Retirement outcome" })
     ).toHaveTextContent(
-      "On track. You can retire at 60 and meet your target income of £31,350/year in today's money until age 80."
+      "Based on the information entered, this scenario appears to provide your target income before tax of £31,350/year in today's money from age 60 until age 80."
     );
     expect(
       screen.getByRole("region", { name: "Retirement outcome" })
@@ -97,7 +97,7 @@ describe("PensionSummarySection", () => {
     expect(
       screen.getByRole("region", { name: "Retirement outcome" })
     ).toHaveTextContent(
-      "Shortfall from age 74. This plan does not meet your target income of £31,350/year through to age 80. The first shortfall is £4,200/year in today's money."
+      "Shortfall from age 74. Based on the information entered, this scenario does not provide your target income before tax of £31,350/year through to age 80. The first shortfall is £4,200/year in today's money."
     );
   });
 

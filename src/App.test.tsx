@@ -570,6 +570,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     fullSalary: defaultSettings.fullSalary,
     currentStatePension: defaultSettings.currentStatePension,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
+    retirementIncomeTargetBasis: defaultSettings.retirementIncomeTargetBasis,
     spendingStrategyType: defaultSettings.spendingStrategyType,
     spendingSmile: defaultSettings.spendingSmile,
     flexibleWithdrawalPriority: defaultSettings.flexibleWithdrawalPriority,
@@ -826,13 +827,13 @@ describe("App settings form", () => {
       previous_journey_mode: "simple",
     });
 
-    openJourneyStep(/What yearly income would you like/i);
+    openJourneyStep(/What would you like to spend each month/i);
     const targetIncomeInput = screen.getByLabelText(
-      "How much would you like each year in retirement?"
+      "How much would you like available to spend each month after tax?"
     );
 
     fireEvent.change(targetIncomeInput, {
-      target: { value: "50000" },
+      target: { value: "3000" },
     });
     fireEvent.blur(targetIncomeInput);
 
@@ -1007,10 +1008,38 @@ describe("App settings form", () => {
     expect(
       screen.getByRole("button", { name: /Your results/i })
     ).toBeInTheDocument();
-    openJourneyStep(/What yearly income would you like/i);
+    openJourneyStep(/What would you like to spend each month/i);
     expect(
-      screen.getByLabelText("How much would you like each year in retirement?")
-    ).toHaveValue(defaultSettings.desiredRetirementIncome);
+      screen.getByLabelText(
+        "How much would you like available to spend each month after tax?"
+      )
+    ).toHaveValue(2641.67);
+    expect(screen.getByText("Yearly equivalent: £31,700")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Minimum — £1,158 a month/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Moderate — £2,725 a month/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Comfortable — £3,783 a month/i })
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Moderate — £2,725 a month/i })
+    );
+    expect(
+      screen.getByLabelText(
+        "How much would you like available to spend each month after tax?"
+      )
+    ).toHaveValue(2725);
+    expect(screen.getByText("Yearly equivalent: £32,700")).toBeInTheDocument();
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        desiredRetirementIncome: 32700,
+        retirementIncomeTargetBasis: "after_tax",
+        taxationEnabled: true,
+      })
+    );
     expect(
       screen.getByRole("link", { name: /Help me choose a retirement income/i })
     ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
@@ -1412,10 +1441,10 @@ describe("App settings form", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Your retirement income target")
+      screen.getByText("Your target spending after estimated tax")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Current projected retirement income")
+      screen.getByText("Estimated take-home pension income")
     ).toBeInTheDocument();
   });
 
@@ -1956,7 +1985,7 @@ describe("App settings form", () => {
     expect(
       within(ageRangeTable).getByText("Alpha pension, State Pension")
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£2,500.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,400.00")).toBeInTheDocument();
   });
 
   it("keeps the bridge target retirement age stable after slider release", () => {
@@ -2586,10 +2615,12 @@ describe("App settings form", () => {
 
     openJourneyStep(/Retirement income target/i);
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "£45,400",
-      })
+    fireEvent.change(
+      screen.getByLabelText("Retirement Living Standards target (£ per year)"),
+      { target: { value: "45400" } }
+    );
+    fireEvent.blur(
+      screen.getByLabelText("Retirement Living Standards target (£ per year)")
     );
 
     openJourneyStep(/State pension details/i);

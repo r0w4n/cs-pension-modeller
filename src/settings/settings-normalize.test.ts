@@ -13,6 +13,12 @@ describe("settings-normalize", () => {
     expect(normalizeSetting("isaDrawAge", 85)).toBe(85);
     expect(normalizeSetting("isaDrawAge", 120)).toBe(100);
     expect(normalizeSetting("projectionBasis", "bad" as never)).toBe("real");
+    expect(normalizeSetting("retirementIncomeTargetBasis", "after_tax")).toBe(
+      "after_tax"
+    );
+    expect(
+      normalizeSetting("retirementIncomeTargetBasis", "bad" as never)
+    ).toBe("gross");
     expect(
       normalizeSetting("alphaAddedPensionFactorType", "bad" as never)
     ).toBe("self");
@@ -41,6 +47,16 @@ describe("settings-normalize", () => {
 
     expect(settings.requirementAge).toBe(65);
     expect(settings.isaDrawAge).toBe(72);
+  });
+
+  it("enables the tax estimate required by an after-tax target", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      retirementIncomeTargetBasis: "after_tax",
+      taxationEnabled: false,
+    });
+
+    expect(settings.taxationEnabled).toBe(true);
   });
 
   it("caps stored SMILE phase ages to life expectancy", () => {

@@ -48,4 +48,24 @@ describe("Added Pension income target", () => {
     expect(contribution).toBeGreaterThan(0);
     expect(estimatedIncome).toBeCloseTo(desiredExtraMonthlyIncome, -1);
   });
+
+  it("uses take-home rather than gross pension income for an after-tax target", () => {
+    const grossBasis = createAddedPensionGoalBasis({
+      ...settings,
+      taxationEnabled: true,
+      retirementIncomeTargetBasis: "gross",
+    });
+    const afterTaxBasis = createAddedPensionGoalBasis({
+      ...settings,
+      taxationEnabled: true,
+      retirementIncomeTargetBasis: "after_tax",
+    });
+
+    expect(afterTaxBasis.projectedMonthlyIncome).toBeLessThan(
+      grossBasis.projectedMonthlyIncome
+    );
+    expect(afterTaxBasis.monthlyIncomePerContributionPound).toBeLessThan(
+      grossBasis.monthlyIncomePerContributionPound
+    );
+  });
 });

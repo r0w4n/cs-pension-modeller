@@ -97,6 +97,7 @@ describe("projection bridge analysis domain", () => {
       csAvcDrawAge: 60,
       csAvcRealInterestPercent: 0,
       taxationEnabled: true,
+      retirementIncomeTargetBasis: "after_tax",
       taxPersonalAllowance: 0,
       taxBasicRatePercent: 20,
       taxHigherRatePercent: 20,

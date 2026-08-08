@@ -47,6 +47,7 @@ export type IsaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type LisaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type SippTaxReliefRate = "none" | "20" | "40";
 export type ProjectionBasis = "real" | "nominal";
+export type RetirementIncomeTargetBasis = "gross" | "after_tax";
 export type ClassicCalculationMode = "estimate" | "manual";
 export type ClassicFinalSalaryLink = "maintained" | "broken";
 export type AdditionalGuaranteedIncomeIndexation = "none" | "cpi" | "fixed";
@@ -98,6 +99,7 @@ export type PensionSettings = {
   fullSalary: number;
   currentStatePension: number;
   desiredRetirementIncome: number;
+  retirementIncomeTargetBasis: RetirementIncomeTargetBasis;
   spendingStrategyType: SpendingStrategyType;
   spendingSmile: SpendingSmileStrategy;
   flexibleWithdrawalPriority: FlexibleFundAccountId[];
@@ -210,3 +212,9 @@ export type StoredPensionSettings = Omit<
   PensionSettings,
   "startDate" | "normalPensionAge"
 >;
+
+export function usesAfterTaxRetirementIncomeTarget(
+  settings: Pick<PensionSettings, "retirementIncomeTargetBasis">
+) {
+  return settings.retirementIncomeTargetBasis === "after_tax";
+}

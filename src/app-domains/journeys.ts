@@ -1,5 +1,6 @@
 import {
   fieldGroups,
+  type CurrencyInputField,
   type FieldDefinition,
   type FieldGroup,
   type SettingsKey,
@@ -106,6 +107,15 @@ export type JourneyFieldLabels = Partial<Record<FieldDefinition["id"], string>>;
 export type JourneyFieldDescriptions = Partial<
   Record<FieldDefinition["id"], string>
 >;
+export type JourneyCurrencyFieldPresentation = Partial<
+  Record<
+    CurrencyInputField["id"],
+    Pick<
+      CurrencyInputField,
+      "displayDivisor" | "showAnnualEquivalent" | "presets"
+    >
+  >
+>;
 export type JourneyOptionalSectionCopy = Partial<
   Record<
     OptionalSectionToggleKey,
@@ -164,6 +174,7 @@ export type JourneyStepDefinition =
       groupId?: FieldGroup["id"];
       fieldLabels?: JourneyFieldLabels;
       fieldDescriptions?: JourneyFieldDescriptions;
+      currencyFieldPresentation?: JourneyCurrencyFieldPresentation;
       hideFieldInfoLinks?: boolean;
       supportLink?: JourneySupportLink;
       supportLinkLayout?: "inline";
@@ -434,25 +445,48 @@ export const JOURNEY_DEFINITIONS = [
       {
         id: "target",
         eyebrow: "Step 2",
-        title: "What yearly income would you like?",
+        title: "What would you like to spend each month?",
         description:
-          "Think about the money you would like to have coming in each year when you stop working. A rough answer is fine. You can change it later.",
+          "Think about the money you would like available each month after estimated tax when you stop working. A rough answer is fine. You can change it later.",
         kind: "fields",
         fieldIds: ["desiredRetirementIncome"],
         fieldLabels: {
           desiredRetirementIncome:
-            "How much would you like each year in retirement?",
+            "How much would you like available to spend each month after tax?",
         },
         fieldDescriptions: {
           desiredRetirementIncome:
-            "Enter a yearly amount in today’s money. This is a planning target, not a promise of what you will receive.",
+            "Enter a monthly amount in today’s money. The modeller compares it with estimated take-home pension income. This is a planning target, not a promise of what you will receive.",
+        },
+        currencyFieldPresentation: {
+          desiredRetirementIncome: {
+            displayDivisor: 12,
+            showAnnualEquivalent: true,
+            presets: [
+              {
+                value: 13900,
+                label: "Minimum — £1,158 a month",
+                description: "One-person household example: £13,900 a year",
+              },
+              {
+                value: 32700,
+                label: "Moderate — £2,725 a month",
+                description: "One-person household example: £32,700 a year",
+              },
+              {
+                value: 45400,
+                label: "Comfortable — £3,783 a month",
+                description: "One-person household example: £45,400 a year",
+              },
+            ],
+          },
         },
         hideFieldInfoLinks: true,
         supportLinkLayout: "inline",
         supportLink: {
           heading: "Not sure what amount to choose?",
           description:
-            "The Retirement Living Standards show examples of what different retirement lifestyles could cost each year. They show spending, not the income you need before tax. Use them as a starting point and think about your own costs too.",
+            "These one-person household examples come from the Retirement Living Standards. Your housing costs, household and personal circumstances can make your spending different, so use them only as a starting point.",
           href: knowledgeLinks.retirementLivingStandards,
           label: "Help me choose a retirement income",
         },
@@ -833,6 +867,7 @@ export function applyBridgeJourneyDefaults(
     isaWithdrawalStrategy: "use_by_age",
     lisaWithdrawalStrategy: "use_by_age",
     taxationEnabled: false,
+    retirementIncomeTargetBasis: "gross",
     partialRetirementEnabled: false,
   };
 }
@@ -848,6 +883,8 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
+    retirementIncomeTargetBasis: "after_tax",
+    taxationEnabled: true,
     nuvosPensionDrawAge: settings.nuvosPensionDrawAge,
     assumedCpiPercent: 0,
     showStatePension: true,
@@ -881,7 +918,8 @@ export function applySimpleJourneyAssumptions(
     csAvcWithdrawalStrategy: "use_by_age",
     isaWithdrawalStrategy: "use_by_age",
     lisaWithdrawalStrategy: "use_by_age",
-    taxationEnabled: false,
+    taxationEnabled: true,
+    retirementIncomeTargetBasis: "after_tax",
     partialRetirementEnabled: false,
     alphaAddedPensionLumpSums: [],
   };
@@ -902,7 +940,8 @@ export function mergeSimpleJourneySettings(
       currentSettings.statePensionApplyFutureGrowth,
     applyPensionIncreases: true,
     assumedCpiPercent: 0,
-    taxationEnabled: currentSettings.taxationEnabled,
+    taxationEnabled: nextSettings.taxationEnabled,
+    retirementIncomeTargetBasis: nextSettings.retirementIncomeTargetBasis,
     partialRetirementEnabled: currentSettings.partialRetirementEnabled,
     alphaEpaEnabled: nextSettings.alphaEpaEnabled,
     alphaAddedPensionLumpSums: currentSettings.alphaAddedPensionLumpSums,

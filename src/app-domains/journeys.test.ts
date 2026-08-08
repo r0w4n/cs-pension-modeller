@@ -76,7 +76,11 @@ describe("journey definitions", () => {
     );
     expect([
       ...getJourneyStepFieldIds("expert-journey", "expert-retirement-target"),
-    ]).toEqual(["desiredRetirementIncome", "requirementAge"]);
+    ]).toEqual([
+      "desiredRetirementIncome",
+      "requirementAge",
+      "retirementIncomeTargetBasis",
+    ]);
   });
 
   it("keeps flexible withdrawal strategy controls exclusive to expert mode", () => {
@@ -386,6 +390,15 @@ describe("journey definitions", () => {
         spendingStrategyType: "SPENDING_SMILE",
       }).spendingStrategyType
     ).toBe("FLAT");
+  });
+
+  it("uses an after-tax spending target and tax estimates in simple mode", () => {
+    expect(applySimpleJourneyAssumptions(defaultSettings)).toEqual(
+      expect.objectContaining({
+        retirementIncomeTargetBasis: "after_tax",
+        taxationEnabled: true,
+      })
+    );
   });
 
   it("keeps an enabled CS AVC visible in simple journey assumptions", () => {

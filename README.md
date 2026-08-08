@@ -68,7 +68,8 @@ For each projection month, the model can calculate values such as:
 - State Pension deferral uplift and future uprating where enabled
 - ISA, LISA and SIPP balances, withdrawals, and bridge funding
 - gross retirement income by source
-- estimated Income Tax and take-home income where taxation is enabled
+- estimated Income Tax and take-home income where taxation is enabled or an
+  after-tax spending target is selected
 - milestone rows for important dates such as statement dates, pension starts,
   drawdown starts, and planning end age
 
@@ -77,8 +78,9 @@ For each projection month, the model can calculate values such as:
 The current app is driven by inputs grouped around:
 
 - personal details: birth month/year and planning horizon
-- retirement income target: the selected Retirement Living Standards baseline
-  and either flat spending or expert Go-Go, Slow-Go, No-Go phase percentages
+- retirement income target: an explicit before-tax income or after-tax spending
+  basis, with a selected Retirement Living Standards baseline and either flat
+  spending or expert Go-Go, Slow-Go, No-Go phase percentages
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,

@@ -19,19 +19,19 @@ describe("settings-defaults", () => {
     expect(createDefaultSettings().startDate).toBe("2026-04-25");
   });
 
-  it("defaults ISA and SIPP draw ages to Normal Pension Age and legacy Civil Service schemes to their scheme ages", () => {
+  it("defaults ISA and SIPP draw ages to whole years rounded down from NPA", () => {
     const settings = createDefaultSettings();
 
     expect(settings.normalPensionAge).toBe(68);
-    expect(settings.isaDrawAge).toBe(68);
+    expect(settings.isaDrawAge).toBe(58);
     expect(settings.sippDrawAge).toBe(68);
     expect(settings.classicPensionDrawAge).toBe(60);
     expect(settings.classicPlusPensionDrawAge).toBe(60);
     expect(settings.nuvosPensionDrawAge).toBe(65);
   });
 
-  it("includes additional guaranteed income by default", () => {
-    expect(createDefaultSettings().showAdditionalGuaranteedIncome).toBe(true);
+  it("excludes additional guaranteed income by default", () => {
+    expect(createDefaultSettings().showAdditionalGuaranteedIncome).toBe(false);
   });
 
   it("formats local date parts", () => {

@@ -110,7 +110,6 @@ Feature: Modeller journeys
       | Inflation and projection basis |
       | State pension details          |
       | Alpha pension details          |
-      | Additional guaranteed income   |
       | SIPP details                   |
       | ISA details                    |
       | Your results                   |

@@ -47,6 +47,7 @@ describe("settings-validate", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
       lifeExpectancy: 90,
+      showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "bad-ages",
@@ -128,6 +129,7 @@ describe("settings-validate", () => {
   it("treats a blank additional guaranteed income row as a draft", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
+      showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "draft-income",
@@ -155,6 +157,7 @@ describe("settings-validate", () => {
   it("requires a start age once additional guaranteed income has an amount", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),
+      showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "missing-start-age",

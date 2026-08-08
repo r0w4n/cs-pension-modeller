@@ -7,11 +7,16 @@ import { coerceClassicSettings } from "./settings-domains/classic";
 import { coerceNuvosSettings } from "./settings-domains/nuvos";
 import { coercePremiumSettings } from "./settings-domains/premium";
 import { coerceStatePensionSettings } from "./settings-domains/state-pension";
-import { coerceSippTaxReliefRate } from "./settings-domains/sipp";
+import {
+  calculateDefaultSippDrawAge,
+  coerceSippTaxReliefRate,
+} from "./settings-domains/sipp";
+import { calculateDefaultIsaDrawAge } from "./settings-domains/isa";
 import { coerceTaxSettings } from "./settings-domains/tax";
 import { createDefaultSettings } from "./settings-defaults";
 import { migrateSettingsToLatest } from "./settings-migrations";
 import { normalizeSettings } from "./settings-normalize";
+import { calculateNormalPensionAge } from "./settings-shared/state";
 import {
   LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
@@ -307,11 +312,43 @@ export function parseStoredSettings(input: unknown): PensionSettings | null {
   }
 
   const defaults = createDefaultSettings();
+  const coercedSettings = removeUndefinedValues(coerceSettings(input));
+  const dateOfBirth =
+    typeof coercedSettings.dateOfBirth === "string"
+      ? coercedSettings.dateOfBirth
+      : defaults.dateOfBirth;
+  const normalPensionAge = calculateNormalPensionAge(dateOfBirth);
+  const sippDrawAge = reconcileImportedDefaultDrawAge({
+    value: coercedSettings.sippDrawAge,
+    legacyDefault: normalPensionAge,
+    roundedDefault: calculateDefaultSippDrawAge(normalPensionAge),
+  });
+  const isaDrawAge = reconcileImportedDefaultDrawAge({
+    value: coercedSettings.isaDrawAge,
+    legacyDefault: normalPensionAge - 10,
+    roundedDefault: calculateDefaultIsaDrawAge(normalPensionAge),
+  });
 
   return normalizeSettings({
     ...defaults,
-    ...removeUndefinedValues(coerceSettings(input)),
+    ...coercedSettings,
+    sippDrawAge,
+    isaDrawAge,
   });
+}
+
+function reconcileImportedDefaultDrawAge({
+  value,
+  legacyDefault,
+  roundedDefault,
+}: {
+  value: number | undefined;
+  legacyDefault: number;
+  roundedDefault: number;
+}) {
+  return value === undefined || value === legacyDefault
+    ? roundedDefault
+    : value;
 }
 
 export function saveSettings(settings: PensionSettings) {

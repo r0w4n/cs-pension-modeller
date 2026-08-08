@@ -3,6 +3,12 @@ import {
   type PensionSettings,
 } from "../settings";
 import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
+import {
+  calculateMoneyShortfall,
+  calculateMoneySurplus,
+  MONEY_TOLERANCE,
+  normalizeMoney,
+} from "../money";
 import { calculateMonthlyIncomeTax } from "./tax";
 import { calculateIsaPotBeforeWithdrawalAtDate } from "./isa";
 import { calculateSippPotBeforeWithdrawalAtDate } from "./sipp";
@@ -260,13 +266,13 @@ export function generateRetirementBridgeAnalysis(
     });
     const monthlyTargetIncome =
       calculateRetirementIncomeTargetAtDate(settings, rowDate) / 12;
-    const shortfall = Math.max(
-      0,
-      monthlyTargetIncome - secureIncome.guaranteedIncome
+    const shortfall = calculateMoneyShortfall(
+      monthlyTargetIncome,
+      secureIncome.guaranteedIncome
     );
-    const surplus = Math.max(
-      0,
-      secureIncome.guaranteedIncome - monthlyTargetIncome
+    const surplus = calculateMoneySurplus(
+      monthlyTargetIncome,
+      secureIncome.guaranteedIncome
     );
     const drawdown = drawBridgeShortfall({
       balances: potBalances,
@@ -371,7 +377,7 @@ export function generateRetirementBridgeAnalysis(
       monthlyIncome: monthlyTargetIncomeAtRetirement,
       endDate,
     },
-    planWorks: totalUnfundedShortfall <= 0.005,
+    planWorks: totalUnfundedShortfall <= MONEY_TOLERANCE,
     firstFailureDate,
     firstPotToFail,
     totalBridgeRequired,
@@ -395,20 +401,22 @@ export function generateRetirementBridgeAnalysis(
         ? calculateAgeMonths(settings.dateOfBirth, fullSecureIncomeStartDate)
         : null,
     fullSecureAnnualGuaranteedIncome,
-    fullSecureAnnualGuaranteedSurplus:
+    fullSecureAnnualGuaranteedSurplus: normalizeMoney(
       fullSecureAnnualGuaranteedIncome -
-      (fullSecureIncomeStartRow
-        ? calculateRetirementIncomeTargetAtDate(
-            settings,
-            fullSecureIncomeStartRow.date
-          )
-        : settings.desiredRetirementIncome),
+        (fullSecureIncomeStartRow
+          ? calculateRetirementIncomeTargetAtDate(
+              settings,
+              fullSecureIncomeStartRow.date
+            )
+          : settings.desiredRetirementIncome)
+    ),
     stableAnnualGuaranteedIncome,
-    stableAnnualGuaranteedSurplus:
+    stableAnnualGuaranteedSurplus: normalizeMoney(
       stableAnnualGuaranteedIncome -
-      (stableRow
-        ? calculateRetirementIncomeTargetAtDate(settings, stableRow.date)
-        : settings.desiredRetirementIncome),
+        (stableRow
+          ? calculateRetirementIncomeTargetAtDate(settings, stableRow.date)
+          : settings.desiredRetirementIncome)
+    ),
     phases: buildBridgePhases(monthlyRows, settings, retirementDate, endDate),
     potProjection: buildBridgePotProjection(monthlyRows, settings),
   };
@@ -1324,7 +1332,7 @@ function calculateEarliestSustainablePensionDrawAge(
 
     if (
       analysis.planWorks &&
-      analysis.stableAnnualGuaranteedSurplus >= -0.005
+      analysis.stableAnnualGuaranteedSurplus >= -MONEY_TOLERANCE
     ) {
       return age;
     }

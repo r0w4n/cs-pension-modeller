@@ -5,6 +5,7 @@ import {
   type PensionSettings,
 } from "../settings";
 import { addYears } from "../derive-inputs";
+import { MONEY_TOLERANCE } from "../money";
 import type { ProjectionRow } from "../projection-core";
 import { calculateMonthlyIncomeTax } from "./tax";
 import {
@@ -15,7 +16,6 @@ import {
 type MonthlyWithdrawals = Record<FlexibleFundAccountId, number>;
 type FlexibleBalances = Record<FlexibleFundAccountId, number>;
 
-const MONEY_TOLERANCE = 0.005;
 const BINARY_SEARCH_ITERATIONS = 50;
 
 export function coordinateFlexibleWithdrawals(

@@ -5,6 +5,7 @@ import {
   buildComparisonDetailedRows,
   buildComparisonStatusItems,
   buildComparisonTableRows,
+  buildRetirementOutcomeBanner,
   createComparisonResult,
 } from "./comparison";
 import { createDefaultSettings } from "../settings";
@@ -424,6 +425,74 @@ describe("comparison table rows", () => {
     expect(result.targetMissMonths).toBe(0);
   });
 
+  it("treats sub-penny floating-point differences as meeting the target", () => {
+    const settings = createExactTargetScenarioSettings();
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Exact target",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    expect(result.annualIncome).toBeCloseTo(45_400, 6);
+    expect(result.annualGap).toBe(0);
+    expect(result.targetMissMonths).toBe(0);
+    expect(result.summary.retirementIncome.ageRanges).toEqual([
+      expect.objectContaining({
+        annualTargetIncome: 45_400,
+        annualShortfall: 0,
+        annualSurplus: 0,
+      }),
+    ]);
+    expect(result.bridgeAnalysis.totalUnfundedShortfall).toBe(0);
+    expect(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus).toBe(0);
+    expect(buildRetirementOutcomeBanner(result).status).toBe("onTrack");
+    expect(
+      buildComparisonStatusItems(result, {
+        hideBridgeFundingSection: true,
+      })
+    ).toEqual([
+      { label: "Overall status", value: "Looks workable" },
+      {
+        label: "Target shortfall",
+        value: "No shortfall against the target",
+      },
+      {
+        label: "Main issue",
+        value: "No shortfall identified from the current assumptions.",
+      },
+    ]);
+  });
+
+  it("counts projection months rather than chart-only transition points", () => {
+    const settings = {
+      ...createExactTargetScenarioSettings(),
+      desiredRetirementIncome: 45_500,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Real shortfall",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+    const projectionMonthsInAssessmentPeriod = result.rows.filter((row) => {
+      const age = row.age + row.ageMonths / 12;
+
+      return age >= settings.requirementAge && age <= settings.lifeExpectancy;
+    }).length;
+
+    expect(projectionMonthsInAssessmentPeriod).toBe(157);
+    expect(result.targetMissMonths).toBe(projectionMonthsInAssessmentPeriod);
+  });
+
   it("shows expected flexible bridge exhaustion as caution rather than a problem", () => {
     const settings = createFlexibleAssetsScenario({
       isaCurrentPot: 120000,
@@ -474,6 +543,39 @@ describe("comparison table rows", () => {
     );
   });
 });
+
+function createExactTargetScenarioSettings() {
+  return {
+    ...createDefaultSettings(),
+    startDate: "2026-08-07",
+    dateOfBirth: "1974-06-01",
+    normalPensionAge: 67,
+    lifeExpectancy: 80,
+    requirementAge: 67,
+    projectionBasis: "real" as const,
+    currentStatePension: 12_547.6,
+    desiredRetirementIncome: 45_400,
+    statePensionDrawDate: "2041-06-01",
+    statePensionApplyFutureGrowth: false,
+    assumedCpiPercent: 0,
+    alphaPensionAbsDate: "2025",
+    alphaAddedPensionMonthly: 86.15157362859668,
+    alphaPensionLeaveAge: 67,
+    accruedPensionAtLastAbs: 16_000,
+    pensionableEarnings: 42_000,
+    alphaPayRisePercent: 0,
+    alphaPensionDrawAge: 67,
+    taxationEnabled: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showSipp: false,
+    showCsAvc: false,
+    showIsa: false,
+    showLisa: false,
+  };
+}
 
 function createFlexibleAssetsScenario(input: { isaCurrentPot: number }) {
   return {

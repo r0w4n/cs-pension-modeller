@@ -31,8 +31,10 @@ import {
   addYearsToIsoDate,
   createBridgeChartLimits,
   createBridgeChartParameters,
+  createRetirementIncomeAssessmentSeries,
   createRetirementIncomeSeries,
 } from "./retirement-income";
+import { normalizeMoney } from "../money";
 import {
   calculateSmilePhaseTarget,
   type SmilePercentageField,
@@ -264,7 +266,7 @@ export function createComparisonResult(
     bridgeAnalysis,
     annualIncome,
     annualTarget,
-    annualGap: annualIncome - annualTarget,
+    annualGap: normalizeMoney(annualIncome - annualTarget),
     isaDepletedAge: findPotDepletedAge(
       rows,
       "isaPot",
@@ -1684,7 +1686,7 @@ function getLowestAnnualIncome(
   rows: ProjectionRow[],
   settings: PensionSettings
 ) {
-  const incomes = createRetirementIncomeSeries(rows, settings)
+  const incomes = createRetirementIncomeAssessmentSeries(rows, settings)
     .filter(
       (point) =>
         point.age >= settings.requirementAge &&
@@ -1699,7 +1701,7 @@ function getLargestAnnualShortfall(
   rows: ProjectionRow[],
   settings: PensionSettings
 ) {
-  return createRetirementIncomeSeries(rows, settings).reduce(
+  return createRetirementIncomeAssessmentSeries(rows, settings).reduce(
     (largest, point) => {
       if (
         point.age < settings.requirementAge ||
@@ -1718,16 +1720,19 @@ function getTotalLifetimeShortfall(
   rows: ProjectionRow[],
   settings: PensionSettings
 ) {
-  return createRetirementIncomeSeries(rows, settings).reduce((total, point) => {
-    if (
-      point.age < settings.requirementAge ||
-      point.age > settings.lifeExpectancy
-    ) {
-      return total;
-    }
+  return createRetirementIncomeAssessmentSeries(rows, settings).reduce(
+    (total, point) => {
+      if (
+        point.age < settings.requirementAge ||
+        point.age > settings.lifeExpectancy
+      ) {
+        return total;
+      }
 
-    return total + point.shortfallAnnual / 12;
-  }, 0);
+      return total + point.shortfallAnnual / 12;
+    },
+    0
+  );
 }
 
 function getFinalPotBalance(
@@ -1809,7 +1814,7 @@ function countTargetMissMonths(
   rows: ProjectionRow[],
   settings: PensionSettings
 ) {
-  return createRetirementIncomeSeries(rows, settings).filter(
+  return createRetirementIncomeAssessmentSeries(rows, settings).filter(
     (point) =>
       point.age >= settings.requirementAge &&
       point.age <= settings.lifeExpectancy &&

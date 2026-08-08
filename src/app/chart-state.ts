@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
 import {
+  calculateDefaultIsaDrawAge,
+  calculateDefaultSippDrawAge,
   calculateMinimumStatePensionDrawAge,
   calculateMinimumPensionAccessAge,
   calculateMinimumSippAccessAge,
@@ -655,6 +657,10 @@ export function updateSetting({
           : key === "sippDrawAge"
             ? normalizeSippDrawAge(value as number, current.dateOfBirth)
             : normalizeSetting(key, value);
+    const updatedNormalPensionAge =
+      key === "dateOfBirth"
+        ? calculateNormalPensionAge(normalizedValue as string)
+        : current.normalPensionAge;
 
     const next = {
       ...current,
@@ -665,17 +671,25 @@ export function updateSetting({
         : {}),
       ...(key === "dateOfBirth"
         ? {
-            normalPensionAge: calculateNormalPensionAge(
-              normalizedValue as string
-            ),
+            normalPensionAge: updatedNormalPensionAge,
             alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
               current.alphaPensionDrawAge,
               normalizedValue as string
             ),
             sippDrawAge: normalizeSippDrawAge(
-              current.sippDrawAge,
+              current.sippDrawAge === current.normalPensionAge ||
+                current.sippDrawAge ===
+                  calculateDefaultSippDrawAge(current.normalPensionAge)
+                ? calculateDefaultSippDrawAge(updatedNormalPensionAge)
+                : current.sippDrawAge,
               normalizedValue as string
             ),
+            isaDrawAge:
+              current.isaDrawAge ===
+                calculateDefaultIsaDrawAge(current.normalPensionAge) ||
+              current.isaDrawAge === current.normalPensionAge - 10
+                ? calculateDefaultIsaDrawAge(updatedNormalPensionAge)
+                : current.isaDrawAge,
             statePensionDrawDate: calculateStatePensionDrawDateFromAge(
               normalizedValue as string,
               calculateMinimumStatePensionDrawAge(normalizedValue as string)

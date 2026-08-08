@@ -109,9 +109,12 @@ export function SettingsGroupSupplementaryEditor({
           validationIssues,
           "additionalGuaranteedIncomes"
         )}
-        onChange={(nextIncomes) =>
-          onChange("additionalGuaranteedIncomes", nextIncomes)
-        }
+        onChange={(nextIncomes) => {
+          if (!settings.showAdditionalGuaranteedIncome) {
+            onChange("showAdditionalGuaranteedIncome", true);
+          }
+          onChange("additionalGuaranteedIncomes", nextIncomes);
+        }}
       />
     );
   }

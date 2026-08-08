@@ -33,8 +33,19 @@ import {
 import { addYearsToIsoDate, clampNumber } from "./shared";
 import { getSpendingSmileStartAgeBounds } from "../spending-smile";
 import { getFlexibleFundAccountLabel } from "./flexible-withdrawals";
+import { calculateMoneyShortfall } from "../money";
 
 export function createRetirementIncomeSeries(
+  rows: ProjectionRow[],
+  settings: PensionSettings
+): RetirementIncomePoint[] {
+  return insertChartTransitionPoints(
+    createRetirementIncomeAssessmentSeries(rows, settings),
+    settings
+  );
+}
+
+export function createRetirementIncomeAssessmentSeries(
   rows: ProjectionRow[],
   settings: PensionSettings
 ): RetirementIncomePoint[] {
@@ -254,7 +265,7 @@ export function createRetirementIncomeSeries(
       assessedIncomeAnnual,
       shortfallAnnual:
         row.date >= requirementDate
-          ? Math.max(0, targetIncomeAnnual - assessedIncomeAnnual)
+          ? calculateMoneyShortfall(targetIncomeAnnual, assessedIncomeAnnual)
           : 0,
       ...createFlexibleWithdrawalDiagnostics(row),
       flexibleWithdrawalInsights: createFlexibleWithdrawalInsights(row),
@@ -266,7 +277,7 @@ export function createRetirementIncomeSeries(
     };
   });
 
-  return insertChartTransitionPoints(baseSeries, settings);
+  return baseSeries;
 }
 
 function getTargetBasisIncomeAnnual(

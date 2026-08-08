@@ -1179,6 +1179,7 @@ describe("projection calculations", () => {
       showSipp: false,
       showIsa: false,
       showLisa: false,
+      showAdditionalGuaranteedIncome: true,
       taxationEnabled: true,
       additionalGuaranteedIncomes: [
         {
@@ -1288,6 +1289,7 @@ describe("projection calculations", () => {
       showSipp: false,
       showIsa: true,
       showLisa: false,
+      showAdditionalGuaranteedIncome: true,
       isaCurrentPot: 100000,
       isaMonthlyContribution: 0,
       isaDrawAge: 60,

@@ -66,7 +66,6 @@ describe("journey definitions", () => {
       "expert-inflation",
       "expert-state",
       "expert-alpha",
-      "expert-additional-income",
       "expert-sipp",
       "expert-isa",
       "answer",

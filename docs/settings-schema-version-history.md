@@ -1,6 +1,13 @@
 # Settings Schema Version History
 
-## Version 2 (current)
+## Version 10 (current)
+
+- Added `statePensionForecastConfirmed` so the modeller can distinguish a
+  personalised forecast from the fallback full-rate assumption.
+- Version 9 settings are migrated with the confirmation set to `false`. This
+  avoids treating an existing State Pension amount as personally confirmed.
+
+## Version 2
 
 - Introduced a versioned storage envelope for `cs-pension-modeller.settings`.
 - Stored settings now use `{ version, data }` rather than a bare settings object.

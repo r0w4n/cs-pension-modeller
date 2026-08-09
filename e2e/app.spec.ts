@@ -126,6 +126,27 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
     await clickNextAndExpectStep(
       page,
+      "Do you know your State Pension forecast?"
+    );
+    await expect(
+      page.getByRole("radio", { name: "No, use the full-rate assumption" })
+    ).toBeChecked();
+    await expect(
+      page.getByText(
+        /Assumption: the modeller will use the full new State Pension/i
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Check my State Pension forecast/i })
+    ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
+    await page.getByRole("radio", { name: "Yes, enter my forecast" }).click();
+    await fillCurrency(
+      page,
+      "How much State Pension does your forecast show each year?",
+      "12547.6"
+    );
+    await clickNextAndExpectStep(
+      page,
       "Do you have any other Civil Service pensions?"
     );
     await expect(
@@ -151,7 +172,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        /already meets or exceeds the target spending after estimated tax/i
+        /meets or exceeds the target spending after estimated tax/i
       )
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();

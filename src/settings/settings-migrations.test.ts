@@ -7,6 +7,7 @@ import {
   migrateFromV6ToV7,
   migrateFromV7ToV8,
   migrateFromV8ToV9,
+  migrateFromV9ToV10,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -146,6 +147,13 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("marks existing State Pension amounts as unconfirmed during v9 migration", () => {
+    expect(migrateFromV9ToV10({ currentStatePension: 12000 })).toEqual({
+      currentStatePension: 12000,
+      statePensionForecastConfirmed: false,
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -183,6 +191,7 @@ describe("settings-migrations", () => {
         noGoPercentage: 70,
       },
       flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
+      statePensionForecastConfirmed: false,
     });
   });
 

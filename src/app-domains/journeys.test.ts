@@ -348,6 +348,30 @@ describe("journey definitions", () => {
     );
   });
 
+  it("asks whether the simple user knows their State Pension forecast", () => {
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+    const step = simpleJourney?.steps.find(
+      (candidate) => candidate.id === "state-pension-forecast"
+    );
+    const stepIds = simpleJourney?.steps.map((candidate) => candidate.id) ?? [];
+
+    expect(step?.kind).toBe("fields");
+    if (step?.kind !== "fields") {
+      throw new Error("Expected the simple State Pension forecast step");
+    }
+
+    expect(step.fieldIds).toEqual(["currentStatePension"]);
+    expect(step.optionalQuestion?.setting.id).toBe(
+      "statePensionForecastConfirmed"
+    );
+    expect(step.supportLink?.href).toBe(knowledgeLinks.statePensionForecast);
+    expect(stepIds.indexOf("state-pension-forecast")).toBeLessThan(
+      stepIds.indexOf("include")
+    );
+  });
+
   it("keeps additional guaranteed income in the simple and bridge journeys", () => {
     expect(getJourneyStepIds("early-retirement-bridge")).toContain(
       "additional-income"

@@ -98,6 +98,7 @@ export type PensionSettings = {
   partialRetirementWorkPercent: number;
   fullSalary: number;
   currentStatePension: number;
+  statePensionForecastConfirmed: boolean;
   desiredRetirementIncome: number;
   retirementIncomeTargetBasis: RetirementIncomeTargetBasis;
   spendingStrategyType: SpendingStrategyType;

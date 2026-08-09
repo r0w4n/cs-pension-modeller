@@ -13,6 +13,7 @@ import {
   type RetirementIncomePoint,
 } from "../RetirementIncomeBridgeChart";
 import {
+  defaultSettings,
   type FlexibleFundAccountId,
   type PensionSettings,
   type PensionValidationIssue,
@@ -656,6 +657,8 @@ function AddedPensionGapEditor({
 }) {
   const usesAfterTaxTarget =
     settings.retirementIncomeTargetBasis === "after_tax";
+  const usesUnconfirmedStatePension =
+    settings.showStatePension && !settings.statePensionForecastConfirmed;
   const basis = useMemo(
     () => createAddedPensionGoalBasis(settings),
     [settings]
@@ -730,15 +733,28 @@ function AddedPensionGapEditor({
             ? "These are modelled amounts after estimated Income Tax, based on the information and assumptions entered."
             : "These are modelled amounts before tax, based on the information and assumptions entered."}
         </p>
+        {usesUnconfirmedStatePension ? (
+          <p className="field-warning" role="status">
+            This comparison includes an unconfirmed State Pension assumption of{" "}
+            {formatWholePounds(settings.currentStatePension)} a year. Your
+            actual spending gap could be larger if your personalised forecast is
+            lower.
+          </p>
+        ) : null}
       </section>
 
       {monthlyGap <= 0 ? (
         <p className="added-pension-gap-message">
-          This projection already meets or exceeds the{" "}
+          This projection{" "}
+          {usesUnconfirmedStatePension ? "appears to meet" : "meets or exceeds"}{" "}
+          the{" "}
           {usesAfterTaxTarget
             ? "target spending after estimated tax"
             : "retirement income target before tax"}
           , so the modeller has not added an Added Pension payment.
+          {usesUnconfirmedStatePension
+            ? " Check your personalised State Pension forecast before relying on this comparison."
+            : ""}
         </p>
       ) : basis.monthlyIncomePerContributionPound <= 0 ? (
         <p className="added-pension-gap-message" role="status">
@@ -865,6 +881,14 @@ function OptionalFieldsQuestion({
       return;
     }
 
+    if (question.setting.id === "statePensionForecastConfirmed") {
+      if (!enabled) {
+        onChange("currentStatePension", defaultSettings.currentStatePension);
+      }
+      onChange("statePensionForecastConfirmed", enabled);
+      return;
+    }
+
     if (!enabled) {
       onChange("alphaAddedPensionMonthly", 0);
     }
@@ -902,6 +926,15 @@ function OptionalFieldsQuestion({
         </div>
       </fieldset>
 
+      {question.setting.id === "statePensionForecastConfirmed" && !isEnabled ? (
+        <p className="field-warning" role="status">
+          Assumption: the modeller will use the full new State Pension of{" "}
+          {formatWholePounds(defaultSettings.currentStatePension)} a year. Your
+          actual amount may be different. Results will be marked as needing a
+          check until you enter your personalised forecast.
+        </p>
+      ) : null}
+
       {isEnabled ? children : null}
     </div>
   );
@@ -913,6 +946,10 @@ function isOptionalQuestionEnabled(
 ) {
   if (question.setting.id === "alphaEpaEnabled") {
     return settings.alphaEpaEnabled;
+  }
+
+  if (question.setting.id === "statePensionForecastConfirmed") {
+    return settings.statePensionForecastConfirmed;
   }
 
   return settings.alphaAddedPensionMonthly > 0;

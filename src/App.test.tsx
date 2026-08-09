@@ -572,6 +572,8 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     partialRetirementWorkPercent: defaultSettings.partialRetirementWorkPercent,
     fullSalary: defaultSettings.fullSalary,
     currentStatePension: defaultSettings.currentStatePension,
+    statePensionForecastConfirmed:
+      defaultSettings.statePensionForecastConfirmed,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
     retirementIncomeTargetBasis: defaultSettings.retirementIncomeTargetBasis,
     spendingStrategyType: defaultSettings.spendingStrategyType,
@@ -1002,6 +1004,11 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Alpha EPA/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /Do you know your State Pension forecast/i,
+      })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
@@ -1449,6 +1456,62 @@ describe("App settings form", () => {
     expect(
       screen.getByText("Estimated take-home pension income")
     ).toBeInTheDocument();
+  });
+
+  it("asks the simple user to confirm their personalised State Pension forecast", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    openJourneyStep(/Do you know your State Pension forecast/i);
+
+    expect(
+      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+    ).toBeChecked();
+    expect(
+      screen.getByText(
+        /Assumption: the modeller will use the full new State Pension/
+      )
+    ).toHaveTextContent("£12,548 a year");
+    expect(
+      screen.getByRole("link", { name: /Check my State Pension forecast/i })
+    ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
+    expect(
+      screen.queryByLabelText(
+        "How much State Pension does your forecast show each year?"
+      )
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Yes, enter my forecast" })
+    );
+    fireEvent.change(
+      screen.getByLabelText(
+        "How much State Pension does your forecast show each year?"
+      ),
+      { target: { value: "11000" } }
+    );
+    fireEvent.blur(
+      screen.getByLabelText(
+        "How much State Pension does your forecast show each year?"
+      )
+    );
+
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        currentStatePension: 11000,
+        statePensionForecastConfirmed: true,
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+    );
+
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        currentStatePension: defaultSettings.currentStatePension,
+        statePensionForecastConfirmed: false,
+      })
+    );
   });
 
   it("applies simple-mode NPA defaults to the shared settings", () => {
@@ -2131,7 +2194,7 @@ describe("App settings form", () => {
     openJourneyStep(/State pension details/i);
 
     expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
+      screen.getByLabelText("State Pension forecast (£ per year)")
     ).toHaveValue(defaultSettings.currentStatePension);
     expect(
       screen.getByLabelText("Project State Pension future growth")
@@ -2159,7 +2222,7 @@ describe("App settings form", () => {
     );
     expect(
       screen.getByRole("button", {
-        name: "Reset Current Full State Pension (£ per year) to default value",
+        name: "Reset State Pension forecast (£ per year) to default value",
       })
     ).toBeInTheDocument();
     expect(
@@ -2629,13 +2692,13 @@ describe("App settings form", () => {
     openJourneyStep(/State pension details/i);
 
     fireEvent.change(
-      screen.getByLabelText("Current Full State Pension (£ per year)"),
+      screen.getByLabelText("State Pension forecast (£ per year)"),
       {
         target: { value: "11800" },
       }
     );
     fireEvent.blur(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
+      screen.getByLabelText("State Pension forecast (£ per year)")
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
@@ -2784,7 +2847,7 @@ describe("App settings form", () => {
     expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
 
     fireEvent.change(
-      screen.getByLabelText("Current Full State Pension (£ per year)"),
+      screen.getByLabelText("State Pension forecast (£ per year)"),
       {
         target: { value: "11800" },
       }
@@ -2793,7 +2856,7 @@ describe("App settings form", () => {
     expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
 
     fireEvent.blur(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
+      screen.getByLabelText("State Pension forecast (£ per year)")
     );
 
     expect(screen.getByText("Saved Locally")).toBeInTheDocument();
@@ -2891,7 +2954,7 @@ describe("App settings form", () => {
     openJourneyStep(/State pension details/i);
 
     const statePensionSlider = screen.getByLabelText(
-      "Current Full State Pension (£ per year)"
+      "State Pension forecast (£ per year)"
     );
 
     fireEvent.change(statePensionSlider, {
@@ -2901,7 +2964,7 @@ describe("App settings form", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Reset Current Full State Pension (£ per year) to default value",
+        name: "Reset State Pension forecast (£ per year) to default value",
       })
     );
 
@@ -3761,13 +3824,13 @@ describe("App settings form", () => {
     openJourneyStep(/State pension details/i);
 
     fireEvent.change(
-      screen.getByLabelText("Current Full State Pension (£ per year)"),
+      screen.getByLabelText("State Pension forecast (£ per year)"),
       {
         target: { value: "13000" },
       }
     );
     fireEvent.blur(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
+      screen.getByLabelText("State Pension forecast (£ per year)")
     );
 
     openJourneyStep(/SIPP details/i);
@@ -3793,7 +3856,7 @@ describe("App settings form", () => {
     fireEvent.click(screen.getByLabelText("ISA"));
 
     expect(
-      screen.queryByLabelText("Current Full State Pension (£ per year)")
+      screen.queryByLabelText("State Pension forecast (£ per year)")
     ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Current SIPP pot (£)")
@@ -3860,7 +3923,7 @@ describe("App settings form", () => {
     openJourneyStep(/State pension details/i);
 
     expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
+      screen.getByLabelText("State Pension forecast (£ per year)")
     ).toHaveValue(13000);
 
     openJourneyStep(/SIPP details/i);
@@ -3985,7 +4048,7 @@ describe("App settings form", () => {
     openJourneyStep(/State pension details/i);
 
     expect(
-      screen.getByLabelText("Current Full State Pension (£ per year)")
+      screen.getByLabelText("State Pension forecast (£ per year)")
     ).toHaveValue(0);
 
     openJourneyStep(/Alpha pension details/i);

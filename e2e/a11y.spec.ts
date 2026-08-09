@@ -68,6 +68,28 @@ test.describe("accessibility", () => {
     ).toBeVisible();
     await expectNoAxeViolations(page, "simple journey EPA question");
 
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", {
+        name: "Do you know your State Pension forecast?",
+      })
+    ).toBeVisible();
+    await expectNoAxeViolations(
+      page,
+      "simple journey unconfirmed State Pension question"
+    );
+
+    await page.getByRole("radio", { name: "Yes, enter my forecast" }).click();
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "How much State Pension does your forecast show each year?",
+      })
+    ).toBeVisible();
+    await expectNoAxeViolations(
+      page,
+      "simple journey confirmed State Pension question"
+    );
+
     const mobileStepDisclosure = page.getByText("View all steps", {
       exact: true,
     });

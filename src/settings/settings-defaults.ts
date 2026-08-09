@@ -56,6 +56,8 @@ export const defaultSettings: PensionSettings = {
   partialRetirementWorkPercent: 60,
   fullSalary: 42000,
   currentStatePension: statePensionDefaults.currentStatePension,
+  statePensionForecastConfirmed:
+    statePensionDefaults.statePensionForecastConfirmed,
   desiredRetirementIncome: personalDetailsDefaults.desiredRetirementIncome,
   retirementIncomeTargetBasis: "gross",
   spendingStrategyType: "FLAT",

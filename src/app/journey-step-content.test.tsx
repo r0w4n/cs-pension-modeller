@@ -198,6 +198,9 @@ describe("JourneyStepContent", () => {
     expect(
       screen.getByText("Estimated monthly spending gap")
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/This comparison includes an unconfirmed State Pension/)
+    ).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("radio", {
@@ -274,6 +277,85 @@ describe("JourneyStepContent", () => {
     expect(
       screen.getByLabelText("How many years early does your EPA cover?")
     ).toBeInTheDocument();
+  });
+
+  it("makes the full State Pension an explicit unconfirmed assumption", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      currentStatePension: 12_000,
+      statePensionForecastConfirmed: false,
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "state-pension-forecast",
+          eyebrow: "Step 5",
+          title: "Do you know your State Pension forecast?",
+          description: "Confirm the State Pension amount.",
+          kind: "fields",
+          fieldIds: ["currentStatePension"],
+          fieldLabels: {
+            currentStatePension:
+              "How much State Pension does your forecast show each year?",
+          },
+          optionalQuestion: {
+            prompt: "Do you know your State Pension forecast?",
+            noLabel: "No, use the full-rate assumption",
+            yesLabel: "Yes, enter my forecast",
+            showPrompt: true,
+            setting: {
+              id: "statePensionForecastConfirmed",
+              enabledWhen: "true",
+            },
+          },
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+    ).toBeChecked();
+    expect(
+      screen.getByText(
+        /Assumption: the modeller will use the full new State Pension/
+      )
+    ).toHaveTextContent("£12,548 a year");
+    expect(
+      screen.queryByLabelText(
+        "How much State Pension does your forecast show each year?"
+      )
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Yes, enter my forecast" })
+    );
+
+    expect(viewModel.onChange).toHaveBeenCalledWith(
+      "statePensionForecastConfirmed",
+      true
+    );
+    expect(
+      screen.getByLabelText(
+        "How much State Pension does your forecast show each year?"
+      )
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+    );
+
+    expect(viewModel.onChange).toHaveBeenCalledWith(
+      "currentStatePension",
+      12_547.6
+    );
+    expect(viewModel.onChange).toHaveBeenCalledWith(
+      "statePensionForecastConfirmed",
+      false
+    );
   });
 
   it("renders the projection table for desktop expert results", () => {

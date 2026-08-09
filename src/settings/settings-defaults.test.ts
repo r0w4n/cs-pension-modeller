@@ -34,6 +34,13 @@ describe("settings-defaults", () => {
     expect(createDefaultSettings().showAdditionalGuaranteedIncome).toBe(false);
   });
 
+  it("does not treat the full State Pension default as a confirmed forecast", () => {
+    const settings = createDefaultSettings();
+
+    expect(settings.currentStatePension).toBe(12_547.6);
+    expect(settings.statePensionForecastConfirmed).toBe(false);
+  });
+
   it("formats local date parts", () => {
     expect(
       formatLocalIsoDate({

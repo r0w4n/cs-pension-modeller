@@ -101,6 +101,28 @@ describe("PensionSummarySection", () => {
     );
   });
 
+  it("marks an otherwise on-track result as needing a State Pension check", () => {
+    const result = createComparisonResultFixture();
+    result.scenario.settings.statePensionForecastConfirmed = false;
+
+    render(
+      <PensionSummarySection
+        activeResult={result}
+        description="Summary description"
+        retirementIncomeDisplay="annual"
+        incomeAgeRangeItems={[]}
+        statusItems={[]}
+      />
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("Needs checking");
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("unconfirmed State Pension assumption");
+  });
+
   it("warns when a Premium factor is unavailable and income is excluded", () => {
     const result = createComparisonResultFixture();
     result.summary.premiumPension.factorUnavailable = true;
@@ -155,6 +177,7 @@ function createComparisonResultFixture({
         alphaPensionDrawAge: 67,
         showNuvos: false,
         showStatePension: true,
+        statePensionForecastConfirmed: true,
       },
       createdAt: "",
       updatedAt: "",

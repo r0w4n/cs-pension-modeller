@@ -310,6 +310,7 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "premiumHasNpa65":
       return normalizePremiumBooleanSetting(value) as PensionSettings[K];
     case "showStatePension":
+    case "statePensionForecastConfirmed":
       return normalizeStatePensionBooleanSetting(value) as PensionSettings[K];
     case "taxationEnabled":
       return normalizeTaxationBooleanSetting(value) as PensionSettings[K];
@@ -479,6 +480,10 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     currentStatePension: normalizeSetting(
       "currentStatePension",
       settings.currentStatePension
+    ),
+    statePensionForecastConfirmed: normalizeSetting(
+      "statePensionForecastConfirmed",
+      settings.statePensionForecastConfirmed
     ),
     desiredRetirementIncome,
     retirementIncomeTargetBasis,

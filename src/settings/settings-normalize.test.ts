@@ -19,6 +19,9 @@ describe("settings-normalize", () => {
     expect(
       normalizeSetting("retirementIncomeTargetBasis", "bad" as never)
     ).toBe("gross");
+    expect(normalizeSetting("statePensionForecastConfirmed", 1 as never)).toBe(
+      true
+    );
     expect(
       normalizeSetting("alphaAddedPensionFactorType", "bad" as never)
     ).toBe("self");

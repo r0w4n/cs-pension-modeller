@@ -34,6 +34,7 @@ describe("state-pension domain", () => {
     const storedSettings = {
       showStatePension: true,
       currentStatePension: "12000",
+      statePensionForecastConfirmed: true,
       statePensionDrawDate: "2045-01-01",
       statePensionApplyFutureGrowth: false,
       statePensionCpiPercent: "1.5",
@@ -43,6 +44,7 @@ describe("state-pension domain", () => {
     expect(coerceStatePensionSettings(storedSettings)).toEqual({
       showStatePension: true,
       currentStatePension: 12000,
+      statePensionForecastConfirmed: true,
       statePensionDrawDate: "2045-01-01",
       statePensionApplyFutureGrowth: false,
       statePensionCpiPercent: 1.5,

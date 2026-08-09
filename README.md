@@ -150,6 +150,9 @@ Some important assumptions and simplifications are:
   between NPA/EPA tables only where the NPA/EPA itself is non-integer.
 - State Pension age is derived from date of birth using the timetable encoded in
   the app and can be deferred.
+- The full new State Pension rate is used only as an explicitly unconfirmed
+  fallback. Otherwise on-track results are marked as needing a check until the
+  user confirms an amount from their personalised GOV.UK forecast.
 - New State Pension deferral uses the post-2016 rule modelled by the app.
 - ISA, LISA and SIPP projections depend directly on entered balances,
   contributions, lump sums, growth assumptions, draw ages, and withdrawal

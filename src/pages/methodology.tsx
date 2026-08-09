@@ -753,6 +753,18 @@ export function MethodologyPage() {
           using encoded age rules.
         </p>
         <p className="section-copy">
+          The default annual amount is the full new State Pension rate and is
+          treated as an unconfirmed assumption. A result that otherwise appears
+          on track is marked as needing a check until the user confirms that the
+          amount comes from their personalised{" "}
+          <a href={knowledgeLinks.statePensionForecast}>
+            State Pension forecast
+          </a>
+          . The actual amount depends on the person&apos;s National Insurance
+          record and may differ because of qualifying years or time contracted
+          out.
+        </p>
+        <p className="section-copy">
           State Pension income starts from the selected State Pension draw date.
           If the draw date is later than the default State Pension age, the
           model applies deferral uplift.

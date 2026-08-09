@@ -103,6 +103,7 @@ export type RangeField = {
 
 export type CheckboxField = {
   id:
+    | "statePensionForecastConfirmed"
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
     | "classicApplyPensionIncreases"
@@ -376,8 +377,17 @@ export const fieldGroups: FieldGroup[] = [
     description: "Current forecast and optional future uprating assumptions.",
     fields: [
       {
+        id: "statePensionForecastConfirmed",
+        label: "This is my personalised State Pension forecast",
+        type: "checkbox",
+        description:
+          "Select this only when the amount below comes from your personalised GOV.UK State Pension forecast. Otherwise results treat it as an assumption that still needs checking.",
+        infoUrl: knowledgeLinks.statePensionForecast,
+        infoLinkText: "Check State Pension forecast",
+      },
+      {
         id: "currentStatePension",
-        label: "Current Full State Pension (£ per year)",
+        label: "State Pension forecast (£ per year)",
         type: "currency-input",
         min: 0,
         max: 15000,

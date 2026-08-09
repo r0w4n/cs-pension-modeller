@@ -191,6 +191,17 @@ export function migrateFromV8ToV9(data: unknown) {
   };
 }
 
+export function migrateFromV9ToV10(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    statePensionForecastConfirmed: false,
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -200,6 +211,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   6: migrateFromV6ToV7,
   7: migrateFromV7ToV8,
   8: migrateFromV8ToV9,
+  9: migrateFromV9ToV10,
 };
 
 export function migrateSettingsToLatest(

@@ -14,6 +14,7 @@ import {
 export const statePensionDefaults = {
   showStatePension: true,
   currentStatePension: 12547.6,
+  statePensionForecastConfirmed: false,
   statePensionDrawDate: DEFAULT_STATE_PENSION_DRAW_DATE,
   statePensionApplyFutureGrowth: false,
   statePensionCpiPercent: 0,
@@ -98,6 +99,9 @@ export function coerceStatePensionSettings(
 ): Partial<StoredPensionSettings> {
   return {
     showStatePension: coerceBoolean(input.showStatePension),
+    statePensionForecastConfirmed: coerceBoolean(
+      input.statePensionForecastConfirmed
+    ),
     currentStatePension: coerceNumber(input.currentStatePension),
     statePensionDrawDate: coerceString(input.statePensionDrawDate),
     statePensionApplyFutureGrowth: coerceBoolean(

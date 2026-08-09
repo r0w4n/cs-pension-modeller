@@ -89,6 +89,20 @@ Feature: Modeller journeys
     But the estimated take-home pension income should be below the spending target
     And the scenario should report a shortfall against the spending target
 
+  @simple-journey @state-pension
+  Scenario: Do not present an assumed full State Pension as confirmed
+    Given default modeller settings
+    When the "Simplified retirement journey" journey is loaded
+    Then the journey should include a step titled "Do you know your State Pension forecast?"
+    And the "Do you know your State Pension forecast?" journey step should use a yes or no question
+    And the "Do you know your State Pension forecast?" journey step should link to the personalised State Pension forecast
+    And the "Do you know your State Pension forecast?" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
+    Given an unconfirmed full State Pension assumption
+    And the assumed State Pension is enough to meet the retirement target
+    When the retirement outcome is assessed
+    Then the retirement outcome should be labelled "Needs checking"
+    And the retirement outcome should explain that the State Pension is unconfirmed
+
   @simple-journey @optional-sections
   Scenario: Use the retirement target to estimate Added Pension after the basic projection
     When the "Simplified retirement journey" journey is loaded

@@ -1291,7 +1291,10 @@ export function buildComparisonStatusItems(
   options: { hideBridgeFundingSection?: boolean } = {}
 ): SummaryItemLike[] {
   const { hideBridgeFundingSection = false } = options;
-  const overallWorks =
+  const statePensionNeedsChecking = usesUnconfirmedStatePension(
+    result.scenario.settings
+  );
+  const calculationWorks =
     result.targetMissMonths === 0 &&
     (hideBridgeFundingSection || result.bridgeAnalysis.planWorks) &&
     result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus >= 0;
@@ -1299,7 +1302,9 @@ export function buildComparisonStatusItems(
   const targetShortfall =
     result.targetMissMonths > 0
       ? `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`
-      : "No shortfall against the target";
+      : statePensionNeedsChecking
+        ? "No calculated shortfall using the unconfirmed State Pension amount"
+        : "No shortfall against the target";
 
   let mainIssue = "No shortfall identified from the current assumptions.";
 
@@ -1322,12 +1327,21 @@ export function buildComparisonStatusItems(
     mainIssue = hideBridgeFundingSection
       ? "Income drops below target before all selected secure pension income is in place"
       : "Income drops below target before secure pension income is fully in place";
+  } else if (statePensionNeedsChecking) {
+    mainIssue = `State Pension uses an unconfirmed assumption of ${formatCurrencyWholePerYear(
+      result.scenario.settings.currentStatePension
+    )}`;
   }
 
   return [
     {
       label: "Overall status",
-      value: overallWorks ? "Looks workable" : "Needs attention",
+      value:
+        calculationWorks && statePensionNeedsChecking
+          ? "Needs checking"
+          : calculationWorks
+            ? "Looks workable"
+            : "Needs attention",
     },
     {
       label: "Target shortfall",
@@ -1352,7 +1366,7 @@ export type RetirementOutcomeStatus = "onTrack" | "shortfall" | "atRisk";
 
 export type RetirementOutcomeBanner = {
   status: RetirementOutcomeStatus;
-  label: "On track" | "Shortfall" | "At risk";
+  label: "On track" | "Shortfall" | "At risk" | "Needs checking";
   message: string;
 };
 
@@ -1367,7 +1381,21 @@ export function buildRetirementOutcomeBanner(
     return {
       status: "shortfall",
       label: "Shortfall",
-      message: buildShortfallOutcomeMessage(result, shortfallRange),
+      message: appendUnconfirmedStatePensionWarning(
+        buildShortfallOutcomeMessage(result, shortfallRange),
+        result.scenario.settings
+      ),
+    };
+  }
+
+  if (usesUnconfirmedStatePension(result.scenario.settings)) {
+    return {
+      status: "atRisk",
+      label: "Needs checking",
+      message: appendUnconfirmedStatePensionWarning(
+        buildOnTrackOutcomeMessage(result),
+        result.scenario.settings
+      ),
     };
   }
 
@@ -1376,6 +1404,23 @@ export function buildRetirementOutcomeBanner(
     label: "On track",
     message: buildOnTrackOutcomeMessage(result),
   };
+}
+
+function usesUnconfirmedStatePension(settings: PensionSettings) {
+  return settings.showStatePension && !settings.statePensionForecastConfirmed;
+}
+
+function appendUnconfirmedStatePensionWarning(
+  message: string,
+  settings: PensionSettings
+) {
+  if (!usesUnconfirmedStatePension(settings)) {
+    return message;
+  }
+
+  return `${message} This includes an unconfirmed State Pension assumption of ${formatCurrencyWholePerYear(
+    settings.currentStatePension
+  )}. Your actual amount depends on your National Insurance record. Check your personalised forecast before relying on this result.`;
 }
 
 export function buildIncomeAgeRangeItems(

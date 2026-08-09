@@ -146,6 +146,10 @@ export type JourneyOptionalQuestion = {
     | {
         id: "alphaEpaEnabled";
         enabledWhen: "true";
+      }
+    | {
+        id: "statePensionForecastConfirmed";
+        enabledWhen: "true";
       };
 };
 
@@ -346,6 +350,7 @@ export const JOURNEY_DEFINITIONS = [
           "Check your State Pension forecast and the date it becomes available.",
         kind: "fields",
         fieldIds: [
+          "statePensionForecastConfirmed",
           "currentStatePension",
           "statePensionDrawDate",
           "statePensionApplyFutureGrowth",
@@ -598,6 +603,42 @@ export const JOURNEY_DEFINITIONS = [
           partialRetirementWorkPercent: "Reduced hours percentage",
         },
         visible: (settings) => settings.partialRetirementEnabled,
+      },
+      {
+        id: "state-pension-forecast",
+        eyebrow: "Step 5",
+        title: "Do you know your State Pension forecast?",
+        description:
+          "Your State Pension depends on your National Insurance record. The amount can differ because of your qualifying years or time contracted out of the Additional State Pension.",
+        kind: "fields",
+        fieldIds: ["currentStatePension"],
+        fieldLabels: {
+          currentStatePension:
+            "How much State Pension does your forecast show each year?",
+        },
+        fieldDescriptions: {
+          currentStatePension:
+            "Enter the yearly amount from your personalised forecast. If it shows a weekly amount, multiply it by 52.",
+        },
+        hideFieldInfoLinks: true,
+        supportLink: {
+          heading: "Check your personalised forecast",
+          description:
+            "GOV.UK can show how much State Pension you could get, when you can get it and whether you may be able to increase it.",
+          href: knowledgeLinks.statePensionForecast,
+          label: "Check my State Pension forecast",
+        },
+        optionalQuestion: {
+          prompt: "Do you know your State Pension forecast?",
+          noLabel: "No, use the full-rate assumption",
+          yesLabel: "Yes, enter my forecast",
+          showPrompt: true,
+          setting: {
+            id: "statePensionForecastConfirmed",
+            enabledWhen: "true",
+          },
+        },
+        visible: (settings) => settings.showStatePension,
       },
       {
         id: "include",

@@ -468,6 +468,47 @@ describe("comparison table rows", () => {
     ]);
   });
 
+  it("does not report on track while the State Pension amount is unconfirmed", () => {
+    const settings = {
+      ...createExactTargetScenarioSettings(),
+      statePensionForecastConfirmed: false,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Unconfirmed State Pension",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    const banner = buildRetirementOutcomeBanner(result);
+
+    expect(banner.status).toBe("atRisk");
+    expect(banner.label).toBe("Needs checking");
+    expect(banner.message).toContain(
+      "unconfirmed State Pension assumption of £12,548/year"
+    );
+    expect(
+      buildComparisonStatusItems(result, {
+        hideBridgeFundingSection: true,
+      })
+    ).toEqual([
+      { label: "Overall status", value: "Needs checking" },
+      {
+        label: "Target shortfall",
+        value:
+          "No calculated shortfall using the unconfirmed State Pension amount",
+      },
+      {
+        label: "Main issue",
+        value: "State Pension uses an unconfirmed assumption of £12,548/year",
+      },
+    ]);
+  });
+
   it("counts projection months rather than chart-only transition points", () => {
     const settings = {
       ...createExactTargetScenarioSettings(),
@@ -554,6 +595,7 @@ function createExactTargetScenarioSettings() {
     requirementAge: 67,
     projectionBasis: "real" as const,
     currentStatePension: 12_547.6,
+    statePensionForecastConfirmed: true,
     desiredRetirementIncome: 45_400,
     statePensionDrawDate: "2041-06-01",
     statePensionApplyFutureGrowth: false,

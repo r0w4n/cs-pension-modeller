@@ -10,6 +10,7 @@ import {
 import { fieldGroups } from "../../src/fieldDefinitions";
 import { knowledgeLinks } from "../../src/knowledgeLinks";
 import {
+  buildRetirementOutcomeBanner,
   buildComparisonTableRows,
   createComparisonResult,
   type ComparisonResult,
@@ -1160,6 +1161,23 @@ Then(
 );
 
 Then(
+  "the {string} journey step should link to the personalised State Pension forecast",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields" &&
+        step.supportLink?.href === knowledgeLinks.statePensionForecast,
+      `Expected journey step "${stepTitle}" to link to the personalised State Pension forecast`
+    );
+  }
+);
+
+Then(
   "the {string} journey step should appear before the {string} journey step",
   function (
     this: ProductAcceptanceWorld,
@@ -1377,6 +1395,42 @@ Given(
   }
 );
 
+Given(
+  "an unconfirmed full State Pension assumption",
+  function (this: ProductAcceptanceWorld) {
+    this.settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-06-01",
+      dateOfBirth: "1987-06-01",
+      requirementAge: 68,
+      lifeExpectancy: 80,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: true,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+      statePensionForecastConfirmed: false,
+      taxationEnabled: false,
+    };
+  }
+);
+
+Given(
+  "the assumed State Pension is enough to meet the retirement target",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.settings = {
+      ...settings,
+      desiredRetirementIncome: settings.currentStatePension - 100,
+    };
+  }
+);
+
 When(
   "the retirement outcome is assessed",
   function (this: ProductAcceptanceWorld) {
@@ -1421,6 +1475,28 @@ Then(
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
     assertCondition(result.targetMissMonths > 0);
+  }
+);
+
+Then(
+  "the retirement outcome should be labelled {string}",
+  function (this: ProductAcceptanceWorld, expectedLabel: string) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertEqual(buildRetirementOutcomeBanner(result).label, expectedLabel);
+  }
+);
+
+Then(
+  "the retirement outcome should explain that the State Pension is unconfirmed",
+  function (this: ProductAcceptanceWorld) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertCondition(
+      buildRetirementOutcomeBanner(result).message.includes(
+        "unconfirmed State Pension assumption"
+      )
+    );
   }
 );
 

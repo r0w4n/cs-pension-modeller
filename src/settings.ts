@@ -22,6 +22,7 @@ export type {
   IsaWithdrawalStrategy,
   LisaWithdrawalStrategy,
   SippTaxReliefRate,
+  TaxRegime,
   ProjectionBasis,
   SpendingSmileStrategy,
   SpendingStrategyType,
@@ -111,5 +112,7 @@ export {
 } from "./settings/settings-domains/isa";
 
 export { calculateDefaultSippDrawAge } from "./settings/settings-domains/sipp";
+
+export { TAX_REGIME_OPTIONS } from "./settings/settings-domains/tax";
 
 export { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings/settings-domains/lisa";

@@ -63,6 +63,7 @@ import {
   normalizeCsAvcWithdrawalStrategy,
 } from "./settings-domains/cs-avc";
 import {
+  normalizeTaxRegime,
   normalizeTaxationBooleanSetting,
   taxNumericSettingRules,
 } from "./settings-domains/tax";
@@ -313,6 +314,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeStatePensionBooleanSetting(value) as PensionSettings[K];
     case "taxationEnabled":
       return normalizeTaxationBooleanSetting(value) as PensionSettings[K];
+    case "taxRegime":
+      return normalizeTaxRegime(value) as PensionSettings[K];
     case "partialRetirementEnabled":
       return normalizePartialRetirementBooleanSetting(
         value
@@ -456,6 +459,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.additionalGuaranteedIncomes
     ),
     taxationEnabled: normalizeTaxationBooleanSetting(settings.taxationEnabled),
+    taxRegime: normalizeTaxRegime(settings.taxRegime),
     partialRetirementEnabled: Boolean(settings.partialRetirementEnabled),
     partialRetirementStartAge: normalizeSetting(
       "partialRetirementStartAge",

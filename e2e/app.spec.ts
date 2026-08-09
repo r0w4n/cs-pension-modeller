@@ -146,6 +146,36 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
   });
 
+  test("expert mode persists the Scottish Income Tax regime and shows its relevant assumptions", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await page.getByRole("checkbox", { name: "Taxation" }).check();
+    await page.getByRole("button", { name: /Tax assumptions/i }).click();
+
+    const taxRegime = page.getByRole("combobox", {
+      name: "Income Tax regime",
+    });
+    await expect(taxRegime).toHaveValue("rest_of_uk");
+    await taxRegime.selectOption("scotland");
+
+    await expect(taxRegime).toHaveValue("scotland");
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Personal Allowance (£ per year)",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Basic-rate taxable band (£ per year)",
+      })
+    ).toHaveCount(0);
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"taxRegime":"scotland"');
+  });
+
   test("completes the bridge journey", async ({ page }, testInfo) => {
     test.slow();
 

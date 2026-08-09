@@ -441,6 +441,20 @@ Given(
 );
 
 Given(
+  "the Income Tax regime is England, Wales or Northern Ireland",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { taxRegime: "rest_of_uk" });
+  }
+);
+
+Given(
+  "the Income Tax regime is Scotland",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { taxRegime: "scotland" });
+  }
+);
+
+Given(
   "the personal allowance is {float}",
   function (this: ProductAcceptanceWorld, taxPersonalAllowance: number) {
     updateSettings(this, { taxPersonalAllowance });

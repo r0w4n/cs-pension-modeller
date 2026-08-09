@@ -51,6 +51,7 @@ export const defaultSettings: PensionSettings = {
   showAdditionalGuaranteedIncome: false,
   additionalGuaranteedIncomes: [],
   taxationEnabled: taxDefaults.taxationEnabled,
+  taxRegime: taxDefaults.taxRegime,
   partialRetirementEnabled: false,
   partialRetirementStartAge: 55,
   partialRetirementWorkPercent: 60,

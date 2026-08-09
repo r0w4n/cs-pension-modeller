@@ -6,6 +6,7 @@ import {
   migrateFromV5ToV6,
   migrateFromV6ToV7,
   migrateFromV7ToV8,
+  migrateFromV8ToV9,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -138,6 +139,13 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("keeps existing plans on the rest-of-UK tax regime during v8 migration", () => {
+    expect(migrateFromV8ToV9({ requirementAge: 60 })).toEqual({
+      requirementAge: 60,
+      taxRegime: "rest_of_uk",
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -174,6 +182,7 @@ describe("settings-migrations", () => {
         noGoPercentage: 70,
       },
       flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
+      taxRegime: "rest_of_uk",
     });
   });
 

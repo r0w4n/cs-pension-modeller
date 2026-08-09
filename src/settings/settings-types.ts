@@ -46,6 +46,7 @@ export type CsAvcWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type IsaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type LisaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type SippTaxReliefRate = "none" | "20" | "40";
+export type TaxRegime = "rest_of_uk" | "scotland";
 export type ProjectionBasis = "real" | "nominal";
 export type ClassicCalculationMode = "estimate" | "manual";
 export type ClassicFinalSalaryLink = "maintained" | "broken";
@@ -92,6 +93,7 @@ export type PensionSettings = {
   showAdditionalGuaranteedIncome: boolean;
   additionalGuaranteedIncomes: AdditionalGuaranteedIncome[];
   taxationEnabled: boolean;
+  taxRegime: TaxRegime;
   partialRetirementEnabled: boolean;
   partialRetirementStartAge: number;
   partialRetirementWorkPercent: number;

@@ -7587,7 +7587,7 @@ export const acceptanceFeatures = [
       {
         id: "line-20",
         keyword: "Scenario Outline",
-        name: "Estimate annual Income Tax using the selected tax bands",
+        name: "Estimate annual Income Tax for England, Wales or Northern Ireland",
         description: "",
         tags: ["@standard-assumptions"],
         status: "covered",
@@ -7600,45 +7600,37 @@ export const acceptanceFeatures = [
           },
           {
             id: "line-22",
+            keyword: "And",
+            text: "the Income Tax regime is England, Wales or Northern Ireland",
+          },
+          {
+            id: "line-23",
             keyword: "When",
             text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
           },
           {
-            id: "line-23",
+            id: "line-24",
             keyword: "Then",
             text: "the annual Income Tax should be <expectedAnnualTax>",
           },
         ],
         examples: [
           {
-            id: "line-25",
+            id: "line-26",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-26",
-                cells: [
-                  {
-                    id: "line-26-column-9",
-                    value: "annualTaxableIncome",
-                  },
-                  {
-                    id: "line-26-column-31",
-                    value: "expectedAnnualTax",
-                  },
-                ],
-              },
-              {
                 id: "line-27",
                 cells: [
                   {
                     id: "line-27-column-9",
-                    value: "50000.00",
+                    value: "annualTaxableIncome",
                   },
                   {
                     id: "line-27-column-31",
-                    value: "7486.00",
+                    value: "expectedAnnualTax",
                   },
                 ],
               },
@@ -7647,11 +7639,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-28-column-9",
-                    value: "125140.00",
+                    value: "50000.00",
                   },
                   {
                     id: "line-28-column-31",
-                    value: "42516.00",
+                    value: "7486.00",
                   },
                 ],
               },
@@ -7660,10 +7652,23 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-29-column-9",
-                    value: "130000.00",
+                    value: "125140.00",
                   },
                   {
                     id: "line-29-column-31",
+                    value: "42516.00",
+                  },
+                ],
+              },
+              {
+                id: "line-30",
+                cells: [
+                  {
+                    id: "line-30-column-9",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-30-column-31",
                     value: "44703.00",
                   },
                 ],
@@ -7673,7 +7678,165 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-32",
+        id: "line-33",
+        keyword: "Scenario Outline",
+        name: "Estimate annual Scottish Income Tax across each 2026/27 band",
+        description: "",
+        tags: ["@scotland", "@standard-assumptions"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-34",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-35",
+            keyword: "And",
+            text: "the Income Tax regime is Scotland",
+          },
+          {
+            id: "line-36",
+            keyword: "When",
+            text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
+          },
+          {
+            id: "line-37",
+            keyword: "Then",
+            text: "the annual Income Tax should be <expectedAnnualTax>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-39",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-40",
+                cells: [
+                  {
+                    id: "line-40-column-9",
+                    value: "annualTaxableIncome",
+                  },
+                  {
+                    id: "line-40-column-31",
+                    value: "expectedAnnualTax",
+                  },
+                ],
+              },
+              {
+                id: "line-41",
+                cells: [
+                  {
+                    id: "line-41-column-9",
+                    value: "12570.00",
+                  },
+                  {
+                    id: "line-41-column-31",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-42",
+                cells: [
+                  {
+                    id: "line-42-column-9",
+                    value: "16537.00",
+                  },
+                  {
+                    id: "line-42-column-31",
+                    value: "753.73",
+                  },
+                ],
+              },
+              {
+                id: "line-43",
+                cells: [
+                  {
+                    id: "line-43-column-9",
+                    value: "29526.00",
+                  },
+                  {
+                    id: "line-43-column-31",
+                    value: "3351.53",
+                  },
+                ],
+              },
+              {
+                id: "line-44",
+                cells: [
+                  {
+                    id: "line-44-column-9",
+                    value: "43662.00",
+                  },
+                  {
+                    id: "line-44-column-31",
+                    value: "6320.09",
+                  },
+                ],
+              },
+              {
+                id: "line-45",
+                cells: [
+                  {
+                    id: "line-45-column-9",
+                    value: "75000.00",
+                  },
+                  {
+                    id: "line-45-column-31",
+                    value: "19482.05",
+                  },
+                ],
+              },
+              {
+                id: "line-46",
+                cells: [
+                  {
+                    id: "line-46-column-9",
+                    value: "110000.00",
+                  },
+                  {
+                    id: "line-46-column-31",
+                    value: "37482.05",
+                  },
+                ],
+              },
+              {
+                id: "line-47",
+                cells: [
+                  {
+                    id: "line-47-column-9",
+                    value: "125140.00",
+                  },
+                  {
+                    id: "line-47-column-31",
+                    value: "47701.55",
+                  },
+                ],
+              },
+              {
+                id: "line-48",
+                cells: [
+                  {
+                    id: "line-48-column-9",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-48-column-31",
+                    value: "50034.35",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-51",
         keyword: "Scenario",
         name: "Keep the tax-free SIPP share outside taxable income",
         description: "",
@@ -7682,37 +7845,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-33",
+            id: "line-52",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-34",
+            id: "line-53",
             keyword: "And",
             text: "the SIPP tax-free withdrawal share is 25.00%",
           },
           {
-            id: "line-35",
+            id: "line-54",
             keyword: "And",
             text: "monthly Alpha pension income is 2000.00",
           },
           {
-            id: "line-36",
+            id: "line-55",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-37",
+            id: "line-56",
             keyword: "And",
             text: "monthly SIPP income is 1000.00",
           },
           {
-            id: "line-38",
+            id: "line-57",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-39",
+            id: "line-58",
             keyword: "Then",
             text: "the monthly Income Tax should be 540.50",
           },
@@ -7720,7 +7883,59 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-42",
+        id: "line-61",
+        keyword: "Scenario",
+        name: "Apply Scottish bands after excluding the tax-free SIPP share",
+        description: "",
+        tags: ["@scotland", "@sipp"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-62",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-63",
+            keyword: "And",
+            text: "the Income Tax regime is Scotland",
+          },
+          {
+            id: "line-64",
+            keyword: "And",
+            text: "the SIPP tax-free withdrawal share is 25.00%",
+          },
+          {
+            id: "line-65",
+            keyword: "And",
+            text: "monthly Alpha pension income is 2000.00",
+          },
+          {
+            id: "line-66",
+            keyword: "And",
+            text: "monthly State Pension income is 1000.00",
+          },
+          {
+            id: "line-67",
+            keyword: "And",
+            text: "monthly SIPP income is 1000.00",
+          },
+          {
+            id: "line-68",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-69",
+            keyword: "Then",
+            text: "the monthly Income Tax should be 573.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-72",
         keyword: "Scenario",
         name: "Include nuvos pension in taxable retirement income",
         description: "",
@@ -7729,37 +7944,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-43",
+            id: "line-73",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-44",
+            id: "line-74",
             keyword: "And",
             text: "the personal allowance is 0.00",
           },
           {
-            id: "line-45",
+            id: "line-75",
             keyword: "And",
             text: "the basic rate band is 50000.00",
           },
           {
-            id: "line-46",
+            id: "line-76",
             keyword: "And",
             text: "monthly Alpha pension income is 100.00",
           },
           {
-            id: "line-47",
+            id: "line-77",
             keyword: "And",
             text: "monthly nuvos pension income is 50.00",
           },
           {
-            id: "line-48",
+            id: "line-78",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-49",
+            id: "line-79",
             keyword: "Then",
             text: "the monthly Income Tax should be 30.00",
           },

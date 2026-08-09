@@ -49,6 +49,7 @@ export const knowledgeLinks = {
   pensionAccessAge:
     "https://www.gov.uk/personal-pensions-your-rights/how-you-can-take-pension",
   incomeTaxRates: "https://www.gov.uk/income-tax-rates",
+  scottishIncomeTaxRates: "https://www.gov.uk/scottish-income-tax",
   isaAllowance: "https://www.gov.uk/individual-savings-accounts",
   lifetimeIsa: "https://www.gov.uk/lifetime-isa",
   pensionTaxFree: "https://www.gov.uk/tax-on-pension/tax-free",

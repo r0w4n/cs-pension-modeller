@@ -48,6 +48,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
       defaultSettings.showAdditionalGuaranteedIncome,
     additionalGuaranteedIncomes: [],
     taxationEnabled: defaultSettings.taxationEnabled,
+    taxRegime: defaultSettings.taxRegime,
     partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
     partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
     partialRetirementWorkPercent: defaultSettings.partialRetirementWorkPercent,
@@ -358,6 +359,7 @@ describe("settings unit tests", () => {
         defaultSettings.showAdditionalGuaranteedIncome,
       additionalGuaranteedIncomes: [],
       taxationEnabled: defaultSettings.taxationEnabled,
+      taxRegime: defaultSettings.taxRegime,
       partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
       partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
       partialRetirementWorkPercent:

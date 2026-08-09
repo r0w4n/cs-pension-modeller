@@ -47,7 +47,8 @@ It supports:
   estimated unallocated net surplus, residual-balance warnings, account
   attribution, and non-destructive target-based previews
 - bridge analysis for the period before secure pension income starts
-- simplified UK Income Tax estimates for gross and take-home income comparison
+- simplified 2026/27 Income Tax estimates for England, Wales, Northern Ireland
+  and Scotland, for gross and take-home income comparison
 - real-terms and nominal-terms projection bases
 - saved scenarios for side-by-side comparison
 - projection charts, summaries, and detailed projection tables
@@ -96,7 +97,8 @@ The current app is driven by inputs grouped around:
 - SIPP, ISA and LISA: current balances, contributions, lump sums, growth, draw
   ages, withdrawal strategies, and use-by ages
 - partial retirement: start age and working percentage
-- taxation: configurable simplified UK Income Tax assumptions
+- taxation: a 2026/27 rest-of-UK or Scottish regime, with configurable
+  allowance and rest-of-UK assumptions
 - comparison: saved scenario names and settings snapshots
 
 Optional sections can be hidden without deleting their saved values, so users
@@ -154,9 +156,11 @@ Some important assumptions and simplifications are:
   strategy. LISA additions are capped at the modelled Lifetime ISA annual
   allowance, receive the modelled government bonus on eligible additions, stop
   at age 50, and are modelled for retirement withdrawals from age 60.
-- Income Tax is simplified and configurable. It does not cover every personal
-  tax circumstance, devolved tax regime, tax code adjustment, or benefit
-  interaction.
+- Income Tax uses the selected 2026/27 regime throughout the projection.
+  Scottish pension income uses the published starter, basic, intermediate,
+  higher, advanced and top bands. The estimate does not cover every personal
+  tax circumstance, future tax-year changes, tax code adjustment, savings or
+  dividend income, or benefit interaction.
 - Results are deterministic scenario outputs, not probabilistic forecasts.
 
 For more detail, see the in-app Methodology page.

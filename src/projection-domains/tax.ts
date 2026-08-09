@@ -1,4 +1,5 @@
 import type { PensionSettings } from "../settings";
+import { SCOTTISH_INCOME_TAX_RULES } from "../data/income-tax-rules";
 
 export function calculateMonthlyIncomeTax(input: {
   settings: PensionSettings;
@@ -62,6 +63,23 @@ export function calculateAnnualIncomeTax(
     0,
     annualTaxableIncome - personalAllowance
   );
+
+  if (settings.taxRegime === "scotland") {
+    return calculateScottishIncomeTax(taxableAfterAllowance);
+  }
+
+  return calculateRestOfUkIncomeTax(
+    settings,
+    taxableAfterAllowance,
+    personalAllowance
+  );
+}
+
+function calculateRestOfUkIncomeTax(
+  settings: PensionSettings,
+  taxableAfterAllowance: number,
+  personalAllowance: number
+) {
   const basicBand = Math.max(0, settings.taxBasicRateLimit);
   const additionalThreshold = Math.max(
     settings.taxAdditionalRateThreshold,
@@ -86,6 +104,29 @@ export function calculateAnnualIncomeTax(
     higherTaxable * (settings.taxHigherRatePercent / 100) +
     additionalTaxable * (settings.taxAdditionalRatePercent / 100)
   );
+}
+
+function calculateScottishIncomeTax(taxableAfterAllowance: number) {
+  let tax = 0;
+  let lowerLimit = 0;
+
+  for (const band of SCOTTISH_INCOME_TAX_RULES.bands) {
+    const upperLimit = band.upperTaxableIncome ?? Number.POSITIVE_INFINITY;
+    const amountInBand = Math.max(
+      0,
+      Math.min(taxableAfterAllowance, upperLimit) - lowerLimit
+    );
+
+    tax += amountInBand * (band.ratePercent / 100);
+
+    if (taxableAfterAllowance <= upperLimit) {
+      break;
+    }
+
+    lowerLimit = upperLimit;
+  }
+
+  return tax;
 }
 
 function calculateTaxPersonalAllowance(

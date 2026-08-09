@@ -1,7 +1,16 @@
-import type { StoredPensionSettings } from "../settings-types";
+import type { StoredPensionSettings, TaxRegime } from "../settings-types";
+
+export const TAX_REGIME_OPTIONS = [
+  {
+    value: "rest_of_uk",
+    label: "England, Wales or Northern Ireland (2026/27)",
+  },
+  { value: "scotland", label: "Scotland (2026/27)" },
+] as const satisfies readonly { value: TaxRegime; label: string }[];
 
 export const taxDefaults = {
   taxationEnabled: false,
+  taxRegime: "rest_of_uk",
   taxPersonalAllowance: 12570,
   taxPersonalAllowanceTaperThreshold: 100000,
   taxBasicRateLimit: 37700,
@@ -29,6 +38,10 @@ export function normalizeTaxationBooleanSetting(value: unknown) {
   return Boolean(value);
 }
 
+export function normalizeTaxRegime(value: unknown): TaxRegime {
+  return value === "scotland" ? "scotland" : "rest_of_uk";
+}
+
 function coerceNumber(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -43,6 +56,10 @@ export function coerceTaxSettings(
 ): Partial<StoredPensionSettings> {
   return {
     taxationEnabled: coerceBoolean(input.taxationEnabled),
+    taxRegime:
+      input.taxRegime === "rest_of_uk" || input.taxRegime === "scotland"
+        ? input.taxRegime
+        : undefined,
     taxPersonalAllowance: coerceNumber(input.taxPersonalAllowance),
     taxPersonalAllowanceTaperThreshold: coerceNumber(
       input.taxPersonalAllowanceTaperThreshold

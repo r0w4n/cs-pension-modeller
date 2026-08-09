@@ -133,11 +133,11 @@ const TAXABLE_INCOME_SOURCES = [
 ] as const;
 
 const TAX_ASSUMPTIONS = [
+  "selected 2026/27 rest-of-UK or Scottish regime",
   "Personal Allowance",
   "Personal Allowance taper",
-  "basic-rate band",
-  "higher-rate band",
-  "additional-rate threshold",
+  "configurable rest-of-UK basic, higher and additional bands",
+  "published Scottish starter, basic, intermediate, higher, advanced and top bands",
   "taxable share of SIPP withdrawals",
   "taxable share of CS AVC withdrawals",
 ] as const;
@@ -253,8 +253,9 @@ export function MethodologyPage() {
         <ul className="section-copy">
           <li>
             Income Tax is estimated from configurable standard assumptions. It
-            does not cover Scottish tax bands, benefit interactions, tax code
-            changes, or other personal reliefs.
+            supports the 2026/27 rest-of-UK and Scottish regimes, but does not
+            cover future tax-year changes, benefit interactions, tax-code
+            changes, savings or dividend income, or other personal reliefs.
           </li>
           <li>
             Inflation is only modelled where explicit CPI or growth assumptions
@@ -1130,7 +1131,10 @@ export function MethodologyPage() {
       <section>
         <h2>Tax methodology</h2>
         <p className="section-copy">
-          The model includes a simplified UK Income Tax estimate.
+          The model includes a simplified 2026/27 UK Income Tax estimate for
+          pension income. The selected regime is applied unchanged throughout
+          the projection; the model does not forecast future tax policy or
+          uprate tax bands.
         </p>
         <p className="section-copy">Taxable income may include:</p>
         <ul className="section-copy">
@@ -1151,11 +1155,42 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
+          For England, Wales and Northern Ireland, the model applies the
+          configurable basic, higher and additional-rate assumptions. For
+          Scotland, it applies the published 2026/27 taxable-income band limits:
+          starter rate 19% up to £3,967; basic rate 20% up to £16,956;
+          intermediate rate 21% up to £31,092; higher rate 42% up to £62,430;
+          advanced rate 45% up to £125,140; and top rate 48% above £125,140.
+          These limits apply after the modelled Personal Allowance. The
+          allowance is reduced by £1 for every £2 above the selected taper
+          threshold.
+        </p>
+        <p className="section-copy">
+          Sources: the published{" "}
+          <a
+            href={knowledgeLinks.scottishIncomeTaxRates}
+            target="_blank"
+            rel="noreferrer"
+          >
+            HMRC Scottish Income Tax rates
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://www.gov.scot/publications/scottish-income-tax-rates-and-bands/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Scottish Government rates and bands
+          </a>
+          , effective from 6 April 2026 to 5 April 2027.
+        </p>
+        <p className="section-copy">
           Known simplification: this is not PAYE payroll logic and is not tax
-          advice. The model does not fully cover Scottish income-tax bands,
-          National Insurance, benefit interactions, marriage allowance, salary
-          sacrifice, tax-code timing, emergency tax, capital gains tax,
-          inheritance tax or all pension tax edge cases.
+          advice. The model does not cover National Insurance, benefit
+          interactions, marriage allowance, salary sacrifice, tax-code timing,
+          emergency tax, capital gains tax, inheritance tax, savings or dividend
+          rates, or all pension tax edge cases. Scottish rates apply only to the
+          non-savings, non-dividend pension income represented by the model.
         </p>
       </section>
 

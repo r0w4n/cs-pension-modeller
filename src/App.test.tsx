@@ -689,6 +689,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
     taxCsAvcTaxFreeWithdrawalPercent:
       defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
+    taxRegime: defaultSettings.taxRegime,
     ...overrides,
   };
 }
@@ -2363,12 +2364,27 @@ describe("App settings form", () => {
 
     openJourneyStep(/Tax assumptions/i);
 
+    expect(screen.getByLabelText("Income Tax regime")).toHaveValue(
+      "rest_of_uk"
+    );
+
     expect(
       screen.getByLabelText("SIPP tax-free withdrawal share (%)")
     ).toBeInTheDocument();
     expect(
       screen.queryByLabelText("CS AVC tax-free withdrawal share (%)")
     ).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Income Tax regime"), {
+      target: { value: "scotland" },
+    });
+
+    expect(
+      screen.queryByLabelText("Basic-rate taxable band (£ per year)")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Personal Allowance (£ per year)")
+    ).toBeInTheDocument();
 
     openJourneyStep(/Optional sections/i);
     fireEvent.click(screen.getByLabelText("SIPP"));

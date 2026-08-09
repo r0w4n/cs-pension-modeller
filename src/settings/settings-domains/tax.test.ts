@@ -1,4 +1,8 @@
-import { coerceTaxSettings, normalizeTaxationBooleanSetting } from "./tax";
+import {
+  coerceTaxSettings,
+  normalizeTaxRegime,
+  normalizeTaxationBooleanSetting,
+} from "./tax";
 import type { StoredPensionSettings } from "../settings-types";
 
 describe("tax domain", () => {
@@ -7,9 +11,15 @@ describe("tax domain", () => {
     expect(normalizeTaxationBooleanSetting("enabled")).toBe(true);
   });
 
+  it("normalizes the tax regime without accepting unknown stored values", () => {
+    expect(normalizeTaxRegime("scotland")).toBe("scotland");
+    expect(normalizeTaxRegime("unexpected")).toBe("rest_of_uk");
+  });
+
   it("coerces stored values", () => {
     const storedSettings = {
       taxationEnabled: true,
+      taxRegime: "scotland",
       taxPersonalAllowance: "12570",
       taxPersonalAllowanceTaperThreshold: "100000",
       taxBasicRateLimit: "37700",
@@ -22,6 +32,7 @@ describe("tax domain", () => {
 
     expect(coerceTaxSettings(storedSettings)).toEqual({
       taxationEnabled: true,
+      taxRegime: "scotland",
       taxPersonalAllowance: 12570,
       taxPersonalAllowanceTaperThreshold: 100000,
       taxBasicRateLimit: 37700,

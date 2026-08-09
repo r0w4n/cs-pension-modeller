@@ -25,7 +25,7 @@ describe("MethodologyPage", () => {
       "The modeller intentionally simplifies some areas so that results remain understandable and configurable."
     );
     expect(assumptionsSectionElement).toHaveTextContent(
-      "Income Tax is estimated from configurable standard assumptions."
+      "Income Tax is estimated from configurable standard assumptions. It supports the 2026/27 rest-of-UK and Scottish regimes"
     );
     expect(assumptionsSectionElement).toHaveTextContent(
       "Inflation is only modelled where explicit CPI or growth assumptions are enabled."
@@ -51,6 +51,27 @@ describe("MethodologyPage", () => {
     expect(
       screen.queryByRole("heading", { name: "Planning tool only" })
     ).not.toBeInTheDocument();
+  });
+
+  it("documents the Scottish Income Tax rules, tax year, and limitations", () => {
+    render(<MethodologyPage />);
+
+    const taxSection = screen
+      .getByRole("heading", { name: "Tax methodology" })
+      .closest("section") as HTMLElement;
+
+    expect(taxSection).toHaveTextContent(
+      "The selected regime is applied unchanged throughout the projection"
+    );
+    expect(taxSection).toHaveTextContent(
+      "starter rate 19% up to £3,967; basic rate 20% up to £16,956; intermediate rate 21% up to £31,092; higher rate 42% up to £62,430; advanced rate 45% up to £125,140; and top rate 48% above £125,140"
+    );
+    expect(taxSection).toHaveTextContent(
+      "effective from 6 April 2026 to 5 April 2027"
+    );
+    expect(
+      screen.getByRole("link", { name: "HMRC Scottish Income Tax rates" })
+    ).toHaveAttribute("href", "https://www.gov.uk/scottish-income-tax");
   });
 
   it("includes the nuvos early-payment worked example", () => {

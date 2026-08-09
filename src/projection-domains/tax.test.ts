@@ -28,6 +28,46 @@ describe("projection tax domain", () => {
     expect(calculateAnnualIncomeTax(settings, 130000)).toBeCloseTo(44703, 6);
   });
 
+  it.each([
+    [12_570, 0],
+    [16_537, 753.73],
+    [29_526, 3_351.53],
+    [43_662, 6_320.09],
+    [75_000, 19_482.05],
+    [100_000, 30_732.05],
+    [110_000, 37_482.05],
+    [125_140, 47_701.55],
+    [130_000, 50_034.35],
+  ])(
+    "calculates 2026/27 Scottish Income Tax for £%i of pension income",
+    (annualTaxableIncome, expectedTax) => {
+      expect(
+        calculateAnnualIncomeTax(
+          {
+            ...defaultSettings,
+            taxationEnabled: true,
+            taxRegime: "scotland",
+          },
+          annualTaxableIncome
+        )
+      ).toBeCloseTo(expectedTax, 6);
+    }
+  );
+
+  it("uses the configured Personal Allowance with the Scottish bands", () => {
+    expect(
+      calculateAnnualIncomeTax(
+        {
+          ...defaultSettings,
+          taxationEnabled: true,
+          taxRegime: "scotland",
+          taxPersonalAllowance: 0,
+        },
+        3_967
+      )
+    ).toBeCloseTo(753.73, 6);
+  });
+
   it("taxes pension income while keeping the SIPP tax-free share outside taxable income", () => {
     const settings: PensionSettings = {
       ...defaultSettings,

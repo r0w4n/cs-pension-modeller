@@ -1256,6 +1256,15 @@ export function buildComparisonDetailedRows(
         "Taxation enabled",
         (result) => formatYesNo(result.scenario.settings.taxationEnabled),
       ],
+      [
+        "Income Tax regime",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? result.scenario.settings.taxRegime === "scotland"
+              ? "Scotland (2026/27)"
+              : "England, Wales or Northern Ireland (2026/27)"
+            : "N/A",
+      ],
     ]),
   ]
     .flat()

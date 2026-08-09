@@ -2,6 +2,7 @@ import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
   LISA_MONTHLY_CONTRIBUTION_MAX,
+  TAX_REGIME_OPTIONS,
   type PensionSettings,
 } from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
@@ -168,7 +169,8 @@ export type SelectField = {
     | "csAvcWithdrawalStrategy"
     | "isaWithdrawalStrategy"
     | "lisaWithdrawalStrategy"
-    | "premiumEarliestAccessAge";
+    | "premiumEarliestAccessAge"
+    | "taxRegime";
   label: string;
   type: "select";
   options: readonly {
@@ -179,7 +181,8 @@ export type SelectField = {
       | PensionSettings["classicCalculationMode"]
       | PensionSettings["classicFinalSalaryLink"]
       | PensionSettings["sippWithdrawalStrategy"]
-      | PensionSettings["premiumEarliestAccessAge"];
+      | PensionSettings["premiumEarliestAccessAge"]
+      | PensionSettings["taxRegime"];
     label: string;
   }[];
   description?: string;
@@ -1312,6 +1315,24 @@ export const fieldGroups: FieldGroup[] = [
     description:
       "Optional simplified UK Income Tax estimate for planning sensitivity rather than tax advice.",
     fields: [
+      {
+        id: "taxRegime",
+        label: "Income Tax regime",
+        type: "select",
+        options: [...TAX_REGIME_OPTIONS],
+        description:
+          "Choose where the model treats you as a taxpayer. Scotland uses the published 2026/27 starter, basic, intermediate, higher, advanced and top rates for pension income. England, Wales or Northern Ireland uses the configurable assumptions below.",
+        infoLinks: [
+          {
+            href: knowledgeLinks.incomeTaxRates,
+            text: "England, Wales and Northern Ireland rates",
+          },
+          {
+            href: knowledgeLinks.scottishIncomeTaxRates,
+            text: "Scottish Income Tax rates",
+          },
+        ],
+      },
       {
         id: "taxPersonalAllowance",
         label: "Personal Allowance (£ per year)",

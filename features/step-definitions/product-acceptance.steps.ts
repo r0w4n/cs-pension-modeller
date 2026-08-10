@@ -27,6 +27,7 @@ import {
 import { applyBridgeChartParameterPatch } from "../../src/app/chart-state";
 import {
   calculateAnnualIncomeTax,
+  calculateMonthlyTaxableRetirementIncome,
   calculateAnnualStatePensionAtDraw,
   calculateMonthlyIncomeTax,
   calculateMonthlyStatePension,
@@ -51,9 +52,19 @@ type ProductAcceptanceWorld = {
   monthlyStatePensionBeforeStart?: number;
   monthlyStatePensionFromStart?: number;
   monthlyAlphaPension?: number;
+  monthlyClassicPension?: number;
+  monthlyClassicPlusPension?: number;
   monthlyNuvosPension?: number;
+  monthlyPremiumPension?: number;
   monthlyStatePension?: number;
   monthlySippPension?: number;
+  monthlyCsAvcPension?: number;
+  monthlyAdditionalGuaranteedIncomeTaxable?: number;
+  monthlyAdditionalGuaranteedIncomeNonTaxable?: number;
+  monthlyIsaPension?: number;
+  monthlyLisaPension?: number;
+  monthlyTaxableRetirementIncome?: number;
+  annualisedTaxableRetirementIncome?: number;
   annualTaxableIncome?: number;
   annualIncomeTax?: number;
   monthlyIncomeTax?: number;
@@ -434,9 +445,48 @@ Given(
 );
 
 Given(
+  "monthly CS AVC income is {float}",
+  function (this: ProductAcceptanceWorld, amount: number) {
+    this.monthlyCsAvcPension = amount;
+  }
+);
+
+Given(
   "the SIPP tax-free withdrawal share is {float}%",
   function (this: ProductAcceptanceWorld, taxFreeShare: number) {
     updateSettings(this, { taxSippTaxFreeWithdrawalPercent: taxFreeShare });
+  }
+);
+
+Given(
+  "monthly {string} income is {float}",
+  function (
+    this: ProductAcceptanceWorld,
+    incomeSource: string,
+    amount: number
+  ) {
+    const fieldByIncomeSource = {
+      "Alpha pension": "monthlyAlphaPension",
+      "classic pension": "monthlyClassicPension",
+      "classic plus pension": "monthlyClassicPlusPension",
+      "nuvos pension": "monthlyNuvosPension",
+      "Premium pension": "monthlyPremiumPension",
+      "State Pension": "monthlyStatePension",
+      "taxable additional guaranteed income":
+        "monthlyAdditionalGuaranteedIncomeTaxable",
+      "non-taxable additional guaranteed income":
+        "monthlyAdditionalGuaranteedIncomeNonTaxable",
+      "ISA withdrawal": "monthlyIsaPension",
+      "qualifying LISA withdrawal": "monthlyLisaPension",
+    } as const;
+    const field =
+      fieldByIncomeSource[incomeSource as keyof typeof fieldByIncomeSource];
+
+    assertCondition(
+      field,
+      `Unsupported retirement income source: ${incomeSource}`
+    );
+    this[field] = amount;
   }
 );
 
@@ -462,9 +512,26 @@ Given(
 );
 
 Given(
+  "the personal allowance taper threshold is {float}",
+  function (
+    this: ProductAcceptanceWorld,
+    taxPersonalAllowanceTaperThreshold: number
+  ) {
+    updateSettings(this, { taxPersonalAllowanceTaperThreshold });
+  }
+);
+
+Given(
   "the basic rate band is {float}",
   function (this: ProductAcceptanceWorld, taxBasicRateLimit: number) {
     updateSettings(this, { taxBasicRateLimit });
+  }
+);
+
+Given(
+  "the additional rate taxable-income threshold is {float}",
+  function (this: ProductAcceptanceWorld, taxAdditionalRateThreshold: number) {
+    updateSettings(this, { taxAdditionalRateThreshold });
   }
 );
 
@@ -482,13 +549,47 @@ When(
 When(
   "monthly Income Tax is calculated",
   function (this: ProductAcceptanceWorld) {
-    this.monthlyIncomeTax = calculateMonthlyIncomeTax({
+    const input = {
       settings: getSettings(this),
       monthlyAlphaPension: this.monthlyAlphaPension ?? 0,
+      monthlyClassicPension: this.monthlyClassicPension ?? 0,
+      monthlyClassicPlusPension: this.monthlyClassicPlusPension ?? 0,
       monthlyNuvosPension: this.monthlyNuvosPension ?? 0,
+      monthlyPremiumPension: this.monthlyPremiumPension ?? 0,
       monthlyStatePension: this.monthlyStatePension ?? 0,
       monthlySippPension: this.monthlySippPension ?? 0,
-    });
+      monthlyCsAvcPension: this.monthlyCsAvcPension ?? 0,
+      monthlyAdditionalGuaranteedIncomeTaxable:
+        this.monthlyAdditionalGuaranteedIncomeTaxable ?? 0,
+      monthlyAdditionalGuaranteedIncomeNonTaxable:
+        this.monthlyAdditionalGuaranteedIncomeNonTaxable ?? 0,
+      monthlyIsaPension: this.monthlyIsaPension ?? 0,
+      monthlyLisaPension: this.monthlyLisaPension ?? 0,
+    };
+
+    this.monthlyTaxableRetirementIncome =
+      calculateMonthlyTaxableRetirementIncome(input);
+    this.annualisedTaxableRetirementIncome =
+      this.monthlyTaxableRetirementIncome * 12;
+    this.monthlyIncomeTax = calculateMonthlyIncomeTax(input);
+  }
+);
+
+Then(
+  "the monthly taxable retirement income should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(this.monthlyTaxableRetirementIncome, expected, this.precision);
+  }
+);
+
+Then(
+  "the annualised taxable retirement income should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      this.annualisedTaxableRetirementIncome,
+      expected,
+      this.precision
+    );
   }
 );
 

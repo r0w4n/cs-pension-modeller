@@ -2372,6 +2372,12 @@ describe("App settings form", () => {
       screen.getByLabelText("SIPP tax-free withdrawal share (%)")
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("link", { name: "Check the lump-sum allowance" })
+    ).toHaveAttribute(
+      "href",
+      "https://www.gov.uk/tax-on-your-private-pension/lump-sum-allowance"
+    );
+    expect(
       screen.queryByLabelText("CS AVC tax-free withdrawal share (%)")
     ).not.toBeInTheDocument();
 

@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { knowledgeLinks } from "../knowledgeLinks";
+import { PENSION_WITHDRAWAL_TAX_RULES } from "../data/income-tax-rules";
 import { StaticPageLayout } from "./static-page-layout";
 import "../index.css";
 
@@ -124,6 +125,8 @@ const PARTIAL_RETIREMENT_EFFECTS = [
 
 const TAXABLE_INCOME_SOURCES = [
   "Alpha pension",
+  "classic pension",
+  "classic plus pension",
   "nuvos pension",
   "Premium pension",
   "State Pension",
@@ -140,6 +143,7 @@ const TAX_ASSUMPTIONS = [
   "published Scottish starter, basic, intermediate, higher, advanced and top bands",
   "taxable share of SIPP withdrawals",
   "taxable share of CS AVC withdrawals",
+  "the current projection month's income continuing for a full year",
 ] as const;
 
 const COMPARISON_OUTPUTS = [
@@ -1143,7 +1147,18 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
-          ISA withdrawals are excluded from taxable income.
+          ISA withdrawals and qualifying LISA withdrawals are excluded from
+          taxable income. State Pension is included as taxable income even
+          though tax is not normally deducted from the State Pension payment
+          itself; see HMRC's{" "}
+          <a
+            href={knowledgeLinks.statePensionTax}
+            target="_blank"
+            rel="noreferrer"
+          >
+            State Pension tax guidance
+          </a>
+          .
         </p>
         <p className="section-copy">
           The model estimates tax annually and then divides the annual estimate
@@ -1163,10 +1178,35 @@ export function MethodologyPage() {
           advanced rate 45% up to £125,140; and top rate 48% above £125,140.
           These limits apply after the modelled Personal Allowance. The
           allowance is reduced by £1 for every £2 above the selected taper
-          threshold.
+          threshold. The model uses its annualised taxable retirement income as
+          a proxy for adjusted net income; it does not reduce that proxy for
+          pension contributions, Gift Aid or other reliefs.
+        </p>
+        <p className="section-copy">
+          For SIPP and CS AVC withdrawals, the selected tax-free percentage is a
+          planning assumption applied to each modelled withdrawal. The model
+          does not determine whether cash is uncrystallised, crystallised or
+          flexi-access drawdown, and it does not track pension commencement lump
+          sums or earlier allowance use across schemes. The usual standard
+          pension lump-sum allowance is £
+          {PENSION_WITHDRAWAL_TAX_RULES.standardLumpSumAllowance.toLocaleString(
+            "en-GB"
+          )}
+          , although protected allowances may differ. Civil Service retirement
+          lump sums shown elsewhere in the modeller are not added to the monthly
+          Income Tax estimate. Users should adjust the selected tax-free shares
+          based on information from their pension providers.
         </p>
         <p className="section-copy">
           Sources: the published{" "}
+          <a
+            href={knowledgeLinks.incomeTaxRates}
+            target="_blank"
+            rel="noreferrer"
+          >
+            HMRC Income Tax rates and Personal Allowances
+          </a>
+          ,{" "}
           <a
             href={knowledgeLinks.scottishIncomeTaxRates}
             target="_blank"
@@ -1182,15 +1222,46 @@ export function MethodologyPage() {
           >
             Scottish Government rates and bands
           </a>
-          , effective from 6 April 2026 to 5 April 2027.
+          , and HMRC guidance on{" "}
+          <a
+            href={knowledgeLinks.pensionTaxableIncome}
+            target="_blank"
+            rel="noreferrer"
+          >
+            taxable pension income
+          </a>{" "}
+          and the{" "}
+          <a
+            href={knowledgeLinks.pensionLumpSumAllowance}
+            target="_blank"
+            rel="noreferrer"
+          >
+            pension lump-sum allowance
+          </a>
+          . The modelled rates are effective from 6 April 2026 to 5 April 2027.
         </p>
         <p className="section-copy">
           Known simplification: this is not PAYE payroll logic and is not tax
           advice. The model does not cover National Insurance, benefit
-          interactions, marriage allowance, salary sacrifice, tax-code timing,
-          emergency tax, capital gains tax, inheritance tax, savings or dividend
-          rates, or all pension tax edge cases. Scottish rates apply only to the
-          non-savings, non-dividend pension income represented by the model.
+          interactions, Blind Person's Allowance, Marriage Allowance, Married
+          Couple's Allowance, salary sacrifice, tax-code timing, emergency tax,
+          capital gains tax, inheritance tax, savings or dividend rates,
+          employment or self-employment income, annual-allowance charges, the{" "}
+          <a
+            href={knowledgeLinks.moneyPurchaseAnnualAllowance}
+            target="_blank"
+            rel="noreferrer"
+          >
+            £
+            {PENSION_WITHDRAWAL_TAX_RULES.moneyPurchaseAnnualAllowance.toLocaleString(
+              "en-GB"
+            )}{" "}
+            money purchase annual allowance
+          </a>{" "}
+          after flexible access, or all pension tax edge cases. Scottish rates
+          apply only to the non-savings, non-dividend pension income represented
+          by the model. Check the estimate against provider statements, HMRC and
+          regulated advice where appropriate.
         </p>
       </section>
 

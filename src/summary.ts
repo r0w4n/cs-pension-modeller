@@ -509,6 +509,11 @@ function buildRowRetirementIncomeSummary(
       monthlyCsAvcPension: csAvcMonthlyIncome,
       monthlyAdditionalGuaranteedIncomeTaxable:
         additionalGuaranteedIncomeTaxableMonthlyIncome,
+      monthlyAdditionalGuaranteedIncomeNonTaxable:
+        additionalGuaranteedIncomeMonthlyIncome -
+        additionalGuaranteedIncomeTaxableMonthlyIncome,
+      monthlyIsaPension: isaMonthlyIncome,
+      monthlyLisaPension: lisaMonthlyIncome,
     }),
     bridgeWithdrawals,
     ageRanges: drawRows.ageRanges,

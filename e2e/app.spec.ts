@@ -158,6 +158,15 @@ test.describe("app end-to-end journeys", () => {
       name: "Income Tax regime",
     });
     await expect(taxRegime).toHaveValue("rest_of_uk");
+    await expect(
+      page.getByText(/annualises each monthly retirement-income snapshot/i)
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Check the lump-sum allowance" })
+    ).toHaveAttribute(
+      "href",
+      "https://www.gov.uk/tax-on-your-private-pension/lump-sum-allowance"
+    );
     await taxRegime.selectOption("scotland");
 
     await expect(taxRegime).toHaveValue("scotland");

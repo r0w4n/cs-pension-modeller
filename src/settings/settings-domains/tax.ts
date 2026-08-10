@@ -1,4 +1,9 @@
 import type { StoredPensionSettings, TaxRegime } from "../settings-types";
+import {
+  PENSION_WITHDRAWAL_TAX_RULES,
+  REST_OF_UK_INCOME_TAX_RULES,
+  UK_INCOME_TAX_COMMON_RULES,
+} from "../../data/income-tax-rules";
 
 export const TAX_REGIME_OPTIONS = [
   {
@@ -11,15 +16,19 @@ export const TAX_REGIME_OPTIONS = [
 export const taxDefaults = {
   taxationEnabled: false,
   taxRegime: "rest_of_uk",
-  taxPersonalAllowance: 12570,
-  taxPersonalAllowanceTaperThreshold: 100000,
-  taxBasicRateLimit: 37700,
-  taxAdditionalRateThreshold: 125140,
-  taxBasicRatePercent: 20,
-  taxHigherRatePercent: 40,
-  taxAdditionalRatePercent: 45,
-  taxSippTaxFreeWithdrawalPercent: 25,
-  taxCsAvcTaxFreeWithdrawalPercent: 25,
+  taxPersonalAllowance: UK_INCOME_TAX_COMMON_RULES.personalAllowance,
+  taxPersonalAllowanceTaperThreshold:
+    UK_INCOME_TAX_COMMON_RULES.personalAllowanceTaperThreshold,
+  taxBasicRateLimit: REST_OF_UK_INCOME_TAX_RULES.bands[0].upperTaxableIncome,
+  taxAdditionalRateThreshold:
+    REST_OF_UK_INCOME_TAX_RULES.bands[1].upperTaxableIncome,
+  taxBasicRatePercent: REST_OF_UK_INCOME_TAX_RULES.bands[0].ratePercent,
+  taxHigherRatePercent: REST_OF_UK_INCOME_TAX_RULES.bands[1].ratePercent,
+  taxAdditionalRatePercent: REST_OF_UK_INCOME_TAX_RULES.bands[2].ratePercent,
+  taxSippTaxFreeWithdrawalPercent:
+    PENSION_WITHDRAWAL_TAX_RULES.usualMaximumTaxFreeSharePercent,
+  taxCsAvcTaxFreeWithdrawalPercent:
+    PENSION_WITHDRAWAL_TAX_RULES.usualMaximumTaxFreeSharePercent,
 } as const;
 
 export const taxNumericSettingRules = {

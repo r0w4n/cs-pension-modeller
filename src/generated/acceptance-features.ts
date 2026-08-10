@@ -7538,12 +7538,12 @@ export const acceptanceFeatures = [
     path: "features/income-tax.feature",
     name: "Retirement income tax modelling",
     description:
-      "The modeller should show tax as an estimate based on the selected tax\n  assumptions, while keeping pension income sources transparent.",
+      "The modeller should show a qualified 2026/27 Income Tax estimate based on\n  the selected assumptions, while keeping taxable and tax-free retirement\n  income sources transparent.\n\n  The estimate covers non-savings, non-dividend pension income under either\n  the England, Wales and Northern Ireland bands or the Scottish bands. It\n  annualises the income visible in a projection month, applies the Personal\n  Allowance and selected bands, then divides the annual estimate by 12. It is\n  not cumulative PAYE or tax-year accounting.\n\n  State Pension is taxable pension income but is normally paid without tax\n  deducted. The model combines it with the other supported taxable retirement\n  income before estimating tax.\n\n  The selected SIPP and CS AVC tax-free shares are planning assumptions. The\n  model does not track crystallisation, earlier pension benefits, protected\n  allowances or the shared pension lump-sum allowance. It also excludes\n  employment income, savings, dividends, tax-code adjustments, emergency tax,\n  National Insurance, Blind Person's Allowance, Marriage Allowance, Married\n  Couple's Allowance, annual-allowance charges and the money purchase annual\n  allowance.",
     tags: ["@income-tax"],
     status: "covered",
     scenarios: [
       {
-        id: "line-11",
+        id: "line-32",
         keyword: "Scenario",
         name: "Do not deduct Income Tax when taxation is disabled",
         description: "",
@@ -7552,32 +7552,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-12",
+            id: "line-33",
             keyword: "Given",
             text: "Income Tax modelling is off",
           },
           {
-            id: "line-13",
+            id: "line-34",
             keyword: "And",
             text: "monthly Alpha pension income is 3000.00",
           },
           {
-            id: "line-14",
+            id: "line-35",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-15",
+            id: "line-36",
             keyword: "And",
             text: "monthly SIPP income is 500.00",
           },
           {
-            id: "line-16",
+            id: "line-37",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-17",
+            id: "line-38",
             keyword: "Then",
             text: "the monthly Income Tax should be 0.00",
           },
@@ -7585,249 +7585,182 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-20",
-        keyword: "Scenario Outline",
-        name: "Estimate annual Income Tax for England, Wales or Northern Ireland",
+        id: "line-41",
+        keyword: "Scenario",
+        name: "Annualise the current monthly taxable pension income before applying tax",
         description: "",
-        tags: ["@standard-assumptions"],
+        tags: ["@annualisation"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-21",
+            id: "line-42",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-22",
+            id: "line-43",
+            keyword: "And",
+            text: "the personal allowance is 0.00",
+          },
+          {
+            id: "line-44",
+            keyword: "And",
+            text: "the basic rate band is 50000.00",
+          },
+          {
+            id: "line-45",
+            keyword: "And",
+            text: "monthly Alpha pension income is 1000.00",
+          },
+          {
+            id: "line-46",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-47",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 1000.00",
+          },
+          {
+            id: "line-48",
+            keyword: "And",
+            text: "the annualised taxable retirement income should be 12000.00",
+          },
+          {
+            id: "line-49",
+            keyword: "And",
+            text: "the monthly Income Tax should be 200.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-54",
+        keyword: "Scenario Outline",
+        name: "Apply the 2026/27 Personal Allowance and taper",
+        description: "",
+        tags: ["@standard-assumptions", "@personal-allowance"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-55",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-56",
             keyword: "And",
             text: "the Income Tax regime is England, Wales or Northern Ireland",
           },
           {
-            id: "line-23",
+            id: "line-57",
             keyword: "When",
             text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
           },
           {
-            id: "line-24",
+            id: "line-58",
             keyword: "Then",
             text: "the annual Income Tax should be <expectedAnnualTax>",
           },
         ],
         examples: [
           {
-            id: "line-26",
+            id: "line-60",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-27",
+                id: "line-61",
                 cells: [
                   {
-                    id: "line-27-column-9",
+                    id: "line-61-column-11",
                     value: "annualTaxableIncome",
                   },
                   {
-                    id: "line-27-column-31",
+                    id: "line-61-column-33",
                     value: "expectedAnnualTax",
                   },
                 ],
               },
               {
-                id: "line-28",
+                id: "line-62",
                 cells: [
                   {
-                    id: "line-28-column-9",
-                    value: "50000.00",
+                    id: "line-62-column-11",
+                    value: "0.00",
                   },
                   {
-                    id: "line-28-column-31",
-                    value: "7486.00",
-                  },
-                ],
-              },
-              {
-                id: "line-29",
-                cells: [
-                  {
-                    id: "line-29-column-9",
-                    value: "125140.00",
-                  },
-                  {
-                    id: "line-29-column-31",
-                    value: "42516.00",
-                  },
-                ],
-              },
-              {
-                id: "line-30",
-                cells: [
-                  {
-                    id: "line-30-column-9",
-                    value: "130000.00",
-                  },
-                  {
-                    id: "line-30-column-31",
-                    value: "44703.00",
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "line-33",
-        keyword: "Scenario Outline",
-        name: "Estimate annual Scottish Income Tax across each 2026/27 band",
-        description: "",
-        tags: ["@scotland", "@standard-assumptions"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-34",
-            keyword: "Given",
-            text: "Income Tax modelling is on",
-          },
-          {
-            id: "line-35",
-            keyword: "And",
-            text: "the Income Tax regime is Scotland",
-          },
-          {
-            id: "line-36",
-            keyword: "When",
-            text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
-          },
-          {
-            id: "line-37",
-            keyword: "Then",
-            text: "the annual Income Tax should be <expectedAnnualTax>",
-          },
-        ],
-        examples: [
-          {
-            id: "line-39",
-            name: "",
-            tags: [],
-            status: "covered",
-            table: [
-              {
-                id: "line-40",
-                cells: [
-                  {
-                    id: "line-40-column-9",
-                    value: "annualTaxableIncome",
-                  },
-                  {
-                    id: "line-40-column-31",
-                    value: "expectedAnnualTax",
-                  },
-                ],
-              },
-              {
-                id: "line-41",
-                cells: [
-                  {
-                    id: "line-41-column-9",
-                    value: "12570.00",
-                  },
-                  {
-                    id: "line-41-column-31",
+                    id: "line-62-column-33",
                     value: "0.00",
                   },
                 ],
               },
               {
-                id: "line-42",
+                id: "line-63",
                 cells: [
                   {
-                    id: "line-42-column-9",
-                    value: "16537.00",
+                    id: "line-63-column-11",
+                    value: "12570.00",
                   },
                   {
-                    id: "line-42-column-31",
-                    value: "753.73",
+                    id: "line-63-column-33",
+                    value: "0.00",
                   },
                 ],
               },
               {
-                id: "line-43",
+                id: "line-64",
                 cells: [
                   {
-                    id: "line-43-column-9",
-                    value: "29526.00",
+                    id: "line-64-column-11",
+                    value: "12571.00",
                   },
                   {
-                    id: "line-43-column-31",
-                    value: "3351.53",
+                    id: "line-64-column-33",
+                    value: "0.20",
                   },
                 ],
               },
               {
-                id: "line-44",
+                id: "line-65",
                 cells: [
                   {
-                    id: "line-44-column-9",
-                    value: "43662.00",
+                    id: "line-65-column-11",
+                    value: "100000.00",
                   },
                   {
-                    id: "line-44-column-31",
-                    value: "6320.09",
+                    id: "line-65-column-33",
+                    value: "27432.00",
                   },
                 ],
               },
               {
-                id: "line-45",
+                id: "line-66",
                 cells: [
                   {
-                    id: "line-45-column-9",
-                    value: "75000.00",
+                    id: "line-66-column-11",
+                    value: "100002.00",
                   },
                   {
-                    id: "line-45-column-31",
-                    value: "19482.05",
+                    id: "line-66-column-33",
+                    value: "27433.20",
                   },
                 ],
               },
               {
-                id: "line-46",
+                id: "line-67",
                 cells: [
                   {
-                    id: "line-46-column-9",
-                    value: "110000.00",
-                  },
-                  {
-                    id: "line-46-column-31",
-                    value: "37482.05",
-                  },
-                ],
-              },
-              {
-                id: "line-47",
-                cells: [
-                  {
-                    id: "line-47-column-9",
+                    id: "line-67-column-11",
                     value: "125140.00",
                   },
                   {
-                    id: "line-47-column-31",
-                    value: "47701.55",
-                  },
-                ],
-              },
-              {
-                id: "line-48",
-                cells: [
-                  {
-                    id: "line-48-column-9",
-                    value: "130000.00",
-                  },
-                  {
-                    id: "line-48-column-31",
-                    value: "50034.35",
+                    id: "line-67-column-33",
+                    value: "42516.00",
                   },
                 ],
               },
@@ -7836,110 +7769,11 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-51",
-        keyword: "Scenario",
-        name: "Keep the tax-free SIPP share outside taxable income",
-        description: "",
-        tags: ["@sipp"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-52",
-            keyword: "Given",
-            text: "Income Tax modelling is on",
-          },
-          {
-            id: "line-53",
-            keyword: "And",
-            text: "the SIPP tax-free withdrawal share is 25.00%",
-          },
-          {
-            id: "line-54",
-            keyword: "And",
-            text: "monthly Alpha pension income is 2000.00",
-          },
-          {
-            id: "line-55",
-            keyword: "And",
-            text: "monthly State Pension income is 1000.00",
-          },
-          {
-            id: "line-56",
-            keyword: "And",
-            text: "monthly SIPP income is 1000.00",
-          },
-          {
-            id: "line-57",
-            keyword: "When",
-            text: "monthly Income Tax is calculated",
-          },
-          {
-            id: "line-58",
-            keyword: "Then",
-            text: "the monthly Income Tax should be 540.50",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-61",
-        keyword: "Scenario",
-        name: "Apply Scottish bands after excluding the tax-free SIPP share",
-        description: "",
-        tags: ["@scotland", "@sipp"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-62",
-            keyword: "Given",
-            text: "Income Tax modelling is on",
-          },
-          {
-            id: "line-63",
-            keyword: "And",
-            text: "the Income Tax regime is Scotland",
-          },
-          {
-            id: "line-64",
-            keyword: "And",
-            text: "the SIPP tax-free withdrawal share is 25.00%",
-          },
-          {
-            id: "line-65",
-            keyword: "And",
-            text: "monthly Alpha pension income is 2000.00",
-          },
-          {
-            id: "line-66",
-            keyword: "And",
-            text: "monthly State Pension income is 1000.00",
-          },
-          {
-            id: "line-67",
-            keyword: "And",
-            text: "monthly SIPP income is 1000.00",
-          },
-          {
-            id: "line-68",
-            keyword: "When",
-            text: "monthly Income Tax is calculated",
-          },
-          {
-            id: "line-69",
-            keyword: "Then",
-            text: "the monthly Income Tax should be 573.50",
-          },
-        ],
-        examples: [],
-      },
-      {
         id: "line-72",
-        keyword: "Scenario",
-        name: "Include nuvos pension in taxable retirement income",
+        keyword: "Scenario Outline",
+        name: "Apply each 2026/27 rest-of-UK marginal rate at its boundary",
         description: "",
-        tags: ["@legacy-pension"],
+        tags: ["@standard-assumptions", "@rest-of-uk"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
@@ -7951,35 +7785,849 @@ export const acceptanceFeatures = [
           {
             id: "line-74",
             keyword: "And",
-            text: "the personal allowance is 0.00",
+            text: "the Income Tax regime is England, Wales or Northern Ireland",
           },
           {
             id: "line-75",
+            keyword: "When",
+            text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
+          },
+          {
+            id: "line-76",
+            keyword: "Then",
+            text: "the annual Income Tax should be <expectedAnnualTax>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-78",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-79",
+                cells: [
+                  {
+                    id: "line-79-column-11",
+                    value: "annualTaxableIncome",
+                  },
+                  {
+                    id: "line-79-column-33",
+                    value: "expectedAnnualTax",
+                  },
+                ],
+              },
+              {
+                id: "line-80",
+                cells: [
+                  {
+                    id: "line-80-column-11",
+                    value: "50000.00",
+                  },
+                  {
+                    id: "line-80-column-33",
+                    value: "7486.00",
+                  },
+                ],
+              },
+              {
+                id: "line-81",
+                cells: [
+                  {
+                    id: "line-81-column-11",
+                    value: "50270.00",
+                  },
+                  {
+                    id: "line-81-column-33",
+                    value: "7540.00",
+                  },
+                ],
+              },
+              {
+                id: "line-82",
+                cells: [
+                  {
+                    id: "line-82-column-11",
+                    value: "50271.00",
+                  },
+                  {
+                    id: "line-82-column-33",
+                    value: "7540.40",
+                  },
+                ],
+              },
+              {
+                id: "line-83",
+                cells: [
+                  {
+                    id: "line-83-column-11",
+                    value: "125140.00",
+                  },
+                  {
+                    id: "line-83-column-33",
+                    value: "42516.00",
+                  },
+                ],
+              },
+              {
+                id: "line-84",
+                cells: [
+                  {
+                    id: "line-84-column-11",
+                    value: "125141.00",
+                  },
+                  {
+                    id: "line-84-column-33",
+                    value: "42516.45",
+                  },
+                ],
+              },
+              {
+                id: "line-85",
+                cells: [
+                  {
+                    id: "line-85-column-11",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-85-column-33",
+                    value: "44703.00",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-88",
+        keyword: "Scenario",
+        name: "Treat a configured additional-rate threshold as taxable income",
+        description: "",
+        tags: ["@configurable-assumptions", "@regression"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-89",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-90",
+            keyword: "And",
+            text: "the Income Tax regime is England, Wales or Northern Ireland",
+          },
+          {
+            id: "line-91",
+            keyword: "And",
+            text: "the personal allowance is 20000.00",
+          },
+          {
+            id: "line-92",
+            keyword: "And",
+            text: "the personal allowance taper threshold is 200000.00",
+          },
+          {
+            id: "line-93",
+            keyword: "And",
+            text: "the basic rate band is 37700.00",
+          },
+          {
+            id: "line-94",
+            keyword: "And",
+            text: "the additional rate taxable-income threshold is 125140.00",
+          },
+          {
+            id: "line-95",
+            keyword: "When",
+            text: "annual taxable retirement income of 145140.00 is taxed",
+          },
+          {
+            id: "line-96",
+            keyword: "Then",
+            text: "the annual Income Tax should be 42516.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-101",
+        keyword: "Scenario Outline",
+        name: "Apply each 2026/27 Scottish marginal rate at its boundary",
+        description: "",
+        tags: ["@scotland", "@standard-assumptions"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-102",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-103",
+            keyword: "And",
+            text: "the Income Tax regime is Scotland",
+          },
+          {
+            id: "line-104",
+            keyword: "When",
+            text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
+          },
+          {
+            id: "line-105",
+            keyword: "Then",
+            text: "the annual Income Tax should be <expectedAnnualTax>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-107",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-108",
+                cells: [
+                  {
+                    id: "line-108-column-11",
+                    value: "annualTaxableIncome",
+                  },
+                  {
+                    id: "line-108-column-33",
+                    value: "expectedAnnualTax",
+                  },
+                ],
+              },
+              {
+                id: "line-109",
+                cells: [
+                  {
+                    id: "line-109-column-11",
+                    value: "12570.00",
+                  },
+                  {
+                    id: "line-109-column-33",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-110",
+                cells: [
+                  {
+                    id: "line-110-column-11",
+                    value: "12571.00",
+                  },
+                  {
+                    id: "line-110-column-33",
+                    value: "0.19",
+                  },
+                ],
+              },
+              {
+                id: "line-111",
+                cells: [
+                  {
+                    id: "line-111-column-11",
+                    value: "16537.00",
+                  },
+                  {
+                    id: "line-111-column-33",
+                    value: "753.73",
+                  },
+                ],
+              },
+              {
+                id: "line-112",
+                cells: [
+                  {
+                    id: "line-112-column-11",
+                    value: "16538.00",
+                  },
+                  {
+                    id: "line-112-column-33",
+                    value: "753.93",
+                  },
+                ],
+              },
+              {
+                id: "line-113",
+                cells: [
+                  {
+                    id: "line-113-column-11",
+                    value: "29526.00",
+                  },
+                  {
+                    id: "line-113-column-33",
+                    value: "3351.53",
+                  },
+                ],
+              },
+              {
+                id: "line-114",
+                cells: [
+                  {
+                    id: "line-114-column-11",
+                    value: "29527.00",
+                  },
+                  {
+                    id: "line-114-column-33",
+                    value: "3351.74",
+                  },
+                ],
+              },
+              {
+                id: "line-115",
+                cells: [
+                  {
+                    id: "line-115-column-11",
+                    value: "43662.00",
+                  },
+                  {
+                    id: "line-115-column-33",
+                    value: "6320.09",
+                  },
+                ],
+              },
+              {
+                id: "line-116",
+                cells: [
+                  {
+                    id: "line-116-column-11",
+                    value: "43663.00",
+                  },
+                  {
+                    id: "line-116-column-33",
+                    value: "6320.51",
+                  },
+                ],
+              },
+              {
+                id: "line-117",
+                cells: [
+                  {
+                    id: "line-117-column-11",
+                    value: "75000.00",
+                  },
+                  {
+                    id: "line-117-column-33",
+                    value: "19482.05",
+                  },
+                ],
+              },
+              {
+                id: "line-118",
+                cells: [
+                  {
+                    id: "line-118-column-11",
+                    value: "75001.00",
+                  },
+                  {
+                    id: "line-118-column-33",
+                    value: "19482.50",
+                  },
+                ],
+              },
+              {
+                id: "line-119",
+                cells: [
+                  {
+                    id: "line-119-column-11",
+                    value: "100000.00",
+                  },
+                  {
+                    id: "line-119-column-33",
+                    value: "30732.05",
+                  },
+                ],
+              },
+              {
+                id: "line-120",
+                cells: [
+                  {
+                    id: "line-120-column-11",
+                    value: "100002.00",
+                  },
+                  {
+                    id: "line-120-column-33",
+                    value: "30733.40",
+                  },
+                ],
+              },
+              {
+                id: "line-121",
+                cells: [
+                  {
+                    id: "line-121-column-11",
+                    value: "125140.00",
+                  },
+                  {
+                    id: "line-121-column-33",
+                    value: "47701.55",
+                  },
+                ],
+              },
+              {
+                id: "line-122",
+                cells: [
+                  {
+                    id: "line-122-column-11",
+                    value: "125141.00",
+                  },
+                  {
+                    id: "line-122-column-33",
+                    value: "47702.03",
+                  },
+                ],
+              },
+              {
+                id: "line-123",
+                cells: [
+                  {
+                    id: "line-123-column-11",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-123-column-33",
+                    value: "50034.35",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-128",
+        keyword: "Scenario Outline",
+        name: "Include each regular taxable retirement income source",
+        description: "",
+        tags: ["@taxable-sources"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-129",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-130",
+            keyword: "And",
+            text: "the personal allowance is 0.00",
+          },
+          {
+            id: "line-131",
             keyword: "And",
             text: "the basic rate band is 50000.00",
           },
           {
-            id: "line-76",
+            id: "line-132",
             keyword: "And",
-            text: "monthly Alpha pension income is 100.00",
+            text: "monthly <incomeSource> income is 1000.00",
           },
           {
-            id: "line-77",
-            keyword: "And",
-            text: "monthly nuvos pension income is 50.00",
-          },
-          {
-            id: "line-78",
+            id: "line-133",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-79",
+            id: "line-134",
             keyword: "Then",
-            text: "the monthly Income Tax should be 30.00",
+            text: "the monthly taxable retirement income should be 1000.00",
+          },
+          {
+            id: "line-135",
+            keyword: "And",
+            text: "the monthly Income Tax should be 200.00",
+          },
+        ],
+        examples: [
+          {
+            id: "line-137",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-138",
+                cells: [
+                  {
+                    id: "line-138-column-11",
+                    value: "incomeSource",
+                  },
+                ],
+              },
+              {
+                id: "line-139",
+                cells: [
+                  {
+                    id: "line-139-column-11",
+                    value: '"Alpha pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-140",
+                cells: [
+                  {
+                    id: "line-140-column-11",
+                    value: '"classic pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-141",
+                cells: [
+                  {
+                    id: "line-141-column-11",
+                    value: '"classic plus pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-142",
+                cells: [
+                  {
+                    id: "line-142-column-11",
+                    value: '"nuvos pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-143",
+                cells: [
+                  {
+                    id: "line-143-column-11",
+                    value: '"Premium pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-144",
+                cells: [
+                  {
+                    id: "line-144-column-11",
+                    value: '"State Pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-145",
+                cells: [
+                  {
+                    id: "line-145-column-11",
+                    value: '"taxable additional guaranteed income"',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-148",
+        keyword: "Scenario",
+        name: "Keep the selected tax-free SIPP share outside taxable income",
+        description: "",
+        tags: ["@sipp"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-149",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-150",
+            keyword: "And",
+            text: "the SIPP tax-free withdrawal share is 25.00%",
+          },
+          {
+            id: "line-151",
+            keyword: "And",
+            text: "monthly Alpha pension income is 2000.00",
+          },
+          {
+            id: "line-152",
+            keyword: "And",
+            text: "monthly State Pension income is 1000.00",
+          },
+          {
+            id: "line-153",
+            keyword: "And",
+            text: "monthly SIPP income is 1000.00",
+          },
+          {
+            id: "line-154",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-155",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 3750.00",
+          },
+          {
+            id: "line-156",
+            keyword: "And",
+            text: "the monthly Income Tax should be 540.50",
           },
         ],
         examples: [],
+      },
+      {
+        id: "line-159",
+        keyword: "Scenario",
+        name: "Keep the selected tax-free CS AVC share outside taxable income",
+        description: "",
+        tags: ["@cs-avc"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-160",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-161",
+            keyword: "And",
+            text: "the CS AVC tax-free withdrawal share is 25.00%",
+          },
+          {
+            id: "line-162",
+            keyword: "And",
+            text: "monthly Alpha pension income is 2000.00",
+          },
+          {
+            id: "line-163",
+            keyword: "And",
+            text: "monthly State Pension income is 1000.00",
+          },
+          {
+            id: "line-164",
+            keyword: "And",
+            text: "monthly CS AVC income is 1000.00",
+          },
+          {
+            id: "line-165",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-166",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 3750.00",
+          },
+          {
+            id: "line-167",
+            keyword: "And",
+            text: "the monthly Income Tax should be 540.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-170",
+        keyword: "Scenario",
+        name: "Apply Scottish bands after excluding the selected tax-free SIPP share",
+        description: "",
+        tags: ["@scotland", "@sipp"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-171",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-172",
+            keyword: "And",
+            text: "the Income Tax regime is Scotland",
+          },
+          {
+            id: "line-173",
+            keyword: "And",
+            text: "the SIPP tax-free withdrawal share is 25.00%",
+          },
+          {
+            id: "line-174",
+            keyword: "And",
+            text: "monthly Alpha pension income is 2000.00",
+          },
+          {
+            id: "line-175",
+            keyword: "And",
+            text: "monthly State Pension income is 1000.00",
+          },
+          {
+            id: "line-176",
+            keyword: "And",
+            text: "monthly SIPP income is 1000.00",
+          },
+          {
+            id: "line-177",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-178",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 3750.00",
+          },
+          {
+            id: "line-179",
+            keyword: "And",
+            text: "the monthly Income Tax should be 573.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-182",
+        keyword: "Scenario",
+        name: "Combine pension sources before applying the allowance and bands",
+        description: "",
+        tags: ["@combined-income"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-183",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-184",
+            keyword: "And",
+            text: "monthly Alpha pension income is 1000.00",
+          },
+          {
+            id: "line-185",
+            keyword: "And",
+            text: 'monthly "classic pension" income is 250.00',
+          },
+          {
+            id: "line-186",
+            keyword: "And",
+            text: "monthly nuvos pension income is 250.00",
+          },
+          {
+            id: "line-187",
+            keyword: "And",
+            text: "monthly State Pension income is 500.00",
+          },
+          {
+            id: "line-188",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-189",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 2000.00",
+          },
+          {
+            id: "line-190",
+            keyword: "And",
+            text: "the monthly Income Tax should be 190.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-195",
+        keyword: "Scenario Outline",
+        name: "Exclude tax-free savings withdrawals from Income Tax",
+        description: "",
+        tags: ["@tax-free-sources"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-196",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-197",
+            keyword: "And",
+            text: "the personal allowance is 0.00",
+          },
+          {
+            id: "line-198",
+            keyword: "And",
+            text: "monthly <incomeSource> income is 1000.00",
+          },
+          {
+            id: "line-199",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-200",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 0.00",
+          },
+          {
+            id: "line-201",
+            keyword: "And",
+            text: "the monthly Income Tax should be 0.00",
+          },
+        ],
+        examples: [
+          {
+            id: "line-203",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-204",
+                cells: [
+                  {
+                    id: "line-204-column-11",
+                    value: "incomeSource",
+                  },
+                ],
+              },
+              {
+                id: "line-205",
+                cells: [
+                  {
+                    id: "line-205-column-11",
+                    value: '"ISA withdrawal"',
+                  },
+                ],
+              },
+              {
+                id: "line-206",
+                cells: [
+                  {
+                    id: "line-206-column-11",
+                    value: '"qualifying LISA withdrawal"',
+                  },
+                ],
+              },
+              {
+                id: "line-207",
+                cells: [
+                  {
+                    id: "line-207-column-11",
+                    value: '"non-taxable additional guaranteed income"',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
     ],
   },

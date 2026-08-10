@@ -1,7 +1,10 @@
 import type { PensionSettings } from "../settings";
-import { SCOTTISH_INCOME_TAX_RULES } from "../data/income-tax-rules";
+import {
+  SCOTTISH_INCOME_TAX_RULES,
+  UK_INCOME_TAX_COMMON_RULES,
+} from "../data/income-tax-rules";
 
-export function calculateMonthlyIncomeTax(input: {
+export type MonthlyIncomeTaxInput = {
   settings: PensionSettings;
   monthlyAlphaPension: number;
   monthlyClassicPension?: number;
@@ -12,7 +15,25 @@ export function calculateMonthlyIncomeTax(input: {
   monthlySippPension: number;
   monthlyCsAvcPension?: number;
   monthlyAdditionalGuaranteedIncomeTaxable?: number;
-}) {
+  monthlyAdditionalGuaranteedIncomeNonTaxable?: number;
+  monthlyIsaPension?: number;
+  monthlyLisaPension?: number;
+};
+
+export function calculateMonthlyIncomeTax(input: MonthlyIncomeTaxInput) {
+  if (!input.settings.taxationEnabled) {
+    return 0;
+  }
+
+  const annualTaxableIncome =
+    calculateMonthlyTaxableRetirementIncome(input) * 12;
+
+  return calculateAnnualIncomeTax(input.settings, annualTaxableIncome) / 12;
+}
+
+export function calculateMonthlyTaxableRetirementIncome(
+  input: MonthlyIncomeTaxInput
+) {
   const {
     settings,
     monthlyAlphaPension,
@@ -26,25 +47,20 @@ export function calculateMonthlyIncomeTax(input: {
     monthlyAdditionalGuaranteedIncomeTaxable = 0,
   } = input;
 
-  if (!settings.taxationEnabled) {
-    return 0;
-  }
-
   const taxableSippShare = 1 - settings.taxSippTaxFreeWithdrawalPercent / 100;
   const taxableCsAvcShare = 1 - settings.taxCsAvcTaxFreeWithdrawalPercent / 100;
-  const annualTaxableIncome =
-    (monthlyAlphaPension +
-      monthlyClassicPension +
-      monthlyClassicPlusPension +
-      monthlyNuvosPension +
-      monthlyPremiumPension +
-      monthlyStatePension +
-      monthlyAdditionalGuaranteedIncomeTaxable +
-      monthlySippPension * taxableSippShare +
-      monthlyCsAvcPension * taxableCsAvcShare) *
-    12;
 
-  return calculateAnnualIncomeTax(settings, annualTaxableIncome) / 12;
+  return (
+    monthlyAlphaPension +
+    monthlyClassicPension +
+    monthlyClassicPlusPension +
+    monthlyNuvosPension +
+    monthlyPremiumPension +
+    monthlyStatePension +
+    monthlyAdditionalGuaranteedIncomeTaxable +
+    monthlySippPension * taxableSippShare +
+    monthlyCsAvcPension * taxableCsAvcShare
+  );
 }
 
 export function calculateAnnualIncomeTax(
@@ -68,58 +84,62 @@ export function calculateAnnualIncomeTax(
     return calculateScottishIncomeTax(taxableAfterAllowance);
   }
 
-  return calculateRestOfUkIncomeTax(
-    settings,
-    taxableAfterAllowance,
-    personalAllowance
-  );
+  return calculateRestOfUkIncomeTax(settings, taxableAfterAllowance);
 }
 
 function calculateRestOfUkIncomeTax(
   settings: PensionSettings,
-  taxableAfterAllowance: number,
-  personalAllowance: number
+  taxableAfterAllowance: number
 ) {
   const basicBand = Math.max(0, settings.taxBasicRateLimit);
   const additionalThreshold = Math.max(
-    settings.taxAdditionalRateThreshold,
-    settings.taxPersonalAllowance
-  );
-  const higherBand = Math.max(
-    0,
-    additionalThreshold - personalAllowance - basicBand
-  );
-  const basicTaxable = Math.min(taxableAfterAllowance, basicBand);
-  const higherTaxable = Math.min(
-    Math.max(0, taxableAfterAllowance - basicBand),
-    higherBand
-  );
-  const additionalTaxable = Math.max(
-    0,
-    taxableAfterAllowance - basicBand - higherBand
+    basicBand,
+    settings.taxAdditionalRateThreshold
   );
 
-  return (
-    basicTaxable * (settings.taxBasicRatePercent / 100) +
-    higherTaxable * (settings.taxHigherRatePercent / 100) +
-    additionalTaxable * (settings.taxAdditionalRatePercent / 100)
-  );
+  return calculateIncomeTaxAcrossBands(taxableAfterAllowance, [
+    {
+      upperTaxableIncome: basicBand,
+      ratePercent: settings.taxBasicRatePercent,
+    },
+    {
+      upperTaxableIncome: additionalThreshold,
+      ratePercent: settings.taxHigherRatePercent,
+    },
+    {
+      upperTaxableIncome: null,
+      ratePercent: settings.taxAdditionalRatePercent,
+    },
+  ]);
 }
 
 function calculateScottishIncomeTax(taxableAfterAllowance: number) {
+  return calculateIncomeTaxAcrossBands(
+    taxableAfterAllowance,
+    SCOTTISH_INCOME_TAX_RULES.bands
+  );
+}
+
+function calculateIncomeTaxAcrossBands(
+  taxableIncome: number,
+  bands: readonly {
+    upperTaxableIncome: number | null;
+    ratePercent: number;
+  }[]
+) {
   let tax = 0;
   let lowerLimit = 0;
 
-  for (const band of SCOTTISH_INCOME_TAX_RULES.bands) {
+  for (const band of bands) {
     const upperLimit = band.upperTaxableIncome ?? Number.POSITIVE_INFINITY;
     const amountInBand = Math.max(
       0,
-      Math.min(taxableAfterAllowance, upperLimit) - lowerLimit
+      Math.min(taxableIncome, upperLimit) - lowerLimit
     );
 
     tax += amountInBand * (band.ratePercent / 100);
 
-    if (taxableAfterAllowance <= upperLimit) {
+    if (taxableIncome <= upperLimit) {
       break;
     }
 
@@ -138,5 +158,10 @@ function calculateTaxPersonalAllowance(
     annualTaxableIncome - settings.taxPersonalAllowanceTaperThreshold
   );
 
-  return Math.max(0, settings.taxPersonalAllowance - taper / 2);
+  return Math.max(
+    0,
+    settings.taxPersonalAllowance -
+      taper *
+        UK_INCOME_TAX_COMMON_RULES.personalAllowanceReductionPerExcessPound
+  );
 }

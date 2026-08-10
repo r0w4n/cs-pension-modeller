@@ -13,7 +13,10 @@ import {
   calculateCsAvcPotAtDate,
   calculateTotalCsAvcContributions,
 } from "../../src/projection-domains/cs-avc";
-import { calculateMonthlyIncomeTax } from "../../src/projection-domains/tax";
+import {
+  calculateMonthlyIncomeTax,
+  calculateMonthlyTaxableRetirementIncome,
+} from "../../src/projection-domains/tax";
 import {
   calculateNormalPensionAge,
   calculateStatePensionDrawDate,
@@ -565,16 +568,19 @@ When(
     const monthlyStatePension = this.monthlyStatePensionIncome ?? 0;
     const monthlyCsAvcPension = this.monthlyCsAvcIncome ?? 0;
 
-    this.taxableCsAvcIncome =
-      monthlyCsAvcPension *
-      (1 - settings.taxCsAvcTaxFreeWithdrawalPercent / 100);
-    this.monthlyTax = calculateMonthlyIncomeTax({
+    const input = {
       settings,
       monthlyAlphaPension,
       monthlyStatePension,
       monthlySippPension: 0,
       monthlyCsAvcPension,
-    });
+    };
+
+    this.taxableCsAvcIncome =
+      calculateMonthlyTaxableRetirementIncome(input) -
+      monthlyAlphaPension -
+      monthlyStatePension;
+    this.monthlyTax = calculateMonthlyIncomeTax(input);
     this.monthlyTaxWithoutCsAvc = calculateMonthlyIncomeTax({
       settings,
       monthlyAlphaPension,

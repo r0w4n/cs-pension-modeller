@@ -397,6 +397,11 @@ function calculateTax(
     monthlyCsAvcPension: withdrawals.csAvc,
     monthlyAdditionalGuaranteedIncomeTaxable:
       row.monthlyAdditionalGuaranteedIncomeTaxable,
+    monthlyAdditionalGuaranteedIncomeNonTaxable:
+      row.monthlyAdditionalGuaranteedIncomeGross -
+      row.monthlyAdditionalGuaranteedIncomeTaxable,
+    monthlyIsaPension: withdrawals.isa,
+    monthlyLisaPension: withdrawals.lisa,
   });
 }
 

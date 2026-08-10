@@ -50,6 +50,13 @@ export const knowledgeLinks = {
     "https://www.gov.uk/personal-pensions-your-rights/how-you-can-take-pension",
   incomeTaxRates: "https://www.gov.uk/income-tax-rates",
   scottishIncomeTaxRates: "https://www.gov.uk/scottish-income-tax",
+  pensionTaxableIncome: "https://www.gov.uk/tax-on-pension/taxed",
+  pensionLumpSumAllowance:
+    "https://www.gov.uk/tax-on-your-private-pension/lump-sum-allowance",
+  statePensionTax:
+    "https://www.gov.uk/guidance/how-your-state-pension-is-taxed",
+  moneyPurchaseAnnualAllowance:
+    "https://www.gov.uk/guidance/work-out-your-allowances-if-youve-flexibly-accessed-your-pension",
   isaAllowance: "https://www.gov.uk/individual-savings-accounts",
   lifetimeIsa: "https://www.gov.uk/lifetime-isa",
   pensionTaxFree: "https://www.gov.uk/tax-on-pension/tax-free",

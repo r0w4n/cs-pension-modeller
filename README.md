@@ -158,9 +158,12 @@ Some important assumptions and simplifications are:
   at age 50, and are modelled for retirement withdrawals from age 60.
 - Income Tax uses the selected 2026/27 regime throughout the projection.
   Scottish pension income uses the published starter, basic, intermediate,
-  higher, advanced and top bands. The estimate does not cover every personal
-  tax circumstance, future tax-year changes, tax code adjustment, savings or
-  dividend income, or benefit interaction.
+  higher, advanced and top bands. Each monthly income snapshot is annualised;
+  this is not cumulative PAYE or tax-year accounting. User-selected SIPP and CS
+  AVC tax-free shares do not track crystallisation or the shared pension
+  lump-sum allowance. The estimate does not cover every personal tax
+  circumstance, future tax-year changes, tax-code adjustment, employment,
+  savings or dividend income, annual-allowance charges, or benefit interaction.
 - Results are deterministic scenario outputs, not probabilistic forecasts.
 
 For more detail, see the in-app Methodology page.

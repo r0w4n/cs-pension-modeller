@@ -379,6 +379,11 @@ export function buildProjectionRow(input: {
     monthlySippPension: sippProjection.monthlySippPension,
     monthlyCsAvcPension: csAvcProjection.monthlyCsAvcPension,
     monthlyAdditionalGuaranteedIncomeTaxable,
+    monthlyAdditionalGuaranteedIncomeNonTaxable:
+      monthlyAdditionalGuaranteedIncomeGross -
+      monthlyAdditionalGuaranteedIncomeTaxable,
+    monthlyIsaPension: isaProjection.monthlyIsaPension,
+    monthlyLisaPension: lisaProjection.monthlyLisaPension,
   });
 
   return {

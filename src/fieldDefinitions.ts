@@ -1313,7 +1313,7 @@ export const fieldGroups: FieldGroup[] = [
     eyebrow: "Tax",
     title: "Tax assumptions",
     description:
-      "Optional simplified UK Income Tax estimate for planning sensitivity rather than tax advice.",
+      "Optional simplified 2026/27 UK Income Tax estimate. The model annualises each monthly retirement-income snapshot; it does not reproduce cumulative PAYE or forecast future tax policy.",
     fields: [
       {
         id: "taxRegime",
@@ -1342,7 +1342,7 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         format: "currency",
         description:
-          "The amount of taxable income assumed before Income Tax is charged. Adjust this if your tax code or future allowance assumption differs.",
+          "The amount deducted from the modelled annual taxable retirement income before Income Tax is charged. The model uses that income as a simplified proxy for adjusted net income and does not account for reliefs that may change it.",
         infoUrl: knowledgeLinks.incomeTaxRates,
         infoLinkText: "Income Tax rates",
       },
@@ -1355,7 +1355,7 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         format: "currency",
         description:
-          "The income level above which the model starts reducing the Personal Allowance.",
+          "The modelled annual taxable retirement income above which the Personal Allowance is reduced by £1 for every £2. Actual adjusted net income can differ after reliefs and other income.",
         infoUrl: knowledgeLinks.incomeTaxRates,
         infoLinkText: "Income Tax rates",
       },
@@ -1381,7 +1381,7 @@ export const fieldGroups: FieldGroup[] = [
         step: 1,
         format: "currency",
         description:
-          "The taxable-income level at which the additional tax rate starts in this simplified tax model.",
+          "The cumulative taxable-income level, after the Personal Allowance, at which the additional tax rate starts in this simplified tax model.",
         infoUrl: knowledgeLinks.incomeTaxRates,
         infoLinkText: "Income Tax rates",
       },
@@ -1423,9 +1423,17 @@ export const fieldGroups: FieldGroup[] = [
         max: 25,
         step: 0.1,
         description:
-          "The share of SIPP withdrawals the model treats as tax-free pension cash. Alpha, nuvos, State Pension and taxable SIPP withdrawals can be taxable income; ISA withdrawals are not modelled as taxable income.",
-        infoUrl: knowledgeLinks.pensionTaxFree,
-        infoLinkText: "Check pension tax-free rules",
+          "The share of each SIPP withdrawal the model treats as tax-free pension cash. This is a planning assumption, not an entitlement calculation: the model does not track crystallisation or your shared pension lump-sum allowance across schemes and earlier benefits.",
+        infoLinks: [
+          {
+            href: knowledgeLinks.pensionTaxFree,
+            text: "Check pension tax-free rules",
+          },
+          {
+            href: knowledgeLinks.pensionLumpSumAllowance,
+            text: "Check the lump-sum allowance",
+          },
+        ],
       },
       {
         id: "taxCsAvcTaxFreeWithdrawalPercent",
@@ -1435,9 +1443,17 @@ export const fieldGroups: FieldGroup[] = [
         max: 25,
         step: 0.1,
         description:
-          "The share of CS AVC withdrawals the model treats as tax-free pension cash. The remaining share is included in the simplified Income Tax estimate.",
-        infoUrl: knowledgeLinks.pensionTaxFree,
-        infoLinkText: "Check pension tax-free rules",
+          "The share of each CS AVC withdrawal the model treats as tax-free pension cash. This is a planning assumption, not an entitlement calculation: the model does not track crystallisation or your shared pension lump-sum allowance across schemes and earlier benefits.",
+        infoLinks: [
+          {
+            href: knowledgeLinks.pensionTaxFree,
+            text: "Check pension tax-free rules",
+          },
+          {
+            href: knowledgeLinks.pensionLumpSumAllowance,
+            text: "Check the lump-sum allowance",
+          },
+        ],
       },
     ],
   },

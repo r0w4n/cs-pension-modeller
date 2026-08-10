@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calculateAnnualIncomeTax, calculateMonthlyIncomeTax } from "./tax";
+import {
+  calculateAnnualIncomeTax,
+  calculateMonthlyIncomeTax,
+  calculateMonthlyTaxableRetirementIncome,
+} from "./tax";
 import { defaultSettings, type PensionSettings } from "../settings";
 
 describe("projection tax domain", () => {
@@ -27,6 +31,31 @@ describe("projection tax domain", () => {
     expect(calculateAnnualIncomeTax(settings, 125140)).toBeCloseTo(42516, 6);
     expect(calculateAnnualIncomeTax(settings, 130000)).toBeCloseTo(44703, 6);
   });
+
+  it.each([
+    [12_570, 0],
+    [12_571, 0.2],
+    [50_270, 7_540],
+    [50_271, 7_540.4],
+    [100_000, 27_432],
+    [100_002, 27_433.2],
+    [125_140, 42_516],
+    [125_141, 42_516.45],
+  ])(
+    "calculates 2026/27 rest-of-UK Income Tax for £%i of pension income",
+    (annualTaxableIncome, expectedTax) => {
+      expect(
+        calculateAnnualIncomeTax(
+          {
+            ...defaultSettings,
+            taxationEnabled: true,
+            taxRegime: "rest_of_uk",
+          },
+          annualTaxableIncome
+        )
+      ).toBeCloseTo(expectedTax, 6);
+    }
+  );
 
   it.each([
     [12_570, 0],
@@ -66,6 +95,66 @@ describe("projection tax domain", () => {
         3_967
       )
     ).toBeCloseTo(753.73, 6);
+  });
+
+  it("treats the configurable additional-rate threshold as taxable income", () => {
+    expect(
+      calculateAnnualIncomeTax(
+        {
+          ...defaultSettings,
+          taxationEnabled: true,
+          taxRegime: "rest_of_uk",
+          taxPersonalAllowance: 20_000,
+          taxPersonalAllowanceTaperThreshold: 200_000,
+          taxBasicRateLimit: 37_700,
+          taxAdditionalRateThreshold: 125_140,
+        },
+        145_140
+      )
+    ).toBeCloseTo(42_516, 6);
+  });
+
+  it("combines every taxable retirement source before applying tax", () => {
+    const input = {
+      settings: {
+        ...defaultSettings,
+        taxationEnabled: true,
+      },
+      monthlyAlphaPension: 100,
+      monthlyClassicPension: 200,
+      monthlyClassicPlusPension: 300,
+      monthlyNuvosPension: 400,
+      monthlyPremiumPension: 500,
+      monthlyStatePension: 600,
+      monthlySippPension: 800,
+      monthlyCsAvcPension: 1_200,
+      monthlyAdditionalGuaranteedIncomeTaxable: 700,
+      monthlyAdditionalGuaranteedIncomeNonTaxable: 1_000,
+      monthlyIsaPension: 2_000,
+      monthlyLisaPension: 3_000,
+    };
+
+    expect(calculateMonthlyTaxableRetirementIncome(input)).toBeCloseTo(
+      100 + 200 + 300 + 400 + 500 + 600 + 700 + 800 * 0.75 + 1_200 * 0.75,
+      6
+    );
+  });
+
+  it("excludes ISA, qualifying LISA and non-taxable additional income", () => {
+    expect(
+      calculateMonthlyTaxableRetirementIncome({
+        settings: {
+          ...defaultSettings,
+          taxationEnabled: true,
+        },
+        monthlyAlphaPension: 0,
+        monthlyStatePension: 0,
+        monthlySippPension: 0,
+        monthlyAdditionalGuaranteedIncomeNonTaxable: 1_000,
+        monthlyIsaPension: 2_000,
+        monthlyLisaPension: 3_000,
+      })
+    ).toBe(0);
   });
 
   it("taxes pension income while keeping the SIPP tax-free share outside taxable income", () => {

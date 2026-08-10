@@ -358,9 +358,11 @@ Automated axe checks help catch regressions in CI, but they do not prove full
 WCAG compliance. Manual keyboard, focus-management, zoom, and screen-reader
 checks are still needed before release.
 
-This repository includes Git hooks in [`.githooks/`](.githooks). Once
-`core.hooksPath` is set to `.githooks` for the clone, commits and pushes run
-the same local checks that are expected before review.
+This repository includes Git hooks in [`.githooks/`](.githooks). `npm install`
+and `npm ci` configure `core.hooksPath` for the clone automatically, so commits
+and pushes—including those made with GitHub Desktop—run the same local checks
+that are expected before review. To repair the setting without reinstalling
+dependencies, run `npm run setup:hooks`.
 
 ## CI/CD
 

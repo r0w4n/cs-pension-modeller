@@ -375,7 +375,11 @@ Dependency updates are managed by Dependabot for npm packages and GitHub
 Actions. Pull requests also run GitHub's Dependency Review action so dependency
 changes are checked before merge. `npm audit` runs in `npm run check:full` for
 local verification and in a scheduled/manual GitHub Actions workflow, rather
-than blocking every pull request on transient advisory noise.
+than blocking every pull request on transient advisory noise. To apply npm's
+non-breaking automatic remediations, run `npm run audit:fix`, review the
+dependency and lockfile changes, and then run `npm run check:full`. Do not use
+`npm audit fix --force` without reviewing and explicitly accepting its proposed
+major-version changes.
 
 Dependabot groups `react` and `react-dom` updates because React requires those
 runtime packages to use exactly the same version. Dependabot pull requests,

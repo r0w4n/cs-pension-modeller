@@ -123,21 +123,6 @@ test.describe("app end-to-end journeys", () => {
       "Yearly Alpha pension built up so far (£)",
       "17500"
     );
-    await clickNextAndExpectStep(page, "Do you have an Alpha EPA?");
-    await expect(
-      page.getByRole("radio", { name: "No, I do not have an EPA" })
-    ).toBeChecked();
-    await expect(page.getByText("EPA purchase periods")).toHaveCount(0);
-    await page.getByRole("radio", { name: "Yes, I have an EPA" }).click();
-    await page.getByRole("button", { name: "Add EPA period" }).click();
-    await page.getByLabel("EPA option 1").selectOption("1");
-    await page.getByLabel("EPA start date 1").fill("2026-09-01");
-    await page.getByLabel("EPA end date 1").fill("2027-03-31");
-    await page.getByRole("button", { name: "Add EPA period" }).click();
-    await page.getByLabel("EPA option 2").selectOption("3");
-    await page.getByLabel("EPA start date 2").fill("2028-04-01");
-    await page.getByLabel("EPA end date 2").fill("2029-03-31");
-    await expect(page.getByText("EPA period #2")).toBeVisible();
     await clickNextAndExpectStep(
       page,
       "Do you know your State Pension forecast?"
@@ -146,10 +131,9 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("radio", { name: "No, use the full-rate assumption" })
     ).toBeChecked();
     await expect(
-      page.getByText(
-        /Assumption: the modeller will use the full new State Pension/i
-      )
+      page.getByRole("heading", { name: "What we'll assume" })
     ).toBeVisible();
+    await expect(page.getByText(/We'll use £12,548 a year/i)).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Check my State Pension forecast/i })
     ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
@@ -173,8 +157,6 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("checkbox", { name: "Civil Service AVC savings" })
     ).toBeVisible();
-    await clickNextAndExpectStep(page, "Additional guaranteed income");
-    await addAdditionalIncome(page, "Simple journey annuity", "4000", "67");
     await clickNextAndExpectStep(page, "Could Added Pension close the gap?");
     await expect(
       page.getByRole("heading", {

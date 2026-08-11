@@ -166,7 +166,7 @@ describe("journey definitions", () => {
     }
   });
 
-  it("includes Alpha EPA controls in journey-specific places", () => {
+  it("keeps Alpha EPA controls out of the simplified journey", () => {
     const alphaEpaFieldIds = [
       "alphaEpaEnabled",
     ] satisfies FieldDefinition["id"][];
@@ -182,17 +182,12 @@ describe("journey definitions", () => {
       }
     }
 
-    const simpleEpaStep = getJourneyStep(
-      "simple-early-retirement",
-      "alpha-epa"
+    expect(
+      getJourneyStep("simple-early-retirement", "alpha-epa")
+    ).toBeUndefined();
+    expect(getJourneyFieldIds("simple-early-retirement")).not.toContain(
+      "alphaEpaEnabled"
     );
-
-    if (!simpleEpaStep || simpleEpaStep.kind !== "fields") {
-      throw new Error("Expected the simple EPA step to contain fields");
-    }
-    expect(simpleEpaStep.optionalQuestion?.setting.id).toBe("alphaEpaEnabled");
-    expect(simpleEpaStep.groupId).toBe("alpha-epa");
-    expect(simpleEpaStep.fieldIds).toEqual([]);
 
     for (const legacyFieldId of [
       "alphaEpaYearsBeforeNpa",
@@ -292,13 +287,9 @@ describe("journey definitions", () => {
     ]);
 
     const stepIds = simpleJourney?.steps.map((step) => step.id) ?? [];
-    expect(stepIds.indexOf("alpha-epa")).toBeLessThan(
-      stepIds.indexOf("include")
-    );
+    expect(stepIds).not.toContain("alpha-epa");
+    expect(stepIds).not.toContain("additional-income");
     expect(stepIds.indexOf("include")).toBeLessThan(stepIds.indexOf("classic"));
-    expect(stepIds.indexOf("cs-avc")).toBeLessThan(
-      stepIds.indexOf("additional-income")
-    );
   });
 
   it("forces Alpha on throughout the simple journey only", () => {
@@ -392,11 +383,11 @@ describe("journey definitions", () => {
     );
   });
 
-  it("keeps additional guaranteed income in the simple and bridge journeys", () => {
+  it("keeps additional guaranteed income out of the simple journey", () => {
     expect(getJourneyStepIds("early-retirement-bridge")).toContain(
       "additional-income"
     );
-    expect(getJourneyStepIds("simple-early-retirement")).toContain(
+    expect(getJourneyStepIds("simple-early-retirement")).not.toContain(
       "additional-income"
     );
   });
@@ -413,15 +404,56 @@ describe("journey definitions", () => {
     ]);
   });
 
-  it("keeps EPA enabled when applying simple journey assumptions", () => {
-    expect(
-      applySimpleJourneyAssumptions({
-        ...defaultSettings,
-        alphaEpaEnabled: true,
-      })
-    ).toEqual(
+  it("excludes EPA from simple calculations while preserving expert settings", () => {
+    const alphaEpaPeriods = [
+      {
+        id: "saved-epa-period",
+        yearsBeforeNpa: 2 as const,
+        startDate: "2026-04-01",
+        endDate: "2027-03-31",
+      },
+    ];
+    const currentSettings = {
+      ...defaultSettings,
+      alphaEpaEnabled: true,
+      alphaEpaPeriods,
+    };
+    const simpleSettings = applySimpleJourneyAssumptions(currentSettings);
+
+    expect(simpleSettings.alphaEpaEnabled).toBe(false);
+    expect(mergeSimpleJourneySettings(currentSettings, simpleSettings)).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
+        alphaEpaPeriods,
+      })
+    );
+  });
+
+  it("excludes additional guaranteed income from simple calculations while preserving expert settings", () => {
+    const additionalGuaranteedIncomes = [
+      {
+        id: "saved-additional-income",
+        name: "Previous employer pension",
+        annualAmount: 5000,
+        startAge: 67,
+        endAge: null,
+        indexation: "cpi" as const,
+        fixedIncreasePercent: null,
+        taxable: true,
+      },
+    ];
+    const currentSettings = {
+      ...defaultSettings,
+      showAdditionalGuaranteedIncome: true,
+      additionalGuaranteedIncomes,
+    };
+    const simpleSettings = applySimpleJourneyAssumptions(currentSettings);
+
+    expect(simpleSettings.showAdditionalGuaranteedIncome).toBe(false);
+    expect(mergeSimpleJourneySettings(currentSettings, simpleSettings)).toEqual(
+      expect.objectContaining({
+        showAdditionalGuaranteedIncome: true,
+        additionalGuaranteedIncomes,
       })
     );
   });

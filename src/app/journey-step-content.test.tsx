@@ -320,10 +320,12 @@ describe("JourneyStepContent", () => {
       screen.getByRole("radio", { name: "No, use the full-rate assumption" })
     ).toBeChecked();
     expect(
-      screen.getByText(
-        /Assumption: the modeller will use the full new State Pension/
-      )
-    ).toHaveTextContent("£12,548 a year");
+      screen.getByRole("heading", { name: "What we'll assume" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/We'll use/)).toHaveTextContent("£12,548 a year");
+    expect(
+      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+    ).toHaveAttribute("aria-describedby", "state-pension-assumption");
     expect(
       screen.queryByLabelText(
         "How much State Pension does your forecast show each year?"
@@ -343,6 +345,9 @@ describe("JourneyStepContent", () => {
         "How much State Pension does your forecast show each year?"
       )
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "What we'll assume" })
+    ).not.toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("radio", { name: "No, use the full-rate assumption" })

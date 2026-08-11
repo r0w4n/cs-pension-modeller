@@ -649,6 +649,27 @@ h3 {
   width: 100%;
 }
 
+.journey-assumption-callout {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid rgba(166, 95, 0, 0.35);
+  border-left: 0.3rem solid var(--warning);
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: var(--warning-soft);
+}
+
+.journey-assumption-callout h4,
+.journey-assumption-callout p {
+  margin: 0;
+}
+
+.journey-assumption-callout p {
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+}
+
 .added-pension-gap {
   display: grid;
   gap: 1.25rem;
@@ -1465,7 +1486,7 @@ h3 {
   border: 1px solid rgba(17, 100, 102, 0.14);
   border-radius: 999px;
   padding: 0.25rem 0.7rem;
-  background: rgba(216, 236, 233, 0.48);
+  background: var(--accent-soft);
   color: var(--accent-strong);
   font-size: var(--font-size-label);
   line-height: var(--line-height-heading);
@@ -2551,18 +2572,15 @@ h3 {
 
 @keyframes saved-feedback-fade {
   0% {
-    opacity: 0;
     transform: translate(-50%, 0.1rem);
   }
 
   12%,
   72% {
-    opacity: 1;
     transform: translate(-50%, 0);
   }
 
   100% {
-    opacity: 0;
     transform: translate(-50%, -0.1rem);
   }
 }

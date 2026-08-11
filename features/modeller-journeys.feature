@@ -68,6 +68,8 @@ Feature: Modeller journeys
   Scenario: Guide users to enter figures from their Alpha pension statement
     When the "Simplified retirement journey" journey is loaded
     Then the journey should include a step titled "Add your Alpha pension details"
+    And the journey should not include a step titled "Do you have an Alpha EPA?"
+    And the journey should not include a step titled "Additional guaranteed income"
     And the "Add your Alpha pension details" journey step should contain these fields:
       | field                                              |
       | What year is your latest pension statement?        |
@@ -75,7 +77,6 @@ Feature: Modeller journeys
       | Yearly pay used to build your Alpha pension (£)     |
     And the "Add your Alpha pension details" journey step should link to Annual Benefit Statement help
     And the "Add your Alpha pension details" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
-    And the "Do you have any other Civil Service pensions?" journey step should appear before the "Additional guaranteed income" journey step
 
   @simple-journey @alpha
   Scenario: Do not assume pensionable earnings before the member enters them
@@ -110,9 +111,6 @@ Feature: Modeller journeys
     When the "Simplified retirement journey" journey is loaded
     Then the journey should include a step titled "Could Added Pension close the gap?"
     And the "Could Added Pension close the gap?" journey step should use a yes or no question
-    And the "Additional guaranteed income" journey step should appear before the "Could Added Pension close the gap?" journey step
-    And the journey should include a step titled "Do you have an Alpha EPA?"
-    And the "Do you have an Alpha EPA?" journey step should use a yes or no question
 
   @expert-journey
   Scenario: Separate the expert retirement target from personal details

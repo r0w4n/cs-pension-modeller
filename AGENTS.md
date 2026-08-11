@@ -245,6 +245,5 @@ In the final response, concisely state:
 - [Detailed interface and design guidance](docs/design-guidelines.md)
 - [Development and testing](README.md#development)
 - [Testing strategy and commands](README.md#testing)
-- [Settings schema version history](docs/settings-schema-version-history.md)
 - [Executable behaviour specifications](features/)
 - [Browser and accessibility tests](e2e/)

@@ -274,8 +274,9 @@ Keys currently used:
 
 Settings storage is schema-versioned. Current saves use a versioned envelope so
 older browser data can be migrated safely when fields are renamed or
-restructured. The current migration history is documented in
-[`docs/settings-schema-version-history.md`](docs/settings-schema-version-history.md).
+restructured. The migration implementations and their compatibility tests live
+in `src/settings/settings-migrations.ts` and
+`src/settings/settings-migrations.test.ts`.
 
 ## Analytics
 

@@ -872,6 +872,10 @@ function OptionalFieldsQuestion({
   children: ReactNode;
 }) {
   const isEnabled = answer ?? isOptionalQuestionEnabled(question, settings);
+  const statePensionAssumptionId =
+    question.setting.id === "statePensionForecastConfirmed"
+      ? "state-pension-assumption"
+      : undefined;
 
   const chooseAnswer = (enabled: boolean) => {
     onAnswer(question.setting.id, enabled);
@@ -910,6 +914,9 @@ function OptionalFieldsQuestion({
               type="radio"
               name={`journey-question-${question.setting.id}`}
               checked={!isEnabled}
+              aria-describedby={
+                !isEnabled ? statePensionAssumptionId : undefined
+              }
               onChange={() => chooseAnswer(false)}
             />
             <span>{question.noLabel}</span>
@@ -927,12 +934,24 @@ function OptionalFieldsQuestion({
       </fieldset>
 
       {question.setting.id === "statePensionForecastConfirmed" && !isEnabled ? (
-        <p className="field-warning" role="status">
-          Assumption: the modeller will use the full new State Pension of{" "}
-          {formatWholePounds(defaultSettings.currentStatePension)} a year. Your
-          actual amount may be different. Results will be marked as needing a
-          check until you enter your personalised forecast.
-        </p>
+        <div
+          id={statePensionAssumptionId}
+          className="journey-assumption-callout"
+        >
+          <h4>What we&apos;ll assume</h4>
+          <p>
+            We&apos;ll use{" "}
+            <strong>
+              {formatWholePounds(defaultSettings.currentStatePension)} a year
+            </strong>
+            , the full new State Pension rate, for now. Your actual forecast may
+            be different.
+          </p>
+          <p>
+            Until you enter your personalised forecast, we&apos;ll label your
+            result <strong>Needs checking</strong>.
+          </p>
+        </div>
       ) : null}
 
       {isEnabled ? children : null}

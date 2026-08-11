@@ -64,12 +64,6 @@ test.describe("accessibility", () => {
 
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Do you have an Alpha EPA?" })
-    ).toBeVisible();
-    await expectNoAxeViolations(page, "simple journey EPA question");
-
-    await page.getByRole("button", { name: "Next" }).click();
-    await expect(
       page.getByRole("heading", {
         name: "Do you know your State Pension forecast?",
       })

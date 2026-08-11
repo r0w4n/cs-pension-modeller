@@ -555,27 +555,6 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showAlpha,
       },
       {
-        id: "alpha-epa",
-        eyebrow: "Optional",
-        title: "Do you have an Alpha EPA?",
-        description:
-          "An Effective Pension Age (EPA) is an optional extra you pay for so that part of your Alpha pension can normally be taken one, two or three years earlier without a reduction. If you do not recognise EPA from your pension statement or payslip, choose No.",
-        kind: "fields",
-        groupId: "alpha-epa",
-        fieldIds: [],
-        hideFieldInfoLinks: true,
-        optionalQuestion: {
-          prompt: "Do you have an Alpha EPA?",
-          noLabel: "No, I do not have an EPA",
-          yesLabel: "Yes, I have an EPA",
-          setting: {
-            id: "alphaEpaEnabled",
-            enabledWhen: "true",
-          },
-        },
-        visible: (settings) => settings.showAlpha,
-      },
-      {
         id: "partial-retirement",
         eyebrow: "Optional",
         title: "Reduced hours",
@@ -768,16 +747,6 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showCsAvc,
       },
       {
-        id: "additional-income",
-        eyebrow: "Optional",
-        title: "Additional guaranteed income",
-        description:
-          "Add known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
-        kind: "fields",
-        groupId: "additional-income",
-        fieldIds: [],
-      },
-      {
         id: "alpha-options",
         eyebrow: "Projection so far",
         title: "Could Added Pension close the gap?",
@@ -952,6 +921,8 @@ export function applySimpleJourneyAssumptions(
     taxationEnabled: true,
     retirementIncomeTargetBasis: "after_tax",
     partialRetirementEnabled: false,
+    alphaEpaEnabled: false,
+    showAdditionalGuaranteedIncome: false,
     alphaAddedPensionLumpSums: [],
   };
 }
@@ -974,7 +945,11 @@ export function mergeSimpleJourneySettings(
     taxationEnabled: nextSettings.taxationEnabled,
     retirementIncomeTargetBasis: nextSettings.retirementIncomeTargetBasis,
     partialRetirementEnabled: currentSettings.partialRetirementEnabled,
-    alphaEpaEnabled: nextSettings.alphaEpaEnabled,
+    alphaEpaEnabled: currentSettings.alphaEpaEnabled,
+    alphaEpaPeriods: currentSettings.alphaEpaPeriods,
+    showAdditionalGuaranteedIncome:
+      currentSettings.showAdditionalGuaranteedIncome,
+    additionalGuaranteedIncomes: currentSettings.additionalGuaranteedIncomes,
     alphaAddedPensionLumpSums: currentSettings.alphaAddedPensionLumpSums,
   };
 }

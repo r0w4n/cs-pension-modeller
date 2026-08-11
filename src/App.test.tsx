@@ -1013,8 +1013,8 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Added pension/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Alpha EPA/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", {
         name: /Do you know your State Pension forecast/i,
@@ -1301,8 +1301,8 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Added pension/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Alpha EPA/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({ showAlpha: true })
     );
@@ -1391,41 +1391,44 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows EPA controls in a separate simple journey EPA step", () => {
+  it("hides EPA from the simple journey and excludes it from projections", () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          alphaEpaEnabled: true,
+          alphaEpaPeriods: [
+            {
+              id: "saved-simple-epa-period",
+              yearsBeforeNpa: 2,
+              startDate: "2026-06-01",
+              endDate: "2027-03-31",
+            },
+          ],
+        })
+      )
+    );
+
     renderAcknowledgedApp({ mode: "simple" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
-
     expect(
-      screen.getByRole("heading", { name: "Do you have an Alpha EPA?" })
-    ).toBeInTheDocument();
-
-    const noEpaAnswer = screen.getByRole("radio", {
-      name: "No, I do not have an EPA",
-    });
-
-    expect(noEpaAnswer).toBeChecked();
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Do you have an Alpha EPA?" })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("EPA purchase periods")).not.toBeInTheDocument();
-
-    vi.mocked(createProjectionTable).mockClear();
-    fireEvent.click(screen.getByRole("radio", { name: "Yes, I have an EPA" }));
-
-    expect(screen.getByText("EPA purchase periods")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Add EPA period" }));
-    fireEvent.change(screen.getByLabelText("EPA option 1"), {
-      target: { value: "2" },
-    });
-    fireEvent.change(screen.getByLabelText("EPA start date 1"), {
-      target: { value: "2026-06-01" },
-    });
-    fireEvent.change(screen.getByLabelText("EPA end date 1"), {
-      target: { value: "2027-03-31" },
-    });
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        alphaEpaEnabled: false,
+      })
+    );
+    expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
         alphaEpaPeriods: [
           expect.objectContaining({
+            id: "saved-simple-epa-period",
             yearsBeforeNpa: 2,
             startDate: "2026-06-01",
             endDate: "2027-03-31",
@@ -1433,20 +1436,54 @@ describe("App settings form", () => {
         ],
       })
     );
+  });
+
+  it("hides additional guaranteed income from the simple journey and projections", () => {
+    const additionalGuaranteedIncomes = [
+      {
+        id: "saved-simple-additional-income",
+        name: "Previous employer pension",
+        annualAmount: 5000,
+        startAge: 67,
+        endAge: null,
+        indexation: "cpi",
+        fixedIncreasePercent: null,
+        taxable: true,
+      },
+    ];
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(
+        expectedStoredSettings({
+          showAdditionalGuaranteedIncome: true,
+          additionalGuaranteedIncomes,
+        })
+      )
+    );
+
+    renderAcknowledgedApp({ mode: "simple" });
+
     expect(
-      screen.queryByRole("heading", {
-        name: "Estimated Added Pension needed",
+      screen.queryByRole("button", { name: /Additional guaranteed income/i })
+    ).not.toBeInTheDocument();
+    expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        showAdditionalGuaranteedIncome: false,
       })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { name: "Lump sum purchases" })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Add lump sum purchase" })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("Added pension type")
-    ).not.toBeInTheDocument();
+    );
+    expect(readStoredSettingsPayload()).toEqual(
+      expect.objectContaining({
+        showAdditionalGuaranteedIncome: true,
+        additionalGuaranteedIncomes: [
+          expect.objectContaining({
+            id: "saved-simple-additional-income",
+            name: "Previous employer pension",
+            annualAmount: 5000,
+            startAge: 67,
+          }),
+        ],
+      })
+    );
   });
 
   it("shows the retirement target and projection before asking about Added Pension", () => {
@@ -1478,10 +1515,9 @@ describe("App settings form", () => {
       screen.getByRole("radio", { name: "No, use the full-rate assumption" })
     ).toBeChecked();
     expect(
-      screen.getByText(
-        /Assumption: the modeller will use the full new State Pension/
-      )
-    ).toHaveTextContent("£12,548 a year");
+      screen.getByRole("heading", { name: "What we'll assume" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/We'll use/)).toHaveTextContent("£12,548 a year");
     expect(
       screen.getByRole("link", { name: /Check my State Pension forecast/i })
     ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
@@ -1689,12 +1725,20 @@ describe("App settings form", () => {
     );
   });
 
-  it("keeps hidden lump sum settings when visiting the simple journey", () => {
+  it("keeps hidden EPA and lump sum settings when visiting the simple journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
         expectedStoredSettings({
           alphaEpaEnabled: true,
+          alphaEpaPeriods: [
+            {
+              id: "saved-hidden-epa-period",
+              yearsBeforeNpa: 1,
+              startDate: "2026-04-01",
+              endDate: "2027-03-31",
+            },
+          ],
           alphaAddedPensionLumpSums: [
             {
               amount: 5000,
@@ -1716,12 +1760,20 @@ describe("App settings form", () => {
       screen.queryByRole("button", { name: "Add lump sum purchase" })
     ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
-
-    expect(screen.getByText("EPA purchase periods")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Alpha EPA/i })
+    ).not.toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
+        alphaEpaPeriods: [
+          expect.objectContaining({
+            id: "saved-hidden-epa-period",
+            yearsBeforeNpa: 1,
+            startDate: "2026-04-01",
+            endDate: "2027-03-31",
+          }),
+        ],
         alphaAddedPensionLumpSums: [
           expect.objectContaining({
             amount: 5000,

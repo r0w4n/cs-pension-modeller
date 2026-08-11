@@ -10,4 +10,5 @@ export * from "./projection-domains/sipp";
 export * from "./projection-domains/cs-avc";
 export * from "./projection-domains/isa";
 export * from "./projection-domains/tax";
+export * from "./projection-domains/tax-year";
 export * from "./projection-domains/inflation";

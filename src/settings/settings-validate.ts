@@ -177,8 +177,27 @@ export function validateSettings(
     ...validateLisaRules(context),
     ...validatePartialRetirementRules(context),
     ...validateAdditionalGuaranteedIncomeRules(settings),
+    ...validateTaxRules(settings),
     ...validateSpendingSmileRules(settings),
     ...validateLumpSumRules(context),
+  ];
+}
+
+function validateTaxRules(settings: PensionSettings): PensionValidationIssue[] {
+  if (
+    !settings.taxationEnabled ||
+    !settings.taxTrackLumpSumAllowance ||
+    settings.taxLumpSumAllowanceUsed <= settings.taxLumpSumAllowance
+  ) {
+    return [];
+  }
+
+  return [
+    {
+      field: "taxLumpSumAllowanceUsed",
+      message:
+        "Pension lump-sum allowance already used cannot exceed the total allowance entered.",
+    },
   ];
 }
 

@@ -185,6 +185,44 @@ export function migrateFromV8ToV9(data: unknown) {
     return {};
   }
 
+  return {
+    ...data,
+    taxRegime: "rest_of_uk",
+  };
+}
+
+export function migrateFromV9ToV10(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    taxationEnabled:
+      typeof data.taxationEnabled === "boolean" ? data.taxationEnabled : false,
+  };
+}
+
+export function migrateFromV10ToV11(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    taxSippWithdrawalTreatment: "custom",
+    taxCsAvcWithdrawalTreatment: "custom",
+    taxTrackLumpSumAllowance: false,
+    taxLumpSumAllowance: 268_275,
+    taxLumpSumAllowanceUsed: 0,
+  };
+}
+
+export function migrateFromV11ToV12(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
   const hasLegacyEpa = data.alphaEpaEnabled === true;
   const yearsBeforeNpa =
     data.alphaEpaYearsBeforeNpa === 1 ||
@@ -221,6 +259,9 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   6: migrateFromV6ToV7,
   7: migrateFromV7ToV8,
   8: migrateFromV8ToV9,
+  9: migrateFromV9ToV10,
+  10: migrateFromV10ToV11,
+  11: migrateFromV11ToV12,
 };
 
 export function migrateSettingsToLatest(

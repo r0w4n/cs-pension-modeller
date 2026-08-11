@@ -28,6 +28,22 @@ describe("settings-validate", () => {
     expect(validateSettings(createDefaultSettings())).toEqual([]);
   });
 
+  it("does not allow prior lump-sum allowance use to exceed the selected allowance", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      taxationEnabled: true,
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: 100_000,
+      taxLumpSumAllowanceUsed: 100_001,
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "taxLumpSumAllowanceUsed" }),
+      ])
+    );
+  });
+
   it("flags invalid personal dates without throwing", () => {
     const issues = validateSettings({
       ...createDefaultSettings(),

@@ -56,6 +56,7 @@ describe("journey definitions", () => {
       "expert-alpha",
       "expert-sipp",
       "expert-isa",
+      "expert-tax",
       "answer",
     ]);
     expect(getJourneyStepFieldIds("expert-journey", "expert-personal")).toEqual(
@@ -64,6 +65,24 @@ describe("journey definitions", () => {
     expect([
       ...getJourneyStepFieldIds("expert-journey", "expert-retirement-target"),
     ]).toEqual(["desiredRetirementIncome", "requirementAge"]);
+  });
+
+  it("keeps the SIPP tax-free withdrawal assumption with the SIPP inputs", () => {
+    expect(getJourneyStepFieldIds("expert-journey", "expert-sipp")).toContain(
+      "taxSippTaxFreeWithdrawalPercent"
+    );
+    expect(
+      getJourneyStepFieldIds("expert-journey", "expert-tax")
+    ).not.toContain("taxSippTaxFreeWithdrawalPercent");
+  });
+
+  it("lets guided journeys select the tax regime beside their after-tax target", () => {
+    expect(
+      getJourneyStepFieldIds("early-retirement-bridge", "target")
+    ).toContain("taxRegime");
+    expect(
+      getJourneyStepFieldIds("simple-early-retirement", "basics")
+    ).toContain("taxRegime");
   });
 
   it("keeps flexible withdrawal strategy controls exclusive to expert mode", () => {
@@ -165,6 +184,7 @@ describe("journey definitions", () => {
         "lisaMonthlyContribution",
         "lisaDrawAge",
         "lisaRealInterestPercent",
+        "taxSippTaxFreeWithdrawalPercent",
       ])
     );
   });

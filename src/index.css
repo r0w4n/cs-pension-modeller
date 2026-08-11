@@ -1238,6 +1238,23 @@ h3 {
   );
 }
 
+.bridge-income-tax-fill {
+  stroke: #385a78;
+  stroke-width: 1.25;
+  pointer-events: none;
+}
+
+.bridge-income-tax-key {
+  border: 1px solid rgba(56, 90, 120, 0.5);
+  border-radius: 0.15rem;
+  background: repeating-linear-gradient(
+    0deg,
+    #dce6ef 0 3px,
+    #385a78 3px 5px,
+    #dce6ef 5px 8px
+  );
+}
+
 .bridge-avoidable-surplus-fill {
   opacity: 0.62;
   pointer-events: none;

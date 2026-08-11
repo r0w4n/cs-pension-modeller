@@ -1,16 +1,41 @@
 # Settings Schema Version History
 
-## Version 9 (current)
+## Version 12 (current)
 
 - Added `alphaEpaPeriods`, allowing separate dated EPA −1, −2 and −3
   purchase periods.
-- Version 8 settings with the former single EPA option are migrated to one
+- Version 11 settings with the former single EPA option are migrated to one
   equivalent period so existing locally saved scenarios keep their meaning.
 
-## Versions 3–8
+## Version 11
 
-- Added additional guaranteed incomes, protected pension ages, CS AVCs,
-  spending strategies, and flexible-withdrawal priority settings.
+- Added explicit SIPP and Civil Service AVC withdrawal-tax treatments.
+- New plans track one shared pension lump-sum allowance and prior allowance use.
+- Version 10 plans migrate to their existing custom percentage treatment with
+  allowance tracking disabled, preserving their previous projections until the
+  user opts into the tracked treatment.
+
+## Version 10
+
+- New plans enable the simplified Income Tax estimate by default so retirement
+  targets are assessed as take-home income after estimated tax.
+- Existing saved plans preserve their previous Income Tax setting. Plans that
+  pre-date the setting migrate with taxation disabled to avoid changing their
+  results silently.
+
+## Version 9
+
+- Added `taxRegime` so saved plans can select the rest-of-UK or Scottish
+  2026/27 Income Tax rules.
+- Existing plans migrate to `rest_of_uk`, preserving their previous tax
+  calculation.
+
+## Versions 3 to 8
+
+- Added settings for guaranteed income, protected pension ages, Civil Service
+  AVCs, spending phases, and flexible-account withdrawal priority.
+- Each version supplied explicit defaults so older saved plans retained their
+  previous behaviour.
 
 ## Version 2
 

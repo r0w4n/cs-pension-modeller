@@ -1256,10 +1256,125 @@ export function buildComparisonDetailedRows(
         "Taxation enabled",
         (result) => formatYesNo(result.scenario.settings.taxationEnabled),
       ],
+      [
+        "Income Tax regime",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? result.scenario.settings.taxRegime === "scotland"
+              ? "Scotland (2026/27)"
+              : "England, Wales or Northern Ireland (2026/27)"
+            : "N/A",
+      ],
+      [
+        "Tax calculation basis",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? "Modelled tax-year liability"
+            : "N/A",
+      ],
+      [
+        "Pre-retirement employment tax context",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? `${formatCurrencyDetailed(
+                result.scenario.settings.fullSalary
+              )} annual entered full salary`
+            : "N/A",
+      ],
+      [
+        "Projection-end tax context",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? "Final taxable monthly income continued to the following 5 April"
+            : "N/A",
+      ],
+      [
+        "Personal Allowance",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxPersonalAllowance
+              )
+            : "N/A",
+      ],
+      [
+        "Personal Allowance taper threshold",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxPersonalAllowanceTaperThreshold
+              )
+            : "N/A",
+      ],
+      [
+        "SIPP withdrawal tax treatment",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.showSipp
+            ? formatWithdrawalTaxTreatment(
+                result.scenario.settings.taxSippWithdrawalTreatment,
+                result.scenario.settings.taxSippTaxFreeWithdrawalPercent
+              )
+            : "N/A",
+      ],
+      [
+        "CS AVC withdrawal tax treatment",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.showCsAvc
+            ? formatWithdrawalTaxTreatment(
+                result.scenario.settings.taxCsAvcWithdrawalTreatment,
+                result.scenario.settings.taxCsAvcTaxFreeWithdrawalPercent
+              )
+            : "N/A",
+      ],
+      [
+        "Shared lump-sum allowance tracking",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? formatYesNo(result.scenario.settings.taxTrackLumpSumAllowance)
+            : "N/A",
+      ],
+      [
+        "Pension lump-sum allowance",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.taxTrackLumpSumAllowance
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxLumpSumAllowance
+              )
+            : "N/A",
+      ],
+      [
+        "Pension lump-sum allowance already used",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.taxTrackLumpSumAllowance
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxLumpSumAllowanceUsed
+              )
+            : "N/A",
+      ],
     ]),
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
+}
+
+function formatWithdrawalTaxTreatment(
+  treatment: PensionSettings["taxSippWithdrawalTreatment"],
+  customPercent: number
+) {
+  if (treatment === "ufpls") {
+    return "25% tax-free on each withdrawal";
+  }
+  if (treatment === "custom") {
+    return `${formatPercent(customPercent / 100)} tax-free custom share`;
+  }
+  if (treatment === "fully_taxable") {
+    return "Fully taxable drawdown";
+  }
+  return "Not confirmed — fully taxable assumption";
 }
 
 function formatSippProtectedPensionAge(settings: PensionSettings) {
@@ -1325,6 +1440,41 @@ export function buildComparisonStatusItems(
       label: "Main issue",
       value: mainIssue,
     },
+    {
+      label: "Income basis",
+      value: result.scenario.settings.taxationEnabled
+        ? "After estimated Income Tax liability by modelled tax year; PAYE timing and National Insurance are excluded"
+        : "Before Income Tax",
+    },
+    ...(result.scenario.settings.taxationEnabled
+      ? [
+          {
+            label: "Pension tax-free cash",
+            value: result.scenario.settings.taxTrackLumpSumAllowance
+              ? `Shared allowance tracked from ${formatCurrencyDetailed(
+                  Math.max(
+                    0,
+                    result.scenario.settings.taxLumpSumAllowance -
+                      result.scenario.settings.taxLumpSumAllowanceUsed
+                  )
+                )} remaining at projection start`
+              : "Legacy untracked percentage assumption — review before relying on results",
+          },
+          ...((result.scenario.settings.showSipp &&
+            result.scenario.settings.taxSippWithdrawalTreatment ===
+              "unknown") ||
+          (result.scenario.settings.showCsAvc &&
+            result.scenario.settings.taxCsAvcWithdrawalTreatment === "unknown")
+            ? [
+                {
+                  label: "Withdrawal tax basis",
+                  value:
+                    "At least one pension withdrawal treatment is not confirmed and is treated as fully taxable",
+                },
+              ]
+            : []),
+        ]
+      : []),
   ];
 }
 

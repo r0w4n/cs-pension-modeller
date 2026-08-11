@@ -686,10 +686,16 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxBasicRatePercent: defaultSettings.taxBasicRatePercent,
     taxHigherRatePercent: defaultSettings.taxHigherRatePercent,
     taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
+    taxSippWithdrawalTreatment: defaultSettings.taxSippWithdrawalTreatment,
     taxSippTaxFreeWithdrawalPercent:
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
+    taxCsAvcWithdrawalTreatment: defaultSettings.taxCsAvcWithdrawalTreatment,
     taxCsAvcTaxFreeWithdrawalPercent:
       defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
+    taxTrackLumpSumAllowance: defaultSettings.taxTrackLumpSumAllowance,
+    taxLumpSumAllowance: defaultSettings.taxLumpSumAllowance,
+    taxLumpSumAllowanceUsed: defaultSettings.taxLumpSumAllowanceUsed,
+    taxRegime: defaultSettings.taxRegime,
     ...overrides,
   };
 }
@@ -831,7 +837,7 @@ describe("App settings form", () => {
     });
 
     const targetIncomeInput = screen.getByLabelText(
-      "Target retirement income (£ per year)"
+      "After-tax retirement income target (£ per year)"
     );
 
     fireEvent.change(targetIncomeInput, {
@@ -1003,8 +1009,16 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Date of birth month")).toHaveValue("06");
     expect(screen.getByLabelText("Date of birth year")).toHaveValue("1987");
     expect(
-      screen.getByLabelText("Target retirement income (£ per year)")
+      screen.getByLabelText("After-tax retirement income target (£ per year)")
     ).toHaveValue(defaultSettings.desiredRetirementIncome);
+    expect(
+      screen.getByText(/annual spending goal after estimated Income Tax/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /before the modeller applies any Go-Go, Slow-Go, No-Go phase percentage/i
+      )
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Retirement age")).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Age you leave Alpha")
@@ -1837,7 +1851,7 @@ describe("App settings form", () => {
     expect(
       within(ageRangeTable).getByText("Alpha pension, State Pension")
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£2,500.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,400.00")).toBeInTheDocument();
   });
 
   it("keeps the bridge target retirement age stable after slider release", () => {
@@ -1912,7 +1926,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("SIPP")).toBeChecked();
     expect(screen.getByLabelText("State Pension")).toBeChecked();
     expect(screen.getByLabelText("ISA")).toBeChecked();
-    expect(screen.getByLabelText("Taxation")).not.toBeChecked();
+    expect(screen.getByLabelText("Taxation")).toBeChecked();
     expect(
       screen.queryByLabelText("State Pension Age")
     ).not.toBeInTheDocument();
@@ -1938,7 +1952,7 @@ describe("App settings form", () => {
       screen.queryByLabelText("Target retirement age")
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText("Retirement Living Standards target (£ per year)")
+      screen.queryByLabelText("After-tax retirement income target (£ per year)")
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Estimate life expectancy" })
@@ -1947,13 +1961,13 @@ describe("App settings form", () => {
       "https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/healthandlifeexpectancies/articles/lifeexpectancycalculator/2019-06-07"
     );
 
-    openJourneyStep(/Retirement income target/i);
+    openJourneyStep(/After-tax retirement income target/i);
 
     expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
     expect(
-      screen.getByLabelText("Retirement Living Standards target (£ per year)")
+      screen.getByLabelText("After-tax retirement income target (£ per year)")
     ).toHaveValue(defaultSettings.desiredRetirementIncome);
     expect(
       screen.getByRole("link", { name: "Retirement Living Standards" })
@@ -2219,7 +2233,7 @@ describe("App settings form", () => {
         "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
       )
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£2,950.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,850.00")).toBeInTheDocument();
     expect(within(ageRangeTable).getByText("£2,641.67")).toBeInTheDocument();
     expect(
       screen.getAllByText("Starts Drawing Alpha Pension").length
@@ -2368,29 +2382,65 @@ describe("App settings form", () => {
   it("shows tax withdrawal assumptions only for enabled optional sections", () => {
     renderAcknowledgedApp();
 
-    fireEvent.click(screen.getByLabelText("Taxation"));
+    openJourneyStep(/SIPP details/i);
 
-    openJourneyStep(/Tax assumptions/i);
-
+    expect(screen.getByLabelText("SIPP withdrawal tax treatment")).toHaveValue(
+      "ufpls"
+    );
+    expect(
+      screen.queryByLabelText("SIPP tax-free withdrawal share (%)")
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("SIPP withdrawal tax treatment"), {
+      target: { value: "custom" },
+    });
     expect(
       screen.getByLabelText("SIPP tax-free withdrawal share (%)")
     ).toBeInTheDocument();
     expect(
-      screen.queryByLabelText("CS AVC tax-free withdrawal share (%)")
-    ).not.toBeInTheDocument();
-
-    openJourneyStep(/Optional sections/i);
-    fireEvent.click(screen.getByLabelText("SIPP"));
-    fireEvent.click(screen.getByLabelText("Civil Service AVC"));
+      screen.getByRole("link", { name: "Check the lump-sum allowance" })
+    ).toHaveAttribute(
+      "href",
+      "https://www.gov.uk/tax-on-your-private-pension/lump-sum-allowance"
+    );
 
     openJourneyStep(/Tax assumptions/i);
 
+    expect(screen.getByLabelText("Income Tax regime")).toHaveValue(
+      "rest_of_uk"
+    );
+
     expect(
-      screen.queryByLabelText("SIPP tax-free withdrawal share (%)")
+      screen.queryByLabelText("SIPP withdrawal tax treatment")
     ).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText("CS AVC tax-free withdrawal share (%)")
+      screen.queryByLabelText("CS AVC withdrawal tax treatment")
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Income Tax regime"), {
+      target: { value: "scotland" },
+    });
+
+    expect(
+      screen.queryByLabelText("Basic-rate taxable band (£ per year)")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Personal Allowance (£ per year)")
     ).toBeInTheDocument();
+
+    openJourneyStep(/Optional sections/i);
+    fireEvent.click(screen.getByLabelText("Civil Service AVC"));
+
+    openJourneyStep(/Civil Service AVC/i);
+
+    expect(
+      screen.queryByLabelText("SIPP withdrawal tax treatment")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("CS AVC withdrawal tax treatment")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("CS AVC tax-free withdrawal share (%)")
+    ).not.toBeInTheDocument();
   });
 
   it("does not show expandable modeller limitations on the results page", () => {
@@ -2421,7 +2471,7 @@ describe("App settings form", () => {
         "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
       )
     ).toBeInTheDocument();
-    expect(screen.getByText("£35,400.00")).toBeInTheDocument();
+    expect(screen.getByText("£34,200.00")).toBeInTheDocument();
     expect(screen.getByText("£31,700.00")).toBeInTheDocument();
   });
 
@@ -2465,7 +2515,7 @@ describe("App settings form", () => {
       target: { value: "1990" },
     });
 
-    openJourneyStep(/Retirement income target/i);
+    openJourneyStep(/After-tax retirement income target/i);
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -2497,10 +2547,10 @@ describe("App settings form", () => {
   it("allows a custom retirement living standard target", () => {
     renderAcknowledgedApp();
 
-    openJourneyStep(/Retirement income target/i);
+    openJourneyStep(/After-tax retirement income target/i);
 
     const targetInput = screen.getByLabelText(
-      "Retirement Living Standards target (£ per year)"
+      "After-tax retirement income target (£ per year)"
     );
 
     fireEvent.change(targetInput, {
@@ -3206,7 +3256,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target income line")).toBeInTheDocument();
   });
 
-  it("can disable partial retirement from the chart controls", () => {
+  it("removes partial retirement from the chart key when it is disabled", () => {
     renderAcknowledgedApp();
 
     fireEvent.click(screen.getByLabelText("Partial retirement"));
@@ -3226,7 +3276,9 @@ describe("App settings form", () => {
         partialRetirementEnabled: false,
       })
     );
-    expect(partialRetirementKey).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.queryByLabelText("Toggle chart partial retirement source")
+    ).not.toBeInTheDocument();
   });
 
   it("only commits chart control slider changes when the pointer is released", () => {
@@ -3684,7 +3736,7 @@ describe("App settings form", () => {
     expect(
       within(ageRangeTable).getByText("Alpha pension")
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£1,600.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£1,500.00")).toBeInTheDocument();
     expect(
       screen.queryByRole("columnheader", { name: "Monthly State pension" })
     ).not.toBeInTheDocument();

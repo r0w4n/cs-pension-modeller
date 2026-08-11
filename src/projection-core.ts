@@ -11,6 +11,11 @@ import {
 import { createProjectionTableBase } from "./row-engine-base";
 import { createProjectionTableWithPensionIncreases } from "./row-engine-with-pension-increases";
 import { coordinateFlexibleWithdrawals } from "./projection-domains/flexible-withdrawals";
+import {
+  applyTaxYearIncomeTax,
+  deriveTaxYearEffectiveRates,
+  taxYearEffectiveRatesEqual,
+} from "./projection-domains/tax-year";
 import { generatePensionSummary as generatePensionSummaryFromSummary } from "./summary";
 
 export type ProjectionRow = {
@@ -45,6 +50,7 @@ export type ProjectionRow = {
   monthlyStatePension: number;
   monthlyAdditionalGuaranteedIncomeGross: number;
   monthlyAdditionalGuaranteedIncomeTaxable: number;
+  monthlyEmploymentIncome?: number;
   sippPot: number;
   monthlySippPension: number;
   csAvcPot: number;
@@ -55,6 +61,10 @@ export type ProjectionRow = {
   monthlyLisaPension: number;
   totalMonthlyIncomeBeforeTax: number;
   monthlyIncomeTax: number;
+  monthlySippTaxableIncome?: number;
+  monthlyCsAvcTaxableIncome?: number;
+  monthlyTaxFreePensionCash?: number;
+  pensionLumpSumAllowanceRemaining?: number;
   totalMonthlyNetIncome: number;
   monthlyGuaranteedNetIncome?: number;
   monthlyUnavoidableSurplus?: number;
@@ -295,7 +305,34 @@ export function createProjectionTable(
       )
     : createProjectionTableBase(settings, derivedInputs, runtimeDates);
 
-  return coordinateFlexibleWithdrawals(rows, settings);
+  let effectiveRates = new Map<string, number>();
+  let coordinatedRows = coordinateFlexibleWithdrawals(
+    rows,
+    settings,
+    effectiveRates
+  );
+  let taxedRows = applyTaxYearIncomeTax(coordinatedRows, settings);
+
+  for (let iteration = 0; iteration < 12; iteration += 1) {
+    const nextEffectiveRates = deriveTaxYearEffectiveRates(taxedRows, settings);
+
+    if (
+      iteration > 0 &&
+      taxYearEffectiveRatesEqual(effectiveRates, nextEffectiveRates)
+    ) {
+      break;
+    }
+
+    effectiveRates = nextEffectiveRates;
+    coordinatedRows = coordinateFlexibleWithdrawals(
+      rows,
+      settings,
+      effectiveRates
+    );
+    taxedRows = applyTaxYearIncomeTax(coordinatedRows, settings);
+  }
+
+  return taxedRows;
 }
 
 export function prepareBridgeProjectionSettings(

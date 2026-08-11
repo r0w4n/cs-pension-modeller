@@ -180,6 +180,38 @@ export function migrateFromV7ToV8(data: unknown) {
   };
 }
 
+export function migrateFromV8ToV9(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  const hasLegacyEpa = data.alphaEpaEnabled === true;
+  const yearsBeforeNpa =
+    data.alphaEpaYearsBeforeNpa === 1 ||
+    data.alphaEpaYearsBeforeNpa === 2 ||
+    data.alphaEpaYearsBeforeNpa === 3
+      ? data.alphaEpaYearsBeforeNpa
+      : 3;
+
+  return {
+    ...data,
+    alphaEpaPeriods: Array.isArray(data.alphaEpaPeriods)
+      ? data.alphaEpaPeriods
+      : hasLegacyEpa &&
+          typeof data.alphaEpaStartDate === "string" &&
+          typeof data.alphaEpaEndDate === "string"
+        ? [
+            {
+              id: "migrated-epa-period",
+              yearsBeforeNpa,
+              startDate: data.alphaEpaStartDate,
+              endDate: data.alphaEpaEndDate,
+            },
+          ]
+        : [],
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -188,6 +220,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   5: migrateFromV5ToV6,
   6: migrateFromV6ToV7,
   7: migrateFromV7ToV8,
+  8: migrateFromV8ToV9,
 };
 
 export function migrateSettingsToLatest(

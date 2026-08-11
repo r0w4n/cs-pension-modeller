@@ -208,9 +208,6 @@ export const JOURNEY_DEFINITIONS = [
           "pensionableEarnings",
           "alphaAddedPensionMonthly",
           "alphaEpaEnabled",
-          "alphaEpaYearsBeforeNpa",
-          "alphaEpaStartDate",
-          "alphaEpaEndDate",
         ],
         visible: (settings) => settings.showAlpha,
       },
@@ -448,12 +445,8 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "Set the EPA period and the number of years before Normal Pension Age that the EPA portion is intended to be available without early-payment reduction.",
         kind: "fields",
-        fieldIds: [
-          "alphaEpaEnabled",
-          "alphaEpaYearsBeforeNpa",
-          "alphaEpaStartDate",
-          "alphaEpaEndDate",
-        ],
+        groupId: "alpha-epa",
+        fieldIds: ["alphaEpaEnabled"],
         visible: (settings) => settings.showAlpha,
       },
       {

@@ -3,8 +3,10 @@ import alphaLateRetirementFactors from "../data/alpha_pension_late_retirement_fa
 import alphaEarlyRetirementFactors from "../data/alpha_pension_reduction_factors.json";
 import {
   getPartialRetirementContributionMultiplier,
+  getAlphaEpaPeriodForDate,
   type AddedPensionFactorType,
   type AddedPensionLumpSum,
+  type AlphaEpaYearsBeforeNpa,
   type PensionSettings,
 } from "../settings";
 import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
@@ -116,6 +118,30 @@ export function calculateMonthlyEpaAlphaAccrual(
         calculateProjectedAlphaPensionableEarnings(settings, rowDate)
       ) * getPartialRetirementContributionMultiplier(settings, rowDate)
     : 0;
+}
+
+export type AlphaEpaPensionPortions = Record<AlphaEpaYearsBeforeNpa, number>;
+
+export function createEmptyAlphaEpaPensionPortions(): AlphaEpaPensionPortions {
+  return { 1: 0, 2: 0, 3: 0 };
+}
+
+export function calculateMonthlyEpaAlphaAccrualByOption(
+  settings: PensionSettings,
+  rowDate: string
+): AlphaEpaPensionPortions {
+  const portions = createEmptyAlphaEpaPensionPortions();
+  const period = getAlphaEpaPeriodForDate(settings, rowDate);
+
+  if (!settings.showAlpha || !period) {
+    return portions;
+  }
+
+  portions[period.yearsBeforeNpa] =
+    calculateMonthlyAlphaAccrual(
+      calculateProjectedAlphaPensionableEarnings(settings, rowDate)
+    ) * getPartialRetirementContributionMultiplier(settings, rowDate);
+  return portions;
 }
 
 export function calculateStartingAlphaPensionAtStartDate(input: {
@@ -597,6 +623,34 @@ export function calculateAnnualAlphaPensionIncludingEpaReduction(input: {
   return breakdown[breakdown.length - 1].payableAnnualAmount;
 }
 
+export function calculateAnnualAlphaPensionIncludingEpaPortionReductions(input: {
+  standardAlphaPension: number;
+  epaAlphaPensions: AlphaEpaPensionPortions;
+  reductionFactor: number;
+  epaReductionFactors: Record<AlphaEpaYearsBeforeNpa, number>;
+}) {
+  const {
+    standardAlphaPension,
+    epaAlphaPensions,
+    reductionFactor,
+    epaReductionFactors,
+  } = input;
+  const breakdown = calculateAlphaPensionComponentBreakdown([
+    {
+      component: "standardAlpha",
+      unreducedAnnualAmount: standardAlphaPension,
+      paymentFactor: reductionFactor,
+    },
+    ...([1, 2, 3] as const).map((yearsBeforeNpa) => ({
+      component: `epaAlphaNpaMinus${yearsBeforeNpa}`,
+      unreducedAnnualAmount: epaAlphaPensions[yearsBeforeNpa],
+      paymentFactor: epaReductionFactors[yearsBeforeNpa],
+    })),
+  ]);
+
+  return breakdown[breakdown.length - 1].payableAnnualAmount;
+}
+
 export function calculateMonthlyAlphaPensionGross(
   rowDate: string,
   alphaPensionDrawDate: string,
@@ -624,11 +678,7 @@ export function calculateMonthlyAlphaPensionIncludingReduction(
 }
 
 function isEpaAccrualDate(settings: PensionSettings, rowDate: string) {
-  return (
-    settings.alphaEpaEnabled &&
-    rowDate >= settings.alphaEpaStartDate &&
-    rowDate <= settings.alphaEpaEndDate
-  );
+  return Boolean(getAlphaEpaPeriodForDate(settings, rowDate));
 }
 
 function getPublishedAlphaEarlyRetirementFactor(

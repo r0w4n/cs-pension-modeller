@@ -83,8 +83,8 @@ The current app is driven by inputs grouped around:
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
   draw age, and added pension
-- EPA: selected EPA years before Normal Pension Age and the EPA purchase date
-  range
+- EPA: one or more dated EPA −1, −2 or −3 purchase periods, including gaps,
+  partial years, restarts, and option changes
 - classic and classic plus pensions: known annual pension and automatic lump
   sum values, or final pensionable earnings and reckonable service inputs
 - nuvos pension: statement year, accrued pension, draw age, and pension

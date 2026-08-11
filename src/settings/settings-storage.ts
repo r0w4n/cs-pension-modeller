@@ -1,4 +1,5 @@
 import {
+  coerceAlphaEpaPeriods,
   coerceAddedPensionLumpSums,
   coerceLegacySippLumpSum,
 } from "./settings-domains/alpha-pension";
@@ -206,6 +207,7 @@ function coerceSettings(
     alphaPayRisePercent: coerceNumber(input.alphaPayRisePercent),
     alphaPensionDrawAge: coerceNumber(input.alphaPensionDrawAge),
     alphaEpaEnabled: coerceBoolean(input.alphaEpaEnabled),
+    alphaEpaPeriods: coerceAlphaEpaPeriods(input.alphaEpaPeriods),
     alphaEpaYearsBeforeNpa: coerceNumber(input.alphaEpaYearsBeforeNpa),
     alphaEpaStartDate: coerceString(input.alphaEpaStartDate),
     alphaEpaEndDate: coerceString(input.alphaEpaEndDate),

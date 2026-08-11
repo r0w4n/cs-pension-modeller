@@ -381,25 +381,31 @@ export function MethodologyPage() {
           buying extra annual pension through added-pension factors.
         </p>
         <p className="section-copy">
-          When EPA is enabled, Alpha accrual during the selected EPA date range
-          is tracked as a separate EPA portion rather than standard Alpha
-          accrual. The same 2.32% annual accrual rate is used, but the EPA
-          portion has its own unreduced date.
+          When EPA is enabled, Alpha accrual during each selected EPA purchase
+          period is tracked separately from standard Alpha accrual. The same
+          2.32% annual accrual rate is used. The model supports partial periods,
+          gaps, restarts and changes between EPA −1, −2 and −3. Only one EPA
+          option can overlap a date; accrual in a gap returns to standard Alpha.
         </p>
         <p className="section-copy">
-          The EPA unreduced date is calculated as Normal Pension Age minus the
-          selected number of EPA years. If Alpha is drawn before that EPA date,
-          the EPA portion is reduced using the Alpha early-retirement factor for
-          the EPA age. If Alpha is drawn on or after the EPA date, the EPA
-          portion is not reduced for early payment. The standard Alpha portion
-          continues to use the normal Alpha reduction test against Normal
-          Pension Age.
+          Each EPA portion&apos;s unreduced date is calculated as Normal Pension
+          Age minus its selected number of EPA years. When Alpha is claimed, the
+          main Alpha pension and all EPA portions come into payment together.
+          Each EPA portion is reduced independently if the claim date is before
+          that portion&apos;s EPA date. The standard Alpha portion continues to
+          use Normal Pension Age.
         </p>
         <p className="section-copy">
           An EPA cannot provide an unreduced age below 65. EPA accrual is
           revalued like the main Alpha pension, and a change to State Pension
           age can change both Normal Pension Age and the corresponding EPA age.
-          See the{" "}
+          EPA normally starts or changes on 1 April and cancellation normally
+          takes effect after 31 March. Joining Alpha, leaving it, or restarting
+          after a break can produce a partial scheme year, so entered dates
+          should be checked against the member&apos;s official pension record.
+          The projection runs monthly, so a period that begins or ends part-way
+          through a month is represented at monthly rather than daily
+          resolution. See the{" "}
           <a href={knowledgeLinks.alphaEpa} target="_blank" rel="noreferrer">
             official EPA guidance
           </a>

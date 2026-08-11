@@ -6,6 +6,7 @@ import {
   migrateFromV5ToV6,
   migrateFromV6ToV7,
   migrateFromV7ToV8,
+  migrateFromV8ToV9,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -138,6 +139,30 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("migrates the former single EPA window to one dated EPA period", () => {
+    expect(
+      migrateFromV8ToV9({
+        alphaEpaEnabled: true,
+        alphaEpaYearsBeforeNpa: 2,
+        alphaEpaStartDate: "2026-04-01",
+        alphaEpaEndDate: "2028-03-31",
+      })
+    ).toEqual({
+      alphaEpaEnabled: true,
+      alphaEpaYearsBeforeNpa: 2,
+      alphaEpaStartDate: "2026-04-01",
+      alphaEpaEndDate: "2028-03-31",
+      alphaEpaPeriods: [
+        {
+          id: "migrated-epa-period",
+          yearsBeforeNpa: 2,
+          startDate: "2026-04-01",
+          endDate: "2028-03-31",
+        },
+      ],
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -174,6 +199,7 @@ describe("settings-migrations", () => {
         noGoPercentage: 70,
       },
       flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
+      alphaEpaPeriods: [],
     });
   });
 

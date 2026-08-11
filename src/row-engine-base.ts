@@ -2,7 +2,9 @@ import type { PensionSettings } from "./settings";
 import {
   calculateAccruedAlphaPension,
   calculateMonthlyEpaAlphaAccrual,
+  calculateMonthlyEpaAlphaAccrualByOption,
   calculateMonthlyStandardAlphaAccrual,
+  createEmptyAlphaEpaPensionPortions,
 } from "./projection-domains/alpha";
 import type {
   DerivedProjectionInputs,
@@ -50,6 +52,7 @@ export function createProjectionTableBase(
     epaDate,
     reductionFactor,
     epaReductionFactor,
+    epaReductionFactors,
   } = derivedInputs;
   const {
     sippDrawDate,
@@ -76,6 +79,7 @@ export function createProjectionTableBase(
     epaDate,
     reductionFactor,
     epaReductionFactor,
+    epaReductionFactors,
     nuvosDrawDate,
     nuvosNpaDate,
     nuvosReductionFactor,
@@ -90,6 +94,7 @@ export function createProjectionTableBase(
   });
   let cumulativeStandardAccrual = 0;
   let cumulativeEpaAccrual = 0;
+  const cumulativeEpaAccruals = createEmptyAlphaEpaPensionPortions();
   let cumulativeStandardAddedPension = historicalRows.reduce(
     (total, row) => total + row.monthlyAddedPension + row.lumpSumAddedPension,
     0
@@ -122,6 +127,14 @@ export function createProjectionTableBase(
 
     cumulativeStandardAccrual += monthlyStandardAlphaAccrual;
     cumulativeEpaAccrual += monthlyEpaAlphaAccrual;
+    const monthlyEpaAlphaAccruals =
+      rowDate <= accrualStopDate
+        ? calculateMonthlyEpaAlphaAccrualByOption(settings, rowDate)
+        : createEmptyAlphaEpaPensionPortions();
+    for (const yearsBeforeNpa of [1, 2, 3] as const) {
+      cumulativeEpaAccruals[yearsBeforeNpa] +=
+        monthlyEpaAlphaAccruals[yearsBeforeNpa];
+    }
 
     const { monthlyAddedPension, lumpSumAddedPension } =
       calculateAddedPensionValues({
@@ -141,6 +154,7 @@ export function createProjectionTableBase(
       epaDate,
       reductionFactor,
       epaReductionFactor,
+      epaReductionFactors,
       nuvosDrawDate,
       nuvosNpaDate,
       nuvosReductionFactor,
@@ -158,6 +172,13 @@ export function createProjectionTableBase(
       ),
       annualEpaAlphaPension:
         startingAlphaPortionsAtStartDate.epaAlphaPension + cumulativeEpaAccrual,
+      annualEpaAlphaPensions: Object.fromEntries(
+        ([1, 2, 3] as const).map((yearsBeforeNpa) => [
+          yearsBeforeNpa,
+          startingAlphaPortionsAtStartDate.epaAlphaPensions[yearsBeforeNpa] +
+            cumulativeEpaAccruals[yearsBeforeNpa],
+        ])
+      ) as Record<1 | 2 | 3, number>,
       annualNuvosPension: calculateNuvosAnnualPension({
         settings,
         rowDate,

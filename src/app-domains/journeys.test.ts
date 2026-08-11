@@ -134,9 +134,6 @@ describe("journey definitions", () => {
   it("includes Alpha EPA controls in journey-specific places", () => {
     const alphaEpaFieldIds = [
       "alphaEpaEnabled",
-      "alphaEpaYearsBeforeNpa",
-      "alphaEpaStartDate",
-      "alphaEpaEndDate",
     ] satisfies FieldDefinition["id"][];
 
     for (const [journeyId, stepId] of [

@@ -2469,6 +2469,14 @@ describe("projection calculations", () => {
       showSipp: false,
       showIsa: false,
       alphaEpaEnabled: true,
+      alphaEpaPeriods: [
+        {
+          id: "epa-minus-three",
+          yearsBeforeNpa: 3,
+          startDate: "2047-05-15",
+          endDate: "2047-06-15",
+        },
+      ],
       alphaEpaYearsBeforeNpa: 3,
       alphaEpaStartDate: "2047-05-15",
       alphaEpaEndDate: "2047-06-15",
@@ -2483,11 +2491,68 @@ describe("projection calculations", () => {
     expect(row?.annualAlphaPensionIncludingReduction).toBeCloseTo(231.0952, 6);
   });
 
+  it("keeps stopped and restarted EPA options as independently reduced portions", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2044-04-15",
+      dateOfBirth: "1980-06-15",
+      requirementAge: 65,
+      alphaPensionAbsDate: "2044",
+      accruedPensionAtLastAbs: 0,
+      pensionableEarnings: 42000,
+      alphaAddedPensionMonthly: 0,
+      alphaPensionDrawAge: 65,
+      alphaPensionLeaveAge: 65,
+      lifeExpectancy: 66,
+      applyPensionIncreases: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      alphaEpaEnabled: true,
+      alphaEpaPeriods: [
+        {
+          id: "epa-minus-one",
+          yearsBeforeNpa: 1,
+          startDate: "2044-05-15",
+          endDate: "2044-06-15",
+        },
+        {
+          id: "epa-minus-three",
+          yearsBeforeNpa: 3,
+          startDate: "2044-08-15",
+          endDate: "2044-09-15",
+        },
+      ],
+    };
+
+    const rows = createProjectionTable(settings);
+    const gapRow = findRowByDate(rows, "2044-07-15");
+    const drawRow = findRowByDate(rows, "2045-06-15");
+
+    expect(gapRow?.annualEpaAlphaPension).toBeCloseTo(162.4, 6);
+    expect(gapRow?.annualStandardAlphaPension).toBeCloseTo(162.4, 6);
+    expect(drawRow?.annualEpaAlphaPension).toBeCloseTo(324.8, 6);
+    expect(drawRow?.annualAlphaPensionIncludingReduction).toBeCloseTo(
+      (drawRow?.annualStandardAlphaPension ?? 0) * 0.846 +
+        162.4 * 0.897 +
+        162.4,
+      6
+    );
+  });
+
   it("still projects rows when EPA is enabled before the EPA age", () => {
     const rows = createProjectionTable({
       ...defaultSettings,
       requirementAge: 60,
       alphaEpaEnabled: true,
+      alphaEpaPeriods: [
+        {
+          id: "epa-minus-three",
+          yearsBeforeNpa: 3,
+          startDate: defaultSettings.alphaEpaStartDate,
+          endDate: defaultSettings.alphaEpaEndDate,
+        },
+      ],
       alphaEpaYearsBeforeNpa: 3,
       alphaPensionDrawAge: 60,
     });
@@ -2515,6 +2580,14 @@ describe("projection calculations", () => {
       normalPensionAge: 68,
       statePensionDrawDate: "2045-08-23",
       alphaEpaEnabled: true,
+      alphaEpaPeriods: [
+        {
+          id: "epa-minus-two",
+          yearsBeforeNpa: 2,
+          startDate: "2026-04-01",
+          endDate: "2047-03-31",
+        },
+      ],
       alphaEpaYearsBeforeNpa: 2,
       alphaEpaStartDate: "2026-04-01",
       alphaEpaEndDate: "2047-03-31",

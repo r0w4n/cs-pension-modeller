@@ -1,6 +1,7 @@
 import type { PensionSettings } from "./settings";
 import {
   calculateMonthlyEpaAlphaAccrual,
+  calculateMonthlyEpaAlphaAccrualByOption,
   calculateMonthlyStandardAlphaAccrual,
 } from "./projection-domains/alpha";
 import {
@@ -24,7 +25,7 @@ import {
   calculatePremiumAnnualPension,
 } from "./row-assembly";
 
-type AlphaBenefitPortion = "standard" | "epa";
+type AlphaBenefitPortion = "standard" | "epa-1" | "epa-2" | "epa-3";
 
 type AlphaRevaluationEvent = {
   amount: number;
@@ -58,6 +59,7 @@ export function createProjectionTableWithPensionIncreases(
     epaDate,
     reductionFactor,
     epaReductionFactor,
+    epaReductionFactors,
   } = derivedInputs;
   const {
     sippDrawDate,
@@ -121,6 +123,10 @@ export function createProjectionTableWithPensionIncreases(
       rowDate <= accrualStopDate && !shouldSuppressMonthlyAlphaAccrual
         ? calculateMonthlyEpaAlphaAccrual(settings, rowDate)
         : 0;
+    const monthlyEpaAlphaAccruals =
+      rowDate <= accrualStopDate && !shouldSuppressMonthlyAlphaAccrual
+        ? calculateMonthlyEpaAlphaAccrualByOption(settings, rowDate)
+        : { 1: 0, 2: 0, 3: 0 };
 
     if (monthlyStandardAlphaAccrual > 0) {
       alphaRevaluationTracker.addComponent({
@@ -131,11 +137,13 @@ export function createProjectionTableWithPensionIncreases(
     }
 
     if (monthlyEpaAlphaAccrual > 0) {
-      alphaRevaluationTracker.addComponent({
-        amount: monthlyEpaAlphaAccrual,
-        startDate: rowDate,
-        portion: "epa",
-      });
+      for (const yearsBeforeNpa of [1, 2, 3] as const) {
+        alphaRevaluationTracker.addComponent({
+          amount: monthlyEpaAlphaAccruals[yearsBeforeNpa],
+          startDate: rowDate,
+          portion: `epa-${yearsBeforeNpa}`,
+        });
+      }
     }
 
     const { monthlyAddedPension, lumpSumAddedPension } =
@@ -172,6 +180,7 @@ export function createProjectionTableWithPensionIncreases(
       epaDate,
       reductionFactor,
       epaReductionFactor,
+      epaReductionFactors,
       nuvosDrawDate,
       nuvosNpaDate,
       nuvosReductionFactor,
@@ -185,6 +194,7 @@ export function createProjectionTableWithPensionIncreases(
       premiumReductionFactor,
       annualStandardAlphaPension: alphaPortions.standardAlphaPension,
       annualEpaAlphaPension: alphaPortions.epaAlphaPension,
+      annualEpaAlphaPensions: alphaPortions.epaAlphaPensions,
       annualNuvosPension: calculateNuvosAnnualPension({
         settings,
         rowDate,
@@ -256,6 +266,7 @@ function createAlphaRevaluationTracker(input: {
   const totals = {
     standardAlphaPension: 0,
     epaAlphaPension: 0,
+    epaAlphaPensions: { 1: 0, 2: 0, 3: 0 },
   };
 
   return {
@@ -300,6 +311,7 @@ function applyDueAlphaRevaluationEvents(input: {
   totals: {
     standardAlphaPension: number;
     epaAlphaPension: number;
+    epaAlphaPensions: Record<1 | 2 | 3, number>;
   };
   rowDate: string;
   endDate: string;
@@ -341,12 +353,15 @@ function addAmountToAlphaPortionTotals(
   totals: {
     standardAlphaPension: number;
     epaAlphaPension: number;
+    epaAlphaPensions: Record<1 | 2 | 3, number>;
   },
   portion: AlphaBenefitPortion,
   amount: number
 ) {
-  if (portion === "epa") {
+  if (portion !== "standard") {
+    const yearsBeforeNpa = Number(portion.slice(-1)) as 1 | 2 | 3;
     totals.epaAlphaPension += amount;
+    totals.epaAlphaPensions[yearsBeforeNpa] += amount;
     return;
   }
 

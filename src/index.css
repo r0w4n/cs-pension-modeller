@@ -1772,6 +1772,27 @@ h3 {
   gap: 1rem;
 }
 
+.epa-periods-editor > .secondary-button {
+  justify-self: start;
+}
+
+.epa-period-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.epa-period-card,
+.epa-period-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.epa-period-date-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
 .additional-income-card {
   align-content: start;
 }

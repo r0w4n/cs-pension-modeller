@@ -94,6 +94,17 @@ test.describe("app end-to-end journeys", () => {
     await clickNextAndExpectStep(page, "Added pension");
     await clickNextAndExpectStep(page, "Alpha EPA");
 
+    await page.getByRole("checkbox", { name: "Add EPA" }).check();
+    await page.getByRole("button", { name: "Add EPA period" }).click();
+    await page.getByLabel("EPA option 1").selectOption("1");
+    await page.getByLabel("EPA start date 1").fill("2026-09-01");
+    await page.getByLabel("EPA end date 1").fill("2027-03-31");
+    await page.getByRole("button", { name: "Add EPA period" }).click();
+    await page.getByLabel("EPA option 2").selectOption("3");
+    await page.getByLabel("EPA start date 2").fill("2028-04-01");
+    await page.getByLabel("EPA end date 2").fill("2029-03-31");
+    await expect(page.getByText("EPA period #2")).toBeVisible();
+
     await clickNextAndExpectStep(page, "Additional guaranteed income");
     await addAdditionalIncome(page, "Simple journey annuity", "4000", "67");
     await page.getByRole("button", { name: "Show my answer" }).click();

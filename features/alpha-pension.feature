@@ -354,6 +354,53 @@ Feature: Alpha pension modelling
     Then monthly standard Alpha accrual should be 0.00
     And monthly EPA Alpha accrual should be 81.20
 
+  @alpha @epa @accrual @partial-year
+  Scenario Outline: Route partial-year stops, gaps and restarts to the correct EPA portion
+    Given the member has EPA purchase periods:
+      | option | startDate  | endDate    |
+      | NPA-1  | 2026-06-01 | 2026-09-30 |
+      | NPA-3  | 2027-02-01 | 2027-03-31 |
+    And the member has actual pensionable earnings of 42000.00
+    When Alpha accrual is calculated for <calculationDate>
+    Then monthly standard Alpha accrual should be <standardAccrual>
+    And monthly EPA Alpha accrual should be <epaAccrual>
+    And monthly EPA Alpha accrual for <epaOption> should be <optionAccrual>
+
+    Examples:
+      | calculationDate | standardAccrual | epaAccrual | epaOption | optionAccrual |
+      | 2026-05-01      | 81.20           | 0.00       | NPA-1     | 0.00          |
+      | 2026-06-01      | 0.00            | 81.20      | NPA-1     | 81.20         |
+      | 2026-10-01      | 81.20           | 0.00       | NPA-1     | 0.00          |
+      | 2027-02-01      | 0.00            | 81.20      | NPA-3     | 81.20         |
+
+  @alpha @epa @accrual @change-option
+  Scenario: Preserve separate EPA portions when the option changes
+    Given the member has alpha normal pension age 68
+    And the member has standard alpha pension of 10000.00
+    And the member has EPA alpha pension portions:
+      | option | annualPension |
+      | NPA-1  | 1200.00       |
+      | NPA-2  | 900.00        |
+      | NPA-3  | 600.00        |
+    When the member draws all alpha pension at age 65 and 0 months
+    Then the annual pension breakdown should be:
+      | component         | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
+      | standardAlpha     | 10000.00              | 8460.00             | 1540.00         |
+      | epaAlphaNpaMinus1 | 1200.00               | 1076.40             | 123.60          |
+      | epaAlphaNpaMinus2 | 900.00                | 854.10              | 45.90           |
+      | epaAlphaNpaMinus3 | 600.00                | 600.00              | 0.00            |
+      | total             | 12700.00              | 10990.50            | 1709.50         |
+
+  @alpha @epa @validation
+  Scenario: Reject overlapping EPA options because only one can be bought at a time
+    Given the member has EPA purchase periods:
+      | option | startDate  | endDate    |
+      | NPA-1  | 2026-04-01 | 2027-03-31 |
+      | NPA-2  | 2027-03-01 | 2028-03-31 |
+    When the EPA purchase periods are validated
+    Then the EPA purchase periods should be invalid
+    And the EPA validation should explain "only one option can be bought at a time"
+
   @alpha @epa @normal-pension-age
   Scenario: Move the EPA date when State Pension age changes Normal Pension Age
     Given the member was born on 1977-04-06

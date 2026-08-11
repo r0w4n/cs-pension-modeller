@@ -4,6 +4,7 @@ import {
   isValidIsoDate,
   resolveAlphaAbsDate,
   validateSettings,
+  type AlphaEpaYearsBeforeNpa,
   type PensionSettings,
 } from "./settings";
 import {
@@ -50,6 +51,7 @@ export type DerivedProjectionInputs = {
   epaDate: string;
   reductionFactor: number;
   epaReductionFactor: number;
+  epaReductionFactors: Record<AlphaEpaYearsBeforeNpa, number>;
 };
 
 export type DerivedInflationAssumptions = {
@@ -246,6 +248,18 @@ export function deriveProjectionInputs(
     !settings.alphaEpaEnabled || drawDate >= epaDate
       ? 1
       : getAlphaEarlyRetirementFactor(epaDrawAge, settings.alphaPensionDrawAge);
+  const epaReductionFactors = Object.fromEntries(
+    ([1, 2, 3] as const).map((yearsBeforeNpa) => {
+      const epaAge = normalPensionAge - yearsBeforeNpa;
+      const portionDate = getAlphaEpaDate(settings, yearsBeforeNpa);
+      return [
+        yearsBeforeNpa,
+        drawDate >= portionDate
+          ? 1
+          : getAlphaEarlyRetirementFactor(epaAge, settings.alphaPensionDrawAge),
+      ];
+    })
+  ) as Record<AlphaEpaYearsBeforeNpa, number>;
 
   return {
     endDate,
@@ -270,6 +284,7 @@ export function deriveProjectionInputs(
     epaDate,
     reductionFactor,
     epaReductionFactor,
+    epaReductionFactors,
   };
 }
 

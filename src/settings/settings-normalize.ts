@@ -2,6 +2,7 @@ import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   FLEXIBLE_FUND_ACCOUNT_IDS,
   type AddedPensionLumpSum,
+  type AlphaEpaPeriod,
   type FlexibleFundAccountId,
   type PensionSettings,
 } from "./settings-types";
@@ -14,6 +15,7 @@ import {
 import {
   normalizeAddedPensionFactorType,
   normalizeAddedPensionLumpSums,
+  normalizeAlphaEpaPeriods,
   normalizeAlphaAbsYearValue,
   normalizeAlphaPensionBooleanSetting,
 } from "./settings-domains/alpha-pension";
@@ -391,6 +393,10 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizeAddedPensionLumpSums(value as AddedPensionLumpSum[], {
         includeFactorType: true,
       }) as PensionSettings[K];
+    case "alphaEpaPeriods":
+      return normalizeAlphaEpaPeriods(
+        value as AlphaEpaPeriod[]
+      ) as PensionSettings[K];
     case "isaLumpSums":
     case "sippLumpSums":
     case "csAvcLumpSums":
@@ -536,6 +542,10 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       dateOfBirth
     ),
     alphaEpaEnabled: Boolean(settings.alphaEpaEnabled),
+    alphaEpaPeriods: normalizeSetting(
+      "alphaEpaPeriods",
+      settings.alphaEpaPeriods
+    ),
     alphaEpaYearsBeforeNpa: normalizeSetting(
       "alphaEpaYearsBeforeNpa",
       settings.alphaEpaYearsBeforeNpa

@@ -74,6 +74,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
     alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
     alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+    alphaEpaPeriods: defaultSettings.alphaEpaPeriods,
     alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
     alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
     alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
@@ -388,6 +389,7 @@ describe("settings unit tests", () => {
       alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
       alphaPensionDrawAge: 70,
       alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+      alphaEpaPeriods: defaultSettings.alphaEpaPeriods,
       alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
       alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
       alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
@@ -754,15 +756,39 @@ describe("settings unit tests", () => {
       alphaEpaEnabled: true,
       alphaPensionLeaveAge: 60,
       alphaPensionDrawAge: 60,
-      alphaEpaStartDate: "2050-04-01",
-      alphaEpaEndDate: "2051-03-31",
+      alphaEpaPeriods: [
+        {
+          id: "future-epa",
+          yearsBeforeNpa: 1,
+          startDate: "2050-04-01",
+          endDate: "2051-03-31",
+        },
+      ],
     });
 
     expect(issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          field: "alphaEpaStartDate",
+          field: "alphaEpaPeriods",
+          itemId: "future-epa",
           message: "EPA dates must overlap the Alpha accrual period.",
+        }),
+      ])
+    );
+  });
+
+  it("requires an EPA purchase period when EPA is enabled", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      alphaEpaEnabled: true,
+      alphaEpaPeriods: [],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "alphaEpaPeriods",
+          message: "Add at least one EPA purchase period or turn off EPA.",
         }),
       ])
     );

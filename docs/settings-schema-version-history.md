@@ -1,6 +1,22 @@
 # Settings Schema Version History
 
-## Version 9 (current)
+## Version 11 (current)
+
+- Added explicit SIPP and Civil Service AVC withdrawal-tax treatments.
+- New plans track one shared pension lump-sum allowance and prior allowance use.
+- Version 10 plans migrate to their existing custom percentage treatment with
+  allowance tracking disabled, preserving their previous projections until the
+  user opts into the tracked treatment.
+
+## Version 10
+
+- New plans enable the simplified Income Tax estimate by default so retirement
+  targets are assessed as take-home income after estimated tax.
+- Existing saved plans preserve their previous Income Tax setting. Plans that
+  pre-date the setting migrate with taxation disabled to avoid changing their
+  results silently.
+
+## Version 9
 
 - Added `taxRegime` so saved plans can select the rest-of-UK or Scottish
   2026/27 Income Tax rules.

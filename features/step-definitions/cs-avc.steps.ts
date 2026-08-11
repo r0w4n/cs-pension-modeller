@@ -396,7 +396,10 @@ Given("CS AVC Income Tax modelling is on", function (this: CsAvcWorld) {
 Given(
   "the CS AVC tax-free withdrawal share is {float}%",
   function (this: CsAvcWorld, taxCsAvcTaxFreeWithdrawalPercent: number) {
-    updateSettings(this, { taxCsAvcTaxFreeWithdrawalPercent });
+    updateSettings(this, {
+      taxCsAvcWithdrawalTreatment: "custom",
+      taxCsAvcTaxFreeWithdrawalPercent,
+    });
   }
 );
 

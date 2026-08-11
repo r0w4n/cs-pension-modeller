@@ -1,5 +1,6 @@
 import {
   getPartialRetirementStartDate,
+  getPreRetirementMonthlyEmploymentTaxContext,
   type PensionSettings,
 } from "../settings";
 import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
@@ -9,7 +10,19 @@ import {
   MONEY_TOLERANCE,
   normalizeMoney,
 } from "../money";
-import { calculateMonthlyIncomeTax } from "./tax";
+import {
+  calculateAnnualIncomeTax,
+  calculateMonthlyIncomeTax,
+  calculateMonthlyTaxableRetirementIncome,
+  calculatePensionWithdrawalTaxBreakdown,
+  consumePensionLumpSumAllowance,
+  createPensionLumpSumAllowanceState,
+  type PensionLumpSumAllowanceState,
+} from "./tax";
+import {
+  getProjectionTaxYearKey,
+  getRemainingMonthsInTaxYear,
+} from "./tax-year";
 import { calculateIsaPotBeforeWithdrawalAtDate } from "./isa";
 import { calculateSippPotBeforeWithdrawalAtDate } from "./sipp";
 import { calculateCsAvcPotBeforeWithdrawalAtDate } from "./cs-avc";
@@ -31,6 +44,10 @@ export type ProjectionRowLike = {
   monthlyStatePension: number;
   monthlyAdditionalGuaranteedIncomeGross?: number;
   monthlyAdditionalGuaranteedIncomeTaxable?: number;
+  monthlyEmploymentIncome?: number;
+  monthlyIncomeTax?: number;
+  classicAutomaticLumpSumIncludingReduction?: number;
+  classicPlusAutomaticLumpSumIncludingReduction?: number;
 };
 
 type ProjectPensionRows = (settings: PensionSettings) => ProjectionRowLike[];
@@ -85,6 +102,9 @@ export type BridgePotProjectionRow = {
   monthlyAdditionalGuaranteedIncomeGross: number;
   monthlyAdditionalGuaranteedIncomeTaxable: number;
   monthlyStatePension: number;
+  monthlyTaxableIncome: number;
+  monthlyFlexibleTaxableIncome: number;
+  monthlyIncomeTax: number;
   monthlyTargetIncome: number;
   isaBalance: number;
   lisaBalance: number;
@@ -151,6 +171,8 @@ type MonthlySecureIncome = {
   monthlyAdditionalGuaranteedIncomeGross: number;
   monthlyAdditionalGuaranteedIncomeTaxable: number;
   monthlyStatePension: number;
+  monthlyTaxableIncome: number;
+  monthlyIncomeTax: number;
   guaranteedIncome: number;
 };
 
@@ -164,6 +186,118 @@ type BridgePotMilestoneTracker = {
   hasIncludedSippDepletion: boolean;
   hasIncludedCsAvcDepletion: boolean;
 };
+
+function deriveBridgeTaxYearEffectiveRates(
+  pensionRows: ProjectionRowLike[],
+  settings: PensionSettings,
+  bridgeRows: BridgePotProjectionRow[]
+) {
+  const totals = new Map<string, number>();
+  const taxablePensionIncomeByDate = new Map<string, number>();
+  const activePensionRows = pensionRows.filter(
+    (row) => row.date >= settings.startDate
+  );
+
+  activePensionRows.forEach((row) => {
+    const key = getProjectionTaxYearKey(row.date);
+    const taxableIncome = calculateMonthlyTaxableRetirementIncome({
+      settings,
+      monthlyAlphaPension: row.monthlyAlphaPensionGross,
+      monthlyClassicPension: row.monthlyClassicPensionGross,
+      monthlyClassicPlusPension: row.monthlyClassicPlusPensionGross,
+      monthlyNuvosPension: row.monthlyNuvosPensionGross,
+      monthlyPremiumPension: row.monthlyPremiumPensionGross,
+      monthlyStatePension: row.monthlyStatePension,
+      monthlySippPension: 0,
+      monthlyCsAvcPension: 0,
+      monthlyAdditionalGuaranteedIncomeTaxable:
+        row.monthlyAdditionalGuaranteedIncomeTaxable ?? 0,
+      monthlyEmploymentIncome: row.monthlyEmploymentIncome ?? 0,
+    });
+    totals.set(
+      key,
+      (totals.get(key) ?? 0) +
+        taxableIncome +
+        getPreRetirementMonthlyEmploymentTaxContext(settings, row.date)
+    );
+    taxablePensionIncomeByDate.set(row.date, taxableIncome);
+  });
+
+  bridgeRows.forEach((row) => {
+    const key = getProjectionTaxYearKey(row.date);
+    totals.set(key, (totals.get(key) ?? 0) + row.monthlyFlexibleTaxableIncome);
+  });
+
+  const finalPensionRow = activePensionRows.at(-1);
+  if (finalPensionRow) {
+    const key = getProjectionTaxYearKey(finalPensionRow.date);
+    const finalTaxableIncome =
+      taxablePensionIncomeByDate.get(finalPensionRow.date) ?? 0;
+    totals.set(
+      key,
+      (totals.get(key) ?? 0) +
+        finalTaxableIncome * getRemainingMonthsInTaxYear(finalPensionRow.date)
+    );
+  }
+
+  return new Map(
+    [...totals].map(([key, annualTaxableIncome]) => [
+      key,
+      annualTaxableIncome > 0
+        ? calculateAnnualIncomeTax(settings, annualTaxableIncome) /
+          annualTaxableIncome
+        : 0,
+    ])
+  );
+}
+
+function bridgeTaxYearRatesEqual(
+  first: ReadonlyMap<string, number>,
+  second: ReadonlyMap<string, number>
+) {
+  const keys = new Set([...first.keys(), ...second.keys()]);
+
+  return [...keys].every(
+    (key) => Math.abs((first.get(key) ?? 0) - (second.get(key) ?? 0)) <= 1e-12
+  );
+}
+
+function createBridgeAllowanceState(
+  pensionRows: ProjectionRowLike[],
+  settings: PensionSettings,
+  retirementDate: string
+) {
+  let state = createPensionLumpSumAllowanceState(settings);
+  const consumeAutomaticLumpSum = (
+    shown: boolean,
+    drawDate: string,
+    field:
+      | "classicAutomaticLumpSumIncludingReduction"
+      | "classicPlusAutomaticLumpSumIncludingReduction"
+  ) => {
+    if (!shown || drawDate > retirementDate) {
+      return;
+    }
+
+    state = consumePensionLumpSumAllowance(
+      state,
+      findFirstRowAtOrAfterDate(pensionRows, drawDate)?.[field] ?? 0
+    ).nextState;
+  };
+
+  consumeAutomaticLumpSum(
+    settings.showClassic,
+    addYears(settings.dateOfBirth, settings.classicPensionDrawAge),
+    "classicAutomaticLumpSumIncludingReduction"
+  );
+  consumeAutomaticLumpSum(
+    settings.showClassicPlus,
+    addYears(settings.dateOfBirth, settings.classicPlusPensionDrawAge),
+    "classicPlusAutomaticLumpSumIncludingReduction"
+  );
+
+  return state;
+}
 
 export function prepareBridgeProjectionSettings(
   settings: PensionSettings
@@ -179,6 +313,56 @@ export function generateRetirementBridgeAnalysis(
   pensionRows: ProjectionRowLike[],
   settings: PensionSettings,
   options: RetirementBridgeAnalysisOptions = {}
+): RetirementBridgeAnalysis {
+  let effectiveRates = deriveBridgeTaxYearEffectiveRates(
+    pensionRows,
+    settings,
+    []
+  );
+  let analysis = generateRetirementBridgeAnalysisPass(
+    pensionRows,
+    settings,
+    effectiveRates
+  );
+
+  for (let iteration = 0; iteration < 12; iteration += 1) {
+    const nextRates = deriveBridgeTaxYearEffectiveRates(
+      pensionRows,
+      settings,
+      analysis.potProjection
+    );
+    const ratesStable = bridgeTaxYearRatesEqual(effectiveRates, nextRates);
+
+    effectiveRates = nextRates;
+    analysis = generateRetirementBridgeAnalysisPass(
+      pensionRows,
+      settings,
+      effectiveRates
+    );
+
+    if (ratesStable) {
+      break;
+    }
+  }
+
+  if (!options.calculateSafeDrawAge) {
+    return analysis;
+  }
+
+  return {
+    ...analysis,
+    earliestSustainablePensionDrawAge:
+      calculateEarliestSustainablePensionDrawAge(
+        settings,
+        options.projectPensionRows
+      ),
+  };
+}
+
+function generateRetirementBridgeAnalysisPass(
+  pensionRows: ProjectionRowLike[],
+  settings: PensionSettings,
+  effectiveRates: ReadonlyMap<string, number>
 ): RetirementBridgeAnalysis {
   const retirementDate = addYears(
     settings.dateOfBirth,
@@ -243,8 +427,44 @@ export function generateRetirementBridgeAnalysis(
   let requiredSippAtAccess = 0;
   let firstFailureDate: string | null = null;
   let firstPotToFail: string | null = null;
+  let allowanceState = createBridgeAllowanceState(
+    pensionRows,
+    settings,
+    retirementDate
+  );
+  let classicLumpSumConsumed =
+    !settings.showClassic ||
+    addYears(settings.dateOfBirth, settings.classicPensionDrawAge) <=
+      retirementDate;
+  let classicPlusLumpSumConsumed =
+    !settings.showClassicPlus ||
+    addYears(settings.dateOfBirth, settings.classicPlusPensionDrawAge) <=
+      retirementDate;
 
   const monthlyRows = bridgeRows.map((rowDate, index) => {
+    if (
+      !classicLumpSumConsumed &&
+      rowDate >= addYears(settings.dateOfBirth, settings.classicPensionDrawAge)
+    ) {
+      allowanceState = consumePensionLumpSumAllowance(
+        allowanceState,
+        findFirstRowAtOrAfterDate(pensionRows, rowDate)
+          ?.classicAutomaticLumpSumIncludingReduction ?? 0
+      ).nextState;
+      classicLumpSumConsumed = true;
+    }
+    if (
+      !classicPlusLumpSumConsumed &&
+      rowDate >=
+        addYears(settings.dateOfBirth, settings.classicPlusPensionDrawAge)
+    ) {
+      allowanceState = consumePensionLumpSumAllowance(
+        allowanceState,
+        findFirstRowAtOrAfterDate(pensionRows, rowDate)
+          ?.classicPlusAutomaticLumpSumIncludingReduction ?? 0
+      ).nextState;
+      classicPlusLumpSumConsumed = true;
+    }
     const growth = applyBridgePotGrowth({
       balances: potBalances,
       rates: {
@@ -259,6 +479,7 @@ export function generateRetirementBridgeAnalysis(
       settings,
       pensionRows,
       rowDate,
+      effectiveTaxRate: effectiveRates.get(getProjectionTaxYearKey(rowDate)),
     });
     const monthlyTargetIncome =
       calculateRetirementIncomeTargetAtDate(settings, rowDate) / 12;
@@ -279,7 +500,13 @@ export function generateRetirementBridgeAnalysis(
       secureIncome,
       settings,
       sippAccessDate,
+      allowanceState,
+      effectiveTaxRate: effectiveRates.get(getProjectionTaxYearKey(rowDate)),
     });
+    allowanceState = {
+      ...allowanceState,
+      remaining: drawdown.allowanceRemaining,
+    };
 
     if (shortfall > 0 && rowDate < sippAccessDate) {
       requiredIsaAtRetirement += shortfall;
@@ -316,6 +543,11 @@ export function generateRetirementBridgeAnalysis(
       monthlyAdditionalGuaranteedIncomeTaxable:
         secureIncome.monthlyAdditionalGuaranteedIncomeTaxable,
       monthlyStatePension: secureIncome.monthlyStatePension,
+      monthlyTaxableIncome:
+        secureIncome.monthlyTaxableIncome + drawdown.taxableWithdrawal,
+      monthlyFlexibleTaxableIncome: drawdown.taxableWithdrawal,
+      monthlyIncomeTax:
+        secureIncome.monthlyIncomeTax + drawdown.withdrawalIncomeTax,
       monthlyTargetIncome,
       guaranteedIncome: secureIncome.guaranteedIncome,
       shortfall,
@@ -417,18 +649,7 @@ export function generateRetirementBridgeAnalysis(
     potProjection: buildBridgePotProjection(monthlyRows, settings),
   };
 
-  if (!options.calculateSafeDrawAge) {
-    return analysisWithoutSafeDrawAge;
-  }
-
-  return {
-    ...analysisWithoutSafeDrawAge,
-    earliestSustainablePensionDrawAge:
-      calculateEarliestSustainablePensionDrawAge(
-        settings,
-        options.projectPensionRows
-      ),
-  };
+  return analysisWithoutSafeDrawAge;
 }
 
 function applyBridgePotGrowth(input: {
@@ -462,35 +683,40 @@ function calculateMonthlySecureIncome(input: {
   settings: PensionSettings;
   pensionRows: ProjectionRowLike[];
   rowDate: string;
+  effectiveTaxRate?: number;
 }): MonthlySecureIncome {
-  const { settings, pensionRows, rowDate } = input;
+  const { effectiveTaxRate, settings, pensionRows, rowDate } = input;
   const pensionRow =
     findFirstRowAtOrAfterDate(pensionRows, rowDate) ?? pensionRows.at(-1);
-  const monthlyAlphaPension =
-    settings.showAlpha && pensionRow ? pensionRow.monthlyAlphaPensionGross : 0;
-  const monthlyClassicPension =
-    settings.showClassic && pensionRow
-      ? (pensionRow.monthlyClassicPensionGross ?? 0)
-      : 0;
-  const monthlyClassicPlusPension =
-    settings.showClassicPlus && pensionRow
-      ? (pensionRow.monthlyClassicPlusPensionGross ?? 0)
-      : 0;
-  const monthlyNuvosPension =
-    settings.showNuvos && pensionRow ? pensionRow.monthlyNuvosPensionGross : 0;
-  const monthlyPremiumPension =
-    settings.showPremium && pensionRow
-      ? pensionRow.monthlyPremiumPensionGross
-      : 0;
+  const monthlyAlphaPension = getShownPensionIncome(
+    settings.showAlpha,
+    pensionRow?.monthlyAlphaPensionGross
+  );
+  const monthlyClassicPension = getShownPensionIncome(
+    settings.showClassic,
+    pensionRow?.monthlyClassicPensionGross
+  );
+  const monthlyClassicPlusPension = getShownPensionIncome(
+    settings.showClassicPlus,
+    pensionRow?.monthlyClassicPlusPensionGross
+  );
+  const monthlyNuvosPension = getShownPensionIncome(
+    settings.showNuvos,
+    pensionRow?.monthlyNuvosPensionGross
+  );
+  const monthlyPremiumPension = getShownPensionIncome(
+    settings.showPremium,
+    pensionRow?.monthlyPremiumPensionGross
+  );
   const monthlyAdditionalGuaranteedIncomeGross =
     pensionRow?.monthlyAdditionalGuaranteedIncomeGross ?? 0;
   const monthlyAdditionalGuaranteedIncomeTaxable =
     pensionRow?.monthlyAdditionalGuaranteedIncomeTaxable ?? 0;
-  const monthlyStatePension =
-    settings.showStatePension && pensionRow
-      ? pensionRow.monthlyStatePension
-      : 0;
-  const monthlyIncomeTax = calculateMonthlyIncomeTax({
+  const monthlyStatePension = getShownPensionIncome(
+    settings.showStatePension,
+    pensionRow?.monthlyStatePension
+  );
+  const taxInput = {
     settings,
     monthlyAlphaPension,
     monthlyClassicPension,
@@ -501,7 +727,14 @@ function calculateMonthlySecureIncome(input: {
     monthlySippPension: 0,
     monthlyCsAvcPension: 0,
     monthlyAdditionalGuaranteedIncomeTaxable,
-  });
+    monthlyEmploymentIncome: pensionRow?.monthlyEmploymentIncome ?? 0,
+  };
+  const monthlyTaxableIncome =
+    calculateMonthlyTaxableRetirementIncome(taxInput);
+  const monthlyIncomeTax =
+    effectiveTaxRate === undefined
+      ? (pensionRow?.monthlyIncomeTax ?? calculateMonthlyIncomeTax(taxInput))
+      : monthlyTaxableIncome * effectiveTaxRate;
 
   return {
     monthlyAlphaPension,
@@ -512,6 +745,8 @@ function calculateMonthlySecureIncome(input: {
     monthlyAdditionalGuaranteedIncomeGross,
     monthlyAdditionalGuaranteedIncomeTaxable,
     monthlyStatePension,
+    monthlyTaxableIncome,
+    monthlyIncomeTax,
     guaranteedIncome: Math.max(
       0,
       monthlyAlphaPension +
@@ -526,6 +761,10 @@ function calculateMonthlySecureIncome(input: {
   };
 }
 
+function getShownPensionIncome(shown: boolean, income: number | undefined) {
+  return shown ? (income ?? 0) : 0;
+}
+
 function drawBridgeShortfall(input: {
   balances: BridgePotBalances;
   csAvcAccessDate: string;
@@ -535,6 +774,8 @@ function drawBridgeShortfall(input: {
   secureIncome: MonthlySecureIncome;
   settings: PensionSettings;
   sippAccessDate: string;
+  allowanceState: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
   const {
     balances,
@@ -544,6 +785,8 @@ function drawBridgeShortfall(input: {
     secureIncome,
     settings,
     sippAccessDate,
+    allowanceState,
+    effectiveTaxRate,
   } = input;
   let remainingShortfall = input.remainingShortfall;
   const sippDrawdownResult = drawFromTaxableBridgePot({
@@ -556,6 +799,8 @@ function drawBridgeShortfall(input: {
         secureIncome,
         sippDrawdown: grossDrawdown,
         csAvcDrawdown: 0,
+        allowanceState,
+        effectiveTaxRate,
       }),
   });
   const sippDrawdown = sippDrawdownResult.grossDrawdown;
@@ -575,12 +820,16 @@ function drawBridgeShortfall(input: {
         secureIncome,
         sippDrawdown,
         csAvcDrawdown: grossDrawdown,
+        allowanceState,
+        effectiveTaxRate,
       }) -
       calculateNetBridgeWithdrawal({
         settings,
         secureIncome,
         sippDrawdown,
         csAvcDrawdown: 0,
+        allowanceState,
+        effectiveTaxRate,
       }),
   });
   const csAvcDrawdown = csAvcDrawdownResult.grossDrawdown;
@@ -606,12 +855,45 @@ function drawBridgeShortfall(input: {
   balances.isaBalance -= isaDrawdown;
   remainingShortfall -= isaDrawdown;
 
+  const withdrawalTax = calculatePensionWithdrawalTaxBreakdown({
+    settings,
+    sippWithdrawal: sippDrawdown,
+    csAvcWithdrawal: csAvcDrawdown,
+    allowanceState,
+    accountOrder: settings.flexibleWithdrawalPriority,
+  });
+  const taxableWithdrawal =
+    withdrawalTax.sippTaxable + withdrawalTax.csAvcTaxable;
+  const withdrawalIncomeTax =
+    effectiveTaxRate === undefined
+      ? Math.max(
+          0,
+          calculateBridgeIncomeTax({
+            settings,
+            secureIncome,
+            sippDrawdown,
+            csAvcDrawdown,
+            allowanceState,
+          }) -
+            calculateBridgeIncomeTax({
+              settings,
+              secureIncome,
+              sippDrawdown: 0,
+              csAvcDrawdown: 0,
+              allowanceState,
+            })
+        )
+      : taxableWithdrawal * effectiveTaxRate;
+
   return {
     isaDrawdown,
     lisaDrawdown,
     remainingShortfall,
     sippDrawdown,
     csAvcDrawdown,
+    taxableWithdrawal,
+    withdrawalIncomeTax,
+    allowanceRemaining: withdrawalTax.allowanceRemaining,
   };
 }
 
@@ -678,13 +960,41 @@ function calculateNetBridgeWithdrawal(input: {
   secureIncome: MonthlySecureIncome;
   sippDrawdown: number;
   csAvcDrawdown: number;
+  allowanceState: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
-  const { settings, secureIncome, sippDrawdown, csAvcDrawdown } = input;
+  const {
+    allowanceState,
+    csAvcDrawdown,
+    effectiveTaxRate,
+    settings,
+    secureIncome,
+    sippDrawdown,
+  } = input;
+  const withdrawalTax = calculatePensionWithdrawalTaxBreakdown({
+    settings,
+    sippWithdrawal: sippDrawdown,
+    csAvcWithdrawal: csAvcDrawdown,
+    allowanceState,
+    accountOrder: settings.flexibleWithdrawalPriority,
+  });
+
+  if (effectiveTaxRate !== undefined) {
+    return Math.max(
+      0,
+      sippDrawdown +
+        csAvcDrawdown -
+        (withdrawalTax.sippTaxable + withdrawalTax.csAvcTaxable) *
+          effectiveTaxRate
+    );
+  }
+
   const taxBeforeFlexibleWithdrawals = calculateBridgeIncomeTax({
     settings,
     secureIncome,
     sippDrawdown: 0,
     csAvcDrawdown: 0,
+    allowanceState,
   });
   const taxAfterFlexibleWithdrawals = calculateBridgeIncomeTax(input);
 
@@ -701,8 +1011,22 @@ function calculateBridgeIncomeTax(input: {
   secureIncome: MonthlySecureIncome;
   sippDrawdown: number;
   csAvcDrawdown: number;
+  allowanceState: PensionLumpSumAllowanceState;
 }) {
-  const { settings, secureIncome, sippDrawdown, csAvcDrawdown } = input;
+  const {
+    allowanceState,
+    settings,
+    secureIncome,
+    sippDrawdown,
+    csAvcDrawdown,
+  } = input;
+  const withdrawalTax = calculatePensionWithdrawalTaxBreakdown({
+    settings,
+    sippWithdrawal: sippDrawdown,
+    csAvcWithdrawal: csAvcDrawdown,
+    allowanceState,
+    accountOrder: settings.flexibleWithdrawalPriority,
+  });
 
   return calculateMonthlyIncomeTax({
     settings,
@@ -714,6 +1038,8 @@ function calculateBridgeIncomeTax(input: {
     monthlyStatePension: secureIncome.monthlyStatePension,
     monthlySippPension: sippDrawdown,
     monthlyCsAvcPension: csAvcDrawdown,
+    monthlySippTaxableOverride: withdrawalTax.sippTaxable,
+    monthlyCsAvcTaxableOverride: withdrawalTax.csAvcTaxable,
     monthlyAdditionalGuaranteedIncomeTaxable:
       secureIncome.monthlyAdditionalGuaranteedIncomeTaxable,
   });

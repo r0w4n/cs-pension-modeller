@@ -1,5 +1,6 @@
 import {
   coerceTaxSettings,
+  normalizePensionWithdrawalTaxTreatment,
   normalizeTaxRegime,
   normalizeTaxationBooleanSetting,
 } from "./tax";
@@ -16,6 +17,13 @@ describe("tax domain", () => {
     expect(normalizeTaxRegime("unexpected")).toBe("rest_of_uk");
   });
 
+  it("uses a conservative fully taxable assumption for unknown withdrawal treatment values", () => {
+    expect(normalizePensionWithdrawalTaxTreatment("ufpls")).toBe("ufpls");
+    expect(normalizePensionWithdrawalTaxTreatment("unexpected")).toBe(
+      "unknown"
+    );
+  });
+
   it("coerces stored values", () => {
     const storedSettings = {
       taxationEnabled: true,
@@ -27,7 +35,13 @@ describe("tax domain", () => {
       taxBasicRatePercent: "20",
       taxHigherRatePercent: "40",
       taxAdditionalRatePercent: "45",
+      taxSippWithdrawalTreatment: "ufpls",
       taxSippTaxFreeWithdrawalPercent: "25",
+      taxCsAvcWithdrawalTreatment: "fully_taxable",
+      taxCsAvcTaxFreeWithdrawalPercent: "0",
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: "268275",
+      taxLumpSumAllowanceUsed: "10000",
     } as unknown as Partial<StoredPensionSettings>;
 
     expect(coerceTaxSettings(storedSettings)).toEqual({
@@ -40,7 +54,13 @@ describe("tax domain", () => {
       taxBasicRatePercent: 20,
       taxHigherRatePercent: 40,
       taxAdditionalRatePercent: 45,
+      taxSippWithdrawalTreatment: "ufpls",
       taxSippTaxFreeWithdrawalPercent: 25,
+      taxCsAvcWithdrawalTreatment: "fully_taxable",
+      taxCsAvcTaxFreeWithdrawalPercent: 0,
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: 268275,
+      taxLumpSumAllowanceUsed: 10000,
     });
   });
 });

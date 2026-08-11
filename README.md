@@ -47,8 +47,9 @@ It supports:
   estimated unallocated net surplus, residual-balance warnings, account
   attribution, and non-destructive target-based previews
 - bridge analysis for the period before secure pension income starts
-- simplified 2026/27 Income Tax estimates for England, Wales, Northern Ireland
-  and Scotland, for gross and take-home income comparison
+- simplified 2026/27 Income Tax liability estimates for England, Wales,
+  Northern Ireland and Scotland, comparing gross income with income after the
+  modelled liability
 - real-terms and nominal-terms projection bases
 - saved scenarios for side-by-side comparison
 - projection charts, summaries, and detailed projection tables
@@ -69,7 +70,8 @@ For each projection month, the model can calculate values such as:
 - State Pension deferral uplift and future uprating where enabled
 - ISA, LISA and SIPP balances, withdrawals, and bridge funding
 - gross retirement income by source
-- estimated Income Tax and take-home income where taxation is enabled
+- estimated Income Tax liability and income after that estimate where taxation
+  is enabled
 - milestone rows for important dates such as statement dates, pension starts,
   drawdown starts, and planning end age
 
@@ -78,8 +80,10 @@ For each projection month, the model can calculate values such as:
 The current app is driven by inputs grouped around:
 
 - personal details: birth month/year and planning horizon
-- retirement income target: the selected Retirement Living Standards baseline
-  and either flat spending or expert Go-Go, Slow-Go, No-Go phase percentages
+- after-tax retirement income target: the selected annual spending goal after
+  estimated Income Tax, using a Retirement Living Standards preset or a custom
+  amount, and either flat spending or expert Go-Go, Slow-Go, No-Go phase
+  percentages
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
@@ -97,8 +101,9 @@ The current app is driven by inputs grouped around:
 - SIPP, ISA and LISA: current balances, contributions, lump sums, growth, draw
   ages, withdrawal strategies, and use-by ages
 - partial retirement: start age and working percentage
-- taxation: a 2026/27 rest-of-UK or Scottish regime, with configurable
-  allowance and rest-of-UK assumptions
+- taxation: a 2026/27 rest-of-UK or Scottish regime, configurable rate and
+  allowance assumptions, explicit SIPP and CS AVC withdrawal treatment, and a
+  shared pension lump-sum allowance
 - comparison: saved scenario names and settings snapshots
 
 Optional sections can be hidden without deleting their saved values, so users
@@ -156,14 +161,25 @@ Some important assumptions and simplifications are:
   strategy. LISA additions are capped at the modelled Lifetime ISA annual
   allowance, receive the modelled government bonus on eligible additions, stop
   at age 50, and are modelled for retirement withdrawals from age 60.
-- Income Tax uses the selected 2026/27 regime throughout the projection.
+- Income Tax is enabled for new plans by default and uses the selected 2026/27
+  regime throughout the projection. The retirement income target is the amount
+  the user wants available to spend after estimated Income Tax; when taxation
+  is disabled, gross income is treated as income available to spend.
   Scottish pension income uses the published starter, basic, intermediate,
-  higher, advanced and top bands. Each monthly income snapshot is annualised;
-  this is not cumulative PAYE or tax-year accounting. User-selected SIPP and CS
-  AVC tax-free shares do not track crystallisation or the shared pension
-  lump-sum allowance. The estimate does not cover every personal tax
-  circumstance, future tax-year changes, tax-code adjustment, employment,
-  savings or dividend income, annual-allowance charges, or benefit interaction.
+  higher, advanced and top bands. Modelled taxable income is grouped into
+  April-to-March years and one annual liability is allocated across taxable
+  rows; this is not PAYE deduction forecasting. New plans track the selected
+  shared pension lump-sum allowance across modelled classic, classic plus, SIPP
+  and CS AVC benefits, while migrated plans retain their previous untracked
+  behavior. Before retirement, the entered full salary is used only as tax-rate
+  context and is not added to the retirement-income chart. Reduced-hours
+  employment during partial retirement is included in both income and tax. In
+  the final partial tax year, the last modelled taxable monthly income is
+  assumed to continue to the following 5 April for tax-rate context only; this
+  does not extend the cash-flow projection. The estimate does not cover every
+  personal tax circumstance, employment income that differs from the entered
+  salary assumption, future tax-year changes, tax-code adjustments, savings or
+  dividend income, annual-allowance charges, or benefit interactions.
 - Results are deterministic scenario outputs, not probabilistic forecasts.
 
 For more detail, see the in-app Methodology page.

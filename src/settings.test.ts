@@ -167,10 +167,15 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxBasicRatePercent: defaultSettings.taxBasicRatePercent,
     taxHigherRatePercent: defaultSettings.taxHigherRatePercent,
     taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
+    taxSippWithdrawalTreatment: defaultSettings.taxSippWithdrawalTreatment,
     taxSippTaxFreeWithdrawalPercent:
       defaultSettings.taxSippTaxFreeWithdrawalPercent,
+    taxCsAvcWithdrawalTreatment: defaultSettings.taxCsAvcWithdrawalTreatment,
     taxCsAvcTaxFreeWithdrawalPercent:
       defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
+    taxTrackLumpSumAllowance: defaultSettings.taxTrackLumpSumAllowance,
+    taxLumpSumAllowance: defaultSettings.taxLumpSumAllowance,
+    taxLumpSumAllowanceUsed: defaultSettings.taxLumpSumAllowanceUsed,
     ...overrides,
   };
 }
@@ -358,7 +363,7 @@ describe("settings unit tests", () => {
       showAdditionalGuaranteedIncome:
         defaultSettings.showAdditionalGuaranteedIncome,
       additionalGuaranteedIncomes: [],
-      taxationEnabled: defaultSettings.taxationEnabled,
+      taxationEnabled: false,
       taxRegime: defaultSettings.taxRegime,
       partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
       partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
@@ -493,10 +498,15 @@ describe("settings unit tests", () => {
       taxBasicRatePercent: defaultSettings.taxBasicRatePercent,
       taxHigherRatePercent: defaultSettings.taxHigherRatePercent,
       taxAdditionalRatePercent: defaultSettings.taxAdditionalRatePercent,
+      taxSippWithdrawalTreatment: "custom",
       taxSippTaxFreeWithdrawalPercent:
         defaultSettings.taxSippTaxFreeWithdrawalPercent,
+      taxCsAvcWithdrawalTreatment: "custom",
       taxCsAvcTaxFreeWithdrawalPercent:
         defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
+      taxTrackLumpSumAllowance: false,
+      taxLumpSumAllowance: 268275,
+      taxLumpSumAllowanceUsed: 0,
     });
   });
 

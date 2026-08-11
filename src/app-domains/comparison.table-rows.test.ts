@@ -356,6 +356,37 @@ describe("comparison table rows", () => {
     ).not.toContain("Bridge");
   });
 
+  it("discloses the entered salary used as pre-retirement tax context", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      taxationEnabled: true,
+      fullSalary: 48_000,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Tax context",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    expect(
+      getFirstComparisonValue(
+        buildComparisonDetailedRows([result]),
+        "Pre-retirement employment tax context"
+      )
+    ).toBe("£48,000.00 annual entered full salary");
+    expect(
+      getFirstComparisonValue(
+        buildComparisonDetailedRows([result]),
+        "Projection-end tax context"
+      )
+    ).toBe("Final taxable monthly income continued to the following 5 April");
+  });
+
   it("does not report a one-month target shortfall when month-based ages meet at a transition", () => {
     const dateOfBirth = "1980-01-01";
     const startDate = "2026-06-13";
@@ -465,6 +496,7 @@ describe("comparison table rows", () => {
         label: "Main issue",
         value: "No shortfall identified from the current assumptions.",
       },
+      { label: "Income basis", value: "Before Income Tax" },
     ]);
   });
 

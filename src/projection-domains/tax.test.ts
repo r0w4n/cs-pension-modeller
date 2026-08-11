@@ -3,6 +3,8 @@ import {
   calculateAnnualIncomeTax,
   calculateMonthlyIncomeTax,
   calculateMonthlyTaxableRetirementIncome,
+  calculatePensionWithdrawalTaxBreakdown,
+  createPensionLumpSumAllowanceState,
 } from "./tax";
 import { defaultSettings, type PensionSettings } from "../settings";
 
@@ -138,6 +140,84 @@ describe("projection tax domain", () => {
       100 + 200 + 300 + 400 + 500 + 600 + 700 + 800 * 0.75 + 1_200 * 0.75,
       6
     );
+  });
+
+  it("includes reduced-hours employment income with taxable retirement income", () => {
+    expect(
+      calculateMonthlyTaxableRetirementIncome({
+        settings: defaultSettings,
+        monthlyAlphaPension: 500,
+        monthlyStatePension: 0,
+        monthlySippPension: 0,
+        monthlyEmploymentIncome: 2_000,
+      })
+    ).toBe(2_500);
+  });
+
+  it.each([
+    ["fully_taxable", 0, 1_000],
+    ["unknown", 0, 1_000],
+    ["ufpls", 250, 750],
+    ["custom", 100, 900],
+  ] as const)(
+    "applies the %s SIPP withdrawal treatment",
+    (treatment, expectedTaxFree, expectedTaxable) => {
+      const result = calculatePensionWithdrawalTaxBreakdown({
+        settings: {
+          ...defaultSettings,
+          taxSippWithdrawalTreatment: treatment,
+          taxSippTaxFreeWithdrawalPercent: 10,
+        },
+        sippWithdrawal: 1_000,
+        csAvcWithdrawal: 0,
+      });
+
+      expect(result.sippTaxFree).toBe(expectedTaxFree);
+      expect(result.sippTaxable).toBe(expectedTaxable);
+    }
+  );
+
+  it("shares the remaining lump-sum allowance across SIPP and CS AVC withdrawals in funding order", () => {
+    const settings = {
+      ...defaultSettings,
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: 300,
+      taxLumpSumAllowanceUsed: 0,
+      taxSippWithdrawalTreatment: "ufpls" as const,
+      taxCsAvcWithdrawalTreatment: "ufpls" as const,
+    };
+    const result = calculatePensionWithdrawalTaxBreakdown({
+      settings,
+      sippWithdrawal: 1_000,
+      csAvcWithdrawal: 1_000,
+      allowanceState: createPensionLumpSumAllowanceState(settings),
+      accountOrder: ["sipp", "csAvc", "lisa", "isa"],
+    });
+
+    expect(result).toEqual({
+      sippTaxFree: 250,
+      sippTaxable: 750,
+      csAvcTaxFree: 50,
+      csAvcTaxable: 950,
+      allowanceRemaining: 0,
+    });
+  });
+
+  it("preserves the legacy untracked tax-free-share behaviour", () => {
+    const settings = {
+      ...defaultSettings,
+      taxTrackLumpSumAllowance: false,
+      taxSippWithdrawalTreatment: "custom" as const,
+      taxSippTaxFreeWithdrawalPercent: 25,
+    };
+
+    expect(
+      calculatePensionWithdrawalTaxBreakdown({
+        settings,
+        sippWithdrawal: 2_000_000,
+        csAvcWithdrawal: 0,
+      }).sippTaxFree
+    ).toBe(500_000);
   });
 
   it("excludes ISA, qualifying LISA and non-taxable additional income", () => {

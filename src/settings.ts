@@ -22,6 +22,7 @@ export type {
   IsaWithdrawalStrategy,
   LisaWithdrawalStrategy,
   SippTaxReliefRate,
+  PensionWithdrawalTaxTreatment,
   TaxRegime,
   ProjectionBasis,
   SpendingSmileStrategy,
@@ -99,6 +100,8 @@ export {
   getPartialRetirementStartDate,
   getPartialRetirementContributionMultiplier,
   getPartialRetirementSavingsContributionMultiplier,
+  getPartialRetirementMonthlyEmploymentIncome,
+  getPreRetirementMonthlyEmploymentTaxContext,
 } from "./settings/settings-domains/partial-retirement";
 
 export {
@@ -113,6 +116,9 @@ export {
 
 export { calculateDefaultSippDrawAge } from "./settings/settings-domains/sipp";
 
-export { TAX_REGIME_OPTIONS } from "./settings/settings-domains/tax";
+export {
+  PENSION_WITHDRAWAL_TAX_TREATMENT_OPTIONS,
+  TAX_REGIME_OPTIONS,
+} from "./settings/settings-domains/tax";
 
 export { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings/settings-domains/lisa";

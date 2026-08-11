@@ -66,7 +66,7 @@ describe("MethodologyPage", () => {
     expect(taxSection).toHaveTextContent("classic pension");
     expect(taxSection).toHaveTextContent("classic plus pension");
     expect(taxSection).toHaveTextContent(
-      "annualised taxable retirement income as a proxy for adjusted net income"
+      "summed taxable income represented in each modelled April-to-March year as a proxy for adjusted net income"
     );
     expect(taxSection).toHaveTextContent(
       "starter rate 19% up to £3,967; basic rate 20% up to £16,956; intermediate rate 21% up to £31,092; higher rate 42% up to £62,430; advanced rate 45% up to £125,140; and top rate 48% above £125,140"
@@ -75,10 +75,10 @@ describe("MethodologyPage", () => {
       "effective from 6 April 2026 to 5 April 2027"
     );
     expect(taxSection).toHaveTextContent(
-      "does not track pension commencement lump sums or earlier allowance use across schemes"
+      "shared pension lump-sum allowance less the amount entered as already used"
     );
     expect(taxSection).toHaveTextContent(
-      "usual standard pension lump-sum allowance is £268,275"
+      "usual standard allowance is £268,275"
     );
     expect(taxSection).toHaveTextContent(
       "£10,000 money purchase annual allowance"

@@ -2,6 +2,7 @@ import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
   LISA_MONTHLY_CONTRIBUTION_MAX,
+  PENSION_WITHDRAWAL_TAX_TREATMENT_OPTIONS,
   TAX_REGIME_OPTIONS,
   type PensionSettings,
 } from "./settings";
@@ -110,7 +111,8 @@ export type CheckboxField = {
     | "nuvosApplyPensionIncreases"
     | "premiumHasNpa65"
     | "sippHasProtectedPensionAge"
-    | "csAvcHasProtectedPensionAge";
+    | "csAvcHasProtectedPensionAge"
+    | "taxTrackLumpSumAllowance";
   label: string;
   type: "checkbox";
   description: string;
@@ -138,7 +140,9 @@ export type CurrencyInputField = {
     | "taxPersonalAllowance"
     | "taxPersonalAllowanceTaperThreshold"
     | "taxBasicRateLimit"
-    | "taxAdditionalRateThreshold";
+    | "taxAdditionalRateThreshold"
+    | "taxLumpSumAllowance"
+    | "taxLumpSumAllowanceUsed";
   label: string;
   type: "currency-input";
   min: number;
@@ -170,7 +174,9 @@ export type SelectField = {
     | "isaWithdrawalStrategy"
     | "lisaWithdrawalStrategy"
     | "premiumEarliestAccessAge"
-    | "taxRegime";
+    | "taxRegime"
+    | "taxSippWithdrawalTreatment"
+    | "taxCsAvcWithdrawalTreatment";
   label: string;
   type: "select";
   options: readonly {
@@ -182,7 +188,8 @@ export type SelectField = {
       | PensionSettings["classicFinalSalaryLink"]
       | PensionSettings["sippWithdrawalStrategy"]
       | PensionSettings["premiumEarliestAccessAge"]
-      | PensionSettings["taxRegime"];
+      | PensionSettings["taxRegime"]
+      | PensionSettings["taxSippWithdrawalTreatment"];
     label: string;
   }[];
   description?: string;
@@ -237,13 +244,13 @@ export const fieldGroups: FieldGroup[] = [
   {
     id: "retirement-target",
     eyebrow: "Retirement Income Target",
-    title: "Retirement income target",
+    title: "After-tax retirement income target",
     description:
-      "Choose your target retirement age, the annual income you would like to target, and whether that income remains level or changes as you move through retirement.",
+      "Choose your target retirement age, the annual income you would like available to spend after estimated Income Tax, and whether that target remains level or changes as you move through retirement.",
     fields: [
       {
         id: "desiredRetirementIncome",
-        label: "Retirement Living Standards target (£ per year)",
+        label: "After-tax retirement income target (£ per year)",
         type: "currency-input",
         min: 0,
         max: 200000,
@@ -276,7 +283,7 @@ export const fieldGroups: FieldGroup[] = [
           },
         ],
         description:
-          "Your underlying annual spending goal before the modeller applies any tax setting or Go-Go, Slow-Go, No-Go phase percentage. The presets come from Retirement Living Standards benchmarks, but your own housing, care, travel and family costs may matter more.",
+          "Your annual spending goal after estimated Income Tax liability. The model estimates the gross taxable income needed to support this target. If taxation is turned off, gross income is treated as income available to spend. The presets come from Retirement Living Standards benchmarks, but your own housing, care, travel and family costs may matter more.",
         infoUrl: knowledgeLinks.retirementLivingStandards,
         infoLinkText: "Retirement Living Standards",
       },
@@ -353,14 +360,14 @@ export const fieldGroups: FieldGroup[] = [
       },
       {
         id: "fullSalary",
-        label: "Full salary before partial retirement (£ per year)",
+        label: "Full salary before retirement (£ per year)",
         type: "currency-input",
         min: 0,
         max: 300000,
         step: 1,
         format: "currency",
         description:
-          "Used for partial-retirement work income and SIPP/ISA contribution modelling. Alpha pension accrual still uses pensionable earnings, which may be different from full salary.",
+          "Used for partial-retirement work income and SIPP/ISA contribution modelling. When Income Tax modelling is enabled, the model also uses this amount as unshown taxable-income context before partial or full retirement, so employment and retirement income share one tax-year calculation. Alpha pension accrual still uses pensionable earnings, which may be different from full salary.",
       },
       {
         id: "partialRetirementWorkPercent",
@@ -1046,6 +1053,36 @@ export const fieldGroups: FieldGroup[] = [
         description:
           "The age by which the SIPP pot is intended to be used up when the use-by-age strategy is selected.",
       },
+      {
+        id: "taxSippWithdrawalTreatment",
+        label: "SIPP withdrawal tax treatment",
+        type: "select",
+        options: [...PENSION_WITHDRAWAL_TAX_TREATMENT_OPTIONS],
+        description:
+          "Choose how withdrawals are treated for Income Tax. Fully taxable is appropriate for crystallised drawdown; the 25% option models an UFPLS-style pattern; custom preserves a user-selected tax-free share. If treatment is not confirmed, the model uses the conservative fully taxable assumption.",
+        infoUrl: knowledgeLinks.pensionTaxFree,
+        infoLinkText: "Check pension withdrawal tax rules",
+      },
+      {
+        id: "taxSippTaxFreeWithdrawalPercent",
+        label: "SIPP tax-free withdrawal share (%)",
+        type: "range",
+        min: 0,
+        max: 25,
+        step: 0.1,
+        description:
+          "The custom share of each SIPP withdrawal treated as tax-free pension cash before the model applies the remaining shared lump-sum allowance.",
+        infoLinks: [
+          {
+            href: knowledgeLinks.pensionTaxFree,
+            text: "Check pension tax-free rules",
+          },
+          {
+            href: knowledgeLinks.pensionLumpSumAllowance,
+            text: "Check the lump-sum allowance",
+          },
+        ],
+      },
     ],
   },
   {
@@ -1055,6 +1092,36 @@ export const fieldGroups: FieldGroup[] = [
     description:
       "Civil Service Additional Voluntary Contribution pot, contributions, investment return, and drawdown assumptions.",
     fields: [
+      {
+        id: "taxCsAvcWithdrawalTreatment",
+        label: "CS AVC withdrawal tax treatment",
+        type: "select",
+        options: [...PENSION_WITHDRAWAL_TAX_TREATMENT_OPTIONS],
+        description:
+          "Choose whether CS AVC withdrawals are fully taxable, use an UFPLS-style 25% tax-free share, use a custom share, or are not yet confirmed.",
+        infoUrl: knowledgeLinks.pensionTaxFree,
+        infoLinkText: "Check pension withdrawal tax rules",
+      },
+      {
+        id: "taxCsAvcTaxFreeWithdrawalPercent",
+        label: "CS AVC tax-free withdrawal share (%)",
+        type: "range",
+        min: 0,
+        max: 25,
+        step: 0.1,
+        description:
+          "The custom share of each CS AVC withdrawal treated as tax-free pension cash before the model applies the remaining shared lump-sum allowance.",
+        infoLinks: [
+          {
+            href: knowledgeLinks.pensionTaxFree,
+            text: "Check pension tax-free rules",
+          },
+          {
+            href: knowledgeLinks.pensionLumpSumAllowance,
+            text: "Check the lump-sum allowance",
+          },
+        ],
+      },
       {
         id: "csAvcCurrentPot",
         label: "Current CS AVC pot (£)",
@@ -1313,7 +1380,7 @@ export const fieldGroups: FieldGroup[] = [
     eyebrow: "Tax",
     title: "Tax assumptions",
     description:
-      "Optional simplified 2026/27 UK Income Tax estimate. The model annualises each monthly retirement-income snapshot; it does not reproduce cumulative PAYE or forecast future tax policy.",
+      "Optional simplified 2026/27 UK Income Tax estimate. The model groups modelled taxable income into April-to-March years and allocates each annual liability across those rows. It uses the full-salary setting before retirement and continues final taxable income to the following 5 April as unshown tax context; it does not reproduce PAYE deductions or forecast future tax policy.",
     fields: [
       {
         id: "taxRegime",
@@ -1416,44 +1483,37 @@ export const fieldGroups: FieldGroup[] = [
           "The tax rate applied to taxable income above the additional-rate threshold.",
       },
       {
-        id: "taxSippTaxFreeWithdrawalPercent",
-        label: "SIPP tax-free withdrawal share (%)",
-        type: "range",
-        min: 0,
-        max: 25,
-        step: 0.1,
+        id: "taxTrackLumpSumAllowance",
+        label: "Track the shared pension lump-sum allowance",
+        type: "checkbox",
         description:
-          "The share of each SIPP withdrawal the model treats as tax-free pension cash. This is a planning assumption, not an entitlement calculation: the model does not track crystallisation or your shared pension lump-sum allowance across schemes and earlier benefits.",
-        infoLinks: [
-          {
-            href: knowledgeLinks.pensionTaxFree,
-            text: "Check pension tax-free rules",
-          },
-          {
-            href: knowledgeLinks.pensionLumpSumAllowance,
-            text: "Check the lump-sum allowance",
-          },
-        ],
+          "Apply one chronological allowance across modelled SIPP, CS AVC, classic and classic plus tax-free pension cash. Legacy plans may leave this off to preserve their previous unlimited percentage assumption.",
+        infoUrl: knowledgeLinks.pensionLumpSumAllowance,
+        infoLinkText: "Check the lump-sum allowance",
       },
       {
-        id: "taxCsAvcTaxFreeWithdrawalPercent",
-        label: "CS AVC tax-free withdrawal share (%)",
-        type: "range",
+        id: "taxLumpSumAllowance",
+        label: "Pension lump-sum allowance (£)",
+        type: "currency-input",
         min: 0,
-        max: 25,
-        step: 0.1,
+        max: 2000000,
+        step: 1,
+        format: "currency",
         description:
-          "The share of each CS AVC withdrawal the model treats as tax-free pension cash. This is a planning assumption, not an entitlement calculation: the model does not track crystallisation or your shared pension lump-sum allowance across schemes and earlier benefits.",
-        infoLinks: [
-          {
-            href: knowledgeLinks.pensionTaxFree,
-            text: "Check pension tax-free rules",
-          },
-          {
-            href: knowledgeLinks.pensionLumpSumAllowance,
-            text: "Check the lump-sum allowance",
-          },
-        ],
+          "The total pension lump-sum allowance available across schemes. Enter a provider-confirmed protected amount here if it differs from the standard allowance.",
+        infoUrl: knowledgeLinks.pensionLumpSumAllowance,
+        infoLinkText: "Check the lump-sum allowance",
+      },
+      {
+        id: "taxLumpSumAllowanceUsed",
+        label: "Pension lump-sum allowance already used (£)",
+        type: "currency-input",
+        min: 0,
+        max: 2000000,
+        step: 1,
+        format: "currency",
+        description:
+          "Tax-free pension cash already taken before the projection starts. The model deducts this before allocating tax-free cash to future withdrawals and modelled Civil Service lump sums.",
       },
     ],
   },

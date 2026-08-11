@@ -1,4 +1,10 @@
-import { createEvent, fireEvent, render, screen } from "@testing-library/react";
+import {
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import {
   RetirementIncomeBridgeChart,
   type RetirementIncomeBridgeChartProps,
@@ -86,6 +92,7 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   showAlpha: true,
   showClassic: false,
   showClassicPlus: false,
+  showCsAvc: false,
   showIsa: false,
   showLisa: false,
   showSipp: false,
@@ -178,6 +185,10 @@ function getTargetLinePath() {
 
 function getShortfallFillPath() {
   return document.querySelector(".bridge-shortfall-fill")?.getAttribute("d");
+}
+
+function getIncomeTaxFillPath() {
+  return document.querySelector(".bridge-income-tax-fill")?.getAttribute("d");
 }
 
 function getXAxisLabels() {
@@ -1063,6 +1074,63 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(getShortfallFillPath()).toContain(alphaStartX);
   });
 
+  it("distinguishes estimated Income Tax from shortfall in the chart and key", () => {
+    renderChart({
+      data: [
+        {
+          ...basePoint,
+          date: "2045-07-01",
+          age: 60,
+          targetIncomeAnnual: 35_000,
+          alphaIncomeAnnual: 40_000,
+          totalIncomeAnnual: 40_000,
+          assessedIncomeAnnual: 34_000,
+          shortfallAnnual: 1_000,
+          phase: "alpha-only",
+        },
+        {
+          ...basePoint,
+          date: "2046-07-01",
+          age: 61,
+          targetIncomeAnnual: 35_000,
+          alphaIncomeAnnual: 40_000,
+          totalIncomeAnnual: 40_000,
+          assessedIncomeAnnual: 34_000,
+          shortfallAnnual: 1_000,
+          phase: "alpha-only",
+        },
+      ],
+      targetIncomeAnnual: 35_000,
+    });
+
+    const chartKey = screen.getByLabelText("Chart key");
+
+    expect(chartKey).toHaveTextContent("Estimated Income Tax");
+    expect(chartKey).toHaveTextContent("Shortfall");
+    expect(chartKey.querySelector(".bridge-income-tax-key")).not.toBeNull();
+    expect(chartKey.querySelector(".bridge-shortfall-key")).not.toBeNull();
+    expect(getIncomeTaxFillPath()).toBeTruthy();
+    expect(document.querySelector(".bridge-income-tax-fill")).toHaveAttribute(
+      "fill",
+      "url(#estimated-income-tax-hatch)"
+    );
+    expect(
+      document.querySelector("#estimated-income-tax-hatch")
+    ).not.toHaveAttribute("patternTransform");
+    expect(document.querySelector("#shortfall-hatch")).toHaveAttribute(
+      "patternTransform",
+      "rotate(45)"
+    );
+  });
+
+  it("omits the estimated Income Tax key when gross and take-home income match", () => {
+    renderChart();
+
+    expect(screen.getByLabelText("Chart key")).not.toHaveTextContent(
+      "Estimated Income Tax"
+    );
+  });
+
   it("starts with a 2.5-year build-up window and expands for earlier milestones", () => {
     renderChart();
 
@@ -1071,16 +1139,33 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(getBuildUpBandWidth()).toBeGreaterThan(0);
   });
 
-  it("labels the bridge series as ISA and SIPP in the chart legend", () => {
-    renderChart();
+  it.each([
+    { label: "ISA", setting: "showIsa" },
+    { label: "LISA", setting: "showLisa" },
+    { label: "SIPP", setting: "showSipp" },
+    { label: "Civil Service AVC", setting: "showCsAvc" },
+  ] as const)(
+    "shows $label in the chart key only while it is enabled",
+    ({ label, setting }) => {
+      const { rerender } = renderChart({ [setting]: true });
 
-    expect(
-      screen.getByRole("button", { name: "Toggle chart ISA source" })
-    ).toHaveTextContent("ISA");
-    expect(
-      screen.getByRole("button", { name: "Toggle chart SIPP source" })
-    ).toHaveTextContent("SIPP");
-  });
+      expect(
+        screen.getByRole("button", {
+          name: `Toggle chart ${label} source`,
+        })
+      ).toHaveTextContent(label);
+
+      rerender(
+        <RetirementIncomeBridgeChart {...baseProps} {...{ [setting]: false }} />
+      );
+
+      expect(
+        within(screen.getByLabelText("Chart key")).queryByText(label, {
+          exact: true,
+        })
+      ).not.toBeInTheDocument();
+    }
+  );
 
   it("hides the additional income legend item when it has no chart values", () => {
     renderChart({ hideInactiveLegendItems: true });

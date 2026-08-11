@@ -10,8 +10,13 @@ const TAX_ASSUMPTION_FIELD_IDS = new Set<FieldDefinition["id"]>([
   "taxBasicRatePercent",
   "taxHigherRatePercent",
   "taxAdditionalRatePercent",
+  "taxSippWithdrawalTreatment",
   "taxSippTaxFreeWithdrawalPercent",
+  "taxCsAvcWithdrawalTreatment",
   "taxCsAvcTaxFreeWithdrawalPercent",
+  "taxTrackLumpSumAllowance",
+  "taxLumpSumAllowance",
+  "taxLumpSumAllowanceUsed",
 ]);
 
 const REST_OF_UK_TAX_FIELD_IDS = new Set<FieldDefinition["id"]>([
@@ -33,7 +38,15 @@ export function shouldRenderTaxAssumptionField(
   return (
     (!REST_OF_UK_TAX_FIELD_IDS.has(fieldId) ||
       settings.taxRegime === "rest_of_uk") &&
+    (fieldId !== "taxSippWithdrawalTreatment" || settings.showSipp) &&
     (fieldId !== "taxSippTaxFreeWithdrawalPercent" || settings.showSipp) &&
-    (fieldId !== "taxCsAvcTaxFreeWithdrawalPercent" || settings.showCsAvc)
+    (fieldId !== "taxSippTaxFreeWithdrawalPercent" ||
+      settings.taxSippWithdrawalTreatment === "custom") &&
+    (fieldId !== "taxCsAvcWithdrawalTreatment" || settings.showCsAvc) &&
+    (fieldId !== "taxCsAvcTaxFreeWithdrawalPercent" || settings.showCsAvc) &&
+    (fieldId !== "taxCsAvcTaxFreeWithdrawalPercent" ||
+      settings.taxCsAvcWithdrawalTreatment === "custom") &&
+    (fieldId !== "taxLumpSumAllowance" || settings.taxTrackLumpSumAllowance) &&
+    (fieldId !== "taxLumpSumAllowanceUsed" || settings.taxTrackLumpSumAllowance)
   );
 }

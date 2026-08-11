@@ -17,7 +17,7 @@ import {
   calculateWholeMonthDifference,
   calculateSippPotAtDate,
   calculateTotalGrossMonthlyIncome,
-  calculateMonthlyIncomeTax,
+  calculateAnnualIncomeTax,
   createProjectionTable,
   deriveProjectionInputs,
   generateRetirementBridgeAnalysis,
@@ -29,6 +29,7 @@ import {
   getLifeExpectancyDate,
   getModelledAnnualGrowthRate,
   getModelledMonthlyGrowthRate,
+  getProjectionTaxYearKey,
   prepareBridgeProjectionSettings,
 } from "./projection";
 import {
@@ -467,6 +468,24 @@ describe("projection calculations", () => {
     );
     expect(partialRow?.annualAccruedAlphaPension).toBeCloseTo(
       (12000 * 0.0232) / 12 / 2 + expectedAddedPension,
+      6
+    );
+    expect(partialRow?.monthlyEmploymentIncome).toBeCloseTo(
+      (settings.fullSalary * 0.5) / 12,
+      6
+    );
+    const firstTaxYearRows = rows.filter(
+      (row) => getProjectionTaxYearKey(row.date) === "2042-2043"
+    );
+    const annualEmploymentIncome = firstTaxYearRows.reduce(
+      (total, row) => total + (row.monthlyEmploymentIncome ?? 0),
+      0
+    );
+
+    expect(
+      firstTaxYearRows.reduce((total, row) => total + row.monthlyIncomeTax, 0)
+    ).toBeCloseTo(
+      calculateAnnualIncomeTax(settings, annualEmploymentIncome),
       6
     );
   });
@@ -1118,7 +1137,24 @@ describe("projection calculations", () => {
       nuvosPensionLeaveAge: 60,
     };
 
-    const row = findRowByDate(createProjectionTable(settings), "2047-06-15");
+    const rows = createProjectionTable(settings);
+    const row = findRowByDate(rows, "2047-06-15");
+    const taxYearRows = rows.filter(
+      (candidate) =>
+        getProjectionTaxYearKey(candidate.date) ===
+        getProjectionTaxYearKey("2047-06-15")
+    );
+    const annualTaxableIncome = taxYearRows.reduce(
+      (total, candidate) =>
+        total +
+        candidate.monthlyAlphaPensionGross +
+        candidate.monthlyNuvosPensionGross,
+      0
+    );
+    const annualIncomeTax = calculateAnnualIncomeTax(
+      settings,
+      annualTaxableIncome
+    );
 
     expect(row?.monthlyAlphaPensionGross).toBeGreaterThan(0);
     expect(row?.monthlyNuvosPensionGross).toBeGreaterThan(0);
@@ -1128,17 +1164,61 @@ describe("projection calculations", () => {
       6
     );
     expect(row?.monthlyIncomeTax).toBeCloseTo(
-      calculateMonthlyIncomeTax({
-        settings,
-        monthlyAlphaPension: row?.monthlyAlphaPensionGross ?? 0,
-        monthlyNuvosPension: row?.monthlyNuvosPensionGross ?? 0,
-        monthlyStatePension: 0,
-        monthlySippPension: 0,
-      }),
+      (((row?.monthlyAlphaPensionGross ?? 0) +
+        (row?.monthlyNuvosPensionGross ?? 0)) /
+        annualTaxableIncome) *
+        annualIncomeTax,
       6
     );
+    expect(
+      taxYearRows.reduce(
+        (total, candidate) => total + candidate.monthlyIncomeTax,
+        0
+      )
+    ).toBeCloseTo(annualIncomeTax, 6);
     expect(row?.totalMonthlyNetIncome).toBeCloseTo(
       (row?.totalMonthlyIncomeBeforeTax ?? 0) - (row?.monthlyIncomeTax ?? 0),
+      6
+    );
+  });
+
+  it("uses full salary as tax context when employment hands over to pension income mid-year", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2047-04-15",
+      dateOfBirth: "1987-06-15",
+      lifeExpectancy: 62,
+      requirementAge: 60,
+      fullSalary: 24_000,
+      taxationEnabled: true,
+      showAlpha: false,
+      showClassic: true,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      classicCalculationMode: "manual",
+      classicAnnualPension: 24_000,
+      classicAutomaticLumpSum: 0,
+      classicPensionDrawAge: 60,
+      classicApplyPensionIncreases: false,
+    };
+
+    const rows = createProjectionTable(settings);
+    const workingRow = findRowByDate(rows, "2047-05-15");
+    const firstPensionRow = findRowByDate(rows, "2047-06-15");
+    const fullPensionYearRow = findRowByDate(rows, "2048-04-15");
+    const finalPensionRow = findRowByDate(rows, "2049-06-15");
+
+    expect(workingRow?.totalMonthlyIncomeBeforeTax).toBe(0);
+    expect(workingRow?.monthlyIncomeTax).toBe(0);
+    expect(firstPensionRow?.monthlyClassicPensionGross).toBeCloseTo(2_000, 6);
+    expect(firstPensionRow?.monthlyIncomeTax).toBeCloseTo(190.5, 6);
+    expect(firstPensionRow?.monthlyIncomeTax).toBeCloseTo(
+      fullPensionYearRow?.monthlyIncomeTax ?? 0,
+      6
+    );
+    expect(finalPensionRow?.monthlyIncomeTax).toBeCloseTo(
+      fullPensionYearRow?.monthlyIncomeTax ?? 0,
       6
     );
   });
@@ -1179,6 +1259,7 @@ describe("projection calculations", () => {
     const beforeStartRow = findRowByDate(rows, "2029-12-01");
     const startRow = findRowByDate(rows, "2030-01-01");
     const finalPayableRow = findRowByDate(rows, "2030-12-01");
+    const fullTaxYearRow = findRowByDate(rows, "2030-04-01");
     const afterEndRow = findRowByDate(rows, "2031-01-01");
 
     expect(beforeStartRow?.monthlyAdditionalGuaranteedIncomeGross).toBe(0);
@@ -1191,7 +1272,8 @@ describe("projection calculations", () => {
       6
     );
     expect(startRow?.totalMonthlyIncomeBeforeTax).toBeCloseTo(20000 / 12, 6);
-    expect(startRow?.monthlyIncomeTax).toBeGreaterThan(0);
+    expect(startRow?.monthlyIncomeTax).toBeCloseTo(218.538813, 6);
+    expect(fullTaxYearRow?.monthlyIncomeTax).toBeGreaterThan(0);
     expect(finalPayableRow?.monthlyAdditionalGuaranteedIncomeGross).toBeCloseTo(
       20000 / 12,
       6
@@ -3031,6 +3113,7 @@ describe("projection calculations", () => {
       alphaPensionLeaveAge: 60,
       statePensionDrawDate: "2055-06-15",
       lifeExpectancy: 68,
+      taxationEnabled: false,
     };
 
     const rows = createProjectionTable(settings);
@@ -3341,6 +3424,7 @@ describe("projection calculations", () => {
       showNuvos: false,
       showSipp: false,
       showIsa: false,
+      taxationEnabled: false,
       currentStatePension: 12547.6,
       nuvosAccruedPensionAtLastAbs: 12000,
       nuvosPensionableEarnings: 42000,
@@ -3702,11 +3786,20 @@ describe("projection calculations", () => {
     );
 
     expect(analysis.fullSecureIncomeStartDate).toBe("2026-05-06");
-    expect(analysis.fullSecureAnnualGuaranteedIncome).toBeCloseTo(15000, 6);
-    expect(analysis.fullSecureAnnualGuaranteedSurplus).toBeCloseTo(3000, 6);
-    expect(analysis.stableAnnualGuaranteedIncome).toBeCloseTo(15000, 6);
-    expect(analysis.stableAnnualGuaranteedSurplus).toBeCloseTo(3000, 6);
-    expect(statePensionPhase?.annualSurplus).toBeCloseTo(3000, 6);
+    expect(analysis.fullSecureAnnualGuaranteedIncome).toBeCloseTo(
+      14689.02087199076,
+      6
+    );
+    expect(analysis.fullSecureAnnualGuaranteedSurplus).toBeCloseTo(
+      analysis.fullSecureAnnualGuaranteedIncome - 12000,
+      6
+    );
+    expect(analysis.stableAnnualGuaranteedIncome).toBeCloseTo(14514, 6);
+    expect(analysis.stableAnnualGuaranteedSurplus).toBeCloseTo(
+      analysis.stableAnnualGuaranteedIncome - 12000,
+      6
+    );
+    expect(statePensionPhase?.annualSurplus).toBeGreaterThan(0);
   });
 
   it("finds the earliest sustainable Alpha draw age using projected pension income", () => {

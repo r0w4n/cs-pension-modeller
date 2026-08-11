@@ -70,7 +70,7 @@ test.describe("accessibility", () => {
     await fillExactNumber(page, "Target retirement age exact value", "58");
     await fillCurrency(
       page,
-      "Income you want in retirement (£ per year)",
+      "After-tax income you want in retirement (£ per year)",
       "34000"
     );
     await clickNextAndExpectStep(page, "Your personal details");
@@ -136,6 +136,27 @@ test.describe("accessibility", () => {
       page,
       "expert target-based withdrawal priority"
     );
+  });
+
+  test("expert taxation chart has no detectable axe violations", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await page.getByRole("checkbox", { name: "Taxation" }).check();
+    await page.getByRole("button", { name: /Alpha pension details/i }).click();
+    await fillCurrency(
+      page,
+      "Alpha Pension Accrued at Last Statement (£ per year)",
+      "40000"
+    );
+    await page.getByRole("button", { name: /Your results/i }).click();
+    await renderDeferredComparisonContent(page);
+
+    await expect(
+      page.getByLabel("Chart key").getByText("Estimated Income Tax")
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "expert taxation chart");
   });
 
   for (const staticPage of [

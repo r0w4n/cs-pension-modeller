@@ -171,8 +171,13 @@ export const defaultSettings: PensionSettings = {
   taxBasicRatePercent: taxDefaults.taxBasicRatePercent,
   taxHigherRatePercent: taxDefaults.taxHigherRatePercent,
   taxAdditionalRatePercent: taxDefaults.taxAdditionalRatePercent,
+  taxSippWithdrawalTreatment: taxDefaults.taxSippWithdrawalTreatment,
   taxSippTaxFreeWithdrawalPercent: taxDefaults.taxSippTaxFreeWithdrawalPercent,
+  taxCsAvcWithdrawalTreatment: taxDefaults.taxCsAvcWithdrawalTreatment,
   taxCsAvcTaxFreeWithdrawalPercent: taxDefaults.taxSippTaxFreeWithdrawalPercent,
+  taxTrackLumpSumAllowance: taxDefaults.taxTrackLumpSumAllowance,
+  taxLumpSumAllowance: taxDefaults.taxLumpSumAllowance,
+  taxLumpSumAllowanceUsed: taxDefaults.taxLumpSumAllowanceUsed,
 };
 
 export function createDefaultSettings(): PensionSettings {

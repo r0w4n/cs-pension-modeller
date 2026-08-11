@@ -1,5 +1,6 @@
 import {
   getPartialRetirementContributionMultiplier,
+  getPartialRetirementMonthlyEmploymentIncome,
   type PensionSettings,
 } from "./settings";
 import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
@@ -57,7 +58,8 @@ export function calculateTotalGrossMonthlyIncome(
   monthlyClassicPensionIncludingReduction = 0,
   monthlyClassicPlusPensionIncludingReduction = 0,
   monthlyPremiumPensionIncludingReduction = 0,
-  monthlyAdditionalGuaranteedIncomeGross = 0
+  monthlyAdditionalGuaranteedIncomeGross = 0,
+  monthlyEmploymentIncome = 0
 ) {
   return (
     monthlyAlphaPensionIncludingReduction +
@@ -70,7 +72,8 @@ export function calculateTotalGrossMonthlyIncome(
     monthlySippPension +
     monthlyCsAvcPension +
     monthlyIsaPension +
-    monthlyLisaPension
+    monthlyLisaPension +
+    monthlyEmploymentIncome
   );
 }
 
@@ -355,6 +358,10 @@ export function buildProjectionRow(input: {
     additionalGuaranteedIncome.annualGross / 12;
   const monthlyAdditionalGuaranteedIncomeTaxable =
     additionalGuaranteedIncome.annualTaxable / 12;
+  const monthlyEmploymentIncome = getPartialRetirementMonthlyEmploymentIncome(
+    settings,
+    rowDate
+  );
   const totalMonthlyIncomeBeforeTax = calculateTotalGrossMonthlyIncome(
     monthlyAlphaPensionGross,
     monthlyStatePension,
@@ -366,7 +373,8 @@ export function buildProjectionRow(input: {
     monthlyClassicPensionGross,
     monthlyClassicPlusPensionGross,
     monthlyPremiumPensionGross,
-    monthlyAdditionalGuaranteedIncomeGross
+    monthlyAdditionalGuaranteedIncomeGross,
+    monthlyEmploymentIncome
   );
   const monthlyIncomeTax = calculateMonthlyIncomeTax({
     settings,
@@ -384,6 +392,7 @@ export function buildProjectionRow(input: {
       monthlyAdditionalGuaranteedIncomeTaxable,
     monthlyIsaPension: isaProjection.monthlyIsaPension,
     monthlyLisaPension: lisaProjection.monthlyLisaPension,
+    monthlyEmploymentIncome,
   });
 
   return {
@@ -416,6 +425,7 @@ export function buildProjectionRow(input: {
     monthlyStatePension,
     monthlyAdditionalGuaranteedIncomeGross,
     monthlyAdditionalGuaranteedIncomeTaxable,
+    monthlyEmploymentIncome,
     sippPot: sippProjection.sippPot,
     monthlySippPension: sippProjection.monthlySippPension,
     csAvcPot: csAvcProjection.csAvcPot,
@@ -426,6 +436,15 @@ export function buildProjectionRow(input: {
     monthlyLisaPension: lisaProjection.monthlyLisaPension,
     totalMonthlyIncomeBeforeTax,
     monthlyIncomeTax,
+    monthlySippTaxableIncome: 0,
+    monthlyCsAvcTaxableIncome: 0,
+    monthlyTaxFreePensionCash: 0,
+    pensionLumpSumAllowanceRemaining: settings.taxTrackLumpSumAllowance
+      ? Math.max(
+          0,
+          settings.taxLumpSumAllowance - settings.taxLumpSumAllowanceUsed
+        )
+      : Number.POSITIVE_INFINITY,
     totalMonthlyNetIncome: totalMonthlyIncomeBeforeTax - monthlyIncomeTax,
     monthlyGuaranteedNetIncome: 0,
     monthlyUnavoidableSurplus: 0,

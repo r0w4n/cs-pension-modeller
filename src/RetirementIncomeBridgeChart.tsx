@@ -26,6 +26,11 @@ import {
   type ChartNumberLimit,
 } from "./app/chart-drag-constraints";
 import type { ResidualFlexibleFundInsight } from "./app-domains/flexible-withdrawals";
+import {
+  calculateRetirementChartOverlays,
+  RETIREMENT_CHART_OVERLAY_META,
+} from "./app-domains/retirement-chart-overlays";
+import { selectRetirementChartLegendKeys } from "./app-domains/retirement-chart-legend";
 
 export type RetirementIncomePoint = {
   date: string;
@@ -107,6 +112,7 @@ export type RetirementIncomeBridgeParameters = {
   showAlpha: boolean;
   showClassic: boolean;
   showClassicPlus: boolean;
+  showCsAvc: boolean;
   showIsa: boolean;
   showLisa: boolean;
   showSipp: boolean;
@@ -435,6 +441,7 @@ export function RetirementIncomeBridgeChart({
   showAlpha,
   showClassic,
   showClassicPlus,
+  showCsAvc,
   showIsa,
   showLisa,
   showSipp,
@@ -575,6 +582,7 @@ export function RetirementIncomeBridgeChart({
           showAlpha,
           showClassic,
           showClassicPlus,
+          showCsAvc,
           partialRetirementEnabled,
           showIsa,
           showLisa,
@@ -589,6 +597,7 @@ export function RetirementIncomeBridgeChart({
       showAlpha,
       showClassic,
       showClassicPlus,
+      showCsAvc,
       showIsa,
       showLisa,
       showNuvos,
@@ -739,20 +748,30 @@ export function RetirementIncomeBridgeChart({
     () => createChartIncomeSeriesDefinitions(incomeKeys, visibleData),
     [visibleData]
   );
-  const legendIncomeKeys = useMemo(
-    () =>
-      hideInactiveLegendItems
-        ? enabledIncomeSeries.filter((series) =>
-            hasActiveIncome(visibleData, series)
-          )
-        : allLegendIncomeSeries,
-    [
-      allLegendIncomeSeries,
-      enabledIncomeSeries,
-      hideInactiveLegendItems,
-      visibleData,
-    ]
-  );
+  const legendIncomeKeys = useMemo(() => {
+    const enabledKeys = new Set(
+      enabledIncomeSeries.map((series) => series.key)
+    );
+    const visibleLegendKeys = new Set(
+      selectRetirementChartLegendKeys(
+        allLegendIncomeSeries.map((series) => ({
+          key: series.key,
+          enabled: enabledKeys.has(series.key),
+          active: hasActiveIncome(visibleData, series),
+        })),
+        hideInactiveLegendItems
+      )
+    );
+
+    return allLegendIncomeSeries.filter((series) =>
+      visibleLegendKeys.has(series.key)
+    );
+  }, [
+    allLegendIncomeSeries,
+    enabledIncomeSeries,
+    hideInactiveLegendItems,
+    visibleData,
+  ]);
   const maxIncome =
     d3.max(visibleData, (point) => point.totalIncomeAnnual / divisor) ??
     displayedTargetIncomeAnnual / divisor;
@@ -816,6 +835,28 @@ export function RetirementIncomeBridgeChart({
     )
     .y1((point) => yScale(point.targetIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
+  const estimatedIncomeTaxArea = d3
+    .area<RetirementIncomePoint>()
+    .defined(
+      (point) =>
+        calculateRetirementChartOverlays({
+          grossIncomeAnnual: point.totalIncomeAnnual,
+          takeHomeIncomeAnnual: point.assessedIncomeAnnual,
+          targetIncomeAnnual: point.targetIncomeAnnual,
+        }).estimatedIncomeTaxAnnual > 0
+    )
+    .x((point) => xScale(point.age))
+    .y0((point) => yScale(point.assessedIncomeAnnual / divisor))
+    .y1((point) => yScale(point.totalIncomeAnnual / divisor))
+    .curve(d3.curveStepAfter);
+  const hasEstimatedIncomeTax = visibleData.some(
+    (point) =>
+      calculateRetirementChartOverlays({
+        grossIncomeAnnual: point.totalIncomeAnnual,
+        takeHomeIncomeAnnual: point.assessedIncomeAnnual,
+        targetIncomeAnnual: point.targetIncomeAnnual,
+      }).estimatedIncomeTaxAnnual > 0
+  );
   const avoidableSurplusArea = d3
     .area<RetirementIncomePoint>()
     .defined(
@@ -2463,9 +2504,12 @@ export function RetirementIncomeBridgeChart({
       </div>
 
       <p id={chartDescriptionId} className="visually-hidden">
-        Stacked income chart showing ISA, SIPP, partial retirement income,
-        Alpha, Nuvos, additional guaranteed income and State Pension income
-        against the target retirement income over age.
+        Stacked gross income chart showing ISA, SIPP, partial retirement income,
+        Civil Service pensions, additional guaranteed income and State Pension
+        against the target retirement income over age. Estimated Income Tax is
+        shown with horizontal blue-grey hatching between income after estimated
+        Income Tax and gross income. Shortfall is shown with red diagonal
+        hatching.
       </p>
 
       <div className="bridge-chart-shell" ref={shellRef}>
@@ -2479,6 +2523,22 @@ export function RetirementIncomeBridgeChart({
           onContextMenu={(event) => event.preventDefault()}
         >
           <defs>
+            <pattern
+              id="estimated-income-tax-hatch"
+              width="8"
+              height="8"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect width="8" height="8" fill="#dce6ef" fillOpacity="0.82" />
+              <line
+                x1="0"
+                y1="4"
+                x2="8"
+                y2="4"
+                stroke="#385a78"
+                strokeWidth="1.6"
+              />
+            </pattern>
             <pattern
               id="shortfall-hatch"
               width="8"
@@ -2576,6 +2636,12 @@ export function RetirementIncomeBridgeChart({
                 />
               );
             })}
+
+            <path
+              d={estimatedIncomeTaxArea(visibleData) ?? undefined}
+              className="bridge-income-tax-fill"
+              fill="url(#estimated-income-tax-hatch)"
+            />
 
             <path
               d={toSvgPath(avoidableSurplusArea(flexibleSurplusData))}
@@ -2867,7 +2933,7 @@ export function RetirementIncomeBridgeChart({
 
         <div
           className="bridge-legend bridge-legend--overlay"
-          aria-label="Income sources"
+          aria-label="Chart key"
         >
           <span>
             <span className="bridge-build-up-key" />
@@ -2882,6 +2948,7 @@ export function RetirementIncomeBridgeChart({
                   showAlpha,
                   showClassic,
                   showClassicPlus,
+                  showCsAvc,
                   partialRetirementEnabled,
                   showIsa,
                   showLisa,
@@ -2918,9 +2985,15 @@ export function RetirementIncomeBridgeChart({
               </button>
             );
           })}
+          {hasEstimatedIncomeTax ? (
+            <span>
+              <span className="bridge-income-tax-key" />
+              {RETIREMENT_CHART_OVERLAY_META.estimatedIncomeTax.label}
+            </span>
+          ) : null}
           <span>
             <span className="bridge-shortfall-key" />
-            Shortfall
+            {RETIREMENT_CHART_OVERLAY_META.shortfall.label}
           </span>
           <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
         </div>
@@ -4099,6 +4172,7 @@ function isIncomeSourceEnabled(
     | "showAlpha"
     | "showClassic"
     | "showClassicPlus"
+    | "showCsAvc"
     | "partialRetirementEnabled"
     | "showIsa"
     | "showLisa"
@@ -4118,6 +4192,10 @@ function isIncomeSourceEnabled(
 
   if (key === "classicPlusIncomeAnnual") {
     return state.showClassicPlus;
+  }
+
+  if (key === "csAvcIncomeAnnual") {
+    return state.showCsAvc;
   }
 
   if (key === "isaIncomeAnnual") {
@@ -4165,6 +4243,10 @@ function getIncomeSourceTogglePatch(
 
   if (key === "classicPlusIncomeAnnual") {
     return { showClassicPlus: enabled };
+  }
+
+  if (key === "csAvcIncomeAnnual") {
+    return { showCsAvc: enabled };
   }
 
   if (key === "isaIncomeAnnual") {

@@ -8,7 +8,6 @@ import {
   calculateCsAvcPotBeforeWithdrawalAtDate,
   calculateTotalCsAvcContributions,
 } from "./projection-domains/cs-avc";
-import { calculateMonthlyIncomeTax } from "./projection-domains/tax";
 import { calculateRetirementIncomeTargetAtDate } from "./projection-domains/inflation";
 import {
   addYears,
@@ -470,8 +469,6 @@ function buildRowRetirementIncomeSummary(
   const statePensionMonthlyIncome = summaryRow?.monthlyStatePension ?? 0;
   const additionalGuaranteedIncomeMonthlyIncome =
     summaryRow?.monthlyAdditionalGuaranteedIncomeGross ?? 0;
-  const additionalGuaranteedIncomeTaxableMonthlyIncome =
-    summaryRow?.monthlyAdditionalGuaranteedIncomeTaxable ?? 0;
   const sippMonthlyIncome = summaryRow?.monthlySippPension ?? 0;
   const csAvcMonthlyIncome = summaryRow?.monthlyCsAvcPension ?? 0;
   const isaMonthlyIncome = summaryRow?.monthlyIsaPension ?? 0;
@@ -497,24 +494,7 @@ function buildRowRetirementIncomeSummary(
     lisaMonthlyIncome,
     additionalGuaranteedIncomeMonthlyIncome,
     statePensionMonthlyIncome,
-    monthlyIncomeTax: calculateMonthlyIncomeTax({
-      settings,
-      monthlyAlphaPension: alphaMonthlyIncome,
-      monthlyClassicPension: classicMonthlyIncome,
-      monthlyClassicPlusPension: classicPlusMonthlyIncome,
-      monthlyNuvosPension: nuvosMonthlyIncome,
-      monthlyPremiumPension: premiumMonthlyIncome,
-      monthlyStatePension: statePensionMonthlyIncome,
-      monthlySippPension: sippMonthlyIncome,
-      monthlyCsAvcPension: csAvcMonthlyIncome,
-      monthlyAdditionalGuaranteedIncomeTaxable:
-        additionalGuaranteedIncomeTaxableMonthlyIncome,
-      monthlyAdditionalGuaranteedIncomeNonTaxable:
-        additionalGuaranteedIncomeMonthlyIncome -
-        additionalGuaranteedIncomeTaxableMonthlyIncome,
-      monthlyIsaPension: isaMonthlyIncome,
-      monthlyLisaPension: lisaMonthlyIncome,
-    }),
+    monthlyIncomeTax: summaryRow?.monthlyIncomeTax ?? 0,
     bridgeWithdrawals,
     ageRanges: drawRows.ageRanges,
     settings,
@@ -1259,7 +1239,7 @@ function buildRetirementIncomeSummary({
           ),
         ]
       : []),
-    ...(settings.taxationEnabled
+    ...(settings.taxationEnabled && monthlyIncomeTax > ACTIVE_INCOME_EPSILON
       ? [
           createRetirementIncomeSource(
             "incomeTax",

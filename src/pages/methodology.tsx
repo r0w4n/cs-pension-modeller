@@ -131,6 +131,7 @@ const TAXABLE_INCOME_SOURCES = [
   "Premium pension",
   "State Pension",
   "taxable additional guaranteed income",
+  "modelled reduced-hours salary during partial retirement",
   "taxable SIPP withdrawals",
   "taxable CS AVC withdrawals",
 ] as const;
@@ -141,9 +142,11 @@ const TAX_ASSUMPTIONS = [
   "Personal Allowance taper",
   "configurable rest-of-UK basic, higher and additional bands",
   "published Scottish starter, basic, intermediate, higher, advanced and top bands",
+  "entered full salary as unshown tax context before retirement",
   "taxable share of SIPP withdrawals",
   "taxable share of CS AVC withdrawals",
-  "the current projection month's income continuing for a full year",
+  "one liability for the modelled income in each April-to-March year",
+  "final taxable monthly income continuing to 5 April as tax-only context",
 ] as const;
 
 const COMPARISON_OUTPUTS = [
@@ -234,9 +237,12 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The retirement-income target is also treated according to the selected
-          basis. In real terms, the target stays flat in today&apos;s money. In
-          nominal terms, the target increases over time with the inflation
-          assumption.
+          basis. It represents the amount available to spend after estimated
+          Income Tax. In real terms, the target stays flat in today&apos;s
+          money. In nominal terms, the target increases over time with the
+          inflation assumption. If Income Tax modelling is turned off, the model
+          treats gross retirement income as take-home income when assessing the
+          target.
         </p>
         <p className="section-copy">
           In real-terms projections, the model removes the main inflation
@@ -983,13 +989,13 @@ export function MethodologyPage() {
           The expert journey can replace the flat retirement spending target
           with three percentage phases. Go-go starts at the target retirement
           age, Slow-go starts at its selected age, and No-go starts at its
-          selected age. The selected Retirement Living Standards target remains
+          selected age. The selected after-tax retirement income target remains
           the only monetary target.
         </p>
         <p className="section-copy">
           The stored values are a percentage for each phase and the two
           later-phase start ages. The applicable percentage is multiplied by the
-          selected target in today&apos;s money. In nominal mode, that
+          selected after-tax target in today&apos;s money. In nominal mode, that
           phase-adjusted target is increased from the model start date using the
           existing inflation assumption. The strategy changes only the spending
           requirement; pension dates, tax, withdrawal order, growth and life
@@ -997,10 +1003,10 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           Retirement Living Standards values are selected through the existing
-          retirement target control. Go-Go, Slow-Go, No-Go does not create
-          separate standards or monetary targets for individual phases. These
-          values are annual expenditure benchmarks rather than gross income
-          figures and exclude rent and mortgage costs.
+          after-tax retirement target control. Go-Go, Slow-Go, No-Go does not
+          create separate standards or monetary targets for individual phases.
+          These values are annual expenditure benchmarks rather than gross
+          income figures and exclude rent and mortgage costs.
         </p>
       </section>
 
@@ -1136,9 +1142,9 @@ export function MethodologyPage() {
         <h2>Tax methodology</h2>
         <p className="section-copy">
           The model includes a simplified 2026/27 UK Income Tax estimate for
-          pension income. The selected regime is applied unchanged throughout
-          the projection; the model does not forecast future tax policy or
-          uprate tax bands.
+          pension income and enables it for new plans by default. The selected
+          regime is applied unchanged throughout the projection; the model does
+          not forecast future tax policy or uprate tax bands.
         </p>
         <p className="section-copy">Taxable income may include:</p>
         <ul className="section-copy">
@@ -1161,8 +1167,21 @@ export function MethodologyPage() {
           .
         </p>
         <p className="section-copy">
-          The model estimates tax annually and then divides the annual estimate
-          into monthly amounts. It applies simplified assumptions for:
+          The model groups projection rows into April-to-March modeling years,
+          calculates one liability from the taxable income represented in each
+          year, and allocates that liability across the rows in proportion to
+          their taxable income. This allocation is a planning presentation, not
+          a prediction of PAYE deductions. Before partial or full retirement, it
+          assumes the entered full salary continues as tax-only context. The
+          salary affects the tax-year effective rate but is not added to the
+          retirement-income chart or retirement cash flow. Once partial
+          retirement starts, the modelled reduced-hours salary replaces that
+          context and is shown as income. At the projection horizon, the model
+          assumes the final taxable monthly income continues to the following 5
+          April for tax-rate context only. This avoids an artificial tax drop
+          caused solely by ending the projection, without extending income or
+          balances beyond the selected life-expectancy age. It applies
+          simplified assumptions for:
         </p>
         <ul className="section-copy">
           {TAX_ASSUMPTIONS.map((item) => (
@@ -1178,24 +1197,41 @@ export function MethodologyPage() {
           advanced rate 45% up to £125,140; and top rate 48% above £125,140.
           These limits apply after the modelled Personal Allowance. The
           allowance is reduced by £1 for every £2 above the selected taper
-          threshold. The model uses its annualised taxable retirement income as
-          a proxy for adjusted net income; it does not reduce that proxy for
-          pension contributions, Gift Aid or other reliefs.
+          threshold. The model uses the summed taxable income represented in
+          each modelled April-to-March year as a proxy for adjusted net income;
+          it does not reduce that proxy for pension contributions, Gift Aid or
+          other reliefs. If the projection starts part-way through a tax year,
+          income before the model start is unknown and is not included, while
+          the full Personal Allowance is still applied. This can understate tax
+          for that first partial year.
         </p>
         <p className="section-copy">
-          For SIPP and CS AVC withdrawals, the selected tax-free percentage is a
-          planning assumption applied to each modelled withdrawal. The model
-          does not determine whether cash is uncrystallised, crystallised or
-          flexi-access drawdown, and it does not track pension commencement lump
-          sums or earlier allowance use across schemes. The usual standard
-          pension lump-sum allowance is £
+          SIPP and CS AVC withdrawals can be marked as fully taxable,
+          UFPLS-style with 25% tax-free cash, a custom tax-free share, or not
+          confirmed. The not-confirmed option uses the conservative fully
+          taxable assumption. The model does not infer whether cash is
+          uncrystallised, crystallised or flexi-access drawdown; the selection
+          remains a planning assumption to check with the provider.
+        </p>
+        <p className="section-copy">
+          For new plans, the model starts with the selected shared pension
+          lump-sum allowance less the amount entered as already used. It reduces
+          that balance for modelled classic and classic plus automatic lump
+          sums, then for tax-free SIPP and CS AVC cash in the selected funding
+          order. Once the balance is exhausted, later SIPP and CS AVC
+          withdrawals are taxable. The usual standard allowance is £
           {PENSION_WITHDRAWAL_TAX_RULES.standardLumpSumAllowance.toLocaleString(
             "en-GB"
           )}
-          , although protected allowances may differ. Civil Service retirement
-          lump sums shown elsewhere in the modeller are not added to the monthly
-          Income Tax estimate. Users should adjust the selected tax-free shares
-          based on information from their pension providers.
+          , although protected allowances and transitional rules may change the
+          available amount. Migrated plans keep allowance tracking off so their
+          existing results do not change silently. A known limitation is that a
+          modelled classic or classic plus automatic lump sum above the
+          remaining allowance reduces the ledger to zero, but the excess is not
+          currently added as taxable lump-sum income. SIPP treatment is
+          configured with SIPP withdrawal assumptions and CS AVC treatment with
+          CS AVC assumptions; the shared allowance and general regime remain in
+          Tax assumptions.
         </p>
         <p className="section-copy">
           Sources: the published{" "}
@@ -1246,7 +1282,10 @@ export function MethodologyPage() {
           interactions, Blind Person's Allowance, Marriage Allowance, Married
           Couple's Allowance, salary sacrifice, tax-code timing, emergency tax,
           capital gains tax, inheritance tax, savings or dividend rates,
-          employment or self-employment income, annual-allowance charges, the{" "}
+          employment or self-employment income that differs from the entered
+          full-salary context or the reduced-hours salary modelled between
+          partial retirement and the retirement target, annual-allowance
+          charges, the{" "}
           <a
             href={knowledgeLinks.moneyPurchaseAnnualAllowance}
             target="_blank"

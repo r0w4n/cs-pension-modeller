@@ -11,6 +11,55 @@ export function getPartialRetirementStartDate(settings: PensionSettings) {
   );
 }
 
+export function getPartialRetirementMonthlyEmploymentIncome(
+  settings: PensionSettings,
+  rowDate: string
+) {
+  const retirementDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.requirementAge
+  );
+
+  if (
+    !settings.partialRetirementEnabled ||
+    rowDate < getPartialRetirementStartDate(settings) ||
+    rowDate >= retirementDate
+  ) {
+    return 0;
+  }
+
+  return (
+    (Math.max(0, settings.fullSalary) *
+      (settings.partialRetirementWorkPercent / 100)) /
+    12
+  );
+}
+
+export function getPreRetirementMonthlyEmploymentTaxContext(
+  settings: PensionSettings,
+  rowDate: string
+) {
+  // This is tax-rate context only: it prevents retirement from appearing to
+  // create a new Personal Allowance without adding salary to retirement cash flow.
+  const retirementDate = addYearsToIsoDate(
+    settings.dateOfBirth,
+    settings.requirementAge
+  );
+
+  if (rowDate >= retirementDate) {
+    return 0;
+  }
+
+  if (
+    settings.partialRetirementEnabled &&
+    rowDate >= getPartialRetirementStartDate(settings)
+  ) {
+    return 0;
+  }
+
+  return Math.max(0, settings.fullSalary) / 12;
+}
+
 export function normalizePartialRetirementBooleanSetting(value: unknown) {
   return Boolean(value);
 }

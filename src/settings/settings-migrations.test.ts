@@ -7,6 +7,8 @@ import {
   migrateFromV6ToV7,
   migrateFromV7ToV8,
   migrateFromV8ToV9,
+  migrateFromV9ToV10,
+  migrateFromV10ToV11,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -146,6 +148,36 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("preserves existing tax choices and keeps missing legacy choices off during v9 migration", () => {
+    expect(migrateFromV9ToV10({ taxationEnabled: true })).toEqual({
+      taxationEnabled: true,
+    });
+    expect(migrateFromV9ToV10({ taxationEnabled: false })).toEqual({
+      taxationEnabled: false,
+    });
+    expect(migrateFromV9ToV10({ requirementAge: 60 })).toEqual({
+      requirementAge: 60,
+      taxationEnabled: false,
+    });
+  });
+
+  it("preserves legacy withdrawal outputs when adding explicit treatment and allowance settings", () => {
+    expect(
+      migrateFromV10ToV11({
+        taxSippTaxFreeWithdrawalPercent: 20,
+        taxCsAvcTaxFreeWithdrawalPercent: 10,
+      })
+    ).toEqual({
+      taxSippTaxFreeWithdrawalPercent: 20,
+      taxCsAvcTaxFreeWithdrawalPercent: 10,
+      taxSippWithdrawalTreatment: "custom",
+      taxCsAvcWithdrawalTreatment: "custom",
+      taxTrackLumpSumAllowance: false,
+      taxLumpSumAllowance: 268_275,
+      taxLumpSumAllowanceUsed: 0,
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -183,6 +215,12 @@ describe("settings-migrations", () => {
       },
       flexibleWithdrawalPriority: ["sipp", "csAvc", "lisa", "isa"],
       taxRegime: "rest_of_uk",
+      taxationEnabled: false,
+      taxSippWithdrawalTreatment: "custom",
+      taxCsAvcWithdrawalTreatment: "custom",
+      taxTrackLumpSumAllowance: false,
+      taxLumpSumAllowance: 268_275,
+      taxLumpSumAllowanceUsed: 0,
     });
   });
 

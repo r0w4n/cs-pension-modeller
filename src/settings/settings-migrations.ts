@@ -191,6 +191,33 @@ export function migrateFromV8ToV9(data: unknown) {
   };
 }
 
+export function migrateFromV9ToV10(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    taxationEnabled:
+      typeof data.taxationEnabled === "boolean" ? data.taxationEnabled : false,
+  };
+}
+
+export function migrateFromV10ToV11(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    taxSippWithdrawalTreatment: "custom",
+    taxCsAvcWithdrawalTreatment: "custom",
+    taxTrackLumpSumAllowance: false,
+    taxLumpSumAllowance: 268_275,
+    taxLumpSumAllowanceUsed: 0,
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -200,6 +227,8 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   6: migrateFromV6ToV7,
   7: migrateFromV7ToV8,
   8: migrateFromV8ToV9,
+  9: migrateFromV9ToV10,
+  10: migrateFromV10ToV11,
 };
 
 export function migrateSettingsToLatest(

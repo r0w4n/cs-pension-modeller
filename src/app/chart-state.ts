@@ -208,6 +208,10 @@ function applyVisibilityPatch(
     next.showClassicPlus = patch.showClassicPlus;
   }
 
+  if (patch.showCsAvc !== undefined) {
+    next.showCsAvc = patch.showCsAvc;
+  }
+
   if (patch.showIsa !== undefined) {
     next.showIsa = patch.showIsa;
   }

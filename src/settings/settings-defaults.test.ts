@@ -34,6 +34,17 @@ describe("settings-defaults", () => {
     expect(createDefaultSettings().showAdditionalGuaranteedIncome).toBe(false);
   });
 
+  it("enables the simplified Income Tax estimate for new plans", () => {
+    const settings = createDefaultSettings();
+
+    expect(settings.taxationEnabled).toBe(true);
+    expect(settings.taxSippWithdrawalTreatment).toBe("ufpls");
+    expect(settings.taxCsAvcWithdrawalTreatment).toBe("ufpls");
+    expect(settings.taxTrackLumpSumAllowance).toBe(true);
+    expect(settings.taxLumpSumAllowance).toBe(268_275);
+    expect(settings.taxLumpSumAllowanceUsed).toBe(0);
+  });
+
   it("formats local date parts", () => {
     expect(
       formatLocalIsoDate({

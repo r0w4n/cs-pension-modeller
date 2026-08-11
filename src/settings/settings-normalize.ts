@@ -63,6 +63,8 @@ import {
   normalizeCsAvcWithdrawalStrategy,
 } from "./settings-domains/cs-avc";
 import {
+  normalizePensionWithdrawalTaxTreatment,
+  normalizeTaxRegime,
   normalizeTaxationBooleanSetting,
   taxNumericSettingRules,
 } from "./settings-domains/tax";
@@ -219,6 +221,8 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
     defaultSettings.taxSippTaxFreeWithdrawalPercent,
   taxCsAvcTaxFreeWithdrawalPercent:
     defaultSettings.taxCsAvcTaxFreeWithdrawalPercent,
+  taxLumpSumAllowance: defaultSettings.taxLumpSumAllowance,
+  taxLumpSumAllowanceUsed: defaultSettings.taxLumpSumAllowanceUsed,
 };
 
 const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
@@ -313,7 +317,15 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "statePensionForecastConfirmed":
       return normalizeStatePensionBooleanSetting(value) as PensionSettings[K];
     case "taxationEnabled":
+    case "taxTrackLumpSumAllowance":
       return normalizeTaxationBooleanSetting(value) as PensionSettings[K];
+    case "taxRegime":
+      return normalizeTaxRegime(value) as PensionSettings[K];
+    case "taxSippWithdrawalTreatment":
+    case "taxCsAvcWithdrawalTreatment":
+      return normalizePensionWithdrawalTaxTreatment(
+        value
+      ) as PensionSettings[K];
     case "partialRetirementEnabled":
       return normalizePartialRetirementBooleanSetting(
         value
@@ -467,6 +479,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     taxationEnabled:
       retirementIncomeTargetBasis === "after_tax" ||
       normalizeTaxationBooleanSetting(settings.taxationEnabled),
+    taxRegime: normalizeTaxRegime(settings.taxRegime),
     partialRetirementEnabled: Boolean(settings.partialRetirementEnabled),
     partialRetirementStartAge: normalizeSetting(
       "partialRetirementStartAge",
@@ -827,13 +840,33 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "taxAdditionalRatePercent",
       settings.taxAdditionalRatePercent
     ),
+    taxSippWithdrawalTreatment: normalizeSetting(
+      "taxSippWithdrawalTreatment",
+      settings.taxSippWithdrawalTreatment
+    ),
     taxSippTaxFreeWithdrawalPercent: normalizeSetting(
       "taxSippTaxFreeWithdrawalPercent",
       settings.taxSippTaxFreeWithdrawalPercent
     ),
+    taxCsAvcWithdrawalTreatment: normalizeSetting(
+      "taxCsAvcWithdrawalTreatment",
+      settings.taxCsAvcWithdrawalTreatment
+    ),
     taxCsAvcTaxFreeWithdrawalPercent: normalizeSetting(
       "taxCsAvcTaxFreeWithdrawalPercent",
       settings.taxCsAvcTaxFreeWithdrawalPercent
+    ),
+    taxTrackLumpSumAllowance: normalizeSetting(
+      "taxTrackLumpSumAllowance",
+      settings.taxTrackLumpSumAllowance
+    ),
+    taxLumpSumAllowance: normalizeSetting(
+      "taxLumpSumAllowance",
+      settings.taxLumpSumAllowance
+    ),
+    taxLumpSumAllowanceUsed: normalizeSetting(
+      "taxLumpSumAllowanceUsed",
+      settings.taxLumpSumAllowanceUsed
     ),
   };
 }

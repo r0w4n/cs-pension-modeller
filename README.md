@@ -47,7 +47,9 @@ It supports:
   estimated unallocated net surplus, residual-balance warnings, account
   attribution, and non-destructive target-based previews
 - bridge analysis for the period before secure pension income starts
-- simplified UK Income Tax estimates for gross and take-home income comparison
+- simplified 2026/27 Income Tax liability estimates for England, Wales,
+  Northern Ireland and Scotland, comparing gross income with income after the
+  modelled liability
 - real-terms and nominal-terms projection bases
 - saved scenarios for side-by-side comparison
 - projection charts, summaries, and detailed projection tables
@@ -68,8 +70,8 @@ For each projection month, the model can calculate values such as:
 - State Pension deferral uplift and future uprating where enabled
 - ISA, LISA and SIPP balances, withdrawals, and bridge funding
 - gross retirement income by source
-- estimated Income Tax and take-home income where taxation is enabled or an
-  after-tax spending target is selected
+- estimated Income Tax liability and take-home income where taxation is enabled
+  or an after-tax spending target is selected
 - milestone rows for important dates such as statement dates, pension starts,
   drawdown starts, and planning end age
 
@@ -98,7 +100,9 @@ The current app is driven by inputs grouped around:
 - SIPP, ISA and LISA: current balances, contributions, lump sums, growth, draw
   ages, withdrawal strategies, and use-by ages
 - partial retirement: start age and working percentage
-- taxation: configurable simplified UK Income Tax assumptions
+- taxation: a 2026/27 rest-of-UK or Scottish regime, configurable rate and
+  allowance assumptions, explicit SIPP and CS AVC withdrawal treatment, and a
+  shared pension lump-sum allowance
 - comparison: saved scenario names and settings snapshots
 
 Optional sections can be hidden without deleting their saved values, so users
@@ -159,9 +163,26 @@ Some important assumptions and simplifications are:
   strategy. LISA additions are capped at the modelled Lifetime ISA annual
   allowance, receive the modelled government bonus on eligible additions, stop
   at age 50, and are modelled for retirement withdrawals from age 60.
-- Income Tax is simplified and configurable. It does not cover every personal
-  tax circumstance, devolved tax regime, tax code adjustment, or benefit
-  interaction.
+- Income Tax is enabled for new plans by default and uses the selected 2026/27
+  regime throughout the projection. The retirement income target has an
+  explicit basis: gross targets are compared with income before tax, while
+  after-tax targets are compared with income available to spend after estimated
+  Income Tax. Selecting an after-tax target enables the tax estimate.
+  Scottish pension income uses the published starter, basic, intermediate,
+  higher, advanced and top bands. Modelled taxable income is grouped into
+  April-to-March years and one annual liability is allocated across taxable
+  rows; this is not PAYE deduction forecasting. New plans track the selected
+  shared pension lump-sum allowance across modelled classic, classic plus, SIPP
+  and CS AVC benefits, while migrated plans retain their previous untracked
+  behavior. Before retirement, the entered full salary is used only as tax-rate
+  context and is not added to the retirement-income chart. Reduced-hours
+  employment during partial retirement is included in both income and tax. In
+  the final partial tax year, the last modelled taxable monthly income is
+  assumed to continue to the following 5 April for tax-rate context only; this
+  does not extend the cash-flow projection. The estimate does not cover every
+  personal tax circumstance, employment income that differs from the entered
+  salary assumption, future tax-year changes, tax-code adjustments, savings or
+  dividend income, annual-allowance charges, or benefit interactions.
 - Results are deterministic scenario outputs, not probabilistic forecasts.
 
 For more detail, see the in-app Methodology page.
@@ -363,9 +384,11 @@ Automated axe checks help catch regressions in CI, but they do not prove full
 WCAG compliance. Manual keyboard, focus-management, zoom, and screen-reader
 checks are still needed before release.
 
-This repository includes Git hooks in [`.githooks/`](.githooks). Once
-`core.hooksPath` is set to `.githooks` for the clone, commits and pushes run
-the same local checks that are expected before review.
+This repository includes Git hooks in [`.githooks/`](.githooks). `npm install`
+and `npm ci` configure `core.hooksPath` for the clone automatically, so commits
+and pushes—including those made with GitHub Desktop—run the same local checks
+that are expected before review. To repair the setting without reinstalling
+dependencies, run `npm run setup:hooks`.
 
 ## CI/CD
 
@@ -378,7 +401,11 @@ Dependency updates are managed by Dependabot for npm packages and GitHub
 Actions. Pull requests also run GitHub's Dependency Review action so dependency
 changes are checked before merge. `npm audit` runs in `npm run check:full` for
 local verification and in a scheduled/manual GitHub Actions workflow, rather
-than blocking every pull request on transient advisory noise.
+than blocking every pull request on transient advisory noise. To apply npm's
+non-breaking automatic remediations, run `npm run audit:fix`, review the
+dependency and lockfile changes, and then run `npm run check:full`. Do not use
+`npm audit fix --force` without reviewing and explicitly accepting its proposed
+major-version changes.
 
 Dependabot groups `react` and `react-dom` updates because React requires those
 runtime packages to use exactly the same version. Dependabot pull requests,

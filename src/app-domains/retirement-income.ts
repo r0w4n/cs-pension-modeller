@@ -6,7 +6,6 @@ import type {
 import {
   addMonths,
   calculateAdditionalGuaranteedIncomeStreamForDate,
-  calculateMonthlyIncomeTax,
   calculateRetirementIncomeTargetAtDate,
   type ProjectionRow,
 } from "../projection";
@@ -193,20 +192,18 @@ export function createRetirementIncomeAssessmentSeries(
       premiumDrawDate,
     });
     const partialRetirementIncomeAnnual =
-      calculatePartialRetirementIncomeAnnual(
-        settings,
-        row.date,
-        requirementDate
-      );
+      row.monthlyEmploymentIncome === undefined
+        ? calculatePartialRetirementIncomeAnnual(
+            settings,
+            row.date,
+            requirementDate
+          )
+        : row.monthlyEmploymentIncome * 12;
     const additionalGuaranteedIncomeStreams =
       calculateAdditionalGuaranteedIncomeStreams(settings, row.date);
     const additionalGuaranteedIncomeAnnual =
       settings.showAdditionalGuaranteedIncome
         ? row.monthlyAdditionalGuaranteedIncomeGross * 12
-        : 0;
-    const additionalGuaranteedIncomeTaxableAnnual =
-      settings.showAdditionalGuaranteedIncome
-        ? row.monthlyAdditionalGuaranteedIncomeTaxable * 12
         : 0;
     const targetIncomeAnnual = calculateRetirementIncomeTargetAtDate(
       settings,
@@ -225,19 +222,8 @@ export function createRetirementIncomeAssessmentSeries(
       premiumIncomeAnnual +
       additionalGuaranteedIncomeAnnual +
       statePensionIncomeAnnual;
-    const monthlyIncomeTax = calculateMonthlyIncomeTax({
-      settings,
-      monthlyAlphaPension: alphaIncomeAnnual / 12,
-      monthlyClassicPension: classicIncomeAnnual / 12,
-      monthlyClassicPlusPension: classicPlusIncomeAnnual / 12,
-      monthlyNuvosPension: nuvosIncomeAnnual / 12,
-      monthlyPremiumPension: premiumIncomeAnnual / 12,
-      monthlyStatePension: statePensionIncomeAnnual / 12,
-      monthlySippPension: sippIncomeAnnual / 12,
-      monthlyCsAvcPension: csAvcIncomeAnnual / 12,
-      monthlyAdditionalGuaranteedIncomeTaxable:
-        additionalGuaranteedIncomeTaxableAnnual / 12,
-    });
+    const monthlyIncomeTax = row.monthlyIncomeTax;
+    const takeHomeIncomeAnnual = totalIncomeAnnual - monthlyIncomeTax * 12;
     const assessedIncomeAnnual = getTargetBasisIncomeAnnual(
       totalIncomeAnnual,
       monthlyIncomeTax,
@@ -262,6 +248,7 @@ export function createRetirementIncomeAssessmentSeries(
       additionalGuaranteedIncomeStreams,
       statePensionIncomeAnnual,
       totalIncomeAnnual,
+      takeHomeIncomeAnnual,
       assessedIncomeAnnual,
       shortfallAnnual:
         row.date >= requirementDate
@@ -716,6 +703,7 @@ export function createBridgeChartParameters(
     showAlpha: settings.showAlpha,
     showClassic: settings.showClassic,
     showClassicPlus: settings.showClassicPlus,
+    showCsAvc: settings.showCsAvc,
     showIsa: settings.showIsa,
     showLisa: settings.showLisa,
     showSipp: settings.showSipp,

@@ -630,7 +630,7 @@ function getProjectionTableColumnLabel(
 ) {
   if (column.key === "totalMonthlyNetIncome") {
     return settings.taxationEnabled
-      ? "Total monthly take-home income"
+      ? "Total monthly income after estimated Income Tax"
       : "Total monthly income before tax";
   }
 

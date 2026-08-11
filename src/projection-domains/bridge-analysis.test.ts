@@ -102,6 +102,7 @@ describe("projection bridge analysis domain", () => {
       taxBasicRatePercent: 20,
       taxHigherRatePercent: 20,
       taxAdditionalRatePercent: 20,
+      taxCsAvcWithdrawalTreatment: "fully_taxable",
       taxCsAvcTaxFreeWithdrawalPercent: 0,
     });
     const pensionRows = createProjectionTable({

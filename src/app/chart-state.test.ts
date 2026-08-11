@@ -48,6 +48,19 @@ describe("chart-state", () => {
     expect(next.showAlpha).toBe(false);
   });
 
+  it("applies Civil Service AVC visibility changes from the chart key", () => {
+    const current = {
+      ...createDefaultSettings(),
+      showCsAvc: true,
+    };
+
+    const next = applyBridgeChartParameterPatch(current, {
+      showCsAvc: false,
+    });
+
+    expect(next.showCsAvc).toBe(false);
+  });
+
   it("keeps the default SIPP draw age linked to Normal Pension Age when date of birth changes", () => {
     const current = createDefaultSettings();
     let next = current;

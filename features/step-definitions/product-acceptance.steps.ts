@@ -29,9 +29,21 @@ import {
 } from "../../src/app/app-persistence";
 import { applyBridgeChartParameterPatch } from "../../src/app/chart-state";
 import {
+  calculateRetirementChartOverlays,
+  RETIREMENT_CHART_OVERLAY_META,
+} from "../../src/app-domains/retirement-chart-overlays";
+import {
+  selectRetirementChartLegendKeys,
+  type RetirementChartLegendSource,
+} from "../../src/app-domains/retirement-chart-legend";
+import {
   calculateAnnualIncomeTax,
+  calculateTaxYearIncomeTaxAllocation,
+  calculateMonthlyTaxableRetirementIncome,
   calculateAnnualStatePensionAtDraw,
   calculateMonthlyIncomeTax,
+  calculatePensionWithdrawalTaxBreakdown,
+  createPensionLumpSumAllowanceState,
   calculateMonthlyStatePension,
   calculateStatePensionDeferralIncreasePercent,
   createProjectionTable,
@@ -54,12 +66,38 @@ type ProductAcceptanceWorld = {
   monthlyStatePensionBeforeStart?: number;
   monthlyStatePensionFromStart?: number;
   monthlyAlphaPension?: number;
+  monthlyClassicPension?: number;
+  monthlyClassicPlusPension?: number;
   monthlyNuvosPension?: number;
+  monthlyPremiumPension?: number;
   monthlyStatePension?: number;
   monthlySippPension?: number;
+  monthlyCsAvcPension?: number;
+  monthlyAdditionalGuaranteedIncomeTaxable?: number;
+  monthlyAdditionalGuaranteedIncomeNonTaxable?: number;
+  monthlyIsaPension?: number;
+  monthlyLisaPension?: number;
+  monthlyEmploymentIncome?: number;
+  monthlyTaxableRetirementIncome?: number;
+  annualisedTaxableRetirementIncome?: number;
   annualTaxableIncome?: number;
   annualIncomeTax?: number;
   monthlyIncomeTax?: number;
+  taxYearIncomeEntries?: Array<{
+    date: string;
+    taxableIncome: number;
+    taxableIncomeContext?: number;
+  }>;
+  taxYearAllocatedTax?: Map<string, number>;
+  withdrawalTaxBreakdown?: ReturnType<
+    typeof calculatePensionWithdrawalTaxBreakdown
+  >;
+  chartGrossIncomeAnnual?: number;
+  chartTakeHomeIncomeAnnual?: number;
+  chartTargetIncomeAnnual?: number;
+  chartOverlays?: ReturnType<typeof calculateRetirementChartOverlays>;
+  chartLegendSources?: RetirementChartLegendSource[];
+  chartLegendKeys?: string[];
   bridgeAnalysis?: ReturnType<typeof generateRetirementBridgeAnalysis>;
   bridgeSummary?: ReturnType<typeof generatePensionSummary>;
   bridgeFundingNeedBeforeGuaranteedIncome?: number;
@@ -254,6 +292,79 @@ Given(
 );
 
 Given(
+  "the chart has annual gross retirement income of {float}",
+  function (this: ProductAcceptanceWorld, amount: number) {
+    this.chartGrossIncomeAnnual = amount;
+  }
+);
+
+Given(
+  "the chart has annual take-home retirement income of {float}",
+  function (this: ProductAcceptanceWorld, amount: number) {
+    this.chartTakeHomeIncomeAnnual = amount;
+  }
+);
+
+Given(
+  "the chart has annual target retirement income of {float}",
+  function (this: ProductAcceptanceWorld, amount: number) {
+    this.chartTargetIncomeAnnual = amount;
+  }
+);
+
+When(
+  "retirement chart overlays are prepared",
+  function (this: ProductAcceptanceWorld) {
+    this.chartOverlays = calculateRetirementChartOverlays({
+      grossIncomeAnnual: this.chartGrossIncomeAnnual ?? 0,
+      takeHomeIncomeAnnual: this.chartTakeHomeIncomeAnnual ?? 0,
+      assessedIncomeAnnual: this.chartTakeHomeIncomeAnnual ?? 0,
+      targetIncomeAnnual: this.chartTargetIncomeAnnual ?? 0,
+    });
+  }
+);
+
+Then(
+  "chart estimated Income Tax should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      this.chartOverlays?.estimatedIncomeTaxAnnual,
+      expected,
+      this.precision
+    );
+  }
+);
+
+Then(
+  "chart shortfall should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(this.chartOverlays?.shortfallAnnual, expected, this.precision);
+  }
+);
+
+Then(
+  "the chart key should identify {string} separately from {string}",
+  function (
+    this: ProductAcceptanceWorld,
+    taxLabel: string,
+    shortfallLabel: string
+  ) {
+    assertCondition(
+      new Set<string>([taxLabel, shortfallLabel]).size === 2,
+      "Chart labels must be distinct"
+    );
+    assertCondition(
+      RETIREMENT_CHART_OVERLAY_META.estimatedIncomeTax.label === taxLabel,
+      `Expected chart tax label ${taxLabel}`
+    );
+    assertCondition(
+      RETIREMENT_CHART_OVERLAY_META.shortfall.label === shortfallLabel,
+      `Expected chart shortfall label ${shortfallLabel}`
+    );
+  }
+);
+
+Given(
   "bridge analysis outputs are rounded to {int} decimal places",
   function (this: ProductAcceptanceWorld, precision: number) {
     this.precision = precision;
@@ -437,9 +548,160 @@ Given(
 );
 
 Given(
+  "monthly CS AVC income is {float}",
+  function (this: ProductAcceptanceWorld, amount: number) {
+    this.monthlyCsAvcPension = amount;
+  }
+);
+
+Given(
   "the SIPP tax-free withdrawal share is {float}%",
   function (this: ProductAcceptanceWorld, taxFreeShare: number) {
-    updateSettings(this, { taxSippTaxFreeWithdrawalPercent: taxFreeShare });
+    updateSettings(this, {
+      taxSippWithdrawalTreatment: "custom",
+      taxSippTaxFreeWithdrawalPercent: taxFreeShare,
+    });
+  }
+);
+
+Given(
+  "the {word} withdrawal treatment is {string}",
+  function (this: ProductAcceptanceWorld, account: string, treatment: string) {
+    assertCondition(
+      treatment === "fully_taxable" ||
+        treatment === "ufpls" ||
+        treatment === "custom" ||
+        treatment === "unknown",
+      `Unsupported withdrawal treatment: ${treatment}`
+    );
+    if (account === "SIPP") {
+      updateSettings(this, {
+        taxSippWithdrawalTreatment: treatment,
+      });
+      return;
+    }
+
+    assertCondition(
+      account === "CS",
+      `Unsupported pension account: ${account}`
+    );
+    updateSettings(this, {
+      taxCsAvcWithdrawalTreatment: treatment,
+    });
+  }
+);
+
+Given(
+  "the CS AVC withdrawal treatment is {string}",
+  function (this: ProductAcceptanceWorld, treatment: string) {
+    assertCondition(
+      treatment === "fully_taxable" ||
+        treatment === "ufpls" ||
+        treatment === "custom" ||
+        treatment === "unknown",
+      `Unsupported withdrawal treatment: ${treatment}`
+    );
+    updateSettings(this, {
+      taxCsAvcWithdrawalTreatment: treatment,
+    });
+  }
+);
+
+Given(
+  "the remaining pension lump-sum allowance is {float}",
+  function (this: ProductAcceptanceWorld, allowance: number) {
+    updateSettings(this, {
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: allowance,
+      taxLumpSumAllowanceUsed: 0,
+    });
+  }
+);
+
+Given(
+  "monthly {string} income is {float}",
+  function (
+    this: ProductAcceptanceWorld,
+    incomeSource: string,
+    amount: number
+  ) {
+    const fieldByIncomeSource = {
+      "Alpha pension": "monthlyAlphaPension",
+      "classic pension": "monthlyClassicPension",
+      "classic plus pension": "monthlyClassicPlusPension",
+      "nuvos pension": "monthlyNuvosPension",
+      "Premium pension": "monthlyPremiumPension",
+      "State Pension": "monthlyStatePension",
+      "taxable additional guaranteed income":
+        "monthlyAdditionalGuaranteedIncomeTaxable",
+      "non-taxable additional guaranteed income":
+        "monthlyAdditionalGuaranteedIncomeNonTaxable",
+      "ISA withdrawal": "monthlyIsaPension",
+      "qualifying LISA withdrawal": "monthlyLisaPension",
+      "reduced-hours employment": "monthlyEmploymentIncome",
+    } as const;
+    const field =
+      fieldByIncomeSource[incomeSource as keyof typeof fieldByIncomeSource];
+
+    assertCondition(
+      field,
+      `Unsupported retirement income source: ${incomeSource}`
+    );
+    this[field] = amount;
+  }
+);
+
+Given(
+  "the modelled tax year has these taxable monthly amounts:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    this.taxYearIncomeEntries = table.hashes().map((row) => ({
+      date: row.date ?? "",
+      taxableIncome: parseMoney(row.amount ?? 0),
+      taxableIncomeContext: parseMoney(row.taxContext ?? 0),
+    }));
+  }
+);
+
+When(
+  "the modelled tax-year liability is allocated",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.taxYearIncomeEntries, "No tax-year income provided");
+    this.taxYearAllocatedTax = calculateTaxYearIncomeTaxAllocation(
+      this.taxYearIncomeEntries,
+      getSettings(this)
+    );
+  }
+);
+
+When(
+  "tax treatment is applied to a SIPP withdrawal of {float} and a CS AVC withdrawal of {float}",
+  function (
+    this: ProductAcceptanceWorld,
+    sippWithdrawal: number,
+    csAvcWithdrawal: number
+  ) {
+    const settings = getSettings(this);
+    this.withdrawalTaxBreakdown = calculatePensionWithdrawalTaxBreakdown({
+      settings,
+      sippWithdrawal,
+      csAvcWithdrawal,
+      allowanceState: createPensionLumpSumAllowanceState(settings),
+      accountOrder: settings.flexibleWithdrawalPriority,
+    });
+  }
+);
+
+Given(
+  "the Income Tax regime is England, Wales or Northern Ireland",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { taxRegime: "rest_of_uk" });
+  }
+);
+
+Given(
+  "the Income Tax regime is Scotland",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { taxRegime: "scotland" });
   }
 );
 
@@ -451,9 +713,26 @@ Given(
 );
 
 Given(
+  "the personal allowance taper threshold is {float}",
+  function (
+    this: ProductAcceptanceWorld,
+    taxPersonalAllowanceTaperThreshold: number
+  ) {
+    updateSettings(this, { taxPersonalAllowanceTaperThreshold });
+  }
+);
+
+Given(
   "the basic rate band is {float}",
   function (this: ProductAcceptanceWorld, taxBasicRateLimit: number) {
     updateSettings(this, { taxBasicRateLimit });
+  }
+);
+
+Given(
+  "the additional rate taxable-income threshold is {float}",
+  function (this: ProductAcceptanceWorld, taxAdditionalRateThreshold: number) {
+    updateSettings(this, { taxAdditionalRateThreshold });
   }
 );
 
@@ -471,13 +750,81 @@ When(
 When(
   "monthly Income Tax is calculated",
   function (this: ProductAcceptanceWorld) {
-    this.monthlyIncomeTax = calculateMonthlyIncomeTax({
+    const input = {
       settings: getSettings(this),
       monthlyAlphaPension: this.monthlyAlphaPension ?? 0,
+      monthlyClassicPension: this.monthlyClassicPension ?? 0,
+      monthlyClassicPlusPension: this.monthlyClassicPlusPension ?? 0,
       monthlyNuvosPension: this.monthlyNuvosPension ?? 0,
+      monthlyPremiumPension: this.monthlyPremiumPension ?? 0,
       monthlyStatePension: this.monthlyStatePension ?? 0,
       monthlySippPension: this.monthlySippPension ?? 0,
-    });
+      monthlyCsAvcPension: this.monthlyCsAvcPension ?? 0,
+      monthlyAdditionalGuaranteedIncomeTaxable:
+        this.monthlyAdditionalGuaranteedIncomeTaxable ?? 0,
+      monthlyAdditionalGuaranteedIncomeNonTaxable:
+        this.monthlyAdditionalGuaranteedIncomeNonTaxable ?? 0,
+      monthlyIsaPension: this.monthlyIsaPension ?? 0,
+      monthlyLisaPension: this.monthlyLisaPension ?? 0,
+      monthlyEmploymentIncome: this.monthlyEmploymentIncome ?? 0,
+    };
+
+    this.monthlyTaxableRetirementIncome =
+      calculateMonthlyTaxableRetirementIncome(input);
+    this.annualisedTaxableRetirementIncome =
+      this.monthlyTaxableRetirementIncome * 12;
+    this.monthlyIncomeTax = calculateMonthlyIncomeTax(input);
+  }
+);
+
+Then(
+  "the total modelled Income Tax should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      [...(this.taxYearAllocatedTax?.values() ?? [])].reduce(
+        (total, tax) => total + tax,
+        0
+      ),
+      expected,
+      this.precision
+    );
+  }
+);
+
+for (const [step, field] of [
+  ["the SIPP tax-free cash should be {float}", "sippTaxFree"],
+  ["the SIPP taxable withdrawal should be {float}", "sippTaxable"],
+  ["the CS AVC tax-free cash should be {float}", "csAvcTaxFree"],
+  ["the CS AVC taxable withdrawal should be {float}", "csAvcTaxable"],
+  [
+    "the remaining pension lump-sum allowance should be {float}",
+    "allowanceRemaining",
+  ],
+] as const) {
+  Then(step, function (this: ProductAcceptanceWorld, expected: number) {
+    assertCondition(
+      this.withdrawalTaxBreakdown,
+      "No pension withdrawal tax breakdown has been calculated"
+    );
+    expectMoney(this.withdrawalTaxBreakdown[field], expected, this.precision);
+  });
+}
+
+Then(
+  "the monthly taxable retirement income should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(this.monthlyTaxableRetirementIncome, expected, this.precision);
+  }
+);
+
+Then(
+  "the annualised taxable retirement income should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      this.annualisedTaxableRetirementIncome,
+      expected,
+      this.precision
+    );
   }
 );
 
@@ -1205,6 +1552,62 @@ Then(
 );
 
 Then(
+  "the {string} journey step should include the field {string}",
+  function (
+    this: ProductAcceptanceWorld,
+    stepTitle: string,
+    fieldLabel: string
+  ) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields",
+      `Journey step "${stepTitle}" does not contain fields`
+    );
+    const matchingField = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((field) => field.label === fieldLabel);
+
+    assertCondition(matchingField, `Field "${fieldLabel}" not found`);
+    assertCondition(
+      step.fieldIds.includes(matchingField.id),
+      `Expected journey step "${stepTitle}" to include "${fieldLabel}"`
+    );
+  }
+);
+
+Then(
+  "the {string} journey step should not include the field {string}",
+  function (
+    this: ProductAcceptanceWorld,
+    stepTitle: string,
+    fieldLabel: string
+  ) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      step.kind === "fields",
+      `Journey step "${stepTitle}" does not contain fields`
+    );
+    const matchingField = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((field) => field.label === fieldLabel);
+
+    assertCondition(matchingField, `Field "${fieldLabel}" not found`);
+    assertCondition(
+      !step.fieldIds.includes(matchingField.id),
+      `Expected journey step "${stepTitle}" not to include "${fieldLabel}"`
+    );
+  }
+);
+
+Then(
   "the simplified pension choices should not offer Alpha as an optional pension",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1527,9 +1930,9 @@ Then(
 );
 
 Then(
-  "Income Tax modelling should be off",
+  "Income Tax modelling should be on",
   function (this: ProductAcceptanceWorld) {
-    assertEqual(getSettings(this).taxationEnabled, false);
+    assertEqual(getSettings(this).taxationEnabled, true);
   }
 );
 
@@ -1541,6 +1944,51 @@ Then(
     assertEqual(settings.isaWithdrawalStrategy, "use_by_age");
     assertEqual(settings.lisaWithdrawalStrategy, "use_by_age");
     assertEqual(settings.sippWithdrawalStrategy, "use_by_age");
+  }
+);
+
+Given(
+  "the results chart has these income sources:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    this.chartLegendSources = table.hashes().map((row) => ({
+      key: row.source ?? "",
+      enabled: row.enabled === "yes",
+      active: row.active === "yes",
+    }));
+  }
+);
+
+When(
+  "the chart key is prepared without hiding inactive enabled sources",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.chartLegendSources,
+      "No results chart income sources have been provided"
+    );
+    this.chartLegendKeys = selectRetirementChartLegendKeys(
+      this.chartLegendSources,
+      false
+    );
+  }
+);
+
+Then(
+  "the chart key should include {string}",
+  function (this: ProductAcceptanceWorld, source: string) {
+    assertCondition(
+      this.chartLegendKeys?.includes(source),
+      `Expected the chart key to include ${source}`
+    );
+  }
+);
+
+Then(
+  "the chart key should not include {string}",
+  function (this: ProductAcceptanceWorld, source: string) {
+    assertCondition(
+      !this.chartLegendKeys?.includes(source),
+      `Expected the chart key not to include ${source}`
+    );
   }
 );
 

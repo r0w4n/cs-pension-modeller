@@ -1,6 +1,8 @@
 import { createDefaultSettings } from "../settings-defaults";
 import {
   getPartialRetirementContributionMultiplier,
+  getPartialRetirementMonthlyEmploymentIncome,
+  getPreRetirementMonthlyEmploymentTaxContext,
   getPartialRetirementSavingsContributionMultiplier,
   getPartialRetirementStartDate,
   validatePartialRetirementRules,
@@ -29,6 +31,31 @@ describe("partial-retirement settings module", () => {
     expect(
       getPartialRetirementSavingsContributionMultiplier(settings, startDate)
     ).toBe(0.5);
+  });
+
+  it("uses full salary as tax-only context until partial or full retirement", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1980-06-01",
+      requirementAge: 68,
+      partialRetirementEnabled: true,
+      partialRetirementStartAge: 60,
+      partialRetirementWorkPercent: 50,
+      fullSalary: 48_000,
+    };
+
+    expect(
+      getPreRetirementMonthlyEmploymentTaxContext(settings, "2040-05-01")
+    ).toBe(4_000);
+    expect(
+      getPreRetirementMonthlyEmploymentTaxContext(settings, "2040-06-01")
+    ).toBe(0);
+    expect(
+      getPartialRetirementMonthlyEmploymentIncome(settings, "2040-06-01")
+    ).toBe(2_000);
+    expect(
+      getPreRetirementMonthlyEmploymentTaxContext(settings, "2048-06-01")
+    ).toBe(0);
   });
 
   it("validates partial retirement window", () => {

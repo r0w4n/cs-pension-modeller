@@ -1,6 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { useState } from "react";
-import type { ComparisonScenario } from "../app-domains";
+import {
+  buildIncomeAgeRangeItems,
+  type ComparisonScenario,
+} from "../app-domains";
 import {
   createDefaultSettings,
   type PensionSettings,
@@ -8,6 +11,7 @@ import {
 } from "../settings";
 import {
   MAX_COMPARISON_SCENARIOS,
+  buildComparisonPanelData,
   useScenarioActions,
 } from "./comparison-state";
 
@@ -148,5 +152,29 @@ describe("comparison state scenario actions", () => {
     expect(result.current.scenarios.map((scenario) => scenario.id)).toEqual([
       "scenario-2",
     ]);
+  });
+
+  it("uses the active saved scenario's target basis for income ranges", () => {
+    const savedScenario = createScenario("saved", "Saved tax-off plan", {
+      ...createDefaultSettings(),
+      startDate: "2026-06-01",
+      dateOfBirth: "1966-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 61,
+      taxationEnabled: false,
+      retirementIncomeTargetBasis: "gross",
+    });
+    const panel = buildComparisonPanelData({
+      comparisonResultCache: undefined,
+      currentResult: null,
+      currentSettingsSignature: "different-current-plan",
+      retirementIncomeDisplay: "annual",
+      scenarios: [savedScenario],
+      hideBridgeFundingSection: true,
+    });
+
+    expect(panel.incomeAgeRangeItems).toEqual(
+      buildIncomeAgeRangeItems(panel.activeResult!.summary, "annual", "gross")
+    );
   });
 });

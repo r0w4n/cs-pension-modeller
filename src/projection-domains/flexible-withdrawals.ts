@@ -7,7 +7,15 @@ import {
 import { addYears } from "../derive-inputs";
 import { MONEY_TOLERANCE } from "../money";
 import type { ProjectionRow } from "../projection-core";
-import { calculateMonthlyIncomeTax } from "./tax";
+import {
+  calculateMonthlyIncomeTax,
+  calculateMonthlyTaxableRetirementIncome,
+  calculatePensionWithdrawalTaxBreakdown,
+  consumePensionLumpSumAllowance,
+  createPensionLumpSumAllowanceState,
+  type PensionLumpSumAllowanceState,
+} from "./tax";
+import { getProjectionTaxYearKey } from "./tax-year";
 import {
   calculateRetirementIncomeTargetAtDate,
   getModelledMonthlyGrowthRate,
@@ -20,7 +28,8 @@ const BINARY_SEARCH_ITERATIONS = 50;
 
 export function coordinateFlexibleWithdrawals(
   rows: ProjectionRow[],
-  settings: PensionSettings
+  settings: PensionSettings,
+  taxYearEffectiveRates: ReadonlyMap<string, number> = new Map()
 ): ProjectionRow[] {
   const requirementDate = addYears(
     settings.dateOfBirth,
@@ -31,15 +40,48 @@ export function coordinateFlexibleWithdrawals(
   const growthRates = getMonthlyGrowthRates(settings);
   const accessDates = getAccessDates(settings);
   let balancesInitialized = false;
+  let allowanceState = createPensionLumpSumAllowanceState(settings);
+  let classicLumpSumConsumed = false;
+  let classicPlusLumpSumConsumed = false;
+  const classicDrawDate = addYears(
+    settings.dateOfBirth,
+    settings.classicPensionDrawAge
+  );
+  const classicPlusDrawDate = addYears(
+    settings.dateOfBirth,
+    settings.classicPlusPensionDrawAge
+  );
 
   return rows.map((sourceRow) => {
     const row = cloneProjectionRow(sourceRow);
-
-    if (row.date < requirementDate) {
-      return row;
+    if (
+      settings.showClassic &&
+      !classicLumpSumConsumed &&
+      row.date >= classicDrawDate
+    ) {
+      allowanceState = consumePensionLumpSumAllowance(
+        allowanceState,
+        row.classicAutomaticLumpSumIncludingReduction
+      ).nextState;
+      classicLumpSumConsumed = true;
     }
+    if (
+      settings.showClassicPlus &&
+      !classicPlusLumpSumConsumed &&
+      row.date >= classicPlusDrawDate
+    ) {
+      allowanceState = consumePensionLumpSumAllowance(
+        allowanceState,
+        row.classicPlusAutomaticLumpSumIncludingReduction
+      ).nextState;
+      classicPlusLumpSumConsumed = true;
+    }
+    const monthStartAllowanceState = allowanceState;
+    const effectiveTaxRate = taxYearEffectiveRates.get(
+      getProjectionTaxYearKey(row.date)
+    );
 
-    if (targetAccounts.length > 0) {
+    if (row.date >= requirementDate && targetAccounts.length > 0) {
       if (!balancesInitialized) {
         balances.sipp = row.sippPot;
         balances.csAvc = row.csAvcPot;
@@ -58,12 +100,26 @@ export function coordinateFlexibleWithdrawals(
         row,
         settings,
         targetAccounts,
+        allowanceState: monthStartAllowanceState,
+        effectiveTaxRate,
       });
     }
 
+    const withdrawals = getMonthlyWithdrawals(row);
+    allowanceState = updateRowIncomeTotals(
+      row,
+      settings,
+      withdrawals,
+      monthStartAllowanceState,
+      effectiveTaxRate
+    );
+
     return {
       ...row,
-      ...analyseFlexibleSurplus(row, settings),
+      ...analyseFlexibleSurplus(row, settings, {
+        allowanceState: monthStartAllowanceState,
+        effectiveTaxRate,
+      }),
     };
   });
 }
@@ -74,8 +130,18 @@ function applyTargetBasedWithdrawals(input: {
   row: ProjectionRow;
   settings: PensionSettings;
   targetAccounts: FlexibleFundAccountId[];
+  allowanceState: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
-  const { accessDates, balances, row, settings, targetAccounts } = input;
+  const {
+    accessDates,
+    allowanceState,
+    balances,
+    effectiveTaxRate,
+    row,
+    settings,
+    targetAccounts,
+  } = input;
   const withdrawals = getMonthlyWithdrawals(row);
   const monthlyTarget =
     calculateRetirementIncomeTargetAtDate(settings, row.date) / 12;
@@ -86,6 +152,8 @@ function applyTargetBasedWithdrawals(input: {
       row,
       settings,
       withdrawals,
+      allowanceState,
+      effectiveTaxRate,
     });
     const remainingAssessedRequirement = Math.max(
       0,
@@ -109,6 +177,8 @@ function applyTargetBasedWithdrawals(input: {
                 ...withdrawals,
                 [accountId]: candidateWithdrawal,
               },
+              allowanceState,
+              effectiveTaxRate,
             }) - currentAssessedIncome,
         })
       : 0;
@@ -120,13 +190,15 @@ function applyTargetBasedWithdrawals(input: {
       withdrawal: grossWithdrawal,
     });
   }
-
-  updateRowIncomeTotals(row, settings, withdrawals);
 }
 
 export function analyseFlexibleSurplus(
   row: ProjectionRow,
-  settings: PensionSettings
+  settings: PensionSettings,
+  taxContext: {
+    allowanceState?: PensionLumpSumAllowanceState;
+    effectiveTaxRate?: number;
+  } = {}
 ) {
   const monthlyActiveIncomeTarget =
     calculateRetirementIncomeTargetAtDate(settings, row.date) / 12;
@@ -136,11 +208,13 @@ export function analyseFlexibleSurplus(
     row,
     settings,
     withdrawals,
+    ...taxContext,
   });
   const monthlyGuaranteedNetIncome = calculateMonthlyNetIncome({
     row,
     settings,
     withdrawals: zeroWithdrawals,
+    ...taxContext,
   });
   const totalSurplus = Math.max(
     0,
@@ -163,6 +237,7 @@ export function analyseFlexibleSurplus(
     row,
     settings,
     withdrawals,
+    ...taxContext,
   });
 
   return {
@@ -178,6 +253,8 @@ function attributeReducibleWithdrawals(input: {
   row: ProjectionRow;
   settings: PensionSettings;
   withdrawals: MonthlyWithdrawals;
+  allowanceState?: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
   const result = createZeroInsightRecord();
   let remainingAvoidableNetSurplus = input.avoidableNetSurplus;
@@ -186,6 +263,8 @@ function attributeReducibleWithdrawals(input: {
     row: input.row,
     settings: input.settings,
     withdrawals: mutableWithdrawals,
+    allowanceState: input.allowanceState,
+    effectiveTaxRate: input.effectiveTaxRate,
   });
 
   // Explicit withdrawals are reduced in reverse configured funding order.
@@ -213,6 +292,8 @@ function attributeReducibleWithdrawals(input: {
         ...mutableWithdrawals,
         [accountId]: 0,
       },
+      allowanceState: input.allowanceState,
+      effectiveTaxRate: input.effectiveTaxRate,
     });
     const maximumNetReduction = Math.max(
       0,
@@ -229,6 +310,8 @@ function attributeReducibleWithdrawals(input: {
             row: input.row,
             settings: input.settings,
             withdrawals: mutableWithdrawals,
+            allowanceState: input.allowanceState,
+            effectiveTaxRate: input.effectiveTaxRate,
           });
     const nextWithdrawals = {
       ...mutableWithdrawals,
@@ -238,6 +321,8 @@ function attributeReducibleWithdrawals(input: {
       row: input.row,
       settings: input.settings,
       withdrawals: nextWithdrawals,
+      allowanceState: input.allowanceState,
+      effectiveTaxRate: input.effectiveTaxRate,
     });
     const attributedNet = Math.min(
       remainingAvoidableNetSurplus,
@@ -267,6 +352,8 @@ function solveGrossReduction(input: {
   row: ProjectionRow;
   settings: PensionSettings;
   withdrawals: MonthlyWithdrawals;
+  allowanceState?: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
   return findMinimumSufficientValue({
     upperBound: input.grossWithdrawal,
@@ -278,6 +365,8 @@ function solveGrossReduction(input: {
           ...input.withdrawals,
           [input.accountId]: input.grossWithdrawal - candidateReduction,
         },
+        allowanceState: input.allowanceState,
+        effectiveTaxRate: input.effectiveTaxRate,
       });
 
       return (
@@ -349,7 +438,9 @@ function findMinimumSufficientValue(input: {
 function updateRowIncomeTotals(
   row: ProjectionRow,
   settings: PensionSettings,
-  withdrawals: MonthlyWithdrawals
+  withdrawals: MonthlyWithdrawals,
+  allowanceState: PensionLumpSumAllowanceState,
+  effectiveTaxRate?: number
 ) {
   row.monthlySippPension = withdrawals.sipp;
   row.monthlyCsAvcPension = withdrawals.csAvc;
@@ -357,26 +448,58 @@ function updateRowIncomeTotals(
   row.monthlyIsaPension = withdrawals.isa;
   row.totalMonthlyIncomeBeforeTax =
     getGuaranteedMonthlyGrossIncome(row) +
+    (row.monthlyEmploymentIncome ?? 0) +
     Object.values(withdrawals).reduce((total, value) => total + value, 0);
-  row.monthlyIncomeTax = calculateTax(row, settings, withdrawals);
+  const taxDetails = calculateTaxDetails({
+    row,
+    settings,
+    withdrawals,
+    allowanceState,
+    effectiveTaxRate,
+  });
+  row.monthlySippTaxableIncome = taxDetails.withdrawalTax.sippTaxable;
+  row.monthlyCsAvcTaxableIncome = taxDetails.withdrawalTax.csAvcTaxable;
+  row.monthlyTaxFreePensionCash =
+    taxDetails.withdrawalTax.sippTaxFree +
+    taxDetails.withdrawalTax.csAvcTaxFree;
+  row.pensionLumpSumAllowanceRemaining =
+    taxDetails.withdrawalTax.allowanceRemaining;
+  row.monthlyIncomeTax = taxDetails.tax;
   row.totalMonthlyNetIncome =
     row.totalMonthlyIncomeBeforeTax - row.monthlyIncomeTax;
+
+  return {
+    ...allowanceState,
+    remaining: taxDetails.withdrawalTax.allowanceRemaining,
+  };
 }
 
 function calculateMonthlyNetIncome(input: {
   row: ProjectionRow;
   settings: PensionSettings;
   withdrawals: MonthlyWithdrawals;
+  allowanceState?: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
   const grossIncome =
     getGuaranteedMonthlyGrossIncome(input.row) +
+    (input.row.monthlyEmploymentIncome ?? 0) +
     Object.values(input.withdrawals).reduce(
       (total, withdrawal) => total + withdrawal,
       0
     );
 
   return (
-    grossIncome - calculateTax(input.row, input.settings, input.withdrawals)
+    grossIncome -
+    calculateTaxDetails({
+      row: input.row,
+      settings: input.settings,
+      withdrawals: input.withdrawals,
+      allowanceState:
+        input.allowanceState ??
+        createPensionLumpSumAllowanceState(input.settings),
+      effectiveTaxRate: input.effectiveTaxRate,
+    }).tax
   );
 }
 
@@ -384,6 +507,8 @@ function calculateMonthlyTargetBasisIncome(input: {
   row: ProjectionRow;
   settings: PensionSettings;
   withdrawals: MonthlyWithdrawals;
+  allowanceState?: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
 }) {
   if (input.settings.retirementIncomeTargetBasis === "after_tax") {
     return calculateMonthlyNetIncome(input);
@@ -391,6 +516,7 @@ function calculateMonthlyTargetBasisIncome(input: {
 
   return (
     getGuaranteedMonthlyGrossIncome(input.row) +
+    (input.row.monthlyEmploymentIncome ?? 0) +
     Object.values(input.withdrawals).reduce(
       (total, withdrawal) => total + withdrawal,
       0
@@ -398,12 +524,23 @@ function calculateMonthlyTargetBasisIncome(input: {
   );
 }
 
-function calculateTax(
-  row: ProjectionRow,
-  settings: PensionSettings,
-  withdrawals: MonthlyWithdrawals
-) {
-  return calculateMonthlyIncomeTax({
+function calculateTaxDetails(input: {
+  row: ProjectionRow;
+  settings: PensionSettings;
+  withdrawals: MonthlyWithdrawals;
+  allowanceState: PensionLumpSumAllowanceState;
+  effectiveTaxRate?: number;
+}) {
+  const { allowanceState, effectiveTaxRate, row, settings, withdrawals } =
+    input;
+  const withdrawalTax = calculatePensionWithdrawalTaxBreakdown({
+    settings,
+    sippWithdrawal: withdrawals.sipp,
+    csAvcWithdrawal: withdrawals.csAvc,
+    allowanceState,
+    accountOrder: settings.flexibleWithdrawalPriority,
+  });
+  const taxInput = {
     settings,
     monthlyAlphaPension: row.monthlyAlphaPensionGross,
     monthlyClassicPension: row.monthlyClassicPensionGross,
@@ -413,9 +550,23 @@ function calculateTax(
     monthlyStatePension: row.monthlyStatePension,
     monthlySippPension: withdrawals.sipp,
     monthlyCsAvcPension: withdrawals.csAvc,
+    monthlySippTaxableOverride: withdrawalTax.sippTaxable,
+    monthlyCsAvcTaxableOverride: withdrawalTax.csAvcTaxable,
     monthlyAdditionalGuaranteedIncomeTaxable:
       row.monthlyAdditionalGuaranteedIncomeTaxable,
-  });
+    monthlyAdditionalGuaranteedIncomeNonTaxable:
+      row.monthlyAdditionalGuaranteedIncomeGross -
+      row.monthlyAdditionalGuaranteedIncomeTaxable,
+    monthlyIsaPension: withdrawals.isa,
+    monthlyLisaPension: withdrawals.lisa,
+    monthlyEmploymentIncome: row.monthlyEmploymentIncome ?? 0,
+  };
+  const tax =
+    effectiveTaxRate === undefined
+      ? calculateMonthlyIncomeTax(taxInput)
+      : calculateMonthlyTaxableRetirementIncome(taxInput) * effectiveTaxRate;
+
+  return { tax, withdrawalTax };
 }
 
 function getGuaranteedMonthlyGrossIncome(row: ProjectionRow) {

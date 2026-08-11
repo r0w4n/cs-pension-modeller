@@ -1268,10 +1268,125 @@ export function buildComparisonDetailedRows(
         "Taxation enabled",
         (result) => formatYesNo(result.scenario.settings.taxationEnabled),
       ],
+      [
+        "Income Tax regime",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? result.scenario.settings.taxRegime === "scotland"
+              ? "Scotland (2026/27)"
+              : "England, Wales or Northern Ireland (2026/27)"
+            : "N/A",
+      ],
+      [
+        "Tax calculation basis",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? "Modelled tax-year liability"
+            : "N/A",
+      ],
+      [
+        "Pre-retirement employment tax context",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? `${formatCurrencyDetailed(
+                result.scenario.settings.fullSalary
+              )} annual entered full salary`
+            : "N/A",
+      ],
+      [
+        "Projection-end tax context",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? "Final taxable monthly income continued to the following 5 April"
+            : "N/A",
+      ],
+      [
+        "Personal Allowance",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxPersonalAllowance
+              )
+            : "N/A",
+      ],
+      [
+        "Personal Allowance taper threshold",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxPersonalAllowanceTaperThreshold
+              )
+            : "N/A",
+      ],
+      [
+        "SIPP withdrawal tax treatment",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.showSipp
+            ? formatWithdrawalTaxTreatment(
+                result.scenario.settings.taxSippWithdrawalTreatment,
+                result.scenario.settings.taxSippTaxFreeWithdrawalPercent
+              )
+            : "N/A",
+      ],
+      [
+        "CS AVC withdrawal tax treatment",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.showCsAvc
+            ? formatWithdrawalTaxTreatment(
+                result.scenario.settings.taxCsAvcWithdrawalTreatment,
+                result.scenario.settings.taxCsAvcTaxFreeWithdrawalPercent
+              )
+            : "N/A",
+      ],
+      [
+        "Shared lump-sum allowance tracking",
+        (result) =>
+          result.scenario.settings.taxationEnabled
+            ? formatYesNo(result.scenario.settings.taxTrackLumpSumAllowance)
+            : "N/A",
+      ],
+      [
+        "Pension lump-sum allowance",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.taxTrackLumpSumAllowance
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxLumpSumAllowance
+              )
+            : "N/A",
+      ],
+      [
+        "Pension lump-sum allowance already used",
+        (result) =>
+          result.scenario.settings.taxationEnabled &&
+          result.scenario.settings.taxTrackLumpSumAllowance
+            ? formatCurrencyDetailed(
+                result.scenario.settings.taxLumpSumAllowanceUsed
+              )
+            : "N/A",
+      ],
     ]),
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
+}
+
+function formatWithdrawalTaxTreatment(
+  treatment: PensionSettings["taxSippWithdrawalTreatment"],
+  customPercent: number
+) {
+  if (treatment === "ufpls") {
+    return "25% tax-free on each withdrawal";
+  }
+  if (treatment === "custom") {
+    return `${formatPercent(customPercent / 100)} tax-free custom share`;
+  }
+  if (treatment === "fully_taxable") {
+    return "Fully taxable drawdown";
+  }
+  return "Not confirmed — fully taxable assumption";
 }
 
 function formatSippProtectedPensionAge(settings: PensionSettings) {
@@ -1284,6 +1399,91 @@ function formatCsAvcProtectedPensionAge(settings: PensionSettings) {
   return settings.csAvcHasProtectedPensionAge
     ? "Provider-confirmed age 50"
     : "Not confirmed";
+}
+
+function buildTargetShortfallStatus(
+  result: ComparisonResult,
+  statePensionNeedsChecking: boolean
+) {
+  if (result.targetMissMonths > 0) {
+    return `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`;
+  }
+
+  return statePensionNeedsChecking
+    ? "No calculated shortfall using the unconfirmed State Pension amount"
+    : "No shortfall against the target";
+}
+
+function buildMainComparisonIssue(
+  result: ComparisonResult,
+  hideBridgeFundingSection: boolean,
+  statePensionNeedsChecking: boolean
+) {
+  if (!hideBridgeFundingSection && !result.bridgeAnalysis.planWorks) {
+    return result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
+      ? `Bridge still unfunded; estimated extra monthly saving ${formatMonthlyCurrency(
+          result.bridgeAnalysis.additionalMonthlyContributionRequired
+        )}`
+      : "Bridge still unfunded";
+  }
+
+  if (result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus < 0) {
+    const context = hideBridgeFundingSection
+      ? "once all selected secure pension income is in payment"
+      : "once the bridge ends";
+    return `Secure pension income is ${formatAnnualCurrency(
+      Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
+    )} below target ${context}`;
+  }
+
+  if (result.targetMissMonths > 0) {
+    return hideBridgeFundingSection
+      ? "Income drops below target before all selected secure pension income is in place"
+      : "Income drops below target before secure pension income is fully in place";
+  }
+
+  if (statePensionNeedsChecking) {
+    return `State Pension uses an unconfirmed assumption of ${formatCurrencyWholePerYear(
+      result.scenario.settings.currentStatePension
+    )}`;
+  }
+
+  return "No shortfall identified from the current assumptions.";
+}
+
+function buildWithdrawalTaxStatusItems(
+  settings: PensionSettings
+): SummaryItemLike[] {
+  if (!settings.taxationEnabled) {
+    return [];
+  }
+
+  const hasUnknownWithdrawalTreatment =
+    (settings.showSipp && settings.taxSippWithdrawalTreatment === "unknown") ||
+    (settings.showCsAvc && settings.taxCsAvcWithdrawalTreatment === "unknown");
+
+  return [
+    {
+      label: "Pension tax-free cash",
+      value: settings.taxTrackLumpSumAllowance
+        ? `Shared allowance tracked from ${formatCurrencyDetailed(
+            Math.max(
+              0,
+              settings.taxLumpSumAllowance - settings.taxLumpSumAllowanceUsed
+            )
+          )} remaining at projection start`
+        : "Legacy untracked percentage assumption — review before relying on results",
+    },
+    ...(hasUnknownWithdrawalTreatment
+      ? [
+          {
+            label: "Withdrawal tax basis",
+            value:
+              "At least one pension withdrawal treatment is not confirmed and is treated as fully taxable",
+          },
+        ]
+      : []),
+  ];
 }
 
 export function buildComparisonStatusItems(
@@ -1299,39 +1499,15 @@ export function buildComparisonStatusItems(
     (hideBridgeFundingSection || result.bridgeAnalysis.planWorks) &&
     result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus >= 0;
 
-  const targetShortfall =
-    result.targetMissMonths > 0
-      ? `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`
-      : statePensionNeedsChecking
-        ? "No calculated shortfall using the unconfirmed State Pension amount"
-        : "No shortfall against the target";
-
-  let mainIssue = "No shortfall identified from the current assumptions.";
-
-  if (!hideBridgeFundingSection && !result.bridgeAnalysis.planWorks) {
-    mainIssue =
-      result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
-        ? `Bridge still unfunded; estimated extra monthly saving ${formatMonthlyCurrency(
-            result.bridgeAnalysis.additionalMonthlyContributionRequired
-          )}`
-        : "Bridge still unfunded";
-  } else if (result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus < 0) {
-    mainIssue = hideBridgeFundingSection
-      ? `Secure pension income is ${formatAnnualCurrency(
-          Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
-        )} below target once all selected secure pension income is in payment`
-      : `Secure pension income is ${formatAnnualCurrency(
-          Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
-        )} below target once the bridge ends`;
-  } else if (result.targetMissMonths > 0) {
-    mainIssue = hideBridgeFundingSection
-      ? "Income drops below target before all selected secure pension income is in place"
-      : "Income drops below target before secure pension income is fully in place";
-  } else if (statePensionNeedsChecking) {
-    mainIssue = `State Pension uses an unconfirmed assumption of ${formatCurrencyWholePerYear(
-      result.scenario.settings.currentStatePension
-    )}`;
-  }
+  const targetShortfall = buildTargetShortfallStatus(
+    result,
+    statePensionNeedsChecking
+  );
+  const mainIssue = buildMainComparisonIssue(
+    result,
+    hideBridgeFundingSection,
+    statePensionNeedsChecking
+  );
 
   return [
     {
@@ -1351,6 +1527,14 @@ export function buildComparisonStatusItems(
       label: "Main issue",
       value: mainIssue,
     },
+    {
+      label: "Income basis",
+      value:
+        result.scenario.settings.retirementIncomeTargetBasis === "after_tax"
+          ? "After estimated Income Tax liability by modelled tax year; PAYE timing and National Insurance are excluded"
+          : "Before Income Tax",
+    },
+    ...buildWithdrawalTaxStatusItems(result.scenario.settings),
   ];
 }
 

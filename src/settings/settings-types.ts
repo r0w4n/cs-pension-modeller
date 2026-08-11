@@ -46,6 +46,9 @@ export type CsAvcWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type IsaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type LisaWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type SippTaxReliefRate = "none" | "20" | "40";
+export type TaxRegime = "rest_of_uk" | "scotland";
+export type PensionWithdrawalTaxTreatment =
+  "fully_taxable" | "ufpls" | "custom" | "unknown";
 export type ProjectionBasis = "real" | "nominal";
 export type RetirementIncomeTargetBasis = "gross" | "after_tax";
 export type ClassicCalculationMode = "estimate" | "manual";
@@ -93,6 +96,7 @@ export type PensionSettings = {
   showAdditionalGuaranteedIncome: boolean;
   additionalGuaranteedIncomes: AdditionalGuaranteedIncome[];
   taxationEnabled: boolean;
+  taxRegime: TaxRegime;
   partialRetirementEnabled: boolean;
   partialRetirementStartAge: number;
   partialRetirementWorkPercent: number;
@@ -199,8 +203,13 @@ export type PensionSettings = {
   taxBasicRatePercent: number;
   taxHigherRatePercent: number;
   taxAdditionalRatePercent: number;
+  taxSippWithdrawalTreatment: PensionWithdrawalTaxTreatment;
   taxSippTaxFreeWithdrawalPercent: number;
+  taxCsAvcWithdrawalTreatment: PensionWithdrawalTaxTreatment;
   taxCsAvcTaxFreeWithdrawalPercent: number;
+  taxTrackLumpSumAllowance: boolean;
+  taxLumpSumAllowance: number;
+  taxLumpSumAllowanceUsed: number;
 };
 
 export type PensionValidationIssue = {

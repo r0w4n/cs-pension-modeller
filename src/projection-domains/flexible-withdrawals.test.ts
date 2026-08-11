@@ -165,6 +165,35 @@ describe("flexible withdrawal coordination", () => {
     expect(row.monthlySippPension).toBeCloseTo(1_500, 6);
     expect(row.totalMonthlyNetIncome).toBeCloseTo(2_500, 6);
   });
+
+  it("exhausts one shared lump-sum allowance chronologically across withdrawals", () => {
+    const rows = createProjectionTable(
+      createSettings({
+        taxationEnabled: true,
+        taxTrackLumpSumAllowance: true,
+        taxLumpSumAllowance: 300,
+        taxLumpSumAllowanceUsed: 0,
+        taxSippWithdrawalTreatment: "ufpls",
+        showSipp: true,
+        sippCurrentPot: 120_000,
+        sippWithdrawalStrategy: "percentage",
+        sippWithdrawalPercent: 10,
+      })
+    );
+    const january = rows.find((row) => row.date === "2027-01-01");
+    const february = rows.find((row) => row.date === "2027-02-01");
+    const march = rows.find((row) => row.date === "2027-03-01");
+
+    expect(january?.monthlyTaxFreePensionCash).toBeCloseTo(250, 6);
+    expect(january?.pensionLumpSumAllowanceRemaining).toBeCloseTo(50, 6);
+    expect(february?.monthlyTaxFreePensionCash).toBeCloseTo(50, 6);
+    expect(february?.pensionLumpSumAllowanceRemaining).toBe(0);
+    expect(march?.monthlyTaxFreePensionCash).toBe(0);
+    expect(march?.monthlySippTaxableIncome).toBeCloseTo(
+      march?.monthlySippPension ?? 0,
+      6
+    );
+  });
 });
 
 describe("flexible withdrawal surplus analysis", () => {

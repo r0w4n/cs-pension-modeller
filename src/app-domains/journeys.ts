@@ -86,7 +86,7 @@ export const OPTIONAL_SECTION_TOGGLES = [
     key: "taxationEnabled",
     label: "Taxation",
     description:
-      "Estimates take-home retirement income after Income Tax using the selected tax assumptions.",
+      "Estimates retirement income after modelled Income Tax liability using the selected assumptions. It does not reproduce PAYE deductions or National Insurance.",
   },
 ] as const;
 
@@ -214,12 +214,13 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 1",
         title: "Your retirement target",
         description:
-          "Set the age you want to stop work and the income you want that retirement to support.",
+          "Set the age you want to stop work and the annual income you want available to spend after estimated Income Tax.",
         kind: "fields",
-        fieldIds: ["requirementAge", "desiredRetirementIncome"],
+        fieldIds: ["requirementAge", "desiredRetirementIncome", "taxRegime"],
         fieldLabels: {
           requirementAge: "Target retirement age",
-          desiredRetirementIncome: "Income you want in retirement (£ per year)",
+          desiredRetirementIncome:
+            "After-tax income you want in retirement (£ per year)",
         },
       },
       {
@@ -394,11 +395,18 @@ export const JOURNEY_DEFINITIONS = [
           "sippHasProtectedPensionAge",
           "sippTaxReliefRate",
           "sippRealInterestPercent",
+          "taxSippWithdrawalTreatment",
+          "taxSippTaxFreeWithdrawalPercent",
           "csAvcCurrentPot",
           "csAvcMonthlyContribution",
           "csAvcDrawAge",
           "csAvcHasProtectedPensionAge",
           "csAvcRealInterestPercent",
+          "taxCsAvcWithdrawalTreatment",
+          "taxCsAvcTaxFreeWithdrawalPercent",
+          "taxTrackLumpSumAllowance",
+          "taxLumpSumAllowance",
+          "taxLumpSumAllowanceUsed",
         ],
         fieldLabels: {
           isaCurrentPot: "Current ISA balance (£)",
@@ -454,7 +462,7 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "Think about the money you would like available each month after estimated tax when you stop working. A rough answer is fine. You can change it later.",
         kind: "fields",
-        fieldIds: ["desiredRetirementIncome"],
+        fieldIds: ["desiredRetirementIncome", "taxRegime"],
         fieldLabels: {
           desiredRetirementIncome:
             "How much would you like available to spend each month after tax?",
@@ -907,8 +915,8 @@ export function applyBridgeJourneyDefaults(
     csAvcWithdrawalStrategy: "use_by_age",
     isaWithdrawalStrategy: "use_by_age",
     lisaWithdrawalStrategy: "use_by_age",
-    taxationEnabled: false,
-    retirementIncomeTargetBasis: "gross",
+    taxationEnabled: true,
+    retirementIncomeTargetBasis: "after_tax",
     partialRetirementEnabled: false,
   };
 }

@@ -54,7 +54,9 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Retirement income target" })
+      page.getByRole("heading", {
+        name: "Retirement income target",
+      })
     ).toBeVisible();
     await fillExactNumber(page, "Target retirement age exact value", "60");
     await page.getByRole("button", { name: "Next" }).click();
@@ -66,6 +68,10 @@ test.describe("app end-to-end journeys", () => {
     await fillCurrency(page, "Current ISA pot (£)", "40000");
     await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current LISA pot (£)", "10000");
+    await clickNextAndExpectStep(page, "Tax assumptions");
+    await expect(page.getByLabel("SIPP withdrawal tax treatment")).toHaveCount(
+      0
+    );
     await page.getByRole("button", { name: "Show my answer" }).click();
     await renderDeferredComparisonContent(page);
     await expectProjectionBasisBelowResultsChart(page);
@@ -226,6 +232,88 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
   });
 
+  test("expert mode persists the Scottish Income Tax regime and shows its relevant assumptions", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await expect(
+      page.getByRole("checkbox", { name: "Taxation" })
+    ).toBeChecked();
+    await page.getByRole("button", { name: /SIPP details/i }).click();
+    const sippWithdrawalTaxTreatment = page.getByRole("combobox", {
+      name: "SIPP withdrawal tax treatment",
+    });
+    await expect(sippWithdrawalTaxTreatment).toHaveValue("ufpls");
+    await expect(
+      page.getByRole("slider", {
+        name: "SIPP tax-free withdrawal share (%)",
+      })
+    ).toHaveCount(0);
+    await sippWithdrawalTaxTreatment.selectOption("custom");
+    await expect(
+      page.getByRole("slider", {
+        name: "SIPP tax-free withdrawal share (%)",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Check the lump-sum allowance" })
+    ).toHaveAttribute(
+      "href",
+      "https://www.gov.uk/tax-on-your-private-pension/lump-sum-allowance"
+    );
+    await page.getByRole("button", { name: /Tax assumptions/i }).click();
+
+    const taxRegime = page.getByRole("combobox", {
+      name: "Income Tax regime",
+    });
+    await expect(taxRegime).toHaveValue("rest_of_uk");
+    await expect(
+      page.getByText(
+        /groups modelled taxable income into April-to-March years/i
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", {
+        name: "SIPP withdrawal tax treatment",
+      })
+    ).toHaveCount(0);
+    await taxRegime.selectOption("scotland");
+
+    await expect(taxRegime).toHaveValue("scotland");
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Personal Allowance (£ per year)",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Basic-rate taxable band (£ per year)",
+      })
+    ).toHaveCount(0);
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"taxRegime":"scotland"');
+
+    await page.getByRole("button", { name: /Alpha pension details/i }).click();
+    await fillCurrency(
+      page,
+      "Alpha Pension Accrued at Last Statement (£ per year)",
+      "40000"
+    );
+    await page.getByRole("button", { name: /Your results/i }).click();
+    await renderDeferredComparisonContent(page);
+
+    const chartKey = page.getByLabel("Chart key");
+    await expect(chartKey.getByText("Estimated Income Tax")).toBeVisible();
+    await expect(chartKey.getByText("Shortfall")).toBeVisible();
+    await expect(
+      chartKey.getByText("Civil Service AVC", { exact: true })
+    ).toHaveCount(0);
+    await expect(chartKey.getByText("LISA", { exact: true })).toHaveCount(0);
+    await expect(chartKey.locator(".bridge-income-tax-key")).toBeVisible();
+  });
+
   test("completes the bridge journey", async ({ page }, testInfo) => {
     test.slow();
 
@@ -234,7 +322,7 @@ test.describe("app end-to-end journeys", () => {
     await fillExactNumber(page, "Target retirement age exact value", "58");
     await fillCurrency(
       page,
-      "Income you want in retirement (£ per year)",
+      "After-tax income you want in retirement (£ per year)",
       "34000"
     );
     await clickNextAndExpectStep(page, "Your personal details");
@@ -347,35 +435,35 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
     await expect(
       page.getByRole("spinbutton", {
-        name: "Retirement Living Standards target (£ per year)",
+        name: "Retirement income target (£ per year)",
       })
     ).toHaveCount(0);
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Retirement income target" })
+      page.getByRole("heading", {
+        name: "Retirement income target",
+      })
     ).toBeVisible();
-    await expect(page.locator(".journey-progress")).toHaveText("Step 3 of 9");
+    await expect(page.locator(".journey-progress")).toHaveText("Step 3 of 10");
     await page.getByRole("button", { name: "Back" }).click();
     await expect(
       page.getByRole("heading", { name: "Personal details" })
     ).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Retirement income target" })
+      page.getByRole("heading", {
+        name: "Retirement income target",
+      })
     ).toBeVisible();
     const retirementAgeControl = page.getByRole("slider", {
       name: "Target retirement age",
     });
     await expect(retirementAgeControl).toHaveValue("68");
 
-    await fillCurrency(
-      page,
-      "Retirement Living Standards target (£ per year)",
-      "45400"
-    );
+    await fillCurrency(page, "Retirement income target (£ per year)", "45400");
 
     const targetControl = page.getByRole("spinbutton", {
-      name: "Retirement Living Standards target (£ per year)",
+      name: "Retirement income target (£ per year)",
     });
     const strategyControl = page.getByRole("combobox", {
       name: "Spending strategy",

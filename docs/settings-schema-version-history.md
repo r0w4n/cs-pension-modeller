@@ -1,11 +1,44 @@
 # Settings Schema Version History
 
-## Version 10 (current)
+## Version 12 (current)
 
 - Added `statePensionForecastConfirmed` so the modeller can distinguish a
   personalised forecast from the fallback full-rate assumption.
-- Version 9 settings are migrated with the confirmation set to `false`. This
-  avoids treating an existing State Pension amount as personally confirmed.
+- Added `retirementIncomeTargetBasis` so plans can distinguish a before-tax
+  income target from an after-tax spending target.
+- Version 11 settings derive the target basis from their existing Income Tax
+  setting and mark State Pension amounts as unconfirmed, preserving their
+  existing target semantics without treating a saved amount as personalised.
+
+## Version 11
+
+- Added explicit SIPP and Civil Service AVC withdrawal-tax treatments.
+- New plans track one shared pension lump-sum allowance and prior allowance use.
+- Version 10 plans migrate to their existing custom percentage treatment with
+  allowance tracking disabled, preserving their previous projections until the
+  user opts into the tracked treatment.
+
+## Version 10
+
+- New plans enable the simplified Income Tax estimate by default so retirement
+  targets are assessed as take-home income after estimated tax.
+- Existing saved plans preserve their previous Income Tax setting. Plans that
+  pre-date the setting migrate with taxation disabled to avoid changing their
+  results silently.
+
+## Version 9
+
+- Added `taxRegime` so saved plans can select the rest-of-UK or Scottish
+  2026/27 Income Tax rules.
+- Existing plans migrate to `rest_of_uk`, preserving their previous tax
+  calculation.
+
+## Versions 3 to 8
+
+- Added settings for guaranteed income, protected pension ages, Civil Service
+  AVCs, spending phases, and flexible-account withdrawal priority.
+- Each version supplied explicit defaults so older saved plans retained their
+  previous behaviour.
 
 ## Version 2
 

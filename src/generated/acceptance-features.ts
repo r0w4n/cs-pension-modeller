@@ -7603,12 +7603,12 @@ export const acceptanceFeatures = [
     path: "features/income-tax.feature",
     name: "Retirement income tax modelling",
     description:
-      "The modeller should show tax as an estimate based on the selected tax\n  assumptions, while keeping pension income sources transparent.",
+      "The modeller should show a qualified 2026/27 Income Tax estimate based on\n  the selected assumptions, while keeping taxable and tax-free retirement\n  income sources transparent.\n\n  The estimate covers non-savings, non-dividend pension income under either\n  the England, Wales and Northern Ireland bands or the Scottish bands. It\n  groups modelled income into April-to-March years, applies one Personal\n  Allowance and the selected bands to that modelled tax-year income, then\n  allocates the liability across rows in proportion to taxable income. Before\n  retirement, the entered full salary is used as unshown tax context so that a\n  switch from earnings to pension income does not create a fresh allowance.\n  At the projection horizon, the final taxable monthly income is continued as\n  tax-only context to the following 5 April so that truncating the projection\n  does not create an artificial tax-free period.\n  The monthly calculator scenarios below remain useful for a steady-income\n  illustration, but projection results use the tax-year calculation.\n\n  State Pension is taxable pension income but is normally paid without tax\n  deducted. The model combines it with the other supported taxable retirement\n  income before estimating tax.\n\n  SIPP and CS AVC withdrawals can be modelled as fully taxable, UFPLS-style,\n  custom or unknown. New plans track a shared pension lump-sum allowance,\n  including an amount already used and modelled classic or classic plus\n  automatic lump sums. Migrated plans retain their previous untracked custom\n  percentage behavior. The model does not determine crystallisation history or\n  protected allowances. It excludes employment income that differs from the\n  entered salary assumption, savings, dividends, tax-code adjustments,\n  emergency tax, National Insurance, Blind Person's Allowance, Marriage\n  Allowance, Married Couple's Allowance, annual-allowance charges and the money\n  purchase annual allowance.",
     tags: ["@income-tax"],
     status: "covered",
     scenarios: [
       {
-        id: "line-11",
+        id: "line-42",
         keyword: "Scenario",
         name: "Do not deduct Income Tax when taxation is disabled",
         description: "",
@@ -7617,32 +7617,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-12",
+            id: "line-43",
             keyword: "Given",
             text: "Income Tax modelling is off",
           },
           {
-            id: "line-13",
+            id: "line-44",
             keyword: "And",
             text: "monthly Alpha pension income is 3000.00",
           },
           {
-            id: "line-14",
+            id: "line-45",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-15",
+            id: "line-46",
             keyword: "And",
             text: "monthly SIPP income is 500.00",
           },
           {
-            id: "line-16",
+            id: "line-47",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-17",
+            id: "line-48",
             keyword: "Then",
             text: "the monthly Income Tax should be 0.00",
           },
@@ -7650,85 +7650,824 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-20",
-        keyword: "Scenario Outline",
-        name: "Estimate annual Income Tax using the selected tax bands",
+        id: "line-51",
+        keyword: "Scenario",
+        name: "Annualise the current monthly taxable pension income before applying tax",
         description: "",
-        tags: ["@standard-assumptions"],
+        tags: ["@annualisation"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-21",
+            id: "line-52",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-22",
+            id: "line-53",
+            keyword: "And",
+            text: "the personal allowance is 0.00",
+          },
+          {
+            id: "line-54",
+            keyword: "And",
+            text: "the basic rate band is 50000.00",
+          },
+          {
+            id: "line-55",
+            keyword: "And",
+            text: "monthly Alpha pension income is 1000.00",
+          },
+          {
+            id: "line-56",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-57",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 1000.00",
+          },
+          {
+            id: "line-58",
+            keyword: "And",
+            text: "the annualised taxable retirement income should be 12000.00",
+          },
+          {
+            id: "line-59",
+            keyword: "And",
+            text: "the monthly Income Tax should be 200.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-64",
+        keyword: "Scenario",
+        name: "Do not annualise a short modelled income period",
+        description: "",
+        tags: ["@tax-year", "@part-year"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-65",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-66",
+            keyword: "And",
+            text: "the modelled tax year has these taxable monthly amounts:",
+            table: [
+              {
+                id: "line-67",
+                cells: [
+                  {
+                    id: "line-67-column-11",
+                    value: "date",
+                  },
+                  {
+                    id: "line-67-column-24",
+                    value: "amount",
+                  },
+                ],
+              },
+              {
+                id: "line-68",
+                cells: [
+                  {
+                    id: "line-68-column-11",
+                    value: "2027-01-15",
+                  },
+                  {
+                    id: "line-68-column-24",
+                    value: "4000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-69",
+                cells: [
+                  {
+                    id: "line-69-column-11",
+                    value: "2027-02-15",
+                  },
+                  {
+                    id: "line-69-column-24",
+                    value: "4000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-70",
+                cells: [
+                  {
+                    id: "line-70-column-11",
+                    value: "2027-03-15",
+                  },
+                  {
+                    id: "line-70-column-24",
+                    value: "4000.00",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-71",
+            keyword: "When",
+            text: "the modelled tax-year liability is allocated",
+          },
+          {
+            id: "line-72",
+            keyword: "Then",
+            text: "the total modelled Income Tax should be 0.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-75",
+        keyword: "Scenario",
+        name: "Continue final taxable income to 5 April for the terminal tax rate",
+        description: "",
+        tags: ["@tax-year", "@projection-end-context"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-76",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-77",
+            keyword: "And",
+            text: "the modelled tax year has these taxable monthly amounts:",
+            table: [
+              {
+                id: "line-78",
+                cells: [
+                  {
+                    id: "line-78-column-11",
+                    value: "date",
+                  },
+                  {
+                    id: "line-78-column-24",
+                    value: "amount",
+                  },
+                ],
+              },
+              {
+                id: "line-79",
+                cells: [
+                  {
+                    id: "line-79-column-11",
+                    value: "2026-04-15",
+                  },
+                  {
+                    id: "line-79-column-24",
+                    value: "4000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-80",
+                cells: [
+                  {
+                    id: "line-80-column-11",
+                    value: "2026-05-15",
+                  },
+                  {
+                    id: "line-80-column-24",
+                    value: "4000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-81",
+                cells: [
+                  {
+                    id: "line-81-column-11",
+                    value: "2026-06-15",
+                  },
+                  {
+                    id: "line-81-column-24",
+                    value: "4000.00",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-82",
+            keyword: "When",
+            text: "the modelled tax-year liability is allocated",
+          },
+          {
+            id: "line-83",
+            keyword: "Then",
+            text: "the total modelled Income Tax should be 1771.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-86",
+        keyword: "Scenario",
+        name: "Use earlier employment income as tax context when retirement starts mid-year",
+        description: "",
+        tags: ["@tax-year", "@employment-context"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-87",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-88",
+            keyword: "And",
+            text: "the modelled tax year has these taxable monthly amounts:",
+            table: [
+              {
+                id: "line-89",
+                cells: [
+                  {
+                    id: "line-89-column-11",
+                    value: "date",
+                  },
+                  {
+                    id: "line-89-column-24",
+                    value: "amount",
+                  },
+                  {
+                    id: "line-89-column-34",
+                    value: "taxContext",
+                  },
+                ],
+              },
+              {
+                id: "line-90",
+                cells: [
+                  {
+                    id: "line-90-column-11",
+                    value: "2026-04-15",
+                  },
+                  {
+                    id: "line-90-column-24",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-90-column-34",
+                    value: "3500.00",
+                  },
+                ],
+              },
+              {
+                id: "line-91",
+                cells: [
+                  {
+                    id: "line-91-column-11",
+                    value: "2026-05-15",
+                  },
+                  {
+                    id: "line-91-column-24",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-91-column-34",
+                    value: "3500.00",
+                  },
+                ],
+              },
+              {
+                id: "line-92",
+                cells: [
+                  {
+                    id: "line-92-column-11",
+                    value: "2026-06-15",
+                  },
+                  {
+                    id: "line-92-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-92-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-93",
+                cells: [
+                  {
+                    id: "line-93-column-11",
+                    value: "2026-07-15",
+                  },
+                  {
+                    id: "line-93-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-93-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-94",
+                cells: [
+                  {
+                    id: "line-94-column-11",
+                    value: "2026-08-15",
+                  },
+                  {
+                    id: "line-94-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-94-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-95",
+                cells: [
+                  {
+                    id: "line-95-column-11",
+                    value: "2026-09-15",
+                  },
+                  {
+                    id: "line-95-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-95-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-96",
+                cells: [
+                  {
+                    id: "line-96-column-11",
+                    value: "2026-10-15",
+                  },
+                  {
+                    id: "line-96-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-96-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-97",
+                cells: [
+                  {
+                    id: "line-97-column-11",
+                    value: "2026-11-15",
+                  },
+                  {
+                    id: "line-97-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-97-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-98",
+                cells: [
+                  {
+                    id: "line-98-column-11",
+                    value: "2026-12-15",
+                  },
+                  {
+                    id: "line-98-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-98-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-99",
+                cells: [
+                  {
+                    id: "line-99-column-11",
+                    value: "2027-01-15",
+                  },
+                  {
+                    id: "line-99-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-99-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-100",
+                cells: [
+                  {
+                    id: "line-100-column-11",
+                    value: "2027-02-15",
+                  },
+                  {
+                    id: "line-100-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-100-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-101",
+                cells: [
+                  {
+                    id: "line-101-column-11",
+                    value: "2027-03-15",
+                  },
+                  {
+                    id: "line-101-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-101-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-102",
+            keyword: "When",
+            text: "the modelled tax-year liability is allocated",
+          },
+          {
+            id: "line-103",
+            keyword: "Then",
+            text: "the total modelled Income Tax should be 4905.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-106",
+        keyword: "Scenario",
+        name: "Combine reduced-hours salary with pension income",
+        description: "",
+        tags: ["@tax-year", "@employment-income"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-107",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-108",
+            keyword: "And",
+            text: "monthly Alpha pension income is 500.00",
+          },
+          {
+            id: "line-109",
+            keyword: "And",
+            text: 'monthly "reduced-hours employment" income is 2000.00',
+          },
+          {
+            id: "line-110",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-111",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 2500.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-116",
+        keyword: "Scenario",
+        name: "Distinguish estimated Income Tax from retirement-income shortfall",
+        description: "",
+        tags: ["@chart-presentation"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-117",
+            keyword: "Given",
+            text: "the chart has annual gross retirement income of 40000.00",
+          },
+          {
+            id: "line-118",
+            keyword: "And",
+            text: "the chart has annual take-home retirement income of 34000.00",
+          },
+          {
+            id: "line-119",
+            keyword: "And",
+            text: "the chart has annual target retirement income of 35000.00",
+          },
+          {
+            id: "line-120",
+            keyword: "When",
+            text: "retirement chart overlays are prepared",
+          },
+          {
+            id: "line-121",
+            keyword: "Then",
+            text: "chart estimated Income Tax should be 6000.00",
+          },
+          {
+            id: "line-122",
+            keyword: "And",
+            text: "chart shortfall should be 1000.00",
+          },
+          {
+            id: "line-123",
+            keyword: "And",
+            text: 'the chart key should identify "Estimated Income Tax" separately from "Shortfall"',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-128",
+        keyword: "Scenario Outline",
+        name: "Apply the 2026/27 Personal Allowance and taper",
+        description: "",
+        tags: ["@standard-assumptions", "@personal-allowance"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-129",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-130",
+            keyword: "And",
+            text: "the Income Tax regime is England, Wales or Northern Ireland",
+          },
+          {
+            id: "line-131",
             keyword: "When",
             text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
           },
           {
-            id: "line-23",
+            id: "line-132",
             keyword: "Then",
             text: "the annual Income Tax should be <expectedAnnualTax>",
           },
         ],
         examples: [
           {
-            id: "line-25",
+            id: "line-134",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-26",
+                id: "line-135",
                 cells: [
                   {
-                    id: "line-26-column-9",
+                    id: "line-135-column-11",
                     value: "annualTaxableIncome",
                   },
                   {
-                    id: "line-26-column-31",
+                    id: "line-135-column-33",
                     value: "expectedAnnualTax",
                   },
                 ],
               },
               {
-                id: "line-27",
+                id: "line-136",
                 cells: [
                   {
-                    id: "line-27-column-9",
+                    id: "line-136-column-11",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-136-column-33",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-137",
+                cells: [
+                  {
+                    id: "line-137-column-11",
+                    value: "12570.00",
+                  },
+                  {
+                    id: "line-137-column-33",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-138",
+                cells: [
+                  {
+                    id: "line-138-column-11",
+                    value: "12571.00",
+                  },
+                  {
+                    id: "line-138-column-33",
+                    value: "0.20",
+                  },
+                ],
+              },
+              {
+                id: "line-139",
+                cells: [
+                  {
+                    id: "line-139-column-11",
+                    value: "100000.00",
+                  },
+                  {
+                    id: "line-139-column-33",
+                    value: "27432.00",
+                  },
+                ],
+              },
+              {
+                id: "line-140",
+                cells: [
+                  {
+                    id: "line-140-column-11",
+                    value: "100002.00",
+                  },
+                  {
+                    id: "line-140-column-33",
+                    value: "27433.20",
+                  },
+                ],
+              },
+              {
+                id: "line-141",
+                cells: [
+                  {
+                    id: "line-141-column-11",
+                    value: "125140.00",
+                  },
+                  {
+                    id: "line-141-column-33",
+                    value: "42516.00",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-146",
+        keyword: "Scenario Outline",
+        name: "Apply each 2026/27 rest-of-UK marginal rate at its boundary",
+        description: "",
+        tags: ["@standard-assumptions", "@rest-of-uk"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-147",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-148",
+            keyword: "And",
+            text: "the Income Tax regime is England, Wales or Northern Ireland",
+          },
+          {
+            id: "line-149",
+            keyword: "When",
+            text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
+          },
+          {
+            id: "line-150",
+            keyword: "Then",
+            text: "the annual Income Tax should be <expectedAnnualTax>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-152",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-153",
+                cells: [
+                  {
+                    id: "line-153-column-11",
+                    value: "annualTaxableIncome",
+                  },
+                  {
+                    id: "line-153-column-33",
+                    value: "expectedAnnualTax",
+                  },
+                ],
+              },
+              {
+                id: "line-154",
+                cells: [
+                  {
+                    id: "line-154-column-11",
                     value: "50000.00",
                   },
                   {
-                    id: "line-27-column-31",
+                    id: "line-154-column-33",
                     value: "7486.00",
                   },
                 ],
               },
               {
-                id: "line-28",
+                id: "line-155",
                 cells: [
                   {
-                    id: "line-28-column-9",
+                    id: "line-155-column-11",
+                    value: "50270.00",
+                  },
+                  {
+                    id: "line-155-column-33",
+                    value: "7540.00",
+                  },
+                ],
+              },
+              {
+                id: "line-156",
+                cells: [
+                  {
+                    id: "line-156-column-11",
+                    value: "50271.00",
+                  },
+                  {
+                    id: "line-156-column-33",
+                    value: "7540.40",
+                  },
+                ],
+              },
+              {
+                id: "line-157",
+                cells: [
+                  {
+                    id: "line-157-column-11",
                     value: "125140.00",
                   },
                   {
-                    id: "line-28-column-31",
+                    id: "line-157-column-33",
                     value: "42516.00",
                   },
                 ],
               },
               {
-                id: "line-29",
+                id: "line-158",
                 cells: [
                   {
-                    id: "line-29-column-9",
+                    id: "line-158-column-11",
+                    value: "125141.00",
+                  },
+                  {
+                    id: "line-158-column-33",
+                    value: "42516.45",
+                  },
+                ],
+              },
+              {
+                id: "line-159",
+                cells: [
+                  {
+                    id: "line-159-column-11",
                     value: "130000.00",
                   },
                   {
-                    id: "line-29-column-31",
+                    id: "line-159-column-33",
                     value: "44703.00",
                   },
                 ],
@@ -7738,98 +8477,827 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-32",
+        id: "line-162",
         keyword: "Scenario",
-        name: "Keep the tax-free SIPP share outside taxable income",
+        name: "Treat a configured additional-rate threshold as taxable income",
+        description: "",
+        tags: ["@configurable-assumptions", "@regression"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-163",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-164",
+            keyword: "And",
+            text: "the Income Tax regime is England, Wales or Northern Ireland",
+          },
+          {
+            id: "line-165",
+            keyword: "And",
+            text: "the personal allowance is 20000.00",
+          },
+          {
+            id: "line-166",
+            keyword: "And",
+            text: "the personal allowance taper threshold is 200000.00",
+          },
+          {
+            id: "line-167",
+            keyword: "And",
+            text: "the basic rate band is 37700.00",
+          },
+          {
+            id: "line-168",
+            keyword: "And",
+            text: "the additional rate taxable-income threshold is 125140.00",
+          },
+          {
+            id: "line-169",
+            keyword: "When",
+            text: "annual taxable retirement income of 145140.00 is taxed",
+          },
+          {
+            id: "line-170",
+            keyword: "Then",
+            text: "the annual Income Tax should be 42516.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-175",
+        keyword: "Scenario Outline",
+        name: "Apply each 2026/27 Scottish marginal rate at its boundary",
+        description: "",
+        tags: ["@scotland", "@standard-assumptions"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-176",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-177",
+            keyword: "And",
+            text: "the Income Tax regime is Scotland",
+          },
+          {
+            id: "line-178",
+            keyword: "When",
+            text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
+          },
+          {
+            id: "line-179",
+            keyword: "Then",
+            text: "the annual Income Tax should be <expectedAnnualTax>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-181",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-182",
+                cells: [
+                  {
+                    id: "line-182-column-11",
+                    value: "annualTaxableIncome",
+                  },
+                  {
+                    id: "line-182-column-33",
+                    value: "expectedAnnualTax",
+                  },
+                ],
+              },
+              {
+                id: "line-183",
+                cells: [
+                  {
+                    id: "line-183-column-11",
+                    value: "12570.00",
+                  },
+                  {
+                    id: "line-183-column-33",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-184",
+                cells: [
+                  {
+                    id: "line-184-column-11",
+                    value: "12571.00",
+                  },
+                  {
+                    id: "line-184-column-33",
+                    value: "0.19",
+                  },
+                ],
+              },
+              {
+                id: "line-185",
+                cells: [
+                  {
+                    id: "line-185-column-11",
+                    value: "16537.00",
+                  },
+                  {
+                    id: "line-185-column-33",
+                    value: "753.73",
+                  },
+                ],
+              },
+              {
+                id: "line-186",
+                cells: [
+                  {
+                    id: "line-186-column-11",
+                    value: "16538.00",
+                  },
+                  {
+                    id: "line-186-column-33",
+                    value: "753.93",
+                  },
+                ],
+              },
+              {
+                id: "line-187",
+                cells: [
+                  {
+                    id: "line-187-column-11",
+                    value: "29526.00",
+                  },
+                  {
+                    id: "line-187-column-33",
+                    value: "3351.53",
+                  },
+                ],
+              },
+              {
+                id: "line-188",
+                cells: [
+                  {
+                    id: "line-188-column-11",
+                    value: "29527.00",
+                  },
+                  {
+                    id: "line-188-column-33",
+                    value: "3351.74",
+                  },
+                ],
+              },
+              {
+                id: "line-189",
+                cells: [
+                  {
+                    id: "line-189-column-11",
+                    value: "43662.00",
+                  },
+                  {
+                    id: "line-189-column-33",
+                    value: "6320.09",
+                  },
+                ],
+              },
+              {
+                id: "line-190",
+                cells: [
+                  {
+                    id: "line-190-column-11",
+                    value: "43663.00",
+                  },
+                  {
+                    id: "line-190-column-33",
+                    value: "6320.51",
+                  },
+                ],
+              },
+              {
+                id: "line-191",
+                cells: [
+                  {
+                    id: "line-191-column-11",
+                    value: "75000.00",
+                  },
+                  {
+                    id: "line-191-column-33",
+                    value: "19482.05",
+                  },
+                ],
+              },
+              {
+                id: "line-192",
+                cells: [
+                  {
+                    id: "line-192-column-11",
+                    value: "75001.00",
+                  },
+                  {
+                    id: "line-192-column-33",
+                    value: "19482.50",
+                  },
+                ],
+              },
+              {
+                id: "line-193",
+                cells: [
+                  {
+                    id: "line-193-column-11",
+                    value: "100000.00",
+                  },
+                  {
+                    id: "line-193-column-33",
+                    value: "30732.05",
+                  },
+                ],
+              },
+              {
+                id: "line-194",
+                cells: [
+                  {
+                    id: "line-194-column-11",
+                    value: "100002.00",
+                  },
+                  {
+                    id: "line-194-column-33",
+                    value: "30733.40",
+                  },
+                ],
+              },
+              {
+                id: "line-195",
+                cells: [
+                  {
+                    id: "line-195-column-11",
+                    value: "125140.00",
+                  },
+                  {
+                    id: "line-195-column-33",
+                    value: "47701.55",
+                  },
+                ],
+              },
+              {
+                id: "line-196",
+                cells: [
+                  {
+                    id: "line-196-column-11",
+                    value: "125141.00",
+                  },
+                  {
+                    id: "line-196-column-33",
+                    value: "47702.03",
+                  },
+                ],
+              },
+              {
+                id: "line-197",
+                cells: [
+                  {
+                    id: "line-197-column-11",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-197-column-33",
+                    value: "50034.35",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-202",
+        keyword: "Scenario Outline",
+        name: "Include each regular taxable retirement income source",
+        description: "",
+        tags: ["@taxable-sources"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-203",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-204",
+            keyword: "And",
+            text: "the personal allowance is 0.00",
+          },
+          {
+            id: "line-205",
+            keyword: "And",
+            text: "the basic rate band is 50000.00",
+          },
+          {
+            id: "line-206",
+            keyword: "And",
+            text: "monthly <incomeSource> income is 1000.00",
+          },
+          {
+            id: "line-207",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-208",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 1000.00",
+          },
+          {
+            id: "line-209",
+            keyword: "And",
+            text: "the monthly Income Tax should be 200.00",
+          },
+        ],
+        examples: [
+          {
+            id: "line-211",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-212",
+                cells: [
+                  {
+                    id: "line-212-column-11",
+                    value: "incomeSource",
+                  },
+                ],
+              },
+              {
+                id: "line-213",
+                cells: [
+                  {
+                    id: "line-213-column-11",
+                    value: '"Alpha pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-214",
+                cells: [
+                  {
+                    id: "line-214-column-11",
+                    value: '"classic pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-215",
+                cells: [
+                  {
+                    id: "line-215-column-11",
+                    value: '"classic plus pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-216",
+                cells: [
+                  {
+                    id: "line-216-column-11",
+                    value: '"nuvos pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-217",
+                cells: [
+                  {
+                    id: "line-217-column-11",
+                    value: '"Premium pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-218",
+                cells: [
+                  {
+                    id: "line-218-column-11",
+                    value: '"State Pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-219",
+                cells: [
+                  {
+                    id: "line-219-column-11",
+                    value: '"taxable additional guaranteed income"',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-222",
+        keyword: "Scenario",
+        name: "Keep the selected tax-free SIPP share outside taxable income",
         description: "",
         tags: ["@sipp"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-33",
+            id: "line-223",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-34",
+            id: "line-224",
             keyword: "And",
             text: "the SIPP tax-free withdrawal share is 25.00%",
           },
           {
-            id: "line-35",
+            id: "line-225",
             keyword: "And",
             text: "monthly Alpha pension income is 2000.00",
           },
           {
-            id: "line-36",
+            id: "line-226",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-37",
+            id: "line-227",
             keyword: "And",
             text: "monthly SIPP income is 1000.00",
           },
           {
-            id: "line-38",
+            id: "line-228",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-39",
+            id: "line-229",
             keyword: "Then",
+            text: "the monthly taxable retirement income should be 3750.00",
+          },
+          {
+            id: "line-230",
+            keyword: "And",
             text: "the monthly Income Tax should be 540.50",
           },
         ],
         examples: [],
       },
       {
-        id: "line-42",
+        id: "line-233",
         keyword: "Scenario",
-        name: "Include nuvos pension in taxable retirement income",
+        name: "Keep the selected tax-free CS AVC share outside taxable income",
         description: "",
-        tags: ["@legacy-pension"],
+        tags: ["@cs-avc"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-43",
+            id: "line-234",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-44",
+            id: "line-235",
             keyword: "And",
-            text: "the personal allowance is 0.00",
+            text: "the CS AVC tax-free withdrawal share is 25.00%",
           },
           {
-            id: "line-45",
+            id: "line-236",
             keyword: "And",
-            text: "the basic rate band is 50000.00",
+            text: "monthly Alpha pension income is 2000.00",
           },
           {
-            id: "line-46",
+            id: "line-237",
             keyword: "And",
-            text: "monthly Alpha pension income is 100.00",
+            text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-47",
+            id: "line-238",
             keyword: "And",
-            text: "monthly nuvos pension income is 50.00",
+            text: "monthly CS AVC income is 1000.00",
           },
           {
-            id: "line-48",
+            id: "line-239",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-49",
+            id: "line-240",
             keyword: "Then",
-            text: "the monthly Income Tax should be 30.00",
+            text: "the monthly taxable retirement income should be 3750.00",
+          },
+          {
+            id: "line-241",
+            keyword: "And",
+            text: "the monthly Income Tax should be 540.50",
           },
         ],
         examples: [],
+      },
+      {
+        id: "line-244",
+        keyword: "Scenario",
+        name: "Treat an unconfirmed SIPP withdrawal basis as fully taxable",
+        description: "",
+        tags: ["@withdrawal-treatment", "@conservative-assumption"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-245",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-246",
+            keyword: "And",
+            text: 'the SIPP withdrawal treatment is "unknown"',
+          },
+          {
+            id: "line-247",
+            keyword: "When",
+            text: "tax treatment is applied to a SIPP withdrawal of 1000.00 and a CS AVC withdrawal of 0.00",
+          },
+          {
+            id: "line-248",
+            keyword: "Then",
+            text: "the SIPP tax-free cash should be 0.00",
+          },
+          {
+            id: "line-249",
+            keyword: "And",
+            text: "the SIPP taxable withdrawal should be 1000.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-252",
+        keyword: "Scenario",
+        name: "Share the remaining pension lump-sum allowance in funding order",
+        description: "",
+        tags: ["@lump-sum-allowance", "@shared-ledger"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-253",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-254",
+            keyword: "And",
+            text: 'the SIPP withdrawal treatment is "ufpls"',
+          },
+          {
+            id: "line-255",
+            keyword: "And",
+            text: 'the CS AVC withdrawal treatment is "ufpls"',
+          },
+          {
+            id: "line-256",
+            keyword: "And",
+            text: "the remaining pension lump-sum allowance is 300.00",
+          },
+          {
+            id: "line-257",
+            keyword: "When",
+            text: "tax treatment is applied to a SIPP withdrawal of 1000.00 and a CS AVC withdrawal of 1000.00",
+          },
+          {
+            id: "line-258",
+            keyword: "Then",
+            text: "the SIPP tax-free cash should be 250.00",
+          },
+          {
+            id: "line-259",
+            keyword: "And",
+            text: "the CS AVC tax-free cash should be 50.00",
+          },
+          {
+            id: "line-260",
+            keyword: "And",
+            text: "the CS AVC taxable withdrawal should be 950.00",
+          },
+          {
+            id: "line-261",
+            keyword: "And",
+            text: "the remaining pension lump-sum allowance should be 0.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-264",
+        keyword: "Scenario",
+        name: "Apply Scottish bands after excluding the selected tax-free SIPP share",
+        description: "",
+        tags: ["@scotland", "@sipp"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-265",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-266",
+            keyword: "And",
+            text: "the Income Tax regime is Scotland",
+          },
+          {
+            id: "line-267",
+            keyword: "And",
+            text: "the SIPP tax-free withdrawal share is 25.00%",
+          },
+          {
+            id: "line-268",
+            keyword: "And",
+            text: "monthly Alpha pension income is 2000.00",
+          },
+          {
+            id: "line-269",
+            keyword: "And",
+            text: "monthly State Pension income is 1000.00",
+          },
+          {
+            id: "line-270",
+            keyword: "And",
+            text: "monthly SIPP income is 1000.00",
+          },
+          {
+            id: "line-271",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-272",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 3750.00",
+          },
+          {
+            id: "line-273",
+            keyword: "And",
+            text: "the monthly Income Tax should be 573.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-276",
+        keyword: "Scenario",
+        name: "Combine pension sources before applying the allowance and bands",
+        description: "",
+        tags: ["@combined-income"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-277",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-278",
+            keyword: "And",
+            text: "monthly Alpha pension income is 1000.00",
+          },
+          {
+            id: "line-279",
+            keyword: "And",
+            text: 'monthly "classic pension" income is 250.00',
+          },
+          {
+            id: "line-280",
+            keyword: "And",
+            text: "monthly nuvos pension income is 250.00",
+          },
+          {
+            id: "line-281",
+            keyword: "And",
+            text: "monthly State Pension income is 500.00",
+          },
+          {
+            id: "line-282",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-283",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 2000.00",
+          },
+          {
+            id: "line-284",
+            keyword: "And",
+            text: "the monthly Income Tax should be 190.50",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-289",
+        keyword: "Scenario Outline",
+        name: "Exclude tax-free savings withdrawals from Income Tax",
+        description: "",
+        tags: ["@tax-free-sources"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-290",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-291",
+            keyword: "And",
+            text: "the personal allowance is 0.00",
+          },
+          {
+            id: "line-292",
+            keyword: "And",
+            text: "monthly <incomeSource> income is 1000.00",
+          },
+          {
+            id: "line-293",
+            keyword: "When",
+            text: "monthly Income Tax is calculated",
+          },
+          {
+            id: "line-294",
+            keyword: "Then",
+            text: "the monthly taxable retirement income should be 0.00",
+          },
+          {
+            id: "line-295",
+            keyword: "And",
+            text: "the monthly Income Tax should be 0.00",
+          },
+        ],
+        examples: [
+          {
+            id: "line-297",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-298",
+                cells: [
+                  {
+                    id: "line-298-column-11",
+                    value: "incomeSource",
+                  },
+                ],
+              },
+              {
+                id: "line-299",
+                cells: [
+                  {
+                    id: "line-299-column-11",
+                    value: '"ISA withdrawal"',
+                  },
+                ],
+              },
+              {
+                id: "line-300",
+                cells: [
+                  {
+                    id: "line-300-column-11",
+                    value: '"qualifying LISA withdrawal"',
+                  },
+                ],
+              },
+              {
+                id: "line-301",
+                cells: [
+                  {
+                    id: "line-301-column-11",
+                    value: '"non-taxable additional guaranteed income"',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -8092,68 +9560,48 @@ export const acceptanceFeatures = [
           {
             id: "line-22",
             keyword: "And",
-            text: "the journey result should <resultExpectation>",
+            text: 'the "<targetStep>" journey step should include the field "Income Tax regime"',
           },
           {
             id: "line-23",
+            keyword: "And",
+            text: "the journey result should <resultExpectation>",
+          },
+          {
+            id: "line-24",
             keyword: "And",
             text: "the journey should <bridgeFundingExpectation>",
           },
         ],
         examples: [
           {
-            id: "line-25",
+            id: "line-26",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-26",
-                cells: [
-                  {
-                    id: "line-26-column-9",
-                    value: "journey",
-                  },
-                  {
-                    id: "line-26-column-48",
-                    value: "targetStep",
-                  },
-                  {
-                    id: "line-26-column-84",
-                    value: "planningStep",
-                  },
-                  {
-                    id: "line-26-column-114",
-                    value: "resultExpectation",
-                  },
-                  {
-                    id: "line-26-column-145",
-                    value: "bridgeFundingExpectation",
-                  },
-                ],
-              },
-              {
                 id: "line-27",
                 cells: [
                   {
                     id: "line-27-column-9",
-                    value: "Simplified retirement journey",
+                    value: "journey",
                   },
                   {
                     id: "line-27-column-48",
-                    value: "What would you like to spend each month?",
+                    value: "targetStep",
                   },
                   {
-                    id: "line-27-column-91",
-                    value: "Do you have any other Civil Service pensions?",
+                    id: "line-27-column-84",
+                    value: "planningStep",
                   },
                   {
-                    id: "line-27-column-139",
-                    value: "use the shared bridge answer",
+                    id: "line-27-column-114",
+                    value: "resultExpectation",
                   },
                   {
-                    id: "line-27-column-170",
-                    value: "hide bridge funding details by default",
+                    id: "line-27-column-145",
+                    value: "bridgeFundingExpectation",
                   },
                 ],
               },
@@ -8162,22 +9610,47 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-28-column-9",
-                    value: "Work out what I need to retire early",
+                    value: "Simplified retirement journey",
                   },
                   {
                     id: "line-28-column-48",
+                    value: "What would you like to spend each month?",
+                  },
+                  {
+                    id: "line-28-column-91",
+                    value: "Do you have any other Civil Service pensions?",
+                  },
+                  {
+                    id: "line-28-column-139",
+                    value: "use the shared bridge answer",
+                  },
+                  {
+                    id: "line-28-column-170",
+                    value: "hide bridge funding details by default",
+                  },
+                ],
+              },
+              {
+                id: "line-29",
+                cells: [
+                  {
+                    id: "line-29-column-9",
+                    value: "Work out what I need to retire early",
+                  },
+                  {
+                    id: "line-29-column-48",
                     value: "Your retirement target",
                   },
                   {
-                    id: "line-28-column-84",
+                    id: "line-29-column-84",
                     value: "Your bridging pots",
                   },
                   {
-                    id: "line-28-column-114",
+                    id: "line-29-column-114",
                     value: "show the projection table",
                   },
                   {
-                    id: "line-28-column-145",
+                    id: "line-29-column-145",
                     value: "show bridge funding details by default",
                   },
                 ],
@@ -8187,7 +9660,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-31",
+        id: "line-32",
         keyword: "Scenario",
         name: "Start the simplified journey with personal details",
         description: "",
@@ -8196,58 +9669,67 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-32",
+            id: "line-33",
             keyword: "When",
             text: 'the "Simplified retirement journey" journey is loaded',
           },
           {
-            id: "line-33",
+            id: "line-34",
             keyword: "Then",
             text: 'the first journey step should be titled "A little about you"',
           },
           {
-            id: "line-34",
+            id: "line-35",
             keyword: "And",
             text: 'the journey should not include a step titled "Alpha pension: the basics"',
           },
           {
-            id: "line-35",
+            id: "line-36",
             keyword: "And",
             text: 'the journey should include a step titled "What would you like to spend each month?"',
           },
           {
-            id: "line-36",
+            id: "line-37",
             keyword: "And",
             text: 'the "What would you like to spend each month?" journey step should contain these fields:',
             table: [
-              {
-                id: "line-37",
-                cells: [
-                  {
-                    id: "line-37-column-9",
-                    value: "field",
-                  },
-                ],
-              },
               {
                 id: "line-38",
                 cells: [
                   {
                     id: "line-38-column-9",
+                    value: "field",
+                  },
+                ],
+              },
+              {
+                id: "line-39",
+                cells: [
+                  {
+                    id: "line-39-column-9",
                     value:
                       "How much would you like available to spend each month after tax?",
+                  },
+                ],
+              },
+              {
+                id: "line-40",
+                cells: [
+                  {
+                    id: "line-40-column-9",
+                    value: "Income Tax regime",
                   },
                 ],
               },
             ],
           },
           {
-            id: "line-39",
+            id: "line-41",
             keyword: "And",
             text: 'the "What would you like to spend each month?" journey step should link to the Retirement Living Standards',
           },
           {
-            id: "line-40",
+            id: "line-42",
             keyword: "And",
             text: 'the "What would you like to spend each month?" journey step should place its support link beside the field',
           },
@@ -8255,7 +9737,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-43",
+        id: "line-45",
         keyword: "Scenario",
         name: "Ask when the member would like to retire",
         description: "",
@@ -8264,34 +9746,34 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-44",
+            id: "line-46",
             keyword: "When",
             text: 'the "Simplified retirement journey" journey is loaded',
           },
           {
-            id: "line-45",
+            id: "line-47",
             keyword: "Then",
             text: 'the journey should include a step titled "What age would you like to retire?"',
           },
           {
-            id: "line-46",
+            id: "line-48",
             keyword: "And",
             text: 'the "What age would you like to retire?" journey step should contain these fields:',
             table: [
               {
-                id: "line-47",
+                id: "line-49",
                 cells: [
                   {
-                    id: "line-47-column-9",
+                    id: "line-49-column-9",
                     value: "field",
                   },
                 ],
               },
               {
-                id: "line-48",
+                id: "line-50",
                 cells: [
                   {
-                    id: "line-48-column-9",
+                    id: "line-50-column-9",
                     value: "How old would you like to be when you retire?",
                   },
                 ],
@@ -8299,12 +9781,12 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-49",
+            id: "line-51",
             keyword: "And",
             text: 'the "What would you like to spend each month?" journey step should appear before the "What age would you like to retire?" journey step',
           },
           {
-            id: "line-50",
+            id: "line-52",
             keyword: "And",
             text: 'the "What age would you like to retire?" journey step should appear before the "Add your Alpha pension details" journey step',
           },
@@ -8312,7 +9794,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-53",
+        id: "line-55",
         keyword: "Scenario",
         name: "Explain other Civil Service pensions while keeping Alpha included",
         description: "",
@@ -8321,49 +9803,31 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-54",
+            id: "line-56",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-55",
+            id: "line-57",
             keyword: "When",
             text: 'the "Simplified retirement journey" journey is loaded',
           },
           {
-            id: "line-56",
+            id: "line-58",
             keyword: "Then",
             text: "the simplified pension choices should not offer Alpha as an optional pension",
           },
           {
-            id: "line-57",
+            id: "line-59",
             keyword: "And",
             text: "the simplified pension choices should explain:",
             table: [
-              {
-                id: "line-58",
-                cells: [
-                  {
-                    id: "line-58-column-9",
-                    value: "choice",
-                  },
-                ],
-              },
-              {
-                id: "line-59",
-                cells: [
-                  {
-                    id: "line-59-column-9",
-                    value: "classic pension",
-                  },
-                ],
-              },
               {
                 id: "line-60",
                 cells: [
                   {
                     id: "line-60-column-9",
-                    value: "classic plus pension",
+                    value: "choice",
                   },
                 ],
               },
@@ -8372,7 +9836,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-61-column-9",
-                    value: "nuvos pension",
+                    value: "classic pension",
                   },
                 ],
               },
@@ -8381,7 +9845,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-62-column-9",
-                    value: "premium pension",
+                    value: "classic plus pension",
                   },
                 ],
               },
@@ -8390,6 +9854,24 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-63-column-9",
+                    value: "nuvos pension",
+                  },
+                ],
+              },
+              {
+                id: "line-64",
+                cells: [
+                  {
+                    id: "line-64-column-9",
+                    value: "premium pension",
+                  },
+                ],
+              },
+              {
+                id: "line-65",
+                cells: [
+                  {
+                    id: "line-65-column-9",
                     value: "Civil Service AVC savings",
                   },
                 ],
@@ -8400,7 +9882,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-66",
+        id: "line-68",
         keyword: "Scenario",
         name: "Guide users to enter figures from their Alpha pension statement",
         description: "",
@@ -8409,44 +9891,26 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-67",
+            id: "line-69",
             keyword: "When",
             text: 'the "Simplified retirement journey" journey is loaded',
           },
           {
-            id: "line-68",
+            id: "line-70",
             keyword: "Then",
             text: 'the journey should include a step titled "Add your Alpha pension details"',
           },
           {
-            id: "line-69",
+            id: "line-71",
             keyword: "And",
             text: 'the "Add your Alpha pension details" journey step should contain these fields:',
             table: [
-              {
-                id: "line-70",
-                cells: [
-                  {
-                    id: "line-70-column-9",
-                    value: "field",
-                  },
-                ],
-              },
-              {
-                id: "line-71",
-                cells: [
-                  {
-                    id: "line-71-column-9",
-                    value: "What year is your latest pension statement?",
-                  },
-                ],
-              },
               {
                 id: "line-72",
                 cells: [
                   {
                     id: "line-72-column-9",
-                    value: "Yearly Alpha pension built up so far (£)",
+                    value: "field",
                   },
                 ],
               },
@@ -8455,6 +9919,24 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-73-column-9",
+                    value: "What year is your latest pension statement?",
+                  },
+                ],
+              },
+              {
+                id: "line-74",
+                cells: [
+                  {
+                    id: "line-74-column-9",
+                    value: "Yearly Alpha pension built up so far (£)",
+                  },
+                ],
+              },
+              {
+                id: "line-75",
+                cells: [
+                  {
+                    id: "line-75-column-9",
                     value: "Yearly pay used to build your Alpha pension (£)",
                   },
                 ],
@@ -8462,17 +9944,17 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-74",
+            id: "line-76",
             keyword: "And",
             text: 'the "Add your Alpha pension details" journey step should link to Annual Benefit Statement help',
           },
           {
-            id: "line-75",
+            id: "line-77",
             keyword: "And",
             text: 'the "Add your Alpha pension details" journey step should appear before the "Do you have any other Civil Service pensions?" journey step',
           },
           {
-            id: "line-76",
+            id: "line-78",
             keyword: "And",
             text: 'the "Do you have any other Civil Service pensions?" journey step should appear before the "Additional guaranteed income" journey step',
           },
@@ -8480,7 +9962,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-79",
+        id: "line-81",
         keyword: "Scenario",
         name: "Do not assume pensionable earnings before the member enters them",
         description: "",
@@ -8489,12 +9971,12 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-80",
+            id: "line-82",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-81",
+            id: "line-83",
             keyword: "Then",
             text: "pensionable earnings should not have a pre-filled amount",
           },
@@ -8502,7 +9984,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-84",
+        id: "line-86",
         keyword: "Scenario",
         name: "Compare a simple spending target with take-home pension income",
         description: "",
@@ -8511,32 +9993,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-85",
+            id: "line-87",
             keyword: "Given",
             text: "a retirement spending target of 2000.00 per month after estimated tax",
           },
           {
-            id: "line-86",
+            id: "line-88",
             keyword: "And",
             text: "projected taxable pension income of 25000.00 per year before tax",
           },
           {
-            id: "line-87",
+            id: "line-89",
             keyword: "When",
             text: "the retirement outcome is assessed",
           },
           {
-            id: "line-88",
+            id: "line-90",
             keyword: "Then",
             text: "the gross pension income should exceed the spending target",
           },
           {
-            id: "line-89",
+            id: "line-91",
             keyword: "But",
             text: "the estimated take-home pension income should be below the spending target",
           },
           {
-            id: "line-90",
+            id: "line-92",
             keyword: "And",
             text: "the scenario should report a shortfall against the spending target",
           },
@@ -8544,7 +10026,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-93",
+        id: "line-95",
         keyword: "Scenario",
         name: "Do not present an assumed full State Pension as confirmed",
         description: "",
@@ -8553,57 +10035,57 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-94",
+            id: "line-96",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-95",
+            id: "line-97",
             keyword: "When",
             text: 'the "Simplified retirement journey" journey is loaded',
           },
           {
-            id: "line-96",
+            id: "line-98",
             keyword: "Then",
             text: 'the journey should include a step titled "Do you know your State Pension forecast?"',
           },
           {
-            id: "line-97",
+            id: "line-99",
             keyword: "And",
             text: 'the "Do you know your State Pension forecast?" journey step should use a yes or no question',
           },
           {
-            id: "line-98",
+            id: "line-100",
             keyword: "And",
             text: 'the "Do you know your State Pension forecast?" journey step should link to the personalised State Pension forecast',
           },
           {
-            id: "line-99",
+            id: "line-101",
             keyword: "And",
             text: 'the "Do you know your State Pension forecast?" journey step should appear before the "Do you have any other Civil Service pensions?" journey step',
           },
           {
-            id: "line-100",
+            id: "line-102",
             keyword: "Given",
             text: "an unconfirmed full State Pension assumption",
           },
           {
-            id: "line-101",
+            id: "line-103",
             keyword: "And",
             text: "the assumed State Pension is enough to meet the retirement target",
           },
           {
-            id: "line-102",
+            id: "line-104",
             keyword: "When",
             text: "the retirement outcome is assessed",
           },
           {
-            id: "line-103",
+            id: "line-105",
             keyword: "Then",
             text: 'the retirement outcome should be labelled "Needs checking"',
           },
           {
-            id: "line-104",
+            id: "line-106",
             keyword: "And",
             text: "the retirement outcome should explain that the State Pension is unconfirmed",
           },
@@ -8611,7 +10093,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-107",
+        id: "line-109",
         keyword: "Scenario",
         name: "Use the retirement target to estimate Added Pension after the basic projection",
         description: "",
@@ -8620,32 +10102,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-108",
+            id: "line-110",
             keyword: "When",
             text: 'the "Simplified retirement journey" journey is loaded',
           },
           {
-            id: "line-109",
+            id: "line-111",
             keyword: "Then",
             text: 'the journey should include a step titled "Could Added Pension close the gap?"',
           },
           {
-            id: "line-110",
+            id: "line-112",
             keyword: "And",
             text: 'the "Could Added Pension close the gap?" journey step should use a yes or no question',
           },
           {
-            id: "line-111",
+            id: "line-113",
             keyword: "And",
             text: 'the "Additional guaranteed income" journey step should appear before the "Could Added Pension close the gap?" journey step',
           },
           {
-            id: "line-112",
+            id: "line-114",
             keyword: "And",
             text: 'the journey should include a step titled "Do you have an Alpha EPA?"',
           },
           {
-            id: "line-113",
+            id: "line-115",
             keyword: "And",
             text: 'the "Do you have an Alpha EPA?" journey step should use a yes or no question',
           },
@@ -8653,7 +10135,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-116",
+        id: "line-118",
         keyword: "Scenario",
         name: "Separate the expert retirement target from personal details",
         description: "",
@@ -8662,44 +10144,26 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-117",
+            id: "line-119",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-118",
+            id: "line-120",
             keyword: "When",
             text: 'the "Expert journey" journey is loaded',
           },
           {
-            id: "line-119",
+            id: "line-121",
             keyword: "Then",
             text: "the default visible journey steps should be:",
             table: [
-              {
-                id: "line-120",
-                cells: [
-                  {
-                    id: "line-120-column-9",
-                    value: "title",
-                  },
-                ],
-              },
-              {
-                id: "line-121",
-                cells: [
-                  {
-                    id: "line-121-column-9",
-                    value: "Optional sections",
-                  },
-                ],
-              },
               {
                 id: "line-122",
                 cells: [
                   {
                     id: "line-122-column-9",
-                    value: "Personal details",
+                    value: "title",
                   },
                 ],
               },
@@ -8708,7 +10172,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-123-column-9",
-                    value: "Retirement income target",
+                    value: "Optional sections",
                   },
                 ],
               },
@@ -8717,7 +10181,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-124-column-9",
-                    value: "Inflation and projection basis",
+                    value: "Personal details",
                   },
                 ],
               },
@@ -8726,7 +10190,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-125-column-9",
-                    value: "State pension details",
+                    value: "Retirement income target",
                   },
                 ],
               },
@@ -8735,7 +10199,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-126-column-9",
-                    value: "Alpha pension details",
+                    value: "Inflation and projection basis",
                   },
                 ],
               },
@@ -8744,7 +10208,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-127-column-9",
-                    value: "SIPP details",
+                    value: "State pension details",
                   },
                 ],
               },
@@ -8753,7 +10217,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-128-column-9",
-                    value: "ISA details",
+                    value: "Alpha pension details",
                   },
                 ],
               },
@@ -8762,23 +10226,25 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-129-column-9",
-                    value: "Your results",
+                    value: "SIPP details",
                   },
                 ],
               },
-            ],
-          },
-          {
-            id: "line-130",
-            keyword: "And",
-            text: 'the "Personal details" journey step should contain these fields:',
-            table: [
+              {
+                id: "line-130",
+                cells: [
+                  {
+                    id: "line-130-column-9",
+                    value: "ISA details",
+                  },
+                ],
+              },
               {
                 id: "line-131",
                 cells: [
                   {
                     id: "line-131-column-9",
-                    value: "field",
+                    value: "Tax assumptions",
                   },
                 ],
               },
@@ -8787,32 +10253,32 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-132-column-9",
-                    value: "Your Birth Month and Year",
-                  },
-                ],
-              },
-              {
-                id: "line-133",
-                cells: [
-                  {
-                    id: "line-133-column-9",
-                    value: "Life Expectancy (Age)",
+                    value: "Your results",
                   },
                 ],
               },
             ],
           },
           {
-            id: "line-134",
+            id: "line-133",
             keyword: "And",
-            text: 'the "Retirement income target" journey step should contain these fields:',
+            text: 'the "Personal details" journey step should contain these fields:',
             table: [
+              {
+                id: "line-134",
+                cells: [
+                  {
+                    id: "line-134-column-9",
+                    value: "field",
+                  },
+                ],
+              },
               {
                 id: "line-135",
                 cells: [
                   {
                     id: "line-135-column-9",
-                    value: "field",
+                    value: "Your Birth Month and Year",
                   },
                 ],
               },
@@ -8821,35 +10287,80 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-136-column-9",
-                    value: "Retirement Living Standards target (£ per year)",
+                    value: "Life Expectancy (Age)",
                   },
                 ],
               },
-              {
-                id: "line-137",
-                cells: [
-                  {
-                    id: "line-137-column-9",
-                    value: "Target retirement age",
-                  },
-                ],
-              },
+            ],
+          },
+          {
+            id: "line-137",
+            keyword: "And",
+            text: 'the "Retirement income target" journey step should contain these fields:',
+            table: [
               {
                 id: "line-138",
                 cells: [
                   {
                     id: "line-138-column-9",
+                    value: "field",
+                  },
+                ],
+              },
+              {
+                id: "line-139",
+                cells: [
+                  {
+                    id: "line-139-column-9",
+                    value: "Retirement income target (£ per year)",
+                  },
+                ],
+              },
+              {
+                id: "line-140",
+                cells: [
+                  {
+                    id: "line-140-column-9",
+                    value: "Target retirement age",
+                  },
+                ],
+              },
+              {
+                id: "line-141",
+                cells: [
+                  {
+                    id: "line-141-column-9",
                     value: "What does your retirement income target mean?",
                   },
                 ],
               },
             ],
           },
+          {
+            id: "line-142",
+            keyword: "And",
+            text: 'the "SIPP details" journey step should include the field "SIPP withdrawal tax treatment"',
+          },
+          {
+            id: "line-143",
+            keyword: "And",
+            text: 'the "SIPP details" journey step should include the field "SIPP tax-free withdrawal share (%)"',
+          },
+          {
+            id: "line-144",
+            keyword: "But",
+            text: 'the "Tax assumptions" journey step should not include the field "SIPP withdrawal tax treatment"',
+          },
+          {
+            id: "line-145",
+            keyword: "And",
+            text: 'the "Tax assumptions" journey step should not include the field "SIPP tax-free withdrawal share (%)"',
+          },
         ],
         examples: [],
       },
       {
-        id: "line-141",
+        id: "line-148",
         keyword: "Scenario",
         name: "Exclude Alpha pension from an expert scenario",
         description: "",
@@ -8858,27 +10369,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-142",
+            id: "line-149",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-143",
+            id: "line-150",
             keyword: "When",
             text: 'the "Expert journey" journey is loaded',
           },
           {
-            id: "line-144",
+            id: "line-151",
             keyword: "Then",
             text: "the expert optional sections should allow Alpha pension to be disabled",
           },
           {
-            id: "line-145",
+            id: "line-152",
             keyword: "When",
             text: "Alpha pension is disabled",
           },
           {
-            id: "line-146",
+            id: "line-153",
             keyword: "Then",
             text: 'the "Alpha pension details" journey step should not be visible',
           },
@@ -8886,38 +10397,167 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-149",
+        id: "line-156",
         keyword: "Scenario",
-        name: "Bridge journey enables bridge pots and disables tax by default",
+        name: "Bridge journey enables bridge pots and Income Tax by default",
         description: "",
         tags: ["@defaults"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-150",
+            id: "line-157",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-151",
+            id: "line-158",
             keyword: "When",
             text: "bridge journey defaults are applied",
           },
           {
-            id: "line-152",
+            id: "line-159",
             keyword: "Then",
             text: "State Pension, ISA, LISA and SIPP should be included",
           },
           {
-            id: "line-153",
+            id: "line-160",
             keyword: "And",
-            text: "Income Tax modelling should be off",
+            text: "Income Tax modelling should be on",
           },
           {
-            id: "line-154",
+            id: "line-161",
             keyword: "And",
             text: "ISA, LISA and SIPP withdrawals should use the use-by-age strategy",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-164",
+        keyword: "Scenario",
+        name: "Exclude disabled income sources from the results chart key",
+        description: "",
+        tags: ["@results-chart", "@chart-key"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-165",
+            keyword: "Given",
+            text: "the results chart has these income sources:",
+            table: [
+              {
+                id: "line-166",
+                cells: [
+                  {
+                    id: "line-166-column-9",
+                    value: "source",
+                  },
+                  {
+                    id: "line-166-column-31",
+                    value: "enabled",
+                  },
+                  {
+                    id: "line-166-column-41",
+                    value: "active",
+                  },
+                ],
+              },
+              {
+                id: "line-167",
+                cells: [
+                  {
+                    id: "line-167-column-9",
+                    value: "Alpha pension",
+                  },
+                  {
+                    id: "line-167-column-31",
+                    value: "yes",
+                  },
+                  {
+                    id: "line-167-column-41",
+                    value: "yes",
+                  },
+                ],
+              },
+              {
+                id: "line-168",
+                cells: [
+                  {
+                    id: "line-168-column-9",
+                    value: "Civil Service AVC",
+                  },
+                  {
+                    id: "line-168-column-31",
+                    value: "no",
+                  },
+                  {
+                    id: "line-168-column-41",
+                    value: "no",
+                  },
+                ],
+              },
+              {
+                id: "line-169",
+                cells: [
+                  {
+                    id: "line-169-column-9",
+                    value: "LISA",
+                  },
+                  {
+                    id: "line-169-column-31",
+                    value: "no",
+                  },
+                  {
+                    id: "line-169-column-41",
+                    value: "no",
+                  },
+                ],
+              },
+              {
+                id: "line-170",
+                cells: [
+                  {
+                    id: "line-170-column-9",
+                    value: "SIPP",
+                  },
+                  {
+                    id: "line-170-column-31",
+                    value: "yes",
+                  },
+                  {
+                    id: "line-170-column-41",
+                    value: "no",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-171",
+            keyword: "When",
+            text: "the chart key is prepared without hiding inactive enabled sources",
+          },
+          {
+            id: "line-172",
+            keyword: "Then",
+            text: 'the chart key should include "Alpha pension"',
+          },
+          {
+            id: "line-173",
+            keyword: "And",
+            text: 'the chart key should include "SIPP"',
+          },
+          {
+            id: "line-174",
+            keyword: "But",
+            text: 'the chart key should not include "Civil Service AVC"',
+          },
+          {
+            id: "line-175",
+            keyword: "And",
+            text: 'the chart key should not include "LISA"',
           },
         ],
         examples: [],

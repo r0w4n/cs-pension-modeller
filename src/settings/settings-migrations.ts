@@ -187,7 +187,7 @@ export function migrateFromV8ToV9(data: unknown) {
 
   return {
     ...data,
-    retirementIncomeTargetBasis: "gross",
+    taxRegime: "rest_of_uk",
   };
 }
 
@@ -198,7 +198,47 @@ export function migrateFromV9ToV10(data: unknown) {
 
   return {
     ...data,
-    statePensionForecastConfirmed: false,
+    taxationEnabled:
+      typeof data.taxationEnabled === "boolean" ? data.taxationEnabled : false,
+  };
+}
+
+export function migrateFromV10ToV11(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    ...data,
+    taxSippWithdrawalTreatment: "custom",
+    taxCsAvcWithdrawalTreatment: "custom",
+    taxTrackLumpSumAllowance: false,
+    taxLumpSumAllowance: 268_275,
+    taxLumpSumAllowanceUsed: 0,
+  };
+}
+
+export function migrateFromV11ToV12(data: unknown) {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  const retirementIncomeTargetBasis =
+    data.retirementIncomeTargetBasis === "gross" ||
+    data.retirementIncomeTargetBasis === "after_tax"
+      ? data.retirementIncomeTargetBasis
+      : data.taxationEnabled === true
+        ? "after_tax"
+        : "gross";
+
+  return {
+    ...data,
+    taxRegime: data.taxRegime === "scotland" ? "scotland" : "rest_of_uk",
+    retirementIncomeTargetBasis,
+    statePensionForecastConfirmed:
+      typeof data.statePensionForecastConfirmed === "boolean"
+        ? data.statePensionForecastConfirmed
+        : false,
   };
 }
 
@@ -212,6 +252,8 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   7: migrateFromV7ToV8,
   8: migrateFromV8ToV9,
   9: migrateFromV9ToV10,
+  10: migrateFromV10ToV11,
+  11: migrateFromV11ToV12,
 };
 
 export function migrateSettingsToLatest(

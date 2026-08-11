@@ -10,6 +10,7 @@ import {
   migrateFromV9ToV10,
   migrateFromV10ToV11,
   migrateFromV11ToV12,
+  migrateFromV12ToV13,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -207,6 +208,63 @@ describe("settings-migrations", () => {
     });
   });
 
+  it("migrates the former single EPA window to one dated EPA period", () => {
+    expect(
+      migrateFromV12ToV13({
+        alphaEpaEnabled: true,
+        alphaEpaYearsBeforeNpa: 2,
+        alphaEpaStartDate: "2026-04-01",
+        alphaEpaEndDate: "2028-03-31",
+      })
+    ).toEqual({
+      alphaEpaEnabled: true,
+      alphaEpaYearsBeforeNpa: 2,
+      alphaEpaStartDate: "2026-04-01",
+      alphaEpaEndDate: "2028-03-31",
+      taxRegime: "rest_of_uk",
+      retirementIncomeTargetBasis: "gross",
+      statePensionForecastConfirmed: false,
+      alphaEpaPeriods: [
+        {
+          id: "migrated-epa-period",
+          yearsBeforeNpa: 2,
+          startDate: "2026-04-01",
+          endDate: "2028-03-31",
+        },
+      ],
+    });
+
+    expect(
+      migrateFromV12ToV13({
+        taxationEnabled: true,
+        taxRegime: "scotland",
+        retirementIncomeTargetBasis: "after_tax",
+        statePensionForecastConfirmed: true,
+        alphaEpaPeriods: [
+          {
+            id: "existing-period",
+            yearsBeforeNpa: 1,
+            startDate: "2029-04-01",
+            endDate: "2030-03-31",
+          },
+        ],
+      })
+    ).toEqual({
+      taxationEnabled: true,
+      taxRegime: "scotland",
+      retirementIncomeTargetBasis: "after_tax",
+      statePensionForecastConfirmed: true,
+      alphaEpaPeriods: [
+        {
+          id: "existing-period",
+          yearsBeforeNpa: 1,
+          startDate: "2029-04-01",
+          endDate: "2030-03-31",
+        },
+      ],
+    });
+  });
+
   it("migrates legacy data to the latest schema", () => {
     expect(
       migrateSettingsToLatest({
@@ -252,6 +310,7 @@ describe("settings-migrations", () => {
       taxLumpSumAllowance: 268_275,
       taxLumpSumAllowanceUsed: 0,
       statePensionForecastConfirmed: false,
+      alphaEpaPeriods: [],
     });
   });
 

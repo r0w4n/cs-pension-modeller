@@ -13,6 +13,8 @@ export type {
   AddedPensionLumpSumCadence,
   AddedPensionFactorType,
   AddedPensionLumpSum,
+  AlphaEpaPeriod,
+  AlphaEpaYearsBeforeNpa,
   AdditionalGuaranteedIncome,
   AdditionalGuaranteedIncomeIndexation,
   FlexibleFundAccountId,
@@ -95,6 +97,10 @@ export {
   resolveAlphaAbsDate,
   getLatestAlphaAddedPensionPurchaseDate,
   createDefaultAddedPensionLumpSum,
+  createDefaultAlphaEpaPeriod,
+  getAlphaEpaPeriodForDate,
+  getAlphaEpaPeriods,
+  isAlphaEpaOptionAvailable,
   getAlphaEpaDate,
 } from "./settings/settings-domains/alpha-pension";
 

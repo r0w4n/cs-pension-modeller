@@ -85,6 +85,7 @@ export const defaultSettings: PensionSettings = {
   alphaPayRisePercent: 0,
   alphaPensionDrawAge: personalDetailsDefaults.requirementAge,
   alphaEpaEnabled: false,
+  alphaEpaPeriods: [],
   alphaEpaYearsBeforeNpa: 3,
   alphaEpaStartDate: "2026-04-01",
   alphaEpaEndDate: "2047-03-31",

@@ -18,6 +18,8 @@ import {
   calculateMinimumPensionAccessAge,
   defaultSettings,
   getAlphaEpaDate,
+  isAlphaEpaOptionAvailable,
+  type AlphaEpaPeriod,
 } from "../../src/settings";
 import { validateAlphaPensionRules } from "../../src/settings/settings-domains/alpha-pension";
 import { calculateNormalPensionAge } from "../../src/settings/settings-shared/state";
@@ -33,6 +35,7 @@ import {
   calculateMonthlyAddedPension,
   calculateMonthlyAlphaPensionGross,
   calculateMonthlyEpaAlphaAccrual,
+  calculateMonthlyEpaAlphaAccrualByOption,
   calculateMonthlyStandardAlphaAccrual,
   calculateProjectedAlphaPensionableEarnings,
   calculateStartingAlphaPensionAtStartDate,
@@ -81,6 +84,7 @@ class AlphaPensionWorld {
   normalPensionAge = 67;
   standardAlphaPension = 0;
   epaAlphaPension = 0;
+  epaAlphaPensions: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
   epaOption: "NPA-1" | "NPA-2" | "NPA-3" = "NPA-1";
   addedPensionPurchase:
     | {
@@ -140,6 +144,9 @@ class AlphaPensionWorld {
   selectedAddedPensionFactor = 0;
   monthlyStandardAccrual = 0;
   monthlyEpaAccrual = 0;
+  monthlyEpaAccruals: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+  epaPeriods: AlphaEpaPeriod[] = [];
+  epaPeriodValidationIssues: { message: string }[] = [];
   epaAccrualStartDate = "";
   epaAccrualEndDate = "";
   epaPayableDate = "";
@@ -865,24 +872,9 @@ When(
     this.epaOption = option;
     const yearsBeforeNpa = Number(option.replace("NPA-", ""));
     const payableAge = this.normalPensionAge - yearsBeforeNpa;
-    const settings = {
-      ...defaultSettings,
-      showAlpha: true,
-      alphaEpaEnabled: true,
-      alphaEpaYearsBeforeNpa: yearsBeforeNpa,
-    };
-    const issues = validateAlphaPensionRules({
-      settings,
-      lifeExpectancyDate: addYears(settings.dateOfBirth, 90),
-      alphaDrawDate: addYears(settings.dateOfBirth, payableAge),
-      alphaLeaveDate: addYears(settings.dateOfBirth, payableAge),
-      alphaAccrualStopDate: addYears(settings.dateOfBirth, payableAge),
-      alphaAbsDate: ACCEPTANCE_START_DATE,
-      alphaEpaAgeDate: addYears(settings.dateOfBirth, payableAge),
-      latestAlphaAddedPensionPurchaseDate: addYears(settings.dateOfBirth, 67),
-    });
-    const hasEpaAgeIssue = issues.some(
-      (issue) => issue.field === "alphaEpaYearsBeforeNpa"
+    const hasEpaAgeIssue = !isAlphaEpaOptionAvailable(
+      this.normalPensionAge,
+      yearsBeforeNpa as 1 | 2 | 3
     );
 
     this.epaValidation = {
@@ -926,6 +918,16 @@ Given(
 );
 
 Given(
+  "the member has EPA alpha pension portions:",
+  function (this: AlphaPensionWorld, table: DataTable) {
+    for (const row of table.hashes()) {
+      const option = Number(row.option?.replace("NPA-", "")) as 1 | 2 | 3;
+      this.epaAlphaPensions[option] = Number(row.annualPension);
+    }
+  }
+);
+
+Given(
   /^the member has selected EPA option (NPA-[123])$/,
   function (this: AlphaPensionWorld, option: "NPA-1" | "NPA-2" | "NPA-3") {
     this.epaOption = option;
@@ -952,7 +954,9 @@ function drawAllAlphaPensionAtAge(
   drawAgeMonths: number
 ) {
   const hasEpaPension =
-    world.standardAlphaPension > 0 || world.epaAlphaPension > 0;
+    world.standardAlphaPension > 0 ||
+    world.epaAlphaPension > 0 ||
+    Object.values(world.epaAlphaPensions).some((amount) => amount > 0);
   const yearsBeforeNpa = Number(world.epaOption.replace("NPA-", ""));
   const epaAge = world.normalPensionAge - yearsBeforeNpa;
   const drawAgeWithMonths = ageWithMonths(drawAge, drawAgeMonths);
@@ -967,17 +971,35 @@ function drawAllAlphaPensionAtAge(
         ? 1
         : getAlphaEarlyRetirementFactor(epaAge, drawAgeWithMonths);
 
+    const separateEpaComponents = ([1, 2, 3] as const)
+      .filter((option) => world.epaAlphaPensions[option] > 0)
+      .map((option) => {
+        const optionAge = world.normalPensionAge - option;
+        return {
+          component: `epaAlphaNpaMinus${option}`,
+          unreducedAnnualAmount: world.epaAlphaPensions[option],
+          paymentFactor:
+            drawAgeWithMonths >= optionAge
+              ? 1
+              : getAlphaEarlyRetirementFactor(optionAge, drawAgeWithMonths),
+        };
+      });
     world.pensionBreakdown = calculateAlphaPensionComponentBreakdown([
       {
         component: "standardAlpha",
         unreducedAnnualAmount: world.standardAlphaPension,
         paymentFactor: standardFactor,
       },
-      {
-        component: "epaAlpha",
-        unreducedAnnualAmount: world.epaAlphaPension,
-        paymentFactor: epaFactor,
-      },
+      ...(world.epaAlphaPension > 0
+        ? [
+            {
+              component: "epaAlpha",
+              unreducedAnnualAmount: world.epaAlphaPension,
+              paymentFactor: epaFactor,
+            },
+          ]
+        : []),
+      ...separateEpaComponents,
     ]);
     return;
   }
@@ -1468,6 +1490,18 @@ Given(
   }
 );
 
+Given(
+  "the member has EPA purchase periods:",
+  function (this: AlphaPensionWorld, table: DataTable) {
+    this.epaPeriods = table.hashes().map((row, index) => ({
+      id: `acceptance-epa-${index + 1}`,
+      yearsBeforeNpa: Number(row.option?.replace("NPA-", "")) as 1 | 2 | 3,
+      startDate: row.startDate ?? "",
+      endDate: row.endDate ?? "",
+    }));
+  }
+);
+
 When(
   "Alpha accrual is calculated for {word}",
   function (this: AlphaPensionWorld, rowDate: string) {
@@ -1477,6 +1511,17 @@ When(
       pensionableEarnings: this.startingSalary,
       alphaPayRisePercent: 0,
       alphaEpaEnabled: true,
+      alphaEpaPeriods:
+        this.epaPeriods.length > 0
+          ? this.epaPeriods
+          : [
+              {
+                id: "acceptance-epa-period",
+                yearsBeforeNpa: 1 as const,
+                startDate: this.epaAccrualStartDate,
+                endDate: this.epaAccrualEndDate,
+              },
+            ],
       alphaEpaStartDate: this.epaAccrualStartDate,
       alphaEpaEndDate: this.epaAccrualEndDate,
     };
@@ -1486,6 +1531,58 @@ When(
       rowDate
     );
     this.monthlyEpaAccrual = calculateMonthlyEpaAlphaAccrual(settings, rowDate);
+    this.monthlyEpaAccruals = calculateMonthlyEpaAlphaAccrualByOption(
+      settings,
+      rowDate
+    );
+  }
+);
+
+Then(
+  /^monthly EPA Alpha accrual for (NPA-[123]) should be (\d+(?:\.\d+)?)$/,
+  function (this: AlphaPensionWorld, option: string, expected: string) {
+    const yearsBeforeNpa = Number(option.replace("NPA-", "")) as 1 | 2 | 3;
+    expectMoney(this.monthlyEpaAccruals[yearsBeforeNpa], expected);
+  }
+);
+
+When(
+  "the EPA purchase periods are validated",
+  function (this: AlphaPensionWorld) {
+    const settings = {
+      ...defaultSettings,
+      showAlpha: true,
+      alphaEpaEnabled: true,
+      alphaEpaPeriods: this.epaPeriods,
+    };
+    this.epaPeriodValidationIssues = validateAlphaPensionRules({
+      settings,
+      lifeExpectancyDate: addYears(settings.dateOfBirth, 90),
+      alphaDrawDate: addYears(settings.dateOfBirth, 65),
+      alphaLeaveDate: addYears(settings.dateOfBirth, 65),
+      alphaAccrualStopDate: "2055-03-31",
+      alphaAbsDate: "2025-04-01",
+      alphaEpaAgeDate: addYears(settings.dateOfBirth, 65),
+      latestAlphaAddedPensionPurchaseDate: addYears(settings.dateOfBirth, 67),
+    }).filter((issue) => issue.field === "alphaEpaPeriods");
+  }
+);
+
+Then(
+  "the EPA purchase periods should be invalid",
+  function (this: AlphaPensionWorld) {
+    assertCondition(this.epaPeriodValidationIssues.length > 0);
+  }
+);
+
+Then(
+  "the EPA validation should explain {string}",
+  function (this: AlphaPensionWorld, expected: string) {
+    assertCondition(
+      this.epaPeriodValidationIssues.some((issue) =>
+        issue.message.includes(expected)
+      )
+    );
   }
 );
 

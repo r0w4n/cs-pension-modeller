@@ -599,6 +599,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
     alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
     alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
+    alphaEpaPeriods: defaultSettings.alphaEpaPeriods,
     alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
     alphaEpaStartDate: defaultSettings.alphaEpaStartDate,
     alphaEpaEndDate: defaultSettings.alphaEpaEndDate,
@@ -1404,31 +1405,32 @@ describe("App settings form", () => {
     });
 
     expect(noEpaAnswer).toBeChecked();
-    expect(
-      screen.queryByLabelText("How many years early does your EPA cover?")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("When did your EPA payments start?")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("When will your EPA payments stop?")
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("EPA purchase periods")).not.toBeInTheDocument();
 
     vi.mocked(createProjectionTable).mockClear();
     fireEvent.click(screen.getByRole("radio", { name: "Yes, I have an EPA" }));
 
-    expect(
-      screen.getByLabelText("How many years early does your EPA cover?")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("When did your EPA payments start?")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("When will your EPA payments stop?")
-    ).toBeInTheDocument();
+    expect(screen.getByText("EPA purchase periods")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add EPA period" }));
+    fireEvent.change(screen.getByLabelText("EPA option 1"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("EPA start date 1"), {
+      target: { value: "2026-06-01" },
+    });
+    fireEvent.change(screen.getByLabelText("EPA end date 1"), {
+      target: { value: "2027-03-31" },
+    });
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
+        alphaEpaPeriods: [
+          expect.objectContaining({
+            yearsBeforeNpa: 2,
+            startDate: "2026-06-01",
+            endDate: "2027-03-31",
+          }),
+        ],
       })
     );
     expect(
@@ -1709,18 +1711,14 @@ describe("App settings form", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
 
-    expect(
-      screen.queryByLabelText("How many years early does your EPA cover?")
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("EPA purchase periods")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Add lump sum purchase" })
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Alpha EPA/i }));
 
-    expect(
-      screen.getByLabelText("How many years early does your EPA cover?")
-    ).toBeInTheDocument();
+    expect(screen.getByText("EPA purchase periods")).toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: true,
@@ -4125,8 +4123,14 @@ describe("App settings form", () => {
       JSON.stringify({
         ...defaultSettings,
         alphaEpaEnabled: true,
-        alphaEpaStartDate: "2030-01-01",
-        alphaEpaEndDate: "2029-01-01",
+        alphaEpaPeriods: [
+          {
+            id: "invalid-epa",
+            yearsBeforeNpa: 1,
+            startDate: "2030-01-01",
+            endDate: "2029-01-01",
+          },
+        ],
       })
     );
 

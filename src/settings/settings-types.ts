@@ -41,6 +41,15 @@ export type AddedPensionLumpSum = {
   factorType?: AddedPensionFactorType;
 };
 
+export type AlphaEpaYearsBeforeNpa = 1 | 2 | 3;
+
+export type AlphaEpaPeriod = {
+  id: string;
+  yearsBeforeNpa: AlphaEpaYearsBeforeNpa;
+  startDate: string;
+  endDate: string;
+};
+
 export type SippWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type CsAvcWithdrawalStrategy = FlexibleWithdrawalStrategy;
 export type IsaWithdrawalStrategy = FlexibleWithdrawalStrategy;
@@ -123,8 +132,12 @@ export type PensionSettings = {
   alphaPayRisePercent: number;
   alphaPensionDrawAge: number;
   alphaEpaEnabled: boolean;
+  alphaEpaPeriods: AlphaEpaPeriod[];
+  /** @deprecated Retained to read and model pre-version-9 settings. */
   alphaEpaYearsBeforeNpa: number;
+  /** @deprecated Retained to read and model pre-version-9 settings. */
   alphaEpaStartDate: string;
+  /** @deprecated Retained to read and model pre-version-9 settings. */
   alphaEpaEndDate: string;
   alphaAddedPensionLumpSums: AddedPensionLumpSum[];
   classicCalculationMode: ClassicCalculationMode;

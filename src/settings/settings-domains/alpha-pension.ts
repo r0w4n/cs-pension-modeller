@@ -4,6 +4,8 @@ import {
   NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE,
   type AddedPensionFactorType,
   type AddedPensionLumpSum,
+  type AlphaEpaPeriod,
+  type AlphaEpaYearsBeforeNpa,
   type PensionSettings,
   type PensionValidationIssue,
 } from "../settings-types";
@@ -211,11 +213,104 @@ export function createDefaultAddedPensionLumpSum(
   };
 }
 
-export function getAlphaEpaDate(settings: PensionSettings) {
+function createAlphaEpaPeriodId() {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `epa-period-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function normalizeAlphaEpaYearsBeforeNpa(
+  value: unknown
+): AlphaEpaYearsBeforeNpa {
+  return value === 1 || value === 2 || value === 3 ? value : 1;
+}
+
+export function createDefaultAlphaEpaPeriod(
+  startDate = getTodayIsoDate()
+): AlphaEpaPeriod {
+  return {
+    id: createAlphaEpaPeriodId(),
+    yearsBeforeNpa: 1,
+    startDate,
+    endDate: startDate,
+  };
+}
+
+function coerceAlphaEpaPeriod(value: unknown): AlphaEpaPeriod | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const input = value as Partial<AlphaEpaPeriod>;
+  const startDate = coerceString(input.startDate) ?? getTodayIsoDate();
+
+  return {
+    id: coerceString(input.id) ?? createAlphaEpaPeriodId(),
+    yearsBeforeNpa: normalizeAlphaEpaYearsBeforeNpa(input.yearsBeforeNpa),
+    startDate,
+    endDate: coerceString(input.endDate) ?? startDate,
+  };
+}
+
+export function coerceAlphaEpaPeriods(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value
+    .map(coerceAlphaEpaPeriod)
+    .filter((period): period is AlphaEpaPeriod => period !== undefined);
+}
+
+export function normalizeAlphaEpaPeriods(value: AlphaEpaPeriod[]) {
+  return value.map((period) => {
+    const startDate = isValidIsoDate(period.startDate)
+      ? period.startDate
+      : getTodayIsoDate();
+
+    return {
+      id: period.id || createAlphaEpaPeriodId(),
+      yearsBeforeNpa: normalizeAlphaEpaYearsBeforeNpa(period.yearsBeforeNpa),
+      startDate,
+      endDate: isValidIsoDate(period.endDate) ? period.endDate : startDate,
+    } satisfies AlphaEpaPeriod;
+  });
+}
+
+export function getAlphaEpaPeriods(settings: PensionSettings) {
+  return settings.alphaEpaEnabled ? settings.alphaEpaPeriods : [];
+}
+
+export function isAlphaEpaOptionAvailable(
+  normalPensionAge: number,
+  yearsBeforeNpa: AlphaEpaYearsBeforeNpa
+) {
+  return normalPensionAge - yearsBeforeNpa >= 65;
+}
+
+export function getAlphaEpaPeriodForDate(
+  settings: PensionSettings,
+  rowDate: string
+) {
+  return getAlphaEpaPeriods(settings).find(
+    (period) => rowDate >= period.startDate && rowDate <= period.endDate
+  );
+}
+
+export function getAlphaEpaDate(
+  settings: PensionSettings,
+  yearsBeforeNpa = normalizeAlphaEpaYearsBeforeNpa(
+    settings.alphaEpaYearsBeforeNpa
+  )
+) {
   return addYearsToIsoDate(
     settings.dateOfBirth,
-    calculateNormalPensionAge(settings.dateOfBirth) -
-      settings.alphaEpaYearsBeforeNpa
+    calculateNormalPensionAge(settings.dateOfBirth) - yearsBeforeNpa
   );
 }
 
@@ -238,7 +333,6 @@ export function validateAlphaPensionRules({
   alphaLeaveDate,
   alphaAccrualStopDate,
   alphaAbsDate,
-  alphaEpaAgeDate,
 }: AlphaPensionValidationContext): PensionValidationIssue[] {
   const issues: PensionValidationIssue[] = [];
 
@@ -287,38 +381,61 @@ export function validateAlphaPensionRules({
     });
   }
 
+  const epaPeriods = getAlphaEpaPeriods(settings);
   if (
     settings.showAlpha &&
     settings.alphaEpaEnabled &&
-    settings.alphaEpaStartDate > settings.alphaEpaEndDate
+    epaPeriods.length === 0
   ) {
     issues.push({
-      field: "alphaEpaStartDate",
-      message: "EPA start date must be on or before EPA end date.",
+      field: "alphaEpaPeriods",
+      message: "Add at least one EPA purchase period or turn off EPA.",
     });
   }
+  for (const period of epaPeriods) {
+    if (period.startDate > period.endDate) {
+      issues.push({
+        field: "alphaEpaPeriods",
+        itemId: period.id,
+        message: "EPA period start date must be on or before its end date.",
+      });
+    }
 
-  if (
-    settings.showAlpha &&
-    settings.alphaEpaEnabled &&
-    alphaEpaAgeDate < addYearsToIsoDate(settings.dateOfBirth, 65)
-  ) {
-    issues.push({
-      field: "alphaEpaYearsBeforeNpa",
-      message: "EPA age cannot be earlier than age 65.",
-    });
+    const periodEpaAgeDate = getAlphaEpaDate(settings, period.yearsBeforeNpa);
+    if (periodEpaAgeDate < addYearsToIsoDate(settings.dateOfBirth, 65)) {
+      issues.push({
+        field: "alphaEpaPeriods",
+        itemId: period.id,
+        message: "EPA age cannot be earlier than age 65.",
+      });
+    }
+
+    if (
+      period.endDate < alphaAbsDate ||
+      period.startDate > alphaAccrualStopDate
+    ) {
+      issues.push({
+        field: "alphaEpaPeriods",
+        itemId: period.id,
+        message: "EPA dates must overlap the Alpha accrual period.",
+      });
+    }
   }
 
-  if (
-    settings.showAlpha &&
-    settings.alphaEpaEnabled &&
-    (settings.alphaEpaEndDate < alphaAbsDate ||
-      settings.alphaEpaStartDate > alphaAccrualStopDate)
-  ) {
-    issues.push({
-      field: "alphaEpaStartDate",
-      message: "EPA dates must overlap the Alpha accrual period.",
-    });
+  const sortedEpaPeriods = [...epaPeriods].sort((first, second) =>
+    first.startDate.localeCompare(second.startDate)
+  );
+  for (let index = 1; index < sortedEpaPeriods.length; index += 1) {
+    const previous = sortedEpaPeriods[index - 1];
+    const current = sortedEpaPeriods[index];
+    if (previous && current && current.startDate <= previous.endDate) {
+      issues.push({
+        field: "alphaEpaPeriods",
+        itemId: current.id,
+        message:
+          "EPA periods cannot overlap because only one option can be bought at a time.",
+      });
+    }
   }
 
   return issues;

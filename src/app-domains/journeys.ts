@@ -263,9 +263,6 @@ export const JOURNEY_DEFINITIONS = [
           "pensionableEarnings",
           "alphaAddedPensionMonthly",
           "alphaEpaEnabled",
-          "alphaEpaYearsBeforeNpa",
-          "alphaEpaStartDate",
-          "alphaEpaEndDate",
         ],
         visible: (settings) => settings.showAlpha,
       },
@@ -564,23 +561,8 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "An Effective Pension Age (EPA) is an optional extra you pay for so that part of your Alpha pension can normally be taken one, two or three years earlier without a reduction. If you do not recognise EPA from your pension statement or payslip, choose No.",
         kind: "fields",
-        fieldIds: [
-          "alphaEpaYearsBeforeNpa",
-          "alphaEpaStartDate",
-          "alphaEpaEndDate",
-        ],
-        fieldLabels: {
-          alphaEpaYearsBeforeNpa: "How many years early does your EPA cover?",
-          alphaEpaStartDate: "When did your EPA payments start?",
-          alphaEpaEndDate: "When will your EPA payments stop?",
-        },
-        fieldDescriptions: {
-          alphaEpaYearsBeforeNpa:
-            "Choose one, two or three years, as shown in your EPA details.",
-          alphaEpaStartDate: "Enter the date you started paying for this EPA.",
-          alphaEpaEndDate:
-            "Enter the date you expect to stop paying for this EPA.",
-        },
+        groupId: "alpha-epa",
+        fieldIds: [],
         hideFieldInfoLinks: true,
         optionalQuestion: {
           prompt: "Do you have an Alpha EPA?",

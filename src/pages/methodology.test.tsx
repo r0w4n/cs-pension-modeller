@@ -227,9 +227,9 @@ describe("MethodologyPage", () => {
       screen.getByRole("heading", { name: "Alpha EPA" })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/The EPA unreduced date is calculated/)
+      screen.getByText(/Each EPA portion's unreduced date is calculated/)
     ).toHaveTextContent(
-      "The EPA unreduced date is calculated as Normal Pension Age minus the selected number of EPA years."
+      "Each EPA portion's unreduced date is calculated as Normal Pension Age minus its selected number of EPA years."
     );
     expect(
       screen.getByText(/Under the Alpha scheme rules, partial retirement/)

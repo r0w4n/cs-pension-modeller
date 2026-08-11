@@ -20,14 +20,17 @@ import { calculateCsAvcProjectionRow } from "./projection-domains/cs-avc";
 import { calculateIsaProjectionRow } from "./projection-domains/isa";
 import { calculateLisaProjectionRow } from "./projection-domains/lisa";
 import {
-  calculateAnnualAlphaPensionIncludingEpaReduction,
+  calculateAnnualAlphaPensionIncludingEpaPortionReductions,
   calculateAnnualAlphaPensionIncludingReduction,
   calculateLumpSumAddedPension,
   calculateMonthlyAddedPension,
   calculateMonthlyAlphaPensionGross,
   calculateMonthlyEpaAlphaAccrual,
+  calculateMonthlyEpaAlphaAccrualByOption,
   calculateMonthlyStandardAlphaAccrual,
   getAddedPensionPeriodCalculationDate,
+  createEmptyAlphaEpaPensionPortions,
+  type AlphaEpaPensionPortions,
 } from "./projection-domains/alpha";
 import {
   calculateAnnualStatePensionAtDate,
@@ -198,6 +201,7 @@ export function buildProjectionRow(input: {
   epaDate: string;
   reductionFactor: number;
   epaReductionFactor: number;
+  epaReductionFactors: Record<1 | 2 | 3, number>;
   nuvosDrawDate: string;
   nuvosNpaDate: string;
   nuvosReductionFactor: number;
@@ -211,6 +215,7 @@ export function buildProjectionRow(input: {
   premiumReductionFactor: number | null;
   annualStandardAlphaPension: number;
   annualEpaAlphaPension: number;
+  annualEpaAlphaPensions: AlphaEpaPensionPortions;
   annualNuvosPension: number;
   annualClassicPension: number;
   classicAutomaticLumpSum: number;
@@ -241,7 +246,7 @@ export function buildProjectionRow(input: {
     rowDate,
     drawDate,
     reductionFactor,
-    epaReductionFactor,
+    epaReductionFactors,
     nuvosDrawDate,
     nuvosNpaDate,
     nuvosReductionFactor,
@@ -255,6 +260,7 @@ export function buildProjectionRow(input: {
     premiumReductionFactor,
     annualStandardAlphaPension,
     annualEpaAlphaPension,
+    annualEpaAlphaPensions,
     annualNuvosPension,
     annualClassicPension,
     classicAutomaticLumpSum,
@@ -272,11 +278,11 @@ export function buildProjectionRow(input: {
   const annualAccruedAlphaPension =
     annualStandardAlphaPension + annualEpaAlphaPension;
   const annualAlphaPensionIncludingReduction =
-    calculateAnnualAlphaPensionIncludingEpaReduction({
+    calculateAnnualAlphaPensionIncludingEpaPortionReductions({
       standardAlphaPension: annualStandardAlphaPension,
-      epaAlphaPension: annualEpaAlphaPension,
+      epaAlphaPensions: annualEpaAlphaPensions,
       reductionFactor,
-      epaReductionFactor,
+      epaReductionFactors,
     });
   const monthlyAlphaPensionGross = calculateMonthlyAlphaPensionGross(
     rowDate,
@@ -469,6 +475,7 @@ export function calculateStartingAlphaPortionsAtStartDate(input: {
     return {
       standardAlphaPension: 0,
       epaAlphaPension: 0,
+      epaAlphaPensions: createEmptyAlphaEpaPensionPortions(),
     };
   }
 
@@ -476,11 +483,13 @@ export function calculateStartingAlphaPortionsAtStartDate(input: {
     return {
       standardAlphaPension: settings.accruedPensionAtLastAbs,
       epaAlphaPension: 0,
+      epaAlphaPensions: createEmptyAlphaEpaPensionPortions(),
     };
   }
 
   let standardAlphaPension = settings.accruedPensionAtLastAbs;
   let epaAlphaPension = 0;
+  const epaAlphaPensions = createEmptyAlphaEpaPensionPortions();
   let monthIndex = 1;
   let rowDate = addMonths(alphaAbsDate, monthIndex);
 
@@ -489,6 +498,13 @@ export function calculateStartingAlphaPortionsAtStartDate(input: {
       settings,
       rowDate
     );
+    const monthlyEpaPortions = calculateMonthlyEpaAlphaAccrualByOption(
+      settings,
+      rowDate
+    );
+    for (const yearsBeforeNpa of [1, 2, 3] as const) {
+      epaAlphaPensions[yearsBeforeNpa] += monthlyEpaPortions[yearsBeforeNpa];
+    }
     epaAlphaPension += calculateMonthlyEpaAlphaAccrual(settings, rowDate);
     monthIndex += 1;
     rowDate = addMonths(alphaAbsDate, monthIndex);
@@ -497,6 +513,7 @@ export function calculateStartingAlphaPortionsAtStartDate(input: {
   return {
     standardAlphaPension,
     epaAlphaPension,
+    epaAlphaPensions,
   };
 }
 
@@ -510,6 +527,7 @@ export function createHistoricalProjectionRows(input: {
   epaDate: string;
   reductionFactor: number;
   epaReductionFactor: number;
+  epaReductionFactors: Record<1 | 2 | 3, number>;
   nuvosDrawDate: string;
   nuvosNpaDate: string;
   nuvosReductionFactor: number;
@@ -532,6 +550,7 @@ export function createHistoricalProjectionRows(input: {
     epaDate,
     reductionFactor,
     epaReductionFactor,
+    epaReductionFactors,
     nuvosDrawDate,
     nuvosNpaDate,
     nuvosReductionFactor,
@@ -556,6 +575,7 @@ export function createHistoricalProjectionRows(input: {
   let cumulativeLumpSumAddedPension = 0;
   let cumulativeStandardAlphaPension = settings.accruedPensionAtLastAbs;
   let cumulativeEpaAlphaPension = 0;
+  const cumulativeEpaAlphaPensions = createEmptyAlphaEpaPensionPortions();
 
   while (rowDate < settings.startDate) {
     const { monthlyAddedPension, lumpSumAddedPension } =
@@ -576,6 +596,14 @@ export function createHistoricalProjectionRows(input: {
         settings,
         rowDate
       );
+      const monthlyEpaPortions = calculateMonthlyEpaAlphaAccrualByOption(
+        settings,
+        rowDate
+      );
+      for (const yearsBeforeNpa of [1, 2, 3] as const) {
+        cumulativeEpaAlphaPensions[yearsBeforeNpa] +=
+          monthlyEpaPortions[yearsBeforeNpa];
+      }
     }
 
     rows.push(
@@ -587,6 +615,7 @@ export function createHistoricalProjectionRows(input: {
         epaDate,
         reductionFactor,
         epaReductionFactor,
+        epaReductionFactors,
         nuvosDrawDate,
         nuvosNpaDate,
         nuvosReductionFactor,
@@ -601,6 +630,7 @@ export function createHistoricalProjectionRows(input: {
         annualStandardAlphaPension:
           cumulativeStandardAlphaPension + cumulativeLumpSumAddedPension,
         annualEpaAlphaPension: cumulativeEpaAlphaPension,
+        annualEpaAlphaPensions: cumulativeEpaAlphaPensions,
         annualNuvosPension: 0,
         annualClassicPension: 0,
         classicAutomaticLumpSum: 0,

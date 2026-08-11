@@ -127,9 +127,17 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("radio", { name: "No, I do not have an EPA" })
     ).toBeChecked();
-    await expect(
-      page.getByLabel("How many years early does your EPA cover?")
-    ).toHaveCount(0);
+    await expect(page.getByText("EPA purchase periods")).toHaveCount(0);
+    await page.getByRole("radio", { name: "Yes, I have an EPA" }).click();
+    await page.getByRole("button", { name: "Add EPA period" }).click();
+    await page.getByLabel("EPA option 1").selectOption("1");
+    await page.getByLabel("EPA start date 1").fill("2026-09-01");
+    await page.getByLabel("EPA end date 1").fill("2027-03-31");
+    await page.getByRole("button", { name: "Add EPA period" }).click();
+    await page.getByLabel("EPA option 2").selectOption("3");
+    await page.getByLabel("EPA start date 2").fill("2028-04-01");
+    await page.getByLabel("EPA end date 2").fill("2029-03-31");
+    await expect(page.getByText("EPA period #2")).toBeVisible();
     await clickNextAndExpectStep(
       page,
       "Do you know your State Pension forecast?"

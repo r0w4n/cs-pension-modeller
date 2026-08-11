@@ -169,9 +169,6 @@ describe("journey definitions", () => {
   it("includes Alpha EPA controls in journey-specific places", () => {
     const alphaEpaFieldIds = [
       "alphaEpaEnabled",
-      "alphaEpaYearsBeforeNpa",
-      "alphaEpaStartDate",
-      "alphaEpaEndDate",
     ] satisfies FieldDefinition["id"][];
 
     for (const [journeyId, stepId] of [
@@ -194,15 +191,18 @@ describe("journey definitions", () => {
       throw new Error("Expected the simple EPA step to contain fields");
     }
     expect(simpleEpaStep.optionalQuestion?.setting.id).toBe("alphaEpaEnabled");
-    expect(simpleEpaStep.fieldIds).toEqual([
+    expect(simpleEpaStep.groupId).toBe("alpha-epa");
+    expect(simpleEpaStep.fieldIds).toEqual([]);
+
+    for (const legacyFieldId of [
       "alphaEpaYearsBeforeNpa",
       "alphaEpaStartDate",
       "alphaEpaEndDate",
-    ]);
-
-    expect(
-      getJourneyStepFieldIds("simple-early-retirement", "alpha-options")
-    ).not.toContain("alphaEpaYearsBeforeNpa");
+    ] as const) {
+      expect(getJourneyFieldIds("simple-early-retirement")).not.toContain(
+        legacyFieldId
+      );
+    }
   });
 
   it("includes LISA controls in the early retirement bridging pots step", () => {

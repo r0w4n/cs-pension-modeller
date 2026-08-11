@@ -1,6 +1,15 @@
 # Settings Schema Version History
 
-## Version 12 (current)
+## Version 13 (current)
+
+- Added `alphaEpaPeriods`, allowing separate dated EPA −1, −2 and −3
+  purchase periods.
+- Version 12 settings with the former single EPA option are migrated to one
+  equivalent period so existing locally saved scenarios keep their meaning.
+- The migration also supplies any missing Version 12 target-basis fields, so
+  settings written by either Version 12 development lineage remain readable.
+
+## Version 12
 
 - Added `statePensionForecastConfirmed` so the modeller can distinguish a
   personalised forecast from the fallback full-rate assumption.

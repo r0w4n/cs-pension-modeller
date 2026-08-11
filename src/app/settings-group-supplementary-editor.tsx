@@ -5,6 +5,7 @@ import {
   type SettingsFieldOnChange,
 } from "./form-fields";
 import { AdditionalGuaranteedIncomeEditor } from "./form-field-additional-guaranteed-income";
+import { AlphaEpaPeriodsEditor } from "./form-field-alpha-epa-periods";
 
 export function SettingsGroupSupplementaryEditor({
   groupId,
@@ -21,18 +22,45 @@ export function SettingsGroupSupplementaryEditor({
 }) {
   if (groupId === "alpha") {
     return (
-      <AddedPensionLumpSumsEditorFeature
-        lumpSums={settings.alphaAddedPensionLumpSums}
+      <>
+        <AddedPensionLumpSumsEditorFeature
+          lumpSums={settings.alphaAddedPensionLumpSums}
+          defaultStartDate={settings.startDate}
+          useDropdownDates={useDropdownDates}
+          showFactorType
+          validationIssues={getValidationIssuesForField(
+            validationIssues,
+            "alphaAddedPensionLumpSums"
+          )}
+          onChange={(nextLumpSums) =>
+            onChange("alphaAddedPensionLumpSums", nextLumpSums)
+          }
+        />
+        {settings.alphaEpaEnabled ? (
+          <AlphaEpaPeriodsEditor
+            periods={settings.alphaEpaPeriods}
+            defaultStartDate={settings.startDate}
+            validationIssues={getValidationIssuesForField(
+              validationIssues,
+              "alphaEpaPeriods"
+            )}
+            onChange={(periods) => onChange("alphaEpaPeriods", periods)}
+          />
+        ) : null}
+      </>
+    );
+  }
+
+  if (groupId === "alpha-epa" && settings.alphaEpaEnabled) {
+    return (
+      <AlphaEpaPeriodsEditor
+        periods={settings.alphaEpaPeriods}
         defaultStartDate={settings.startDate}
-        useDropdownDates={useDropdownDates}
-        showFactorType
         validationIssues={getValidationIssuesForField(
           validationIssues,
-          "alphaAddedPensionLumpSums"
+          "alphaEpaPeriods"
         )}
-        onChange={(nextLumpSums) =>
-          onChange("alphaAddedPensionLumpSums", nextLumpSums)
-        }
+        onChange={(periods) => onChange("alphaEpaPeriods", periods)}
       />
     );
   }

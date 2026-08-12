@@ -400,6 +400,7 @@ function renderExpertAnswerStep(
 function renderBridgeAnswerStep(
   step: JourneyStepDefinition & {
     kind: "bridge-answer";
+    showComparisonSection?: boolean;
     showProjectionTable?: boolean;
   },
   viewModel: JourneyStepViewModel,
@@ -458,24 +459,26 @@ function renderBridgeAnswerStep(
         assumptions={derivedInflationAssumptions}
       />
 
-      <ComparisonSection>
-        <ComparisonPanelFeature
-          settings={settings}
-          validationIssues={validationIssues}
-          scenarios={comparisonScenarios}
-          comparisonResultCache={comparisonResultCache}
-          onScenariosChange={onScenariosChange}
-          onLoadScenario={onLoadScenario}
-          retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
-          onRetirementIncomeDisplayChange={
-            onComparisonRetirementIncomeDisplayChange
-          }
-          hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
-          hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
-          hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}
-          showPensionSummary={false}
-        />
-      </ComparisonSection>
+      {step.showComparisonSection !== false ? (
+        <ComparisonSection>
+          <ComparisonPanelFeature
+            settings={settings}
+            validationIssues={validationIssues}
+            scenarios={comparisonScenarios}
+            comparisonResultCache={comparisonResultCache}
+            onScenariosChange={onScenariosChange}
+            onLoadScenario={onLoadScenario}
+            retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+            onRetirementIncomeDisplayChange={
+              onComparisonRetirementIncomeDisplayChange
+            }
+            hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
+            hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
+            hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}
+            showPensionSummary={false}
+          />
+        </ComparisonSection>
+      ) : null}
 
       {step.showProjectionTable !== false && shouldRenderProjectionTable ? (
         <ProjectionTableSectionContainer>

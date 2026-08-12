@@ -706,10 +706,26 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function readStoredSettingsPayload() {
+function readStoredSettingsPayload(journey?: "simple" | "bridge" | "expert") {
   const stored = JSON.parse(
     window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
-  ) as { data?: Record<string, unknown> };
+  ) as {
+    data?: {
+      journeys?: Partial<
+        Record<"simple" | "bridge" | "expert", Record<string, unknown>>
+      >;
+    };
+  };
+
+  const activeJourney =
+    journey ??
+    (window.localStorage.getItem(APP_MODE_STORAGE_KEY) as
+      "simple" | "bridge" | "expert" | null) ??
+    "expert";
+
+  if (stored.data?.journeys?.[activeJourney]) {
+    return stored.data.journeys[activeJourney];
+  }
 
   if (
     typeof stored === "object" &&
@@ -718,7 +734,7 @@ function readStoredSettingsPayload() {
     typeof stored.data === "object" &&
     stored.data !== null
   ) {
-    return stored.data;
+    return stored.data as Record<string, unknown>;
   }
 
   return stored as Record<string, unknown>;
@@ -1603,7 +1619,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("shares simple journey defaults with the bridge journey", () => {
+  it("keeps migrated simple and bridge journey defaults separate", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1623,14 +1639,12 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
-      String(defaultSettings.normalPensionAge)
-    );
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
 
     openJourneyStep(/Your Alpha pension/i);
 
     expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
-      String(defaultSettings.normalPensionAge)
+      "61"
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
@@ -1639,7 +1653,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("shares simple-mode chart marker changes with the bridge journey", () => {
+  it("does not copy simple-mode chart marker changes into the bridge journey", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1684,10 +1698,22 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("67");
+    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    expect(readStoredSettingsPayload("simple")).toEqual(
+      expect.objectContaining({
+        requirementAge: 67,
+        alphaPensionDrawAge: 67,
+      })
+    );
+    expect(readStoredSettingsPayload("bridge")).toEqual(
+      expect.objectContaining({
+        requirementAge: 60,
+        alphaPensionDrawAge: 62,
+      })
+    );
   });
 
-  it("defaults bridge journey withdrawal strategies to use-by-age after expert changes", () => {
+  it("keeps bridge journey withdrawal strategies separate from expert changes", () => {
     renderAcknowledgedApp();
 
     openJourneyStep(/SIPP details/i);
@@ -1704,7 +1730,7 @@ describe("App settings form", () => {
     });
     fireEvent.blur(screen.getByLabelText("ISA withdrawal strategy"));
 
-    expect(readStoredSettingsPayload()).toEqual(
+    expect(readStoredSettingsPayload("expert")).toEqual(
       expect.objectContaining({
         sippWithdrawalStrategy: "percentage",
         isaWithdrawalStrategy: "zero_at_death",
@@ -1717,7 +1743,7 @@ describe("App settings form", () => {
       })
     );
 
-    expect(readStoredSettingsPayload()).toEqual(
+    expect(readStoredSettingsPayload("bridge")).toEqual(
       expect.objectContaining({
         sippWithdrawalStrategy: "use_by_age",
         isaWithdrawalStrategy: "use_by_age",
@@ -1920,77 +1946,25 @@ describe("App settings form", () => {
     ).toBeInTheDocument();
   });
 
-  it("finishes the simple journey on the shared comparison result interface", async () => {
+  it("finishes the simple journey without the comparison section", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     advanceJourneyToResult();
 
     expect(
-      await screen.findByRole("region", { name: "Comparison results" })
-    ).toBeInTheDocument();
+      screen.queryByRole("region", { name: "Comparison results" })
+    ).not.toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "Comparison" })
-    ).toBeInTheDocument();
-    const comparisonResultsRegion = screen.getByRole("region", {
-      name: "Comparison results",
-    });
+      screen.queryByRole("heading", { name: "Comparison" })
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Comparison" }).closest("section")
-    ).toBe(comparisonResultsRegion);
-    expect(comparisonResultsRegion).toContainElement(
-      screen.getByRole("heading", { name: "Save this result as a scenario" })
-    );
-    const comparisonCardSection = comparisonResultsRegion.querySelector(
-      ".summary-section.summary-section--compact"
-    );
-    expect(comparisonCardSection).not.toBeNull();
-    const comparisonBuilderSection = screen
-      .getByRole("heading", { name: "Save this result as a scenario" })
-      .closest("section");
-    expect(comparisonBuilderSection).not.toBeNull();
-    const comparisonBuilderNode = comparisonBuilderSection as HTMLElement;
-    expect(comparisonCardSection).not.toContainElement(
-      screen.getByRole("heading", { name: "Save this result as a scenario" })
-    );
+      screen.queryByRole("heading", { name: "Save this result as a scenario" })
+    ).not.toBeInTheDocument();
     expect(
-      comparisonBuilderNode.compareDocumentPosition(
-        comparisonCardSection as Node
-      ) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).not.toBe(0);
-    expect(comparisonResultsRegion).toContainElement(
-      screen.getByText("Compare the key decision metrics across scenarios.")
-    );
-    expect(
-      within(comparisonResultsRegion).getByRole("group", {
-        name: "Comparison display",
-      })
-    ).toBeInTheDocument();
-    expect(
-      within(comparisonResultsRegion).getByRole("button", {
-        name: "Show annual comparison values",
-      })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Saved scenarios" })
-    ).toBeInTheDocument();
-    const comparisonHeading = within(comparisonResultsRegion).getByRole(
-      "heading",
-      { name: "Comparison" }
-    );
-    const comparisonChartNode =
-      within(comparisonResultsRegion).queryByRole("heading", {
-        name: "Retirement income bridge",
-      }) ?? comparisonResultsRegion.querySelector('[aria-hidden="true"]');
-    expect(comparisonChartNode).not.toBeNull();
-    expect(
-      comparisonHeading.compareDocumentPosition(comparisonChartNode as Node) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).not.toBe(0);
+      screen.queryByRole("heading", { name: "Saved scenarios" })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
     expect(screen.queryByText("Flexible assets")).not.toBeInTheDocument();
-    expect(
-      screen.getAllByRole("columnheader", { name: "Current model" }).length
-    ).toBeGreaterThan(0);
     expect(
       screen.getByRole("heading", { name: "Retirement income summary" })
     ).toBeInTheDocument();

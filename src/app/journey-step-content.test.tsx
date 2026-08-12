@@ -18,6 +18,7 @@ const projectionTableMocks = vi.hoisted(() => ({
 
 const journeyContentMocks = vi.hoisted(() => ({
   bridgeChart: vi.fn(),
+  comparisonPanel: vi.fn(),
   pensionSummary: vi.fn(),
   retirementChart: vi.fn(),
 }));
@@ -37,7 +38,10 @@ vi.mock("./chart", () => ({
 }));
 
 vi.mock("./comparison", () => ({
-  ComparisonPanel: () => <div>Comparison panel</div>,
+  ComparisonPanel: (props: unknown) => {
+    journeyContentMocks.comparisonPanel(props);
+    return <div>Comparison panel</div>;
+  },
   ComparisonSection: ({ children }: { children: ReactNode }) => (
     <section>{children}</section>
   ),
@@ -85,6 +89,7 @@ describe("JourneyStepContent", () => {
   beforeEach(() => {
     projectionTableMocks.section.mockClear();
     journeyContentMocks.bridgeChart.mockClear();
+    journeyContentMocks.comparisonPanel.mockClear();
     journeyContentMocks.pensionSummary.mockClear();
     journeyContentMocks.retirementChart.mockClear();
   });
@@ -708,6 +713,30 @@ describe("JourneyStepContent", () => {
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
     expect(chartProps?.showFlexibleWithdrawalInsights).not.toBe(true);
+  });
+
+  it("can omit comparison controls from a simplified bridge answer", () => {
+    mockMatchMedia(false);
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "answer",
+          eyebrow: "Result",
+          title: "Your results",
+          description: "Review results",
+          kind: "bridge-answer",
+          showComparisonSection: false,
+        }}
+        viewModel={createViewModel()}
+      />
+    );
+
+    expect(journeyContentMocks.comparisonPanel).not.toHaveBeenCalled();
+    expect(screen.queryByText("Comparison panel")).not.toBeInTheDocument();
+    expect(screen.getByText("Pension summary")).toBeInTheDocument();
+    expect(screen.getByText("Comparison bridge chart")).toBeInTheDocument();
+    expect(screen.getByText("Inflation basis")).toBeInTheDocument();
   });
 
   it("enables flexible withdrawal results and chart presentation for expert answers", () => {

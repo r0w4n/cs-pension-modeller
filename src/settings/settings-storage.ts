@@ -32,11 +32,15 @@ import {
   type SippWithdrawalStrategy,
   type SpendingStrategyType,
   type StoredPensionSettings,
+  type PensionSettingsByJourney,
+  type SettingsJourney,
+  type StoredPensionSettingsByJourney,
   type PensionSettings,
 } from "./settings-types";
 import {
   LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
   SETTINGS_SCHEMA_VERSION,
+  type StoredJourneySettingsData,
   type StoredSettingsEnvelope,
 } from "./settings-versions";
 
@@ -134,9 +138,7 @@ function removeUndefinedValues<T extends object>(input: T) {
   ) as Partial<T>;
 }
 
-function isSettingsObject(
-  input: unknown
-): input is Partial<StoredPensionSettings> {
+function isSettingsObject(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object" && !Array.isArray(input);
 }
 
@@ -278,34 +280,82 @@ function coerceSettings(
 }
 
 export function loadStoredSettings(): PensionSettings {
+  return loadStoredSettingsByJourney().settings.expert;
+}
+
+export type LoadedJourneySettings = {
+  settings: PensionSettingsByJourney;
+  migratedFromLegacy: boolean;
+};
+
+export function loadStoredSettingsByJourney(): LoadedJourneySettings {
   if (!isLocalStorageEnabled()) {
-    return createDefaultSettings();
+    return createDefaultJourneySettings();
   }
 
   const stored = readStorageItem(SETTINGS_STORAGE_KEY);
 
   if (!stored) {
-    return createDefaultSettings();
+    return createDefaultJourneySettings();
   }
 
   try {
     const parsed: unknown = JSON.parse(stored);
-    const envelope: StoredSettingsEnvelope<unknown> = isStoredSettingsEnvelope(
-      parsed
-    )
-      ? parsed
-      : {
-          version: LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
-          data: parsed,
-        };
-
     return (
-      parseStoredSettings(migrateSettingsToLatest(envelope)) ??
-      createDefaultSettings()
+      parseStoredSettingsByJourney(parsed) ?? createDefaultJourneySettings()
     );
   } catch {
-    return createDefaultSettings();
+    return createDefaultJourneySettings();
   }
+}
+
+export function parseStoredSettingsByJourney(
+  input: unknown
+): LoadedJourneySettings | null {
+  const envelope: StoredSettingsEnvelope<unknown> = isStoredSettingsEnvelope(
+    input
+  )
+    ? input
+    : {
+        version: LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
+        data: input,
+      };
+  const migratedFromLegacy = envelope.version < SETTINGS_SCHEMA_VERSION;
+  const migratedData = migrateSettingsToLatest(envelope);
+
+  if (!isSettingsObject(migratedData)) {
+    return null;
+  }
+
+  const journeys = migratedData.journeys;
+
+  if (!isSettingsObject(journeys)) {
+    return null;
+  }
+
+  return {
+    settings: {
+      simple: parseJourneySettings(journeys.simple),
+      bridge: parseJourneySettings(journeys.bridge),
+      expert: parseJourneySettings(journeys.expert),
+    },
+    migratedFromLegacy,
+  };
+}
+
+function parseJourneySettings(input: unknown) {
+  return parseStoredSettings(input) ?? createDefaultSettings();
+}
+
+function createDefaultJourneySettings(): LoadedJourneySettings {
+  return {
+    settings: {
+      simple: createDefaultSettings(),
+      bridge: createDefaultSettings(),
+      expert: createDefaultSettings(),
+    },
+    migratedFromLegacy: true,
+  };
 }
 
 export function parseStoredSettings(input: unknown): PensionSettings | null {
@@ -314,7 +364,9 @@ export function parseStoredSettings(input: unknown): PensionSettings | null {
   }
 
   const defaults = createDefaultSettings();
-  const coercedSettings = removeUndefinedValues(coerceSettings(input));
+  const coercedSettings = removeUndefinedValues(
+    coerceSettings(input as Partial<StoredPensionSettings>)
+  );
   const dateOfBirth =
     typeof coercedSettings.dateOfBirth === "string"
       ? coercedSettings.dateOfBirth
@@ -354,17 +406,31 @@ function reconcileImportedDefaultDrawAge({
 }
 
 export function saveSettings(settings: PensionSettings) {
+  const currentSettings = loadStoredSettingsByJourney().settings;
+
+  return saveSettingsByJourney({
+    ...currentSettings,
+    expert: settings,
+  });
+}
+
+export function saveSettingsByJourney(settings: PensionSettingsByJourney) {
   if (!isLocalStorageEnabled()) {
     return false;
   }
 
-  const storedSettings = getStoredSettingsSnapshot(settings);
-  const envelope: StoredSettingsEnvelope = {
-    version: SETTINGS_SCHEMA_VERSION,
-    data: storedSettings,
-  };
+  const envelope = getStoredSettingsEnvelope(settings);
 
   return writeStorageItem(SETTINGS_STORAGE_KEY, JSON.stringify(envelope));
+}
+
+export function getStoredSettingsEnvelope(
+  settings: PensionSettingsByJourney
+): StoredSettingsEnvelope<StoredJourneySettingsData> {
+  return {
+    version: SETTINGS_SCHEMA_VERSION,
+    data: getStoredSettingsByJourneySnapshot(settings),
+  };
 }
 
 export function clearStoredSettings() {
@@ -381,4 +447,17 @@ export function getStoredSettingsSnapshot(
     ...storedSettings
   } = normalizedSettings;
   return storedSettings;
+}
+
+export function getStoredSettingsByJourneySnapshot(
+  settings: PensionSettingsByJourney
+): StoredJourneySettingsData {
+  return {
+    journeys: Object.fromEntries(
+      (Object.keys(settings) as SettingsJourney[]).map((journey) => [
+        journey,
+        getStoredSettingsSnapshot(settings[journey]),
+      ])
+    ) as StoredPensionSettingsByJourney,
+  };
 }

@@ -11,6 +11,7 @@ import {
   migrateFromV10ToV11,
   migrateFromV11ToV12,
   migrateFromV12ToV13,
+  migrateFromV13ToV14,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -266,15 +267,7 @@ describe("settings-migrations", () => {
   });
 
   it("migrates legacy data to the latest schema", () => {
-    expect(
-      migrateSettingsToLatest({
-        version: 1,
-        data: {
-          dateOfBirth: "1987-06-01",
-          targetRetirementAge: 60,
-        },
-      })
-    ).toEqual({
+    const migratedLegacySettings = {
       dateOfBirth: "1987-06-01",
       requirementAge: 60,
       additionalGuaranteedIncomes: [],
@@ -311,6 +304,34 @@ describe("settings-migrations", () => {
       taxLumpSumAllowanceUsed: 0,
       statePensionForecastConfirmed: false,
       alphaEpaPeriods: [],
+    };
+
+    expect(
+      migrateSettingsToLatest({
+        version: 1,
+        data: {
+          dateOfBirth: "1987-06-01",
+          targetRetirementAge: 60,
+        },
+      })
+    ).toEqual({
+      journeys: {
+        simple: migratedLegacySettings,
+        bridge: migratedLegacySettings,
+        expert: migratedLegacySettings,
+      },
+    });
+  });
+
+  it("copies the final flat settings schema into every journey", () => {
+    const settings = { requirementAge: 64 };
+
+    expect(migrateFromV13ToV14(settings)).toEqual({
+      journeys: {
+        simple: settings,
+        bridge: settings,
+        expert: settings,
+      },
     });
   });
 

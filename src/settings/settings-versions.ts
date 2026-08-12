@@ -1,9 +1,19 @@
-import type { StoredPensionSettings } from "./settings-types";
+import type {
+  StoredPensionSettings,
+  StoredPensionSettingsByJourney,
+} from "./settings-types";
 
 export const LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION = 1;
-export const SETTINGS_SCHEMA_VERSION = 13;
+export const SETTINGS_SCHEMA_VERSION = 14;
 
-export type StoredSettingsEnvelope<TData = StoredPensionSettings> = {
+export type StoredJourneySettingsData = {
+  journeys: StoredPensionSettingsByJourney;
+};
+
+export type StoredSettingsEnvelope<TData = StoredJourneySettingsData> = {
   version: number;
   data: TData;
 };
+
+export type LegacyStoredSettingsEnvelope =
+  StoredSettingsEnvelope<StoredPensionSettings>;

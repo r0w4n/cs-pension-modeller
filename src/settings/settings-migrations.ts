@@ -275,6 +275,20 @@ export function migrateFromV12ToV13(data: unknown) {
   };
 }
 
+export function migrateFromV13ToV14(data: unknown) {
+  if (!isRecord(data)) {
+    return { journeys: {} };
+  }
+
+  return {
+    journeys: {
+      simple: data,
+      bridge: data,
+      expert: data,
+    },
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -288,6 +302,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   10: migrateFromV10ToV11,
   11: migrateFromV11ToV12,
   12: migrateFromV12ToV13,
+  13: migrateFromV13ToV14,
 };
 
 export function migrateSettingsToLatest(

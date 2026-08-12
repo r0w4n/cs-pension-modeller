@@ -263,20 +263,25 @@ saving preference so the browser can remember that saving is off.
 
 Keys currently used:
 
-| Key                                       | Purpose                                                                                            | Stored value                                                                    |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                          |
-| `cs-pension-modeller.settings`            | Pension inputs and assumptions, when local saving is enabled.                                      | JSON object envelope `{ version, data }`, where `data` is the settings payload. |
-| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                            |
-| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                          |
-| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.         |
-| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string, currently `"v1"`.                                               |
+| Key                                       | Purpose                                                                                            | Stored value                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                              |
+| `cs-pension-modeller.settings`            | Pension inputs and assumptions for each journey, when local saving is enabled.                     | JSON object envelope `{ version, data: { journeys: { simple, bridge, expert } } }`. |
+| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                                |
+| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                              |
+| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.             |
+| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string, currently `"v1"`.                                                   |
 
 Settings storage is schema-versioned. Current saves use a versioned envelope so
 older browser data can be migrated safely when fields are renamed or
 restructured. The migration implementations and their compatibility tests live
 in `src/settings/settings-migrations.ts` and
-`src/settings/settings-migrations.test.ts`.
+`src/settings/settings-migrations.test.ts`. Each journey has an independent
+settings section in the same saved file, so changing one journey does not alter
+another. Legacy flat settings and parameter exports remain supported: on first
+load they seed all three sections, with the guided-journey defaults applied to
+the simple and bridge sections. This compatibility path has no time-based
+expiry.
 
 ## Analytics
 

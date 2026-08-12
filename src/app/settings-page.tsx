@@ -135,9 +135,9 @@ export function SettingsPage({
           <section className="field-card">
             <span className="field-label">Export parameters</span>
             <p className="field-help">
-              Download the current assumptions as a JSON file. This is useful if
-              you want a backup or want to move the same scenario to another
-              browser.
+              Download the assumptions for all three journeys as one JSON file.
+              This is useful if you want a backup or want to move your scenarios
+              to another browser.
             </p>
 
             <div className="settings-panel-actions">
@@ -155,7 +155,8 @@ export function SettingsPage({
             <span className="field-label">Load parameters</span>
             <p className="field-help">
               Load a JSON parameter export from this modeller. Imported
-              assumptions replace the current scenario in the app.
+              assumptions replace the saved scenarios for each journey. Older
+              single-scenario exports are also supported.
             </p>
 
             <label className="date-select-label" htmlFor="parameter-file">

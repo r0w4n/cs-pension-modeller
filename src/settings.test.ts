@@ -187,7 +187,15 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
 function readStoredSettingsPayload() {
   const stored = JSON.parse(
     window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
-  ) as { data?: Record<string, unknown> };
+  ) as {
+    data?: {
+      journeys?: { expert?: Record<string, unknown> };
+    };
+  };
+
+  if (stored.data?.journeys?.expert) {
+    return stored.data.journeys.expert;
+  }
 
   if (
     typeof stored === "object" &&
@@ -196,7 +204,7 @@ function readStoredSettingsPayload() {
     typeof stored.data === "object" &&
     stored.data !== null
   ) {
-    return stored.data;
+    return stored.data as Record<string, unknown>;
   }
 
   return stored as Record<string, unknown>;

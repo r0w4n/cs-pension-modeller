@@ -7,7 +7,7 @@ import {
   clearStoredSettings,
   isLocalStorageEnabled as loadLocalStorageEnabled,
   saveLocalStoragePreference,
-  saveSettings,
+  saveSettingsByJourney,
   type PensionSettings,
 } from "../settings";
 import {
@@ -44,7 +44,6 @@ import { useJourneySettings } from "./use-journey-settings";
 import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
-import { applySimpleJourneyDefaults } from "../app-domains/journeys";
 
 export function useAppController() {
   const {
@@ -72,6 +71,7 @@ export function useAppController() {
     setSettings,
     setSettingsFormVersion,
     settings,
+    settingsByJourney,
     settingsFormVersion,
   } = useJourneySettings({
     activeJourneyMode,
@@ -210,7 +210,7 @@ export function useAppController() {
       saveStoredAppMode(appMode);
     }
 
-    saveSettings(settings);
+    saveSettingsByJourney(settingsByJourney);
     saveStoredComparisonScenarios(comparisonScenarios);
     saveStoredGuidanceNotes(showGuidanceNotes);
     saveStoredJourneyRetirementIncomeDisplay(journeyRetirementIncomeDisplay);
@@ -262,14 +262,9 @@ export function useAppController() {
       previous_journey_mode: appMode ?? "none",
     });
 
-    if (mode === "simple") {
-      setSettings((current) => applySimpleJourneyDefaults(current));
-    }
-
     selectAppModeAction({
       mode,
       currentMode: appMode,
-      setSettings,
       setChartUndoStack,
       shouldFocusActiveModeRef: shouldFocusActiveMode,
       scrollActiveModeIntoView,

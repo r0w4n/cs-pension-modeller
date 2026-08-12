@@ -23,6 +23,9 @@ export const ALPHA_ADDED_PENSION_MONTHLY_MAX = 2_000;
 export const NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE = "2028-04-06";
 export const STATE_PENSION_AGE_STEP = 0.25;
 
+export const SETTINGS_JOURNEYS = ["simple", "bridge", "expert"] as const;
+export type SettingsJourney = (typeof SETTINGS_JOURNEYS)[number];
+
 export const DEFAULT_DATE_OF_BIRTH = "1987-06-01";
 export const DEFAULT_STATE_PENSION_DRAW_DATE = "2055-06-01";
 export const DEFAULT_ALPHA_ABS_YEAR = "2025";
@@ -234,6 +237,13 @@ export type PensionValidationIssue = {
 export type StoredPensionSettings = Omit<
   PensionSettings,
   "startDate" | "normalPensionAge"
+>;
+
+export type PensionSettingsByJourney = Record<SettingsJourney, PensionSettings>;
+
+export type StoredPensionSettingsByJourney = Record<
+  SettingsJourney,
+  StoredPensionSettings
 >;
 
 export function usesAfterTaxRetirementIncomeTarget(

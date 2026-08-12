@@ -7,13 +7,15 @@ import {
   type SetStateAction,
 } from "react";
 import {
-  getStoredSettingsSnapshot,
-  loadStoredSettings,
-  parseStoredSettings,
-  saveSettings,
+  getStoredSettingsEnvelope,
+  loadStoredSettingsByJourney,
+  parseStoredSettingsByJourney,
+  saveSettingsByJourney,
   type PensionSettings,
+  type PensionSettingsByJourney,
 } from "../settings";
 import {
+  applyBridgeJourneyDefaults,
   applySimpleJourneyAssumptions,
   applySimpleJourneyDefaults,
   mergeSimpleJourneySettings,
@@ -45,18 +47,35 @@ export function useJourneySettings({
   setChartUndoStack: SetChartUndoStack;
   showSavedLabel: () => void;
 }) {
-  const [settings, setSettings] = useState<PensionSettings>(() => {
-    const storedSettings = loadStoredSettings();
+  const [settingsByJourney, setSettingsByJourney] =
+    useState<PensionSettingsByJourney>(() => {
+      const loaded = loadStoredSettingsByJourney();
 
-    return initialAppMode === "simple"
-      ? applySimpleJourneyDefaults(storedSettings)
-      : storedSettings;
-  });
+      return loaded.migratedFromLegacy
+        ? applyLegacyJourneyDefaults(loaded.settings)
+        : loaded.settings;
+    });
+  const activeSettingsJourney = activeJourneyMode ?? initialAppMode ?? "expert";
+  const settings = settingsByJourney[activeSettingsJourney];
+  const setSettings = useCallback(
+    (
+      value: PensionSettings | ((current: PensionSettings) => PensionSettings)
+    ) => {
+      setSettingsByJourney((current) => ({
+        ...current,
+        [activeSettingsJourney]:
+          typeof value === "function"
+            ? value(current[activeSettingsJourney])
+            : value,
+      }));
+    },
+    [activeSettingsJourney]
+  );
   const [settingsFormVersion, setSettingsFormVersion] = useState(0);
 
   useEffect(() => {
-    saveSettings(settings);
-  }, [settings]);
+    saveSettingsByJourney(settingsByJourney);
+  }, [settingsByJourney]);
 
   const effectiveSettings = useMemo(
     () =>
@@ -75,55 +94,50 @@ export function useJourneySettings({
           const baseSettings = applySimpleJourneyAssumptions(current);
           const nextSettings =
             typeof value === "function" ? value(baseSettings) : value;
-          const sharedSettings =
+          const journeySettings =
             nextSettings.dateOfBirth !== current.dateOfBirth
               ? applySimpleJourneyDefaults(nextSettings)
               : nextSettings;
           const retirementAlignedSettings =
-            sharedSettings.requirementAge !== baseSettings.requirementAge
+            journeySettings.requirementAge !== baseSettings.requirementAge
               ? {
-                  ...sharedSettings,
-                  alphaPensionLeaveAge: sharedSettings.requirementAge,
+                  ...journeySettings,
+                  alphaPensionLeaveAge: journeySettings.requirementAge,
                 }
-              : sharedSettings;
+              : journeySettings;
 
           return mergeSimpleJourneySettings(current, retirementAlignedSettings);
         });
         return;
       }
 
-      if (typeof value === "function") {
-        setSettings((current) => value(current));
-        return;
-      }
-
       setSettings(value);
     },
-    [activeJourneyMode]
+    [activeJourneyMode, setSettings]
   );
 
   function loadParameters(input: unknown) {
-    const importedSettings = parseStoredSettings(input);
+    const imported = parseStoredSettingsByJourney(input);
 
-    if (!importedSettings) {
+    if (!imported) {
       return false;
     }
 
-    saveSettings(importedSettings);
+    const importedSettings = imported.migratedFromLegacy
+      ? applyLegacyJourneyDefaults(imported.settings)
+      : imported.settings;
+
+    saveSettingsByJourney(importedSettings);
     showSavedLabel();
     setChartUndoStack([]);
     setSettingsFormVersion((current) => current + 1);
-    setSettings(
-      activeJourneyMode === "simple"
-        ? applySimpleJourneyDefaults(importedSettings)
-        : importedSettings
-    );
+    setSettingsByJourney(importedSettings);
 
     return true;
   }
 
   function exportParameters() {
-    const snapshot = getStoredSettingsSnapshot(effectiveSettings);
+    const snapshot = getStoredSettingsEnvelope(settingsByJourney);
     const exportTimestamp = formatParameterExportTimestamp(new Date());
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -147,6 +161,17 @@ export function useJourneySettings({
     setSettings,
     setSettingsFormVersion,
     settings,
+    settingsByJourney,
     settingsFormVersion,
+  };
+}
+
+function applyLegacyJourneyDefaults(
+  settings: PensionSettingsByJourney
+): PensionSettingsByJourney {
+  return {
+    simple: applySimpleJourneyDefaults(settings.simple),
+    bridge: applyBridgeJourneyDefaults(settings.bridge),
+    expert: settings.expert,
   };
 }

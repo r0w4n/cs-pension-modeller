@@ -54,8 +54,11 @@ import {
 import {
   calculateNormalPensionAge,
   createDefaultSettings,
+  getStoredSettingsEnvelope,
+  parseStoredSettingsByJourney,
   saveLocalStoragePreference,
   type PensionSettings,
+  type PensionSettingsByJourney,
 } from "../../src/settings";
 
 type ProductAcceptanceWorld = {
@@ -107,6 +110,7 @@ type ProductAcceptanceWorld = {
   acknowledgementLoaded?: boolean;
   appModeLoaded?: ReturnType<typeof loadStoredAppMode>;
   guidanceNotesLoaded?: boolean;
+  journeySettings?: PensionSettingsByJourney;
 };
 
 type MemoryStorage = Storage & {
@@ -1746,9 +1750,80 @@ Then(
   }
 );
 
+Then(
+  "the journey should hide the comparison section",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const answerStep = getJourneyAnswerStep(this.selectedJourney);
+
+    assertEqual(answerStep.showComparisonSection, false);
+  }
+);
+
+Then(
+  "the journey should show the comparison section",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const answerStep = getJourneyAnswerStep(this.selectedJourney);
+
+    assertEqual(answerStep.showComparisonSection === false, false);
+  }
+);
+
 Given("default modeller settings", function (this: ProductAcceptanceWorld) {
   this.settings = createDefaultSettings();
 });
+
+Given(
+  "each journey has a different retirement age",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.journeySettings = {
+      simple: { ...defaults, requirementAge: 61 },
+      bridge: { ...defaults, requirementAge: 62 },
+      expert: { ...defaults, requirementAge: 63 },
+    };
+  }
+);
+
+When(
+  "the journey settings are exported and parsed",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.journeySettings, "Expected journey settings");
+    this.journeySettings = parseStoredSettingsByJourney(
+      getStoredSettingsEnvelope(this.journeySettings)
+    )?.settings;
+  }
+);
+
+Then(
+  "each journey should retain its own retirement age",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.journeySettings, "Expected parsed journey settings");
+    assertEqual(this.journeySettings.simple.requirementAge, 61);
+    assertEqual(this.journeySettings.bridge.requirementAge, 62);
+    assertEqual(this.journeySettings.expert.requirementAge, 63);
+  }
+);
+
+When(
+  "a legacy flat parameter file with retirement age {int} is parsed",
+  function (this: ProductAcceptanceWorld, requirementAge: number) {
+    this.journeySettings = parseStoredSettingsByJourney({
+      requirementAge,
+    })?.settings;
+  }
+);
+
+Then(
+  "all three journeys should use the legacy retirement age {int}",
+  function (this: ProductAcceptanceWorld, requirementAge: number) {
+    assertCondition(this.journeySettings, "Expected migrated journey settings");
+    assertEqual(this.journeySettings.simple.requirementAge, requirementAge);
+    assertEqual(this.journeySettings.bridge.requirementAge, requirementAge);
+    assertEqual(this.journeySettings.expert.requirementAge, requirementAge);
+  }
+);
 
 Given(
   "a retirement spending target of {float} per month after estimated tax",

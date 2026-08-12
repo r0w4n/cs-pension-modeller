@@ -66,8 +66,6 @@ test.describe("app end-to-end journeys", () => {
     await fillCurrency(page, "Current SIPP pot (£)", "125000");
     await page.getByRole("button", { name: "Next" }).click();
     await fillCurrency(page, "Current ISA pot (£)", "40000");
-    await page.getByRole("button", { name: "Next" }).click();
-    await fillCurrency(page, "Current LISA pot (£)", "10000");
     await clickNextAndExpectStep(page, "Tax assumptions");
     await expect(page.getByLabel("SIPP withdrawal tax treatment")).toHaveCount(
       0
@@ -88,7 +86,7 @@ test.describe("app end-to-end journeys", () => {
     expect(horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test("completes the simple journey and shows the shared comparison interface", async ({
+  test("completes the simple journey without the comparison section", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "simple");
@@ -172,29 +170,20 @@ test.describe("app end-to-end journeys", () => {
       )
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
-    await renderDeferredComparisonContent(page);
     await expectProjectionBasisBelowResultsChart(page);
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Retirement income summary" })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })
-    ).toBeVisible();
-
-    await page.getByLabel("Scenario name").fill("Simple journey check");
-    await page.getByRole("button", { name: "Add to comparison" }).click();
+    ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Saved scenarios" })
-    ).toBeVisible();
-    await expect(
-      page.locator(
-        '.comparison-saved-section input[value="Simple journey check"]'
-      )
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 
   test("expert mode can exclude Alpha pension", async ({ page }) => {
@@ -665,13 +654,11 @@ test.describe("app end-to-end journeys", () => {
           page,
           "cs-pension-modeller.settings"
         );
-        return stored
-          ? (
-              JSON.parse(stored) as {
-                data: { spendingSmile: { slowGoStartAge: number } };
-              }
-            ).data.spendingSmile.slowGoStartAge
-          : null;
+        return readJourneySettingsValue(
+          stored,
+          "expert",
+          (settings) => settings.spendingSmile?.slowGoStartAge
+        );
       })
       .toBe(76);
     await page.mouse.up();
@@ -681,13 +668,11 @@ test.describe("app end-to-end journeys", () => {
           page,
           "cs-pension-modeller.settings"
         );
-        return stored
-          ? (
-              JSON.parse(stored) as {
-                data: { spendingSmile: { slowGoStartAge: number } };
-              }
-            ).data.spendingSmile.slowGoStartAge
-          : null;
+        return readJourneySettingsValue(
+          stored,
+          "expert",
+          (settings) => settings.spendingSmile?.slowGoStartAge
+        );
       })
       .not.toBe(76);
 
@@ -743,13 +728,11 @@ test.describe("app end-to-end journeys", () => {
           page,
           "cs-pension-modeller.settings"
         );
-        return stored
-          ? (
-              JSON.parse(stored) as {
-                data: { spendingSmile: { slowGoPercentage: number } };
-              }
-            ).data.spendingSmile.slowGoPercentage
-          : null;
+        return readJourneySettingsValue(
+          stored,
+          "expert",
+          (settings) => settings.spendingSmile?.slowGoPercentage
+        );
       })
       .not.toBe(80);
     await slowGoResultHandle.evaluate(
@@ -1001,6 +984,39 @@ async function startFirstRun(page: Page) {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
+}
+
+function readJourneySettingsValue<T>(
+  stored: string | null,
+  journey: "simple" | "bridge" | "expert",
+  select: (settings: {
+    spendingSmile?: {
+      slowGoStartAge?: number;
+      slowGoPercentage?: number;
+    };
+  }) => T | undefined
+) {
+  if (!stored) {
+    return null;
+  }
+
+  const parsed = JSON.parse(stored) as {
+    data?: {
+      journeys?: Partial<
+        Record<
+          "simple" | "bridge" | "expert",
+          {
+            spendingSmile?: {
+              slowGoStartAge?: number;
+              slowGoPercentage?: number;
+            };
+          }
+        >
+      >;
+    };
+  };
+
+  return select(parsed.data?.journeys?.[journey] ?? {}) ?? null;
 }
 
 async function acknowledgeAndOpenMode(

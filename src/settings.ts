@@ -33,6 +33,9 @@ export type {
   ClassicCalculationMode,
   ClassicFinalSalaryLink,
   PensionSettings,
+  PensionSettingsByJourney,
+  SettingsJourney,
+  StoredPensionSettingsByJourney,
   PensionValidationIssue,
 } from "./settings/settings-types";
 export { usesAfterTaxRetirementIncomeTarget } from "./settings/settings-types";
@@ -67,11 +70,16 @@ export {
   clearStoredSettings,
   isLocalStorageEnabled,
   loadStoredSettings,
+  loadStoredSettingsByJourney,
   parseStoredSettings,
+  parseStoredSettingsByJourney,
   removeStorageItem,
   saveLocalStoragePreference,
   saveSettings,
+  saveSettingsByJourney,
   getStoredSettingsSnapshot,
+  getStoredSettingsByJourneySnapshot,
+  getStoredSettingsEnvelope,
   readStorageItem,
   writeStorageItem,
 } from "./settings/settings-storage";

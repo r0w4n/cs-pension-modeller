@@ -3,10 +3,13 @@ import {
   clearStoredSettings,
   isLocalStorageEnabled,
   loadStoredSettings,
+  loadStoredSettingsByJourney,
+  parseStoredSettingsByJourney,
   parseStoredSettings,
   saveLocalStoragePreference,
   readStorageItem,
   saveSettings,
+  saveSettingsByJourney,
   writeStorageItem,
 } from "./settings-storage";
 import {
@@ -97,13 +100,61 @@ describe("settings-storage", () => {
     ]);
   });
 
+  it("saves independent settings for all three journeys in one envelope", () => {
+    const defaults = createDefaultSettings();
+
+    saveSettingsByJourney({
+      simple: { ...defaults, requirementAge: 61 },
+      bridge: { ...defaults, requirementAge: 62 },
+      expert: { ...defaults, requirementAge: 63 },
+    });
+
+    const stored = JSON.parse(
+      window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
+    ) as {
+      version?: unknown;
+      data?: {
+        journeys?: Record<string, { requirementAge?: unknown }>;
+      };
+    };
+    expect(stored.version).toBe(SETTINGS_SCHEMA_VERSION);
+    expect(stored.data?.journeys?.simple.requirementAge).toBe(61);
+    expect(stored.data?.journeys?.bridge.requirementAge).toBe(62);
+    expect(stored.data?.journeys?.expert.requirementAge).toBe(63);
+    const loaded = loadStoredSettingsByJourney().settings;
+    expect(loaded.simple.requirementAge).toBe(61);
+    expect(loaded.bridge.requirementAge).toBe(62);
+    expect(loaded.expert.requirementAge).toBe(63);
+  });
+
+  it("permanently accepts legacy flat parameter files", () => {
+    const imported = parseStoredSettingsByJourney({
+      targetRetirementAge: 64,
+      desiredRetirementIncome: 42000,
+    });
+
+    expect(imported?.migratedFromLegacy).toBe(true);
+    expect(imported?.settings.simple.requirementAge).toBe(64);
+    expect(imported?.settings.simple.desiredRetirementIncome).toBe(42000);
+    expect(imported?.settings.bridge.requirementAge).toBe(64);
+    expect(imported?.settings.bridge.desiredRetirementIncome).toBe(42000);
+    expect(imported?.settings.expert.requirementAge).toBe(64);
+    expect(imported?.settings.expert.desiredRetirementIncome).toBe(42000);
+  });
+
   it("defensively restores missing and invalid priority entries", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify({
         version: SETTINGS_SCHEMA_VERSION,
         data: {
-          flexibleWithdrawalPriority: ["isa", "unknown", "isa"],
+          journeys: {
+            simple: {},
+            bridge: {},
+            expert: {
+              flexibleWithdrawalPriority: ["isa", "unknown", "isa"],
+            },
+          },
         },
       })
     );
@@ -159,8 +210,14 @@ describe("settings-storage", () => {
       JSON.stringify({
         version: SETTINGS_SCHEMA_VERSION,
         data: {
-          requirementAge: 62,
-          desiredRetirementIncome: 61000,
+          journeys: {
+            simple: { requirementAge: 61 },
+            bridge: { requirementAge: 60 },
+            expert: {
+              requirementAge: 62,
+              desiredRetirementIncome: 61000,
+            },
+          },
         },
       })
     );

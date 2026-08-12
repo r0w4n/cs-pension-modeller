@@ -1,9 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { PensionSettings } from "../settings";
-import {
-  applyBridgeJourneyDefaults,
-  clonePensionSettings,
-} from "../app-domains";
+import { clonePensionSettings } from "../app-domains";
 import { saveStoredAppMode, type AppMode } from "./app-persistence";
 
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;
@@ -58,7 +55,6 @@ export function loadComparisonScenario({
 export function selectAppMode({
   mode,
   currentMode,
-  setSettings,
   setChartUndoStack,
   shouldFocusActiveModeRef,
   scrollActiveModeIntoView,
@@ -66,20 +62,12 @@ export function selectAppMode({
 }: {
   mode: AppMode;
   currentMode: AppMode | null;
-  setSettings: SetSettings;
   setChartUndoStack: SetChartUndoStack;
   shouldFocusActiveModeRef: MutableRefObject<boolean>;
   scrollActiveModeIntoView: () => void;
   setAppMode: SetAppMode;
 }) {
-  if (mode === "bridge") {
-    setSettings((current) => applyBridgeJourneyDefaults(current));
-    setChartUndoStack([]);
-  }
-
-  if (mode === "simple") {
-    setChartUndoStack([]);
-  }
+  setChartUndoStack([]);
 
   shouldFocusActiveModeRef.current = true;
   if (mode === currentMode) {

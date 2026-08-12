@@ -2,7 +2,7 @@
 Feature: Modeller journeys
 
   The modeller should offer guided journeys that expose the right level of
-  detail while sharing the same comparison result interface.
+  detail while presenting results appropriate to each journey.
 
   @mode-selection
   Scenario: Offer simplified, bridge, and expert planning journeys
@@ -22,11 +22,12 @@ Feature: Modeller journeys
     And the "<targetStep>" journey step should include the field "Income Tax regime"
     And the journey result should <resultExpectation>
     And the journey should <bridgeFundingExpectation>
+    And the journey should <comparisonExpectation>
 
     Examples:
-      | journey                              | targetStep                        | planningStep                | resultExpectation            | bridgeFundingExpectation               |
-      | Simplified retirement journey        | What would you like to spend each month? | Do you have any other Civil Service pensions? | use the shared bridge answer | hide bridge funding details by default |
-      | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default |
+      | journey                              | targetStep                        | planningStep                | resultExpectation            | bridgeFundingExpectation               | comparisonExpectation       |
+      | Simplified retirement journey        | What would you like to spend each month? | Do you have any other Civil Service pensions? | use the shared bridge answer | hide bridge funding details by default | hide the comparison section |
+      | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default | show the comparison section |
 
   @simple-journey
   Scenario: Start the simplified journey with personal details
@@ -157,6 +158,14 @@ Feature: Modeller journeys
     Then State Pension, ISA, LISA and SIPP should be included
     And Income Tax modelling should be on
     And ISA, LISA and SIPP withdrawals should use the use-by-age strategy
+
+  @settings-storage
+  Scenario: Keep journey settings separate while supporting older parameter files
+    Given each journey has a different retirement age
+    When the journey settings are exported and parsed
+    Then each journey should retain its own retirement age
+    When a legacy flat parameter file with retirement age 64 is parsed
+    Then all three journeys should use the legacy retirement age 64
 
   @results-chart @chart-key
   Scenario: Exclude disabled income sources from the results chart key

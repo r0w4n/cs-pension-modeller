@@ -61,9 +61,12 @@ describe("settings-storage", () => {
 
     const stored = JSON.parse(
       window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
-    ) as { version?: unknown; data?: Record<string, unknown> };
+    ) as {
+      version?: unknown;
+      data?: { journeys?: { expert?: Record<string, unknown> } };
+    };
     expect(stored.version).toBe(SETTINGS_SCHEMA_VERSION);
-    expect(stored.data?.startDate).toBeUndefined();
+    expect(stored.data?.journeys?.expert?.startDate).toBeUndefined();
 
     const loaded = loadStoredSettings();
     expect(loaded.desiredRetirementIncome).toBe(60000);

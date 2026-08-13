@@ -556,25 +556,6 @@ export const JOURNEY_DEFINITIONS = [
         visible: (settings) => settings.showAlpha,
       },
       {
-        id: "partial-retirement",
-        eyebrow: "Optional",
-        title: "Reduced hours",
-        description:
-          "Model a reduced-hours period before full retirement if that is part of your plan.",
-        kind: "fields",
-        fieldIds: [
-          "partialRetirementStartAge",
-          "fullSalary",
-          "partialRetirementWorkPercent",
-        ],
-        fieldLabels: {
-          partialRetirementStartAge: "Reduced hours age",
-          fullSalary: "Full salary before reduced hours (£ per year)",
-          partialRetirementWorkPercent: "Reduced hours percentage",
-        },
-        visible: (settings) => settings.partialRetirementEnabled,
-      },
-      {
         id: "state-pension-forecast",
         eyebrow: "Step 5",
         title: "Do you know your State Pension forecast?",

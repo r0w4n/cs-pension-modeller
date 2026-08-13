@@ -289,6 +289,7 @@ describe("journey definitions", () => {
     const stepIds = simpleJourney?.steps.map((step) => step.id) ?? [];
     expect(stepIds).not.toContain("alpha-epa");
     expect(stepIds).not.toContain("additional-income");
+    expect(stepIds).not.toContain("partial-retirement");
     expect(stepIds.indexOf("include")).toBeLessThan(stepIds.indexOf("classic"));
   });
 

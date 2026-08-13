@@ -1577,7 +1577,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("applies simple-mode NPA defaults to the shared settings", () => {
+  it("applies simple-mode NPA defaults to migrated simple settings", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(

@@ -58,7 +58,7 @@ export function ModeSelection({
           onClick={() => onSelectMode("expert")}
         >
           <span className="card-label">Expert journey</span>
-          <strong>Work through every setting with full control.</strong>
+          <strong>Work through every setting with full control</strong>
           <span>
             This journey gives you more control over your retirement projection,
             including detailed assumptions for pensions, savings, tax,

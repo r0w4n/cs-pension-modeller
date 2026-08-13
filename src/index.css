@@ -597,6 +597,7 @@ h3 {
 }
 
 .journey-support-callout {
+  width: 100%;
   border: 1px solid rgba(17, 100, 102, 0.18);
   border-radius: 1rem;
   padding: 1rem 1.1rem;
@@ -613,10 +614,6 @@ h3 {
   color: var(--text-muted);
   font-size: var(--font-size-body-sm);
   line-height: var(--line-height-body);
-}
-
-.journey-support-callout {
-  width: 100%;
 }
 
 .journey-support-callout a {

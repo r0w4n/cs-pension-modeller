@@ -66,7 +66,7 @@ describe("useUndoShortcut", () => {
     expect(result.current.chartUndoStack).toHaveLength(1);
   });
 
-  it("restores simple-journey undo state through the shared settings", () => {
+  it("restores simple-journey undo state through its journey settings", () => {
     const previousSettings = createSettings({ dateOfBirth: "1988-03-14" });
 
     const { result } = renderHook(() => {

@@ -557,6 +557,11 @@ export function RetirementIncomeBridgeChart({
   const valueLabel =
     displayMode === "monthly" ? "Monthly income" : "Annual income";
   const axisTargetLabel = formatCurrency(displayedTargetIncomeAnnual / divisor);
+  const axisTitle = createBridgeAxisTitle(
+    valueLabel,
+    axisTargetLabel,
+    isSimplePresentation
+  );
   const chartTitleId = "retirement-income-bridge-chart-title";
   const chartDescriptionId = "retirement-income-bridge-chart-description";
   const displayedData = useMemo(
@@ -1189,6 +1194,7 @@ export function RetirementIncomeBridgeChart({
       createMobileBridgeSummary({
         displayedData,
         displayedTargetIncomeAnnual,
+        isSimplePresentation,
         retirementAge,
         showStatePension,
         statePensionAge,
@@ -1198,6 +1204,7 @@ export function RetirementIncomeBridgeChart({
       alphaStartAge,
       displayedData,
       displayedTargetIncomeAnnual,
+      isSimplePresentation,
       retirementAge,
       showStatePension,
       statePensionAge,
@@ -2915,7 +2922,7 @@ export function RetirementIncomeBridgeChart({
               x={-dimensions.marginLeft + 2}
               y={-24}
             >
-              {`${valueLabel} (£) · Target ${axisTargetLabel}`}
+              {axisTitle}
             </text>
           </g>
         </svg>
@@ -2982,7 +2989,7 @@ export function RetirementIncomeBridgeChart({
           ) : null}
           <span>
             <span className="bridge-shortfall-key" />
-            {RETIREMENT_CHART_OVERLAY_META.shortfall.label}
+            {getBridgeShortfallLabel(isSimplePresentation)}
           </span>
           <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
         </div>
@@ -3119,7 +3126,7 @@ function BridgeChartDescription({
   isSimplePresentation: boolean;
 }) {
   const description = isSimplePresentation
-    ? "The coloured areas show where your estimated income comes from as you get older. The target line shows the amount you said you would like to spend. The tax pattern shows estimated Income Tax, and red hatching shows where income may be below your target."
+    ? "The coloured areas show where your estimated income comes from as you get older. The line shows the amount you said you would like to spend. The tax pattern shows estimated Income Tax, and red hatching shows where the estimate gives you less than that."
     : "Stacked gross income chart showing ISA, SIPP, partial retirement income, Civil Service pensions, additional guaranteed income and State Pension against the target retirement income over age. Estimated Income Tax is shown with horizontal blue-grey hatching between income after estimated Income Tax and gross income. Shortfall is shown with red diagonal hatching.";
 
   return (
@@ -3132,6 +3139,15 @@ function BridgeChartDescription({
       {description}
     </p>
   );
+}
+
+function createBridgeAxisTitle(
+  valueLabel: string,
+  targetLabel: string,
+  isSimplePresentation: boolean
+) {
+  const comparisonLabel = isSimplePresentation ? "Amount you want" : "Target";
+  return `${valueLabel} (£) · ${comparisonLabel} ${targetLabel}`;
 }
 
 function createFlexibleAccountWarnings(
@@ -4038,6 +4054,7 @@ function getMarkerHandleLabel(marker: MilestoneMarker) {
 function createMobileBridgeSummary({
   displayedData,
   displayedTargetIncomeAnnual,
+  isSimplePresentation,
   retirementAge,
   showStatePension,
   statePensionAge,
@@ -4045,6 +4062,7 @@ function createMobileBridgeSummary({
 }: {
   displayedData: RetirementIncomePoint[];
   displayedTargetIncomeAnnual: number;
+  isSimplePresentation: boolean;
   retirementAge: number;
   showStatePension: boolean;
   statePensionAge: number;
@@ -4055,19 +4073,21 @@ function createMobileBridgeSummary({
   );
   const firstShortfallPoint = shortfallPoints[0];
   const lastShortfallPoint = shortfallPoints.at(-1);
-  const shortfallLabel =
+  const shortfallValue =
     firstShortfallPoint && lastShortfallPoint
       ? `Ages ${formatAgeValue(firstShortfallPoint.age)}-${formatAgeValue(lastShortfallPoint.age)}`
-      : "No modelled shortfall";
+      : isSimplePresentation
+        ? "No ages with less than you want"
+        : "No modelled shortfall";
 
   return [
     {
-      label: "Target",
+      label: isSimplePresentation ? "Amount you want" : "Target",
       value: `${formatCurrency(displayedTargetIncomeAnnual)} / year`,
     },
     {
-      label: "Shortfall",
-      value: shortfallLabel,
+      label: getBridgeShortfallLabel(isSimplePresentation),
+      value: shortfallValue,
     },
     {
       label: showStatePension ? "State Pension" : "Alpha pension",
@@ -4076,6 +4096,12 @@ function createMobileBridgeSummary({
       )}`,
     },
   ];
+}
+
+function getBridgeShortfallLabel(isSimplePresentation: boolean) {
+  return isSimplePresentation
+    ? "Less than you want"
+    : RETIREMENT_CHART_OVERLAY_META.shortfall.label;
 }
 
 function getFlexibleSurplusData(

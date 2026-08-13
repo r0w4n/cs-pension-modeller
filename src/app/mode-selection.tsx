@@ -32,7 +32,7 @@ export function ModeSelection({
           <span>
             Answer a few plain-English questions about you, the income you would
             like, and when you want to retire. At the end, see an estimate of
-            your retirement income, key dates, and assumptions.
+            how much money you might have each month and where it may come from.
           </span>
         </button>
 

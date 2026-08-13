@@ -38,7 +38,7 @@ Feature: Modeller journeys
     And the "What would you like to spend each month?" journey step should contain these fields:
       | field                                                              |
       | How much would you like available to spend each month after tax?   |
-      | Income Tax regime                                                  |
+      | Which UK tax rules should we use?                                  |
     And the "What would you like to spend each month?" journey step should link to the Retirement Living Standards
     And the "What would you like to spend each month?" journey step should place its support link beside the field
 
@@ -123,10 +123,19 @@ Feature: Modeller journeys
     But the retirement outcome should not mention unused bridge withdrawals
 
   @simple-journey @optional-sections
-  Scenario: Use the retirement target to estimate Added Pension after the basic projection
+  Scenario: Keep Added Pension out of the simplified journey
     When the "Simplified retirement journey" journey is loaded
-    Then the journey should include a step titled "Could Added Pension close the gap?"
-    And the "Could Added Pension close the gap?" journey step should use a yes or no question
+    Then the journey should not include a step titled "Could Added Pension close the gap?"
+
+  @simple-journey @optional-sections
+  Scenario: Ask for statement amounts for older Civil Service pensions
+    When the "Simplified retirement journey" journey is loaded
+    Then the "Copy your classic pension amounts" journey step should contain these fields:
+      | field                                                   |
+      | Yearly classic pension shown on your statement (£)      |
+      | One-off classic payment shown on your statement (£)     |
+      | How old would you like to be when this pension starts?  |
+      | Allow for this pension rising with prices?              |
 
   @expert-journey
   Scenario: Separate the expert retirement target from personal details

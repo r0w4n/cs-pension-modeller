@@ -310,7 +310,7 @@ describe("JourneyStepContent", () => {
           },
           optionalQuestion: {
             prompt: "Do you know your State Pension forecast?",
-            noLabel: "No, use the full-rate assumption",
+            noLabel: "No — use £12,548 a year for now",
             yesLabel: "Yes, enter my forecast",
             showPrompt: true,
             setting: {
@@ -324,17 +324,21 @@ describe("JourneyStepContent", () => {
     );
 
     expect(
-      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+      screen.getByRole("radio", {
+        name: "No — use £12,548 a year for now",
+      })
     ).toBeChecked();
     expect(
-      screen.getByRole("heading", { name: "What we'll assume" })
+      screen.getByRole("heading", { name: "What we'll use for now" })
     ).toBeInTheDocument();
     expect(screen.getByText(/We'll use/)).toHaveTextContent("£12,548 a year");
-    expect(screen.getByText(/We'll identify this amount/)).toHaveTextContent(
-      "If your target depends on it, we'll label the result Needs checking. Otherwise, the result can remain Looks workable"
+    expect(screen.getByText(/Your result will remind you/)).toHaveTextContent(
+      "changing it could leave you with less than the amount you want"
     );
     expect(
-      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+      screen.getByRole("radio", {
+        name: "No — use £12,548 a year for now",
+      })
     ).toHaveAttribute("aria-describedby", "state-pension-assumption");
     expect(
       screen.queryByLabelText(
@@ -356,11 +360,13 @@ describe("JourneyStepContent", () => {
       )
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "What we'll assume" })
+      screen.queryByRole("heading", { name: "What we'll use for now" })
     ).not.toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+      screen.getByRole("radio", {
+        name: "No — use £12,548 a year for now",
+      })
     );
 
     expect(viewModel.onChange).toHaveBeenCalledWith(

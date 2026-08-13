@@ -233,7 +233,7 @@ export function SimplePensionSummary({
   const period = retirementIncomeDisplay === "monthly" ? "a month" : "a year";
   const difference = activeResult.annualGap / divisor;
   const differenceLabel =
-    difference < 0 ? "Estimated shortfall" : "Estimated amount above target";
+    difference < 0 ? "Less than you want" : "More than you want";
   const outcome = buildRetirementOutcomeBanner(activeResult);
 
   return (
@@ -253,14 +253,14 @@ export function SimplePensionSummary({
       </p>
       <div className="simple-results-figures">
         <div className="simple-results-figure simple-results-figure--primary">
-          <span>Estimated income after tax</span>
+          <span>Money left after estimated tax</span>
           <strong>
             {formatCurrencyDetailed(activeResult.annualIncome / divisor)}{" "}
             {period}
           </strong>
         </div>
         <div className="simple-results-figure">
-          <span>Your spending target</span>
+          <span>Amount you want to spend</span>
           <strong>
             {formatCurrencyDetailed(activeResult.annualTarget / divisor)}{" "}
             {period}
@@ -342,9 +342,9 @@ export function SimplePensionDetails({
             {incomeAgeRangeItems.map((item) => (
               <li key={`${item.ageRange}-${item.sources}`}>
                 <strong>{item.ageRange}</strong>
-                <span>{item.income} after estimated tax</span>
+                <span>{item.income} left after estimated tax</span>
                 <span>{item.sources}</span>
-                <span>{item.difference} compared with your target</span>
+                <span>{formatSimpleDifference(item.difference)}</span>
               </li>
             ))}
           </ul>
@@ -360,9 +360,11 @@ export function SimplePensionDetails({
                   <tr>
                     <th scope="col">Age range</th>
                     <th scope="col">Sources</th>
-                    <th scope="col">Estimated income after tax</th>
-                    <th scope="col">Target spending after estimated tax</th>
-                    <th scope="col">Estimated spending difference</th>
+                    <th scope="col">Money left after estimated tax</th>
+                    <th scope="col">
+                      Amount you want to spend after estimated tax
+                    </th>
+                    <th scope="col">Difference</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -372,7 +374,7 @@ export function SimplePensionDetails({
                       <td>{item.sources}</td>
                       <td>{item.income}</td>
                       <td>{item.target}</td>
-                      <td>{item.difference}</td>
+                      <td>{formatSimpleDifference(item.difference)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -418,24 +420,41 @@ function RetirementOutcomeBannerView({
 }) {
   const simpleMessage =
     outcome.status === "shortfall"
-      ? "The model estimates that your income is below your target for part of retirement. The chart shows when this may happen."
+      ? "The estimate shows less money than you want for part of retirement. The chart shows when this may happen."
       : outcome.status === "atRisk"
-        ? "The estimate reaches your target, but it depends on a State Pension amount that you have not confirmed."
-        : "Based on your answers, the model estimates that your income reaches your target across the ages shown.";
+        ? "The estimate reaches the amount you want, but it uses a temporary State Pension amount."
+        : "Based on your answers, the estimate shows at least the amount you want across the ages shown.";
+  const simpleLabel = getSimpleOutcomeLabel(outcome);
 
   return (
     <section
       className={`summary-outcome-banner summary-outcome-banner--${outcome.status}`}
       aria-label="Retirement outcome"
     >
-      <div className="summary-outcome-status">{outcome.label}</div>
+      <div className="summary-outcome-status">
+        {simple ? simpleLabel : outcome.label}
+      </div>
       <p>{simple ? simpleMessage : outcome.message}</p>
       {outcome.warning ? (
         <div className="summary-outcome-warning">
           <strong>{outcome.warning.heading}</strong>
-          <p>{outcome.warning.message}</p>
+          <p>
+            {simple
+              ? "We used a temporary State Pension amount. Your result may change when you enter your own forecast."
+              : outcome.warning.message}
+          </p>
         </div>
       ) : null}
     </section>
   );
+}
+
+function formatSimpleDifference(difference: string) {
+  return difference
+    .replace(" shortfall", " less than you want")
+    .replace(" surplus", " more than you want");
+}
+
+function getSimpleOutcomeLabel(outcome: RetirementOutcomeBanner) {
+  return outcome.status === "shortfall" ? "Less than you want" : outcome.label;
 }

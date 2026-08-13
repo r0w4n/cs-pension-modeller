@@ -465,10 +465,13 @@ export const JOURNEY_DEFINITIONS = [
         fieldLabels: {
           desiredRetirementIncome:
             "How much would you like available to spend each month after tax?",
+          taxRegime: "Which UK tax rules should we use?",
         },
         fieldDescriptions: {
           desiredRetirementIncome:
-            "Enter a monthly amount in today’s money. The modeller compares it with estimated take-home pension income. This is a planning target, not a promise of what you will receive.",
+            "Enter the amount you would like to have left each month after estimated tax. Use today’s prices, as if you were spending the money now. This is a rough planning amount, not a promise of what you will receive.",
+          taxRegime:
+            "Choose Scotland if you expect to pay Scottish Income Tax in retirement. Otherwise choose England, Wales or Northern Ireland.",
         },
         currencyFieldPresentation: {
           desiredRetirementIncome: {
@@ -516,7 +519,7 @@ export const JOURNEY_DEFINITIONS = [
         },
         fieldDescriptions: {
           requirementAge:
-            "The model uses this as the age you stop building up Alpha pension and start needing your retirement income. If your Alpha pension starts later, the results will show the gap between those ages.",
+            "We use this as the age you stop working and stop building more Alpha pension through your job. If your pension starts later, the results show the time between stopping work and receiving it.",
         },
         hideFieldInfoLinks: true,
       },
@@ -540,11 +543,11 @@ export const JOURNEY_DEFINITIONS = [
         },
         fieldDescriptions: {
           alphaPensionAbsDate:
-            "Choose the year printed on your latest Annual Benefit Statement. We use this as the starting point for your estimate.",
+            "Copy the year shown on your latest Annual Benefit Statement. We use it as the starting point for the estimate.",
           accruedPensionAtLastAbs:
-            "Your statement may call this your accrued Alpha pension. Enter the yearly amount, not a monthly amount. This is pension income you have built up, not the value of a pension pot.",
+            "Copy the yearly Alpha pension amount from your statement. It may be called ‘accrued pension’. Do not enter a total pot value.",
           pensionableEarnings:
-            "Your statement or employer may call this pensionable earnings. It is the part of your pay Alpha uses to work out the pension you build each year. It is usually your basic pay plus any pensionable allowances.",
+            "Copy the yearly pay figure used for your Alpha pension. Your statement may call it ‘pensionable earnings’. If you cannot find it, ask your employer which pay figure Alpha uses.",
         },
         hideFieldInfoLinks: true,
         supportLink: {
@@ -561,7 +564,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 5",
         title: "Do you know your State Pension forecast?",
         description:
-          "Your State Pension depends on your National Insurance record. The amount can differ because of your qualifying years or time contracted out of the Additional State Pension.",
+          "Your State Pension amount is personal to you. If you have checked it on GOV.UK, enter the yearly amount shown there. If not, we can use a temporary amount.",
         kind: "fields",
         fieldIds: ["currentStatePension"],
         fieldLabels: {
@@ -582,7 +585,7 @@ export const JOURNEY_DEFINITIONS = [
         },
         optionalQuestion: {
           prompt: "Do you know your State Pension forecast?",
-          noLabel: "No, use the full-rate assumption",
+          noLabel: "No — use £12,548 a year for now",
           yesLabel: "Yes, enter my forecast",
           showPrompt: true,
           setting: {
@@ -637,66 +640,120 @@ export const JOURNEY_DEFINITIONS = [
       {
         id: "classic",
         eyebrow: "Optional",
-        title: "classic pension",
+        title: "Copy your classic pension amounts",
         description:
-          "Add classic benefits if they should be part of the projection.",
+          "Use the classic section of your pension statement. Copy the yearly pension and one-off payment shown there, then choose when you want the pension to start.",
         kind: "fields",
         fieldIds: [
-          "classicPensionDrawAge",
-          "classicCalculationMode",
-          "classicFinalSalaryLink",
-          "classicCurrentFinalPensionableEarnings",
-          "classicPreservedFinalPensionableEarnings",
-          "classicReckonableServiceYears",
           "classicAnnualPension",
           "classicAutomaticLumpSum",
+          "classicPensionDrawAge",
           "classicApplyPensionIncreases",
         ],
+        fieldLabels: {
+          classicAnnualPension:
+            "Yearly classic pension shown on your statement (£)",
+          classicAutomaticLumpSum:
+            "One-off classic payment shown on your statement (£)",
+          classicPensionDrawAge:
+            "How old would you like to be when this pension starts?",
+          classicApplyPensionIncreases:
+            "Allow for this pension rising with prices?",
+        },
+        fieldDescriptions: {
+          classicAnnualPension:
+            "Copy the yearly pension amount from the classic section of your statement.",
+          classicAutomaticLumpSum:
+            "Copy the automatic lump sum from your statement. This is the one-off amount paid when the pension starts.",
+          classicPensionDrawAge:
+            "Starting it before age 60 will usually make the yearly amount smaller. The estimate applies that reduction.",
+          classicApplyPensionIncreases:
+            "Leave this on if you want the estimate to allow for yearly increases before and after the pension starts.",
+        },
+        hideFieldInfoLinks: true,
         visible: (settings) => settings.showClassic,
       },
       {
         id: "classic-plus",
         eyebrow: "Optional",
-        title: "classic plus pension",
+        title: "Copy your classic plus pension amounts",
         description:
-          "Add classic plus benefits if they should be part of the projection.",
+          "Use the classic plus section of your pension statement. Copy the yearly pension and one-off payment shown there, then choose when you want the pension to start.",
         kind: "fields",
         fieldIds: [
-          "classicPlusPensionDrawAge",
-          "classicPlusCalculationMode",
-          "classicPlusFinalSalaryLink",
-          "classicPlusCurrentFinalPensionableEarnings",
-          "classicPlusPreservedFinalPensionableEarnings",
-          "classicPlusPre2002ServiceYears",
-          "classicPlusPost2002ServiceYears",
           "classicPlusAnnualPension",
           "classicPlusAutomaticLumpSum",
+          "classicPlusPensionDrawAge",
           "classicPlusApplyPensionIncreases",
         ],
+        fieldLabels: {
+          classicPlusAnnualPension:
+            "Yearly classic plus pension shown on your statement (£)",
+          classicPlusAutomaticLumpSum:
+            "One-off classic plus payment shown on your statement (£)",
+          classicPlusPensionDrawAge:
+            "How old would you like to be when this pension starts?",
+          classicPlusApplyPensionIncreases:
+            "Allow for this pension rising with prices?",
+        },
+        fieldDescriptions: {
+          classicPlusAnnualPension:
+            "Copy the yearly pension amount from the classic plus section of your statement.",
+          classicPlusAutomaticLumpSum:
+            "Copy the automatic lump sum from your statement. This is the one-off amount paid when the pension starts.",
+          classicPlusPensionDrawAge:
+            "Starting it before age 60 will usually make the yearly amount smaller. The estimate applies that reduction.",
+          classicPlusApplyPensionIncreases:
+            "Leave this on if you want the estimate to allow for yearly increases before and after the pension starts.",
+        },
+        hideFieldInfoLinks: true,
         visible: (settings) => settings.showClassicPlus,
       },
       {
         id: "nuvos",
         eyebrow: "Optional",
-        title: "nuvos pension",
+        title: "Copy your nuvos pension amount",
         description:
-          "Add nuvos benefits if they should be part of the projection.",
+          "Use the nuvos section of your pension statement. Copy the statement year and yearly pension amount, then choose when you want the pension to start.",
         kind: "fields",
         fieldIds: [
-          "nuvosPensionDrawAge",
           "nuvosPensionAbsDate",
           "nuvosAccruedPensionAtLastAbs",
+          "nuvosPensionDrawAge",
           "nuvosApplyPensionIncreases",
           "nuvosAssumedCpiPercent",
         ],
+        fieldLabels: {
+          nuvosPensionAbsDate: "Year shown on your nuvos statement",
+          nuvosAccruedPensionAtLastAbs:
+            "Yearly nuvos pension shown on your statement (£)",
+          nuvosPensionDrawAge:
+            "How old would you like to be when this pension starts?",
+          nuvosApplyPensionIncreases:
+            "Allow for this pension rising with prices?",
+          nuvosAssumedCpiPercent: "How much might prices rise each year? (%)",
+        },
+        fieldDescriptions: {
+          nuvosPensionAbsDate:
+            "Copy the year printed on the nuvos section of your latest pension statement.",
+          nuvosAccruedPensionAtLastAbs:
+            "Copy the yearly pension amount from the nuvos section of your statement.",
+          nuvosPensionDrawAge:
+            "Starting it before its usual pension age will normally make the yearly amount smaller. The estimate applies that reduction.",
+          nuvosApplyPensionIncreases:
+            "Leave this on if you want the estimate to allow for yearly increases before and after the pension starts.",
+          nuvosAssumedCpiPercent:
+            "This is a guess for how much prices, and this pension, may rise each year.",
+        },
+        hideFieldInfoLinks: true,
         visible: (settings) => settings.showNuvos,
       },
       {
         id: "premium",
         eyebrow: "Optional",
-        title: "Premium pension",
+        title: "Copy your Premium pension amount",
         description:
-          "Add preserved Premium benefits if they should be part of the projection.",
+          "Use the Premium section of your pension statement. Copy the yearly pension and statement date, then answer the questions about when it can start.",
         kind: "fields",
         fieldIds: [
           "premiumAnnualPensionAtValuationDate",
@@ -706,14 +763,41 @@ export const JOURNEY_DEFINITIONS = [
           "premiumEarliestAccessAge",
           "premiumHasNpa65",
         ],
+        fieldLabels: {
+          premiumAnnualPensionAtValuationDate:
+            "Yearly Premium pension shown on your statement (£)",
+          premiumValuationDate: "Date shown beside that Premium amount",
+          premiumDrawAge:
+            "How old would you like to be when this pension starts?",
+          premiumHasNpa65:
+            "Does your statement say this pension normally starts at 65?",
+          premiumNormalPensionAge:
+            "Age your statement says this pension normally starts",
+          premiumEarliestAccessAge:
+            "Earliest age your statement says you can take it",
+        },
+        fieldDescriptions: {
+          premiumAnnualPensionAtValuationDate:
+            "Copy the yearly pension amount from the Premium section of your statement.",
+          premiumValuationDate:
+            "Copy the date that the statement says this pension amount was worked out for.",
+          premiumDrawAge:
+            "Starting it before its usual age will normally make the yearly amount smaller.",
+          premiumHasNpa65:
+            "Choose yes only if your pension record says age 65. Most Premium pensions normally start at 60.",
+          premiumNormalPensionAge: "Copy this age from your pension record.",
+          premiumEarliestAccessAge:
+            "Choose age 50 only if your pension record confirms it. Otherwise choose 55.",
+        },
+        hideFieldInfoLinks: true,
         visible: (settings) => settings.showPremium,
       },
       {
         id: "cs-avc",
         eyebrow: "Optional",
-        title: "Civil Service AVC",
+        title: "Copy your Civil Service AVC savings",
         description:
-          "Add your Civil Service Additional Voluntary Contribution pot if it should be part of the projection.",
+          "Use your latest Civil Service AVC statement for the current value, then add what you pay each month and when you want to start using the money.",
         kind: "fields",
         fieldIds: [
           "csAvcCurrentPot",
@@ -723,40 +807,38 @@ export const JOURNEY_DEFINITIONS = [
           "csAvcRealInterestPercent",
         ],
         fieldLabels: {
-          csAvcCurrentPot: "Current CS AVC balance (£)",
-          csAvcMonthlyContribution: "Monthly CS AVC contribution (£)",
-          csAvcDrawAge: "CS AVC access age",
+          csAvcCurrentPot:
+            "Current value shown on your Civil Service AVC statement (£)",
+          csAvcMonthlyContribution:
+            "How much do you pay into it each month? (£)",
+          csAvcDrawAge:
+            "How old would you like to be when you start using this money?",
+          csAvcHasProtectedPensionAge:
+            "Does your statement confirm that you can use it before the normal minimum age?",
+          csAvcRealInterestPercent:
+            "How much might this money grow each year after price rises? (%)",
         },
-        visible: (settings) => settings.showCsAvc,
-      },
-      {
-        id: "alpha-options",
-        eyebrow: "Projection so far",
-        title: "Could Added Pension close the gap?",
-        description:
-          "Compare the retirement income you asked for with the model's projection before Added Pension. If there is a gap, the modeller can estimate the Added Pension payment that could close it.",
-        kind: "fields",
-        fieldIds: ["alphaAddedPensionMonthly"],
+        fieldDescriptions: {
+          csAvcCurrentPot:
+            "Copy the current value from your latest Civil Service AVC statement.",
+          csAvcMonthlyContribution:
+            "Enter the amount that normally leaves your pay each month. Enter £0 if you no longer pay into it.",
+          csAvcDrawAge:
+            "This is the age when the estimate starts using this money as retirement income.",
+          csAvcHasProtectedPensionAge:
+            "Choose yes only if your provider has confirmed this in writing.",
+          csAvcRealInterestPercent:
+            "This is a guess for investment growth after allowing for prices rising.",
+        },
         hideFieldInfoLinks: true,
-        addedPensionIncomeGoal: true,
-        optionalQuestion: {
-          prompt: "Would you like Added Pension to try to close this gap?",
-          noLabel: "No, keep this projection",
-          yesLabel: "Yes, estimate the Added Pension needed",
-          showPrompt: true,
-          setting: {
-            id: "alphaAddedPensionMonthly",
-            enabledWhen: "positive",
-          },
-        },
-        visible: (settings) => settings.showAlpha,
+        visible: (settings) => settings.showCsAvc,
       },
       {
         id: "answer",
         eyebrow: "Result",
         title: "Your results",
         description:
-          "Review your projected income, key dates, and assumptions.",
+          "See how much money you may have each month and where it may come from.",
         kind: "bridge-answer",
         hideInactiveLegendItems: true,
         hideBridgeFundingSection: true,
@@ -877,6 +959,9 @@ export function applySimpleJourneyDefaults(
     showClassic: settings.showClassic,
     showClassicPlus: settings.showClassicPlus,
     showPremium: settings.showPremium,
+    alphaAddedPensionMonthly: 0,
+    classicCalculationMode: "manual",
+    classicPlusCalculationMode: "manual",
   };
 }
 
@@ -895,6 +980,9 @@ export function applySimpleJourneyAssumptions(
     showClassic: settings.showClassic,
     showClassicPlus: settings.showClassicPlus,
     showPremium: settings.showPremium,
+    alphaAddedPensionMonthly: 0,
+    classicCalculationMode: "manual",
+    classicPlusCalculationMode: "manual",
     alphaAddedPensionFactorType: "self",
     statePensionApplyFutureGrowth: false,
     assumedCpiPercent: 0,

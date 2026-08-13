@@ -84,19 +84,13 @@ test.describe("accessibility", () => {
       "simple journey confirmed State Pension question"
     );
 
-    const mobileStepDisclosure = page.getByText("View all steps", {
-      exact: true,
-    });
-    if (await mobileStepDisclosure.isVisible()) {
-      await mobileStepDisclosure.click();
-    }
-    await page
-      .getByRole("button", { name: "Could Added Pension close the gap?" })
-      .click();
+    await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Could Added Pension close the gap?" })
+      page.getByRole("heading", {
+        name: "Do you have any other Civil Service pensions?",
+      })
     ).toBeVisible();
-    await expectNoAxeViolations(page, "simple journey Added Pension gap");
+    await expectNoAxeViolations(page, "simple journey optional pensions");
   });
 
   test("expert journey entry screen has no detectable axe violations", async ({

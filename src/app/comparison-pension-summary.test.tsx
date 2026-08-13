@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import type { ComparisonResult } from "../app-domains";
 import { defaultSettings } from "../settings";
-import { PensionSummarySection } from "./comparison-pension-summary";
+import {
+  PensionSummarySection,
+  SimplePensionDetails,
+  SimplePensionSummary,
+} from "./comparison-pension-summary";
 
 describe("PensionSummarySection", () => {
   it("starts the summary content with an on-track outcome banner", () => {
@@ -195,6 +199,51 @@ describe("PensionSummarySection", () => {
     ).toHaveTextContent(
       "This Premium case is outside the published factors currently modelled, so Premium income is excluded."
     );
+  });
+});
+
+describe("simple pension results", () => {
+  it("explains the headline result without target or shortfall jargon", () => {
+    const result = createComparisonResultFixture({ targetMissMonths: 12 });
+    result.annualGap = -4200;
+
+    render(
+      <SimplePensionSummary
+        activeResult={result}
+        retirementIncomeDisplay="annual"
+      />
+    );
+
+    expect(screen.getByText("Money left after estimated tax")).toBeVisible();
+    expect(screen.getByText("Amount you want to spend")).toBeVisible();
+    expect(screen.getAllByText("Less than you want").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/shortfall/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/target/i)).not.toBeInTheDocument();
+  });
+
+  it("uses plain English in the detailed age ranges", () => {
+    render(
+      <SimplePensionDetails
+        activeResult={createComparisonResultFixture()}
+        retirementIncomeDisplay="annual"
+        incomeAgeRangeItems={[
+          {
+            ageRange: "Age 60 to 67",
+            sources: "Alpha pension",
+            income: "£15,578.65",
+            target: "£31,350.00",
+            difference: "£15,771.35 shortfall",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getAllByText("£15,771.35 less than you want")).toHaveLength(
+      2
+    );
+    expect(
+      screen.queryByText(/compared with your target/i)
+    ).not.toBeInTheDocument();
   });
 });
 

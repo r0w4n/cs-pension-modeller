@@ -968,21 +968,18 @@ function OptionalFieldsQuestion({
           id={statePensionAssumptionId}
           className="journey-assumption-callout"
         >
-          <h4>What we&apos;ll assume</h4>
+          <h4>What we&apos;ll use for now</h4>
           <p>
             We&apos;ll use{" "}
             <strong>
               {formatWholePounds(defaultSettings.currentStatePension)} a year
-            </strong>
-            , the full new State Pension rate, for now. Your actual forecast may
-            be different.
+            </strong>{" "}
+            until you enter your own forecast. Your amount may be different.
           </p>
           <p>
-            We&apos;ll identify this amount as an assumption in your results. If
-            your target depends on it, we&apos;ll label the result{" "}
-            <strong>Needs checking</strong>. Otherwise, the result can remain{" "}
-            <strong>Looks workable</strong>, with a reminder to confirm the
-            amount.
+            Your result will remind you that this number needs checking. It will
+            also show whether changing it could leave you with less than the
+            amount you want.
           </p>
         </div>
       ) : null}

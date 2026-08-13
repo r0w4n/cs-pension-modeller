@@ -1026,8 +1026,8 @@ describe("App settings form", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Added pension/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /Added pension/i })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Alpha EPA/i })
     ).not.toBeInTheDocument();
@@ -1118,7 +1118,7 @@ describe("App settings form", () => {
       screen.getByLabelText("Yearly Alpha pension built up so far (£)")
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/pension income you have built up, not the value/i)
+      screen.getByText(/Do not enter a total pot value/i)
     ).toBeInTheDocument();
     expect(
       screen.getByLabelText("Yearly pay used to build your Alpha pension (£)")
@@ -1129,7 +1129,7 @@ describe("App settings form", () => {
       )
     ).toHaveValue(null);
     expect(
-      screen.getByText(/employer may call this pensionable earnings/i)
+      screen.getByText(/statement may call it ‘pensionable earnings’/i)
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", {
@@ -1178,7 +1178,9 @@ describe("App settings form", () => {
     openJourneyStep(/nuvos pension/i);
 
     expect(
-      screen.getByLabelText("Planned nuvos Pension Draw Age")
+      screen.getByLabelText(
+        "How old would you like to be when this pension starts?"
+      )
     ).toBeInTheDocument();
   });
 
@@ -1186,27 +1188,27 @@ describe("App settings form", () => {
     {
       toggleName: "classic pension",
       stepName: /classic pension/i,
-      headingName: "classic pension",
+      headingName: "Copy your classic pension amounts",
     },
     {
       toggleName: "classic plus pension",
       stepName: /classic plus pension/i,
-      headingName: "classic plus pension",
+      headingName: "Copy your classic plus pension amounts",
     },
     {
       toggleName: "nuvos pension",
       stepName: /nuvos pension/i,
-      headingName: "nuvos pension",
+      headingName: "Copy your nuvos pension amount",
     },
     {
       toggleName: "premium pension",
       stepName: /Premium pension/i,
-      headingName: "Premium pension",
+      headingName: "Copy your Premium pension amount",
     },
     {
       toggleName: "Civil Service AVC savings",
       stepName: /Civil Service AVC/i,
-      headingName: "Civil Service AVC",
+      headingName: "Copy your Civil Service AVC savings",
     },
   ])(
     "lets the simple journey exercise the $toggleName optional checkbox",
@@ -1252,7 +1254,9 @@ describe("App settings form", () => {
     openJourneyStep(/Civil Service AVC/i);
 
     expect(
-      screen.getByLabelText("Current CS AVC balance (£)")
+      screen.getByLabelText(
+        "Current value shown on your Civil Service AVC statement (£)"
+      )
     ).toBeInTheDocument();
     expect(
       screen.queryByLabelText("Current ISA balance (£)")
@@ -1314,8 +1318,8 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Add your Alpha pension details/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Added pension/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /Added pension/i })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Alpha EPA/i })
     ).not.toBeInTheDocument();
@@ -1336,9 +1340,11 @@ describe("App settings form", () => {
 
     openJourneyStep(/nuvos pension/i);
 
-    expect(screen.getByLabelText("Planned nuvos Pension Draw Age")).toHaveValue(
-      "65"
-    );
+    expect(
+      screen.getByLabelText(
+        "How old would you like to be when this pension starts?"
+      )
+    ).toHaveValue("65");
   });
 
   it("keeps nuvos timing read-only in the simple journey result chart", () => {
@@ -1510,24 +1516,15 @@ describe("App settings form", () => {
     );
   });
 
-  it("shows the retirement target and projection before asking about Added Pension", () => {
+  it("keeps Added Pension out of the simple journey and calculation", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Could Added Pension close the gap/i })
+    expect(
+      screen.queryByRole("button", { name: /Added Pension/i })
+    ).not.toBeInTheDocument();
+    expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({ alphaAddedPensionMonthly: 0 })
     );
-
-    expect(
-      screen.getByRole("heading", {
-        name: "Your projection before Added Pension",
-      })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Your target spending after estimated tax")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Estimated take-home pension income")
-    ).toBeInTheDocument();
   });
 
   it("asks the simple user to confirm their personalised State Pension forecast", () => {
@@ -1536,14 +1533,16 @@ describe("App settings form", () => {
     openJourneyStep(/Do you know your State Pension forecast/i);
 
     expect(
-      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+      screen.getByRole("radio", {
+        name: "No — use £12,548 a year for now",
+      })
     ).toBeChecked();
     expect(
-      screen.getByRole("heading", { name: "What we'll assume" })
+      screen.getByRole("heading", { name: "What we'll use for now" })
     ).toBeInTheDocument();
     expect(screen.getByText(/We'll use/)).toHaveTextContent("£12,548 a year");
-    expect(screen.getByText(/We'll identify this amount/)).toHaveTextContent(
-      "If your target depends on it, we'll label the result Needs checking. Otherwise, the result can remain Looks workable"
+    expect(screen.getByText(/Your result will remind you/)).toHaveTextContent(
+      "changing it could leave you with less than the amount you want"
     );
     expect(
       screen.getByRole("link", { name: /Check my State Pension forecast/i })
@@ -1577,7 +1576,9 @@ describe("App settings form", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("radio", { name: "No, use the full-rate assumption" })
+      screen.getByRole("radio", {
+        name: "No — use £12,548 a year for now",
+      })
     );
 
     expect(readStoredSettingsPayload()).toEqual(
@@ -1788,8 +1789,6 @@ describe("App settings form", () => {
     );
 
     renderAcknowledgedApp({ mode: "simple" });
-
-    fireEvent.click(screen.getByRole("button", { name: /Added pension/i }));
 
     expect(screen.queryByText("EPA purchase periods")).not.toBeInTheDocument();
     expect(

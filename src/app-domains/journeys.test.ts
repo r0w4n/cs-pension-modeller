@@ -344,7 +344,7 @@ describe("journey definitions", () => {
       pensionableEarnings: "Yearly pay used to build your Alpha pension (£)",
     });
     expect(alphaStep.fieldDescriptions?.accruedPensionAtLastAbs).toContain(
-      "not the value of a pension pot"
+      "Do not enter a total pot value"
     );
     expect(alphaStep.fieldDescriptions?.pensionableEarnings).toContain(
       "pensionable earnings"
@@ -402,6 +402,41 @@ describe("journey definitions", () => {
     );
     expect(getJourneyStepIds("simple-early-retirement")).not.toContain(
       "additional-income"
+    );
+  });
+
+  it("keeps Added Pension out of the simple journey and calculation", () => {
+    expect(getJourneyStepIds("simple-early-retirement")).not.toContain(
+      "alpha-options"
+    );
+    expect(
+      applySimpleJourneyAssumptions({
+        ...defaultSettings,
+        alphaAddedPensionMonthly: 250,
+      })
+    ).toEqual(expect.objectContaining({ alphaAddedPensionMonthly: 0 }));
+  });
+
+  it("uses statement amounts for classic pensions in the simple journey", () => {
+    expect([
+      ...getJourneyStepFieldIds("simple-early-retirement", "classic"),
+    ]).toEqual([
+      "classicAnnualPension",
+      "classicAutomaticLumpSum",
+      "classicPensionDrawAge",
+      "classicApplyPensionIncreases",
+    ]);
+    expect(
+      applySimpleJourneyAssumptions({
+        ...defaultSettings,
+        classicCalculationMode: "estimate",
+        classicPlusCalculationMode: "estimate",
+      })
+    ).toEqual(
+      expect.objectContaining({
+        classicCalculationMode: "manual",
+        classicPlusCalculationMode: "manual",
+      })
     );
   });
 

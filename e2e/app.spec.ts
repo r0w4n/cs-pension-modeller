@@ -126,10 +126,12 @@ test.describe("app end-to-end journeys", () => {
       "Do you know your State Pension forecast?"
     );
     await expect(
-      page.getByRole("radio", { name: "No, use the full-rate assumption" })
+      page.getByRole("radio", {
+        name: "No — use £12,548 a year for now",
+      })
     ).toBeChecked();
     await expect(
-      page.getByRole("heading", { name: "What we'll assume" })
+      page.getByRole("heading", { name: "What we'll use for now" })
     ).toBeVisible();
     await expect(page.getByText(/We'll use £12,548 a year/i)).toBeVisible();
     await expect(
@@ -155,20 +157,6 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("checkbox", { name: "Civil Service AVC savings" })
     ).toBeVisible();
-    await clickNextAndExpectStep(page, "Could Added Pension close the gap?");
-    await expect(
-      page.getByRole("heading", {
-        name: "Your projection before Added Pension",
-      })
-    ).toBeVisible();
-    await expect(
-      page.getByText("Estimated take-home pension income")
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        /meets or exceeds the target spending after estimated tax/i
-      )
-    ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
     await expect(
       page.getByRole("heading", {
@@ -178,6 +166,14 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("button", { name: "Show chart as monthly" })
     ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByText("Amount you want to spend", { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Money left after estimated tax", { exact: true }).first()
+    ).toBeVisible();
+    await expect(page.getByText(/Estimated shortfall/i)).toHaveCount(0);
+    await expect(page.getByText(/spending target/i)).toHaveCount(0);
     await expect(page.getByLabel("Target income line")).toHaveCount(0);
     await expect(page.getByLabel("Added Alpha pension")).toHaveCount(0);
     await expect(

@@ -155,8 +155,10 @@ Some important assumptions and simplifications are:
 - State Pension age is derived from date of birth using the timetable encoded in
   the app and can be deferred.
 - The full new State Pension rate is used only as an explicitly unconfirmed
-  fallback. Otherwise on-track results are marked as needing a check until the
-  user confirms an amount from their personalised GOV.UK forecast.
+  fallback. An on-track result is marked as needing a check when the target
+  depends on that assumption. If the target remains met without it, the result
+  stays on track with a caution until the user confirms an amount from their
+  personalised GOV.UK forecast.
 - New State Pension deferral uses the post-2016 rule modelled by the app.
 - ISA, LISA and SIPP projections depend directly on entered balances,
   contributions, lump sums, growth assumptions, draw ages, and withdrawal

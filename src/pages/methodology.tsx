@@ -770,9 +770,12 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The default annual amount is the full new State Pension rate and is
-          treated as an unconfirmed assumption. A result that otherwise appears
-          on track is marked as needing a check until the user confirms that the
-          amount comes from their personalised{" "}
+          treated as an unconfirmed assumption. The model also assesses the
+          projection without that income. An otherwise on-track result is marked
+          as needing a check only when the target depends on the assumed amount.
+          If the target remains met without it, the result stays on track and
+          carries a caution until the user confirms that the amount comes from
+          their personalised{" "}
           <a href={knowledgeLinks.statePensionForecast}>
             State Pension forecast
           </a>

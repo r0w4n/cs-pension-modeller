@@ -328,6 +328,9 @@ describe("JourneyStepContent", () => {
       screen.getByRole("heading", { name: "What we'll assume" })
     ).toBeInTheDocument();
     expect(screen.getByText(/We'll use/)).toHaveTextContent("£12,548 a year");
+    expect(screen.getByText(/We'll identify this amount/)).toHaveTextContent(
+      "If your target depends on it, we'll label the result Needs checking. Otherwise, the result can remain Looks workable"
+    );
     expect(
       screen.getByRole("radio", { name: "No, use the full-rate assumption" })
     ).toHaveAttribute("aria-describedby", "state-pension-assumption");

@@ -225,6 +225,12 @@ function RetirementOutcomeBannerView({
     >
       <div className="summary-outcome-status">{outcome.label}</div>
       <p>{outcome.message}</p>
+      {outcome.warning ? (
+        <div className="summary-outcome-warning">
+          <strong>{outcome.warning.heading}</strong>
+          <p>{outcome.warning.message}</p>
+        </div>
+      ) : null}
     </section>
   );
 }

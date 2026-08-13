@@ -101,8 +101,40 @@ describe("PensionSummarySection", () => {
     );
   });
 
-  it("marks an otherwise on-track result as needing a State Pension check", () => {
-    const result = createComparisonResultFixture();
+  it("keeps a resilient result on track and shows a State Pension caution", () => {
+    const result = createComparisonResultFixture({
+      statePensionAssumptionAffectsTarget: false,
+    });
+    result.scenario.settings.statePensionForecastConfirmed = false;
+
+    render(
+      <PensionSummarySection
+        activeResult={result}
+        description="Summary description"
+        retirementIncomeDisplay="annual"
+        incomeAgeRangeItems={[]}
+        statusItems={[]}
+      />
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("Looks workable");
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("State Pension amount not confirmed");
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("target is still met if this income is excluded");
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("Review the State Pension section");
+  });
+
+  it("marks a result as needing checking when it depends on assumed State Pension", () => {
+    const result = createComparisonResultFixture({
+      statePensionAssumptionAffectsTarget: true,
+    });
     result.scenario.settings.statePensionForecastConfirmed = false;
 
     render(
@@ -120,7 +152,9 @@ describe("PensionSummarySection", () => {
     ).toHaveTextContent("Needs checking");
     expect(
       screen.getByRole("region", { name: "Retirement outcome" })
-    ).toHaveTextContent("unconfirmed State Pension assumption");
+    ).toHaveTextContent(
+      "meets your target only when the assumed State Pension"
+    );
   });
 
   it("warns when a Premium factor is unavailable and income is excluded", () => {
@@ -147,6 +181,7 @@ describe("PensionSummarySection", () => {
 
 function createComparisonResultFixture({
   targetMissMonths = 0,
+  statePensionAssumptionAffectsTarget = false,
   ageRanges = [
     {
       startAge: 60,
@@ -163,6 +198,7 @@ function createComparisonResultFixture({
   ],
 }: {
   targetMissMonths?: number;
+  statePensionAssumptionAffectsTarget?: boolean;
   ageRanges?: ComparisonResult["summary"]["retirementIncome"]["ageRanges"];
 } = {}): ComparisonResult {
   return {
@@ -221,6 +257,7 @@ function createComparisonResultFixture({
     statePensionAnnualIncome: 36667.6,
     lifeExpectancyAnnualIncome: 36667.6,
     targetMissMonths,
+    statePensionAssumptionAffectsTarget,
     currentMatchesSaved: true,
   } as unknown as ComparisonResult;
 }

@@ -76,6 +76,7 @@ export type ComparisonResult = {
   statePensionAnnualIncome: number;
   lifeExpectancyAnnualIncome: number;
   targetMissMonths: number;
+  statePensionAssumptionAffectsTarget: boolean;
   currentMatchesSaved: boolean;
 };
 
@@ -260,6 +261,13 @@ export function createComparisonResult(
     scenario.settings.dateOfBirth,
     scenario.settings.statePensionDrawDate
   );
+  const targetMissMonths = countTargetMissMonths(rows, scenario.settings);
+  const statePensionAssumptionAffectsTarget =
+    calculateStatePensionAssumptionAffectsTarget(
+      scenario.settings,
+      summary,
+      targetMissMonths
+    );
   const result = {
     rows,
     summary,
@@ -318,7 +326,8 @@ export function createComparisonResult(
       scenario.settings.lifeExpectancy,
       scenario.settings.retirementIncomeTargetBasis
     ),
-    targetMissMonths: countTargetMissMonths(rows, scenario.settings),
+    targetMissMonths,
+    statePensionAssumptionAffectsTarget,
   };
 
   cache?.set(settingsSignature, result);
@@ -1403,13 +1412,13 @@ function formatCsAvcProtectedPensionAge(settings: PensionSettings) {
 
 function buildTargetShortfallStatus(
   result: ComparisonResult,
-  statePensionNeedsChecking: boolean
+  statePensionAssumptionAffectsTarget: boolean
 ) {
   if (result.targetMissMonths > 0) {
     return `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`;
   }
 
-  return statePensionNeedsChecking
+  return statePensionAssumptionAffectsTarget
     ? "No calculated shortfall using the unconfirmed State Pension amount"
     : "No shortfall against the target";
 }
@@ -1417,7 +1426,7 @@ function buildTargetShortfallStatus(
 function buildMainComparisonIssue(
   result: ComparisonResult,
   hideBridgeFundingSection: boolean,
-  statePensionNeedsChecking: boolean
+  usesUnconfirmedStatePensionAssumption: boolean
 ) {
   if (!hideBridgeFundingSection && !result.bridgeAnalysis.planWorks) {
     return result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
@@ -1442,10 +1451,12 @@ function buildMainComparisonIssue(
       : "Income drops below target before secure pension income is fully in place";
   }
 
-  if (statePensionNeedsChecking) {
-    return `State Pension uses an unconfirmed assumption of ${formatCurrencyWholePerYear(
-      result.scenario.settings.currentStatePension
-    )}`;
+  if (usesUnconfirmedStatePensionAssumption) {
+    return result.statePensionAssumptionAffectsTarget
+      ? `The target depends on an assumed State Pension of ${formatCurrencyWholePerYear(
+          result.scenario.settings.currentStatePension
+        )}`
+      : "State Pension is an unconfirmed assumption, but the target remains met without it";
   }
 
   return "No shortfall identified from the current assumptions.";
@@ -1491,9 +1502,12 @@ export function buildComparisonStatusItems(
   options: { hideBridgeFundingSection?: boolean } = {}
 ): SummaryItemLike[] {
   const { hideBridgeFundingSection = false } = options;
-  const statePensionNeedsChecking = usesUnconfirmedStatePension(
+  const usesUnconfirmedStatePensionAssumption = usesUnconfirmedStatePension(
     result.scenario.settings
   );
+  const statePensionNeedsChecking =
+    usesUnconfirmedStatePensionAssumption &&
+    result.statePensionAssumptionAffectsTarget;
   const calculationWorks =
     result.targetMissMonths === 0 &&
     (hideBridgeFundingSection || result.bridgeAnalysis.planWorks) &&
@@ -1506,7 +1520,7 @@ export function buildComparisonStatusItems(
   const mainIssue = buildMainComparisonIssue(
     result,
     hideBridgeFundingSection,
-    statePensionNeedsChecking
+    usesUnconfirmedStatePensionAssumption
   );
 
   return [
@@ -1550,8 +1564,12 @@ export type RetirementOutcomeStatus = "onTrack" | "shortfall" | "atRisk";
 
 export type RetirementOutcomeBanner = {
   status: RetirementOutcomeStatus;
-  label: "On track" | "Shortfall" | "At risk" | "Needs checking";
+  label: "Looks workable" | "Shortfall" | "At risk" | "Needs checking";
   message: string;
+  warning?: {
+    heading: string;
+    message: string;
+  };
 };
 
 export function buildRetirementOutcomeBanner(
@@ -1565,28 +1583,28 @@ export function buildRetirementOutcomeBanner(
     return {
       status: "shortfall",
       label: "Shortfall",
-      message: appendUnconfirmedStatePensionWarning(
-        buildShortfallOutcomeMessage(result, shortfallRange),
-        result.scenario.settings
-      ),
+      message: buildShortfallOutcomeMessage(result, shortfallRange),
+      warning: buildUnconfirmedStatePensionWarning(result),
     };
   }
 
-  if (usesUnconfirmedStatePension(result.scenario.settings)) {
+  if (
+    usesUnconfirmedStatePension(result.scenario.settings) &&
+    result.statePensionAssumptionAffectsTarget
+  ) {
     return {
       status: "atRisk",
       label: "Needs checking",
-      message: appendUnconfirmedStatePensionWarning(
-        buildOnTrackOutcomeMessage(result),
-        result.scenario.settings
-      ),
+      message: buildOnTrackOutcomeMessage(result),
+      warning: buildUnconfirmedStatePensionWarning(result),
     };
   }
 
   return {
     status: "onTrack",
-    label: "On track",
+    label: "Looks workable",
     message: buildOnTrackOutcomeMessage(result),
+    warning: buildUnconfirmedStatePensionWarning(result),
   };
 }
 
@@ -1594,17 +1612,33 @@ function usesUnconfirmedStatePension(settings: PensionSettings) {
   return settings.showStatePension && !settings.statePensionForecastConfirmed;
 }
 
-function appendUnconfirmedStatePensionWarning(
-  message: string,
-  settings: PensionSettings
-) {
+function buildUnconfirmedStatePensionWarning(
+  result: ComparisonResult
+): RetirementOutcomeBanner["warning"] {
+  const settings = result.scenario.settings;
+
   if (!usesUnconfirmedStatePension(settings)) {
-    return message;
+    return undefined;
   }
 
-  return `${message} This includes an unconfirmed State Pension assumption of ${formatCurrencyWholePerYear(
+  const assumedAmount = `${formatCurrencyWhole(
     settings.currentStatePension
-  )}. Your actual amount depends on your National Insurance record. Check your personalised forecast before relying on this result.`;
+  )} a year`;
+  const hasExistingShortfall =
+    result.targetMissMonths > 0 ||
+    result.summary.retirementIncome.ageRanges.some(
+      (range) => range.annualShortfall > 0
+    );
+  const materialitySentence = hasExistingShortfall
+    ? `This projection includes an assumed State Pension of ${assumedAmount}. Your actual shortfall may differ once you enter your personalised forecast.`
+    : result.statePensionAssumptionAffectsTarget
+      ? `This projection meets your target only when the assumed State Pension of ${assumedAmount} is included.`
+      : `This projection includes an assumed State Pension of ${assumedAmount}. Your target is still met if this income is excluded, but figures that include it should be treated with caution until you check your personalised forecast.`;
+
+  return {
+    heading: "State Pension amount not confirmed",
+    message: `${materialitySentence} Review the State Pension section and enter your personalised forecast when available.`,
+  };
 }
 
 export function buildIncomeAgeRangeItems(
@@ -1751,11 +1785,15 @@ function formatStatePensionStartSentence(result: ComparisonResult) {
 }
 
 function formatCurrencyWholePerYear(value: number) {
-  return `${new Intl.NumberFormat("en-GB", {
+  return `${formatCurrencyWhole(value)}/year`;
+}
+
+function formatCurrencyWhole(value: number) {
+  return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
     maximumFractionDigits: 0,
-  }).format(value)}/year`;
+  }).format(value);
 }
 
 function formatProjectionBasisPhrase(settings: PensionSettings) {
@@ -2029,12 +2067,18 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 }
 
 function getComparisonStatusLabel(result: ComparisonResult) {
-  return result.targetMissMonths === 0 ? "Looks workable" : "Needs attention";
+  if (result.targetMissMonths > 0) {
+    return "Needs attention";
+  }
+
+  return result.statePensionAssumptionAffectsTarget
+    ? "Needs checking"
+    : "Looks workable";
 }
 
 function renderComparisonStatusCell(result: ComparisonResult) {
   const status = getComparisonStatusLabel(result);
-  const tone = status === "Needs attention" ? "caution" : "good";
+  const tone = status === "Looks workable" ? "good" : "caution";
 
   return renderComparisonToneCell(status, tone);
 }
@@ -2049,6 +2093,44 @@ function countTargetMissMonths(
       point.age <= settings.lifeExpectancy &&
       point.shortfallAnnual > 0
   ).length;
+}
+
+function calculateStatePensionAssumptionAffectsTarget(
+  settings: PensionSettings,
+  summary: PensionSummary,
+  targetMissMonths: number
+) {
+  if (
+    !usesUnconfirmedStatePension(settings) ||
+    targetMissMonths > 0 ||
+    summary.retirementIncome.ageRanges.some(
+      (range) => range.annualShortfall > 0
+    )
+  ) {
+    return false;
+  }
+
+  const settingsWithoutStatePension = {
+    ...settings,
+    showStatePension: false,
+  };
+  const rowsWithoutStatePension = createProjectionTable(
+    settingsWithoutStatePension
+  );
+  const summaryWithoutStatePension = generatePensionSummary(
+    rowsWithoutStatePension,
+    settingsWithoutStatePension
+  );
+
+  return (
+    countTargetMissMonths(
+      rowsWithoutStatePension,
+      settingsWithoutStatePension
+    ) > 0 ||
+    summaryWithoutStatePension.retirementIncome.ageRanges.some(
+      (range) => range.annualShortfall > 0
+    )
+  );
 }
 
 function formatTargetMissDuration(months: number) {

@@ -383,7 +383,7 @@ export const fieldGroups: FieldGroup[] = [
   {
     id: "state",
     eyebrow: "State Pension",
-    title: "State pension details",
+    title: "State Pension details",
     description: "Current forecast and optional future uprating assumptions.",
     fields: [
       {
@@ -391,7 +391,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "This is my personalised State Pension forecast",
         type: "checkbox",
         description:
-          "Select this only when the amount below comes from your personalised GOV.UK State Pension forecast. Otherwise results treat it as an assumption that still needs checking.",
+          "Select this only when the amount below comes from your personalised GOV.UK State Pension forecast. Until it is confirmed, the amount is shown as an assumption. Results that depend on it are labelled Needs checking; otherwise they remain on track with a caution.",
         infoUrl: knowledgeLinks.statePensionForecast,
         infoLinkText: "Check State Pension forecast",
       },

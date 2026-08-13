@@ -1909,6 +1909,29 @@ Given(
   }
 );
 
+Given(
+  "other retirement income is enough to meet the target without State Pension",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.settings = {
+      ...settings,
+      desiredRetirementIncome: settings.currentStatePension - 100,
+      showAdditionalGuaranteedIncome: true,
+      additionalGuaranteedIncomes: [
+        {
+          id: "bdd-other-pension",
+          name: "Other pension",
+          annualAmount: settings.currentStatePension + 100,
+          startAge: settings.requirementAge,
+          endAge: null,
+          indexation: "none",
+          taxable: true,
+        },
+      ],
+    };
+  }
+);
+
 When(
   "the retirement outcome is assessed",
   function (this: ProductAcceptanceWorld) {
@@ -1970,9 +1993,22 @@ Then(
   function (this: ProductAcceptanceWorld) {
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
+    const warning = buildRetirementOutcomeBanner(result).warning;
     assertCondition(
-      buildRetirementOutcomeBanner(result).message.includes(
-        "unconfirmed State Pension assumption"
+      warning?.heading === "State Pension amount not confirmed" &&
+        warning.message.includes("assumed State Pension")
+    );
+  }
+);
+
+Then(
+  "the retirement outcome should explain that the target remains met without State Pension",
+  function (this: ProductAcceptanceWorld) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertCondition(
+      buildRetirementOutcomeBanner(result).warning?.message.includes(
+        "target is still met if this income is excluded"
       )
     );
   }

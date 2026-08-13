@@ -951,8 +951,11 @@ function OptionalFieldsQuestion({
             be different.
           </p>
           <p>
-            Until you enter your personalised forecast, we&apos;ll label your
-            result <strong>Needs checking</strong>.
+            We&apos;ll identify this amount as an assumption in your results. If
+            your target depends on it, we&apos;ll label the result{" "}
+            <strong>Needs checking</strong>. Otherwise, the result can remain{" "}
+            <strong>Looks workable</strong>, with a reminder to confirm the
+            amount.
           </p>
         </div>
       ) : null}

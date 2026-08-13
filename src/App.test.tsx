@@ -1534,6 +1534,9 @@ describe("App settings form", () => {
       screen.getByRole("heading", { name: "What we'll assume" })
     ).toBeInTheDocument();
     expect(screen.getByText(/We'll use/)).toHaveTextContent("£12,548 a year");
+    expect(screen.getByText(/We'll identify this amount/)).toHaveTextContent(
+      "If your target depends on it, we'll label the result Needs checking. Otherwise, the result can remain Looks workable"
+    );
     expect(
       screen.getByRole("link", { name: /Check my State Pension forecast/i })
     ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");

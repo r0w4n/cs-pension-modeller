@@ -107,6 +107,15 @@ Feature: Modeller journeys
     Then the retirement outcome should be labelled "Needs checking"
     And the retirement outcome should explain that the State Pension is unconfirmed
 
+  @simple-journey @state-pension
+  Scenario: Keep an otherwise resilient result on track when State Pension is unconfirmed
+    Given an unconfirmed full State Pension assumption
+    And other retirement income is enough to meet the target without State Pension
+    When the retirement outcome is assessed
+    Then the retirement outcome should be labelled "Looks workable"
+    And the retirement outcome should explain that the State Pension is unconfirmed
+    And the retirement outcome should explain that the target remains met without State Pension
+
   @simple-journey @optional-sections
   Scenario: Use the retirement target to estimate Added Pension after the basic projection
     When the "Simplified retirement journey" journey is loaded
@@ -123,7 +132,7 @@ Feature: Modeller journeys
       | Personal details                   |
       | Retirement income target           |
       | Inflation and projection basis     |
-      | State pension details              |
+      | State Pension details              |
       | Alpha pension details              |
       | SIPP details                       |
       | ISA details                        |

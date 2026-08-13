@@ -500,7 +500,7 @@ describe("comparison table rows", () => {
     ]);
   });
 
-  it("does not report on track while the State Pension amount is unconfirmed", () => {
+  it("requires checking when an on-track result depends on unconfirmed State Pension", () => {
     const settings = {
       ...createExactTargetScenarioSettings(),
       statePensionForecastConfirmed: false,
@@ -520,8 +520,9 @@ describe("comparison table rows", () => {
 
     expect(banner.status).toBe("atRisk");
     expect(banner.label).toBe("Needs checking");
-    expect(banner.message).toContain(
-      "unconfirmed State Pension assumption of £12,548/year"
+    expect(banner.warning?.heading).toBe("State Pension amount not confirmed");
+    expect(banner.warning?.message).toContain(
+      "meets your target only when the assumed State Pension of £12,548 a year is included"
     );
     expect(
       buildComparisonStatusItems(result, {
@@ -536,10 +537,109 @@ describe("comparison table rows", () => {
       },
       {
         label: "Main issue",
-        value: "State Pension uses an unconfirmed assumption of £12,548/year",
+        value: "The target depends on an assumed State Pension of £12,548/year",
       },
       { label: "Income basis", value: "Before Income Tax" },
     ]);
+  });
+
+  it("keeps the result workable when the target is met without unconfirmed State Pension", () => {
+    const settings = {
+      ...createExactTargetScenarioSettings(),
+      desiredRetirementIncome: 30_000,
+      statePensionForecastConfirmed: false,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Resilient without State Pension",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    const banner = buildRetirementOutcomeBanner(result);
+
+    expect(result.statePensionAssumptionAffectsTarget).toBe(false);
+    expect(banner.status).toBe("onTrack");
+    expect(banner.label).toBe("Looks workable");
+    expect(banner.warning?.heading).toBe("State Pension amount not confirmed");
+    expect(banner.warning?.message).toContain(
+      "target is still met if this income is excluded"
+    );
+    expect(
+      buildComparisonStatusItems(result, {
+        hideBridgeFundingSection: true,
+      })
+    ).toEqual([
+      { label: "Overall status", value: "Looks workable" },
+      {
+        label: "Target shortfall",
+        value: "No shortfall against the target",
+      },
+      {
+        label: "Main issue",
+        value:
+          "State Pension is an unconfirmed assumption, but the target remains met without it",
+      },
+      { label: "Income basis", value: "Before Income Tax" },
+    ]);
+  });
+
+  it("keeps an after-tax result workable when Alpha alone meets the target", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-08-13",
+      dateOfBirth: "1977-04-01",
+      lifeExpectancy: 80,
+      requirementAge: 67,
+      projectionBasis: "real" as const,
+      currentStatePension: 12_547.6,
+      statePensionForecastConfirmed: false,
+      desiredRetirementIncome: 32_700,
+      retirementIncomeTargetBasis: "after_tax" as const,
+      statePensionDrawDate: "2044-04-01",
+      statePensionApplyFutureGrowth: false,
+      assumedCpiPercent: 0,
+      alphaPensionAbsDate: "2025",
+      alphaAddedPensionMonthly: 0,
+      alphaPensionLeaveAge: 67,
+      accruedPensionAtLastAbs: 16_000,
+      pensionableEarnings: 70_000,
+      alphaPayRisePercent: 0,
+      alphaPensionDrawAge: 67,
+      taxationEnabled: true,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "After-tax Alpha surplus",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    expect(result.targetMissMonths).toBe(0);
+    expect(result.statePensionAssumptionAffectsTarget).toBe(false);
+    const banner = buildRetirementOutcomeBanner(result);
+    expect(banner.status).toBe("onTrack");
+    expect(banner.label).toBe("Looks workable");
+    expect(banner.warning?.heading).toBe("State Pension amount not confirmed");
+    expect(banner.warning?.message).toContain(
+      "target is still met if this income is excluded"
+    );
   });
 
   it("counts projection months rather than chart-only transition points", () => {

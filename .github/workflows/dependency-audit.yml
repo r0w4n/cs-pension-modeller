@@ -1,30 +1,288 @@
-name: Dependency Audit
+name: Nightly npm audit fix
 
 on:
   schedule:
-    - cron: "17 6 * * 1"
+    # GitHub Actions schedules use UTC. Avoid the start of the hour, when
+    # scheduled runs are more likely to be delayed.
+    - cron: "17 2 * * *"
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
 
 permissions:
   contents: read
 
+concurrency:
+  group: nightly-npm-audit-fix
+  cancel-in-progress: false
+
 jobs:
-  dependency-audit:
-    name: Dependency Security Audit
+  create-fix:
+    name: Create npm audit fix pull request
+    if: github.event_name != 'workflow_run'
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
 
     steps:
+      - name: Check for an existing audit fix pull request
+        id: existing
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: "open",
+              base: "main",
+              per_page: 100,
+            });
+
+            const existing = pulls.find(
+              (pull) =>
+                pull.user?.login === "github-actions[bot]" &&
+                pull.head.ref.startsWith("automation/npm-audit-fix-"),
+            );
+
+            core.setOutput("found", String(Boolean(existing)));
+            if (existing) {
+              core.notice(
+                `Skipped: audit fix PR #${existing.number} is already open.`,
+              );
+            }
+
       - name: Checkout
+        if: steps.existing.outputs.found != 'true'
         uses: actions/checkout@v7
+        with:
+          ref: main
 
       - name: Setup Node
+        if: steps.existing.outputs.found != 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
+        if: steps.existing.outputs.found != 'true'
         run: npm ci
 
-      - name: Audit dependencies
-        run: npm run audit
+      - name: Create the audit fix branch
+        if: steps.existing.outputs.found != 'true'
+        id: branch
+        env:
+          BRANCH_NAME: automation/npm-audit-fix-${{ github.run_id }}
+        run: |
+          git switch -c "$BRANCH_NAME"
+          echo "name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Apply non-breaking audit fixes
+        if: steps.existing.outputs.found != 'true'
+        run: npm audit fix
+
+      - name: Verify the fixed dependency tree
+        if: steps.existing.outputs.found != 'true'
+        run: |
+          npm ci
+          npm run audit
+
+      - name: Detect manifest changes
+        if: steps.existing.outputs.found != 'true'
+        id: changes
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No dependency fixes are available."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push the audit fix
+        if: steps.changes.outputs.found == 'true'
+        id: commit
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Apply npm audit fixes"
+          git push origin "$BRANCH_NAME"
+          echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+          echo "base-sha=$(git rev-parse HEAD^)" >> "$GITHUB_OUTPUT"
+          echo "head-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.changes.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.commit.outputs.branch }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Apply nightly npm audit fixes" \
+            --body "Automated non-breaking dependency security fixes produced by \`npm audit fix\`. This pull request will merge only if dependency review and the complete CI workflow pass for this exact commit."
+
+      - name: Run CI for the pull request branch
+        if: steps.changes.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.commit.outputs.branch }}
+          BASE_SHA: ${{ steps.commit.outputs.base-sha }}
+          HEAD_SHA: ${{ steps.commit.outputs.head-sha }}
+        run: |
+          gh workflow run ci.yml \
+            --ref "$BRANCH_NAME" \
+            -f dependency_review_base="$BASE_SHA" \
+            -f dependency_review_head="$HEAD_SHA"
+
+  merge-fix:
+    name: Merge a tested npm audit fix pull request
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'workflow_dispatch' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Merge the exact audit fix commit that passed CI
+        id: merge
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const run = context.payload.workflow_run;
+
+            if (!run.head_branch?.startsWith("automation/npm-audit-fix-")) {
+              core.notice("Skipped: the successful CI run was not for an audit fix branch.");
+              core.setOutput("merged", "false");
+              return;
+            }
+
+            const jobs = await github.paginate(
+              github.rest.actions.listJobsForWorkflowRun,
+              {
+                owner,
+                repo,
+                run_id: run.id,
+                per_page: 100,
+              },
+            );
+            const dependencyReview = jobs.find(
+              (job) => job.name === "Dependency Review",
+            );
+
+            if (dependencyReview?.conclusion !== "success") {
+              core.notice(
+                "Skipped: the dispatched CI run did not pass dependency review.",
+              );
+              core.setOutput("merged", "false");
+              return;
+            }
+
+            const pulls = await github.paginate(
+              github.rest.repos.listPullRequestsAssociatedWithCommit,
+              {
+                owner,
+                repo,
+                commit_sha: run.head_sha,
+                per_page: 100,
+              },
+            );
+            const pull = pulls.find(
+              (candidate) =>
+                candidate.state === "open" &&
+                candidate.base.ref === "main" &&
+                candidate.head.ref === run.head_branch &&
+                candidate.head.sha === run.head_sha &&
+                candidate.user?.login === "github-actions[bot]" &&
+                candidate.draft === false,
+            );
+
+            if (!pull) {
+              core.notice("Skipped: no matching open audit fix pull request was found.");
+              core.setOutput("merged", "false");
+              return;
+            }
+
+            const { data: currentPull } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: pull.number,
+            });
+            if (
+              currentPull.state !== "open" ||
+              currentPull.head.sha !== run.head_sha ||
+              currentPull.head.ref !== run.head_branch ||
+              currentPull.user?.login !== "github-actions[bot]"
+            ) {
+              core.notice(`Skipped PR #${pull.number}: it changed after CI completed.`);
+              core.setOutput("merged", "false");
+              return;
+            }
+
+            try {
+              const { data: result } = await github.rest.pulls.merge({
+                owner,
+                repo,
+                pull_number: currentPull.number,
+                sha: run.head_sha,
+                merge_method: "merge",
+                commit_title: `${currentPull.title} (#${currentPull.number})`,
+              });
+
+              if (!result.merged) {
+                core.notice(`Skipped PR #${currentPull.number}: ${result.message}`);
+                core.setOutput("merged", "false");
+                return;
+              }
+
+              core.setOutput("merged", "true");
+              console.log(`Merged audit fix PR #${currentPull.number}.`);
+
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${currentPull.head.ref}`,
+                });
+              } catch (error) {
+                core.notice(
+                  `Merged PR #${currentPull.number}, but could not delete its branch: ${error.message}`,
+                );
+              }
+            } catch (error) {
+              if ([405, 409, 422].includes(error.status)) {
+                core.notice(
+                  `Could not merge PR #${currentPull.number}: ${error.message}`,
+                );
+                core.setOutput("merged", "false");
+                return;
+              }
+
+              throw error;
+            }
+
+      - name: Run CI on the updated main branch
+        if: steps.merge.outputs.merged == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              ...context.repo,
+              workflow_id: "ci.yml",
+              ref: "main",
+            });
+            console.log("Dispatched CI for the updated main branch.");

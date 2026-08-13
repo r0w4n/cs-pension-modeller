@@ -7,6 +7,7 @@ import {
   useState,
   type KeyboardEvent,
   type PointerEvent,
+  type ReactNode,
   type TouchEvent,
 } from "react";
 import * as d3 from "d3";
@@ -131,6 +132,7 @@ export type RetirementIncomeBridgeChartProps =
     alphaLabel?: string;
     hideInactiveLegendItems?: boolean;
     showFlexibleWithdrawalInsights?: boolean;
+    presentation?: "standard" | "simple";
     residualFlexibleFundInsights?: ResidualFlexibleFundInsight[];
     limits: RetirementIncomeBridgeLimits;
     statePensionEditable?: boolean;
@@ -455,12 +457,14 @@ export function RetirementIncomeBridgeChart({
   alphaLabel = "Alpha pension",
   hideInactiveLegendItems = false,
   showFlexibleWithdrawalInsights = false,
+  presentation = "standard",
   residualFlexibleFundInsights = [],
   limits,
   statePensionEditable = false,
   validationIssues = [],
   onChangeParameters,
 }: RetirementIncomeBridgeChartProps) {
+  const isSimplePresentation = presentation === "simple";
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const targetLineHitboxRef = useRef<SVGPathElement | null>(null);
@@ -484,7 +488,7 @@ export function RetirementIncomeBridgeChart({
   const lastTouchStartTimeRef = useRef<number>(0);
   const [width, setWidth] = useState(960);
   const [displayMode, setDisplayMode] = useState<"annual" | "monthly">(
-    "annual"
+    isSimplePresentation ? "monthly" : "annual"
   );
   const [draftTargetIncomeAnnual, setDraftTargetIncomeAnnual] = useState<
     number | null
@@ -921,6 +925,11 @@ export function RetirementIncomeBridgeChart({
   const alphaTopLinePath = alphaStackedSeries
     ? alphaTopLine(alphaStackedSeries)
     : undefined;
+  const showAlphaTopLineHitbox = shouldShowAlphaTopLineHitbox({
+    alphaTopLinePath,
+    isSimplePresentation,
+    showAlpha,
+  });
   const yTicks = yScale.ticks(5);
   const xTicks = xScale.ticks(width < 640 ? 5 : 8);
   const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
@@ -931,170 +940,176 @@ export function RetirementIncomeBridgeChart({
   const hasValidationIssues = validationIssues.length > 0;
   const projectionReady = data.length > 0;
   const milestoneMarkers: MilestoneMarker[] = useMemo(
-    () => [
-      {
-        key: "retirementAge",
-        label: "Retire",
-        shortLabel: "Retire",
-        age: retirementAge,
-        colour: "#0f6f72",
-        editable: true,
-      },
-      ...createSpendingSmileMilestoneMarkers(
-        spendingSmileEnabled,
-        resolvedSpendingSmile
-      ),
-      ...(showAlpha
-        ? [
-            {
-              key: "alphaLeaveAge" as const,
-              label: "Leave Alpha",
-              shortLabel: "Leave alpha",
-              age: alphaLeaveAge,
-              colour: "#b45309",
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showSipp
-        ? [
-            {
-              key: "sippAccessAge" as const,
-              label: "SIPP start",
-              shortLabel: "SIPP start",
-              age: sippAccessAge,
-              colour: sourceMeta.sippIncomeAnnual.colour,
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showSipp && sippUseByAgeEnabled
-        ? [
-            {
-              key: "sippUseByAge" as const,
-              label: "SIPP stop",
-              shortLabel: "SIPP stop",
-              age: sippUseByAge,
-              colour: sourceMeta.sippIncomeAnnual.colour,
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showIsa
-        ? [
-            {
-              key: "isaAccessAge" as const,
-              label: "ISA start",
-              shortLabel: "ISA start",
-              age: isaAccessAge,
-              colour: sourceMeta.isaIncomeAnnual.colour,
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showLisa
-        ? [
-            {
-              key: "lisaAccessAge" as const,
-              label: "LISA start",
-              shortLabel: "LISA start",
-              age: lisaAccessAge,
-              colour: sourceMeta.lisaIncomeAnnual.colour,
-              editable: true,
-            },
-          ]
-        : []),
-      ...(partialRetirementEnabled
-        ? [
-            {
-              key: "partialRetirementStartAge" as const,
-              label: "Start partial",
-              shortLabel: "Start partial",
-              age: partialRetirementStartAge,
-              colour: "#c2410c",
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showAlpha
-        ? [
-            {
-              key: "alphaStartAge" as const,
-              label: "Start Alpha",
-              shortLabel: "Start Alpha",
-              age: alphaStartAge,
-              colour: "#7353bf",
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showNuvos
-        ? [
-            {
-              key: "nuvosStartAge" as const,
-              label: "Start Nuvos",
-              shortLabel: "Start Nuvos",
-              age: nuvosStartAge,
-              colour: "#b45309",
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showPremium
-        ? [
-            {
-              key: "premiumStartAge" as const,
-              label: "Start Premium",
-              shortLabel: "Start Premium",
-              age: premiumStartAge,
-              colour: "#0f766e",
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showIsa && isaUseByAgeEnabled
-        ? [
-            {
-              key: "isaUseByAge" as const,
-              label: "ISA stop",
-              shortLabel: "ISA stop",
-              age: isaUseByAge,
-              colour: sourceMeta.isaIncomeAnnual.colour,
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showLisa && lisaUseByAgeEnabled
-        ? [
-            {
-              key: "lisaUseByAge" as const,
-              label: "LISA stop",
-              shortLabel: "LISA stop",
-              age: lisaUseByAge,
-              colour: sourceMeta.lisaIncomeAnnual.colour,
-              editable: true,
-            },
-          ]
-        : []),
-      ...(showStatePension
-        ? [
-            {
-              key: "statePensionAge" as const,
-              label: "Start State",
-              shortLabel: "Start State",
-              age: statePensionAge,
-              colour: "#1d62d1",
-              editable: statePensionEditable,
-            },
-          ]
-        : []),
-    ],
+    () =>
+      [
+        {
+          key: "retirementAge",
+          label: "Retire",
+          shortLabel: "Retire",
+          age: retirementAge,
+          colour: "#0f6f72",
+          editable: true,
+        },
+        ...createSpendingSmileMilestoneMarkers(
+          spendingSmileEnabled,
+          resolvedSpendingSmile
+        ),
+        ...(showAlpha
+          ? [
+              {
+                key: "alphaLeaveAge" as const,
+                label: "Leave Alpha",
+                shortLabel: "Leave alpha",
+                age: alphaLeaveAge,
+                colour: "#b45309",
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showSipp
+          ? [
+              {
+                key: "sippAccessAge" as const,
+                label: "SIPP start",
+                shortLabel: "SIPP start",
+                age: sippAccessAge,
+                colour: sourceMeta.sippIncomeAnnual.colour,
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showSipp && sippUseByAgeEnabled
+          ? [
+              {
+                key: "sippUseByAge" as const,
+                label: "SIPP stop",
+                shortLabel: "SIPP stop",
+                age: sippUseByAge,
+                colour: sourceMeta.sippIncomeAnnual.colour,
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showIsa
+          ? [
+              {
+                key: "isaAccessAge" as const,
+                label: "ISA start",
+                shortLabel: "ISA start",
+                age: isaAccessAge,
+                colour: sourceMeta.isaIncomeAnnual.colour,
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showLisa
+          ? [
+              {
+                key: "lisaAccessAge" as const,
+                label: "LISA start",
+                shortLabel: "LISA start",
+                age: lisaAccessAge,
+                colour: sourceMeta.lisaIncomeAnnual.colour,
+                editable: true,
+              },
+            ]
+          : []),
+        ...(partialRetirementEnabled
+          ? [
+              {
+                key: "partialRetirementStartAge" as const,
+                label: "Start partial",
+                shortLabel: "Start partial",
+                age: partialRetirementStartAge,
+                colour: "#c2410c",
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showAlpha
+          ? [
+              {
+                key: "alphaStartAge" as const,
+                label: "Start Alpha",
+                shortLabel: "Start Alpha",
+                age: alphaStartAge,
+                colour: "#7353bf",
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showNuvos
+          ? [
+              {
+                key: "nuvosStartAge" as const,
+                label: "Start Nuvos",
+                shortLabel: "Start Nuvos",
+                age: nuvosStartAge,
+                colour: "#b45309",
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showPremium
+          ? [
+              {
+                key: "premiumStartAge" as const,
+                label: "Start Premium",
+                shortLabel: "Start Premium",
+                age: premiumStartAge,
+                colour: "#0f766e",
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showIsa && isaUseByAgeEnabled
+          ? [
+              {
+                key: "isaUseByAge" as const,
+                label: "ISA stop",
+                shortLabel: "ISA stop",
+                age: isaUseByAge,
+                colour: sourceMeta.isaIncomeAnnual.colour,
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showLisa && lisaUseByAgeEnabled
+          ? [
+              {
+                key: "lisaUseByAge" as const,
+                label: "LISA stop",
+                shortLabel: "LISA stop",
+                age: lisaUseByAge,
+                colour: sourceMeta.lisaIncomeAnnual.colour,
+                editable: true,
+              },
+            ]
+          : []),
+        ...(showStatePension
+          ? [
+              {
+                key: "statePensionAge" as const,
+                label: "Start State",
+                shortLabel: "Start State",
+                age: statePensionAge,
+                colour: "#1d62d1",
+                editable: statePensionEditable,
+              },
+            ]
+          : []),
+      ].map((marker) => ({
+        ...marker,
+        key: marker.key as MilestoneKey,
+        editable: marker.editable && !isSimplePresentation,
+      })),
     [
       alphaStartAge,
       alphaLeaveAge,
       isaAccessAge,
       isaUseByAge,
       isaUseByAgeEnabled,
+      isSimplePresentation,
       lisaAccessAge,
       lisaUseByAge,
       lisaUseByAgeEnabled,
@@ -2448,43 +2463,12 @@ export function RetirementIncomeBridgeChart({
       aria-describedby={chartDescriptionId}
       aria-live="polite"
     >
-      <div className="bridge-chart-heading">
-        <h3 id={chartTitleId} className="bridge-chart-title">
-          Retirement income bridge
-        </h3>
-        <div
-          className="summary-toggle bridge-display-toggle"
-          role="group"
-          aria-label="Chart income display"
-        >
-          <button
-            type="button"
-            className={
-              displayMode === "monthly"
-                ? "summary-toggle-button summary-toggle-button--active"
-                : "summary-toggle-button"
-            }
-            aria-label="Show chart as monthly"
-            aria-pressed={displayMode === "monthly"}
-            onClick={() => changeDisplayMode("monthly")}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            className={
-              displayMode === "annual"
-                ? "summary-toggle-button summary-toggle-button--active"
-                : "summary-toggle-button"
-            }
-            aria-label="Show chart as annual"
-            aria-pressed={displayMode === "annual"}
-            onClick={() => changeDisplayMode("annual")}
-          >
-            Annual
-          </button>
-        </div>
-      </div>
+      <BridgeChartHeading
+        chartTitleId={chartTitleId}
+        displayMode={displayMode}
+        isSimplePresentation={isSimplePresentation}
+        onChangeDisplayMode={changeDisplayMode}
+      />
 
       {!projectionReady || hasValidationIssues ? (
         <div className="bridge-validation-banner" role="alert">
@@ -2512,14 +2496,10 @@ export function RetirementIncomeBridgeChart({
         ))}
       </div>
 
-      <p id={chartDescriptionId} className="visually-hidden">
-        Stacked gross income chart showing ISA, SIPP, partial retirement income,
-        Civil Service pensions, additional guaranteed income and State Pension
-        against the target retirement income over age. Estimated Income Tax is
-        shown with horizontal blue-grey hatching between income after estimated
-        Income Tax and gross income. Shortfall is shown with red diagonal
-        hatching.
-      </p>
+      <BridgeChartDescription
+        chartDescriptionId={chartDescriptionId}
+        isSimplePresentation={isSimplePresentation}
+      />
 
       <div className="bridge-chart-shell" ref={shellRef}>
         <svg
@@ -2669,11 +2649,11 @@ export function RetirementIncomeBridgeChart({
               opacity="0.55"
             />
 
-            {showAlpha && alphaTopLinePath ? (
+            <OptionalChartLayer visible={showAlphaTopLineHitbox}>
               <path
                 ref={alphaAddedPensionHitboxRef}
                 className="bridge-alpha-added-pension-hitbox"
-                d={alphaTopLinePath}
+                d={alphaTopLinePath ?? undefined}
                 role="slider"
                 tabIndex={0}
                 aria-label="Alpha added pension top edge"
@@ -2698,13 +2678,13 @@ export function RetirementIncomeBridgeChart({
                   finishAlphaAddedPensionTouchDrag(event, false)
                 }
               />
-            ) : null}
+            </OptionalChartLayer>
 
             <path
               className="bridge-target-line"
               d={targetLine(visibleData) ?? undefined}
             />
-            {spendingSmileEnabled ? (
+            {isSimplePresentation ? null : spendingSmileEnabled ? (
               spendingSmilePhasePaths.map((phase) =>
                 phase.path ? (
                   <path
@@ -2808,7 +2788,7 @@ export function RetirementIncomeBridgeChart({
                       .filter(Boolean)
                       .join(" ")}
                     role={marker.editable ? "slider" : "img"}
-                    tabIndex={0}
+                    tabIndex={marker.editable ? 0 : undefined}
                     data-testid={`bridge-marker-${marker.key}`}
                     aria-label={`${marker.label}, age ${formatAgeValue(marker.age)}`}
                     aria-valuemin={limits[marker.key].min}
@@ -2971,7 +2951,7 @@ export function RetirementIncomeBridgeChart({
               ? getIncomeSourceTogglePatch(key, !enabled)
               : null;
 
-            if (!key || !togglePatch) {
+            if (isSimplePresentation || !key || !togglePatch) {
               return (
                 <span key={series.key}>
                   <span style={{ background: series.colour }} />
@@ -3010,49 +2990,147 @@ export function RetirementIncomeBridgeChart({
 
       <SurplusTextEquivalent points={surplusSummaryPoints} />
 
-      <BridgeMobileNavigation
-        isCompact={isCompact}
-        isVisible={isMobileNavigationVisible}
-        limits={limits}
-        selectedMobileMarker={selectedMobileMarker}
-        visibleMilestoneMarkers={visibleMilestoneMarkers}
-        onChangeParameters={onChangeParameters}
-        onSelectMobileMarker={(key) => {
-          setSelectedMobileMarkerKey(key);
-          trackAnalyticsEvent("chart_mobile_marker_selected", {
-            chart_marker: key,
-          });
-        }}
-        onToggleVisibility={() => {
-          setIsMobileNavigationVisible((currentValue) => {
-            const nextValue = !currentValue;
-
-            trackAnalyticsEvent("chart_mobile_controls_toggled", {
-              expanded: nextValue,
+      {!isSimplePresentation ? (
+        <BridgeMobileNavigation
+          isCompact={isCompact}
+          isVisible={isMobileNavigationVisible}
+          limits={limits}
+          selectedMobileMarker={selectedMobileMarker}
+          visibleMilestoneMarkers={visibleMilestoneMarkers}
+          onChangeParameters={onChangeParameters}
+          onSelectMobileMarker={(key) => {
+            setSelectedMobileMarkerKey(key);
+            trackAnalyticsEvent("chart_mobile_marker_selected", {
+              chart_marker: key,
             });
+          }}
+          onToggleVisibility={() => {
+            setIsMobileNavigationVisible((currentValue) => {
+              const nextValue = !currentValue;
 
-            return nextValue;
-          });
-        }}
-      />
+              trackAnalyticsEvent("chart_mobile_controls_toggled", {
+                expanded: nextValue,
+              });
 
-      <BridgeControlGrid
-        displayedAlphaMonthlyAddedPension={displayedAlphaMonthlyAddedPension}
-        flexibleAccountWarnings={flexibleAccountWarnings}
-        hasUnavoidableSurplus={hasUnavoidableSurplus}
-        isaMonthlyContribution={isaMonthlyContribution}
-        lisaMonthlyContribution={lisaMonthlyContribution}
-        limits={limits}
-        onChangeParameters={onChangeParameters}
-        partialRetirementEnabled={partialRetirementEnabled}
-        partialRetirementWorkPercent={partialRetirementWorkPercent}
-        showAlpha={showAlpha}
-        showIsa={showIsa}
-        showLisa={showLisa}
-        showSipp={showSipp}
-        sippMonthlyContribution={sippMonthlyContribution}
-      />
+              return nextValue;
+            });
+          }}
+        />
+      ) : null}
+
+      {!isSimplePresentation ? (
+        <BridgeControlGrid
+          displayedAlphaMonthlyAddedPension={displayedAlphaMonthlyAddedPension}
+          flexibleAccountWarnings={flexibleAccountWarnings}
+          hasUnavoidableSurplus={hasUnavoidableSurplus}
+          isaMonthlyContribution={isaMonthlyContribution}
+          lisaMonthlyContribution={lisaMonthlyContribution}
+          limits={limits}
+          onChangeParameters={onChangeParameters}
+          partialRetirementEnabled={partialRetirementEnabled}
+          partialRetirementWorkPercent={partialRetirementWorkPercent}
+          showAlpha={showAlpha}
+          showIsa={showIsa}
+          showLisa={showLisa}
+          showSipp={showSipp}
+          sippMonthlyContribution={sippMonthlyContribution}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function OptionalChartLayer({
+  children,
+  visible,
+}: {
+  children: ReactNode;
+  visible: boolean;
+}) {
+  return visible ? children : null;
+}
+
+function shouldShowAlphaTopLineHitbox({
+  alphaTopLinePath,
+  isSimplePresentation,
+  showAlpha,
+}: {
+  alphaTopLinePath: string | null | undefined;
+  isSimplePresentation: boolean;
+  showAlpha: boolean;
+}) {
+  return showAlpha && !isSimplePresentation && Boolean(alphaTopLinePath);
+}
+
+function BridgeChartHeading({
+  chartTitleId,
+  displayMode,
+  isSimplePresentation,
+  onChangeDisplayMode,
+}: {
+  chartTitleId: string;
+  displayMode: "annual" | "monthly";
+  isSimplePresentation: boolean;
+  onChangeDisplayMode: (displayMode: "annual" | "monthly") => void;
+}) {
+  const title = isSimplePresentation
+    ? "How your retirement income may change"
+    : "Retirement income bridge";
+  const titleClassName = isSimplePresentation
+    ? "bridge-chart-title bridge-chart-title--visible"
+    : "bridge-chart-title";
+
+  return (
+    <div className="bridge-chart-heading">
+      <h3 id={chartTitleId} className={titleClassName}>
+        {title}
+      </h3>
+      <div
+        className="summary-toggle bridge-display-toggle"
+        role="group"
+        aria-label="Chart income display"
+      >
+        {(["monthly", "annual"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            className={
+              displayMode === mode
+                ? "summary-toggle-button summary-toggle-button--active"
+                : "summary-toggle-button"
+            }
+            aria-label={`Show chart as ${mode}`}
+            aria-pressed={displayMode === mode}
+            onClick={() => onChangeDisplayMode(mode)}
+          >
+            {mode === "monthly" ? "Monthly" : "Annual"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BridgeChartDescription({
+  chartDescriptionId,
+  isSimplePresentation,
+}: {
+  chartDescriptionId: string;
+  isSimplePresentation: boolean;
+}) {
+  const description = isSimplePresentation
+    ? "The coloured areas show where your estimated income comes from as you get older. The target line shows the amount you said you would like to spend. The tax pattern shows estimated Income Tax, and red hatching shows where income may be below your target."
+    : "Stacked gross income chart showing ISA, SIPP, partial retirement income, Civil Service pensions, additional guaranteed income and State Pension against the target retirement income over age. Estimated Income Tax is shown with horizontal blue-grey hatching between income after estimated Income Tax and gross income. Shortfall is shown with red diagonal hatching.";
+
+  return (
+    <p
+      id={chartDescriptionId}
+      className={
+        isSimplePresentation ? "bridge-chart-introduction" : "visually-hidden"
+      }
+    >
+      {description}
+    </p>
   );
 }
 

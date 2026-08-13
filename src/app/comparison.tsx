@@ -28,7 +28,11 @@ import {
 } from "./results-summary";
 import { SavedScenariosSection } from "./saved-scenarios";
 
-export { PensionSummarySection } from "./comparison-pension-summary";
+export {
+  PensionSummarySection,
+  SimplePensionDetails,
+  SimplePensionSummary,
+} from "./comparison-pension-summary";
 
 type ComparisonSectionProps = {
   children: ReactNode;

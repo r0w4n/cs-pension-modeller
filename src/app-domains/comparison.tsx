@@ -1739,7 +1739,7 @@ function formatBridgeFundingSentence(result: ComparisonResult) {
   const bridgeWithdrawals = result.summary.retirementIncome.bridgeWithdrawals;
 
   if (bridgeWithdrawals.length === 0) {
-    return "No bridge withdrawals are modelled before secure pension income starts.";
+    return "";
   }
 
   const startAge = Math.min(

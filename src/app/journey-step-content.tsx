@@ -49,6 +49,8 @@ import {
   ComparisonPanel as ComparisonPanelFeature,
   ComparisonSection,
   PensionSummarySection as PensionSummarySectionFeature,
+  SimplePensionDetails,
+  SimplePensionSummary,
 } from "./comparison";
 import { OptionalSectionToggleGrid } from "./optional-section-toggle-grid";
 import {
@@ -237,7 +239,6 @@ function renderAnswerStep(
     onComparisonRetirementIncomeDisplayChange,
     onChangeChartParameters,
   } = viewModel;
-
   if (!pensionSummary) {
     return null;
   }
@@ -327,7 +328,6 @@ function renderExpertAnswerStep(
     onChangeChartParameters,
     onChange,
   } = viewModel;
-
   return (
     <>
       <ValidationSummary validationIssues={validationIssues} />
@@ -426,23 +426,32 @@ function renderBridgeAnswerStep(
     onComparisonRetirementIncomeDisplayChange,
     onChangeChartParameters,
   } = viewModel;
+  const usesSimpleResults = step.resultsPresentation === "simple";
 
   return (
     <>
       <ValidationSummary validationIssues={validationIssues} />
 
       <ResultsSummarySection>
-        <PensionSummarySectionFeature
-          activeResult={currentComparisonResult}
-          headingLevel={2}
-          description="This summary uses your current journey assumptions and shows projected income by age range."
-          retirementIncomeDisplay={retirementIncomeDisplay}
-          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-          incomeAgeRangeItems={incomeAgeRangeItems}
-          statusItems={buildStatusItems(currentComparisonResult, {
-            hideBridgeFundingSection: Boolean(step.hideBridgeFundingSection),
-          })}
-        />
+        {usesSimpleResults ? (
+          <SimplePensionSummary
+            activeResult={currentComparisonResult}
+            retirementIncomeDisplay={retirementIncomeDisplay}
+            onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          />
+        ) : (
+          <PensionSummarySectionFeature
+            activeResult={currentComparisonResult}
+            headingLevel={2}
+            description="This summary uses your current journey assumptions and shows projected income by age range."
+            retirementIncomeDisplay={retirementIncomeDisplay}
+            onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+            incomeAgeRangeItems={incomeAgeRangeItems}
+            statusItems={buildStatusItems(currentComparisonResult, {
+              hideBridgeFundingSection: Boolean(step.hideBridgeFundingSection),
+            })}
+          />
+        )}
       </ResultsSummarySection>
 
       <ComparisonBridgeChart
@@ -450,14 +459,32 @@ function renderBridgeAnswerStep(
         bridgeChartParameters={bridgeChartParameters}
         bridgeChartLimits={bridgeChartLimits}
         hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
+        presentation={usesSimpleResults ? "simple" : "standard"}
         validationIssues={validationIssues}
         onChangeChartParameters={onChangeChartParameters}
       />
 
-      <InflationBasisPanelFeature
-        settings={settings}
-        assumptions={derivedInflationAssumptions}
-      />
+      {usesSimpleResults ? (
+        <>
+          <SimplePensionDetails
+            activeResult={currentComparisonResult}
+            retirementIncomeDisplay={retirementIncomeDisplay}
+            incomeAgeRangeItems={incomeAgeRangeItems}
+          />
+          <details className="simple-results-disclosure simple-results-methodology">
+            <summary>How this estimate was worked out</summary>
+            <InflationBasisPanelFeature
+              settings={settings}
+              assumptions={derivedInflationAssumptions}
+            />
+          </details>
+        </>
+      ) : (
+        <InflationBasisPanelFeature
+          settings={settings}
+          assumptions={derivedInflationAssumptions}
+        />
+      )}
 
       {step.showComparisonSection !== false ? (
         <ComparisonSection>

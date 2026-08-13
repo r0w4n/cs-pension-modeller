@@ -314,6 +314,18 @@ describe("journey definitions", () => {
     );
   });
 
+  it("uses the simplified results presentation", () => {
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+    const answerStep = simpleJourney?.steps.find(
+      (step) => step.id === "answer"
+    );
+
+    expect(answerStep?.kind).toBe("bridge-answer");
+    expect(answerStep?.resultsPresentation).toBe("simple");
+  });
+
   it("guides simple journey users to copy the three Alpha statement figures", () => {
     const simpleJourney = JOURNEY_DEFINITIONS.find(
       (journey) => journey.id === "simple-early-retirement"

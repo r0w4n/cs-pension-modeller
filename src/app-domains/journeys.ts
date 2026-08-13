@@ -163,6 +163,7 @@ export type JourneyStepDefinition =
       hideInactiveLegendItems?: boolean;
       hideBridgeFundingSection?: boolean;
       hideFlexibleAssetsSection?: boolean;
+      resultsPresentation?: "simple";
       showComparisonSection?: boolean;
       showProjectionTable?: boolean;
       toggleKeys?: readonly OptionalSectionToggleKey[];
@@ -760,6 +761,7 @@ export const JOURNEY_DEFINITIONS = [
         hideInactiveLegendItems: true,
         hideBridgeFundingSection: true,
         hideFlexibleAssetsSection: true,
+        resultsPresentation: "simple",
         showComparisonSection: false,
         showProjectionTable: false,
       },

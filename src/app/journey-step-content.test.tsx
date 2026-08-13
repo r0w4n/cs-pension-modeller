@@ -49,6 +49,8 @@ vi.mock("./comparison", () => ({
     journeyContentMocks.pensionSummary(props);
     return <div>Pension summary</div>;
   },
+  SimplePensionDetails: () => <div>Simple pension details</div>,
+  SimplePensionSummary: () => <div>Simple pension summary</div>,
 }));
 
 vi.mock("./projection-table", () => ({
@@ -729,6 +731,7 @@ describe("JourneyStepContent", () => {
           title: "Your results",
           description: "Review results",
           kind: "bridge-answer",
+          resultsPresentation: "simple",
           showComparisonSection: false,
         }}
         viewModel={createViewModel()}
@@ -737,9 +740,13 @@ describe("JourneyStepContent", () => {
 
     expect(journeyContentMocks.comparisonPanel).not.toHaveBeenCalled();
     expect(screen.queryByText("Comparison panel")).not.toBeInTheDocument();
-    expect(screen.getByText("Pension summary")).toBeInTheDocument();
+    expect(screen.getByText("Simple pension summary")).toBeInTheDocument();
+    expect(screen.getByText("Simple pension details")).toBeInTheDocument();
     expect(screen.getByText("Comparison bridge chart")).toBeInTheDocument();
     expect(screen.getByText("Inflation basis")).toBeInTheDocument();
+    expect(journeyContentMocks.bridgeChart).toHaveBeenCalledWith(
+      expect.objectContaining({ presentation: "simple" })
+    );
   });
 
   it("enables flexible withdrawal results and chart presentation for expert answers", () => {

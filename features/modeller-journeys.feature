@@ -42,6 +42,11 @@ Feature: Modeller journeys
     And the "What would you like to spend each month?" journey step should link to the Retirement Living Standards
     And the "What would you like to spend each month?" journey step should place its support link beside the field
 
+  @simple-journey @results
+  Scenario: Use results designed for the simplified journey
+    When the "Simplified retirement journey" journey is loaded
+    Then the journey result should use the simple results presentation
+
   @simple-journey @alpha
   Scenario: Ask when the member would like to retire
     When the "Simplified retirement journey" journey is loaded
@@ -115,6 +120,7 @@ Feature: Modeller journeys
     Then the retirement outcome should be labelled "Looks workable"
     And the retirement outcome should explain that the State Pension is unconfirmed
     And the retirement outcome should explain that the target remains met without State Pension
+    But the retirement outcome should not mention unused bridge withdrawals
 
   @simple-journey @optional-sections
   Scenario: Use the retirement target to estimate Added Pension after the basic projection

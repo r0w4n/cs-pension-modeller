@@ -1341,7 +1341,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("lets the simple journey move the nuvos chart marker before retirement age", () => {
+  it("keeps nuvos timing read-only in the simple journey result chart", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     fireEvent.click(
@@ -1353,14 +1353,17 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 65"), {
+    const marker = screen.getByLabelText("Start Nuvos, age 65");
+
+    expect(marker).toHaveAttribute("role", "img");
+    fireEvent.keyDown(marker, {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Start Nuvos, age 64")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Nuvos, age 65")).toBeInTheDocument();
   });
 
-  it("lets the simple journey move the nuvos chart marker down to the retirement age", () => {
+  it("keeps retirement timing read-only in the simple journey result chart", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1374,15 +1377,20 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
     advanceJourneyToResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+    const retirementMarker = screen.getByLabelText("Retire, age 68");
+    const nuvosMarker = screen.getByLabelText("Start Nuvos, age 68");
+
+    expect(retirementMarker).toHaveAttribute("role", "img");
+    expect(nuvosMarker).toHaveAttribute("role", "img");
+    fireEvent.keyDown(retirementMarker, {
       key: "ArrowLeft",
     });
-    fireEvent.keyDown(screen.getByLabelText("Start Nuvos, age 68"), {
+    fireEvent.keyDown(nuvosMarker, {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start Nuvos, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText("Retire, age 68")).toBeInTheDocument();
+    expect(screen.getByLabelText("Start Nuvos, age 68")).toBeInTheDocument();
   });
 
   it("restores Alpha in simple journey results when older settings had disabled it", async () => {
@@ -1403,7 +1411,7 @@ describe("App settings form", () => {
       within(ageRangeTable).getByText(/Alpha pension/)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Income by age range" })
+      screen.getByRole("heading", { name: "Income at different ages" })
     ).toBeInTheDocument();
   });
 
@@ -1656,7 +1664,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("does not copy simple-mode chart marker changes into the bridge journey", () => {
+  it("does not let the read-only simple result chart change bridge settings", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1671,27 +1679,26 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
     advanceJourneyToResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
-      key: "ArrowLeft",
-    });
-    fireEvent.keyDown(screen.getByLabelText(/^Leave Alpha, age /), {
-      key: "ArrowLeft",
-    });
-    fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
-      key: "ArrowLeft",
-    });
-    fireEvent.keyDown(screen.getByLabelText("Start State, age 68"), {
-      key: "ArrowRight",
-    });
-
-    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Leave Alpha, age /)).toBeInTheDocument();
-    expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start State, age 69")).toBeInTheDocument();
+    expect(screen.getByLabelText("Retire, age 68")).toHaveAttribute(
+      "role",
+      "img"
+    );
+    expect(screen.getByLabelText(/^Leave Alpha, age /)).toHaveAttribute(
+      "role",
+      "img"
+    );
+    expect(screen.getByLabelText("Start Alpha, age 68")).toHaveAttribute(
+      "role",
+      "img"
+    );
+    expect(screen.getByLabelText("Start State, age 68")).toHaveAttribute(
+      "role",
+      "img"
+    );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        requirementAge: 67,
-        alphaPensionDrawAge: 67,
+        requirementAge: 68,
+        alphaPensionDrawAge: 68,
       })
     );
 
@@ -1704,8 +1711,8 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
     expect(readStoredSettingsPayload("simple")).toEqual(
       expect.objectContaining({
-        requirementAge: 67,
-        alphaPensionDrawAge: 67,
+        requirementAge: 68,
+        alphaPensionDrawAge: 68,
       })
     );
     expect(readStoredSettingsPayload("bridge")).toEqual(
@@ -1969,10 +1976,12 @@ describe("App settings form", () => {
     expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
     expect(screen.queryByText("Flexible assets")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Retirement income summary" })
+      screen.getByRole("heading", { name: "Your estimated retirement income" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Plan status" })
+      screen.getByRole("heading", {
+        name: "How your retirement income may change",
+      })
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/Bridge still unfunded/i)
@@ -1980,9 +1989,18 @@ describe("App settings form", () => {
     expect(screen.queryByText(/once the bridge ends/i)).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "This summary uses your current journey assumptions and shows projected income by age range."
+        /An estimate of the money available to spend after Income Tax/i
       )
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "What to check" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Target income line")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Added Alpha pension")
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Planning tool only" })
     ).toBeInTheDocument();

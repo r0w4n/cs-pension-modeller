@@ -1082,6 +1082,24 @@ h3 {
   border: 0;
 }
 
+.bridge-chart-title--visible {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0 auto 0 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+.bridge-chart-introduction {
+  max-width: 58rem;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: var(--line-height-body);
+}
+
 .bridge-chart-shell {
   position: relative;
   min-width: 0;
@@ -2147,6 +2165,155 @@ h3 {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
+}
+
+.simple-results-summary,
+.simple-results-details {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.simple-results-summary > .section-copy,
+.simple-results-details .section-copy {
+  margin: 0;
+}
+
+.simple-results-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.85rem;
+}
+
+.simple-results-figure {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: #f8fbfd;
+}
+
+.simple-results-figure--primary {
+  border-color: rgba(17, 100, 102, 0.32);
+  background: #eef8f5;
+}
+
+.simple-results-figure span {
+  color: var(--text-muted);
+  font-size: var(--font-size-body-sm);
+  font-weight: 700;
+}
+
+.simple-results-figure strong {
+  color: var(--text);
+  font-size: clamp(1.3rem, 3vw, 1.85rem);
+  line-height: 1.2;
+}
+
+.simple-results-context {
+  max-width: 58rem;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: var(--line-height-body);
+}
+
+.simple-income-sources {
+  display: grid;
+  gap: 0;
+  margin: 1rem 0 0;
+}
+
+.simple-income-sources div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.simple-income-sources dt {
+  font-weight: 700;
+}
+
+.simple-income-sources dd {
+  margin: 0;
+  text-align: right;
+}
+
+.simple-age-ranges,
+.simple-results-checks {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.simple-age-ranges h2,
+.simple-results-checks h2 {
+  margin: 0;
+}
+
+.simple-age-ranges ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.simple-age-ranges li {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: #f8fbfd;
+}
+
+.simple-age-ranges li span {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.simple-results-checks ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: var(--line-height-body);
+}
+
+.simple-results-checks li + li {
+  margin-top: 0.45rem;
+}
+
+.simple-results-disclosure {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-strong);
+}
+
+.simple-results-disclosure > summary {
+  padding: 0.9rem 1rem;
+  color: var(--link);
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.simple-results-disclosure[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.simple-results-disclosure > .summary-table-shell {
+  margin: 1rem;
+}
+
+.simple-results-methodology > .inflation-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .summary-outcome-banner {

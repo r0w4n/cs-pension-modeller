@@ -1721,6 +1721,16 @@ Then(
 );
 
 Then(
+  "the journey result should use the simple results presentation",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const answerStep = getJourneyAnswerStep(this.selectedJourney);
+
+    assertEqual(answerStep.resultsPresentation, "simple");
+  }
+);
+
+Then(
   "the journey should hide bridge funding details by default",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -2010,6 +2020,19 @@ Then(
       buildRetirementOutcomeBanner(result).warning?.message.includes(
         "target is still met if this income is excluded"
       )
+    );
+  }
+);
+
+Then(
+  "the retirement outcome should not mention unused bridge withdrawals",
+  function (this: ProductAcceptanceWorld) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    const banner = buildRetirementOutcomeBanner(result);
+    assertCondition(
+      !banner.message.toLowerCase().includes("bridge withdrawal"),
+      `Expected the outcome to omit unused bridge withdrawals, received: ${banner.message}`
     );
   }
 );

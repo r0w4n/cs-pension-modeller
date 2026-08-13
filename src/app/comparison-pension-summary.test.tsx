@@ -67,6 +67,25 @@ describe("PensionSummarySection", () => {
     expect(screen.getByText("£15,771.35 shortfall")).toBeInTheDocument();
   });
 
+  it("does not mention bridge withdrawals when none are modelled", () => {
+    const result = createComparisonResultFixture();
+    result.summary.retirementIncome.bridgeWithdrawals = [];
+
+    render(
+      <PensionSummarySection
+        activeResult={result}
+        description="Summary description"
+        retirementIncomeDisplay="annual"
+        incomeAgeRangeItems={[]}
+        statusItems={[]}
+      />
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).not.toHaveTextContent(/bridge withdrawals/i);
+  });
+
   it("shows a shortfall outcome when the target is missed", () => {
     render(
       <PensionSummarySection

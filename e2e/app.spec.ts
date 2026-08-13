@@ -170,13 +170,28 @@ test.describe("app end-to-end journeys", () => {
       )
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
-    await expectProjectionBasisBelowResultsChart(page);
+    await expect(
+      page.getByRole("heading", {
+        name: "How your retirement income may change",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Show chart as monthly" })
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByLabel("Target income line")).toHaveCount(0);
+    await expect(page.getByLabel("Added Alpha pension")).toHaveCount(0);
+    await expect(
+      page.getByText("What to check", { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText("How this estimate was worked out", { exact: true })
+    ).toBeVisible();
 
     await expect(
       page.getByRole("region", { name: "Comparison results" })
     ).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Retirement income summary" })
+      page.getByRole("heading", { name: "Your estimated retirement income" })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Save this result as a scenario" })

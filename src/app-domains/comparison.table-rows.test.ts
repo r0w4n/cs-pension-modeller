@@ -500,6 +500,48 @@ describe("comparison table rows", () => {
     ]);
   });
 
+  it("keeps the chart, outcome and plan status aligned for classic-only income", () => {
+    const settings = createClassicOnlyTargetScenarioSettings();
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Classic-only income",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+    const retirementPoint = createRetirementIncomeSeries(
+      result.rows,
+      settings
+    ).find((point) => point.age >= settings.requirementAge);
+    const statusItems = buildComparisonStatusItems(result);
+
+    expect(retirementPoint).toEqual(
+      expect.objectContaining({
+        classicIncomeAnnual: 12_000,
+        assessedIncomeAnnual: 12_000,
+        shortfallAnnual: 0,
+      })
+    );
+    expect(result.targetMissMonths).toBe(0);
+    expect(result.bridgeAnalysis.planWorks).toBe(true);
+    expect(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus).toBe(6000);
+    expect(buildRetirementOutcomeBanner(result)).toEqual(
+      expect.objectContaining({ status: "onTrack", label: "Looks workable" })
+    );
+    expect(statusItems).toEqual(
+      expect.arrayContaining([
+        { label: "Overall status", value: "Looks workable" },
+        {
+          label: "Main issue",
+          value: "No shortfall identified from the current assumptions.",
+        },
+      ])
+    );
+  });
+
   it("requires checking when an on-track result depends on unconfirmed State Pension", () => {
     const settings = {
       ...createExactTargetScenarioSettings(),
@@ -745,6 +787,33 @@ function createExactTargetScenarioSettings() {
     showClassicPlus: false,
     showNuvos: false,
     showPremium: false,
+    showSipp: false,
+    showCsAvc: false,
+    showIsa: false,
+    showLisa: false,
+  };
+}
+
+function createClassicOnlyTargetScenarioSettings() {
+  return {
+    ...createDefaultSettings(),
+    startDate: "2026-04-01",
+    dateOfBirth: "1980-04-01",
+    requirementAge: 60,
+    lifeExpectancy: 61,
+    desiredRetirementIncome: 6000,
+    taxationEnabled: false,
+    showAlpha: false,
+    showClassic: true,
+    classicCalculationMode: "manual" as const,
+    classicAnnualPension: 12_000,
+    classicAutomaticLumpSum: 0,
+    classicPensionDrawAge: 60,
+    classicApplyPensionIncreases: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: false,
     showSipp: false,
     showCsAvc: false,
     showIsa: false,

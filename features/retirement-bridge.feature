@@ -56,6 +56,18 @@ Feature: Early retirement bridge planning
     And at least one bridge phase should include "State Pension"
     And the stable annual secure income should be 12000.00
 
+  @classic
+  Scenario: Treat classic pension as secure income throughout the bridge result
+    Given the bridge plan has classic pension of 12000.00 per year from age 60
+    And the bridge plan has no State Pension
+    And the bridge retirement age is 60
+    And the bridge life expectancy age is 61
+    And the bridge target income is 6000.00 per year
+    When the bridge plan is analysed
+    Then the bridge plan should work on these assumptions
+    And at least one bridge phase should include "classic"
+    And the full secure annual income should be 12000.00
+
   @additional-guaranteed-income
   Scenario: Use additional guaranteed income to reduce the bridge funding need
     Given the bridge plan has no Civil Service pension

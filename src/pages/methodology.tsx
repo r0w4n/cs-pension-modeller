@@ -1089,7 +1089,8 @@ export function MethodologyPage() {
         <p className="section-copy">
           Bridge analysis first prepares a retirement scenario where Alpha
           accrual stops at the target retirement age and ISA drawdown can begin
-          at retirement. It then compares net secure income from Alpha, nuvos
+          at retirement. It then compares net secure income from the selected
+          Civil Service defined-benefit pensions, additional guaranteed income
           and State Pension with the selected target for each month from
           retirement to life expectancy. In real-terms mode the target remains
           in today's-money terms; in nominal mode it is increased from the model

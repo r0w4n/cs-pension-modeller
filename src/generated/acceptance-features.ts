@@ -14132,16 +14132,16 @@ export const acceptanceFeatures = [
       {
         id: "line-60",
         keyword: "Scenario",
-        name: "Use additional guaranteed income to reduce the bridge funding need",
+        name: "Treat classic pension as secure income throughout the bridge result",
         description: "",
-        tags: ["@additional-guaranteed-income"],
+        tags: ["@classic"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
             id: "line-61",
             keyword: "Given",
-            text: "the bridge plan has no Civil Service pension",
+            text: "the bridge plan has classic pension of 12000.00 per year from age 60",
           },
           {
             id: "line-62",
@@ -14151,37 +14151,37 @@ export const acceptanceFeatures = [
           {
             id: "line-63",
             keyword: "And",
-            text: "the bridge retirement age is 58",
+            text: "the bridge retirement age is 60",
           },
           {
             id: "line-64",
             keyword: "And",
-            text: "the bridge life expectancy age is 62",
+            text: "the bridge life expectancy age is 61",
           },
           {
             id: "line-65",
             keyword: "And",
-            text: "the bridge target income is 18000.00 per year",
+            text: "the bridge target income is 6000.00 per year",
           },
           {
             id: "line-66",
-            keyword: "And",
-            text: "the bridge plan has an ISA balance of 30000.00",
-          },
-          {
-            id: "line-67",
             keyword: "When",
             text: "the bridge plan is analysed",
           },
           {
+            id: "line-67",
+            keyword: "Then",
+            text: "the bridge plan should work on these assumptions",
+          },
+          {
             id: "line-68",
             keyword: "And",
-            text: "the same bridge plan adds guaranteed income of 6000.00 per year from age 60",
+            text: 'at least one bridge phase should include "classic"',
           },
           {
             id: "line-69",
-            keyword: "Then",
-            text: "the total bridge funding need should be lower with the guaranteed income",
+            keyword: "And",
+            text: "the full secure annual income should be 12000.00",
           },
         ],
         examples: [],
@@ -14189,16 +14189,16 @@ export const acceptanceFeatures = [
       {
         id: "line-72",
         keyword: "Scenario",
-        name: "Find the earliest Alpha draw age that sustains the retirement target",
+        name: "Use additional guaranteed income to reduce the bridge funding need",
         description: "",
-        tags: ["@sustainable-draw-age"],
+        tags: ["@additional-guaranteed-income"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
             id: "line-73",
             keyword: "Given",
-            text: "the bridge plan has Alpha pension of 20000.00 per year",
+            text: "the bridge plan has no Civil Service pension",
           },
           {
             id: "line-74",
@@ -14208,25 +14208,82 @@ export const acceptanceFeatures = [
           {
             id: "line-75",
             keyword: "And",
-            text: "the bridge retirement age is 55",
+            text: "the bridge retirement age is 58",
           },
           {
             id: "line-76",
             keyword: "And",
-            text: "the bridge life expectancy age is 56",
+            text: "the bridge life expectancy age is 62",
           },
           {
             id: "line-77",
             keyword: "And",
-            text: "the bridge target income is 5000.00 per year",
+            text: "the bridge target income is 18000.00 per year",
           },
           {
             id: "line-78",
+            keyword: "And",
+            text: "the bridge plan has an ISA balance of 30000.00",
+          },
+          {
+            id: "line-79",
+            keyword: "When",
+            text: "the bridge plan is analysed",
+          },
+          {
+            id: "line-80",
+            keyword: "And",
+            text: "the same bridge plan adds guaranteed income of 6000.00 per year from age 60",
+          },
+          {
+            id: "line-81",
+            keyword: "Then",
+            text: "the total bridge funding need should be lower with the guaranteed income",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-84",
+        keyword: "Scenario",
+        name: "Find the earliest Alpha draw age that sustains the retirement target",
+        description: "",
+        tags: ["@sustainable-draw-age"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-85",
+            keyword: "Given",
+            text: "the bridge plan has Alpha pension of 20000.00 per year",
+          },
+          {
+            id: "line-86",
+            keyword: "And",
+            text: "the bridge plan has no State Pension",
+          },
+          {
+            id: "line-87",
+            keyword: "And",
+            text: "the bridge retirement age is 55",
+          },
+          {
+            id: "line-88",
+            keyword: "And",
+            text: "the bridge life expectancy age is 56",
+          },
+          {
+            id: "line-89",
+            keyword: "And",
+            text: "the bridge target income is 5000.00 per year",
+          },
+          {
+            id: "line-90",
             keyword: "When",
             text: "the earliest sustainable pension draw age is calculated",
           },
           {
-            id: "line-79",
+            id: "line-91",
             keyword: "Then",
             text: "the earliest sustainable pension draw age should be 55",
           },

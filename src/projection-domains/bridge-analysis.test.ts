@@ -166,4 +166,98 @@ describe("projection bridge analysis domain", () => {
     expect(rows.find((row) => row.age === 62)?.monthlyTargetIncome).toBe(250);
     expect(rows.find((row) => row.age === 60)?.isaDrawdown).toBe(1000);
   });
+
+  it("treats classic as secure income in bridge dates, phases and projection rows", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      dateOfBirth: "1980-04-01",
+      requirementAge: 60,
+      lifeExpectancy: 61,
+      desiredRetirementIncome: 6000,
+      taxationEnabled: false,
+      showAlpha: false,
+      showClassic: true,
+      classicCalculationMode: "manual",
+      classicAnnualPension: 12_000,
+      classicAutomaticLumpSum: 0,
+      classicPensionDrawAge: 60,
+      classicApplyPensionIncreases: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+    });
+
+    const analysis = generateRetirementBridgeAnalysis(
+      createProjectionTable(settings),
+      settings
+    );
+
+    expect(analysis.planWorks).toBe(true);
+    expect(analysis.fullSecureIncomeStartDate).toBe("2040-04-01");
+    expect(analysis.fullSecureAnnualGuaranteedIncome).toBeCloseTo(12_000, 6);
+    expect(analysis.fullSecureAnnualGuaranteedSurplus).toBeCloseTo(6000, 6);
+    expect(analysis.phases[0]).toEqual(
+      expect.objectContaining({
+        incomeSourcesActive: ["classic"],
+        annualClassicPension: 12_000,
+      })
+    );
+    expect(analysis.potProjection[0]?.monthlyClassicPension).toBe(1000);
+    expect(
+      analysis.potProjection[0]?.milestones.includes("classic starts")
+    ).toBe(true);
+  });
+
+  it("treats classic plus as secure income in bridge dates, phases and projection rows", () => {
+    const settings = prepareBridgeProjectionSettings({
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      dateOfBirth: "1980-04-01",
+      requirementAge: 60,
+      lifeExpectancy: 61,
+      desiredRetirementIncome: 6000,
+      taxationEnabled: false,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: true,
+      classicPlusCalculationMode: "manual",
+      classicPlusAnnualPension: 12_000,
+      classicPlusAutomaticLumpSum: 0,
+      classicPlusPensionDrawAge: 60,
+      classicPlusApplyPensionIncreases: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+    });
+
+    const analysis = generateRetirementBridgeAnalysis(
+      createProjectionTable(settings),
+      settings
+    );
+
+    expect(analysis.planWorks).toBe(true);
+    expect(analysis.fullSecureIncomeStartDate).toBe("2040-04-01");
+    expect(analysis.fullSecureAnnualGuaranteedIncome).toBeCloseTo(12_000, 6);
+    expect(analysis.fullSecureAnnualGuaranteedSurplus).toBeCloseTo(6000, 6);
+    expect(analysis.phases[0]).toEqual(
+      expect.objectContaining({
+        incomeSourcesActive: ["classic plus"],
+        annualClassicPlusPension: 12_000,
+      })
+    );
+    expect(analysis.potProjection[0]?.monthlyClassicPlusPension).toBe(1000);
+    expect(
+      analysis.potProjection[0]?.milestones.includes("classic plus starts")
+    ).toBe(true);
+  });
 });

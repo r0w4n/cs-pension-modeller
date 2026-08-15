@@ -897,6 +897,36 @@ Given(
 );
 
 Given(
+  "the bridge plan has classic pension of {float} per year from age {float}",
+  function (
+    this: ProductAcceptanceWorld,
+    classicAnnualPension: number,
+    classicPensionDrawAge: number
+  ) {
+    updateSettings(this, {
+      startDate: "2026-04-01",
+      dateOfBirth: "1980-04-01",
+      inflationRateAnnual: 0,
+      taxationEnabled: false,
+      showAlpha: false,
+      showClassic: true,
+      classicCalculationMode: "manual",
+      classicAnnualPension,
+      classicAutomaticLumpSum: 0,
+      classicPensionDrawAge,
+      classicApplyPensionIncreases: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+    });
+  }
+);
+
+Given(
   "the bridge plan includes State Pension of {float} per year from {word}",
   function (
     this: ProductAcceptanceWorld,
@@ -1110,6 +1140,17 @@ Then(
   function (this: ProductAcceptanceWorld, expected: number) {
     expectMoney(
       getBridgeAnalysis(this).stableAnnualGuaranteedIncome,
+      expected,
+      this.precision
+    );
+  }
+);
+
+Then(
+  "the full secure annual income should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      getBridgeAnalysis(this).fullSecureAnnualGuaranteedIncome,
       expected,
       this.precision
     );

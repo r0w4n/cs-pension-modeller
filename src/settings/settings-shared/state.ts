@@ -11,6 +11,7 @@ import {
   normalizeIsoDate,
   roundUpToStep,
 } from "./date";
+import { roundModelAge } from "./age";
 import { calculateDateAge } from "../settings-domains/personal-details";
 
 const fixedStatePensionDateRules = [
@@ -118,7 +119,7 @@ export function calculateNormalPensionAge(dateOfBirth: string) {
     normalizedDateOfBirth
   );
 
-  return (
+  return roundModelAge(
     calculateNormalPensionAgeMonths(
       normalizedDateOfBirth,
       statePensionDrawDate
@@ -136,6 +137,13 @@ export function calculateMinimumStatePensionDrawAge(dateOfBirth: string) {
   return roundUpToStep(
     calculateDateAge(normalizedDateOfBirth, defaultDrawDate),
     STATE_PENSION_AGE_STEP
+  );
+}
+
+export function calculateDefaultStatePensionDrawAge(dateOfBirth: string) {
+  return Math.max(
+    calculateNormalPensionAge(dateOfBirth),
+    calculateMinimumStatePensionDrawAge(dateOfBirth)
   );
 }
 
@@ -203,7 +211,7 @@ function normalizeMinimumPensionAccessAge(
   );
   const parsed = Number(value);
   const normalizedAge = Number.isFinite(parsed)
-    ? Math.min(maxAge, Math.max(55, parsed))
+    ? roundModelAge(Math.min(maxAge, Math.max(55, parsed)))
     : 58;
   const sippDrawDate = addYearsToIsoDate(normalizedDateOfBirth, normalizedAge);
 
@@ -324,5 +332,7 @@ export function normalizeAlphaPensionDrawAge(
 
 export function normalizeSippDrawAge(value: number, _dateOfBirth: string) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.min(100, Math.max(0, parsed)) : 58;
+  return Number.isFinite(parsed)
+    ? roundModelAge(Math.min(100, Math.max(0, parsed)))
+    : 58;
 }

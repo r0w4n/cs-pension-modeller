@@ -1,4 +1,4 @@
-import type { PensionSettings } from "../settings";
+import { formatModelAgeCompact, type PensionSettings } from "../settings";
 
 export function formatDate(value: string) {
   if (!value) {
@@ -84,7 +84,7 @@ export function formatDecimalAge(age: number) {
 }
 
 export function formatAgeValue(value: number) {
-  return value.toFixed(2).replace(/\.00$/, "");
+  return formatModelAgeCompact(value);
 }
 
 export function isSettingsGroupVisible(

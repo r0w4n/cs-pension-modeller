@@ -112,22 +112,22 @@ const baseProps: RetirementIncomeBridgeChartProps = {
       step: 25,
     },
     sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
-    retirementAge: { min: 40, max: 67, step: 1 },
-    slowGoStartAge: { min: 61, max: 79, step: 1 },
-    noGoStartAge: { min: 76, max: 80, step: 1 },
-    alphaLeaveAge: { min: 40, max: 67, step: 1 },
-    sippAccessAge: { min: 57, max: 67, step: 1 },
-    sippUseByAge: { min: 57.25, max: 80, step: 1 },
-    isaAccessAge: { min: 40, max: 67, step: 1 },
-    lisaAccessAge: { min: 60, max: 80, step: 1 },
-    alphaStartAge: { min: 60, max: 67, step: 1 },
-    nuvosStartAge: { min: 60, max: 67, step: 1 },
-    premiumStartAge: { min: 55, max: 67, step: 1 },
-    isaUseByAge: { min: 60.25, max: 80, step: 1 },
-    lisaUseByAge: { min: 60.25, max: 80, step: 1 },
-    partialRetirementStartAge: { min: 40, max: 59.75, step: 1 },
+    retirementAge: { min: 40, max: 67, step: 0.25 },
+    slowGoStartAge: { min: 61, max: 79, step: 0.25 },
+    noGoStartAge: { min: 76, max: 80, step: 0.25 },
+    alphaLeaveAge: { min: 40, max: 67, step: 0.25 },
+    sippAccessAge: { min: 57, max: 67, step: 0.25 },
+    sippUseByAge: { min: 57.25, max: 80, step: 0.25 },
+    isaAccessAge: { min: 40, max: 67, step: 0.25 },
+    lisaAccessAge: { min: 60, max: 80, step: 0.25 },
+    alphaStartAge: { min: 60, max: 67, step: 0.25 },
+    nuvosStartAge: { min: 60, max: 67, step: 0.25 },
+    premiumStartAge: { min: 55, max: 67, step: 0.25 },
+    isaUseByAge: { min: 60.25, max: 80, step: 0.25 },
+    lisaUseByAge: { min: 60.25, max: 80, step: 0.25 },
+    partialRetirementStartAge: { min: 40, max: 59.75, step: 0.25 },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
-    statePensionAge: { min: 67, max: 80, step: 1 },
+    statePensionAge: { min: 67, max: 80, step: 0.25 },
   },
   onChangeParameters: vi.fn(),
 };
@@ -649,10 +649,10 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     const slowGoStartHandle = screen.getByRole("slider", {
-      name: "Start Slow-go, age 75",
+      name: /Start Slow-go, age 75/i,
     });
     const noGoStartHandle = screen.getByRole("slider", {
-      name: "Start No-go, age 80",
+      name: /Start No-go, age 80/i,
     });
     expect(slowGoStartHandle).toHaveAttribute("aria-valuemin", "61");
     expect(slowGoStartHandle).toHaveAttribute("aria-valuemax", "79");
@@ -662,7 +662,7 @@ describe("RetirementIncomeBridgeChart", () => {
     fireEvent.keyDown(slowGoStartHandle, { key: "ArrowRight" });
 
     expect(onChangeParameters).toHaveBeenCalledWith({
-      slowGoStartAge: 76,
+      slowGoStartAge: 75.25,
     });
   });
 
@@ -676,7 +676,7 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     const slowGoStartLabel = screen.getByRole("slider", {
-      name: "Start Slow-go, age 75",
+      name: /Start Slow-go, age 75/i,
     });
     const marker = slowGoStartLabel.closest(".bridge-milestone");
     const guideLine = marker?.querySelector("line");
@@ -1446,20 +1446,27 @@ describe("RetirementIncomeBridgeChart", () => {
       pointerType: "touch",
     });
     fireEvent.pointerMove(window, {
-      clientX: 97,
-      clientY: 150,
-      pointerId: 1,
-    });
-    fireEvent.pointerUp(window, {
-      clientX: 97,
+      clientX: 100,
       clientY: 150,
       pointerId: 1,
     });
 
-    expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57 });
+    const dragAgeLabel = document.querySelector(".bridge-drag-age");
+    const dragAgeLabelRect = dragAgeLabel?.querySelector("rect");
+
+    expect(dragAgeLabel?.textContent).toBe("57y 3m");
+    expect(dragAgeLabelRect).toHaveAttribute("width", "58");
+
+    fireEvent.pointerUp(window, {
+      clientX: 100,
+      clientY: 150,
+      pointerId: 1,
+    });
+
+    expect(onChangeParameters).toHaveBeenCalledWith({ retirementAge: 57.25 });
   });
 
-  it("uses whole-year steps for the mobile age input", () => {
+  it("uses quarter-year steps for the mobile age input", () => {
     mockChartResize(360);
 
     renderChart();
@@ -1470,7 +1477,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
     expect(screen.getByRole("spinbutton", { name: "Age" })).toHaveAttribute(
       "step",
-      "1"
+      "0.25"
     );
   });
 
@@ -1670,7 +1677,7 @@ describe("RetirementIncomeBridgeChart", () => {
       onChangeParameters,
     });
 
-    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 60"), {
+    fireEvent.keyDown(screen.getByLabelText(/Leave Alpha, age 60/i), {
       key: "ArrowRight",
     });
 
@@ -1701,7 +1708,7 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     expect(
-      screen.getByRole("slider", { name: "Start Nuvos, age 66" })
+      screen.getByRole("slider", { name: /Start Nuvos, age 66/i })
     ).toBeInTheDocument();
   });
 
@@ -1715,11 +1722,13 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     fireEvent.keyDown(
-      screen.getByRole("slider", { name: "Start Premium, age 60" }),
+      screen.getByRole("slider", { name: /Start Premium, age 60/i }),
       { key: "ArrowLeft" }
     );
 
-    expect(onChangeParameters).toHaveBeenCalledWith({ premiumStartAge: 59 });
+    expect(onChangeParameters).toHaveBeenCalledWith({
+      premiumStartAge: 59.75,
+    });
   });
 
   it("aligns the ISA area boundaries with the ISA markers", () => {
@@ -1777,8 +1786,8 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     const isaPath = getIncomeAreaPath("#1f8ee6");
-    const isaStartX = getMilestoneLineX(/ISA start, age 59.25/i);
-    const isaUseByX = getMilestoneLineX(/ISA stop, age 65.75/i);
+    const isaStartX = getMilestoneLineX(/ISA start, age 59 years 3 months/i);
+    const isaUseByX = getMilestoneLineX(/ISA stop, age 65 years 9 months/i);
     const isaActiveRange = getAreaActiveXRange(isaPath);
 
     expectPathToContainX(isaPath, isaStartX);
@@ -1842,8 +1851,8 @@ describe("RetirementIncomeBridgeChart", () => {
     });
 
     const sippPath = getIncomeAreaPath("#148c55");
-    const sippStartX = getMilestoneLineX(/SIPP start, age 59.25/i);
-    const sippUseByX = getMilestoneLineX(/SIPP stop, age 66.75/i);
+    const sippStartX = getMilestoneLineX(/SIPP start, age 59 years 3 months/i);
+    const sippUseByX = getMilestoneLineX(/SIPP stop, age 66 years 9 months/i);
     const sippActiveRange = getAreaActiveXRange(sippPath);
 
     expectPathToContainX(sippPath, sippStartX);

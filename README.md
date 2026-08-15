@@ -112,6 +112,11 @@ can compare scenarios without repeatedly re-entering data.
 
 Some important assumptions and simplifications are:
 
+- Numeric modelling ages are represented in quarter-year steps (whole years,
+  then 3, 6 or 9 months). Values entered, derived or loaded from an older saved
+  file are rounded to the nearest quarter year and that rounded value is used
+  throughout the model. Calendar-date inputs and the monthly projection retain
+  their date or month resolution.
 - Alpha accrual is calculated from pensionable earnings using the Alpha accrual
   rate encoded in the model.
 - The starting Alpha pension is rolled forward from the latest ABS year to the
@@ -135,8 +140,8 @@ Some important assumptions and simplifications are:
 - Premium early-retirement reductions at supported draw ages from 55 use the
   completed-years-and-months entries in GAD consolidated Civil Service factors
   workbook version 2026-01: table 1-406/P1ER60PEN1 for NPA 60 and table
-  1-410/P1ER65PEN1 for NPA 65. The on-screen control currently selects whole
-  years. The values and source metadata are stored in
+  1-410/P1ER65PEN1 for NPA 65. The on-screen control selects quarter years. The
+  values and source metadata are stored in
   [`src/data/premium_pension_reduction_factors.json`](src/data/premium_pension_reduction_factors.json).
   The app does not approximate unsupported under-55 or personal-NPA cases using
   Alpha or nuvos rules.

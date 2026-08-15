@@ -12,7 +12,12 @@ import {
 } from "react";
 import * as d3 from "d3";
 import { trackAnalyticsEvent } from "./analytics";
-import type { PensionValidationIssue, SpendingSmileStrategy } from "./settings";
+import {
+  formatModelAge,
+  formatModelAgeCompact,
+  type PensionValidationIssue,
+  type SpendingSmileStrategy,
+} from "./settings";
 import {
   MAX_SPENDING_SMILE_PERCENTAGE,
   MIN_SPENDING_SMILE_PERCENTAGE,
@@ -352,6 +357,8 @@ const HANDLE_LABEL_WIDTH = 24;
 const HANDLE_LABEL_HEIGHT = 84;
 const HANDLE_LABEL_STACK_GAP = 16;
 const HANDLE_LABEL_STACK_SPACING = HANDLE_LABEL_HEIGHT + HANDLE_LABEL_STACK_GAP;
+const DRAG_AGE_LABEL_WIDTH = 58;
+const DRAG_AGE_LABEL_HEIGHT = 19;
 const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
 const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
 const MARKER_DRAG_LEFT_OVERSCAN_RATIO = 0.4;
@@ -2797,7 +2804,7 @@ export function RetirementIncomeBridgeChart({
                     role={marker.editable ? "slider" : "img"}
                     tabIndex={marker.editable ? 0 : undefined}
                     data-testid={`bridge-marker-${marker.key}`}
-                    aria-label={`${marker.label}, age ${formatAgeValue(marker.age)}`}
+                    aria-label={`${marker.label}, age ${formatModelAge(marker.age)}`}
                     aria-valuemin={limits[marker.key].min}
                     aria-valuemax={limits[marker.key].max}
                     aria-valuenow={marker.age}
@@ -2909,9 +2916,19 @@ export function RetirementIncomeBridgeChart({
             {draggingMobileMarker ? (
               <g
                 className="bridge-drag-age"
-                transform={`translate(${xScale(draggingMobileMarker.plotAge)},${plotHeight + 18})`}
+                transform={`translate(${clampNumber(
+                  xScale(draggingMobileMarker.plotAge),
+                  DRAG_AGE_LABEL_WIDTH / 2,
+                  plotWidth - DRAG_AGE_LABEL_WIDTH / 2
+                )},${plotHeight + 18})`}
               >
-                <rect x={-18} y={-13} width={36} height={19} rx={6} />
+                <rect
+                  x={-DRAG_AGE_LABEL_WIDTH / 2}
+                  y={-13}
+                  width={DRAG_AGE_LABEL_WIDTH}
+                  height={DRAG_AGE_LABEL_HEIGHT}
+                  rx={6}
+                />
                 <text y="0.12em" textAnchor="middle">
                   {formatAgeValue(draggingMobileMarker.age)}
                 </text>
@@ -4243,7 +4260,7 @@ function BridgeMobileNavigation({
               min={markerLimit.min}
               max={markerLimit.max}
               step={markerLimit.step}
-              value={formatAgeValue(selectedMobileMarker.age)}
+              value={selectedMobileMarker.age.toString()}
               disabled={!selectedMobileMarker.editable}
               onChange={(event) =>
                 onChangeParameters({
@@ -4410,7 +4427,7 @@ function formatCompactCurrency(value: number) {
 }
 
 function formatAgeValue(value: number) {
-  return value.toFixed(2).replace(/\.00$/, "");
+  return formatModelAgeCompact(value);
 }
 
 function resolveDisplayedSpendingSmile({

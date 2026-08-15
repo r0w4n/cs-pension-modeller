@@ -22,7 +22,7 @@ import {
   isValidIsoDate,
 } from "./settings-shared/date";
 import {
-  calculateMinimumStatePensionDrawAge,
+  calculateDefaultStatePensionDrawAge,
   calculateNormalPensionAge,
   calculateStatePensionDrawDateFromAge,
   normalizeSippDrawAge,
@@ -188,7 +188,7 @@ export function createDefaultSettings(): PensionSettings {
   const normalPensionAge = calculateNormalPensionAge(
     defaultSettings.dateOfBirth
   );
-  const statePensionDrawAge = calculateMinimumStatePensionDrawAge(
+  const statePensionDrawAge = calculateDefaultStatePensionDrawAge(
     defaultSettings.dateOfBirth
   );
 
@@ -196,6 +196,9 @@ export function createDefaultSettings(): PensionSettings {
     ...defaultSettings,
     spendingSmile: { ...defaultSettings.spendingSmile },
     normalPensionAge,
+    requirementAge: normalPensionAge,
+    alphaPensionLeaveAge: normalPensionAge,
+    alphaPensionDrawAge: normalPensionAge,
     startDate: getTodayIsoDate(),
     nuvosPensionDrawAge: nuvosDefaults.nuvosPensionDrawAge,
     premiumDrawAge: premiumDefaults.premiumNormalPensionAge,

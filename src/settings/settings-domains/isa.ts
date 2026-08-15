@@ -4,11 +4,12 @@ import type {
   PensionValidationIssue,
 } from "../settings-types";
 import { normalizeFlexibleWithdrawalStrategy } from "../settings-types";
+import { roundModelAge } from "../settings-shared/age";
 
 export const ISA_DEFAULT_YEARS_BEFORE_NPA = 10;
 
 export function calculateDefaultIsaDrawAge(normalPensionAge: number) {
-  return Math.floor(normalPensionAge - ISA_DEFAULT_YEARS_BEFORE_NPA);
+  return roundModelAge(normalPensionAge - ISA_DEFAULT_YEARS_BEFORE_NPA);
 }
 
 export function normalizeIsaWithdrawalStrategy(

@@ -578,6 +578,7 @@ function renderFieldsStep(
           ? viewModel.flexibleWithdrawalSummary
           : undefined
       }
+      useNpaLinkedDefaults={step.id.startsWith("expert-")}
     >
       {isSpendingSmileEditorStep(step.id) ? (
         <SpendingSmileEditor

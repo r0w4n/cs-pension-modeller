@@ -1,5 +1,8 @@
 import { applyBridgeChartParameterPatch, updateSetting } from "./chart-state";
-import { createDefaultSettings } from "../settings";
+import {
+  calculateStatePensionDrawAge,
+  createDefaultSettings,
+} from "../settings";
 
 describe("chart-state", () => {
   it("caps SMILE phase ages when life expectancy is reduced", () => {
@@ -75,8 +78,122 @@ describe("chart-state", () => {
       },
     });
 
-    expect(next.normalPensionAge).toBeCloseTo(67.1666666667);
-    expect(next.sippDrawAge).toBe(67);
+    expect(next.normalPensionAge).toBe(67.25);
+    expect(next.sippDrawAge).toBe(67.25);
+  });
+
+  it("aligns untouched expert retirement defaults to Normal Pension Age when date of birth changes", () => {
+    const current = createDefaultSettings();
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1977-06-01",
+      journeyMode: "expert",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.normalPensionAge).toBe(67.25);
+    expect(next.requirementAge).toBe(67.25);
+    expect(next.alphaPensionLeaveAge).toBe(67.25);
+    expect(next.alphaPensionDrawAge).toBe(67.25);
+    expect(next.sippDrawAge).toBe(67.25);
+    expect(
+      calculateStatePensionDrawAge(next.dateOfBirth, next.statePensionDrawDate)
+    ).toBe(67.25);
+  });
+
+  it("preserves a custom expert target retirement age when date of birth changes", () => {
+    const current = {
+      ...createDefaultSettings(),
+      requirementAge: 60,
+    };
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1977-06-01",
+      journeyMode: "expert",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.normalPensionAge).toBe(67.25);
+    expect(next.requirementAge).toBe(60);
+  });
+
+  it("preserves a custom Alpha scheme leave age when date of birth changes", () => {
+    const current = {
+      ...createDefaultSettings(),
+      alphaPensionLeaveAge: 60,
+    };
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1977-06-01",
+      journeyMode: "expert",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.normalPensionAge).toBe(67.25);
+    expect(next.alphaPensionLeaveAge).toBe(60);
+  });
+
+  it("preserves a custom Alpha pension draw age when date of birth changes", () => {
+    const current = {
+      ...createDefaultSettings(),
+      alphaPensionDrawAge: 60,
+    };
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1977-06-01",
+      journeyMode: "expert",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.normalPensionAge).toBe(67.25);
+    expect(next.alphaPensionDrawAge).toBe(60);
+  });
+
+  it("preserves a custom State Pension deferral age when date of birth changes", () => {
+    const current = {
+      ...createDefaultSettings(),
+      statePensionDrawDate: "2057-06-01",
+    };
+    let next = current;
+
+    updateSetting({
+      key: "dateOfBirth",
+      value: "1977-06-01",
+      journeyMode: "expert",
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(
+      calculateStatePensionDrawAge(next.dateOfBirth, next.statePensionDrawDate)
+    ).toBe(70);
   });
 
   it("preserves a custom SIPP draw age when date of birth changes", () => {
@@ -114,8 +231,8 @@ describe("chart-state", () => {
       },
     });
 
-    expect(next.normalPensionAge).toBeCloseTo(67.1666666667);
-    expect(next.isaDrawAge).toBe(57);
+    expect(next.normalPensionAge).toBe(67.25);
+    expect(next.isaDrawAge).toBe(57.25);
   });
 
   it("preserves a custom ISA draw age when date of birth changes", () => {

@@ -4,6 +4,7 @@ import {
   type StoredSettingsEnvelope,
 } from "./settings-versions";
 import { FLEXIBLE_FUND_ACCOUNT_IDS } from "./settings-types";
+import { MODEL_AGE_SETTING_KEYS, roundModelAge } from "./settings-shared/age";
 
 type SettingsMigration = (data: unknown) => unknown;
 
@@ -289,6 +290,22 @@ export function migrateFromV13ToV14(data: unknown) {
   };
 }
 
+export function migrateFromV14ToV15(data: unknown) {
+  if (!isRecord(data) || !isRecord(data.journeys)) {
+    return { journeys: {} };
+  }
+
+  return {
+    ...data,
+    journeys: Object.fromEntries(
+      Object.entries(data.journeys).map(([journey, settings]) => [
+        journey,
+        migrateJourneyToQuarterYearAges(settings),
+      ])
+    ),
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -303,6 +320,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   11: migrateFromV11ToV12,
   12: migrateFromV12ToV13,
   13: migrateFromV13ToV14,
+  14: migrateFromV14ToV15,
 };
 
 export function migrateSettingsToLatest(
@@ -336,6 +354,53 @@ export function migrateSettingsToLatest(
   }
 
   return migratedData;
+}
+
+function migrateJourneyToQuarterYearAges(data: unknown) {
+  if (!isRecord(data)) {
+    return data;
+  }
+
+  const migrated = { ...data };
+
+  for (const key of MODEL_AGE_SETTING_KEYS) {
+    if (Object.hasOwn(migrated, key)) {
+      migrated[key] = migrateAgeValue(migrated[key]);
+    }
+  }
+
+  if (isRecord(data.spendingSmile)) {
+    migrated.spendingSmile = {
+      ...data.spendingSmile,
+      slowGoStartAge: migrateAgeValue(data.spendingSmile.slowGoStartAge),
+      noGoStartAge: migrateAgeValue(data.spendingSmile.noGoStartAge),
+    };
+  }
+
+  if (Array.isArray(data.additionalGuaranteedIncomes)) {
+    migrated.additionalGuaranteedIncomes = data.additionalGuaranteedIncomes.map(
+      (income: unknown) =>
+        isRecord(income)
+          ? {
+              ...income,
+              ...(Object.hasOwn(income, "startAge")
+                ? { startAge: migrateAgeValue(income.startAge) }
+                : {}),
+              ...(Object.hasOwn(income, "endAge")
+                ? { endAge: migrateAgeValue(income.endAge) }
+                : {}),
+            }
+          : income
+    );
+  }
+
+  return migrated;
+}
+
+function migrateAgeValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? roundModelAge(value)
+    : value;
 }
 
 function getMigratedPercentage(

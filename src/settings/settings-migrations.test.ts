@@ -12,6 +12,7 @@ import {
   migrateFromV11ToV12,
   migrateFromV12ToV13,
   migrateFromV13ToV14,
+  migrateFromV14ToV15,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -331,6 +332,56 @@ describe("settings-migrations", () => {
         simple: settings,
         bridge: settings,
         expert: settings,
+      },
+    });
+  });
+
+  it("rounds stored numeric ages to the nearest quarter year", () => {
+    expect(
+      migrateFromV14ToV15({
+        journeys: {
+          simple: {
+            requirementAge: 67.16666666666667,
+            lifeExpectancy: 89.9,
+            desiredRetirementIncome: 31_700.2,
+            spendingSmile: {
+              slowGoStartAge: 74.9,
+              noGoStartAge: 84.6,
+            },
+            additionalGuaranteedIncomes: [
+              {
+                id: "income-1",
+                startAge: 62.2,
+                endAge: 70.4,
+                annualAmount: 5_000.5,
+              },
+            ],
+          },
+          bridge: { sippDrawAge: 63.1 },
+          expert: { alphaPensionDrawAge: 68.24 },
+        },
+      })
+    ).toEqual({
+      journeys: {
+        simple: {
+          requirementAge: 67.25,
+          lifeExpectancy: 90,
+          desiredRetirementIncome: 31_700.2,
+          spendingSmile: {
+            slowGoStartAge: 75,
+            noGoStartAge: 84.5,
+          },
+          additionalGuaranteedIncomes: [
+            {
+              id: "income-1",
+              startAge: 62.25,
+              endAge: 70.5,
+              annualAmount: 5_000.5,
+            },
+          ],
+        },
+        bridge: { sippDrawAge: 63 },
+        expert: { alphaPensionDrawAge: 68.25 },
       },
     });
   });

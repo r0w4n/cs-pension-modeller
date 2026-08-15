@@ -1359,14 +1359,14 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    const marker = screen.getByLabelText("Start Nuvos, age 65");
+    const marker = screen.getByLabelText(/^Start Nuvos, age 65/);
 
     expect(marker).toHaveAttribute("role", "img");
     fireEvent.keyDown(marker, {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Start Nuvos, age 65")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Start Nuvos, age 65/)).toBeInTheDocument();
   });
 
   it("keeps retirement timing read-only in the simple journey result chart", () => {
@@ -1383,8 +1383,8 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
     advanceJourneyToResult();
 
-    const retirementMarker = screen.getByLabelText("Retire, age 68");
-    const nuvosMarker = screen.getByLabelText("Start Nuvos, age 68");
+    const retirementMarker = screen.getByLabelText(/^Retire, age 68/);
+    const nuvosMarker = screen.getByLabelText(/^Start Nuvos, age 68/);
 
     expect(retirementMarker).toHaveAttribute("role", "img");
     expect(nuvosMarker).toHaveAttribute("role", "img");
@@ -1395,8 +1395,8 @@ describe("App settings form", () => {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Retire, age 68")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start Nuvos, age 68")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Retire, age 68/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Start Nuvos, age 68/)).toBeInTheDocument();
   });
 
   it("restores Alpha in simple journey results when older settings had disabled it", async () => {
@@ -1680,7 +1680,7 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
     advanceJourneyToResult();
 
-    expect(screen.getByLabelText("Retire, age 68")).toHaveAttribute(
+    expect(screen.getByLabelText(/^Retire, age 68/)).toHaveAttribute(
       "role",
       "img"
     );
@@ -1688,11 +1688,11 @@ describe("App settings form", () => {
       "role",
       "img"
     );
-    expect(screen.getByLabelText("Start Alpha, age 68")).toHaveAttribute(
+    expect(screen.getByLabelText(/^Start Alpha, age 68/)).toHaveAttribute(
       "role",
       "img"
     );
-    expect(screen.getByLabelText("Start State, age 68")).toHaveAttribute(
+    expect(screen.getByLabelText(/^Start State, age 68/)).toHaveAttribute(
       "role",
       "img"
     );
@@ -1834,10 +1834,10 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start Alpha, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText("Start State, age 67")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Retire, age 67/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Leave Alpha, age 67/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Start Alpha, age 67/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Start State, age 67/)).toBeInTheDocument();
   });
 
   it("uses the chosen simple retirement age as the income target and Alpha leaving age", () => {
@@ -2125,7 +2125,7 @@ describe("App settings form", () => {
     ).toHaveValue(55);
     expect(
       screen.getByLabelText("Target retirement age exact value")
-    ).toHaveAttribute("step", "1");
+    ).toHaveAttribute("step", "0.25");
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 55,
@@ -2989,6 +2989,7 @@ describe("App settings form", () => {
     expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1987-11-01",
+        requirementAge: calculateNormalPensionAge("1987-11-01"),
         statePensionDrawDate: "2055-11-01",
       })
     );
@@ -3000,6 +3001,9 @@ describe("App settings form", () => {
     expect(readStoredSettingsPayload()).toEqual(
       expectedStoredSettings({
         dateOfBirth: "1977-11-01",
+        requirementAge: calculateNormalPensionAge("1977-11-01"),
+        alphaPensionLeaveAge: calculateNormalPensionAge("1977-11-01"),
+        alphaPensionDrawAge: calculateNormalPensionAge("1977-11-01"),
         isaDrawAge: calculateDefaultIsaDrawAge(
           calculateNormalPensionAge("1977-11-01")
         ),
@@ -3276,10 +3280,12 @@ describe("App settings form", () => {
     advanceJourneyToResult();
 
     expect(
-      screen.getByLabelText(`ISA start, age ${defaultSettings.isaDrawAge}`)
+      screen.getByLabelText(
+        new RegExp(`^ISA start, age ${defaultSettings.isaDrawAge}`)
+      )
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("SIPP stop, age 75")).toBeInTheDocument();
-    expect(screen.getByLabelText("ISA stop, age 75")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^SIPP stop, age 75/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^ISA stop, age 75/)).toBeInTheDocument();
   });
 
   it("keeps the leave alpha marker visible when the build-up window hides earlier ages", () => {
@@ -3294,13 +3300,13 @@ describe("App settings form", () => {
     renderAcknowledgedApp({ mode: "bridge" });
     advanceJourneyToResult();
 
-    expect(screen.getByLabelText("Leave Alpha, age 60")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Leave Alpha, age 60/)).toBeInTheDocument();
   });
 
   it("keeps the retirement marker from crossing the Alpha start marker", () => {
     renderAcknowledgedExpertResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+    fireEvent.keyDown(screen.getByLabelText(/^Retire, age 68/), {
       key: "ArrowRight",
     });
 
@@ -3314,7 +3320,7 @@ describe("App settings form", () => {
   it("keeps the leave alpha marker from moving past retirement", () => {
     renderAcknowledgedExpertResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Leave Alpha, age 68"), {
+    fireEvent.keyDown(screen.getByLabelText(/^Leave Alpha, age 68/), {
       key: "ArrowRight",
     });
 
@@ -3328,14 +3334,16 @@ describe("App settings form", () => {
   it("lets the start alpha marker move beyond state pension age", () => {
     renderAcknowledgedExpertResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Start Alpha, age 68"), {
+    fireEvent.keyDown(screen.getByLabelText(/^Start Alpha, age 68/), {
       key: "ArrowRight",
     });
 
-    expect(screen.getByLabelText("Start Alpha, age 69")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/^Start Alpha, age 68 years 3 months$/)
+    ).toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        alphaPensionDrawAge: 69,
+        alphaPensionDrawAge: 68.25,
       })
     );
   });
@@ -3354,16 +3362,20 @@ describe("App settings form", () => {
 
     renderAcknowledgedExpertResult();
 
-    fireEvent.keyDown(screen.getByLabelText("Retire, age 68"), {
+    fireEvent.keyDown(screen.getByLabelText(/^Retire, age 68/), {
       key: "ArrowLeft",
     });
 
-    expect(screen.getByLabelText("Retire, age 67")).toBeInTheDocument();
-    expect(screen.getByLabelText("Leave Alpha, age 67")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/^Retire, age 67 years 9 months$/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/^Leave Alpha, age 67 years 9 months$/)
+    ).toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        requirementAge: 67,
-        alphaPensionLeaveAge: 67,
+        requirementAge: 67.75,
+        alphaPensionLeaveAge: 67.75,
       })
     );
   });
@@ -3478,7 +3490,7 @@ describe("App settings form", () => {
 
     advanceJourneyToResult();
 
-    expect(screen.getByLabelText("Start partial, age 55")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Start partial, age 55/)).toBeInTheDocument();
     expect(
       screen.getAllByText("Partial retirement income").length
     ).toBeGreaterThan(0);

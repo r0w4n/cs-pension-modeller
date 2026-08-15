@@ -80,6 +80,7 @@ import {
   normalizeSpendingSmile,
   reconcileSpendingSmilePhaseAges,
 } from "../spending-smile";
+import { MODEL_AGE_SETTING_KEYS, roundModelAge } from "./settings-shared/age";
 
 const numericSettingRules = {
   ...personalDetailsNumericSettingRules,
@@ -227,26 +228,8 @@ const numericSettingDefaults: Record<NumericSettingKey, number> = {
   taxLumpSumAllowanceUsed: defaultSettings.taxLumpSumAllowanceUsed,
 };
 
-const decimalAgeSettingKeys: readonly NumericSettingKey[] = [
-  "lifeExpectancy",
-  "requirementAge",
-  "partialRetirementStartAge",
-  "alphaPensionLeaveAge",
-  "alphaPensionDrawAge",
-  "classicPensionDrawAge",
-  "classicPlusPensionDrawAge",
-  "nuvosPensionLeaveAge",
-  "nuvosPensionDrawAge",
-  "premiumDrawAge",
-  "sippDrawAge",
-  "sippWithdrawalTargetAge",
-  "csAvcDrawAge",
-  "csAvcWithdrawalTargetAge",
-  "isaDrawAge",
-  "isaWithdrawalTargetAge",
-  "lisaDrawAge",
-  "lisaWithdrawalTargetAge",
-];
+const quarterYearAgeSettingKeys: readonly NumericSettingKey[] =
+  MODEL_AGE_SETTING_KEYS;
 
 export function normalizeFlexibleWithdrawalPriority(
   value: unknown
@@ -274,7 +257,11 @@ function normalizeNumericSetting(key: NumericSettingKey, value: unknown) {
   const { min, max, step } = numericSettingRules[key];
   const clamped = Math.min(max, Math.max(min, parsed));
 
-  if (step !== 1 || decimalAgeSettingKeys.includes(key)) {
+  if (quarterYearAgeSettingKeys.includes(key)) {
+    return Math.min(max, Math.max(min, roundModelAge(clamped)));
+  }
+
+  if (step !== 1) {
     return clamped;
   }
 

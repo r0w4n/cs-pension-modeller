@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { fieldGroups } from "../fieldDefinitions";
-import { createDefaultSettings } from "../settings";
+import { calculateNormalPensionAge, createDefaultSettings } from "../settings";
 import { DateInputFieldEditor, SettingsFields } from "./form-fields";
 
 describe("form-fields module", () => {
@@ -95,5 +95,120 @@ describe("form-fields module", () => {
     expect(
       screen.getByLabelText("ISA withdrawal strategy")
     ).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("validates manually entered ages against quarter-year steps", () => {
+    const settings = createDefaultSettings();
+    const onChange = vi.fn();
+    const retirementAgeField = fieldGroups
+      .flatMap((group) => group.fields)
+      .filter((field) => field.id === "requirementAge");
+
+    render(
+      <SettingsFields
+        fields={retirementAgeField}
+        settings={settings}
+        validationIssues={[]}
+        onChange={onChange}
+        showGuidanceNotes
+        useDropdownDates={false}
+      />
+    );
+
+    const exactAgeInput = screen.getByLabelText(
+      "Target retirement age exact value"
+    );
+
+    expect(exactAgeInput).toHaveAttribute("step", "0.25");
+    expect(screen.getByText("Selected age: 68 years")).toBeInTheDocument();
+
+    fireEvent.focus(exactAgeInput);
+    fireEvent.change(exactAgeInput, { target: { value: "67.2" } });
+    fireEvent.blur(exactAgeInput);
+
+    expect(exactAgeInput).toHaveValue(67.2);
+    expect(exactAgeInput).toHaveAttribute("aria-invalid", "true");
+    expect(
+      screen.getByText(
+        "Enter a whole year, or add 3, 6 or 9 months (for example 67.25)."
+      )
+    ).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.change(exactAgeInput, { target: { value: "67.25" } });
+    fireEvent.blur(exactAgeInput);
+
+    expect(onChange).toHaveBeenCalledWith("requirementAge", 67.25);
+  });
+
+  it("resets NPA-linked expert ages to the current Normal Pension Age", () => {
+    const dateOfBirth = "1977-06-01";
+    const normalPensionAge = calculateNormalPensionAge(dateOfBirth);
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth,
+      normalPensionAge,
+      requirementAge: 60,
+      alphaPensionLeaveAge: 61,
+      alphaPensionDrawAge: 62,
+      sippDrawAge: 65,
+      statePensionDrawDate: "2045-06-01",
+    };
+    const onChange = vi.fn();
+    const fields = fieldGroups
+      .flatMap((group) => group.fields)
+      .filter(
+        (field) =>
+          field.id === "requirementAge" ||
+          field.id === "alphaPensionLeaveAge" ||
+          field.id === "alphaPensionDrawAge" ||
+          field.id === "statePensionDrawDate" ||
+          field.id === "sippDrawAge"
+      );
+
+    render(
+      <SettingsFields
+        fields={fields}
+        settings={settings}
+        validationIssues={[]}
+        onChange={onChange}
+        showGuidanceNotes
+        useDropdownDates={false}
+        useNpaLinkedDefaults
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Reset retirement age to default value",
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Reset State Pension start age to default value",
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Reset Age You Leave Alpha Scheme to default value",
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Reset Planned Alpha Pension Draw Age to default value",
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Reset SIPP draw start age to default value",
+      })
+    );
+
+    expect(normalPensionAge).toBe(67.25);
+    expect(onChange).toHaveBeenCalledWith("requirementAge", 67.25);
+    expect(onChange).toHaveBeenCalledWith("alphaPensionLeaveAge", 67.25);
+    expect(onChange).toHaveBeenCalledWith("alphaPensionDrawAge", 67.25);
+    expect(onChange).toHaveBeenCalledWith("statePensionDrawDate", "2044-09-01");
+    expect(onChange).toHaveBeenCalledWith("sippDrawAge", 67.25);
   });
 });

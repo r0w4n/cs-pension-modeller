@@ -1077,7 +1077,7 @@ describe("projection calculations", () => {
     });
   });
 
-  it("keeps transitional normal pension ages at month precision", () => {
+  it("uses the rounded quarter-year normal pension age internally", () => {
     const settings: PensionSettings = {
       ...defaultSettings,
       startDate: "2025-04-01",
@@ -1095,11 +1095,8 @@ describe("projection calculations", () => {
 
     const derivedInputs = deriveProjectionInputs(settings);
 
-    expect(derivedInputs?.npaDate).toBe("2026-05-06");
-    expect(derivedInputs?.reductionFactor).toBeCloseTo(
-      0.741 + (0.7 - 0.741) / 12,
-      10
-    );
+    expect(derivedInputs?.npaDate).toBe("2026-04-06");
+    expect(derivedInputs?.reductionFactor).toBeCloseTo(0.741, 10);
   });
 
   it("refuses to derive projection inputs when settings fail validation", () => {
@@ -3932,7 +3929,7 @@ describe("projection calculations", () => {
     expect(analysis.earliestSustainablePensionDrawAge).toBe(55);
   });
 
-  it("returns the first whole-year draw age whose projected Alpha income meets the target", () => {
+  it("returns the first quarter-year draw age whose projected Alpha income meets the target", () => {
     const settings = prepareBridgeProjectionSettings({
       ...defaultSettings,
       startDate: "2026-04-01",
@@ -3965,7 +3962,7 @@ describe("projection calculations", () => {
       calculateSafeDrawAge: true,
     });
 
-    expect(analysis.earliestSustainablePensionDrawAge).toBe(58);
+    expect(analysis.earliestSustainablePensionDrawAge).toBe(57.75);
   });
 
   it("does not mark an early Alpha draw sustainable when later income falls below target", () => {

@@ -79,7 +79,7 @@ export function PensionSummarySection({
               </div>
               <p>
                 This Premium case is outside the published factors currently
-                modelled, so Premium income is excluded. Use a whole-year draw
+                modelled, so Premium income is excluded. Use a quarter-year draw
                 age from 55 with Normal Pension Age 60 or 65, or check the
                 amount against an official pension quotation.
               </p>

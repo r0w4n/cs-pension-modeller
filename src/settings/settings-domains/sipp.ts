@@ -7,9 +7,10 @@ import {
   type SippWithdrawalStrategy,
 } from "../settings-types";
 import { resolveSippMinimumAccessAge } from "../settings-shared/state";
+import { roundModelAge } from "../settings-shared/age";
 
 export function calculateDefaultSippDrawAge(normalPensionAge: number) {
-  return Math.floor(normalPensionAge);
+  return roundModelAge(normalPensionAge);
 }
 
 export function normalizeSippWithdrawalStrategy(

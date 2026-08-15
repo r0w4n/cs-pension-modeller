@@ -41,6 +41,7 @@ type SettingsFieldsProps = {
   useDropdownDates: boolean;
   children?: ReactNode;
   flexibleWithdrawalSummary?: FlexibleWithdrawalSummary;
+  useNpaLinkedDefaults?: boolean;
 };
 
 export {
@@ -60,6 +61,7 @@ export function SettingsFields({
   useDropdownDates,
   children,
   flexibleWithdrawalSummary,
+  useNpaLinkedDefaults = false,
 }: SettingsFieldsProps) {
   const visibleFields = fields.filter((field) =>
     shouldRenderField(field.id, settings)
@@ -86,6 +88,7 @@ export function SettingsFields({
             field.id,
             flexibleWithdrawalSummary
           )}
+          useNpaLinkedDefaults={useNpaLinkedDefaults}
         />
       ))}
       {children}
@@ -111,6 +114,7 @@ function Field({
   hideOnMobile = false,
   validationIssue,
   warning,
+  useNpaLinkedDefaults = false,
 }: FieldProps) {
   if (field.id === "statePensionDrawDate") {
     return (
@@ -123,6 +127,7 @@ function Field({
         disabled={disabled}
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
+        useNpaLinkedDefaults={useNpaLinkedDefaults}
       />
     );
   }
@@ -182,6 +187,7 @@ function Field({
         disabled={disabled}
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
+        useNpaLinkedDefaults={useNpaLinkedDefaults}
       />
     );
   }

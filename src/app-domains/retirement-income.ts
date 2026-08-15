@@ -19,6 +19,7 @@ import {
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   FLEXIBLE_FUND_ACCOUNT_IDS,
   LISA_MONTHLY_CONTRIBUTION_MAX,
+  MODEL_AGE_STEP,
   type PensionSettings,
 } from "../settings";
 import {
@@ -819,15 +820,15 @@ export function createBridgeChartLimits(
           ? Math.min(ageUpperLimit, settings.alphaPensionDrawAge)
           : ageUpperLimit
       ),
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     slowGoStartAge: {
       ...slowGoStartAgeBounds,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     noGoStartAge: {
       ...noGoStartAgeBounds,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     alphaLeaveAge: {
       min: currentPlanningAge,
@@ -835,63 +836,63 @@ export function createBridgeChartLimits(
         currentPlanningAge,
         Math.min(ageUpperLimit, settings.requirementAge)
       ),
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     sippAccessAge: {
       min: sippAccessAgeBounds.min,
       max: sippAccessAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     sippUseByAge: {
       min: sippUseByAgeBounds.min,
       max: sippUseByAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     isaAccessAge: {
       min: currentPlanningAge,
       max: isaAccessAgeMax,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     lisaAccessAge: {
       min: 60,
       max: Math.max(60, settings.lifeExpectancy),
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     alphaStartAge: {
       min: alphaStartAgeBounds.min,
       max: alphaStartAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     nuvosStartAge: {
       min: nuvosStartAgeBounds.min,
       max: nuvosStartAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     premiumStartAge: {
       min: premiumStartAgeBounds.min,
       max: premiumStartAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     isaUseByAge: {
       min: isaUseByAgeBounds.min,
       max: isaUseByAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     lisaUseByAge: {
       min: lisaUseByAgeBounds.min,
       max: lisaUseByAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     partialRetirementStartAge: {
       min: partialRetirementStartAgeBounds.min,
       max: partialRetirementStartAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
     partialRetirementWorkPercent: { min: 0, max: 100, step: 1 },
     statePensionAge: {
       min: statePensionAgeBounds.min,
       max: statePensionAgeBounds.max,
-      step: 1,
+      step: MODEL_AGE_STEP,
     },
   };
 }

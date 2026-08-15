@@ -6,10 +6,16 @@ import type {
 } from "../fieldDefinitions";
 import { clampNumber, getEffectiveRangeField } from "../app-domains";
 import {
+  calculateDefaultSippDrawAge,
   calculateMinimumCsAvcAccessAge,
   calculateMinimumSippAccessAge,
   defaultSettings,
   formatCurrency,
+  formatModelAge,
+  isModelAge,
+  normalizeAlphaPensionDrawAge,
+  roundModelAge,
+  normalizeSippDrawAge,
   type PensionSettings,
   type PensionValidationIssue,
 } from "../settings";
@@ -292,6 +298,7 @@ export function RangeSettingField({
   disabled = false,
   hideOnMobile = false,
   validationIssue,
+  useNpaLinkedDefaults = false,
 }: {
   field: RangeField;
   value: number;
@@ -301,6 +308,7 @@ export function RangeSettingField({
   disabled?: boolean;
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
+  useNpaLinkedDefaults?: boolean;
 }) {
   const effectiveField = getEffectiveRangeField(field, settings);
   const preservesBelowMinimumValue =
@@ -311,10 +319,16 @@ export function RangeSettingField({
     draftExactValue === null || draftExactValue.trim() === ""
       ? Number.NaN
       : Number(draftExactValue);
+  const { isAgeField, hasInvalidAgeStep } = getRangeAgeDraftState(
+    effectiveField,
+    draftExactValue,
+    parsedDraftExactValue
+  );
   const hasValidDraftExactValue =
     Number.isFinite(parsedDraftExactValue) &&
     parsedDraftExactValue >= effectiveField.min &&
-    parsedDraftExactValue <= effectiveField.max;
+    parsedDraftExactValue <= effectiveField.max &&
+    !hasInvalidAgeStep;
   const displayedRangeValue = hasValidDraftExactValue
     ? parsedDraftExactValue
     : Math.min(
@@ -329,18 +343,25 @@ export function RangeSettingField({
     preservesBelowMinimumValue,
   });
   const validationId = validationIssue ? `${field.id}-validation` : undefined;
-  const resetValue = defaultSettings[field.id];
+  const ageStepValidationId = hasInvalidAgeStep
+    ? `${field.id}-age-step-validation`
+    : undefined;
+  const describedBy = joinIds(validationId, ageStepValidationId);
+  const hasAnyValidationIssue = Boolean(validationIssue) || hasInvalidAgeStep;
+  const ariaInvalid = getAriaInvalid(hasAnyValidationIssue);
+  const resetValue = getRangeResetValue(field, settings, useNpaLinkedDefaults);
   const resetLabel =
     field.id === "requirementAge"
       ? "Reset retirement age to default value"
       : `Reset ${effectiveField.label} to default value`;
 
   const commitValue = (nextValue: number) => {
-    const normalizedValue = clampNumber(
+    const clampedValue = clampNumber(
       nextValue,
       preservesBelowMinimumValue ? field.min : effectiveField.min,
       effectiveField.max
     );
+    const normalizedValue = normalizeRangeValue(clampedValue, isAgeField);
     onChange(field.id, normalizedValue);
     setDraftValue(null);
     setDraftExactValue(null);
@@ -351,7 +372,7 @@ export function RangeSettingField({
       className={getFieldCardClassName(
         disabled,
         hideOnMobile,
-        Boolean(validationIssue)
+        hasAnyValidationIssue
       )}
     >
       <span className="field-header">
@@ -367,9 +388,10 @@ export function RangeSettingField({
             max={effectiveField.max}
             step={effectiveField.step}
             value={displayedRangeValue}
+            aria-valuetext={getAgeValueText(isAgeField, displayedRangeValue)}
             disabled={disabled}
-            aria-invalid={Boolean(validationIssue) || undefined}
-            aria-describedby={validationId}
+            aria-invalid={ariaInvalid}
+            aria-describedby={describedBy || undefined}
             onPointerDown={(event) => {
               event.currentTarget.focus({ preventScroll: true });
             }}
@@ -405,8 +427,8 @@ export function RangeSettingField({
           step={effectiveField.inputStep ?? effectiveField.step}
           value={displayedExactValue}
           disabled={disabled}
-          aria-invalid={Boolean(validationIssue) || undefined}
-          aria-describedby={validationId}
+          aria-invalid={ariaInvalid}
+          aria-describedby={describedBy || undefined}
           onFocus={(event) => {
             setDraftExactValue(event.currentTarget.value);
           }}
@@ -426,6 +448,13 @@ export function RangeSettingField({
           }}
           onBlur={(event) => {
             const parsedValue = Number(event.target.value);
+            if (
+              isAgeField &&
+              Number.isFinite(parsedValue) &&
+              !isModelAge(parsedValue)
+            ) {
+              return;
+            }
             const nextValue =
               event.target.value.trim() === "" || !Number.isFinite(parsedValue)
                 ? displayedRangeValue
@@ -435,6 +464,13 @@ export function RangeSettingField({
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               const parsedValue = Number(event.currentTarget.value);
+              if (
+                isAgeField &&
+                Number.isFinite(parsedValue) &&
+                !isModelAge(parsedValue)
+              ) {
+                return;
+              }
               const nextValue =
                 event.currentTarget.value.trim() === "" ||
                 !Number.isFinite(parsedValue)
@@ -446,6 +482,12 @@ export function RangeSettingField({
           }}
         />
       </div>
+      <RangeAgeFeedback
+        isAgeField={isAgeField}
+        hasInvalidAgeStep={hasInvalidAgeStep}
+        displayedRangeValue={displayedRangeValue}
+        validationId={ageStepValidationId}
+      />
       {field.id === "sippDrawAge" ? (
         <SippProtectedAgeInlineControls
           settings={settings}
@@ -481,6 +523,97 @@ export function RangeSettingField({
       <FieldHelp field={effectiveField} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
+  );
+}
+
+function getRangeResetValue(
+  field: RangeField,
+  settings: PensionSettings,
+  useNpaLinkedDefaults: boolean
+) {
+  if (
+    useNpaLinkedDefaults &&
+    (field.id === "requirementAge" || field.id === "alphaPensionLeaveAge")
+  ) {
+    return settings.normalPensionAge;
+  }
+
+  if (useNpaLinkedDefaults && field.id === "alphaPensionDrawAge") {
+    return normalizeAlphaPensionDrawAge(
+      settings.normalPensionAge,
+      settings.dateOfBirth
+    );
+  }
+
+  if (useNpaLinkedDefaults && field.id === "sippDrawAge") {
+    return normalizeSippDrawAge(
+      calculateDefaultSippDrawAge(settings.normalPensionAge),
+      settings.dateOfBirth
+    );
+  }
+
+  return defaultSettings[field.id];
+}
+
+function getRangeAgeDraftState(
+  field: RangeField,
+  draftExactValue: string | null,
+  parsedDraftExactValue: number
+) {
+  const isAgeField = field.format === "age";
+  const hasInvalidAgeStep =
+    isAgeField &&
+    draftExactValue !== null &&
+    draftExactValue.trim() !== "" &&
+    Number.isFinite(parsedDraftExactValue) &&
+    !isModelAge(parsedDraftExactValue);
+
+  return { isAgeField, hasInvalidAgeStep };
+}
+
+function normalizeRangeValue(value: number, isAgeField: boolean) {
+  return isAgeField ? roundModelAge(value) : value;
+}
+
+function getAgeValueText(isAgeField: boolean, value: number) {
+  return isAgeField ? formatModelAge(value) : undefined;
+}
+
+function joinIds(...ids: Array<string | undefined>) {
+  return ids.filter(Boolean).join(" ");
+}
+
+function getAriaInvalid(hasValidationIssue: boolean) {
+  return hasValidationIssue || undefined;
+}
+
+function RangeAgeFeedback({
+  isAgeField,
+  hasInvalidAgeStep,
+  displayedRangeValue,
+  validationId,
+}: {
+  isAgeField: boolean;
+  hasInvalidAgeStep: boolean;
+  displayedRangeValue: number;
+  validationId?: string;
+}) {
+  if (!isAgeField) {
+    return null;
+  }
+
+  if (hasInvalidAgeStep) {
+    return (
+      <p id={validationId} className="field-error">
+        Enter a whole year, or add 3, 6 or 9 months (for example 67.25).
+      </p>
+    );
+  }
+
+  return (
+    <p className="field-default-note" aria-live="polite">
+      {`Selected age: ${formatModelAge(displayedRangeValue)}`}
+    </p>
   );
 }
 
@@ -616,9 +749,13 @@ function CsAvcProtectedAgeInlineControls({
   );
 }
 
-function formatFieldValue(value: number, format?: "currency") {
+function formatFieldValue(value: number, format?: RangeField["format"]) {
   if (format === "currency") {
     return formatCurrency(value);
+  }
+
+  if (format === "age") {
+    return formatModelAge(value);
   }
 
   return value.toString();

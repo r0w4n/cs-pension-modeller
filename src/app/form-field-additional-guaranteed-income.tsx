@@ -1,6 +1,8 @@
 import {
   createDefaultAdditionalGuaranteedIncome,
+  formatModelAge,
   getAdditionalGuaranteedIncomeDisplayName,
+  MODEL_AGE_STEP,
   type AdditionalGuaranteedIncome,
   type PensionValidationIssue,
 } from "../settings";
@@ -127,7 +129,7 @@ export function AdditionalGuaranteedIncomeEditor({
                     className="number-input"
                     type="number"
                     min={0}
-                    step={1}
+                    step={MODEL_AGE_STEP}
                     value={income.startAge ?? ""}
                     aria-invalid={hasValidationIssue || undefined}
                     aria-describedby={validationId}
@@ -137,6 +139,11 @@ export function AdditionalGuaranteedIncomeEditor({
                       })
                     }
                   />
+                  {income.startAge !== null ? (
+                    <span className="field-help">
+                      {formatModelAge(income.startAge)}
+                    </span>
+                  ) : null}
                 </label>
 
                 <label className="additional-income-field">
@@ -145,7 +152,7 @@ export function AdditionalGuaranteedIncomeEditor({
                     className="number-input"
                     type="number"
                     min={0}
-                    step={1}
+                    step={MODEL_AGE_STEP}
                     value={income.endAge ?? ""}
                     aria-invalid={hasValidationIssue || undefined}
                     aria-describedby={validationId}
@@ -156,7 +163,9 @@ export function AdditionalGuaranteedIncomeEditor({
                     }
                   />
                   <span className="field-help">
-                    Leave blank if this income is payable for life.
+                    {income.endAge === null || income.endAge === undefined
+                      ? "Leave blank if this income is payable for life."
+                      : formatModelAge(income.endAge)}
                   </span>
                 </label>
               </div>

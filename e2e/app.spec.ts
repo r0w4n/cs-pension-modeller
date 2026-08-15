@@ -222,6 +222,50 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
   });
 
+  test("expert retirement age defaults follow Normal Pension Age", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await clickNextAndExpectStep(page, "Personal details");
+    await page.getByLabel("Your Birth Month and Year month").selectOption("06");
+    await page
+      .getByLabel("Your Birth Month and Year year")
+      .selectOption("1977");
+
+    await clickNextAndExpectStep(page, "Retirement income target");
+    const targetRetirementAge = page.getByLabel(
+      "Target retirement age exact value"
+    );
+    await expect(targetRetirementAge).toHaveValue("67.25");
+
+    await page.getByRole("button", { name: /State pension details/i }).click();
+    await expect(
+      page.getByLabel("State Pension start age exact value")
+    ).toHaveValue("67.25");
+
+    await page.getByRole("button", { name: /Alpha pension details/i }).click();
+    await expect(
+      page.getByLabel("Age You Leave Alpha Scheme exact value")
+    ).toHaveValue("67.25");
+    await expect(
+      page.getByLabel("Planned Alpha Pension Draw Age exact value")
+    ).toHaveValue("67.25");
+
+    await page.getByRole("button", { name: /SIPP details/i }).click();
+    const sippDrawStartAge = page.getByLabel("SIPP draw start age exact value");
+    await expect(sippDrawStartAge).toHaveValue("67.25");
+
+    await sippDrawStartAge.fill("65");
+    await sippDrawStartAge.blur();
+    await page
+      .getByRole("button", {
+        name: "Reset SIPP draw start age to default value",
+      })
+      .click();
+    await expect(sippDrawStartAge).toHaveValue("67.25");
+  });
+
   test("expert mode persists the Scottish Income Tax regime and shows its relevant assumptions", async ({
     page,
   }) => {
@@ -309,7 +353,21 @@ test.describe("app end-to-end journeys", () => {
 
     await acknowledgeAndOpenMode(page, "bridge");
 
-    await fillExactNumber(page, "Target retirement age exact value", "58");
+    const retirementAgeInput = page.getByRole("spinbutton", {
+      name: "Target retirement age exact value",
+    });
+    await expect(retirementAgeInput).toHaveAttribute("step", "0.25");
+    await retirementAgeInput.fill("58.2");
+    await retirementAgeInput.press("Enter");
+    await expect(
+      page.getByText(
+        "Enter a whole year, or add 3, 6 or 9 months (for example 67.25)."
+      )
+    ).toBeVisible();
+    await fillExactNumber(page, "Target retirement age exact value", "58.25");
+    await expect(
+      page.getByText("Selected age: 58 years 3 months")
+    ).toBeVisible();
     await fillCurrency(
       page,
       "After-tax income you want in retirement (£ per year)",
@@ -383,6 +441,35 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByText("Previous employer DB pension").first()
     ).toBeVisible();
+
+    const retirementMarker = page.getByRole("slider", {
+      name: "Retire, age 58 years 3 months",
+    });
+    await retirementMarker.scrollIntoViewIfNeeded();
+    const retirementMarkerBox = await retirementMarker.boundingBox();
+    expect(retirementMarkerBox).not.toBeNull();
+    await page.mouse.move(
+      retirementMarkerBox!.x + retirementMarkerBox!.width / 2,
+      retirementMarkerBox!.y + retirementMarkerBox!.height / 2
+    );
+    await page.mouse.down();
+
+    const dragAgeLabel = page.locator(".bridge-drag-age");
+    await expect(dragAgeLabel).toContainText("58y 3m");
+    const dragAgeLabelBounds = await dragAgeLabel.evaluate((label) => {
+      const background = label.querySelector("rect")?.getBBox();
+      const text = label.querySelector("text")?.getBBox();
+
+      return {
+        backgroundWidth: background?.width ?? 0,
+        textWidth: text?.width ?? Number.POSITIVE_INFINITY,
+      };
+    });
+    expect(dragAgeLabelBounds.backgroundWidth).toBe(58);
+    expect(dragAgeLabelBounds.textWidth).toBeLessThan(
+      dragAgeLabelBounds.backgroundWidth
+    );
+    await page.mouse.up();
 
     await page.getByLabel("Scenario name").fill("Bridge journey check");
     await page.getByRole("button", { name: "Add to comparison" }).click();

@@ -345,6 +345,15 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
+          Numeric modelling ages are represented in quarter-year steps: whole
+          years, then 3, 6 or 9 months. An age entered, derived or loaded from
+          an older saved file is rounded to the nearest quarter year, and the
+          rounded value is used throughout the model. Calendar-date inputs keep
+          their exact entered dates, while the projection itself continues to
+          run monthly. This is a planning convention and does not change an
+          official pension or legal eligibility date.
+        </p>
+        <p className="section-copy">
           Legal and scheme ages are versioned assumptions. They may change in
           future legislation or scheme rules, so the model should be treated as
           a planning estimate based on the rules currently encoded in the
@@ -475,9 +484,8 @@ export function MethodologyPage() {
           entry directly rather than interpolating between annual retirement-age
           values. If NPA or EPA is itself a non-integer age, the model follows
           the GAD guidance by interpolating between the two relevant NPA/EPA
-          tables. The on-screen Alpha draw-age control currently selects whole
-          years, while the calculation and acceptance tests retain
-          completed-month precision.
+          tables. The on-screen Alpha draw-age control selects quarter years;
+          each selected value therefore maps to a completed-month entry.
         </p>
         <p className="section-copy">
           The workbook identifies these factors as the 2023 factor review set
@@ -695,8 +703,8 @@ export function MethodologyPage() {
           part months, rather than interpolating between annual retirement-age
           values. It does not use Alpha reduction factors or the nuvos
           fixed-percentage reduction formula for Premium. The on-screen Premium
-          draw-age control currently selects whole years, while the factor
-          calculation and acceptance tests retain completed-month precision.
+          draw-age control selects quarter years, and the factor calculation
+          uses the corresponding completed-month entry.
         </p>
         <FormulaBlock>
           {
@@ -1128,7 +1136,7 @@ export function MethodologyPage() {
           too high for the selected assumptions.
         </p>
         <p className="section-copy">
-          Where requested by the comparison view, the model tests whole-year
+          Where requested by the comparison view, the model tests quarter-year
           Alpha and nuvos draw ages from the later of age 55 and the selected
           retirement age up to the relevant normal pension age. The first age
           that passes the bridge-plan and stable guaranteed-income checks is

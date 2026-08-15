@@ -11,6 +11,8 @@ import {
 } from "../spending-smile";
 import {
   formatCurrency,
+  formatModelAge,
+  MODEL_AGE_STEP,
   type PensionSettings,
   type PensionValidationIssue,
   type SpendingSmileStrategy,
@@ -203,9 +205,9 @@ function SpendingPhaseCard({
     phase === "goGo" ? startAge : (draftStartAge ?? startAge);
   const endAge =
     phase === "goGo"
-      ? strategy.slowGoStartAge - 1
+      ? strategy.slowGoStartAge - MODEL_AGE_STEP
       : phase === "slowGo"
-        ? strategy.noGoStartAge - 1
+        ? strategy.noGoStartAge - MODEL_AGE_STEP
         : settings.lifeExpectancy;
   const notReached = startAge > settings.lifeExpectancy;
   const calculatedTarget = calculateSmilePhaseTarget(
@@ -219,7 +221,6 @@ function SpendingPhaseCard({
     maximumStartAge,
     Math.max(minimumStartAge, displayedStartAge)
   );
-
   function commitStartAge(value: number) {
     setDraftStartAge(null);
     if (phase === "goGo" || value === startAge) {
@@ -255,7 +256,8 @@ function SpendingPhaseCard({
 
       {phase === "goGo" ? (
         <p className="spending-phase-range">
-          Starts at your retirement age: {settings.requirementAge}
+          Starts at your retirement age:{" "}
+          {formatModelAge(settings.requirementAge)}
         </p>
       ) : (
         <div className="spending-phase-field">
@@ -266,10 +268,10 @@ function SpendingPhaseCard({
                 className="range-input"
                 type="range"
                 aria-label={`${details.title} start age`}
-                aria-valuetext={`Age ${displayedStartAge}`}
+                aria-valuetext={formatModelAge(displayedStartAge)}
                 min={minimumStartAge}
                 max={maximumStartAge}
-                step={1}
+                step={MODEL_AGE_STEP}
                 value={sliderStartAge}
                 aria-invalid={phaseValidationIssues.length > 0 || undefined}
                 aria-describedby={validationId}
@@ -287,8 +289,8 @@ function SpendingPhaseCard({
                 }
               />
               <div className="range-scale">
-                <span>Age {minimumStartAge}</span>
-                <span>Age {maximumStartAge}</span>
+                <span>{formatModelAge(minimumStartAge)}</span>
+                <span>{formatModelAge(maximumStartAge)}</span>
               </div>
             </div>
             <input
@@ -297,7 +299,7 @@ function SpendingPhaseCard({
               aria-label={`${details.title} start age exact value`}
               min={minimumStartAge}
               max={maximumStartAge}
-              step={1}
+              step={MODEL_AGE_STEP}
               value={displayedStartAge}
               aria-invalid={phaseValidationIssues.length > 0 || undefined}
               aria-describedby={validationId}
@@ -314,7 +316,7 @@ function SpendingPhaseCard({
       <p className="spending-phase-range">
         {notReached
           ? "This phase starts after the end of the current projection."
-          : `Age ${startAge} to ${endAge}`}
+          : `${formatModelAge(startAge)} to ${formatModelAge(endAge)}`}
       </p>
 
       <div className="spending-phase-field">

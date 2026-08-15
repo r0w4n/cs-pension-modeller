@@ -150,6 +150,7 @@ export function useAppController() {
       showSavedLabel,
       setChartUndoStack,
       setSettings: setActiveJourneySettings,
+      journeyMode: activeJourneyMode ?? undefined,
     });
   }
 

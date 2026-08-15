@@ -3,6 +3,7 @@ import type {
   PensionSettings,
   SpendingSmileStrategy,
 } from "./settings/settings-types";
+import { roundModelAge } from "./settings/settings-shared/age";
 
 export type SpendingPhase = "FLAT" | "GO_GO" | "SLOW_GO" | "NO_GO";
 export type SmilePercentageField =
@@ -38,11 +39,11 @@ export function reconcileSpendingSmilePhaseAges(
 ): SpendingSmileStrategy {
   const maximumNoGoStartAge = Math.min(
     MAX_SUPPORTED_MODELLING_AGE,
-    Math.floor(lifeExpectancy)
+    lifeExpectancy
   );
-  const minimumSlowGoStartAge = Math.floor(retirementAge) + 1;
+  const minimumSlowGoStartAge = retirementAge + 1;
   const minimumNoGoStartAge = minimumSlowGoStartAge + 1;
-  const noGoStartAge = clampWholeAge(
+  const noGoStartAge = clampQuarterAge(
     strategy.noGoStartAge,
     minimumNoGoStartAge,
     Math.max(minimumNoGoStartAge, maximumNoGoStartAge)
@@ -50,7 +51,7 @@ export function reconcileSpendingSmilePhaseAges(
 
   return {
     ...strategy,
-    slowGoStartAge: clampWholeAge(
+    slowGoStartAge: clampQuarterAge(
       strategy.slowGoStartAge,
       minimumSlowGoStartAge,
       noGoStartAge - 1
@@ -80,7 +81,7 @@ export function updateSpendingSmileStartAge(
 
   return {
     ...reconciled,
-    [field]: clampWholeAge(age, bounds.min, bounds.max),
+    [field]: clampQuarterAge(age, bounds.min, bounds.max),
   };
 }
 
@@ -90,10 +91,10 @@ export function getSpendingSmileStartAgeBounds(
   retirementAge: number,
   lifeExpectancy: number
 ): SmileStartAgeBounds {
-  const minimumSlowGoStartAge = Math.floor(retirementAge) + 1;
+  const minimumSlowGoStartAge = retirementAge + 1;
   const maximumNoGoStartAge = Math.max(
     minimumSlowGoStartAge + 1,
-    Math.min(MAX_SUPPORTED_MODELLING_AGE, Math.floor(lifeExpectancy))
+    Math.min(MAX_SUPPORTED_MODELLING_AGE, lifeExpectancy)
   );
 
   if (field === "slowGoStartAge") {
@@ -193,7 +194,7 @@ export function normalizeSpendingSmile(
       getLegacyPercentage(value.goGo, existingAnnualTarget),
       fallback.goGoPercentage
     ),
-    slowGoStartAge: clampFinite(
+    slowGoStartAge: clampQuarterAge(
       value.slowGoStartAge,
       0,
       MAX_SUPPORTED_MODELLING_AGE,
@@ -204,7 +205,7 @@ export function normalizeSpendingSmile(
       getLegacyPercentage(value.slowGo, existingAnnualTarget),
       fallback.slowGoPercentage
     ),
-    noGoStartAge: clampFinite(
+    noGoStartAge: clampQuarterAge(
       value.noGoStartAge,
       0,
       MAX_SUPPORTED_MODELLING_AGE,
@@ -277,8 +278,13 @@ function clampFinite(value: unknown, min: number, max: number, fallback = min) {
     : fallback;
 }
 
-function clampWholeAge(value: unknown, min: number, max: number) {
-  return Math.round(clampFinite(value, min, max, min));
+function clampQuarterAge(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback = min
+) {
+  return roundModelAge(clampFinite(value, min, max, fallback));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

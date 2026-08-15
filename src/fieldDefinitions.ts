@@ -94,7 +94,7 @@ export type RangeField = {
   max: number;
   step: number;
   inputStep?: number;
-  format?: "currency";
+  format?: "currency" | "age";
   description?: string;
   infoUrl?: string;
   infoLinkText?: string;
@@ -239,8 +239,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 75,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age the projection runs to. This is a planning horizon rather than a prediction: a longer horizon usually asks more from ISA and SIPP pots, while defined benefit income keeps paying for as long as modelled.",
         infoUrl: knowledgeLinks.lifeExpectancy,
@@ -274,10 +275,11 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 0,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
-          "The age from which you want the modeller to assess whether your retirement income target is being met. In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
+          "The age from which you want the modeller to assess whether your retirement income target is being met. In expert mode this defaults to your Alpha Normal Pension Age (NPA). In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
       },
       {
         id: "retirementIncomeTargetBasis",
@@ -352,8 +354,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 40,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age at which the modeller switches future regular accruals and contributions to a reduced work pattern.",
       },
@@ -413,7 +416,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "State Pension start age",
         type: "date",
         description:
-          "The date State Pension income begins in the projection. The default is based on your date of birth, but you can model deferral if needed. This timing is separate from any future-growth assumption.",
+          "The date State Pension income begins in the projection. The default aligns with your Alpha Normal Pension Age (NPA), except where your date of birth gives a later minimum State Pension age. You can model deferral if needed. This timing is separate from any future-growth assumption.",
         infoUrl: knowledgeLinks.statePensionDeferral,
         infoLinkText: "Defer State Pension",
       },
@@ -483,10 +486,11 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 0,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
-          "The age you stop active Alpha service. New 2.32% accrual stops here. Existing accrued Alpha pension continues to be revalued by CPI.",
+          "The age you stop active Alpha service. In expert mode this defaults to your Alpha Normal Pension Age (NPA). New 2.32% accrual stops here. Existing accrued Alpha pension continues to be revalued by CPI.",
       },
       {
         id: "pensionableEarnings",
@@ -524,10 +528,11 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 55,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
-          "The age you plan to start taking Alpha. Alpha Normal Pension Age is linked to State Pension age or 65 if later, so draw age changes both when income starts and whether early-payment reductions apply. If you draw Alpha before Normal Pension Age, the model applies reduction factors.",
+          "The age you plan to start taking Alpha. In expert mode this defaults to your Alpha Normal Pension Age (NPA). Alpha NPA is linked to State Pension age or 65 if later, so draw age changes both when income starts and whether early-payment reductions apply. If you draw Alpha before NPA, the model applies reduction factors.",
         infoUrl: knowledgeLinks.alphaEarlyRetirementFactors,
         infoLinkText: "Reduction factors",
       },
@@ -693,8 +698,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 55,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age you plan to start taking classic benefits. The modeller uses age 60 as classic Normal Pension Age.",
       },
@@ -816,8 +822,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 55,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age you plan to start taking classic plus benefits. The modeller uses age 60 as classic plus Normal Pension Age.",
       },
@@ -863,8 +870,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 55,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age you plan to start taking nuvos benefits. Taking benefits before the scheme pension age may reduce the annual amount.",
         infoUrl: knowledgeLinks.nuvosBenefits,
@@ -912,8 +920,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 50,
         max: 70,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age you plan to start taking Premium benefits. For supported early draws from age 55, the modeller applies published GAD Premium factors for Normal Pension Age 60 or 65.",
         infoUrl: knowledgeLinks.premiumEarlyRetirementFactors,
@@ -932,8 +941,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 60,
         max: 65,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "Premium Normal Pension Age normally defaults to 60 and is separate from State Pension age. The published factors used by the modeller cover NPA 60 and NPA 65 only.",
       },
@@ -994,10 +1004,11 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 0,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
-          "The age SIPP withdrawals start in the model. Standard private pension access is 55 before 6 April 2028 and 57 from that date, unless your provider has confirmed a protected pension age for this pension.",
+          "The age SIPP withdrawals start in the model. It defaults to your Alpha Normal Pension Age (NPA). Standard private pension access is 55 before 6 April 2028 and 57 from that date, unless your provider has confirmed a protected pension age for this pension.",
         infoUrl: knowledgeLinks.pensionAccessAge,
         infoLinkText: "Private pension access",
       },
@@ -1057,8 +1068,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 55,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age by which the SIPP pot is intended to be used up when the use-by-age strategy is selected.",
       },
@@ -1160,8 +1172,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 0,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age CS AVC withdrawals start in the model. Standard private pension access is 55 before 6 April 2028 and 57 from that date, unless your provider has confirmed a protected pension age for this pot.",
         infoUrl: knowledgeLinks.pensionAccessAge,
@@ -1209,8 +1222,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 55,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age by which the CS AVC pot is intended to be used up when the use-by-age strategy is selected.",
       },
@@ -1252,8 +1266,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 0,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age ISA drawdown starts. ISA money can usually be accessed earlier than pension money, which makes it useful for an early-retirement bridge.",
         infoUrl: knowledgeLinks.isaAllowance,
@@ -1292,8 +1307,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 0,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age by which the ISA balance is intended to be used up when the use-by-age strategy is selected.",
       },
@@ -1337,8 +1353,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 60,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age Lifetime ISA drawdown starts in the retirement model. This modeller assumes later-life withdrawals from age 60 and does not model first-home withdrawals or early-withdrawal charges.",
         infoUrl: knowledgeLinks.lifetimeIsa,
@@ -1377,8 +1394,9 @@ export const fieldGroups: FieldGroup[] = [
         type: "range",
         min: 60,
         max: 100,
-        step: 1,
-        inputStep: 1,
+        step: 0.25,
+        inputStep: 0.25,
+        format: "age",
         description:
           "The age by which the LISA balance is intended to be used up when the use-by-age strategy is selected.",
       },

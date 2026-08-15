@@ -8,8 +8,8 @@ Feature: Alpha pension modelling
 
   Rule: Normal Pension Age is linked to State Pension age
 
-  @alpha @normal-pension-age
-  Scenario Outline: Derive Alpha Normal Pension Age from date of birth
+  @alpha @normal-pension-age @quarter-year-ages
+  Scenario Outline: Derive Alpha Normal Pension Age at quarter-year precision
     Given the member was born on <dateOfBirth>
     When the Alpha Normal Pension Age is determined
     Then the Alpha Normal Pension Age should be <years> years and <months> months
@@ -17,8 +17,9 @@ Feature: Alpha pension modelling
     Examples:
       | dateOfBirth | years | months |
       | 1954-09-06  | 66    | 0      |
-      | 1960-04-06  | 66    | 1      |
-      | 1977-04-06  | 67    | 1      |
+      | 1960-04-06  | 66    | 0      |
+      | 1977-04-06  | 67    | 0      |
+      | 1977-11-23  | 67    | 9      |
       | 1978-04-06  | 68    | 0      |
 
   Rule: Active members build career-average pension
@@ -411,7 +412,7 @@ Feature: Alpha pension modelling
     Given the member was born on 1977-04-06
     And the member has selected EPA option NPA-2
     When the EPA payable date is determined
-    Then the EPA payable date should be 2042-05-06
+    Then the EPA payable date should be 2042-04-06
 
   Rule: Members may exchange Alpha pension for a retirement lump sum
 
@@ -517,13 +518,13 @@ Feature: Alpha pension modelling
     And the member remains active for 5 scheme years
     When the member draws all alpha pension at age 60 and 0 months
     Then the unreduced standard alpha pension at draw age should be 25962.95
-    And the purchased annual Added Pension should be 362.10
-    And the combined unreduced annual pension should be 26325.05
+    And the purchased annual Added Pension should be 360.15
+    And the combined unreduced annual pension should be 26323.10
     And the reduced annual pension breakdown should be:
       | component     | unreducedAnnualAmount | payableAnnualAmount | annualReduction |
       | standardAlpha | 25962.95              | 18174.06            | 7788.88         |
-      | addedPension  | 362.10                | 253.47              | 108.63          |
-      | total         | 26325.05              | 18427.53            | 7897.51         |
+      | addedPension  | 360.15                | 252.11              | 108.05          |
+      | total         | 26323.10              | 18426.17            | 7896.93         |
 
 
   Rule: Results explain the material Alpha assumptions and components

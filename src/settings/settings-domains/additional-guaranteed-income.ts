@@ -4,6 +4,7 @@ import type {
   PensionSettings,
   PensionValidationIssue,
 } from "../settings-types";
+import { roundModelAge } from "../settings-shared/age";
 
 export const ADDITIONAL_GUARANTEED_INCOME_DEFAULT_NAME = "Additional income";
 export const ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MIN = -10;
@@ -246,8 +247,8 @@ function normalizeAdditionalGuaranteedIncome(
         : `additional-income-${index + 1}`,
     name: normalizeAdditionalGuaranteedIncomeName(income.name),
     annualAmount: normalizeOptionalNumber(income.annualAmount),
-    startAge: normalizeOptionalNumber(income.startAge),
-    endAge: normalizeOptionalNumber(income.endAge),
+    startAge: normalizeOptionalAge(income.startAge),
+    endAge: normalizeOptionalAge(income.endAge),
     indexation,
     fixedIncreasePercent:
       indexation === "fixed"
@@ -265,6 +266,12 @@ function normalizeOptionalNumber(value: unknown) {
   const parsed = Number(value);
 
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeOptionalAge(value: unknown) {
+  const parsed = normalizeOptionalNumber(value);
+
+  return parsed === null ? null : roundModelAge(parsed);
 }
 
 function createAdditionalGuaranteedIncomeId() {

@@ -231,15 +231,15 @@ describe("settings-storage", () => {
     expect(loaded.desiredRetirementIncome).toBe(61000);
   });
 
-  it("rounds legacy linked ISA and SIPP defaults down on import", () => {
+  it("rounds imported ISA and SIPP ages to the nearest quarter year", () => {
     const imported = parseStoredSettings({
       dateOfBirth: "1977-06-01",
       sippDrawAge: 67.16666666666667,
       isaDrawAge: 57.16666666666667,
     });
 
-    expect(imported?.sippDrawAge).toBe(67);
-    expect(imported?.isaDrawAge).toBe(57);
+    expect(imported?.sippDrawAge).toBe(67.25);
+    expect(imported?.isaDrawAge).toBe(57.25);
   });
 
   it("preserves custom ISA and SIPP draw ages on import", () => {

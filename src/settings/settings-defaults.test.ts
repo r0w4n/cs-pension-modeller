@@ -3,6 +3,7 @@ import {
   formatLocalIsoDate,
   getTodayIsoDate,
 } from "./settings-defaults";
+import { calculateStatePensionDrawAge } from "./settings-shared/state";
 
 describe("settings-defaults", () => {
   beforeEach(() => {
@@ -19,10 +20,19 @@ describe("settings-defaults", () => {
     expect(createDefaultSettings().startDate).toBe("2026-04-25");
   });
 
-  it("defaults ISA and SIPP draw ages to whole years rounded down from NPA", () => {
+  it("aligns the retirement, State Pension and SIPP defaults to NPA", () => {
     const settings = createDefaultSettings();
 
     expect(settings.normalPensionAge).toBe(68);
+    expect(settings.requirementAge).toBe(68);
+    expect(settings.alphaPensionLeaveAge).toBe(68);
+    expect(settings.alphaPensionDrawAge).toBe(68);
+    expect(
+      calculateStatePensionDrawAge(
+        settings.dateOfBirth,
+        settings.statePensionDrawDate
+      )
+    ).toBe(68);
     expect(settings.isaDrawAge).toBe(58);
     expect(settings.sippDrawAge).toBe(68);
     expect(settings.classicPensionDrawAge).toBe(60);

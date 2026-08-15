@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { DateField } from "../fieldDefinitions";
 import {
+  calculateDefaultStatePensionDrawAge,
   calculateMinimumStatePensionDrawAge,
   calculateStatePensionDrawAge,
   calculateStatePensionDrawDateFromAge,
@@ -116,6 +117,7 @@ export function StatePensionAgeField({
   disabled = false,
   hideOnMobile = false,
   validationIssue,
+  useNpaLinkedDefaults = false,
 }: {
   field: DateField;
   value: string;
@@ -125,10 +127,14 @@ export function StatePensionAgeField({
   disabled?: boolean;
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
+  useNpaLinkedDefaults?: boolean;
 }) {
   const minimumStatePensionAge = calculateMinimumStatePensionDrawAge(
     settings.dateOfBirth
   );
+  const defaultStatePensionAge = useNpaLinkedDefaults
+    ? calculateDefaultStatePensionDrawAge(settings.dateOfBirth)
+    : minimumStatePensionAge;
   const maximumStatePensionAge = Math.max(
     minimumStatePensionAge,
     settings.lifeExpectancy
@@ -281,14 +287,14 @@ export function StatePensionAgeField({
             "statePensionDrawDate",
             calculateStatePensionDrawDateFromAge(
               settings.dateOfBirth,
-              minimumStatePensionAge
+              defaultStatePensionAge
             )
           );
           setDraftValue(null);
           setDraftExactValue(null);
         }}
       >
-        {`Reset to default (State Pension age ${formatAgeValue(minimumStatePensionAge)})`}
+        {`Reset to default (State Pension age ${formatAgeValue(defaultStatePensionAge)})`}
       </button>
       <FieldHelp field={field} showGuidanceNotes={showGuidanceNotes} />
       <FieldValidationMessage id={validationId} issue={validationIssue} />

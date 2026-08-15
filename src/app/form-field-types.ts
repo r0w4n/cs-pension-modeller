@@ -21,6 +21,7 @@ export type FieldProps = {
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
   warning?: { id: string; message: string };
+  useNpaLinkedDefaults?: boolean;
 };
 
 export type DateParts = {

@@ -4,6 +4,7 @@ import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridge
 import {
   calculateDefaultIsaDrawAge,
   calculateDefaultSippDrawAge,
+  calculateDefaultStatePensionDrawAge,
   calculateMinimumStatePensionDrawAge,
   calculateMinimumPensionAccessAge,
   calculateMinimumSippAccessAge,
@@ -619,12 +620,14 @@ export function updateSetting({
   showSavedLabel,
   setChartUndoStack,
   setSettings,
+  journeyMode,
 }: {
   key: SettingsKey;
   value: PensionSettings[SettingsKey];
   showSavedLabel: () => void;
   setChartUndoStack: SetChartUndoStack;
   setSettings: SetSettings;
+  journeyMode?: "bridge" | "simple" | "expert";
 }) {
   showSavedLabel();
   setChartUndoStack([]);
@@ -676,8 +679,21 @@ export function updateSetting({
       ...(key === "dateOfBirth"
         ? {
             normalPensionAge: updatedNormalPensionAge,
+            requirementAge:
+              journeyMode === "expert" &&
+              current.requirementAge === current.normalPensionAge
+                ? updatedNormalPensionAge
+                : current.requirementAge,
+            alphaPensionLeaveAge:
+              journeyMode === "expert" &&
+              current.alphaPensionLeaveAge === current.normalPensionAge
+                ? updatedNormalPensionAge
+                : current.alphaPensionLeaveAge,
             alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
-              current.alphaPensionDrawAge,
+              journeyMode === "expert" &&
+                current.alphaPensionDrawAge === current.normalPensionAge
+                ? updatedNormalPensionAge
+                : current.alphaPensionDrawAge,
               normalizedValue as string
             ),
             sippDrawAge: normalizeSippDrawAge(
@@ -696,7 +712,10 @@ export function updateSetting({
                 : current.isaDrawAge,
             statePensionDrawDate: calculateStatePensionDrawDateFromAge(
               normalizedValue as string,
-              calculateMinimumStatePensionDrawAge(normalizedValue as string)
+              resolveStatePensionDrawAgeAfterDateOfBirthChange(
+                current,
+                normalizedValue as string
+              )
             ),
           }
         : {}),
@@ -713,6 +732,23 @@ export function updateSetting({
         }
       : next;
   });
+}
+
+function resolveStatePensionDrawAgeAfterDateOfBirthChange(
+  current: PensionSettings,
+  nextDateOfBirth: string
+) {
+  const currentDrawAge = calculateStatePensionDrawAge(
+    current.dateOfBirth,
+    current.statePensionDrawDate
+  );
+  const currentDefaultDrawAge = calculateDefaultStatePensionDrawAge(
+    current.dateOfBirth
+  );
+
+  return currentDrawAge === currentDefaultDrawAge
+    ? calculateDefaultStatePensionDrawAge(nextDateOfBirth)
+    : normalizeStatePensionDrawAge(currentDrawAge, nextDateOfBirth);
 }
 
 export function updateBridgeChartParameters({

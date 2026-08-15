@@ -33,6 +33,12 @@ describe("settings-normalize", () => {
     );
   });
 
+  it("rounds numeric modelling ages to the nearest quarter year", () => {
+    expect(normalizeSetting("requirementAge", 67.16666666666667)).toBe(67.25);
+    expect(normalizeSetting("alphaPensionDrawAge", 63.1)).toBe(63);
+    expect(normalizeSetting("sippWithdrawalTargetAge", 79.9)).toBe(80);
+  });
+
   it("normalizes date-based values", () => {
     expect(normalizeStatePensionDrawDate("bad-date", "1987-06-15")).toMatch(
       /^\d{4}-\d{2}-\d{2}$/

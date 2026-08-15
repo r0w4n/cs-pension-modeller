@@ -15,6 +15,20 @@ Feature: Early retirement bridge planning
     Then the bridge retirement age should be 60
     And the bridge Alpha draw age should be 60
 
+  @retirement-age @quarter-year-ages
+  Scenario Outline: Round a changed retirement age to the nearest quarter year
+    Given the bridge retirement age is 63
+    When the bridge target retirement age is changed to <enteredAge>
+    Then the bridge retirement age should be <modelledAge>
+
+    Examples:
+      | enteredAge | modelledAge |
+      | 63.1       | 63          |
+      | 63.2       | 63.25       |
+      | 63.4       | 63.5        |
+      | 63.7       | 63.75       |
+      | 63.9       | 64          |
+
   @no-civil-service-pension
   Scenario: Model a bridge plan without Civil Service pension income
     Given the bridge plan has no Civil Service pension

@@ -87,6 +87,15 @@ export {
 export { calculateDateAge } from "./settings/settings-domains/personal-details";
 
 export {
+  MODEL_AGE_STEP,
+  formatModelAge,
+  formatModelAgeCompact,
+  isModelAge,
+  roundModelAge,
+} from "./settings/settings-shared/age";
+
+export {
+  calculateDefaultStatePensionDrawAge,
   calculateMinimumStatePensionDrawAge,
   calculateStatePensionDrawAge,
   calculateStatePensionDrawDateFromAge,

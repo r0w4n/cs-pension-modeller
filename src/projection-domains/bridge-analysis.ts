@@ -1,4 +1,5 @@
 import {
+  MODEL_AGE_STEP,
   getPartialRetirementStartDate,
   getPreRetirementMonthlyEmploymentTaxContext,
   type PensionSettings,
@@ -1627,13 +1628,16 @@ function calculateEarliestSustainablePensionDrawAge(
     return null;
   }
 
-  const earliestAge = Math.max(55, Math.ceil(settings.requirementAge));
+  const earliestAge = Math.max(55, settings.requirementAge);
   const latestAge = Math.min(
     settings.showAlpha ? settings.normalPensionAge : 70,
     settings.showNuvos ? 65 : 70
   );
+  const earliestQuarter = Math.ceil(earliestAge / MODEL_AGE_STEP);
+  const latestQuarter = Math.floor(latestAge / MODEL_AGE_STEP);
 
-  for (let age = earliestAge; age <= latestAge; age += 1) {
+  for (let quarter = earliestQuarter; quarter <= latestQuarter; quarter += 1) {
+    const age = quarter * MODEL_AGE_STEP;
     const candidateSettings = prepareBridgeProjectionSettings({
       ...settings,
       alphaPensionDrawAge: settings.showAlpha

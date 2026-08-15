@@ -204,3 +204,9 @@ Feature: Modeller journeys
     And the chart key should include "SIPP"
     But the chart key should not include "Civil Service AVC"
     And the chart key should not include "LISA"
+
+  @results-chart @chart-title
+  Scenario: Describe the chart as the whole retirement income projection
+    When retirement income chart titles are prepared
+    Then the standard results chart title should be "Retirement income over time"
+    And the simple results chart title should be "How your retirement income may change"

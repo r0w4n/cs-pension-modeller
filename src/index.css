@@ -1044,7 +1044,7 @@ h3 {
   background: #f3f6f8;
 }
 
-.bridge-chart-panel {
+.retirement-income-chart-panel {
   display: grid;
   gap: 1rem;
   min-width: 0;
@@ -1055,22 +1055,22 @@ h3 {
   box-shadow: var(--shadow-soft);
 }
 
-.bridge-chart-panel--invalid {
+.retirement-income-chart-panel--invalid {
   border-color: rgba(191, 44, 44, 0.22);
 }
 
-.bridge-chart-heading {
+.retirement-income-chart-heading {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-.bridge-display-toggle {
+.retirement-income-display-toggle {
   justify-self: start;
 }
 
-.bridge-chart-title {
+.retirement-income-chart-title {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1082,7 +1082,7 @@ h3 {
   border: 0;
 }
 
-.bridge-chart-title--visible {
+.retirement-income-chart-title--visible {
   position: static;
   width: auto;
   height: auto;
@@ -1093,21 +1093,21 @@ h3 {
   white-space: normal;
 }
 
-.bridge-chart-introduction {
+.retirement-income-chart-introduction {
   max-width: 58rem;
   margin: 0;
   color: var(--text-muted);
   line-height: var(--line-height-body);
 }
 
-.bridge-chart-shell {
+.retirement-income-chart-shell {
   position: relative;
   min-width: 0;
   width: 100%;
   overflow: hidden;
 }
 
-.bridge-validation-banner {
+.retirement-income-validation-banner {
   display: grid;
   gap: 0.55rem;
   border: 1px solid rgba(191, 44, 44, 0.24);
@@ -1121,12 +1121,12 @@ h3 {
   color: #7f1d1d;
 }
 
-.bridge-validation-banner strong {
+.retirement-income-validation-banner strong {
   font-size: var(--font-size-body-sm);
   line-height: var(--line-height-body);
 }
 
-.bridge-validation-banner ul {
+.retirement-income-validation-banner ul {
   margin: 0;
   padding-left: 1.1rem;
   color: #991b1b;
@@ -1134,15 +1134,15 @@ h3 {
   line-height: var(--line-height-body);
 }
 
-.bridge-validation-banner li + li {
+.retirement-income-validation-banner li + li {
   margin-top: 0.25rem;
 }
 
-.bridge-mobile-summary {
+.retirement-income-mobile-summary {
   display: none;
 }
 
-.bridge-chart-svg {
+.retirement-income-chart-svg {
   display: block;
   width: 100%;
   height: auto;
@@ -1152,52 +1152,52 @@ h3 {
   user-select: none;
 }
 
-.bridge-build-up-band {
+.retirement-income-build-up-band {
   fill: rgba(199, 139, 29, 0.12);
 }
 
-.bridge-gridline line {
+.retirement-income-gridline line {
   stroke: rgba(68, 85, 107, 0.15);
   stroke-dasharray: 4 5;
 }
 
-.bridge-gridline text,
-.bridge-x-tick text,
-.bridge-axis-title {
+.retirement-income-gridline text,
+.retirement-income-x-tick text,
+.retirement-income-axis-title {
   fill: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
-.bridge-axis {
+.retirement-income-axis {
   stroke: rgba(18, 32, 51, 0.2);
 }
 
-.bridge-x-year-tick line {
+.retirement-income-x-year-tick line {
   stroke: rgba(18, 32, 51, 0.42);
   stroke-width: 1.5;
 }
 
-.bridge-x-year-tick--decade line {
+.retirement-income-x-year-tick--decade line {
   stroke: rgba(18, 32, 51, 0.56);
   stroke-width: 2;
 }
 
-.bridge-shortfall-fill {
+.retirement-income-shortfall-fill {
   fill: rgba(191, 44, 44, 0.16);
   stroke: rgba(191, 44, 44, 0.68);
   stroke-width: 1.5;
 }
 
-.bridge-target-line {
+.retirement-income-target-line {
   fill: none;
   stroke: #0b4dc2;
   stroke-width: 2.5;
   stroke-dasharray: 8 7;
 }
 
-.bridge-target-line-hitbox,
-.bridge-alpha-added-pension-hitbox {
+.retirement-income-target-line-hitbox,
+.retirement-income-alpha-added-pension-hitbox {
   fill: none;
   stroke: transparent;
   stroke-width: 18;
@@ -1207,27 +1207,27 @@ h3 {
   -webkit-touch-callout: none;
 }
 
-.bridge-target-line-hitbox:focus-visible {
+.retirement-income-target-line-hitbox:focus-visible {
   stroke: rgba(11, 77, 194, 0.18);
   outline: none;
 }
 
-.bridge-smile-phase-hitbox:hover {
+.retirement-income-smile-phase-hitbox:hover {
   stroke: rgba(11, 77, 194, 0.12);
 }
 
-.bridge-alpha-added-pension-hitbox:focus-visible {
+.retirement-income-alpha-added-pension-hitbox:focus-visible {
   stroke: rgba(115, 83, 191, 0.22);
   outline: none;
 }
 
-.bridge-milestone line {
+.retirement-income-milestone line {
   stroke-width: 1.75;
   stroke-dasharray: 4 4;
   pointer-events: none;
 }
 
-.bridge-milestone-drag-label--editable {
+.retirement-income-milestone-drag-label--editable {
   cursor: ew-resize;
   outline: none;
   touch-action: none;
@@ -1236,41 +1236,43 @@ h3 {
   user-select: none;
 }
 
-.bridge-milestone--invalid line {
+.retirement-income-milestone--invalid line {
   stroke: #dc2626;
   stroke-width: 2.5;
 }
 
-.bridge-milestone--invalid .bridge-milestone-handle {
+.retirement-income-milestone--invalid .retirement-income-milestone-handle {
   fill: #dc2626;
   stroke: rgba(255, 255, 255, 0.96);
 }
 
-.bridge-milestone--invalid .bridge-milestone-handle-label {
+.retirement-income-milestone--invalid
+  .retirement-income-milestone-handle-label {
   fill: #ffffff;
 }
 
-.bridge-milestone-drag-label:focus-visible .bridge-milestone-handle {
+.retirement-income-milestone-drag-label:focus-visible
+  .retirement-income-milestone-handle {
   stroke: #122033;
   stroke-width: 2.5;
 }
 
-.bridge-milestone--selected .bridge-milestone-handle {
+.retirement-income-milestone--selected .retirement-income-milestone-handle {
   stroke: #122033;
   stroke-width: 2.5;
 }
 
-.bridge-milestone-drag-label:focus-visible {
+.retirement-income-milestone-drag-label:focus-visible {
   outline: none;
 }
 
-.bridge-milestone-handle {
+.retirement-income-milestone-handle {
   stroke: rgba(255, 255, 255, 0.92);
   stroke-width: 1.5;
   filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.18));
 }
 
-.bridge-milestone-handle-label {
+.retirement-income-milestone-handle-label {
   fill: #ffffff;
   font-size: 0.58rem;
   font-weight: 900;
@@ -1278,26 +1280,26 @@ h3 {
   pointer-events: none;
 }
 
-.bridge-drag-age rect {
+.retirement-income-drag-age rect {
   fill: rgba(255, 255, 255, 0.96);
   stroke: rgba(29, 98, 209, 0.42);
   stroke-width: 1.25;
   filter: drop-shadow(0 2px 5px rgba(18, 32, 51, 0.12));
 }
 
-.bridge-drag-age text {
+.retirement-income-drag-age text {
   fill: #122033;
   font-size: 0.66rem;
   font-weight: 900;
 }
 
-.bridge-control-grid {
+.retirement-income-control-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.75rem;
 }
 
-.bridge-control-card {
+.retirement-income-control-card {
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: 0.8rem;
@@ -1305,18 +1307,18 @@ h3 {
   background: #fbfdfc;
 }
 
-.bridge-control-card {
+.retirement-income-control-card {
   display: grid;
   gap: 0.55rem;
 }
 
-.bridge-control-card--surplus {
+.retirement-income-control-card--surplus {
   border-color: var(--warning);
   background: var(--warning-soft);
   box-shadow: 0 0 0 2px rgba(166, 95, 0, 0.12);
 }
 
-.bridge-control-card > span {
+.retirement-income-control-card > span {
   color: var(--text-muted);
   font-size: var(--font-size-label);
   font-weight: 800;
@@ -1324,36 +1326,36 @@ h3 {
   letter-spacing: 0.05em;
 }
 
-.bridge-control-card strong {
+.retirement-income-control-card strong {
   color: var(--control-colour);
 }
 
-.bridge-control-card small {
+.retirement-income-control-card small {
   color: var(--text-muted);
   font-size: var(--font-size-body-sm);
   font-weight: 600;
 }
 
-.bridge-control-row {
+.retirement-income-control-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   align-items: center;
 }
 
-.bridge-control-row input {
+.retirement-income-control-row input {
   min-width: 0;
   accent-color: var(--control-colour);
 }
 
-.bridge-control-surplus-warning {
+.retirement-income-control-surplus-warning {
   margin: 0;
   color: #704300;
   font-size: var(--font-size-body-sm);
   font-weight: 700;
 }
 
-.bridge-control-row button {
+.retirement-income-control-row button {
   display: inline-grid;
   place-items: center;
   width: 2rem;
@@ -1366,12 +1368,12 @@ h3 {
   cursor: pointer;
 }
 
-.bridge-control-row button:disabled {
+.retirement-income-control-row button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
-.bridge-legend {
+.retirement-income-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 0.9rem;
@@ -1380,7 +1382,7 @@ h3 {
   font-weight: 700;
 }
 
-.bridge-legend--overlay {
+.retirement-income-legend--overlay {
   margin-top: 0;
   width: 100%;
   padding: 0 0.1rem 0 0.1rem;
@@ -1389,14 +1391,14 @@ h3 {
   white-space: normal;
 }
 
-.bridge-legend > span,
-.bridge-legend-toggle {
+.retirement-income-legend > span,
+.retirement-income-legend-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.bridge-legend-toggle {
+.retirement-income-legend-toggle {
   border: 0;
   padding: 0;
   background: transparent;
@@ -1405,36 +1407,36 @@ h3 {
   cursor: pointer;
 }
 
-.bridge-legend-toggle[aria-pressed="false"] {
+.retirement-income-legend-toggle[aria-pressed="false"] {
   color: #526377;
 }
 
-.bridge-legend-toggle[aria-pressed="false"] > span {
+.retirement-income-legend-toggle[aria-pressed="false"] > span {
   opacity: 0.48;
 }
 
-.bridge-legend-toggle:focus-visible {
+.retirement-income-legend-toggle:focus-visible {
   outline: 2px solid rgba(17, 100, 102, 0.4);
   outline-offset: 3px;
 }
 
-.bridge-legend > span > span,
-.bridge-legend-toggle > span {
+.retirement-income-legend > span > span,
+.retirement-income-legend-toggle > span {
   flex: 0 0 auto;
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 999px;
 }
 
-.bridge-mobile-navigation {
+.retirement-income-mobile-navigation {
   display: none;
 }
 
-.bridge-mobile-navigation-toggle {
+.retirement-income-mobile-navigation-toggle {
   display: none;
 }
 
-.bridge-shortfall-key {
+.retirement-income-shortfall-key {
   border-radius: 0.15rem;
   background: repeating-linear-gradient(
     45deg,
@@ -1443,13 +1445,13 @@ h3 {
   );
 }
 
-.bridge-income-tax-fill {
+.retirement-income-income-tax-fill {
   stroke: #385a78;
   stroke-width: 1.25;
   pointer-events: none;
 }
 
-.bridge-income-tax-key {
+.retirement-income-income-tax-key {
   border: 1px solid rgba(56, 90, 120, 0.5);
   border-radius: 0.15rem;
   background: repeating-linear-gradient(
@@ -1460,12 +1462,12 @@ h3 {
   );
 }
 
-.bridge-avoidable-surplus-fill {
+.retirement-income-avoidable-surplus-fill {
   opacity: 0.62;
   pointer-events: none;
 }
 
-.bridge-avoidable-surplus-key {
+.retirement-income-avoidable-surplus-key {
   background: repeating-linear-gradient(
     45deg,
     var(--warning-soft),
@@ -1475,16 +1477,16 @@ h3 {
   );
 }
 
-.bridge-surplus-text-equivalent {
+.retirement-income-surplus-text-equivalent {
   margin-top: 0.9rem;
 }
 
-.bridge-surplus-text-equivalent summary {
+.retirement-income-surplus-text-equivalent summary {
   cursor: pointer;
   font-weight: 700;
 }
 
-.bridge-build-up-key {
+.retirement-income-build-up-key {
   border-radius: 0.15rem;
   background: rgba(199, 139, 29, 0.45);
 }
@@ -2803,11 +2805,11 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .bridge-control-grid {
+  .retirement-income-control-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .bridge-milestone-controls {
+  .retirement-income-milestone-controls {
     grid-column: 1 / -1;
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -2849,9 +2851,9 @@ h3 {
   }
 
   .journey-step > .summary-section,
-  .journey-step > .bridge-chart-panel,
+  .journey-step > .retirement-income-chart-panel,
   .comparison-panel .summary-section,
-  .comparison-panel .bridge-chart-panel {
+  .comparison-panel .retirement-income-chart-panel {
     box-shadow: none;
   }
 
@@ -2871,8 +2873,8 @@ h3 {
     border-radius: 0;
   }
 
-  .journey-step > .bridge-chart-panel,
-  .comparison-panel .bridge-chart-panel {
+  .journey-step > .retirement-income-chart-panel,
+  .comparison-panel .retirement-income-chart-panel {
     margin-inline: -1rem;
     border-right: 0;
     border-left: 0;
@@ -3018,15 +3020,15 @@ h3 {
     text-align: right;
   }
 
-  .bridge-chart-heading {
+  .retirement-income-chart-heading {
     justify-content: stretch;
   }
 
-  .bridge-display-toggle {
+  .retirement-income-display-toggle {
     flex: 1 1 10rem;
   }
 
-  .bridge-mobile-summary {
+  .retirement-income-mobile-summary {
     display: grid;
     gap: 0.65rem;
     border: 1px solid rgba(17, 100, 102, 0.16);
@@ -3035,14 +3037,14 @@ h3 {
     background: #f7fbfa;
   }
 
-  .bridge-mobile-summary div {
+  .retirement-income-mobile-summary div {
     display: grid;
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
     gap: 0.75rem;
     align-items: baseline;
   }
 
-  .bridge-mobile-summary span {
+  .retirement-income-mobile-summary span {
     color: var(--text-muted);
     font-size: var(--font-size-label);
     font-weight: 800;
@@ -3050,15 +3052,15 @@ h3 {
     letter-spacing: 0.05em;
   }
 
-  .bridge-mobile-summary strong {
+  .retirement-income-mobile-summary strong {
     text-align: right;
   }
 
-  .bridge-legend--overlay {
+  .retirement-income-legend--overlay {
     justify-content: flex-start;
   }
 
-  .bridge-mobile-navigation {
+  .retirement-income-mobile-navigation {
     display: grid;
     gap: 0.75rem;
     border: 1px solid var(--border);
@@ -3067,7 +3069,7 @@ h3 {
     background: #fbfdfc;
   }
 
-  .bridge-mobile-navigation-toggle {
+  .retirement-income-mobile-navigation-toggle {
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -3082,12 +3084,12 @@ h3 {
     cursor: pointer;
   }
 
-  .bridge-mobile-navigation label {
+  .retirement-income-mobile-navigation label {
     display: grid;
     gap: 0.35rem;
   }
 
-  .bridge-mobile-navigation label > span {
+  .retirement-income-mobile-navigation label > span {
     color: var(--text-muted);
     font-size: var(--font-size-label);
     font-weight: 800;
@@ -3095,12 +3097,12 @@ h3 {
     letter-spacing: 0.05em;
   }
 
-  .bridge-mobile-navigation input[type="range"] {
+  .retirement-income-mobile-navigation input[type="range"] {
     width: 100%;
     accent-color: var(--accent);
   }
 
-  .bridge-control-grid {
+  .retirement-income-control-grid {
     grid-template-columns: 1fr;
   }
 }

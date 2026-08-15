@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
-import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
+import type { RetirementIncomeChartParameters } from "../RetirementIncomeChart";
 import {
   clearAllLocalStorageData,
   clearStoredSettings,
@@ -33,7 +33,7 @@ import {
   selectAppMode as selectAppModeAction,
 } from "./app-actions";
 import {
-  updateBridgeChartParameters as updateBridgeChartParametersAction,
+  updateRetirementIncomeChartParameters as updateRetirementIncomeChartParametersAction,
   updateSetting as updateSettingAction,
 } from "./chart-state";
 import { useMobileDateDropdowns as useMobileDateDropdownsHook } from "./form-fields";
@@ -100,8 +100,8 @@ export function useAppController() {
   );
   const useDropdownDates = useMobileDateDropdownsHook();
   const {
-    bridgeChartLimits,
-    bridgeChartParameters,
+    retirementIncomeChartLimits,
+    retirementIncomeChartParameters,
     deferredSettings,
     derivedInflationAssumptions,
     flexibleWithdrawalSummary,
@@ -154,8 +154,8 @@ export function useAppController() {
     });
   }
 
-  function updateBridgeChartParameters(
-    patch: Partial<RetirementIncomeBridgeParameters>
+  function updateRetirementIncomeChartParameters(
+    patch: Partial<RetirementIncomeChartParameters>
   ) {
     const changedKeys = Object.keys(patch);
 
@@ -164,7 +164,7 @@ export function useAppController() {
       parameter_count: changedKeys.length,
       journey_mode: activeJourneyMode ?? "none",
     });
-    updateBridgeChartParametersAction({
+    updateRetirementIncomeChartParametersAction({
       patch,
       settings: effectiveSettings,
       showSavedLabel,
@@ -229,8 +229,8 @@ export function useAppController() {
     validationIssues,
     pensionSummary,
     retirementIncomeSeries,
-    bridgeChartParameters,
-    bridgeChartLimits,
+    retirementIncomeChartParameters,
+    retirementIncomeChartLimits,
     derivedInflationAssumptions,
     flexibleWithdrawalSummary,
     incomeAgeRangeItems,
@@ -241,7 +241,7 @@ export function useAppController() {
     showGuidanceNotes,
     useDropdownDates,
     onChange: updateSetting,
-    onChangeChartParameters: updateBridgeChartParameters,
+    onChangeChartParameters: updateRetirementIncomeChartParameters,
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange: setComparisonScenarios,
@@ -279,8 +279,8 @@ export function useAppController() {
     activeModeRef,
     acknowledgeNotice,
     appMode,
-    bridgeChartLimits,
-    bridgeChartParameters,
+    retirementIncomeChartLimits,
+    retirementIncomeChartParameters,
     comparisonResultCache,
     comparisonScenarios,
     deferredSettings,
@@ -307,7 +307,7 @@ export function useAppController() {
     settingsFormVersion,
     showGuidanceNotes,
     showSavedFeedback,
-    updateBridgeChartParameters,
+    updateRetirementIncomeChartParameters,
     updateSetting,
     useDropdownDates,
     validationIssues,

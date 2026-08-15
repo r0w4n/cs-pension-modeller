@@ -250,7 +250,7 @@ flowchart LR
     F --> G["Summary generation<br/>src/summary.ts"]
     F --> H["App-domain adapters<br/>comparison, chart, journey helpers"]
     G --> I["Results summary UI"]
-    H --> J["Bridge chart, comparison panel,<br/>projection table, journey screens"]
+    H --> J["Retirement income chart, comparison panel,<br/>projection table, journey screens"]
     B --> K["Local persistence<br/>window.localStorage"]
 ```
 

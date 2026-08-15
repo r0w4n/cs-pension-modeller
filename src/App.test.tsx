@@ -3380,7 +3380,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("renders the bridge chart with an inline warning when the projection is invalid", async () => {
+  it("renders the retirement income chart with an inline warning when the projection is invalid", async () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify({
@@ -3394,13 +3394,13 @@ describe("App settings form", () => {
     advanceJourneyToResult();
 
     expect(
-      await screen.findByRole("region", { name: "Retirement income bridge" })
+      await screen.findByRole("region", { name: "Retirement income over time" })
     ).toBeInTheDocument();
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The chart is showing the current assumptions, but they do not produce a valid projection."
     );
     expect(
-      document.querySelector(".bridge-chart-panel--invalid")
+      document.querySelector(".retirement-income-chart-panel--invalid")
     ).not.toBeNull();
   });
 

@@ -1,8 +1,8 @@
 import type {
-  RetirementIncomeBridgeLimits,
-  RetirementIncomeBridgeParameters,
+  RetirementIncomeChartLimits,
+  RetirementIncomeChartParameters,
   RetirementIncomePoint,
-} from "../RetirementIncomeBridgeChart";
+} from "../RetirementIncomeChart";
 import {
   addMonths,
   calculateAdditionalGuaranteedIncomeStreamForDate,
@@ -29,7 +29,7 @@ import {
   getStatePensionAgeBounds,
   getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
-} from "./bridge-chart-bounds";
+} from "./retirement-income-chart-bounds";
 import { addYearsToIsoDate, clampNumber } from "./shared";
 import { getSpendingSmileStartAgeBounds } from "../spending-smile";
 import { getFlexibleFundAccountLabel } from "./flexible-withdrawals";
@@ -49,10 +49,6 @@ export function createRetirementIncomeAssessmentSeries(
   rows: ProjectionRow[],
   settings: PensionSettings
 ): RetirementIncomePoint[] {
-  const statePensionAge = calculateDateAge(
-    settings.dateOfBirth,
-    settings.statePensionDrawDate
-  );
   const requirementDate = addYearsToIsoDate(
     settings.dateOfBirth,
     settings.requirementAge
@@ -121,7 +117,7 @@ export function createRetirementIncomeAssessmentSeries(
       row.monthlySippPension +
       row.monthlyCsAvcPension;
     const isaIncomeAnnual = settings.showIsa
-      ? getBridgePotIncomeAnnual({
+      ? getFlexibleWithdrawalIncomeAnnual({
           rowDate: row.date,
           drawDate: isaDrawDate,
           stopDate:
@@ -135,7 +131,7 @@ export function createRetirementIncomeAssessmentSeries(
         })
       : 0;
     const sippIncomeAnnual = settings.showSipp
-      ? getBridgePotIncomeAnnual({
+      ? getFlexibleWithdrawalIncomeAnnual({
           rowDate: row.date,
           drawDate: sippDrawDate,
           stopDate:
@@ -149,7 +145,7 @@ export function createRetirementIncomeAssessmentSeries(
         })
       : 0;
     const csAvcIncomeAnnual = settings.showCsAvc
-      ? getBridgePotIncomeAnnual({
+      ? getFlexibleWithdrawalIncomeAnnual({
           rowDate: row.date,
           drawDate: csAvcDrawDate,
           stopDate:
@@ -163,7 +159,7 @@ export function createRetirementIncomeAssessmentSeries(
         })
       : 0;
     const lisaIncomeAnnual = settings.showLisa
-      ? getBridgePotIncomeAnnual({
+      ? getFlexibleWithdrawalIncomeAnnual({
           rowDate: row.date,
           drawDate: lisaDrawDate,
           stopDate:
@@ -261,7 +257,6 @@ export function createRetirementIncomeAssessmentSeries(
       lisaBalance: row.lisaPot,
       sippBalance: row.sippPot,
       csAvcBalance: row.csAvcPot,
-      phase: getRetirementIncomePhase(age, settings, statePensionAge),
     };
   });
 
@@ -379,7 +374,7 @@ function calculateAdditionalGuaranteedIncomeStreams(
   });
 }
 
-function getBridgePotIncomeAnnual(input: {
+function getFlexibleWithdrawalIncomeAnnual(input: {
   rowDate: string;
   drawDate: string;
   stopDate: string | null;
@@ -668,9 +663,9 @@ function calculatePartialRetirementIncomeAnnual(
   return settings.fullSalary * (settings.partialRetirementWorkPercent / 100);
 }
 
-export function createBridgeChartParameters(
+export function createRetirementIncomeChartParameters(
   settings: PensionSettings
-): RetirementIncomeBridgeParameters {
+): RetirementIncomeChartParameters {
   return {
     targetIncomeAnnual: settings.desiredRetirementIncome,
     spendingSmileEnabled: settings.spendingStrategyType === "SPENDING_SMILE",
@@ -720,9 +715,9 @@ export function createBridgeChartParameters(
   };
 }
 
-export function createBridgeChartLimits(
+export function createRetirementIncomeChartLimits(
   settings: PensionSettings
-): RetirementIncomeBridgeLimits {
+): RetirementIncomeChartLimits {
   const statePensionAge = calculateStatePensionDrawAge(
     settings.dateOfBirth,
     settings.statePensionDrawDate
@@ -895,34 +890,6 @@ export function createBridgeChartLimits(
       step: MODEL_AGE_STEP,
     },
   };
-}
-
-function getRetirementIncomePhase(
-  age: number,
-  settings: PensionSettings,
-  statePensionAge: number
-): RetirementIncomePoint["phase"] {
-  if (age < settings.isaDrawAge) {
-    return "build-up";
-  }
-
-  if (settings.showIsa && (!settings.showSipp || age < settings.sippDrawAge)) {
-    return "isa-bridge";
-  }
-
-  if (settings.showSipp && age < settings.alphaPensionDrawAge) {
-    return "sipp-bridge";
-  }
-
-  if (!settings.showStatePension || age < statePensionAge) {
-    if (!settings.showSipp) {
-      return "alpha-only";
-    }
-
-    return "alpha-sipp";
-  }
-
-  return "alpha-state";
 }
 
 function calculateCurrentPlanningAge(settings: PensionSettings) {

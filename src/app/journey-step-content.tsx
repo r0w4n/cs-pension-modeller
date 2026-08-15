@@ -7,11 +7,11 @@ import {
   type ProjectionRow,
 } from "../projection";
 import {
-  RetirementIncomeBridgeChart,
-  type RetirementIncomeBridgeLimits,
-  type RetirementIncomeBridgeParameters,
+  RetirementIncomeChart,
+  type RetirementIncomeChartLimits,
+  type RetirementIncomeChartParameters,
   type RetirementIncomePoint,
-} from "../RetirementIncomeBridgeChart";
+} from "../RetirementIncomeChart";
 import {
   defaultSettings,
   type FlexibleFundAccountId,
@@ -44,7 +44,7 @@ import {
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "../app-domains";
-import { ComparisonBridgeChart } from "./chart";
+import { ComparisonRetirementIncomeChart } from "./chart";
 import {
   ComparisonPanel as ComparisonPanelFeature,
   ComparisonSection,
@@ -77,8 +77,8 @@ export type JourneyStepViewModel = {
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
   retirementIncomeSeries: RetirementIncomePoint[];
-  bridgeChartParameters: RetirementIncomeBridgeParameters;
-  bridgeChartLimits: RetirementIncomeBridgeLimits;
+  retirementIncomeChartParameters: RetirementIncomeChartParameters;
+  retirementIncomeChartLimits: RetirementIncomeChartLimits;
   derivedInflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
   flexibleWithdrawalSummary: FlexibleWithdrawalSummary;
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
@@ -90,7 +90,7 @@ export type JourneyStepViewModel = {
   useDropdownDates: boolean;
   onChange: SettingsFieldOnChange;
   onChangeChartParameters: (
-    patch: Partial<RetirementIncomeBridgeParameters>
+    patch: Partial<RetirementIncomeChartParameters>
   ) => void;
   comparisonScenarios: ComparisonScenario[];
   comparisonResultCache: ComparisonResultCache;
@@ -225,8 +225,8 @@ function renderAnswerStep(
     validationIssues,
     pensionSummary,
     retirementIncomeSeries,
-    bridgeChartParameters,
-    bridgeChartLimits,
+    retirementIncomeChartParameters,
+    retirementIncomeChartLimits,
     derivedInflationAssumptions,
     retirementIncomeDisplay,
     incomeAgeRangeItems,
@@ -262,15 +262,15 @@ function renderAnswerStep(
         items={buildKeyDateItems(settings, pensionSummary)}
       />
 
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         data={retirementIncomeSeries}
         alphaLabel="Alpha pension"
         hideInactiveLegendItems
-        limits={bridgeChartLimits}
+        limits={retirementIncomeChartLimits}
         statePensionEditable
         validationIssues={validationIssues}
         onChangeParameters={onChangeChartParameters}
-        {...bridgeChartParameters}
+        {...retirementIncomeChartParameters}
       />
 
       <InflationBasisPanelFeature
@@ -291,8 +291,8 @@ function renderAnswerStep(
         }
         derivedInflationAssumptions={derivedInflationAssumptions}
         retirementIncomeSeries={retirementIncomeSeries}
-        bridgeChartParameters={bridgeChartParameters}
-        bridgeChartLimits={bridgeChartLimits}
+        retirementIncomeChartParameters={retirementIncomeChartParameters}
+        retirementIncomeChartLimits={retirementIncomeChartLimits}
         hideInactiveLegendItems
         showPensionSummary={false}
         onChangeChartParameters={onChangeChartParameters}
@@ -310,8 +310,8 @@ function renderExpertAnswerStep(
     settings,
     validationIssues,
     retirementIncomeSeries,
-    bridgeChartParameters,
-    bridgeChartLimits,
+    retirementIncomeChartParameters,
+    retirementIncomeChartLimits,
     derivedInflationAssumptions,
     flexibleWithdrawalSummary,
     targetBasedWithdrawalPreviews,
@@ -350,18 +350,18 @@ function renderExpertAnswerStep(
         />
       </ResultsSummarySection>
 
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         data={retirementIncomeSeries}
         alphaLabel="Alpha pension"
         showFlexibleWithdrawalInsights
         residualFlexibleFundInsights={
           flexibleWithdrawalSummary.residualAccounts
         }
-        limits={bridgeChartLimits}
+        limits={retirementIncomeChartLimits}
         statePensionEditable
         validationIssues={validationIssues}
         onChangeParameters={onChangeChartParameters}
-        {...bridgeChartParameters}
+        {...retirementIncomeChartParameters}
       />
 
       <InflationBasisPanelFeature
@@ -411,8 +411,8 @@ function renderBridgeAnswerStep(
     settings,
     validationIssues,
     retirementIncomeSeries,
-    bridgeChartParameters,
-    bridgeChartLimits,
+    retirementIncomeChartParameters,
+    retirementIncomeChartLimits,
     derivedInflationAssumptions,
     projectionRows,
     retirementIncomeDisplay,
@@ -454,10 +454,10 @@ function renderBridgeAnswerStep(
         )}
       </ResultsSummarySection>
 
-      <ComparisonBridgeChart
+      <ComparisonRetirementIncomeChart
         retirementIncomeSeries={retirementIncomeSeries}
-        bridgeChartParameters={bridgeChartParameters}
-        bridgeChartLimits={bridgeChartLimits}
+        retirementIncomeChartParameters={retirementIncomeChartParameters}
+        retirementIncomeChartLimits={retirementIncomeChartLimits}
         hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
         presentation={usesSimpleResults ? "simple" : "standard"}
         validationIssues={validationIssues}

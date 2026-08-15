@@ -1,4 +1,7 @@
-import { applyBridgeChartParameterPatch, updateSetting } from "./chart-state";
+import {
+  applyRetirementIncomeChartParameterPatch,
+  updateSetting,
+} from "./chart-state";
 import {
   calculateStatePensionDrawAge,
   createDefaultSettings,
@@ -57,7 +60,7 @@ describe("chart-state", () => {
       showCsAvc: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       showCsAvc: false,
     });
 
@@ -262,7 +265,7 @@ describe("chart-state", () => {
       spendingStrategyType: "SPENDING_SMILE" as const,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       slowGoPercentage: 82,
     });
 
@@ -285,12 +288,15 @@ describe("chart-state", () => {
       },
     };
 
-    const withSlowGoChange = applyBridgeChartParameterPatch(current, {
+    const withSlowGoChange = applyRetirementIncomeChartParameterPatch(current, {
       slowGoStartAge: 78,
     });
-    const withNoGoChange = applyBridgeChartParameterPatch(withSlowGoChange, {
-      noGoStartAge: 88,
-    });
+    const withNoGoChange = applyRetirementIncomeChartParameterPatch(
+      withSlowGoChange,
+      {
+        noGoStartAge: 88,
+      }
+    );
 
     expect(withSlowGoChange.spendingSmile).toEqual({
       ...current.spendingSmile,
@@ -317,12 +323,12 @@ describe("chart-state", () => {
     };
 
     expect(
-      applyBridgeChartParameterPatch(current, {
+      applyRetirementIncomeChartParameterPatch(current, {
         slowGoStartAge: 84,
       }).spendingSmile.slowGoStartAge
     ).toBe(81);
     expect(
-      applyBridgeChartParameterPatch(current, {
+      applyRetirementIncomeChartParameterPatch(current, {
         noGoStartAge: 70,
       }).spendingSmile.noGoStartAge
     ).toBe(76);
@@ -341,7 +347,7 @@ describe("chart-state", () => {
       },
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 68,
     });
 
@@ -360,7 +366,7 @@ describe("chart-state", () => {
       alphaPensionDrawAge: 68,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       alphaLeaveAge: 66,
     });
 
@@ -375,7 +381,7 @@ describe("chart-state", () => {
       alphaPensionDrawAge: 68,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 64,
     });
 
@@ -392,7 +398,7 @@ describe("chart-state", () => {
       showAlpha: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 60,
     });
 
@@ -410,7 +416,7 @@ describe("chart-state", () => {
       showAlpha: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 60,
     });
 
@@ -434,7 +440,7 @@ describe("chart-state", () => {
       showPremium: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 60,
     });
 
@@ -456,7 +462,7 @@ describe("chart-state", () => {
       showAlpha: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 70,
     });
 
@@ -472,7 +478,7 @@ describe("chart-state", () => {
       alphaPensionDrawAge: 68,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 64,
     });
 
@@ -491,7 +497,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       retirementAge: 64,
     });
 
@@ -509,7 +515,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       sippAccessAge: 55,
     });
 
@@ -527,7 +533,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       sippAccessAge: 55,
     });
 
@@ -547,7 +553,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       sippAccessAge: 55,
     });
 
@@ -565,7 +571,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       sippAccessAge: 58,
     });
 
@@ -585,7 +591,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       sippAccessAge: 72,
     });
 
@@ -602,7 +608,7 @@ describe("chart-state", () => {
       showSipp: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       sippAccessAge: 90,
     });
 
@@ -620,7 +626,7 @@ describe("chart-state", () => {
       showNuvos: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       nuvosStartAge: 60,
     });
 
@@ -640,7 +646,7 @@ describe("chart-state", () => {
       showPremium: true,
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       premiumStartAge: 55,
     });
 
@@ -656,7 +662,7 @@ describe("chart-state", () => {
       statePensionDrawDate: "2055-06-01",
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       alphaStartAge: 69,
     });
 
@@ -674,7 +680,7 @@ describe("chart-state", () => {
       statePensionDrawDate: "2055-06-01",
     };
 
-    const next = applyBridgeChartParameterPatch(current, {
+    const next = applyRetirementIncomeChartParameterPatch(current, {
       isaAccessAge: 72,
     });
 

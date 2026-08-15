@@ -1,6 +1,6 @@
 import { Given, Then, When } from "@cucumber/cucumber";
 import { fieldGroups } from "../../src/fieldDefinitions";
-import { applyBridgeChartParameterPatch } from "../../src/app/chart-state";
+import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
 import { isSpendingSmileEditorStep } from "../../src/app-domains";
 import {
   reconcileSpendingSmilePhaseAges,
@@ -395,7 +395,7 @@ When(
     if (!field) {
       throw new Error(`Unknown SMILE phase: ${phase}`);
     }
-    this.settings = applyBridgeChartParameterPatch(settings, {
+    this.settings = applyRetirementIncomeChartParameterPatch(settings, {
       [field]: percentage,
     });
   }
@@ -413,7 +413,7 @@ When(
     if (!field) {
       throw new Error(`Unknown SMILE phase boundary: ${phase}`);
     }
-    this.settings = applyBridgeChartParameterPatch(settings, {
+    this.settings = applyRetirementIncomeChartParameterPatch(settings, {
       [field]: age,
     });
   }

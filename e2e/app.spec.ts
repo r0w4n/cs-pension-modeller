@@ -71,6 +71,9 @@ test.describe("app end-to-end journeys", () => {
       0
     );
     await page.getByRole("button", { name: "Show my answer" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Retirement income over time" })
+    ).toBeVisible();
     await renderDeferredComparisonContent(page);
     await expectProjectionBasisBelowResultsChart(page);
 
@@ -345,7 +348,9 @@ test.describe("app end-to-end journeys", () => {
       chartKey.getByText("Civil Service AVC", { exact: true })
     ).toHaveCount(0);
     await expect(chartKey.getByText("LISA", { exact: true })).toHaveCount(0);
-    await expect(chartKey.locator(".bridge-income-tax-key")).toBeVisible();
+    await expect(
+      chartKey.locator(".retirement-income-income-tax-key")
+    ).toBeVisible();
   });
 
   test("completes the bridge journey", async ({ page }, testInfo) => {
@@ -420,6 +425,9 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("button", { name: "Show my answer" })
     ).toBeVisible();
     await page.getByRole("button", { name: "Show my answer" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Retirement income over time" })
+    ).toBeVisible();
     await renderDeferredComparisonContent(page);
     await expectProjectionBasisBelowResultsChart(page);
 
@@ -454,7 +462,7 @@ test.describe("app end-to-end journeys", () => {
     );
     await page.mouse.down();
 
-    const dragAgeLabel = page.locator(".bridge-drag-age");
+    const dragAgeLabel = page.locator(".retirement-income-drag-age");
     await expect(dragAgeLabel).toContainText("58y 3m");
     const dragAgeLabelBounds = await dragAgeLabel.evaluate((label) => {
       const background = label.querySelector("rect")?.getBBox();
@@ -721,14 +729,14 @@ test.describe("app end-to-end journeys", () => {
       comparisonResults.getByText("No-go starts", { exact: true })
     ).toBeVisible();
 
-    const targetPath = page.locator(".bridge-target-line").first();
+    const targetPath = page.locator(".retirement-income-target-line").first();
     await expect(targetPath).toHaveAttribute("d", /.+/);
     expect(await countDistinctPathYValues(targetPath)).toBeGreaterThanOrEqual(
       3
     );
 
     const slowGoBoundaryHandle = page.getByTestId(
-      "bridge-marker-slowGoStartAge"
+      "retirement-income-marker-slowGoStartAge"
     );
     await expect(slowGoBoundaryHandle).toHaveAttribute("aria-valuenow", "76");
     await slowGoBoundaryHandle.scrollIntoViewIfNeeded();
@@ -1401,7 +1409,7 @@ async function renderDeferredComparisonContent(page: Page) {
 
 async function expectProjectionBasisBelowResultsChart(page: Page) {
   const chartComesFirst = await page.evaluate(() => {
-    const chart = document.querySelector(".bridge-chart-panel");
+    const chart = document.querySelector(".retirement-income-chart-panel");
     const projectionBasis = document.querySelector(".inflation-panel");
 
     return Boolean(

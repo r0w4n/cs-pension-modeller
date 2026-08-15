@@ -67,13 +67,6 @@ export type RetirementIncomePoint = {
   lisaBalance?: number;
   sippBalance?: number;
   csAvcBalance?: number;
-  phase:
-    | "build-up"
-    | "isa-bridge"
-    | "sipp-bridge"
-    | "alpha-only"
-    | "alpha-sipp"
-    | "alpha-state";
 };
 
 export type RetirementIncomeFlexibleWithdrawalInsight = {
@@ -89,7 +82,7 @@ export type RetirementIncomeAdditionalIncomePoint = {
   annualAmount: number;
 };
 
-export type RetirementIncomeBridgeParameters = {
+export type RetirementIncomeChartParameters = {
   targetIncomeAnnual: number;
   spendingSmileEnabled: boolean;
   goGoPercentage: number;
@@ -131,23 +124,20 @@ export type RetirementIncomeBridgeParameters = {
   showStatePension: boolean;
 };
 
-export type RetirementIncomeBridgeChartProps =
-  RetirementIncomeBridgeParameters & {
-    data: RetirementIncomePoint[];
-    alphaLabel?: string;
-    hideInactiveLegendItems?: boolean;
-    showFlexibleWithdrawalInsights?: boolean;
-    presentation?: "standard" | "simple";
-    residualFlexibleFundInsights?: ResidualFlexibleFundInsight[];
-    limits: RetirementIncomeBridgeLimits;
-    statePensionEditable?: boolean;
-    validationIssues?: PensionValidationIssue[];
-    onChangeParameters: (
-      patch: Partial<RetirementIncomeBridgeParameters>
-    ) => void;
-  };
+export type RetirementIncomeChartProps = RetirementIncomeChartParameters & {
+  data: RetirementIncomePoint[];
+  alphaLabel?: string;
+  hideInactiveLegendItems?: boolean;
+  showFlexibleWithdrawalInsights?: boolean;
+  presentation?: "standard" | "simple";
+  residualFlexibleFundInsights?: ResidualFlexibleFundInsight[];
+  limits: RetirementIncomeChartLimits;
+  statePensionEditable?: boolean;
+  validationIssues?: PensionValidationIssue[];
+  onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
+};
 
-export type RetirementIncomeBridgeLimits = {
+export type RetirementIncomeChartLimits = {
   targetIncomeAnnual: NumberLimit;
   alphaMonthlyAddedPension: NumberLimit;
   isaMonthlyContribution: NumberLimit;
@@ -420,7 +410,7 @@ function createSpendingSmileMilestoneMarkers(
   ];
 }
 
-export function RetirementIncomeBridgeChart({
+export function RetirementIncomeChart({
   data,
   targetIncomeAnnual,
   spendingSmileEnabled,
@@ -470,7 +460,7 @@ export function RetirementIncomeBridgeChart({
   statePensionEditable = false,
   validationIssues = [],
   onChangeParameters,
-}: RetirementIncomeBridgeChartProps) {
+}: RetirementIncomeChartProps) {
   const isSimplePresentation = presentation === "simple";
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -564,13 +554,13 @@ export function RetirementIncomeBridgeChart({
   const valueLabel =
     displayMode === "monthly" ? "Monthly income" : "Annual income";
   const axisTargetLabel = formatCurrency(displayedTargetIncomeAnnual / divisor);
-  const axisTitle = createBridgeAxisTitle(
+  const axisTitle = createRetirementIncomeAxisTitle(
     valueLabel,
     axisTargetLabel,
     isSimplePresentation
   );
-  const chartTitleId = "retirement-income-bridge-chart-title";
-  const chartDescriptionId = "retirement-income-bridge-chart-description";
+  const chartTitleId = "retirement-income-chart-title";
+  const chartDescriptionId = "retirement-income-chart-description";
   const displayedData = useMemo(
     () =>
       createDisplayedTargetData({
@@ -1196,9 +1186,9 @@ export function RetirementIncomeBridgeChart({
     visibleMilestoneMarkers.find(
       (marker) => marker.key === effectiveSelectedMobileMarkerKey
     ) ?? visibleMilestoneMarkers[0];
-  const mobileBridgeSummary = useMemo(
+  const mobileRetirementIncomeSummary = useMemo(
     () =>
-      createMobileBridgeSummary({
+      createMobileRetirementIncomeSummary({
         displayedData,
         displayedTargetIncomeAnnual,
         isSimplePresentation,
@@ -2472,12 +2462,12 @@ export function RetirementIncomeBridgeChart({
 
   return (
     <section
-      className={`bridge-chart-panel${hasValidationIssues ? " bridge-chart-panel--invalid" : ""}`}
+      className={`retirement-income-chart-panel${hasValidationIssues ? " retirement-income-chart-panel--invalid" : ""}`}
       aria-labelledby={chartTitleId}
       aria-describedby={chartDescriptionId}
       aria-live="polite"
     >
-      <BridgeChartHeading
+      <RetirementIncomeChartHeading
         chartTitleId={chartTitleId}
         displayMode={displayMode}
         isSimplePresentation={isSimplePresentation}
@@ -2485,7 +2475,7 @@ export function RetirementIncomeBridgeChart({
       />
 
       {!projectionReady || hasValidationIssues ? (
-        <div className="bridge-validation-banner" role="alert">
+        <div className="retirement-income-validation-banner" role="alert">
           <strong>
             {projectionReady
               ? "The chart is showing the current assumptions, but some settings need attention."
@@ -2501,8 +2491,11 @@ export function RetirementIncomeBridgeChart({
         </div>
       ) : null}
 
-      <div className="bridge-mobile-summary" aria-label="Chart summary">
-        {mobileBridgeSummary.map((item) => (
+      <div
+        className="retirement-income-mobile-summary"
+        aria-label="Chart summary"
+      >
+        {mobileRetirementIncomeSummary.map((item) => (
           <div key={item.label}>
             <span>{item.label}</span>
             <strong>{item.value}</strong>
@@ -2510,15 +2503,15 @@ export function RetirementIncomeBridgeChart({
         ))}
       </div>
 
-      <BridgeChartDescription
+      <RetirementIncomeChartDescription
         chartDescriptionId={chartDescriptionId}
         isSimplePresentation={isSimplePresentation}
       />
 
-      <div className="bridge-chart-shell" ref={shellRef}>
+      <div className="retirement-income-chart-shell" ref={shellRef}>
         <svg
           ref={svgRef}
-          className="bridge-chart-svg"
+          className="retirement-income-chart-svg"
           width={dimensions.width}
           height={dimensions.height}
           viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
@@ -2602,12 +2595,12 @@ export function RetirementIncomeBridgeChart({
                 y={0}
                 width={buildUpWidth}
                 height={plotHeight}
-                className="bridge-build-up-band"
+                className="retirement-income-build-up-band"
               />
             ) : null}
 
             {yTicks.map((tick) => (
-              <g key={tick} className="bridge-gridline">
+              <g key={tick} className="retirement-income-gridline">
                 <line
                   x1={0}
                   x2={plotWidth}
@@ -2642,19 +2635,19 @@ export function RetirementIncomeBridgeChart({
 
             <path
               d={estimatedIncomeTaxArea(visibleData) ?? undefined}
-              className="bridge-income-tax-fill"
+              className="retirement-income-income-tax-fill"
               fill="url(#estimated-income-tax-hatch)"
             />
 
             <path
               d={toSvgPath(avoidableSurplusArea(flexibleSurplusData))}
-              className="bridge-avoidable-surplus-fill"
+              className="retirement-income-avoidable-surplus-fill"
               fill="url(#avoidable-surplus-hatch)"
             />
 
             <path
               d={shortfallArea(visibleData) ?? undefined}
-              className="bridge-shortfall-fill"
+              className="retirement-income-shortfall-fill"
             />
 
             <path
@@ -2666,7 +2659,7 @@ export function RetirementIncomeBridgeChart({
             <OptionalChartLayer visible={showAlphaTopLineHitbox}>
               <path
                 ref={alphaAddedPensionHitboxRef}
-                className="bridge-alpha-added-pension-hitbox"
+                className="retirement-income-alpha-added-pension-hitbox"
                 d={alphaTopLinePath ?? undefined}
                 role="slider"
                 tabIndex={0}
@@ -2695,7 +2688,7 @@ export function RetirementIncomeBridgeChart({
             </OptionalChartLayer>
 
             <path
-              className="bridge-target-line"
+              className="retirement-income-target-line"
               d={targetLine(visibleData) ?? undefined}
             />
             {isSimplePresentation ? null : spendingSmileEnabled ? (
@@ -2703,7 +2696,7 @@ export function RetirementIncomeBridgeChart({
                 phase.path ? (
                   <path
                     key={phase.key}
-                    className="bridge-target-line-hitbox bridge-smile-phase-hitbox"
+                    className="retirement-income-target-line-hitbox retirement-income-smile-phase-hitbox"
                     data-testid={`spending-smile-${phase.key}-target-handle`}
                     d={phase.path}
                     role="slider"
@@ -2743,7 +2736,7 @@ export function RetirementIncomeBridgeChart({
             ) : (
               <path
                 ref={targetLineHitboxRef}
-                className="bridge-target-line-hitbox"
+                className="retirement-income-target-line-hitbox"
                 d={targetLine(visibleData) ?? undefined}
                 role="slider"
                 tabIndex={0}
@@ -2773,12 +2766,12 @@ export function RetirementIncomeBridgeChart({
                 <g
                   key={marker.key}
                   className={[
-                    "bridge-milestone",
+                    "retirement-income-milestone",
                     invalidMarkerKeys.has(marker.key)
-                      ? "bridge-milestone--invalid"
+                      ? "retirement-income-milestone--invalid"
                       : "",
                     marker.key === effectiveSelectedMobileMarkerKey
-                      ? "bridge-milestone--selected"
+                      ? "retirement-income-milestone--selected"
                       : "",
                   ]
                     .filter(Boolean)
@@ -2794,16 +2787,16 @@ export function RetirementIncomeBridgeChart({
                   />
                   <g
                     className={[
-                      "bridge-milestone-drag-label",
+                      "retirement-income-milestone-drag-label",
                       marker.editable
-                        ? "bridge-milestone-drag-label--editable"
+                        ? "retirement-income-milestone-drag-label--editable"
                         : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
                     role={marker.editable ? "slider" : "img"}
                     tabIndex={marker.editable ? 0 : undefined}
-                    data-testid={`bridge-marker-${marker.key}`}
+                    data-testid={`retirement-income-marker-${marker.key}`}
                     aria-label={`${marker.label}, age ${formatModelAge(marker.age)}`}
                     aria-valuemin={limits[marker.key].min}
                     aria-valuemax={limits[marker.key].max}
@@ -2848,13 +2841,13 @@ export function RetirementIncomeBridgeChart({
                       width={HANDLE_LABEL_WIDTH}
                       height={HANDLE_LABEL_HEIGHT}
                       rx={HANDLE_LABEL_WIDTH / 2}
-                      className="bridge-milestone-handle"
+                      className="retirement-income-milestone-handle"
                       fill={marker.colour}
                     />
                     <text
                       x={x}
                       y={marker.handleY}
-                      className="bridge-milestone-handle-label"
+                      className="retirement-income-milestone-handle-label"
                       dominantBaseline="middle"
                       textAnchor="middle"
                       transform={`rotate(90 ${x} ${marker.handleY})`}
@@ -2867,14 +2860,14 @@ export function RetirementIncomeBridgeChart({
             })}
 
             <line
-              className="bridge-axis"
+              className="retirement-income-axis"
               x1={0}
               x2={plotWidth}
               y1={plotHeight}
               y2={plotHeight}
             />
             <line
-              className="bridge-axis"
+              className="retirement-income-axis"
               x1={0}
               x2={0}
               y1={0}
@@ -2883,8 +2876,10 @@ export function RetirementIncomeBridgeChart({
             {xYearTicks.map((tick) => (
               <g
                 key={tick}
-                className={`bridge-x-year-tick${
-                  tick % 10 === 0 ? " bridge-x-year-tick--decade" : ""
+                className={`retirement-income-x-year-tick${
+                  tick % 10 === 0
+                    ? " retirement-income-x-year-tick--decade"
+                    : ""
                 }`}
                 data-age={tick}
                 aria-hidden="true"
@@ -2898,7 +2893,7 @@ export function RetirementIncomeBridgeChart({
               </g>
             ))}
             {xTicks.map((tick) => (
-              <g key={tick} className="bridge-x-tick">
+              <g key={tick} className="retirement-income-x-tick">
                 <line
                   x1={xScale(tick)}
                   x2={xScale(tick)}
@@ -2910,12 +2905,16 @@ export function RetirementIncomeBridgeChart({
                 </text>
               </g>
             ))}
-            <text className="bridge-axis-title" x={0} y={plotHeight + 30}>
+            <text
+              className="retirement-income-axis-title"
+              x={0}
+              y={plotHeight + 30}
+            >
               Age
             </text>
             {draggingMobileMarker ? (
               <g
-                className="bridge-drag-age"
+                className="retirement-income-drag-age"
                 transform={`translate(${clampNumber(
                   xScale(draggingMobileMarker.plotAge),
                   DRAG_AGE_LABEL_WIDTH / 2,
@@ -2935,7 +2934,7 @@ export function RetirementIncomeBridgeChart({
               </g>
             ) : null}
             <text
-              className="bridge-axis-title"
+              className="retirement-income-axis-title"
               x={-dimensions.marginLeft + 2}
               y={-24}
             >
@@ -2945,11 +2944,11 @@ export function RetirementIncomeBridgeChart({
         </svg>
 
         <div
-          className="bridge-legend bridge-legend--overlay"
+          className="retirement-income-legend retirement-income-legend--overlay"
           aria-label="Chart key"
         >
           <span>
-            <span className="bridge-build-up-key" />
+            <span className="retirement-income-build-up-key" />
             {BUILD_UP_META.label}
           </span>
           {legendIncomeKeys.map((series) => {
@@ -2988,7 +2987,7 @@ export function RetirementIncomeBridgeChart({
               <button
                 key={series.key}
                 type="button"
-                className="bridge-legend-toggle"
+                className="retirement-income-legend-toggle"
                 aria-label={getIncomeSourceToggleLabel(key)}
                 aria-pressed={enabled}
                 onClick={() => onChangeParameters(togglePatch)}
@@ -3000,13 +2999,13 @@ export function RetirementIncomeBridgeChart({
           })}
           {hasEstimatedIncomeTax ? (
             <span>
-              <span className="bridge-income-tax-key" />
+              <span className="retirement-income-income-tax-key" />
               {RETIREMENT_CHART_OVERLAY_META.estimatedIncomeTax.label}
             </span>
           ) : null}
           <span>
-            <span className="bridge-shortfall-key" />
-            {getBridgeShortfallLabel(isSimplePresentation)}
+            <span className="retirement-income-shortfall-key" />
+            {getRetirementIncomeShortfallLabel(isSimplePresentation)}
           </span>
           <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
         </div>
@@ -3015,7 +3014,7 @@ export function RetirementIncomeBridgeChart({
       <SurplusTextEquivalent points={surplusSummaryPoints} />
 
       {!isSimplePresentation ? (
-        <BridgeMobileNavigation
+        <RetirementIncomeMobileNavigation
           isCompact={isCompact}
           isVisible={isMobileNavigationVisible}
           limits={limits}
@@ -3043,7 +3042,7 @@ export function RetirementIncomeBridgeChart({
       ) : null}
 
       {!isSimplePresentation ? (
-        <BridgeControlGrid
+        <RetirementIncomeControlGrid
           displayedAlphaMonthlyAddedPension={displayedAlphaMonthlyAddedPension}
           flexibleAccountWarnings={flexibleAccountWarnings}
           hasUnavoidableSurplus={hasUnavoidableSurplus}
@@ -3086,7 +3085,7 @@ function shouldShowAlphaTopLineHitbox({
   return showAlpha && !isSimplePresentation && Boolean(alphaTopLinePath);
 }
 
-function BridgeChartHeading({
+function RetirementIncomeChartHeading({
   chartTitleId,
   displayMode,
   isSimplePresentation,
@@ -3097,20 +3096,18 @@ function BridgeChartHeading({
   isSimplePresentation: boolean;
   onChangeDisplayMode: (displayMode: "annual" | "monthly") => void;
 }) {
-  const title = isSimplePresentation
-    ? "How your retirement income may change"
-    : "Retirement income bridge";
-  const titleClassName = isSimplePresentation
-    ? "bridge-chart-title bridge-chart-title--visible"
-    : "bridge-chart-title";
+  const title = getRetirementIncomeChartTitle(isSimplePresentation);
 
   return (
-    <div className="bridge-chart-heading">
-      <h3 id={chartTitleId} className={titleClassName}>
+    <div className="retirement-income-chart-heading">
+      <h3
+        id={chartTitleId}
+        className="retirement-income-chart-title retirement-income-chart-title--visible"
+      >
         {title}
       </h3>
       <div
-        className="summary-toggle bridge-display-toggle"
+        className="summary-toggle retirement-income-display-toggle"
         role="group"
         aria-label="Chart income display"
       >
@@ -3135,7 +3132,13 @@ function BridgeChartHeading({
   );
 }
 
-function BridgeChartDescription({
+export function getRetirementIncomeChartTitle(isSimplePresentation: boolean) {
+  return isSimplePresentation
+    ? "How your retirement income may change"
+    : "Retirement income over time";
+}
+
+function RetirementIncomeChartDescription({
   chartDescriptionId,
   isSimplePresentation,
 }: {
@@ -3150,7 +3153,9 @@ function BridgeChartDescription({
     <p
       id={chartDescriptionId}
       className={
-        isSimplePresentation ? "bridge-chart-introduction" : "visually-hidden"
+        isSimplePresentation
+          ? "retirement-income-chart-introduction"
+          : "visually-hidden"
       }
     >
       {description}
@@ -3158,7 +3163,7 @@ function BridgeChartDescription({
   );
 }
 
-function createBridgeAxisTitle(
+function createRetirementIncomeAxisTitle(
   valueLabel: string,
   targetLabel: string,
   isSimplePresentation: boolean
@@ -3207,7 +3212,7 @@ function createFlexibleAccountWarnings(
   return warnings;
 }
 
-function BridgeControlGrid({
+function RetirementIncomeControlGrid({
   displayedAlphaMonthlyAddedPension,
   flexibleAccountWarnings,
   hasUnavoidableSurplus,
@@ -3223,7 +3228,7 @@ function BridgeControlGrid({
   showSipp,
   sippMonthlyContribution,
 }: Pick<
-  RetirementIncomeBridgeParameters,
+  RetirementIncomeChartParameters,
   | "isaMonthlyContribution"
   | "lisaMonthlyContribution"
   | "partialRetirementEnabled"
@@ -3237,15 +3242,13 @@ function BridgeControlGrid({
   displayedAlphaMonthlyAddedPension: number;
   flexibleAccountWarnings: Map<string, string>;
   hasUnavoidableSurplus: boolean;
-  limits: RetirementIncomeBridgeLimits;
-  onChangeParameters: (
-    patch: Partial<RetirementIncomeBridgeParameters>
-  ) => void;
+  limits: RetirementIncomeChartLimits;
+  onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
 }) {
   return (
-    <div className="bridge-control-grid">
+    <div className="retirement-income-control-grid">
       {showAlpha ? (
-        <BridgeMetricControl
+        <RetirementIncomeMetricControl
           label="Added Alpha pension"
           value={displayedAlphaMonthlyAddedPension}
           suffix="/ month"
@@ -3264,7 +3267,7 @@ function BridgeControlGrid({
         />
       ) : null}
       {showIsa ? (
-        <BridgeMetricControl
+        <RetirementIncomeMetricControl
           label="ISA contribution"
           value={isaMonthlyContribution}
           suffix="/ month"
@@ -3277,7 +3280,7 @@ function BridgeControlGrid({
         />
       ) : null}
       {showLisa ? (
-        <BridgeMetricControl
+        <RetirementIncomeMetricControl
           label="LISA contribution"
           value={lisaMonthlyContribution}
           suffix="/ month"
@@ -3290,7 +3293,7 @@ function BridgeControlGrid({
         />
       ) : null}
       {showSipp ? (
-        <BridgeMetricControl
+        <RetirementIncomeMetricControl
           label="SIPP contribution"
           value={sippMonthlyContribution}
           suffix="/ month"
@@ -3303,7 +3306,7 @@ function BridgeControlGrid({
         />
       ) : null}
       {partialRetirementEnabled ? (
-        <BridgeMetricControl
+        <RetirementIncomeMetricControl
           label="Partial work"
           value={partialRetirementWorkPercent}
           suffix="%"
@@ -3319,7 +3322,7 @@ function BridgeControlGrid({
   );
 }
 
-function BridgeMetricControl({
+function RetirementIncomeMetricControl({
   label,
   value,
   suffix,
@@ -3355,8 +3358,8 @@ function BridgeMetricControl({
 
   return (
     <div
-      className={`bridge-control-card${
-        surplusWarning ? " bridge-control-card--surplus" : ""
+      className={`retirement-income-control-card${
+        surplusWarning ? " retirement-income-control-card--surplus" : ""
       }`}
       style={{ "--control-colour": colour } as React.CSSProperties}
     >
@@ -3364,7 +3367,7 @@ function BridgeMetricControl({
       <strong>
         {formatValue(roundedValue)} <small>{suffix}</small>
       </strong>
-      <div className="bridge-control-row">
+      <div className="retirement-income-control-row">
         <input
           aria-label={label}
           aria-describedby={surplusWarning ? surplusWarningId : undefined}
@@ -3391,7 +3394,10 @@ function BridgeMetricControl({
         />
       </div>
       {surplusWarning ? (
-        <p id={surplusWarningId} className="bridge-control-surplus-warning">
+        <p
+          id={surplusWarningId}
+          className="retirement-income-control-surplus-warning"
+        >
           {surplusWarning}
         </p>
       ) : null}
@@ -3473,7 +3479,7 @@ function createActiveMilestoneAges({
   sippUseByAgeEnabled,
   statePensionAge,
 }: Pick<
-  RetirementIncomeBridgeParameters,
+  RetirementIncomeChartParameters,
   | "alphaLeaveAge"
   | "alphaStartAge"
   | "isaAccessAge"
@@ -3518,7 +3524,7 @@ function createActiveMilestoneAges({
 
 function createActiveMilestoneBoundaries(
   input: Pick<
-    RetirementIncomeBridgeParameters,
+    RetirementIncomeChartParameters,
     | "alphaLeaveAge"
     | "alphaStartAge"
     | "isaAccessAge"
@@ -3671,7 +3677,7 @@ function createBuildUpEndAge({
   retirementAge,
   showAlpha,
 }: Pick<
-  RetirementIncomeBridgeParameters,
+  RetirementIncomeChartParameters,
   | "alphaLeaveAge"
   | "partialRetirementEnabled"
   | "partialRetirementStartAge"
@@ -3847,7 +3853,7 @@ function createAdditionalIncomeSeriesKey(id: string) {
 }
 
 function getChartIncomeGradientId(key: string) {
-  return `bridge-gradient-${key.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+  return `retirement-income-gradient-${key.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
 function getChartIncomeValue(
@@ -4068,7 +4074,7 @@ function getMarkerHandleLabel(marker: MilestoneMarker) {
   return marker.shortLabel;
 }
 
-function createMobileBridgeSummary({
+function createMobileRetirementIncomeSummary({
   displayedData,
   displayedTargetIncomeAnnual,
   isSimplePresentation,
@@ -4103,7 +4109,7 @@ function createMobileBridgeSummary({
       value: `${formatCurrency(displayedTargetIncomeAnnual)} / year`,
     },
     {
-      label: getBridgeShortfallLabel(isSimplePresentation),
+      label: getRetirementIncomeShortfallLabel(isSimplePresentation),
       value: shortfallValue,
     },
     {
@@ -4115,7 +4121,7 @@ function createMobileBridgeSummary({
   ];
 }
 
-function getBridgeShortfallLabel(isSimplePresentation: boolean) {
+function getRetirementIncomeShortfallLabel(isSimplePresentation: boolean) {
   return isSimplePresentation
     ? "Less than you want"
     : RETIREMENT_CHART_OVERLAY_META.shortfall.label;
@@ -4135,7 +4141,7 @@ function FlexibleSurplusLegend({ visible }: { visible: boolean }) {
 
   return (
     <span>
-      <span className="bridge-avoidable-surplus-key" />
+      <span className="retirement-income-avoidable-surplus-key" />
       Avoidable flexible-fund surplus
     </span>
   );
@@ -4155,7 +4161,7 @@ function SurplusTextEquivalent({
   }
 
   return (
-    <details className="bridge-surplus-text-equivalent">
+    <details className="retirement-income-surplus-text-equivalent">
       <summary>Flexible-fund surplus by age</summary>
       <ul>
         {points.map((point) => (
@@ -4195,20 +4201,18 @@ function createSurplusSummaryPoints(data: RetirementIncomePoint[]) {
   });
 }
 
-type BridgeMobileNavigationProps = {
+type RetirementIncomeMobileNavigationProps = {
   isCompact: boolean;
   isVisible: boolean;
-  limits: RetirementIncomeBridgeLimits;
+  limits: RetirementIncomeChartLimits;
   selectedMobileMarker: VisibleMilestoneMarker | undefined;
   visibleMilestoneMarkers: VisibleMilestoneMarker[];
-  onChangeParameters: (
-    patch: Partial<RetirementIncomeBridgeParameters>
-  ) => void;
+  onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
   onSelectMobileMarker: (key: MilestoneKey) => void;
   onToggleVisibility: () => void;
 };
 
-function BridgeMobileNavigation({
+function RetirementIncomeMobileNavigation({
   isCompact,
   isVisible,
   limits,
@@ -4217,7 +4221,7 @@ function BridgeMobileNavigation({
   onChangeParameters,
   onSelectMobileMarker,
   onToggleVisibility,
-}: BridgeMobileNavigationProps) {
+}: RetirementIncomeMobileNavigationProps) {
   if (!selectedMobileMarker || !isCompact) {
     return null;
   }
@@ -4228,14 +4232,14 @@ function BridgeMobileNavigation({
     <>
       <button
         type="button"
-        className="bridge-mobile-navigation-toggle"
+        className="retirement-income-mobile-navigation-toggle"
         aria-expanded={isVisible}
         onClick={onToggleVisibility}
       >
         {isVisible ? "Hide chart controls" : "Show chart controls"}
       </button>
       {isVisible ? (
-        <div className="bridge-mobile-navigation">
+        <div className="retirement-income-mobile-navigation">
           <label>
             <span>Chart section</span>
             <select
@@ -4298,7 +4302,7 @@ function BridgeMobileNavigation({
 function isIncomeSourceEnabled(
   key: IncomeKey,
   state: Pick<
-    RetirementIncomeBridgeParameters,
+    RetirementIncomeChartParameters,
     | "showAlpha"
     | "showClassic"
     | "showClassicPlus"
@@ -4362,7 +4366,7 @@ function isIncomeSourceEnabled(
 function getIncomeSourceTogglePatch(
   key: IncomeKey,
   enabled: boolean
-): Partial<RetirementIncomeBridgeParameters> | null {
+): Partial<RetirementIncomeChartParameters> | null {
   if (key === "alphaIncomeAnnual") {
     return { showAlpha: enabled };
   }

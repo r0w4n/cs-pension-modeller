@@ -40,7 +40,7 @@ export {
   getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
   type ChartAgeBounds,
-} from "./app-domains/bridge-chart-bounds";
+} from "./app-domains/retirement-income-chart-bounds";
 
 export {
   buildComparisonStatusItems,
@@ -111,8 +111,8 @@ export {
 
 export {
   calculateCurrentPlanningAge,
-  createBridgeChartLimits,
-  createBridgeChartParameters,
+  createRetirementIncomeChartLimits,
+  createRetirementIncomeChartParameters,
   createRetirementIncomeSeries,
 } from "./app-domains/retirement-income";
 

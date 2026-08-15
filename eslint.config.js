@@ -106,7 +106,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/projection.ts", "src/RetirementIncomeBridgeChart.tsx"],
+    files: ["src/projection.ts", "src/RetirementIncomeChart.tsx"],
     rules: {
       "sonarjs/cyclomatic-complexity": ["error", { threshold: 35 }],
     },

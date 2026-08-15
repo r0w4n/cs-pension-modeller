@@ -8,7 +8,7 @@ import {
   type ProjectionRow,
 } from "../projection";
 import {
-  createBridgeChartLimits,
+  createRetirementIncomeChartLimits,
   createRetirementIncomeSeries,
 } from "./retirement-income";
 
@@ -486,7 +486,7 @@ describe("retirement-income chart limits", () => {
       sippDrawAge: 65,
     };
 
-    const limits = createBridgeChartLimits(settings);
+    const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.alphaMonthlyAddedPension.max).toBe(2000);
     expect(limits.lisaMonthlyContribution.max).toBe(
@@ -504,7 +504,7 @@ describe("retirement-income chart limits", () => {
       sippDrawAge: 55,
     };
 
-    const limits = createBridgeChartLimits(settings);
+    const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.sippAccessAge.min).toBe(55);
   });
@@ -518,7 +518,7 @@ describe("retirement-income chart limits", () => {
       sippDrawAge: 55,
     };
 
-    const limits = createBridgeChartLimits(settings);
+    const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.sippAccessAge.min).toBe(57);
   });
@@ -533,7 +533,7 @@ describe("retirement-income chart limits", () => {
       showNuvos: true,
     };
 
-    const limits = createBridgeChartLimits(settings);
+    const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.nuvosStartAge.min).toBe(57);
   });
@@ -548,7 +548,7 @@ describe("retirement-income chart limits", () => {
       showNuvos: true,
     };
 
-    const limits = createBridgeChartLimits(settings);
+    const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.nuvosStartAge.min).toBe(57);
   });
@@ -562,7 +562,7 @@ describe("retirement-income chart limits", () => {
       statePensionDrawDate: "2055-06-01",
     };
 
-    const limits = createBridgeChartLimits(settings);
+    const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.statePensionAge.max).toBe(85);
     expect(limits.sippAccessAge.max).toBe(85);

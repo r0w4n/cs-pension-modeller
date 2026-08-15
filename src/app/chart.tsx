@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  RetirementIncomeBridgeChart,
-  type RetirementIncomeBridgeLimits,
-  type RetirementIncomeBridgeParameters,
+  RetirementIncomeChart,
+  type RetirementIncomeChartLimits,
+  type RetirementIncomeChartParameters,
   type RetirementIncomePoint,
-} from "../RetirementIncomeBridgeChart";
+} from "../RetirementIncomeChart";
 import type { PensionValidationIssue } from "../settings";
 
 export function DeferredBelowFold({
@@ -61,10 +61,10 @@ export function DeferredBelowFold({
   );
 }
 
-export function ComparisonBridgeChart({
+export function ComparisonRetirementIncomeChart({
   retirementIncomeSeries,
-  bridgeChartParameters,
-  bridgeChartLimits,
+  retirementIncomeChartParameters,
+  retirementIncomeChartLimits,
   hideInactiveLegendItems = false,
   showFlexibleWithdrawalInsights = false,
   presentation = "standard",
@@ -72,37 +72,37 @@ export function ComparisonBridgeChart({
   onChangeChartParameters,
 }: {
   retirementIncomeSeries?: RetirementIncomePoint[];
-  bridgeChartParameters?: RetirementIncomeBridgeParameters;
-  bridgeChartLimits?: RetirementIncomeBridgeLimits;
+  retirementIncomeChartParameters?: RetirementIncomeChartParameters;
+  retirementIncomeChartLimits?: RetirementIncomeChartLimits;
   hideInactiveLegendItems?: boolean;
   showFlexibleWithdrawalInsights?: boolean;
   presentation?: "standard" | "simple";
   validationIssues?: PensionValidationIssue[];
   onChangeChartParameters?: (
-    patch: Partial<RetirementIncomeBridgeParameters>
+    patch: Partial<RetirementIncomeChartParameters>
   ) => void;
 }) {
   if (
     !retirementIncomeSeries ||
-    !bridgeChartParameters ||
-    !bridgeChartLimits ||
+    !retirementIncomeChartParameters ||
+    !retirementIncomeChartLimits ||
     !onChangeChartParameters
   ) {
     return null;
   }
 
   return (
-    <RetirementIncomeBridgeChart
+    <RetirementIncomeChart
       data={retirementIncomeSeries}
       alphaLabel="Alpha pension"
       hideInactiveLegendItems={hideInactiveLegendItems}
       showFlexibleWithdrawalInsights={showFlexibleWithdrawalInsights}
       presentation={presentation}
-      limits={bridgeChartLimits}
+      limits={retirementIncomeChartLimits}
       statePensionEditable
       validationIssues={validationIssues}
       onChangeParameters={onChangeChartParameters}
-      {...bridgeChartParameters}
+      {...retirementIncomeChartParameters}
     />
   );
 }

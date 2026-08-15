@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { ComparisonBridgeChart, DeferredBelowFold } from "./chart";
+import { ComparisonRetirementIncomeChart, DeferredBelowFold } from "./chart";
 import { createDefaultSettings } from "../settings";
 import {
-  createBridgeChartLimits,
-  createBridgeChartParameters,
+  createRetirementIncomeChartLimits,
+  createRetirementIncomeChartParameters,
 } from "../app-domains";
 
-vi.mock("../RetirementIncomeBridgeChart", () => ({
-  RetirementIncomeBridgeChart: (props: { alphaLabel: string }) => (
+vi.mock("../RetirementIncomeChart", () => ({
+  RetirementIncomeChart: (props: { alphaLabel: string }) => (
     <div>Chart {props.alphaLabel}</div>
   ),
 }));
@@ -23,11 +23,11 @@ describe("chart module", () => {
     expect(screen.getByText("Deferred body")).toBeInTheDocument();
   });
 
-  it("renders the comparison bridge chart when all inputs are present", () => {
+  it("renders the comparison retirement income chart when all inputs are present", () => {
     const settings = createDefaultSettings();
 
     render(
-      <ComparisonBridgeChart
+      <ComparisonRetirementIncomeChart
         retirementIncomeSeries={[
           {
             date: "2026-01-01",
@@ -55,11 +55,14 @@ describe("chart module", () => {
             isaBalance: 0,
             lisaBalance: 0,
             sippBalance: 0,
-            phase: "build-up",
           },
         ]}
-        bridgeChartParameters={createBridgeChartParameters(settings)}
-        bridgeChartLimits={createBridgeChartLimits(settings)}
+        retirementIncomeChartParameters={createRetirementIncomeChartParameters(
+          settings
+        )}
+        retirementIncomeChartLimits={createRetirementIncomeChartLimits(
+          settings
+        )}
         onChangeChartParameters={vi.fn()}
       />
     );

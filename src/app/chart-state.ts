@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
-import type { RetirementIncomeBridgeParameters } from "../RetirementIncomeBridgeChart";
+import type { RetirementIncomeChartParameters } from "../RetirementIncomeChart";
 import {
   calculateDefaultIsaDrawAge,
   calculateDefaultSippDrawAge,
@@ -47,9 +47,9 @@ type ChartStateContext = {
   minimumSippAccessAge: number;
 };
 
-export function applyBridgeChartParameterPatch(
+export function applyRetirementIncomeChartParameterPatch(
   current: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>
+  patch: Partial<RetirementIncomeChartParameters>
 ) {
   const next = { ...current };
   const context = createChartStateContext(next);
@@ -86,7 +86,7 @@ function createChartStateContext(settings: PensionSettings): ChartStateContext {
 
 function applyIncomeAndContributionPatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>,
+  patch: Partial<RetirementIncomeChartParameters>,
   context: ChartStateContext
 ) {
   if (patch.targetIncomeAnnual !== undefined) {
@@ -148,7 +148,7 @@ function applyIncomeAndContributionPatch(
 
 function applySpendingSmilePercentagePatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>
+  patch: Partial<RetirementIncomeChartParameters>
 ) {
   (
     [
@@ -170,7 +170,7 @@ function applySpendingSmilePercentagePatch(
 
 function applySpendingSmileStartAgePatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>
+  patch: Partial<RetirementIncomeChartParameters>
 ) {
   if (patch.slowGoStartAge !== undefined) {
     next.spendingSmile = updateSpendingSmileStartAge(
@@ -195,7 +195,7 @@ function applySpendingSmileStartAgePatch(
 
 function applyVisibilityPatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>
+  patch: Partial<RetirementIncomeChartParameters>
 ) {
   if (patch.showAlpha !== undefined) {
     next.showAlpha = patch.showAlpha;
@@ -240,7 +240,7 @@ function applyVisibilityPatch(
 
 function applyStatePensionPatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>,
+  patch: Partial<RetirementIncomeChartParameters>,
   context: ChartStateContext
 ) {
   const requestedStateAge =
@@ -268,7 +268,7 @@ function applyStatePensionPatch(
 
 function applyRetirementAgePatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>,
+  patch: Partial<RetirementIncomeChartParameters>,
   context: ChartStateContext,
   statePensionAge: number
 ) {
@@ -337,7 +337,7 @@ function applyRetirementAgePatch(
 
 function applyAlphaLeaveAgePatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>,
+  patch: Partial<RetirementIncomeChartParameters>,
   context: ChartStateContext,
   statePensionAge: number
 ) {
@@ -358,7 +358,7 @@ function applyAlphaLeaveAgePatch(
 
 function applyAccessAgePatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>,
+  patch: Partial<RetirementIncomeChartParameters>,
   context: ChartStateContext
 ) {
   if (patch.sippAccessAge !== undefined) {
@@ -463,7 +463,7 @@ function resolveSippChartAccessAge(
 
 function applyUseByAgePatch(
   next: PensionSettings,
-  patch: Partial<RetirementIncomeBridgeParameters>
+  patch: Partial<RetirementIncomeChartParameters>
 ) {
   if (patch.sippUseByAge !== undefined) {
     const sippUseByAgeBounds = getUseByAgeBounds({
@@ -648,7 +648,7 @@ export function updateSetting({
 
   if (key === "requirementAge") {
     setSettings((current) =>
-      applyBridgeChartParameterPatch(current, {
+      applyRetirementIncomeChartParameterPatch(current, {
         retirementAge: value as number,
       })
     );
@@ -751,14 +751,14 @@ function resolveStatePensionDrawAgeAfterDateOfBirthChange(
     : normalizeStatePensionDrawAge(currentDrawAge, nextDateOfBirth);
 }
 
-export function updateBridgeChartParameters({
+export function updateRetirementIncomeChartParameters({
   patch,
   settings,
   showSavedLabel,
   setChartUndoStack,
   setSettings,
 }: {
-  patch: Partial<RetirementIncomeBridgeParameters>;
+  patch: Partial<RetirementIncomeChartParameters>;
   settings: PensionSettings;
   showSavedLabel: () => void;
   setChartUndoStack: SetChartUndoStack;
@@ -766,5 +766,7 @@ export function updateBridgeChartParameters({
 }) {
   showSavedLabel();
   setChartUndoStack((current) => [...current.slice(-19), settings]);
-  setSettings((current) => applyBridgeChartParameterPatch(current, patch));
+  setSettings((current) =>
+    applyRetirementIncomeChartParameterPatch(current, patch)
+  );
 }

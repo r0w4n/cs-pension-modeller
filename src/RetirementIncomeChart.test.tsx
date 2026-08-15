@@ -6,10 +6,10 @@ import {
   within,
 } from "@testing-library/react";
 import {
-  RetirementIncomeBridgeChart,
-  type RetirementIncomeBridgeChartProps,
+  RetirementIncomeChart,
+  type RetirementIncomeChartProps,
   type RetirementIncomePoint,
-} from "./RetirementIncomeBridgeChart";
+} from "./RetirementIncomeChart";
 import { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings";
 
 const basePoint: RetirementIncomePoint = {
@@ -35,10 +35,9 @@ const basePoint: RetirementIncomePoint = {
   unavoidableSurplusAnnual: 0,
   avoidableFlexibleSurplusAnnual: 0,
   flexibleWithdrawalInsights: [],
-  phase: "build-up",
 };
 
-const baseProps: RetirementIncomeBridgeChartProps = {
+const baseProps: RetirementIncomeChartProps = {
   data: [
     basePoint,
     {
@@ -49,7 +48,6 @@ const baseProps: RetirementIncomeBridgeChartProps = {
       totalIncomeAnnual: 18000,
       assessedIncomeAnnual: 18000,
       shortfallAnnual: 13700,
-      phase: "alpha-only",
     },
     {
       ...basePoint,
@@ -60,7 +58,6 @@ const baseProps: RetirementIncomeBridgeChartProps = {
       totalIncomeAnnual: 28000,
       assessedIncomeAnnual: 28000,
       shortfallAnnual: 3700,
-      phase: "alpha-state",
     },
   ],
   targetIncomeAnnual: 31700,
@@ -132,8 +129,8 @@ const baseProps: RetirementIncomeBridgeChartProps = {
   onChangeParameters: vi.fn(),
 };
 
-function renderChart(props: Partial<RetirementIncomeBridgeChartProps> = {}) {
-  return render(<RetirementIncomeBridgeChart {...baseProps} {...props} />);
+function renderChart(props: Partial<RetirementIncomeChartProps> = {}) {
+  return render(<RetirementIncomeChart {...baseProps} {...props} />);
 }
 
 function mockChartResize(width: number, height = 420) {
@@ -184,28 +181,32 @@ function getTargetLinePath() {
 }
 
 function getShortfallFillPath() {
-  return document.querySelector(".bridge-shortfall-fill")?.getAttribute("d");
+  return document
+    .querySelector(".retirement-income-shortfall-fill")
+    ?.getAttribute("d");
 }
 
 function getIncomeTaxFillPath() {
-  return document.querySelector(".bridge-income-tax-fill")?.getAttribute("d");
+  return document
+    .querySelector(".retirement-income-income-tax-fill")
+    ?.getAttribute("d");
 }
 
 function getXAxisLabels() {
-  return [...document.querySelectorAll(".bridge-x-tick text")].map(
+  return [...document.querySelectorAll(".retirement-income-x-tick text")].map(
     (node) => node.textContent
   );
 }
 
 function getXAxisYearTickAges() {
-  return [...document.querySelectorAll(".bridge-x-year-tick")].map((node) =>
-    Number(node.getAttribute("data-age"))
+  return [...document.querySelectorAll(".retirement-income-x-year-tick")].map(
+    (node) => Number(node.getAttribute("data-age"))
   );
 }
 
 function getXAxisYearTickLength(age: number) {
   const line = document.querySelector(
-    `.bridge-x-year-tick[data-age="${age}"] line`
+    `.retirement-income-x-year-tick[data-age="${age}"] line`
   );
 
   return (
@@ -216,7 +217,7 @@ function getXAxisYearTickLength(age: number) {
 
 function getBuildUpBandWidth() {
   const width = document
-    .querySelector(".bridge-build-up-band")
+    .querySelector(".retirement-income-build-up-band")
     ?.getAttribute("width");
 
   return Number(width);
@@ -225,7 +226,7 @@ function getBuildUpBandWidth() {
 function getMilestoneHitAreas() {
   return [
     ...document.querySelectorAll(
-      ".bridge-milestone-drag-label > rect[aria-hidden='true']"
+      ".retirement-income-milestone-drag-label > rect[aria-hidden='true']"
     ),
   ].map((node) => ({
     height: Number(node.getAttribute("height")),
@@ -234,15 +235,15 @@ function getMilestoneHitAreas() {
 }
 
 function getMilestoneLabelsInRenderOrder() {
-  return [...document.querySelectorAll(".bridge-milestone-drag-label")].map(
-    (node) => node.getAttribute("aria-label")
-  );
+  return [
+    ...document.querySelectorAll(".retirement-income-milestone-drag-label"),
+  ].map((node) => node.getAttribute("aria-label"));
 }
 
 function getMilestoneLineX(label: RegExp | string) {
   const marker = screen
     .getByRole("slider", { name: label })
-    .closest(".bridge-milestone");
+    .closest(".retirement-income-milestone");
 
   return Number(marker?.querySelector("line")?.getAttribute("x1"));
 }
@@ -264,7 +265,7 @@ function getIncomeAreaStrokeColours() {
 function getMilestoneHandleFill(label: RegExp | string) {
   return screen
     .getByRole("slider", { name: label })
-    .querySelector(".bridge-milestone-handle")
+    .querySelector(".retirement-income-milestone-handle")
     ?.getAttribute("fill");
 }
 
@@ -305,10 +306,18 @@ function getPathYSpan(path: string) {
   return Math.max(...yCoordinates) - Math.min(...yCoordinates);
 }
 
-describe("RetirementIncomeBridgeChart", () => {
+describe("RetirementIncomeChart", () => {
+  it("shows the standard chart title as retirement income over time", () => {
+    renderChart();
+
+    expect(
+      screen.getByRole("heading", { name: "Retirement income over time" })
+    ).toHaveClass("retirement-income-chart-title--visible");
+  });
+
   it("hides flexible-fund surplus presentation unless explicitly enabled", () => {
     render(
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         {...baseProps}
         targetIncomeAnnual={24_000}
         isaMonthlyContribution={175}
@@ -342,7 +351,6 @@ describe("RetirementIncomeBridgeChart", () => {
               },
             ],
             isaBalance: 20_000,
-            phase: "alpha-state",
           },
         ]}
       />
@@ -357,13 +365,13 @@ describe("RetirementIncomeBridgeChart", () => {
     expect(
       screen
         .getByRole("slider", { name: "ISA contribution" })
-        .closest(".bridge-control-card")
-    ).not.toHaveClass("bridge-control-card--surplus");
+        .closest(".retirement-income-control-card")
+    ).not.toHaveClass("retirement-income-control-card--surplus");
   });
 
   it("highlights the relevant adjustment control without graph circles", () => {
     render(
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         {...baseProps}
         targetIncomeAnnual={24_000}
         showFlexibleWithdrawalInsights
@@ -387,7 +395,6 @@ describe("RetirementIncomeBridgeChart", () => {
                 avoidableNetAnnual: 6_000,
               },
             ],
-            phase: "alpha-state",
           },
         ]}
       />
@@ -399,8 +406,8 @@ describe("RetirementIncomeBridgeChart", () => {
     const isaControl = screen.getByRole("slider", {
       name: "ISA contribution",
     });
-    expect(isaControl.closest(".bridge-control-card")).toHaveClass(
-      "bridge-control-card--surplus"
+    expect(isaControl.closest(".retirement-income-control-card")).toHaveClass(
+      "retirement-income-control-card--surplus"
     );
     expect(isaControl).toHaveAccessibleDescription(
       "Potential overspend: modelled ISA withdrawals could be reduced at some ages."
@@ -412,7 +419,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
   it("highlights target-based contributions that remain unused at the planning horizon", () => {
     render(
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         {...baseProps}
         showFlexibleWithdrawalInsights
         showLisa
@@ -449,7 +456,6 @@ describe("RetirementIncomeBridgeChart", () => {
             date: "2067-01-01",
             lisaBalance: 86_924,
             sippBalance: 88_253,
-            phase: "alpha-state",
           },
         ]}
       />
@@ -462,11 +468,11 @@ describe("RetirementIncomeBridgeChart", () => {
       name: "SIPP contribution",
     });
 
-    expect(lisaControl.closest(".bridge-control-card")).toHaveClass(
-      "bridge-control-card--surplus"
+    expect(lisaControl.closest(".retirement-income-control-card")).toHaveClass(
+      "retirement-income-control-card--surplus"
     );
-    expect(sippControl.closest(".bridge-control-card")).toHaveClass(
-      "bridge-control-card--surplus"
+    expect(sippControl.closest(".retirement-income-control-card")).toHaveClass(
+      "retirement-income-control-card--surplus"
     );
     expect(lisaControl).toHaveAccessibleDescription(
       "Potential over-saving: the LISA is not used for modelled income and retains £86,924 at age 80. You may want to compare a lower contribution."
@@ -478,7 +484,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
   it("highlights added Alpha pension when guaranteed income exceeds the target", () => {
     render(
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         {...baseProps}
         targetIncomeAnnual={24_000}
         alphaMonthlyAddedPension={475}
@@ -493,7 +499,6 @@ describe("RetirementIncomeBridgeChart", () => {
             assessedIncomeAnnual: 28_000,
             guaranteedNetIncomeAnnual: 28_000,
             unavoidableSurplusAnnual: 4_000,
-            phase: "alpha-state",
           },
         ]}
       />
@@ -502,8 +507,8 @@ describe("RetirementIncomeBridgeChart", () => {
     const alphaControl = screen.getByRole("slider", {
       name: "Added Alpha pension",
     });
-    expect(alphaControl.closest(".bridge-control-card")).toHaveClass(
-      "bridge-control-card--surplus"
+    expect(alphaControl.closest(".retirement-income-control-card")).toHaveClass(
+      "retirement-income-control-card--surplus"
     );
     expect(alphaControl).toHaveAccessibleDescription(
       "Potential overspend: guaranteed income exceeds the target at some ages. Added Alpha pension is one adjustable contributor."
@@ -538,12 +543,12 @@ describe("RetirementIncomeBridgeChart", () => {
     mockChartResize(960);
 
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
     renderChart({ onChangeParameters });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -599,7 +604,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
   it("lets each SMILE phase update its own percentage", () => {
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
     const smileData = [
       { ...basePoint, age: 60, targetIncomeAnnual: 31_700 },
       { ...basePoint, age: 74, targetIncomeAnnual: 31_700 },
@@ -641,7 +646,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
   it("lets SMILE phase boundaries update their own start age", () => {
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
 
     renderChart({
       spendingSmileEnabled: true,
@@ -668,7 +673,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
   it("only starts a SMILE boundary drag from its label", () => {
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
 
     renderChart({
       spendingSmileEnabled: true,
@@ -678,7 +683,7 @@ describe("RetirementIncomeBridgeChart", () => {
     const slowGoStartLabel = screen.getByRole("slider", {
       name: /Start Slow-go, age 75/i,
     });
-    const marker = slowGoStartLabel.closest(".bridge-milestone");
+    const marker = slowGoStartLabel.closest(".retirement-income-milestone");
     const guideLine = marker?.querySelector("line");
 
     if (!guideLine) {
@@ -714,7 +719,7 @@ describe("RetirementIncomeBridgeChart", () => {
   it("commits a dragged SMILE phase without changing the other phases", () => {
     mockChartResize(960);
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
     const smileData = [
       { ...basePoint, age: 60, targetIncomeAnnual: 31_700 },
       { ...basePoint, age: 74, targetIncomeAnnual: 31_700 },
@@ -728,9 +733,9 @@ describe("RetirementIncomeBridgeChart", () => {
       spendingSmileEnabled: true,
       onChangeParameters,
     });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
     Object.defineProperty(svg, "getBoundingClientRect", {
       configurable: true,
@@ -785,7 +790,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
     const releasedPath = slowGoHandle.getAttribute("d");
     rerender(
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         {...baseProps}
         data={smileData}
         spendingSmileEnabled
@@ -809,7 +814,7 @@ describe("RetirementIncomeBridgeChart", () => {
         : point
     );
     rerender(
-      <RetirementIncomeBridgeChart
+      <RetirementIncomeChart
         {...baseProps}
         data={recalculatedData}
         spendingSmileEnabled
@@ -829,12 +834,12 @@ describe("RetirementIncomeBridgeChart", () => {
     mockChartResize(360);
 
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
     renderChart({ onChangeParameters });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -896,12 +901,12 @@ describe("RetirementIncomeBridgeChart", () => {
     mockChartResize(960);
 
     const onChangeParameters =
-      vi.fn<RetirementIncomeBridgeChartProps["onChangeParameters"]>();
+      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
     renderChart({ onChangeParameters });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -957,10 +962,10 @@ describe("RetirementIncomeBridgeChart", () => {
     mockChartResize(960);
 
     renderChart();
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -1015,7 +1020,6 @@ describe("RetirementIncomeBridgeChart", () => {
           age: 66.5,
           targetIncomeAnnual: 31700,
           assessedIncomeAnnual: 31700,
-          phase: "build-up",
         },
         {
           ...basePoint,
@@ -1024,7 +1028,6 @@ describe("RetirementIncomeBridgeChart", () => {
           targetIncomeAnnual: 31700,
           assessedIncomeAnnual: 0,
           shortfallAnnual: 31700,
-          phase: "build-up",
         },
         {
           ...basePoint,
@@ -1033,7 +1036,6 @@ describe("RetirementIncomeBridgeChart", () => {
           targetIncomeAnnual: 31700,
           assessedIncomeAnnual: 0,
           shortfallAnnual: 31700,
-          phase: "build-up",
         },
         {
           ...basePoint,
@@ -1044,7 +1046,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 31700,
           assessedIncomeAnnual: 31700,
           shortfallAnnual: 0,
-          phase: "alpha-only",
         },
         {
           ...basePoint,
@@ -1055,7 +1056,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 31700,
           assessedIncomeAnnual: 31700,
           shortfallAnnual: 0,
-          phase: "alpha-state",
         },
       ],
       retirementAge: 66.75,
@@ -1066,7 +1066,7 @@ describe("RetirementIncomeBridgeChart", () => {
 
     const alphaStartX = screen
       .getByRole("slider", { name: /Start Alpha/ })
-      .closest(".bridge-milestone")
+      .closest(".retirement-income-milestone")
       ?.querySelector("line")
       ?.getAttribute("x1");
 
@@ -1086,7 +1086,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 40_000,
           assessedIncomeAnnual: 34_000,
           shortfallAnnual: 1_000,
-          phase: "alpha-only",
         },
         {
           ...basePoint,
@@ -1097,7 +1096,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 40_000,
           assessedIncomeAnnual: 34_000,
           shortfallAnnual: 1_000,
-          phase: "alpha-only",
         },
       ],
       targetIncomeAnnual: 35_000,
@@ -1107,13 +1105,16 @@ describe("RetirementIncomeBridgeChart", () => {
 
     expect(chartKey).toHaveTextContent("Estimated Income Tax");
     expect(chartKey).toHaveTextContent("Shortfall");
-    expect(chartKey.querySelector(".bridge-income-tax-key")).not.toBeNull();
-    expect(chartKey.querySelector(".bridge-shortfall-key")).not.toBeNull();
+    expect(
+      chartKey.querySelector(".retirement-income-income-tax-key")
+    ).not.toBeNull();
+    expect(
+      chartKey.querySelector(".retirement-income-shortfall-key")
+    ).not.toBeNull();
     expect(getIncomeTaxFillPath()).toBeTruthy();
-    expect(document.querySelector(".bridge-income-tax-fill")).toHaveAttribute(
-      "fill",
-      "url(#estimated-income-tax-hatch)"
-    );
+    expect(
+      document.querySelector(".retirement-income-income-tax-fill")
+    ).toHaveAttribute("fill", "url(#estimated-income-tax-hatch)");
     expect(
       document.querySelector("#estimated-income-tax-hatch")
     ).not.toHaveAttribute("patternTransform");
@@ -1156,7 +1157,7 @@ describe("RetirementIncomeBridgeChart", () => {
       ).toHaveTextContent(label);
 
       rerender(
-        <RetirementIncomeBridgeChart {...baseProps} {...{ [setting]: false }} />
+        <RetirementIncomeChart {...baseProps} {...{ [setting]: false }} />
       );
 
       expect(
@@ -1193,7 +1194,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 23000,
           assessedIncomeAnnual: 23000,
           shortfallAnnual: 8700,
-          phase: "alpha-only",
         },
         {
           ...basePoint,
@@ -1212,7 +1212,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 33000,
           assessedIncomeAnnual: 33000,
           shortfallAnnual: 0,
-          phase: "alpha-state",
         },
       ],
       hideInactiveLegendItems: true,
@@ -1249,7 +1248,6 @@ describe("RetirementIncomeBridgeChart", () => {
           totalIncomeAnnual: 8000,
           assessedIncomeAnnual: 8000,
           shortfallAnnual: 23700,
-          phase: "alpha-only",
         },
       ],
       hideInactiveLegendItems: true,
@@ -1289,7 +1287,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 12000,
           totalIncomeAnnual: 16000,
           assessedIncomeAnnual: 16000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1299,7 +1296,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 3000,
           totalIncomeAnnual: 19000,
           assessedIncomeAnnual: 19000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1308,7 +1304,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 15000,
           totalIncomeAnnual: 15000,
           assessedIncomeAnnual: 15000,
-          phase: "sipp-bridge",
         },
       ],
       showIsa: true,
@@ -1322,7 +1317,7 @@ describe("RetirementIncomeBridgeChart", () => {
     ]);
   });
 
-  it("keeps the first active bridge area at the bottom when a later source starts", () => {
+  it("keeps the first active income area at the bottom when a later source starts", () => {
     renderChart({
       data: [
         {
@@ -1332,7 +1327,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 12000,
           totalIncomeAnnual: 12000,
           assessedIncomeAnnual: 12000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1341,7 +1335,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 12000,
           totalIncomeAnnual: 12000,
           assessedIncomeAnnual: 12000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1351,7 +1344,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 12000,
           totalIncomeAnnual: 20000,
           assessedIncomeAnnual: 20000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1361,7 +1353,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 3000,
           totalIncomeAnnual: 18000,
           assessedIncomeAnnual: 18000,
-          phase: "sipp-bridge",
         },
       ],
       showIsa: true,
@@ -1412,10 +1403,10 @@ describe("RetirementIncomeBridgeChart", () => {
 
     const onChangeParameters = vi.fn();
     renderChart({ onChangeParameters });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -1451,7 +1442,7 @@ describe("RetirementIncomeBridgeChart", () => {
       pointerId: 1,
     });
 
-    const dragAgeLabel = document.querySelector(".bridge-drag-age");
+    const dragAgeLabel = document.querySelector(".retirement-income-drag-age");
     const dragAgeLabelRect = dragAgeLabel?.querySelector("rect");
 
     expect(dragAgeLabel?.textContent).toBe("57y 3m");
@@ -1535,10 +1526,10 @@ describe("RetirementIncomeBridgeChart", () => {
 
     const onChangeParameters = vi.fn();
     renderChart({ onChangeParameters });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -1611,10 +1602,10 @@ describe("RetirementIncomeBridgeChart", () => {
 
     const onChangeParameters = vi.fn();
     renderChart({ onChangeParameters });
-    const svg = document.querySelector(".bridge-chart-svg");
+    const svg = document.querySelector(".retirement-income-chart-svg");
 
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected bridge chart svg to be rendered");
+      throw new Error("Expected retirement income chart SVG to be rendered");
     }
 
     Object.defineProperty(svg, "getBoundingClientRect", {
@@ -1751,7 +1742,6 @@ describe("RetirementIncomeBridgeChart", () => {
           isaIncomeAnnual: 12000,
           totalIncomeAnnual: 12000,
           assessedIncomeAnnual: 12000,
-          phase: "isa-bridge",
         },
         {
           ...basePoint,
@@ -1760,7 +1750,6 @@ describe("RetirementIncomeBridgeChart", () => {
           isaIncomeAnnual: 12000,
           totalIncomeAnnual: 12000,
           assessedIncomeAnnual: 12000,
-          phase: "isa-bridge",
         },
         {
           ...basePoint,
@@ -1769,13 +1758,11 @@ describe("RetirementIncomeBridgeChart", () => {
           isaIncomeAnnual: 12000,
           totalIncomeAnnual: 12000,
           assessedIncomeAnnual: 12000,
-          phase: "isa-bridge",
         },
         {
           ...basePoint,
           date: "2053-06-01",
           age: 66,
-          phase: "alpha-only",
         },
       ],
       showIsa: true,
@@ -1816,7 +1803,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 15000,
           totalIncomeAnnual: 15000,
           assessedIncomeAnnual: 15000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1825,7 +1811,6 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 15000,
           totalIncomeAnnual: 15000,
           assessedIncomeAnnual: 15000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
@@ -1834,13 +1819,11 @@ describe("RetirementIncomeBridgeChart", () => {
           sippIncomeAnnual: 15000,
           totalIncomeAnnual: 15000,
           assessedIncomeAnnual: 15000,
-          phase: "sipp-bridge",
         },
         {
           ...basePoint,
           date: "2054-06-01",
           age: 67,
-          phase: "alpha-only",
         },
       ],
       showSipp: true,

@@ -12,10 +12,10 @@ import {
   type RetirementIncomeDisplay,
 } from "../projection";
 import type {
-  RetirementIncomeBridgeLimits,
-  RetirementIncomeBridgeParameters,
+  RetirementIncomeChartLimits,
+  RetirementIncomeChartParameters,
   RetirementIncomePoint,
-} from "../RetirementIncomeBridgeChart";
+} from "../RetirementIncomeChart";
 import {
   calculateStatePensionDrawAge,
   isLocalStorageEnabled,
@@ -29,8 +29,8 @@ import {
 } from "../settings";
 import {
   addYearsToIsoDate,
-  createBridgeChartLimits,
-  createBridgeChartParameters,
+  createRetirementIncomeChartLimits,
+  createRetirementIncomeChartParameters,
   createRetirementIncomeAssessmentSeries,
   createRetirementIncomeSeries,
 } from "./retirement-income";
@@ -89,10 +89,10 @@ export type ComparisonResultCache = Map<string, CachedComparisonResult>;
 
 export type BridgeAnswerResult = {
   bridgeSettings: PensionSettings;
-  bridgeChartRows: ProjectionRow[];
-  bridgeChartData: RetirementIncomePoint[];
-  bridgeChartParameters: RetirementIncomeBridgeParameters;
-  bridgeChartLimits: RetirementIncomeBridgeLimits;
+  retirementIncomeChartRows: ProjectionRow[];
+  retirementIncomeChartData: RetirementIncomePoint[];
+  retirementIncomeChartParameters: RetirementIncomeChartParameters;
+  retirementIncomeChartLimits: RetirementIncomeChartLimits;
   derivedInflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
 };
 
@@ -194,16 +194,18 @@ export function createBridgeAnswerResult(
   }
 
   const bridgeSettings = prepareBridgeProjectionSettings(settings);
-  const bridgeChartRows = createProjectionTable(bridgeSettings);
+  const retirementIncomeChartRows = createProjectionTable(bridgeSettings);
   const result = {
     bridgeSettings,
-    bridgeChartRows,
-    bridgeChartData: createRetirementIncomeSeries(
-      bridgeChartRows,
+    retirementIncomeChartRows,
+    retirementIncomeChartData: createRetirementIncomeSeries(
+      retirementIncomeChartRows,
       bridgeSettings
     ),
-    bridgeChartParameters: createBridgeChartParameters(bridgeSettings),
-    bridgeChartLimits: createBridgeChartLimits(bridgeSettings),
+    retirementIncomeChartParameters:
+      createRetirementIncomeChartParameters(bridgeSettings),
+    retirementIncomeChartLimits:
+      createRetirementIncomeChartLimits(bridgeSettings),
     derivedInflationAssumptions: deriveInflationAssumptions(settings),
   };
 

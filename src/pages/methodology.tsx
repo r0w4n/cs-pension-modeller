@@ -1131,10 +1131,12 @@ export function MethodologyPage() {
           ))}
         </ul>
         <p className="section-copy">
-          The bridge chart should be interpreted as a planning view, not a
-          guarantee. A shortfall shown in the bridge chart may mean that savings
+          The retirement income chart should be interpreted as a planning view,
+          not a guarantee. A shortfall shown in the chart may mean that savings
           are exhausted, pension income starts too late, or the income target is
-          too high for the selected assumptions.
+          too high for the selected assumptions. This chart uses the main
+          projection; it is distinct from the separate bridge analysis described
+          above.
         </p>
         <p className="section-copy">
           Where requested by the comparison view, the model tests quarter-year

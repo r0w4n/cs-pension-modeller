@@ -8,8 +8,8 @@ import {
 import { validateSettings, type PensionSettings } from "../settings";
 import {
   buildIncomeAgeRangeItems,
-  createBridgeChartLimits,
-  createBridgeChartParameters,
+  createRetirementIncomeChartLimits,
+  createRetirementIncomeChartParameters,
   createRetirementIncomeSeries,
   createTargetBasedWithdrawalPreview,
   summarizeFlexibleWithdrawalInsights,
@@ -54,12 +54,12 @@ export function useProjectionCalculations({
       ),
     [deferredSettings, flexibleWithdrawalSummary.accounts, projectionRows]
   );
-  const bridgeChartParameters = useMemo(
-    () => createBridgeChartParameters(effectiveSettings),
+  const retirementIncomeChartParameters = useMemo(
+    () => createRetirementIncomeChartParameters(effectiveSettings),
     [effectiveSettings]
   );
-  const bridgeChartLimits = useMemo(
-    () => createBridgeChartLimits(effectiveSettings),
+  const retirementIncomeChartLimits = useMemo(
+    () => createRetirementIncomeChartLimits(effectiveSettings),
     [effectiveSettings]
   );
   const derivedInflationAssumptions = useMemo(
@@ -75,8 +75,8 @@ export function useProjectionCalculations({
     : [];
 
   return {
-    bridgeChartLimits,
-    bridgeChartParameters,
+    retirementIncomeChartLimits,
+    retirementIncomeChartParameters,
     deferredSettings,
     derivedInflationAssumptions,
     incomeAgeRangeItems,

@@ -27,7 +27,8 @@ import {
   saveStoredJourneyRetirementIncomeDisplay,
   type RetirementIncomeDisplay,
 } from "../../src/app/app-persistence";
-import { applyBridgeChartParameterPatch } from "../../src/app/chart-state";
+import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
+import { getRetirementIncomeChartTitle } from "../../src/RetirementIncomeChart";
 import {
   calculateRetirementChartOverlays,
   RETIREMENT_CHART_OVERLAY_META,
@@ -101,6 +102,8 @@ type ProductAcceptanceWorld = {
   chartOverlays?: ReturnType<typeof calculateRetirementChartOverlays>;
   chartLegendSources?: RetirementChartLegendSource[];
   chartLegendKeys?: string[];
+  standardChartTitle?: string;
+  simpleChartTitle?: string;
   bridgeAnalysis?: ReturnType<typeof generateRetirementBridgeAnalysis>;
   bridgeSummary?: ReturnType<typeof generatePensionSummary>;
   bridgeFundingNeedBeforeGuaranteedIncome?: number;
@@ -987,9 +990,12 @@ Given(
 When(
   "the bridge target retirement age is changed to {float}",
   function (this: ProductAcceptanceWorld, retirementAge: number) {
-    this.settings = applyBridgeChartParameterPatch(getSettings(this), {
-      retirementAge,
-    });
+    this.settings = applyRetirementIncomeChartParameterPatch(
+      getSettings(this),
+      {
+        retirementAge,
+      }
+    );
   }
 );
 
@@ -2164,6 +2170,28 @@ Then(
       !this.chartLegendKeys?.includes(source),
       `Expected the chart key not to include ${source}`
     );
+  }
+);
+
+When(
+  "retirement income chart titles are prepared",
+  function (this: ProductAcceptanceWorld) {
+    this.standardChartTitle = getRetirementIncomeChartTitle(false);
+    this.simpleChartTitle = getRetirementIncomeChartTitle(true);
+  }
+);
+
+Then(
+  "the standard results chart title should be {string}",
+  function (this: ProductAcceptanceWorld, expectedTitle: string) {
+    assertEqual(this.standardChartTitle, expectedTitle);
+  }
+);
+
+Then(
+  "the simple results chart title should be {string}",
+  function (this: ProductAcceptanceWorld, expectedTitle: string) {
+    assertEqual(this.simpleChartTitle, expectedTitle);
   }
 );
 

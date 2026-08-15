@@ -3,8 +3,8 @@ import { useState, type ReactNode } from "react";
 import { deriveInflationAssumptions } from "../projection";
 import { createDefaultSettings, type PensionSettings } from "../settings";
 import {
-  createBridgeChartLimits,
-  createBridgeChartParameters,
+  createRetirementIncomeChartLimits,
+  createRetirementIncomeChartParameters,
 } from "../app-domains";
 import {
   JourneyStepContent,
@@ -17,23 +17,23 @@ const projectionTableMocks = vi.hoisted(() => ({
 }));
 
 const journeyContentMocks = vi.hoisted(() => ({
-  bridgeChart: vi.fn(),
+  comparisonRetirementIncomeChart: vi.fn(),
   comparisonPanel: vi.fn(),
   pensionSummary: vi.fn(),
   retirementChart: vi.fn(),
 }));
 
-vi.mock("../RetirementIncomeBridgeChart", () => ({
-  RetirementIncomeBridgeChart: (props: unknown) => {
+vi.mock("../RetirementIncomeChart", () => ({
+  RetirementIncomeChart: (props: unknown) => {
     journeyContentMocks.retirementChart(props);
-    return <div>Bridge chart</div>;
+    return <div>Retirement income chart</div>;
   },
 }));
 
 vi.mock("./chart", () => ({
-  ComparisonBridgeChart: (props: unknown) => {
-    journeyContentMocks.bridgeChart(props);
-    return <div>Comparison bridge chart</div>;
+  ComparisonRetirementIncomeChart: (props: unknown) => {
+    journeyContentMocks.comparisonRetirementIncomeChart(props);
+    return <div>Comparison retirement income chart</div>;
   },
 }));
 
@@ -90,7 +90,7 @@ describe("JourneyStepContent", () => {
 
   beforeEach(() => {
     projectionTableMocks.section.mockClear();
-    journeyContentMocks.bridgeChart.mockClear();
+    journeyContentMocks.comparisonRetirementIncomeChart.mockClear();
     journeyContentMocks.comparisonPanel.mockClear();
     journeyContentMocks.pensionSummary.mockClear();
     journeyContentMocks.retirementChart.mockClear();
@@ -446,11 +446,11 @@ describe("JourneyStepContent", () => {
   it.each([
     {
       kind: "bridge-answer" as const,
-      chartText: "Comparison bridge chart",
+      chartText: "Comparison retirement income chart",
     },
     {
       kind: "expert-answer" as const,
-      chartText: "Bridge chart",
+      chartText: "Retirement income chart",
     },
   ])(
     "places the projection basis below the results chart for $kind results",
@@ -719,8 +719,8 @@ describe("JourneyStepContent", () => {
 
     const summaryProps = journeyContentMocks.pensionSummary.mock
       .calls[0]?.[0] as Record<string, unknown>;
-    const chartProps = journeyContentMocks.bridgeChart.mock.calls[0]?.[0] as
-      Record<string, unknown> | undefined;
+    const chartProps = journeyContentMocks.comparisonRetirementIncomeChart.mock
+      .calls[0]?.[0] as Record<string, unknown> | undefined;
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
     expect(chartProps?.showFlexibleWithdrawalInsights).not.toBe(true);
@@ -748,11 +748,13 @@ describe("JourneyStepContent", () => {
     expect(screen.queryByText("Comparison panel")).not.toBeInTheDocument();
     expect(screen.getByText("Simple pension summary")).toBeInTheDocument();
     expect(screen.getByText("Simple pension details")).toBeInTheDocument();
-    expect(screen.getByText("Comparison bridge chart")).toBeInTheDocument();
+    expect(
+      screen.getByText("Comparison retirement income chart")
+    ).toBeInTheDocument();
     expect(screen.getByText("Inflation basis")).toBeInTheDocument();
-    expect(journeyContentMocks.bridgeChart).toHaveBeenCalledWith(
-      expect.objectContaining({ presentation: "simple" })
-    );
+    expect(
+      journeyContentMocks.comparisonRetirementIncomeChart
+    ).toHaveBeenCalledWith(expect.objectContaining({ presentation: "simple" }));
   });
 
   it("enables flexible withdrawal results and chart presentation for expert answers", () => {
@@ -789,8 +791,9 @@ function createViewModel(): JourneyStepViewModel {
     validationIssues: [],
     pensionSummary: null,
     retirementIncomeSeries: [],
-    bridgeChartParameters: createBridgeChartParameters(settings),
-    bridgeChartLimits: createBridgeChartLimits(settings),
+    retirementIncomeChartParameters:
+      createRetirementIncomeChartParameters(settings),
+    retirementIncomeChartLimits: createRetirementIncomeChartLimits(settings),
     derivedInflationAssumptions: deriveInflationAssumptions(settings),
     flexibleWithdrawalSummary: {
       accounts: [],

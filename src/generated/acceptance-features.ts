@@ -11291,6 +11291,33 @@ export const acceptanceFeatures = [
         ],
         examples: [],
       },
+      {
+        id: "line-209",
+        keyword: "Scenario",
+        name: "Describe the chart as the whole retirement income projection",
+        description: "",
+        tags: ["@results-chart", "@chart-title"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-210",
+            keyword: "When",
+            text: "retirement income chart titles are prepared",
+          },
+          {
+            id: "line-211",
+            keyword: "Then",
+            text: 'the standard results chart title should be "Retirement income over time"',
+          },
+          {
+            id: "line-212",
+            keyword: "And",
+            text: 'the simple results chart title should be "How your retirement income may change"',
+          },
+        ],
+        examples: [],
+      },
     ],
   },
   {

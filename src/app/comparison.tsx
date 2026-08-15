@@ -5,15 +5,15 @@ import {
 } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import type {
-  RetirementIncomeBridgeLimits,
-  RetirementIncomeBridgeParameters,
+  RetirementIncomeChartLimits,
+  RetirementIncomeChartParameters,
   RetirementIncomePoint,
-} from "../RetirementIncomeBridgeChart";
+} from "../RetirementIncomeChart";
 import {
   type ComparisonResultCache,
   type ComparisonScenario,
 } from "../app-domains";
-import { ComparisonBridgeChart, DeferredBelowFold } from "./chart";
+import { ComparisonRetirementIncomeChart, DeferredBelowFold } from "./chart";
 import { ComparisonPensionSummary } from "./comparison-pension-summary";
 import { ComparisonResults } from "./comparison-results";
 import {
@@ -49,14 +49,14 @@ export type ComparisonPanelProps = {
   onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
   derivedInflationAssumptions?: ReturnType<typeof deriveInflationAssumptions>;
   retirementIncomeSeries?: RetirementIncomePoint[];
-  bridgeChartParameters?: RetirementIncomeBridgeParameters;
-  bridgeChartLimits?: RetirementIncomeBridgeLimits;
+  retirementIncomeChartParameters?: RetirementIncomeChartParameters;
+  retirementIncomeChartLimits?: RetirementIncomeChartLimits;
   hideInactiveLegendItems?: boolean;
   hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
   showPensionSummary?: boolean;
   onChangeChartParameters?: (
-    patch: Partial<RetirementIncomeBridgeParameters>
+    patch: Partial<RetirementIncomeChartParameters>
   ) => void;
 };
 
@@ -75,8 +75,8 @@ export function ComparisonPanel({
   onRetirementIncomeDisplayChange,
   derivedInflationAssumptions,
   retirementIncomeSeries,
-  bridgeChartParameters,
-  bridgeChartLimits,
+  retirementIncomeChartParameters,
+  retirementIncomeChartLimits,
   hideInactiveLegendItems,
   hideBridgeFundingSection,
   hideFlexibleAssetsSection,
@@ -173,10 +173,10 @@ export function ComparisonPanel({
         estimatedHeight={420}
         forceRender={validationIssues.length > 0}
       >
-        <ComparisonBridgeChart
+        <ComparisonRetirementIncomeChart
           retirementIncomeSeries={retirementIncomeSeries}
-          bridgeChartParameters={bridgeChartParameters}
-          bridgeChartLimits={bridgeChartLimits}
+          retirementIncomeChartParameters={retirementIncomeChartParameters}
+          retirementIncomeChartLimits={retirementIncomeChartLimits}
           hideInactiveLegendItems={hideInactiveLegendItems}
           validationIssues={validationIssues}
           onChangeChartParameters={onChangeChartParameters}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRetirementIncomeSeries } from "../app-domains/retirement-income";
-import { applyBridgeChartParameterPatch } from "../app/chart-state";
+import { applyRetirementIncomeChartParameterPatch } from "../app/chart-state";
 import { createProjectionTable, generatePensionSummary } from "../projection";
 import { defaultSettings, type PensionSettings } from "../settings";
 
@@ -82,7 +82,7 @@ describe("Premium projection integration", () => {
   });
 
   it("keeps Premium income in the results when the graph moves its start age earlier", () => {
-    const settings = applyBridgeChartParameterPatch(
+    const settings = applyRetirementIncomeChartParameterPatch(
       createPremiumSettings({ lifeExpectancy: 60, requirementAge: 55 }),
       { premiumStartAge: 58 }
     );

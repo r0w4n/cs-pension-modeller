@@ -5,9 +5,9 @@ import {
   getSippChartAccessAgeBounds,
   getStatePensionAgeBounds,
   getUseByAgeBounds,
-} from "./bridge-chart-bounds";
+} from "./retirement-income-chart-bounds";
 
-describe("bridge-chart-bounds", () => {
+describe("retirement-income-chart-bounds", () => {
   it("uses the later of SIPP access age and retirement age for chart SIPP starts", () => {
     expect(
       getEarliestSippChartStartAge({

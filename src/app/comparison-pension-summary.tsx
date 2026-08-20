@@ -1,15 +1,13 @@
 import type { RetirementIncomeDisplay } from "../projection";
 import {
   buildRetirementOutcomeBanner,
-  type ComparisonResult,
   type RetirementOutcomeBanner,
 } from "../app-domains";
+import type { ComparisonResult } from "../result-projection/comparison-result";
 import type { IncomeAgeRangeItem } from "../result-projection/income-age-ranges";
-import type {
-  FlexibleWithdrawalSummary,
-  TargetBasedWithdrawalPreview,
-} from "../result-projection/flexible-withdrawals";
-import { formatCurrencyDetailed } from "../result-projection/shared";
+import type { FlexibleWithdrawalSummary } from "../result-projection/flexible-withdrawals";
+import type { TargetBasedWithdrawalPreview } from "../calculation/target-based-withdrawal-previews";
+import { formatCurrencyDetailed } from "../result-projection/formatting";
 import {
   AssumptionsVersionStrip,
   RetirementIncomeDisplayToggle,

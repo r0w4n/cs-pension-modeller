@@ -3,7 +3,8 @@ import { useState } from "react";
 import {
   createComparisonResult,
   type ComparisonScenario,
-} from "../app-domains";
+} from "../result-projection/comparison-result";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import { buildIncomeAgeRangeItems } from "../result-projection/income-age-ranges";
 import {
   createDefaultSettings,
@@ -169,7 +170,13 @@ describe("comparison state scenario actions", () => {
       currentResult: null,
       currentSettingsSignature: "different-current-plan",
       retirementIncomeDisplay: "annual",
-      savedBaseResults: [createComparisonResult(savedScenario, "")],
+      savedBaseResults: [
+        createComparisonResult(
+          savedScenario,
+          "",
+          calculateRetirementPlan(savedScenario.settings)
+        ),
+      ],
     });
 
     expect(panel.incomeAgeRangeItems).toEqual(

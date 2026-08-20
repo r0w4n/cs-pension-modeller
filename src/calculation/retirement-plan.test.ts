@@ -17,6 +17,10 @@ describe("calculateRetirementPlan", () => {
     expect(firstResult.summary).toBeDefined();
     expect(firstResult.assessment).toBeDefined();
     expect(firstResult.bridgeFundingEstimate).toBeDefined();
+    expect(firstResult.targetBasedWithdrawalPreviews).toBeDefined();
+    expect(typeof firstResult.statePensionAssumptionAffectsTarget).toBe(
+      "boolean"
+    );
     expect(firstResult.bridgeFundingEstimate.target.retirementAge).toBe(
       settings.requirementAge
     );

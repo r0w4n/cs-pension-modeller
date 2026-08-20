@@ -4,7 +4,7 @@ import {
   formatCurrencyDetailed,
   formatDecimalAge,
   formatShortfallOrSurplus,
-} from "./shared";
+} from "./formatting";
 
 export type IncomeAgeRangeItem = {
   ageRange: string;

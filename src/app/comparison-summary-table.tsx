@@ -1,9 +1,9 @@
 import {
   buildComparisonTableRows,
   type ComparisonCellValue,
-  type ComparisonResult,
   type ComparisonTableRow,
 } from "../app-domains";
+import type { ComparisonResult } from "../result-projection/comparison-result";
 import type { RetirementIncomeDisplay } from "../projection";
 import { useMobileDateDropdowns } from "./form-fields";
 import { ProjectionTableFrame, type TableColumn } from "./projection-table";

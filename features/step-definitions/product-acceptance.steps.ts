@@ -13,10 +13,13 @@ import {
   buildComparisonStatusItems,
   buildRetirementOutcomeBanner,
   buildComparisonTableRows,
-  createComparisonResult,
-  type ComparisonResult,
   type ComparisonTableRow,
 } from "../../src/app-domains/comparison";
+import {
+  createComparisonResult as projectComparisonResult,
+  type ComparisonResult,
+  type ComparisonScenario,
+} from "../../src/result-projection/comparison-result";
 import {
   loadAcknowledgementState,
   loadStoredAppMode,
@@ -63,6 +66,17 @@ import {
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
+
+function createComparisonResult(
+  scenario: ComparisonScenario,
+  currentSettingsSignature: string
+) {
+  return projectComparisonResult(
+    scenario,
+    currentSettingsSignature,
+    calculateRetirementPlan(scenario.settings)
+  );
+}
 
 type ProductAcceptanceWorld = {
   precision?: number;

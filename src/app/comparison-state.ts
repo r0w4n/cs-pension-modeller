@@ -5,12 +5,14 @@ import type { RetirementIncomePoint } from "../result-projection/retirement-inco
 import {
   buildComparisonStatusItems,
   calculateComparisonInsights,
+  type ComparisonInsights,
+} from "../app-domains";
+import {
   clonePensionSettings,
   getSettingsSignature,
-  type ComparisonInsights,
   type ComparisonResult,
   type ComparisonScenario,
-} from "../app-domains";
+} from "../result-projection/comparison-result";
 import {
   buildIncomeAgeRangeItems,
   type IncomeAgeRangeItem,

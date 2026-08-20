@@ -2,10 +2,7 @@ import type { RetirementIncomeDisplay } from "../projection";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { PensionSettings, RetirementIncomeTargetBasis } from "../settings";
 import { buildIncomeAgeRangeItems } from "./income-age-ranges";
-import {
-  createTargetBasedWithdrawalPreview,
-  summarizeFlexibleWithdrawalInsights,
-} from "./flexible-withdrawals";
+import { summarizeFlexibleWithdrawalInsights } from "./flexible-withdrawals";
 import {
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
@@ -22,14 +19,7 @@ export function projectRetirementPlanResult(result: RetirementPlanResult) {
   return {
     retirementIncomeSeries: createRetirementIncomeSeries(rows, settings),
     flexibleWithdrawalSummary,
-    targetBasedWithdrawalPreviews: flexibleWithdrawalSummary.accounts.map(
-      (account) =>
-        createTargetBasedWithdrawalPreview({
-          accountId: account.accountId,
-          currentRows: rows,
-          settings,
-        })
-    ),
+    targetBasedWithdrawalPreviews: result.targetBasedWithdrawalPreviews,
   };
 }
 

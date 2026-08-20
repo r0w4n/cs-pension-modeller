@@ -10,7 +10,7 @@ import type {
   RetirementIncomeChartParameters,
   RetirementIncomePoint,
 } from "../result-projection/retirement-income-chart-model";
-import { type ComparisonScenario } from "../app-domains";
+import type { ComparisonScenario } from "../result-projection/comparison-result";
 import type { ComparisonResultCache } from "./comparison-result-cache";
 import { DeferredBelowFold } from "./deferred-below-fold";
 import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";

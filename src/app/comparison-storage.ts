@@ -8,7 +8,7 @@ import {
 import {
   clonePensionSettings,
   type ComparisonScenario,
-} from "../app-domains/comparison";
+} from "../result-projection/comparison-result";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";

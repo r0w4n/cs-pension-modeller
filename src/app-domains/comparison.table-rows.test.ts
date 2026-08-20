@@ -4,11 +4,22 @@ import {
   buildComparisonStatusItems,
   buildComparisonTableRows,
   buildRetirementOutcomeBanner,
-  createComparisonResult,
 } from "./comparison";
+import {
+  createComparisonResult as projectComparisonResult,
+  type ComparisonScenario,
+} from "../result-projection/comparison-result";
 import { createDefaultSettings } from "../settings";
 import { createRetirementIncomeSeries } from "../result-projection/retirement-income";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
+
+function createComparisonResult(
+  scenario: ComparisonScenario,
+  currentSettingsSignature: string,
+  plan = calculateRetirementPlan(scenario.settings)
+) {
+  return projectComparisonResult(scenario, currentSettingsSignature, plan);
+}
 
 describe("comparison table rows", () => {
   it("reuses the canonical bridge diagnostic from a precomputed plan", () => {

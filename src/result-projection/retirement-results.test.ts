@@ -17,6 +17,9 @@ describe("projectRetirementPlanResult", () => {
 
     expect(firstProjection).toEqual(secondProjection);
     expect(firstProjection.retirementIncomeSeries.length).toBeGreaterThan(0);
+    expect(firstProjection.targetBasedWithdrawalPreviews).toBe(
+      result.targetBasedWithdrawalPreviews
+    );
     expect(result.settings).toBe(settings);
     expect(projectRetirementPlanControls(settings)).toEqual(
       projectRetirementPlanControls(settings)

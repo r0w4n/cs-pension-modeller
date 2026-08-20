@@ -234,16 +234,21 @@ The concrete layer responsibilities are:
 - [`src/calculation/retirement-plan.ts`](src/calculation/retirement-plan.ts)
   is the canonical calculation entry point. It returns one
   `RetirementPlanResult` containing validation, monthly rows, pension summary,
-  inflation assumptions, plan assessment, and the shared bridge funding
-  diagnostic. Comparison and result projections consume that diagnostic rather
-  than starting a separate bridge projection.
+  inflation assumptions, plan assessment, the shared bridge funding diagnostic,
+  State Pension sensitivity, and target-based withdrawal previews. Comparison
+  and result projections consume those canonical diagnostics rather than
+  starting alternate pension projections.
 - [`src/calculation/retirement-income-assessment.ts`](src/calculation/retirement-income-assessment.ts)
   derives the calculation-owned income assessment used by the canonical plan
-  assessment. It has no dependency on chart or presentation adapters.
+  assessment. Added-pension goal modelling and withdrawal-strategy previews are
+  also calculation-owned. These functions have no dependency on chart or
+  presentation adapters.
 - [`src/result-projection/`](src/result-projection) turns canonical results into
   semantic chart series, chart limits, withdrawal insights, formatted age
-  ranges, summary, and comparison data. The stateless journey and form adapters
-  in [`src/app-domains/`](src/app-domains) sit downstream; neither layer owns
+  ranges, summary, and comparison data. Comparison-result construction is
+  separated from the larger comparison-table adapter, and shared output
+  formatting has an explicit module. The stateless journey and form adapters in
+  [`src/app-domains/`](src/app-domains) sit downstream; neither layer owns
   browser state or JSX. Callers use the owning module directly rather than
   forwarding modules that obscure ownership.
 - The retirement-income chart follows the same boundary internally:
@@ -258,18 +263,20 @@ The concrete layer responsibilities are:
 - [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
   configuration for the simplified, early-retirement, and expert journeys. It
   selects shared fields, labels, help text, update behaviour, and result
-  sections; journey identity is not passed into the calculation engine.
+  sections. Settings-group visibility remains alongside this journey
+  presentation configuration; journey identity is not passed into the
+  calculation engine.
 - [`src/pages/`](src/pages) contains the static footer pages, and [`e2e/`](e2e)
   contains browser journey, accessibility, and production smoke checks.
 
-The FCIS boundary has three practical rules:
+The FCIS boundary has four practical rules:
 
 1. Effects and mutable state flow inward only through `src/app/`; the functional
    core does not read browser state, generate IDs, track analytics, or mutate a
    shared cache.
 2. The calculation engine produces a canonical result once for the active
-   settings. Result projection consumes that result rather than recalculating
-   pension rows from a component.
+   settings. Result projection consumes that result and never starts a pension
+   projection or alternate-strategy calculation.
 3. Result projection returns values and presentation semantics, not React
    elements. Journeys and result components can vary layout and visibility
    without introducing journey-specific financial behaviour.

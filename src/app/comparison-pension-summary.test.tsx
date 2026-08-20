@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { ComparisonResult } from "../app-domains";
+import type { ComparisonResult } from "../result-projection/comparison-result";
 import { defaultSettings } from "../settings";
 import {
   PensionSummarySection,

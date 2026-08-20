@@ -11,7 +11,8 @@ import {
 import {
   createComparisonResult,
   type ComparisonScenario,
-} from "../app-domains/comparison";
+} from "../result-projection/comparison-result";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";
@@ -112,7 +113,13 @@ describe("comparison scenario storage", () => {
 
     expect(loadedScenario?.settings.classicPensionDrawAge).toBe(60);
     expect(loadedScenario?.settings.classicPlusPensionDrawAge).toBe(60);
-    expect(() => createComparisonResult(loadedScenario, "")).not.toThrow();
+    expect(() =>
+      createComparisonResult(
+        loadedScenario,
+        "",
+        calculateRetirementPlan(loadedScenario.settings)
+      )
+    ).not.toThrow();
   });
 
   it("returns an empty list for corrupted storage or when local storage is disabled", () => {

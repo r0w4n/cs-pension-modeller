@@ -7,7 +7,7 @@ import type { PensionSettings, PensionValidationIssue } from "../settings";
 import {
   formatModelledReturn,
   formatPercent,
-} from "../result-projection/shared";
+} from "../result-projection/formatting";
 import { resolveAppBaseHref } from "./app-base";
 
 type ResultsSummarySectionProps = {

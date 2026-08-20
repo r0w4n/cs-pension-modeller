@@ -4,7 +4,7 @@ import {
   type CachedComparisonResult,
   type ComparisonResult,
   type ComparisonScenario,
-} from "../app-domains/comparison";
+} from "../result-projection/comparison-result";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import {
   getCachedRetirementPlanResult,

@@ -10,11 +10,11 @@ import {
   saveSettingsByJourney,
   type PensionSettings,
 } from "../settings";
+import { DEFAULT_JOURNEY_SETTINGS_PRESENTATION } from "../app-domains";
 import {
   clonePensionSettings,
-  DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
   getSettingsSignature,
-} from "../app-domains";
+} from "../result-projection/comparison-result";
 import {
   loadAcknowledgementState,
   loadStoredGuidanceNotes,

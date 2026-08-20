@@ -19,11 +19,6 @@ import {
 } from "../settings";
 import {
   buildComparisonStatusItems,
-  calculateAddedPensionMonthlyIncome,
-  createAddedPensionGoalBasis,
-  estimateAddedPensionMonthlyContribution,
-  type ComparisonResult,
-  type ComparisonScenario,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyCurrencyFieldPresentation,
@@ -33,12 +28,21 @@ import {
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "../app-domains";
+import type {
+  ComparisonResult,
+  ComparisonScenario,
+} from "../result-projection/comparison-result";
+import {
+  calculateAddedPensionMonthlyIncome,
+  createAddedPensionGoalBasis,
+  estimateAddedPensionMonthlyContribution,
+} from "../calculation/added-pension-goal";
 import type { IncomeAgeRangeItem } from "../result-projection/income-age-ranges";
 import {
   getWithdrawalStrategyFieldId,
   type FlexibleWithdrawalSummary,
-  type TargetBasedWithdrawalPreview,
 } from "../result-projection/flexible-withdrawals";
+import type { TargetBasedWithdrawalPreview } from "../calculation/target-based-withdrawal-previews";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { ComparisonResultCache } from "./comparison-result-cache";
 import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";

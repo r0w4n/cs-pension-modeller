@@ -2,12 +2,12 @@ import {
   formatCapitalPreservation,
   formatTargetMissDuration,
   type ComparisonInsights,
-  type ComparisonResult,
 } from "../app-domains";
+import type { ComparisonResult } from "../result-projection/comparison-result";
 import {
   formatCurrencyDetailed,
   formatDecimalAge,
-} from "../result-projection/shared";
+} from "../result-projection/formatting";
 import type { RetirementIncomeDisplay } from "../projection";
 import { ComparisonSummaryTable } from "./comparison-summary-table";
 import { SummarySection } from "./results-summary";

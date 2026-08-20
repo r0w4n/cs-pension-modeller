@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
-import { getSettingsSignature } from "../app-domains";
+import { getSettingsSignature } from "../result-projection/comparison-result";
 import { createDefaultSettings } from "../settings";
 import {
   getCachedComparisonResult,

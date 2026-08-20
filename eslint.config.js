@@ -212,7 +212,15 @@ export default tseslint.config(
       "no-restricted-imports": [
         "error",
         {
-          paths: functionalCoreRestrictedImportPaths,
+          paths: [
+            ...functionalCoreRestrictedImportPaths,
+            {
+              name: "../projection",
+              importNames: ["createProjectionTable"],
+              message:
+                "Result projection must consume canonical calculation output rather than starting a pension projection.",
+            },
+          ],
           patterns: [
             ...imperativeShellImportPatterns,
             {
@@ -221,6 +229,39 @@ export default tseslint.config(
                 "FCIS result projection must not depend on presentation-domain adapters.",
             },
           ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/app-domains/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            ...functionalCoreRestrictedImportPaths,
+            {
+              name: "../projection",
+              importNames: ["createProjectionTable", "generatePensionSummary"],
+              message:
+                "Presentation-domain adapters must consume calculation or result-projection outputs rather than start pension projections.",
+            },
+            {
+              name: "../calculation/retirement-plan",
+              importNames: ["calculateRetirementPlan"],
+              message:
+                "The application shell owns canonical plan calculation orchestration.",
+            },
+            {
+              name: "../calculation/retirement-plan-assessment",
+              importNames: ["assessRetirementPlan"],
+              message:
+                "Presentation-domain adapters must consume canonical plan assessments.",
+            },
+          ],
+          patterns: imperativeShellImportPatterns,
         },
       ],
     },

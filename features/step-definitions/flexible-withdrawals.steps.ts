@@ -7,13 +7,15 @@ import {
 } from "../../src/app-domains";
 import { createRetirementIncomeSeries } from "../../src/result-projection/retirement-income";
 import {
-  createTargetBasedWithdrawalPreview,
+  calculateTargetBasedWithdrawalPreview,
+  type TargetBasedWithdrawalPreview,
+} from "../../src/calculation/target-based-withdrawal-previews";
+import {
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
   reorderFlexibleWithdrawalAccounts,
   shouldShowFlexibleWithdrawalPriority,
   summarizeFlexibleWithdrawalInsights,
-  type TargetBasedWithdrawalPreview,
 } from "../../src/result-projection/flexible-withdrawals";
 import {
   createProjectionTable,
@@ -508,7 +510,7 @@ When(
   function (this: FlexibleWithdrawalWorld) {
     const settings = getSettings(this);
     const rows = createProjectionTable(settings);
-    this.targetBasedPreview = createTargetBasedWithdrawalPreview({
+    this.targetBasedPreview = calculateTargetBasedWithdrawalPreview({
       accountId: "isa",
       currentRows: rows,
       settings,

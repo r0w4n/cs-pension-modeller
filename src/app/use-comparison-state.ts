@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ComparisonScenario } from "../app-domains";
+import type { ComparisonScenario } from "../result-projection/comparison-result";
 import type { ComparisonResultCache } from "./comparison-result-cache";
 import type { RetirementPlanResultCache } from "./retirement-plan-result-cache";
 import {

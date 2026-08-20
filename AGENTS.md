@@ -41,20 +41,20 @@ Do not duplicate full feature or scheme inventories here.
 
 This map is for orientation; the README architecture section is canonical:
 
-| FCIS layer / area                     | Responsibility                                                          |
-| ------------------------------------- | ----------------------------------------------------------------------- |
-| `src/main.tsx`, `src/App.tsx`, UI     | Presentation and top-level composition                                  |
-| `src/app/`                            | Imperative shell: application state, orchestration, effects and caches  |
-| `src/settings/`                       | Canonical settings, validation, normalization and schema migration      |
-| `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                             |
-| `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations           |
-| `src/calculation/`                    | Canonical result, plan assessment and calculation-owned income series   |
-| `src/result-projection/`              | Pure semantic chart, withdrawal, age-range and result projections       |
-| `src/app-domains/`                    | Downstream journey, form and comparison presentation adapters           |
-| `src/app/retirement-income-chart-*`   | Shared chart presentation adapters, controls and accessible equivalents |
-| `src/data/`                           | Pension factor tables and source metadata                               |
-| `features/`                           | Gherkin specifications and step definitions                             |
-| `e2e/`                                | Browser journeys, accessibility and production smoke tests              |
+| FCIS layer / area                     | Responsibility                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `src/main.tsx`, `src/App.tsx`, UI     | Presentation and top-level composition                                            |
+| `src/app/`                            | Imperative shell: application state, orchestration, effects and caches            |
+| `src/settings/`                       | Canonical settings, validation, normalization and schema migration                |
+| `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                                       |
+| `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations                     |
+| `src/calculation/`                    | Canonical result, assessments, diagnostics and alternate-strategy calculations    |
+| `src/result-projection/`              | Pure semantic chart, withdrawal, age-range, formatting and comparison projections |
+| `src/app-domains/`                    | Downstream journey, form and comparison presentation adapters                     |
+| `src/app/retirement-income-chart-*`   | Shared chart presentation adapters, controls and accessible equivalents           |
+| `src/data/`                           | Pension factor tables and source metadata                                         |
+| `features/`                           | Gherkin specifications and step definitions                                       |
+| `e2e/`                                | Browser journeys, accessibility and production smoke tests                        |
 
 ### FCIS Architecture Rules
 
@@ -68,7 +68,8 @@ Engine -> Result Projection -> Presentation`.
   or mutable application state from the functional core.
 - Use `calculateRetirementPlan` as the canonical active-plan calculation entry
   point. Extend `RetirementPlanResult` deliberately when downstream projections
-  need more domain data; do not recalculate pension rows in a component.
+  need more domain data; do not recalculate pension rows in a component or
+  result-projection function.
 - Project canonical results into semantic values before rendering. Result
   projections must not return JSX or `ReactNode` values.
 - Keep source dependencies pointing inward: calculation must not import

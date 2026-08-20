@@ -1,6 +1,4 @@
 import { formatModelAgeCompact, type PensionSettings } from "../settings";
-import { addYearsToIsoDate } from "../model-date";
-import { clampNumber } from "../number";
 
 export function formatDate(value: string) {
   if (!value) {
@@ -69,64 +67,3 @@ export function formatDecimalAge(age: number) {
 export function formatAgeValue(value: number) {
   return formatModelAgeCompact(value);
 }
-
-export function isSettingsGroupVisible(
-  groupId: string,
-  settings: PensionSettings
-) {
-  if (groupId === "alpha") {
-    return settings.showAlpha;
-  }
-
-  if (groupId === "nuvos") {
-    return settings.showNuvos;
-  }
-
-  if (groupId === "classic") {
-    return settings.showClassic;
-  }
-
-  if (groupId === "classic-plus") {
-    return settings.showClassicPlus;
-  }
-
-  if (groupId === "premium") {
-    return settings.showPremium;
-  }
-
-  if (groupId === "state") {
-    return settings.showStatePension;
-  }
-
-  if (groupId === "sipp") {
-    return settings.showSipp;
-  }
-
-  if (groupId === "cs-avc") {
-    return settings.showCsAvc;
-  }
-
-  if (groupId === "isa") {
-    return settings.showIsa;
-  }
-
-  if (groupId === "lisa") {
-    return settings.showLisa;
-  }
-
-  if (groupId === "additional-income") {
-    return settings.showAdditionalGuaranteedIncome;
-  }
-
-  if (groupId === "tax") {
-    return settings.taxationEnabled;
-  }
-
-  if (groupId === "partial-retirement") {
-    return settings.partialRetirementEnabled;
-  }
-
-  return true;
-}
-
-export { addYearsToIsoDate, clampNumber };

@@ -5,13 +5,6 @@ export {
 } from "./app-domains/alpha";
 
 export {
-  calculateAddedPensionMonthlyIncome,
-  createAddedPensionGoalBasis,
-  estimateAddedPensionMonthlyContribution,
-  type AddedPensionGoalBasis,
-} from "./app-domains/added-pension-goal";
-
-export {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
@@ -35,15 +28,10 @@ export {
   buildComparisonTableRows,
   buildRetirementOutcomeBanner,
   calculateComparisonInsights,
-  clonePensionSettings,
-  createComparisonResult,
   formatCapitalPreservation,
   formatTargetMissDuration,
-  getSettingsSignature,
   type ComparisonInsights,
   type ComparisonCellValue,
-  type ComparisonResult,
-  type ComparisonScenario,
   type ComparisonTableRow,
   type RetirementOutcomeBanner,
   type RetirementOutcomeStatus,

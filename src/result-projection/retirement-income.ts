@@ -24,7 +24,6 @@ import {
   getUseByAgeBounds,
 } from "./retirement-income-chart-bounds";
 import { addYearsToIsoDate } from "../model-date";
-import { clampNumber } from "../number";
 import { getSpendingSmileStartAgeBounds } from "../spending-smile";
 import { createRetirementIncomeAssessmentSeries } from "../calculation/retirement-income-assessment";
 
@@ -493,9 +492,4 @@ function calculateCurrentPlanningAge(settings: PensionSettings) {
   );
 }
 
-export {
-  createRetirementIncomeAssessmentSeries,
-  addYearsToIsoDate,
-  calculateCurrentPlanningAge,
-  clampNumber,
-};
+export { calculateCurrentPlanningAge };

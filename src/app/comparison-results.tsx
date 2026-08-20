@@ -1,11 +1,13 @@
 import {
   formatCapitalPreservation,
-  formatCurrencyDetailed,
-  formatDecimalAge,
   formatTargetMissDuration,
   type ComparisonInsights,
   type ComparisonResult,
 } from "../app-domains";
+import {
+  formatCurrencyDetailed,
+  formatDecimalAge,
+} from "../result-projection/shared";
 import type { RetirementIncomeDisplay } from "../projection";
 import { ComparisonSummaryTable } from "./comparison-summary-table";
 import { SummarySection } from "./results-summary";

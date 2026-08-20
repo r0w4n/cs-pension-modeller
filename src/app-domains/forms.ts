@@ -22,7 +22,7 @@ import {
 } from "./lisa";
 import { isNuvosPensionIncreaseField } from "./nuvos";
 import { isPartialRetirementField } from "./partial-retirement";
-import { calculateCurrentPlanningAge } from "./retirement-income";
+import { calculateCurrentPlanningAge } from "../result-projection/retirement-income";
 import {
   getSippEffectiveRangeField,
   isSippFieldDisabled,

@@ -48,9 +48,9 @@ This map is for orientation; the README architecture section is canonical:
 | `src/settings/`                       | Canonical settings, validation, normalization and schema migration      |
 | `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                             |
 | `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations           |
-| `src/calculation/`                    | Canonical `RetirementPlanResult` calculation and assessment             |
-| `src/result-projection/`              | Pure projection, including chart contracts, series and layout data      |
-| `src/app-domains/`                    | Stateless journey, form, chart and comparison adapters                  |
+| `src/calculation/`                    | Canonical result, plan assessment and calculation-owned income series   |
+| `src/result-projection/`              | Pure semantic chart, withdrawal, age-range and result projections       |
+| `src/app-domains/`                    | Downstream journey, form and comparison presentation adapters           |
 | `src/app/retirement-income-chart-*`   | Shared chart presentation adapters, controls and accessible equivalents |
 | `src/data/`                           | Pension factor tables and source metadata                               |
 | `features/`                           | Gherkin specifications and step definitions                             |
@@ -71,6 +71,9 @@ Engine -> Result Projection -> Presentation`.
   need more domain data; do not recalculate pension rows in a component.
 - Project canonical results into semantic values before rendering. Result
   projections must not return JSX or `ReactNode` values.
+- Keep source dependencies pointing inward: calculation must not import
+  `result-projection` or `app-domains`, and result projection must not import
+  `app-domains`. The ESLint boundary rules are mandatory.
 - Treat journeys as presentation configurations only. A journey may choose
   shared fields, copy, ordering, defaults, and visible result components, but it
   must not have a distinct pension or withdrawal calculation path.

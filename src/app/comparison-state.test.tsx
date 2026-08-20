@@ -1,10 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { useState } from "react";
 import {
-  buildIncomeAgeRangeItems,
   createComparisonResult,
   type ComparisonScenario,
 } from "../app-domains";
+import { buildIncomeAgeRangeItems } from "../result-projection/income-age-ranges";
 import {
   createDefaultSettings,
   type PensionSettings,

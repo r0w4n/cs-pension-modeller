@@ -2,11 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { deriveInflationAssumptions } from "../projection";
 import { createDefaultSettings, type PensionSettings } from "../settings";
+import { createComparisonResult } from "../app-domains";
 import {
-  createComparisonResult,
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
-} from "../app-domains";
+} from "../result-projection/retirement-income";
 import {
   JourneyStepContent,
   type JourneyStepViewModel,

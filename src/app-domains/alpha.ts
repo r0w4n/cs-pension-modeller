@@ -8,7 +8,7 @@ import {
   calculateMinimumPensionAccessAge,
   type PensionSettings,
 } from "../settings";
-import { calculateCurrentPlanningAge } from "./retirement-income";
+import { calculateCurrentPlanningAge } from "../result-projection/retirement-income";
 
 const ALPHA_EPA_FIELD_IDS = new Set<FieldDefinition["id"]>([
   "alphaEpaYearsBeforeNpa",

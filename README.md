@@ -237,11 +237,15 @@ The concrete layer responsibilities are:
   inflation assumptions, plan assessment, and the shared bridge funding
   diagnostic. Comparison and result projections consume that diagnostic rather
   than starting a separate bridge projection.
-- [`src/result-projection/`](src/result-projection) and the stateless adapters
-  in [`src/app-domains/`](src/app-domains) turn canonical results into semantic
-  chart, summary, comparison, and form data. They do not own browser state or
-  JSX; presentation components decide how semantic values and tones are
-  rendered.
+- [`src/calculation/retirement-income-assessment.ts`](src/calculation/retirement-income-assessment.ts)
+  derives the calculation-owned income assessment used by the canonical plan
+  assessment. It has no dependency on chart or presentation adapters.
+- [`src/result-projection/`](src/result-projection) turns canonical results into
+  semantic chart series, chart limits, withdrawal insights, formatted age
+  ranges, summary, and comparison data. The stateless journey and form adapters
+  in [`src/app-domains/`](src/app-domains) sit downstream; neither layer owns
+  browser state or JSX. Callers use the owning module directly rather than
+  forwarding modules that obscure ownership.
 - The retirement-income chart follows the same boundary internally:
   [`src/result-projection/retirement-income-chart-model.ts`](src/result-projection/retirement-income-chart-model.ts)
   defines its semantic contract and
@@ -269,6 +273,10 @@ The FCIS boundary has three practical rules:
 3. Result projection returns values and presentation semantics, not React
    elements. Journeys and result components can vary layout and visibility
    without introducing journey-specific financial behaviour.
+4. Source dependencies point inward: calculation code cannot import result or
+   presentation adapters, and result projection cannot import `app-domains`.
+   ESLint enforces these boundaries even though result data flows outward to
+   presentation.
 
 The journey configuration can present the same field differently without
 duplicating its setting or calculation. It can also turn shared results

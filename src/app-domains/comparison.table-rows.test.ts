@@ -7,7 +7,7 @@ import {
   createComparisonResult,
 } from "./comparison";
 import { createDefaultSettings } from "../settings";
-import { createRetirementIncomeSeries } from "./retirement-income";
+import { createRetirementIncomeSeries } from "../result-projection/retirement-income";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
 
 describe("comparison table rows", () => {

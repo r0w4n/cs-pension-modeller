@@ -1,9 +1,6 @@
 import type { PensionSettings } from "../settings";
-import {
-  formatCurrencyDetailed,
-  type ComparisonResult,
-  type ComparisonScenario,
-} from "../app-domains";
+import { type ComparisonResult, type ComparisonScenario } from "../app-domains";
+import { formatCurrencyDetailed } from "../result-projection/shared";
 
 export function SavedScenariosSection({
   scenarios,

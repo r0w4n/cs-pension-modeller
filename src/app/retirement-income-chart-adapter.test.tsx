@@ -5,7 +5,7 @@ import { createDefaultSettings } from "../settings";
 import {
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
-} from "../app-domains";
+} from "../result-projection/retirement-income";
 
 const chartAdapterMocks = vi.hoisted(() => ({
   retirementIncomeChart: vi.fn(),

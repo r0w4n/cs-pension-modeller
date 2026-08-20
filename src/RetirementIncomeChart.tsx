@@ -25,7 +25,7 @@ import {
   type SmilePercentageField,
 } from "./spending-smile";
 import { clampNumber, snapToLimit } from "./app/chart-drag-constraints";
-import type { ResidualFlexibleFundInsight } from "./app-domains/flexible-withdrawals";
+import type { ResidualFlexibleFundInsight } from "./result-projection/flexible-withdrawals";
 import {
   calculateRetirementChartOverlays,
   RETIREMENT_CHART_OVERLAY_META,

@@ -1,16 +1,16 @@
 import type { RetirementIncomeDisplay } from "../projection";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { PensionSettings, RetirementIncomeTargetBasis } from "../settings";
-import { buildIncomeAgeRangeItems } from "../app-domains/comparison";
+import { buildIncomeAgeRangeItems } from "./income-age-ranges";
 import {
   createTargetBasedWithdrawalPreview,
   summarizeFlexibleWithdrawalInsights,
-} from "../app-domains/flexible-withdrawals";
+} from "./flexible-withdrawals";
 import {
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
   createRetirementIncomeSeries,
-} from "../app-domains/retirement-income";
+} from "./retirement-income";
 
 export function projectRetirementPlanResult(result: RetirementPlanResult) {
   const { rows, settings } = result;

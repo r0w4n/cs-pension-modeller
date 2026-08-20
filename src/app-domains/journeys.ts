@@ -7,7 +7,7 @@ import {
 } from "../fieldDefinitions";
 import { knowledgeLinks } from "../knowledgeLinks";
 import type { PensionSettings } from "../settings";
-import { isSettingsGroupVisible } from "./shared";
+import { isSettingsGroupVisible } from "../result-projection/shared";
 
 export const OPTIONAL_SECTION_TOGGLES = [
   {

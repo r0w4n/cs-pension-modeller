@@ -4,7 +4,7 @@ import type {
   RetirementIncomeChartParameters,
   RetirementIncomePoint,
 } from "../result-projection/retirement-income-chart-model";
-import type { ResidualFlexibleFundInsight } from "../app-domains/flexible-withdrawals";
+import type { ResidualFlexibleFundInsight } from "../result-projection/flexible-withdrawals";
 import type { PensionValidationIssue } from "../settings";
 
 export type RetirementIncomeChartPresentation =

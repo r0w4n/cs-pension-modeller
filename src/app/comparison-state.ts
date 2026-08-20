@@ -4,15 +4,17 @@ import type { RetirementIncomeDisplay } from "../projection";
 import type { RetirementIncomePoint } from "../result-projection/retirement-income-chart-model";
 import {
   buildComparisonStatusItems,
-  buildIncomeAgeRangeItems,
   calculateComparisonInsights,
   clonePensionSettings,
   getSettingsSignature,
   type ComparisonInsights,
   type ComparisonResult,
   type ComparisonScenario,
-  type IncomeAgeRangeItem,
 } from "../app-domains";
+import {
+  buildIncomeAgeRangeItems,
+  type IncomeAgeRangeItem,
+} from "../result-projection/income-age-ranges";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import { getCachedComparisonResult } from "./comparison-result-cache";

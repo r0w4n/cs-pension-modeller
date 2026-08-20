@@ -1,4 +1,6 @@
 import { formatModelAgeCompact, type PensionSettings } from "../settings";
+import { addYearsToIsoDate } from "../model-date";
+import { clampNumber } from "../number";
 
 export function formatDate(value: string) {
   if (!value) {
@@ -50,25 +52,6 @@ export function formatModelledReturn(
   return projectionBasis === "real"
     ? `${formatPercent(rate)} real return`
     : formatPercent(rate);
-}
-
-export function addYearsToIsoDate(value: string, years: number) {
-  const [year, month, day] = value.split("-").map(Number);
-  const wholeYears = Math.floor(years);
-  const remainingMonths = Math.round((years - wholeYears) * 12);
-  const nextDate = new Date(
-    Date.UTC(year + wholeYears, month - 1 + remainingMonths, day)
-  );
-
-  return [
-    nextDate.getUTCFullYear(),
-    String(nextDate.getUTCMonth() + 1).padStart(2, "0"),
-    String(nextDate.getUTCDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-export function clampNumber(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 export function formatAge(years: number, months: number) {
@@ -145,3 +128,5 @@ export function isSettingsGroupVisible(
 
   return true;
 }
+
+export { addYearsToIsoDate, clampNumber };

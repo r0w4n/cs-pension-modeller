@@ -22,12 +22,8 @@ import {
   calculateAddedPensionMonthlyIncome,
   createAddedPensionGoalBasis,
   estimateAddedPensionMonthlyContribution,
-  getWithdrawalStrategyFieldId,
   type ComparisonResult,
   type ComparisonScenario,
-  type IncomeAgeRangeItem,
-  type FlexibleWithdrawalSummary,
-  type TargetBasedWithdrawalPreview,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyCurrencyFieldPresentation,
@@ -37,6 +33,12 @@ import {
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "../app-domains";
+import type { IncomeAgeRangeItem } from "../result-projection/income-age-ranges";
+import {
+  getWithdrawalStrategyFieldId,
+  type FlexibleWithdrawalSummary,
+  type TargetBasedWithdrawalPreview,
+} from "../result-projection/flexible-withdrawals";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { ComparisonResultCache } from "./comparison-result-cache";
 import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";

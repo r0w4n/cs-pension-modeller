@@ -5,8 +5,8 @@ import {
 } from "../projection";
 import type { PensionSettings } from "../settings";
 import { normalizeMoney } from "../money";
-import { createRetirementIncomeAssessmentSeries } from "../app-domains/retirement-income";
-import { addYearsToIsoDate } from "../app-domains/shared";
+import { createRetirementIncomeAssessmentSeries } from "./retirement-income-assessment";
+import { addYearsToIsoDate } from "../model-date";
 
 export type FlexibleFundAssessmentAccount =
   "ISA" | "LISA" | "SIPP" | "Civil Service AVC";

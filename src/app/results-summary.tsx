@@ -4,7 +4,10 @@ import {
   type RetirementIncomeDisplay,
 } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
-import { formatModelledReturn, formatPercent } from "../app-domains";
+import {
+  formatModelledReturn,
+  formatPercent,
+} from "../result-projection/shared";
 import { resolveAppBaseHref } from "./app-base";
 
 type ResultsSummarySectionProps = {

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import type { ResidualFlexibleFundInsight } from "../app-domains/flexible-withdrawals";
+import type { ResidualFlexibleFundInsight } from "../result-projection/flexible-withdrawals";
 import { formatModelAgeCompact } from "../settings";
 import type {
   ChartNumberLimit,

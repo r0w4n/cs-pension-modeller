@@ -16,9 +16,8 @@ import {
 import {
   getPrimaryDateYearRange,
   getStatePensionDefaultDrawDate,
-  formatAgeValue,
-  formatDate,
 } from "../app-domains";
+import { formatAgeValue, formatDate } from "../result-projection/shared";
 import type {
   DateParts,
   DateSelectFieldProps,

@@ -1,8 +1,8 @@
-import {
-  formatCurrencyDetailed,
-  type FlexibleWithdrawalSummary,
-  type TargetBasedWithdrawalPreview,
-} from "../app-domains";
+import type {
+  FlexibleWithdrawalSummary,
+  TargetBasedWithdrawalPreview,
+} from "../result-projection/flexible-withdrawals";
+import { formatCurrencyDetailed } from "../result-projection/shared";
 import type { FlexibleFundAccountId } from "../settings";
 
 export function FlexibleWithdrawalInsightPanel({

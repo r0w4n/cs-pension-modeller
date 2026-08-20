@@ -12,7 +12,7 @@ import {
   getWithdrawalStrategyFieldId,
   reorderFlexibleWithdrawalAccounts,
   shouldShowFlexibleWithdrawalPriority,
-} from "../app-domains";
+} from "../result-projection/flexible-withdrawals";
 import {
   FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
   type FlexibleFundAccountId,

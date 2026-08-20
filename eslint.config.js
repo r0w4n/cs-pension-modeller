@@ -17,6 +17,25 @@ const importResolvers = [
   }),
   createNodeResolver(),
 ];
+const functionalCoreRestrictedImportPaths = [
+  {
+    name: "react",
+    message:
+      "Keep the FCIS functional core and semantic adapters independent of React.",
+  },
+  {
+    name: "react-dom",
+    message:
+      "Keep the FCIS functional core and semantic adapters independent of React.",
+  },
+];
+const imperativeShellImportPatterns = [
+  {
+    group: ["../app", "../app/*", "../App"],
+    message:
+      "The FCIS functional core must not depend on the imperative application shell.",
+  },
+];
 
 export default tseslint.config(
   {
@@ -123,25 +142,8 @@ export default tseslint.config(
       "no-restricted-imports": [
         "error",
         {
-          paths: [
-            {
-              name: "react",
-              message:
-                "Keep the FCIS functional core and semantic adapters independent of React.",
-            },
-            {
-              name: "react-dom",
-              message:
-                "Keep the FCIS functional core and semantic adapters independent of React.",
-            },
-          ],
-          patterns: [
-            {
-              group: ["../app", "../app/*", "../App"],
-              message:
-                "The FCIS functional core must not depend on the imperative application shell.",
-            },
-          ],
+          paths: functionalCoreRestrictedImportPaths,
+          patterns: imperativeShellImportPatterns,
         },
       ],
       "no-restricted-globals": [
@@ -174,6 +176,51 @@ export default tseslint.config(
           selector:
             "CallExpression[callee.object.name='Math'][callee.property.name='random']",
           message: "Generate identifiers in the FCIS imperative shell.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/calculation/**/*.ts", "src/projection-domains/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: functionalCoreRestrictedImportPaths,
+          patterns: [
+            ...imperativeShellImportPatterns,
+            {
+              group: [
+                "../app-domains",
+                "../app-domains/*",
+                "../result-projection",
+                "../result-projection/*",
+              ],
+              message:
+                "The FCIS calculation engine must not depend on downstream result or presentation adapters.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/result-projection/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: functionalCoreRestrictedImportPaths,
+          patterns: [
+            ...imperativeShellImportPatterns,
+            {
+              group: ["../app-domains", "../app-domains/*"],
+              message:
+                "FCIS result projection must not depend on presentation-domain adapters.",
+            },
+          ],
         },
       ],
     },

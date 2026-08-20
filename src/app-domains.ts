@@ -31,20 +31,8 @@ export {
 } from "./app-domains/journeys";
 
 export {
-  getEarliestSippChartStartAge,
-  getPartialRetirementStartAgeBounds,
-  getPensionStartAgeBounds,
-  getSippChartAccessAgeBounds,
-  getStatePensionAgeBounds,
-  getStandalonePensionStartAgeBounds,
-  getUseByAgeBounds,
-  type ChartAgeBounds,
-} from "./app-domains/retirement-income-chart-bounds";
-
-export {
   buildComparisonStatusItems,
   buildComparisonTableRows,
-  buildIncomeAgeRangeItems,
   buildRetirementOutcomeBanner,
   calculateComparisonInsights,
   clonePensionSettings,
@@ -54,7 +42,6 @@ export {
   getSettingsSignature,
   type ComparisonInsights,
   type ComparisonCellValue,
-  type IncomeAgeRangeItem,
   type ComparisonResult,
   type ComparisonScenario,
   type ComparisonTableRow,
@@ -88,49 +75,10 @@ export { isNuvosPensionIncreaseField } from "./app-domains/nuvos";
 export { isPartialRetirementField } from "./app-domains/partial-retirement";
 
 export {
-  addYearsToIsoDate,
-  clampNumber,
-  formatAge,
-  formatAgeValue,
-  formatCurrencyDetailed,
-  formatDate,
-  formatDecimalAge,
-  formatModelledReturn,
-  formatPercent,
-  formatShortfallOrSurplus,
-  isSettingsGroupVisible,
-} from "./app-domains/shared";
-
-export {
-  calculateCurrentPlanningAge,
-  createRetirementIncomeChartLimits,
-  createRetirementIncomeChartParameters,
-  createRetirementIncomeSeries,
-} from "./app-domains/retirement-income";
-
-export {
   assessRetirementPlan,
   type FlexibleFundAssessmentAccount,
   type RetirementPlanAssessment,
 } from "./calculation/retirement-plan-assessment";
-
-export {
-  createTargetBasedWithdrawalPreview,
-  getBalanceForAccount,
-  getFlexibleFundAccountIdForStrategyField,
-  getFlexibleFundAccountLabel,
-  getFlexibleWithdrawalNonPriorityAccounts,
-  getFlexibleWithdrawalPriorityAccounts,
-  getWithdrawalForAccount,
-  getWithdrawalStrategyFieldId,
-  reorderFlexibleWithdrawalAccounts,
-  shouldShowFlexibleWithdrawalPriority,
-  summarizeFlexibleWithdrawalInsights,
-  type FlexibleWithdrawalAccountInsight,
-  type FlexibleWithdrawalSummary,
-  type ResidualFlexibleFundInsight,
-  type TargetBasedWithdrawalPreview,
-} from "./app-domains/flexible-withdrawals";
 
 export {
   getSippEffectiveRangeField,

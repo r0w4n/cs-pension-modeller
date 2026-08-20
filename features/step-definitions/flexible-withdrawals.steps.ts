@@ -3,16 +3,18 @@ import { fieldGroups } from "../../src/fieldDefinitions";
 import {
   applyBridgeJourneyDefaults,
   applySimpleJourneyDefaults,
-  createRetirementIncomeSeries,
+  JOURNEY_DEFINITIONS,
+} from "../../src/app-domains";
+import { createRetirementIncomeSeries } from "../../src/result-projection/retirement-income";
+import {
   createTargetBasedWithdrawalPreview,
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
-  JOURNEY_DEFINITIONS,
   reorderFlexibleWithdrawalAccounts,
   shouldShowFlexibleWithdrawalPriority,
   summarizeFlexibleWithdrawalInsights,
   type TargetBasedWithdrawalPreview,
-} from "../../src/app-domains";
+} from "../../src/result-projection/flexible-withdrawals";
 import {
   createProjectionTable,
   type ProjectionRow,

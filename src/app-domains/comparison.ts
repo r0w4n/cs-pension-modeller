@@ -12,7 +12,7 @@ import {
   type PensionSettings,
   type RetirementIncomeTargetBasis,
 } from "../settings";
-import { addYearsToIsoDate } from "./retirement-income";
+import { addYearsToIsoDate } from "../model-date";
 import {
   assessRetirementPlan,
   type RetirementPlanAssessment,
@@ -32,8 +32,7 @@ import {
   formatDate,
   formatDecimalAge,
   formatPercent,
-  formatShortfallOrSurplus,
-} from "./shared";
+} from "../result-projection/shared";
 
 export type ComparisonScenario = {
   id: string;
@@ -1417,14 +1416,6 @@ export function buildComparisonStatusItems(
   ];
 }
 
-export type IncomeAgeRangeItem = {
-  ageRange: string;
-  sources: string;
-  income: string;
-  target: string;
-  difference: string;
-};
-
 export type RetirementOutcomeStatus = "onTrack" | "shortfall" | "atRisk";
 
 export type RetirementOutcomeBanner = {
@@ -1496,50 +1487,6 @@ function buildUnconfirmedStatePensionWarning(
     heading: "State Pension amount not confirmed",
     message: `${materialitySentence} Review the State Pension section and enter your personalised forecast when available.`,
   };
-}
-
-export function buildIncomeAgeRangeItems(
-  summary: PensionSummary,
-  display: RetirementIncomeDisplay,
-  targetBasis: RetirementIncomeTargetBasis
-): IncomeAgeRangeItem[] {
-  return summary.retirementIncome.ageRanges.map((range) => {
-    const income =
-      display === "monthly"
-        ? targetBasis === "after_tax"
-          ? range.monthlyIncomeAfterTax
-          : range.monthlyIncomeBeforeTax
-        : targetBasis === "after_tax"
-          ? range.annualIncomeAfterTax
-          : range.annualIncomeBeforeTax;
-    const target =
-      display === "monthly"
-        ? range.annualTargetIncome / 12
-        : range.annualTargetIncome;
-    const difference =
-      display === "monthly"
-        ? {
-            shortfall: range.annualShortfall / 12,
-            surplus: range.annualSurplus / 12,
-          }
-        : {
-            shortfall: range.annualShortfall,
-            surplus: range.annualSurplus,
-          };
-
-    return {
-      ageRange: `Age ${formatDecimalAge(range.startAge)} to ${formatDecimalAge(
-        range.endAge
-      )}`,
-      sources: range.sourceLabels.join(", "),
-      income: formatCurrencyDetailed(income),
-      target: formatCurrencyDetailed(target),
-      difference: formatShortfallOrSurplus(
-        difference.shortfall,
-        difference.surplus
-      ),
-    };
-  });
 }
 
 function buildOnTrackOutcomeMessage(result: ComparisonResult) {

@@ -20,18 +20,20 @@ import {
   type PensionSettings,
 } from "../settings";
 import {
-  calculateCurrentPlanningAge,
-  clampNumber,
+  isOptionalSectionToggleKey,
+  DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
+  type JourneySettingsPresentation,
+} from "../app-domains";
+import { clampNumber } from "../number";
+import { calculateCurrentPlanningAge } from "../result-projection/retirement-income";
+import {
   getPartialRetirementStartAgeBounds,
   getPensionStartAgeBounds,
   getSippChartAccessAgeBounds,
   getStatePensionAgeBounds,
   getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
-  isOptionalSectionToggleKey,
-  DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
-  type JourneySettingsPresentation,
-} from "../app-domains";
+} from "../result-projection/retirement-income-chart-bounds";
 import {
   reconcileSpendingSmilePhaseAges,
   updateSpendingSmileStartAge,

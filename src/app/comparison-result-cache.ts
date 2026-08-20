@@ -6,6 +6,10 @@ import {
   type ComparisonScenario,
 } from "../app-domains/comparison";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
+import {
+  getCachedRetirementPlanResult,
+  type RetirementPlanResultCache,
+} from "./retirement-plan-result-cache";
 
 export type ComparisonResultCache = Map<string, CachedComparisonResult>;
 
@@ -14,11 +18,13 @@ export function getCachedComparisonResult({
   currentSettingsSignature,
   cache,
   precomputedPlan,
+  retirementPlanResultCache,
 }: {
   scenario: ComparisonScenario;
   currentSettingsSignature: string;
   cache?: ComparisonResultCache;
   precomputedPlan?: RetirementPlanResult;
+  retirementPlanResultCache?: RetirementPlanResultCache;
 }): ComparisonResult {
   const settingsSignature = getSettingsSignature(scenario.settings);
   const cachedResult = cache?.get(settingsSignature);
@@ -31,10 +37,15 @@ export function getCachedComparisonResult({
     };
   }
 
+  const plan = getCachedRetirementPlanResult({
+    settings: scenario.settings,
+    cache: retirementPlanResultCache,
+    precomputedPlan,
+  });
   const result = createComparisonResult(
     scenario,
     currentSettingsSignature,
-    precomputedPlan
+    plan
   );
   const {
     currentMatchesSaved: _currentMatchesSaved,

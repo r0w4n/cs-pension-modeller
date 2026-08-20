@@ -30,6 +30,7 @@ import {
 } from "../../src/app/app-persistence";
 import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
 import { getRetirementIncomeChartTitle } from "../../src/RetirementIncomeChart";
+import { calculateRetirementPlan } from "../../src/calculation/retirement-plan";
 import {
   calculateRetirementChartOverlays,
   RETIREMENT_CHART_OVERLAY_META,
@@ -1050,19 +1051,11 @@ When(
   "the earliest sustainable pension draw age is calculated",
   function (this: ProductAcceptanceWorld) {
     const bridgeSettings = prepareBridgeProjectionSettings(getSettings(this));
-    const pensionRows = createProjectionTable({
-      ...bridgeSettings,
-      showSipp: false,
-      showIsa: false,
-      showLisa: false,
-    });
+    const bridgeFundingEstimate =
+      calculateRetirementPlan(bridgeSettings).bridgeFundingEstimate;
 
     this.settings = bridgeSettings;
-    this.bridgeAnalysis = generateRetirementBridgeAnalysis(
-      pensionRows,
-      bridgeSettings,
-      { calculateSafeDrawAge: true }
-    );
+    this.bridgeAnalysis = bridgeFundingEstimate;
   }
 );
 

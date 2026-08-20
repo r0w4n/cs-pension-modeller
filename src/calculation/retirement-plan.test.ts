@@ -16,5 +16,9 @@ describe("calculateRetirementPlan", () => {
     expect(firstResult.rows.length).toBeGreaterThan(0);
     expect(firstResult.summary).toBeDefined();
     expect(firstResult.assessment).toBeDefined();
+    expect(firstResult.bridgeFundingEstimate).toBeDefined();
+    expect(firstResult.bridgeFundingEstimate.target.retirementAge).toBe(
+      settings.requirementAge
+    );
   });
 });

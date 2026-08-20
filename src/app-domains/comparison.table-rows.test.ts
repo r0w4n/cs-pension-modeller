@@ -8,8 +8,27 @@ import {
 } from "./comparison";
 import { createDefaultSettings } from "../settings";
 import { createRetirementIncomeSeries } from "./retirement-income";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 
 describe("comparison table rows", () => {
+  it("reuses the canonical bridge diagnostic from a precomputed plan", () => {
+    const settings = createDefaultSettings();
+    const plan = calculateRetirementPlan(settings);
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings),
+      plan
+    );
+
+    expect(result.bridgeFundingEstimate).toBe(plan.bridgeFundingEstimate);
+  });
+
   it("uses section divider rows and simplified default metric labels", () => {
     const settings = createDefaultSettings();
     const result = createComparisonResult(

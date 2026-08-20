@@ -1,24 +1,33 @@
 import { useDeferredValue, useMemo } from "react";
 import type { RetirementIncomeDisplay } from "../projection";
 import type { PensionSettings } from "../settings";
-import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import {
   projectRetirementIncomeDisplay,
   projectRetirementPlanControls,
   projectRetirementPlanResult,
 } from "../result-projection/retirement-results";
+import {
+  getCachedRetirementPlanResult,
+  type RetirementPlanResultCache,
+} from "./retirement-plan-result-cache";
 
 export function useProjectionCalculations({
   settings,
   retirementIncomeDisplay,
+  retirementPlanResultCache,
 }: {
   settings: PensionSettings;
   retirementIncomeDisplay: RetirementIncomeDisplay;
+  retirementPlanResultCache?: RetirementPlanResultCache;
 }) {
   const deferredSettings = useDeferredValue(settings);
   const retirementPlanResult = useMemo(
-    () => calculateRetirementPlan(deferredSettings),
-    [deferredSettings]
+    () =>
+      getCachedRetirementPlanResult({
+        settings: deferredSettings,
+        cache: retirementPlanResultCache,
+      }),
+    [deferredSettings, retirementPlanResultCache]
   );
   const resultsProjection = useMemo(
     () => projectRetirementPlanResult(retirementPlanResult),

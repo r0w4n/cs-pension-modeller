@@ -74,8 +74,9 @@ Engine -> Result Projection -> Presentation`.
 - Treat journeys as presentation configurations only. A journey may choose
   shared fields, copy, ordering, defaults, and visible result components, but it
   must not have a distinct pension or withdrawal calculation path.
-- Keep bridge analysis as a shared calculation diagnostic used by assessment
-  and comparison, not as a journey architecture or a journey-specific engine.
+- Keep bridge analysis in the canonical `RetirementPlanResult`. Result and
+  comparison projections consume that shared diagnostic; they must not start a
+  separate bridge projection or treat it as a journey-specific engine.
 - Dependency direction must follow the required flow. Presentation may call
   application actions; the imperative shell may call the functional core; the
   core must not import presentation or application-state modules.

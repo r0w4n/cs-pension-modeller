@@ -2,11 +2,8 @@ import {
   calculateRetirementIncomeTargetAtDate,
   createProjectionTable,
   deriveInflationAssumptions,
-  generateRetirementBridgeAnalysis,
-  prepareBridgeProjectionSettings,
   type PensionSummary,
   type ProjectionRow,
-  type RetirementBridgeAnalysis,
   type RetirementIncomeDisplay,
 } from "../projection";
 import {
@@ -51,7 +48,7 @@ export type ComparisonResult = {
   rows: ProjectionRow[];
   summary: PensionSummary;
   assessment: RetirementPlanAssessment;
-  bridgeFundingEstimate: RetirementBridgeAnalysis;
+  bridgeFundingEstimate: RetirementPlanResult["bridgeFundingEstimate"];
   annualIncome: number;
   annualTarget: number;
   annualGap: number;
@@ -122,22 +119,8 @@ export function createComparisonResult(
     getSettingsSignature(precomputedPlan.settings) === settingsSignature
       ? precomputedPlan
       : calculateRetirementPlan(scenario.settings);
-  const { assessment, rows, summary } = plan;
-  const bridgeSettings = prepareBridgeProjectionSettings(scenario.settings);
-  const bridgePensionRows = createProjectionTable({
-    ...bridgeSettings,
-    showSipp: false,
-    showCsAvc: false,
-    showIsa: false,
-    showLisa: false,
-  });
-  const bridgeFundingEstimate = generateRetirementBridgeAnalysis(
-    bridgePensionRows,
-    bridgeSettings,
-    {
-      calculateSafeDrawAge: true,
-    }
-  );
+  const { assessment, bridgeFundingEstimate, rows, summary } = plan;
+
   const retirementDate = addYearsToIsoDate(
     scenario.settings.dateOfBirth,
     scenario.settings.requirementAge

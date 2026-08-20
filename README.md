@@ -218,8 +218,9 @@ The concrete layer responsibilities are:
   and shared components form the presentation layer. They render state and send
   user intent to the application layer; they do not invoke pension engines.
 - [`src/app/`](src/app) is the imperative shell. It owns React state,
-  orchestration, deferred calculation, mutable comparison caches, generated
-  identifiers, browser storage, import/export, analytics, and other effects.
+  orchestration, deferred calculation, bounded canonical-result and comparison
+  caches, generated identifiers, browser storage, import/export, analytics, and
+  other effects.
   [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) is the main
   composition boundary.
 - [`src/settings/`](src/settings) supplies the canonical `PensionSettings`
@@ -233,7 +234,9 @@ The concrete layer responsibilities are:
 - [`src/calculation/retirement-plan.ts`](src/calculation/retirement-plan.ts)
   is the canonical calculation entry point. It returns one
   `RetirementPlanResult` containing validation, monthly rows, pension summary,
-  inflation assumptions, and plan assessment.
+  inflation assumptions, plan assessment, and the shared bridge funding
+  diagnostic. Comparison and result projections consume that diagnostic rather
+  than starting a separate bridge projection.
 - [`src/result-projection/`](src/result-projection) and the stateless adapters
   in [`src/app-domains/`](src/app-domains) turn canonical results into semantic
   chart, summary, comparison, and form data. They do not own browser state or
@@ -278,10 +281,10 @@ presentation. The current compositions are:
 | Work out what I need to retire early | Guided sequence focused on retirement timing and flexible funds                 | Standard summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
 | Expert journey                       | Full field groups and advanced controls                                         | Detailed summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
 
-The bridge analysis remains a shared illustrative funding diagnostic used by
-plan assessment and comparison. It is not a journey-specific calculation path,
-and the main results visual is the retirement-income chart built from the
-canonical projection.
+The bridge analysis remains a shared illustrative funding diagnostic owned by
+the canonical `RetirementPlanResult` and consumed by comparison projections. It
+is not a journey-specific calculation path, and the main results visual is the
+retirement-income chart built from the canonical projection.
 
 ## Browser Storage And Privacy
 

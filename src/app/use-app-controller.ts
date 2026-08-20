@@ -95,8 +95,12 @@ export function useAppController() {
   ] = useState<RetirementIncomeDisplay>(
     loadStoredComparisonRetirementIncomeDisplay
   );
-  const { comparisonResultCache, comparisonScenarios, setComparisonScenarios } =
-    useComparisonState();
+  const {
+    comparisonResultCache,
+    comparisonScenarios,
+    retirementPlanResultCache,
+    setComparisonScenarios,
+  } = useComparisonState();
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
@@ -120,6 +124,7 @@ export function useAppController() {
   } = useProjectionCalculations({
     settings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
+    retirementPlanResultCache,
   });
   const currentComparisonResult = useMemo(
     () =>
@@ -134,8 +139,14 @@ export function useAppController() {
         currentSettingsSignature: getSettingsSignature(settings),
         cache: comparisonResultCache,
         precomputedPlan: retirementPlanResult,
+        retirementPlanResultCache,
       }),
-    [comparisonResultCache, retirementPlanResult, settings]
+    [
+      comparisonResultCache,
+      retirementPlanResult,
+      retirementPlanResultCache,
+      settings,
+    ]
   );
 
   useUndoShortcut({

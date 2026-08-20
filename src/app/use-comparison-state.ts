@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ComparisonScenario } from "../app-domains";
 import type { ComparisonResultCache } from "./comparison-result-cache";
+import type { RetirementPlanResultCache } from "./retirement-plan-result-cache";
 import {
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
@@ -13,6 +14,9 @@ export function useComparisonState() {
   const [comparisonResultCache] = useState<ComparisonResultCache>(
     () => new Map()
   );
+  const [retirementPlanResultCache] = useState<RetirementPlanResultCache>(
+    () => new Map()
+  );
 
   useEffect(() => {
     saveStoredComparisonScenarios(comparisonScenarios);
@@ -20,6 +24,7 @@ export function useComparisonState() {
 
   return {
     comparisonResultCache,
+    retirementPlanResultCache,
     comparisonScenarios,
     setComparisonScenarios,
   };

@@ -9,10 +9,11 @@ import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomePoint,
-} from "../RetirementIncomeChart";
+} from "../result-projection/retirement-income-chart-model";
 import { type ComparisonScenario } from "../app-domains";
 import type { ComparisonResultCache } from "./comparison-result-cache";
-import { ComparisonRetirementIncomeChart, DeferredBelowFold } from "./chart";
+import { DeferredBelowFold } from "./deferred-below-fold";
+import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";
 import { ComparisonPensionSummary } from "./comparison-pension-summary";
 import { ComparisonResults } from "./comparison-results";
 import {
@@ -174,7 +175,7 @@ export function ComparisonPanel({
         estimatedHeight={420}
         forceRender={validationIssues.length > 0}
       >
-        <ComparisonRetirementIncomeChart
+        <RetirementIncomeChartAdapter
           retirementIncomeSeries={retirementIncomeSeries}
           retirementIncomeChartParameters={retirementIncomeChartParameters}
           retirementIncomeChartLimits={retirementIncomeChartLimits}

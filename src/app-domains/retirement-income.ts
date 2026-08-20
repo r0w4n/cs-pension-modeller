@@ -2,7 +2,7 @@ import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomePoint,
-} from "../RetirementIncomeChart";
+} from "../result-projection/retirement-income-chart-model";
 import {
   addMonths,
   calculateAdditionalGuaranteedIncomeStreamForDate,

@@ -6,12 +6,11 @@ import {
   type RetirementIncomeDisplay,
   type ProjectionRow,
 } from "../projection";
-import {
-  RetirementIncomeChart,
-  type RetirementIncomeChartLimits,
-  type RetirementIncomeChartParameters,
-  type RetirementIncomePoint,
-} from "../RetirementIncomeChart";
+import type {
+  RetirementIncomeChartLimits,
+  RetirementIncomeChartParameters,
+  RetirementIncomePoint,
+} from "../result-projection/retirement-income-chart-model";
 import {
   defaultSettings,
   type FlexibleFundAccountId,
@@ -40,7 +39,7 @@ import {
 } from "../app-domains";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { ComparisonResultCache } from "./comparison-result-cache";
-import { ComparisonRetirementIncomeChart } from "./chart";
+import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";
 import {
   ComparisonPanel as ComparisonPanelFeature,
   ComparisonSection,
@@ -260,27 +259,15 @@ function JourneyResultsStep({
         </ResultsSummarySection>
       ) : null}
 
-      {chartPresentation === "detailed" ? (
-        <RetirementIncomeChart
-          data={retirementIncomeSeries}
-          alphaLabel="Alpha pension"
-          showFlexibleWithdrawalInsights
-          residualFlexibleFundInsights={
-            flexibleWithdrawalSummary.residualAccounts
-          }
-          limits={retirementIncomeChartLimits}
-          statePensionEditable
-          validationIssues={validationIssues}
-          onChangeParameters={onChangeChartParameters}
-          {...retirementIncomeChartParameters}
-        />
-      ) : chartPresentation ? (
-        <ComparisonRetirementIncomeChart
+      {chartPresentation ? (
+        <RetirementIncomeChartAdapter
           retirementIncomeSeries={retirementIncomeSeries}
           retirementIncomeChartParameters={retirementIncomeChartParameters}
           retirementIncomeChartLimits={retirementIncomeChartLimits}
-          hideInactiveLegendItems={chartPresentation === "simple"}
-          presentation={chartPresentation === "simple" ? "simple" : "standard"}
+          residualFlexibleFundInsights={
+            flexibleWithdrawalSummary.residualAccounts
+          }
+          presentation={chartPresentation}
           validationIssues={validationIssues}
           onChangeChartParameters={onChangeChartParameters}
         />

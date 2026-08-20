@@ -239,6 +239,15 @@ The concrete layer responsibilities are:
   chart, summary, comparison, and form data. They do not own browser state or
   JSX; presentation components decide how semantic values and tones are
   rendered.
+- The retirement-income chart follows the same boundary internally:
+  [`src/result-projection/retirement-income-chart-model.ts`](src/result-projection/retirement-income-chart-model.ts)
+  defines its semantic contract and
+  [`src/result-projection/retirement-income-chart-layout.ts`](src/result-projection/retirement-income-chart-layout.ts)
+  contains deterministic series and layout projection. The shared React
+  composition remains in [`src/RetirementIncomeChart.tsx`](src/RetirementIncomeChart.tsx),
+  while [`src/app/retirement-income-chart-adapter.tsx`](src/app/retirement-income-chart-adapter.tsx)
+  and the adjacent heading, controls, mobile-navigation, and accessibility
+  components adapt it to each journey's selected presentation.
 - [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
   configuration for the simplified, early-retirement, and expert journeys. It
   selects shared fields, labels, help text, update behaviour, and result

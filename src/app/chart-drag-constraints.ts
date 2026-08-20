@@ -1,8 +1,6 @@
-export type ChartNumberLimit = {
-  min: number;
-  max: number;
-  step: number;
-};
+import type { ChartNumberLimit } from "../result-projection/retirement-income-chart-model";
+
+export type { ChartNumberLimit } from "../result-projection/retirement-income-chart-model";
 
 export function clampNumber(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));

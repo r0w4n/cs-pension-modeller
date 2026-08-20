@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
-import type { RetirementIncomeChartParameters } from "../RetirementIncomeChart";
+import type { RetirementIncomeChartParameters } from "../result-projection/retirement-income-chart-model";
 import {
   clearAllLocalStorageData,
   clearStoredSettings,

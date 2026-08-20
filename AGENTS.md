@@ -41,19 +41,20 @@ Do not duplicate full feature or scheme inventories here.
 
 This map is for orientation; the README architecture section is canonical:
 
-| FCIS layer / area                     | Responsibility                                                         |
-| ------------------------------------- | ---------------------------------------------------------------------- |
-| `src/main.tsx`, `src/App.tsx`, UI     | Presentation and top-level composition                                 |
-| `src/app/`                            | Imperative shell: application state, orchestration, effects and caches |
-| `src/settings/`                       | Canonical settings, validation, normalization and schema migration     |
-| `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                            |
-| `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations          |
-| `src/calculation/`                    | Canonical `RetirementPlanResult` calculation and assessment            |
-| `src/result-projection/`              | Pure projection from canonical results to semantic presentation data   |
-| `src/app-domains/`                    | Stateless journey, form, chart and comparison adapters                 |
-| `src/data/`                           | Pension factor tables and source metadata                              |
-| `features/`                           | Gherkin specifications and step definitions                            |
-| `e2e/`                                | Browser journeys, accessibility and production smoke tests             |
+| FCIS layer / area                     | Responsibility                                                          |
+| ------------------------------------- | ----------------------------------------------------------------------- |
+| `src/main.tsx`, `src/App.tsx`, UI     | Presentation and top-level composition                                  |
+| `src/app/`                            | Imperative shell: application state, orchestration, effects and caches  |
+| `src/settings/`                       | Canonical settings, validation, normalization and schema migration      |
+| `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                             |
+| `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations           |
+| `src/calculation/`                    | Canonical `RetirementPlanResult` calculation and assessment             |
+| `src/result-projection/`              | Pure projection, including chart contracts, series and layout data      |
+| `src/app-domains/`                    | Stateless journey, form, chart and comparison adapters                  |
+| `src/app/retirement-income-chart-*`   | Shared chart presentation adapters, controls and accessible equivalents |
+| `src/data/`                           | Pension factor tables and source metadata                               |
+| `features/`                           | Gherkin specifications and step definitions                             |
+| `e2e/`                                | Browser journeys, accessibility and production smoke tests              |
 
 ### FCIS Architecture Rules
 

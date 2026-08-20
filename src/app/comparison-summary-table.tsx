@@ -41,7 +41,7 @@ export function ComparisonSummaryTable({
     return (
       <section className="summary-section summary-section--compact">
         <div className="summary-section-inner">
-          <section className="bridge-table-section">
+          <section className="comparison-table-section">
             <div className="projection-mobile-cards projection-mobile-cards--active">
               {rows
                 .filter((row) => !row.isSectionDivider)
@@ -62,7 +62,7 @@ export function ComparisonSummaryTable({
   return (
     <section className="summary-section summary-section--compact">
       <div className="summary-section-inner">
-        <section className="bridge-table-section">
+        <section className="comparison-table-section">
           <ProjectionTableFrame
             columns={columns}
             rows={rows}

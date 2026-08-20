@@ -19,10 +19,9 @@ const projectionTableMocks = vi.hoisted(() => ({
 }));
 
 const journeyContentMocks = vi.hoisted(() => ({
-  comparisonRetirementIncomeChart: vi.fn(),
+  retirementIncomeChartAdapter: vi.fn(),
   comparisonPanel: vi.fn(),
   pensionSummary: vi.fn(),
-  retirementChart: vi.fn(),
 }));
 
 const STANDARD_RESULTS_SECTIONS = [
@@ -48,17 +47,10 @@ const SIMPLE_RESULTS_SECTIONS = [
   { id: "inflation-basis", presentation: "disclosure" },
 ] as const;
 
-vi.mock("../RetirementIncomeChart", () => ({
-  RetirementIncomeChart: (props: unknown) => {
-    journeyContentMocks.retirementChart(props);
-    return <div>Retirement income chart</div>;
-  },
-}));
-
-vi.mock("./chart", () => ({
-  ComparisonRetirementIncomeChart: (props: unknown) => {
-    journeyContentMocks.comparisonRetirementIncomeChart(props);
-    return <div>Comparison retirement income chart</div>;
+vi.mock("./retirement-income-chart-adapter", () => ({
+  RetirementIncomeChartAdapter: (props: unknown) => {
+    journeyContentMocks.retirementIncomeChartAdapter(props);
+    return <div>Journey retirement income chart</div>;
   },
 }));
 
@@ -115,10 +107,9 @@ describe("JourneyStepContent", () => {
 
   beforeEach(() => {
     projectionTableMocks.section.mockClear();
-    journeyContentMocks.comparisonRetirementIncomeChart.mockClear();
+    journeyContentMocks.retirementIncomeChartAdapter.mockClear();
     journeyContentMocks.comparisonPanel.mockClear();
     journeyContentMocks.pensionSummary.mockClear();
-    journeyContentMocks.retirementChart.mockClear();
   });
 
   afterEach(() => {
@@ -474,11 +465,11 @@ describe("JourneyStepContent", () => {
   it.each([
     {
       sections: STANDARD_RESULTS_SECTIONS,
-      chartText: "Comparison retirement income chart",
+      chartText: "Journey retirement income chart",
     },
     {
       sections: DETAILED_RESULTS_SECTIONS,
-      chartText: "Retirement income chart",
+      chartText: "Journey retirement income chart",
     },
   ])(
     "places the projection basis below the $chartText",
@@ -757,7 +748,7 @@ describe("JourneyStepContent", () => {
 
     const summaryProps = journeyContentMocks.pensionSummary.mock
       .calls[0]?.[0] as Record<string, unknown>;
-    const chartProps = journeyContentMocks.comparisonRetirementIncomeChart.mock
+    const chartProps = journeyContentMocks.retirementIncomeChartAdapter.mock
       .calls[0]?.[0] as Record<string, unknown> | undefined;
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
@@ -786,11 +777,11 @@ describe("JourneyStepContent", () => {
     expect(screen.getByText("Simple pension summary")).toBeInTheDocument();
     expect(screen.getByText("Simple pension details")).toBeInTheDocument();
     expect(
-      screen.getByText("Comparison retirement income chart")
+      screen.getByText("Journey retirement income chart")
     ).toBeInTheDocument();
     expect(screen.getByText("Inflation basis")).toBeInTheDocument();
     expect(
-      journeyContentMocks.comparisonRetirementIncomeChart
+      journeyContentMocks.retirementIncomeChartAdapter
     ).toHaveBeenCalledWith(expect.objectContaining({ presentation: "simple" }));
   });
 
@@ -813,11 +804,12 @@ describe("JourneyStepContent", () => {
 
     const summaryProps = journeyContentMocks.pensionSummary.mock
       .calls[0]?.[0] as Record<string, unknown>;
-    const chartProps = journeyContentMocks.retirementChart.mock
+    const chartProps = journeyContentMocks.retirementIncomeChartAdapter.mock
       .calls[0]?.[0] as Record<string, unknown>;
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeDefined();
-    expect(chartProps.showFlexibleWithdrawalInsights).toBe(true);
+    expect(chartProps.presentation).toBe("detailed");
+    expect(chartProps.residualFlexibleFundInsights).toBeDefined();
   });
 
   it("configures summary and chart presentations independently", () => {
@@ -844,10 +836,11 @@ describe("JourneyStepContent", () => {
       .calls[0]?.[0] as Record<string, unknown>;
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
-    expect(journeyContentMocks.retirementChart).toHaveBeenCalledOnce();
     expect(
-      journeyContentMocks.comparisonRetirementIncomeChart
-    ).not.toHaveBeenCalled();
+      journeyContentMocks.retirementIncomeChartAdapter
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({ presentation: "detailed" })
+    );
   });
 });
 

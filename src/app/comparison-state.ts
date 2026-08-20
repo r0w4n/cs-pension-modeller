@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import type { RetirementIncomeDisplay } from "../projection";
-import type { RetirementIncomePoint } from "../RetirementIncomeChart";
+import type { RetirementIncomePoint } from "../result-projection/retirement-income-chart-model";
 import {
   buildComparisonStatusItems,
   buildIncomeAgeRangeItems,

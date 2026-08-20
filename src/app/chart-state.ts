@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { SettingsKey } from "../fieldDefinitions";
-import type { RetirementIncomeChartParameters } from "../RetirementIncomeChart";
+import type { RetirementIncomeChartParameters } from "../result-projection/retirement-income-chart-model";
 import {
   calculateDefaultIsaDrawAge,
   calculateDefaultSippDrawAge,

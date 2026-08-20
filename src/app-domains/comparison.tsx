@@ -31,9 +31,12 @@ import {
   addYearsToIsoDate,
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
-  createRetirementIncomeAssessmentSeries,
   createRetirementIncomeSeries,
 } from "./retirement-income";
+import {
+  assessRetirementPlan,
+  type RetirementPlanAssessment,
+} from "./retirement-plan-assessment";
 import { normalizeMoney } from "../money";
 import {
   calculateSmilePhaseTarget,
@@ -64,7 +67,8 @@ export type ComparisonResult = {
   scenario: ComparisonScenario;
   rows: ProjectionRow[];
   summary: PensionSummary;
-  bridgeAnalysis: RetirementBridgeAnalysis;
+  assessment: RetirementPlanAssessment;
+  bridgeFundingEstimate: RetirementBridgeAnalysis;
   annualIncome: number;
   annualTarget: number;
   annualGap: number;
@@ -75,7 +79,6 @@ export type ComparisonResult = {
   retirementAnnualIncome: number;
   statePensionAnnualIncome: number;
   lifeExpectancyAnnualIncome: number;
-  targetMissMonths: number;
   statePensionAssumptionAffectsTarget: boolean;
   currentMatchesSaved: boolean;
 };
@@ -232,6 +235,7 @@ export function createComparisonResult(
 
   const rows = createProjectionTable(scenario.settings);
   const summary = generatePensionSummary(rows, scenario.settings);
+  const assessment = assessRetirementPlan(rows, scenario.settings);
   const bridgeSettings = prepareBridgeProjectionSettings(scenario.settings);
   const bridgePensionRows = createProjectionTable({
     ...bridgeSettings,
@@ -240,7 +244,7 @@ export function createComparisonResult(
     showIsa: false,
     showLisa: false,
   });
-  const bridgeAnalysis = generateRetirementBridgeAnalysis(
+  const bridgeFundingEstimate = generateRetirementBridgeAnalysis(
     bridgePensionRows,
     bridgeSettings,
     {
@@ -263,17 +267,13 @@ export function createComparisonResult(
     scenario.settings.dateOfBirth,
     scenario.settings.statePensionDrawDate
   );
-  const targetMissMonths = countTargetMissMonths(rows, scenario.settings);
   const statePensionAssumptionAffectsTarget =
-    calculateStatePensionAssumptionAffectsTarget(
-      scenario.settings,
-      summary,
-      targetMissMonths
-    );
+    calculateStatePensionAssumptionAffectsTarget(scenario.settings, assessment);
   const result = {
     rows,
     summary,
-    bridgeAnalysis,
+    assessment,
+    bridgeFundingEstimate,
     annualIncome,
     annualTarget,
     annualGap: normalizeMoney(annualIncome - annualTarget),
@@ -313,11 +313,7 @@ export function createComparisonResult(
         ? scenario.settings.lisaWithdrawalTargetAge
         : null
     ),
-    retirementAnnualIncome: findAnnualIncomeAtAge(
-      rows,
-      scenario.settings.requirementAge,
-      scenario.settings.retirementIncomeTargetBasis
-    ),
+    retirementAnnualIncome: assessment.retirementAnnualIncome,
     statePensionAnnualIncome: findAnnualIncomeAtAge(
       rows,
       statePensionAge,
@@ -328,7 +324,6 @@ export function createComparisonResult(
       scenario.settings.lifeExpectancy,
       scenario.settings.retirementIncomeTargetBasis
     ),
-    targetMissMonths,
     statePensionAssumptionAffectsTarget,
   };
 
@@ -355,7 +350,10 @@ export function calculateComparisonInsights(
   );
   const bestTargetResult = results.reduce<ComparisonResult | null>(
     (best, result) =>
-      !best || result.targetMissMonths < best.targetMissMonths ? result : best,
+      !best ||
+      result.assessment.targetMissMonths < best.assessment.targetMissMonths
+        ? result
+        : best,
     null
   );
   const lowestShortfallRiskResult = results.reduce<ComparisonResult | null>(
@@ -364,8 +362,8 @@ export function calculateComparisonInsights(
         return result;
       }
 
-      const bestShortfall = Math.max(0, -best.annualGap);
-      const resultShortfall = Math.max(0, -result.annualGap);
+      const bestShortfall = best.assessment.largestAnnualShortfall;
+      const resultShortfall = result.assessment.largestAnnualShortfall;
 
       return resultShortfall < bestShortfall ? result : best;
     },
@@ -502,7 +500,7 @@ export function buildComparisonTableRows(
         "Lowest income",
         (result) =>
           formatRecurringAnnualCurrency(
-            getLowestAnnualIncome(result.rows, result.scenario.settings),
+            result.assessment.lowestAnnualIncome,
             retirementIncomeDisplay
           ),
       ],
@@ -510,8 +508,8 @@ export function buildComparisonTableRows(
         "Years below target",
         (result) =>
           renderComparisonToneCell(
-            formatYearsBelowTarget(result.targetMissMonths),
-            result.targetMissMonths > 0 ? "caution" : "good"
+            formatYearsBelowTarget(result.assessment.targetMissMonths),
+            result.assessment.targetMissMonths > 0 ? "caution" : "good"
           ),
       ],
       [
@@ -519,24 +517,18 @@ export function buildComparisonTableRows(
         (result) =>
           renderComparisonToneCell(
             formatRecurringAnnualCurrency(
-              getLargestAnnualShortfall(result.rows, result.scenario.settings),
+              result.assessment.largestAnnualShortfall,
               retirementIncomeDisplay
             ),
-            getLargestAnnualShortfall(result.rows, result.scenario.settings) > 0
-              ? "caution"
-              : "good"
+            result.assessment.largestAnnualShortfall > 0 ? "caution" : "good"
           ),
       ],
       [
         "Lifetime shortfall",
         (result) =>
           renderComparisonToneCell(
-            formatCurrencyDetailed(
-              getTotalLifetimeShortfall(result.rows, result.scenario.settings)
-            ),
-            getTotalLifetimeShortfall(result.rows, result.scenario.settings) > 0
-              ? "caution"
-              : "good"
+            formatCurrencyDetailed(result.assessment.totalLifetimeShortfall),
+            result.assessment.totalLifetimeShortfall > 0 ? "caution" : "good"
           ),
       ],
     ]),
@@ -642,41 +634,42 @@ export function buildComparisonTableRows(
             [
               "Plan status",
               (result) =>
-                result.bridgeAnalysis.planWorks
-                  ? "Works on these assumptions"
-                  : "Shortfall remains",
+                result.assessment.meetsTargetThroughout
+                  ? "Meets target with configured withdrawals"
+                  : "Shortfall with configured withdrawals",
             ],
             [
               "ISA-only gap before SIPP access",
               (result) =>
                 formatCurrencyDetailed(
-                  result.bridgeAnalysis.requiredIsaAtRetirement
+                  result.bridgeFundingEstimate.requiredIsaAtRetirement
                 ),
             ],
             [
               "Later top-up gap after SIPP access",
               (result) =>
                 formatCurrencyDetailed(
-                  result.bridgeAnalysis.requiredSippAtAccess
+                  result.bridgeFundingEstimate.requiredSippAtAccess
                 ),
             ],
             [
-              "Bridge still unfunded",
+              "Projected lifetime shortfall",
               (result) =>
                 renderComparisonToneCell(
                   formatCurrencyDetailed(
-                    result.bridgeAnalysis.totalUnfundedShortfall
+                    result.assessment.totalLifetimeShortfall
                   ),
-                  result.bridgeAnalysis.totalUnfundedShortfall > 0
+                  result.assessment.totalLifetimeShortfall > 0
                     ? "caution"
                     : "good"
                 ),
             ],
             [
-              "Extra saving",
+              "Illustrative extra saving for bridge",
               (result) =>
                 formatRecurringMonthlyCurrency(
-                  result.bridgeAnalysis.additionalMonthlyContributionRequired,
+                  result.bridgeFundingEstimate
+                    .additionalMonthlyContributionRequired,
                   retirementIncomeDisplay
                 ),
             ],
@@ -914,27 +907,30 @@ export function buildComparisonDetailedRows(
       [
         "Bridge spending to cover",
         (result) =>
-          formatCurrencyDetailed(result.bridgeAnalysis.totalBridgeRequired),
+          formatCurrencyDetailed(
+            result.bridgeFundingEstimate.totalBridgeRequired
+          ),
       ],
       [
         "Earliest sustainable pension draw age",
         (result) =>
-          result.bridgeAnalysis.earliestSustainablePensionDrawAge === null
+          result.bridgeFundingEstimate.earliestSustainablePensionDrawAge ===
+          null
             ? "Not found"
             : formatDecimalAge(
-                result.bridgeAnalysis.earliestSustainablePensionDrawAge
+                result.bridgeFundingEstimate.earliestSustainablePensionDrawAge
               ),
       ],
       [
         "All secure pensions active from",
         (result) =>
-          result.bridgeAnalysis.fullSecureIncomeStartDate === null ||
-          result.bridgeAnalysis.fullSecureIncomeStartAge === null ||
-          result.bridgeAnalysis.fullSecureIncomeStartAgeMonths === null
+          result.assessment.allSecureIncomeStartDate === null ||
+          result.assessment.allSecureIncomeStartAge === null ||
+          result.assessment.allSecureIncomeStartAgeMonths === null
             ? "Not reached within this model"
-            : `${formatDate(result.bridgeAnalysis.fullSecureIncomeStartDate)} (${formatAge(
-                result.bridgeAnalysis.fullSecureIncomeStartAge,
-                result.bridgeAnalysis.fullSecureIncomeStartAgeMonths
+            : `${formatDate(result.assessment.allSecureIncomeStartDate)} (${formatAge(
+                result.assessment.allSecureIncomeStartAge,
+                result.assessment.allSecureIncomeStartAgeMonths
               )})`,
       ],
       [
@@ -942,19 +938,20 @@ export function buildComparisonDetailedRows(
         (result) =>
           renderComparisonToneCell(
             formatAnnualPosition(
-              result.bridgeAnalysis.stableAnnualGuaranteedSurplus
+              result.assessment.planningHorizonSecureAnnualSurplus
             ),
-            result.bridgeAnalysis.stableAnnualGuaranteedSurplus >= 0
+            result.assessment.planningHorizonSecureAnnualSurplus >= 0
               ? "good"
               : "caution"
           ),
       ],
       [
-        "First pot to fail",
+        "First configured flexible fund exhausted",
         (result) =>
-          result.bridgeAnalysis.firstPotToFail
-            ? `${result.bridgeAnalysis.firstPotToFail} (${formatDate(
-                result.bridgeAnalysis.firstFailureDate ?? ""
+          result.assessment.firstFlexibleFundExhaustionAccount &&
+          result.assessment.firstFlexibleFundExhaustionDate
+            ? `${result.assessment.firstFlexibleFundExhaustionAccount} (${formatDate(
+                result.assessment.firstFlexibleFundExhaustionDate
               )})`
             : "None",
       ],
@@ -1416,8 +1413,10 @@ function buildTargetShortfallStatus(
   result: ComparisonResult,
   statePensionAssumptionAffectsTarget: boolean
 ) {
-  if (result.targetMissMonths > 0) {
-    return `Below target for ${formatTargetMissDuration(result.targetMissMonths)}`;
+  if (result.assessment.targetMissMonths > 0) {
+    return `Below target for ${formatTargetMissDuration(
+      result.assessment.targetMissMonths
+    )}`;
   }
 
   return statePensionAssumptionAffectsTarget
@@ -1427,30 +1426,14 @@ function buildTargetShortfallStatus(
 
 function buildMainComparisonIssue(
   result: ComparisonResult,
-  hideBridgeFundingSection: boolean,
   usesUnconfirmedStatePensionAssumption: boolean
 ) {
-  if (!hideBridgeFundingSection && !result.bridgeAnalysis.planWorks) {
-    return result.bridgeAnalysis.additionalMonthlyContributionRequired > 0
-      ? `Bridge still unfunded; estimated extra monthly saving ${formatMonthlyCurrency(
-          result.bridgeAnalysis.additionalMonthlyContributionRequired
-        )}`
-      : "Bridge still unfunded";
-  }
-
-  if (result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus < 0) {
-    const context = hideBridgeFundingSection
-      ? "once all selected secure pension income is in payment"
-      : "once the bridge ends";
-    return `Secure pension income is ${formatAnnualCurrency(
-      Math.abs(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus)
-    )} below target ${context}`;
-  }
-
-  if (result.targetMissMonths > 0) {
-    return hideBridgeFundingSection
-      ? "Income drops below target before all selected secure pension income is in place"
-      : "Income drops below target before secure pension income is fully in place";
+  if (!result.assessment.meetsTargetThroughout) {
+    return `Projected income falls below target for ${formatTargetMissDuration(
+      result.assessment.targetMissMonths
+    )}; the largest annual shortfall is ${formatAnnualCurrency(
+      result.assessment.largestAnnualShortfall
+    )}`;
   }
 
   if (usesUnconfirmedStatePensionAssumption) {
@@ -1500,20 +1483,15 @@ function buildWithdrawalTaxStatusItems(
 }
 
 export function buildComparisonStatusItems(
-  result: ComparisonResult,
-  options: { hideBridgeFundingSection?: boolean } = {}
+  result: ComparisonResult
 ): SummaryItemLike[] {
-  const { hideBridgeFundingSection = false } = options;
   const usesUnconfirmedStatePensionAssumption = usesUnconfirmedStatePension(
     result.scenario.settings
   );
   const statePensionNeedsChecking =
     usesUnconfirmedStatePensionAssumption &&
     result.statePensionAssumptionAffectsTarget;
-  const calculationWorks =
-    result.targetMissMonths === 0 &&
-    (hideBridgeFundingSection || result.bridgeAnalysis.planWorks) &&
-    result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus >= 0;
+  const calculationWorks = result.assessment.meetsTargetThroughout;
 
   const targetShortfall = buildTargetShortfallStatus(
     result,
@@ -1521,7 +1499,6 @@ export function buildComparisonStatusItems(
   );
   const mainIssue = buildMainComparisonIssue(
     result,
-    hideBridgeFundingSection,
     usesUnconfirmedStatePensionAssumption
   );
 
@@ -1577,15 +1554,11 @@ export type RetirementOutcomeBanner = {
 export function buildRetirementOutcomeBanner(
   result: ComparisonResult
 ): RetirementOutcomeBanner {
-  const shortfallRange = result.summary.retirementIncome.ageRanges.find(
-    (range) => range.annualShortfall > 0
-  );
-
-  if (result.targetMissMonths > 0 || shortfallRange) {
+  if (!result.assessment.meetsTargetThroughout) {
     return {
       status: "shortfall",
       label: "Shortfall",
-      message: buildShortfallOutcomeMessage(result, shortfallRange),
+      message: buildShortfallOutcomeMessage(result),
       warning: buildUnconfirmedStatePensionWarning(result),
     };
   }
@@ -1626,11 +1599,7 @@ function buildUnconfirmedStatePensionWarning(
   const assumedAmount = `${formatCurrencyWhole(
     settings.currentStatePension
   )} a year`;
-  const hasExistingShortfall =
-    result.targetMissMonths > 0 ||
-    result.summary.retirementIncome.ageRanges.some(
-      (range) => range.annualShortfall > 0
-    );
+  const hasExistingShortfall = !result.assessment.meetsTargetThroughout;
   const materialitySentence = hasExistingShortfall
     ? `This projection includes an assumed State Pension of ${assumedAmount}. Your actual shortfall may differ once you enter your personalised forecast.`
     : result.statePensionAssumptionAffectsTarget
@@ -1695,7 +1664,7 @@ function buildOnTrackOutcomeMessage(result: ComparisonResult) {
       : "target income before tax";
   const sentences = [
     `Based on the information entered, this scenario appears to provide your ${targetDescription} of ${formatCurrencyWholePerYear(
-      result.annualTarget
+      result.assessment.retirementAnnualTarget
     )} ${formatProjectionBasisPhrase(settings)} from age ${formatDecimalAge(
       settings.requirementAge
     )} until age ${formatDecimalAge(settings.lifeExpectancy)}.`,
@@ -1707,21 +1676,13 @@ function buildOnTrackOutcomeMessage(result: ComparisonResult) {
   return sentences.filter(Boolean).join(" ");
 }
 
-function buildShortfallOutcomeMessage(
-  result: ComparisonResult,
-  shortfallRange:
-    PensionSummary["retirementIncome"]["ageRanges"][number] | undefined
-) {
+function buildShortfallOutcomeMessage(result: ComparisonResult) {
   const settings = result.scenario.settings;
-  const firstShortfallAge = shortfallRange?.startAge ?? settings.requirementAge;
-  const targetIncome =
-    shortfallRange?.annualTargetIncome ?? result.annualTarget;
-  const firstShortfallSentence =
-    shortfallRange && shortfallRange.annualShortfall > 0
-      ? ` The first shortfall is ${formatCurrencyWholePerYear(
-          shortfallRange.annualShortfall
-        )} ${formatProjectionBasisPhrase(settings)}.`
-      : "";
+  const firstShortfallAge =
+    result.assessment.firstShortfallAge ?? settings.requirementAge;
+  const firstShortfallSentence = ` The first shortfall is ${formatCurrencyWholePerYear(
+    result.assessment.firstShortfallAnnualAmount
+  )} ${formatProjectionBasisPhrase(settings)}.`;
 
   const targetDescription =
     settings.retirementIncomeTargetBasis === "after_tax"
@@ -1731,7 +1692,7 @@ function buildShortfallOutcomeMessage(
   return `Shortfall from age ${formatDecimalAge(
     firstShortfallAge
   )}. Based on the information entered, this scenario does not provide your ${targetDescription} of ${formatCurrencyWholePerYear(
-    targetIncome
+    result.assessment.firstShortfallAnnualTarget
   )} through to age ${formatDecimalAge(
     settings.lifeExpectancy
   )}.${firstShortfallSentence}`;
@@ -1951,59 +1912,6 @@ function findRowAtAge(rows: ProjectionRow[], targetAge: number) {
   );
 }
 
-function getLowestAnnualIncome(
-  rows: ProjectionRow[],
-  settings: PensionSettings
-) {
-  const incomes = createRetirementIncomeAssessmentSeries(rows, settings)
-    .filter(
-      (point) =>
-        point.age >= settings.requirementAge &&
-        point.age <= settings.lifeExpectancy
-    )
-    .map((point) => point.assessedIncomeAnnual);
-
-  return incomes.length ? Math.min(...incomes) : 0;
-}
-
-function getLargestAnnualShortfall(
-  rows: ProjectionRow[],
-  settings: PensionSettings
-) {
-  return createRetirementIncomeAssessmentSeries(rows, settings).reduce(
-    (largest, point) => {
-      if (
-        point.age < settings.requirementAge ||
-        point.age > settings.lifeExpectancy
-      ) {
-        return largest;
-      }
-
-      return Math.max(largest, point.shortfallAnnual);
-    },
-    0
-  );
-}
-
-function getTotalLifetimeShortfall(
-  rows: ProjectionRow[],
-  settings: PensionSettings
-) {
-  return createRetirementIncomeAssessmentSeries(rows, settings).reduce(
-    (total, point) => {
-      if (
-        point.age < settings.requirementAge ||
-        point.age > settings.lifeExpectancy
-      ) {
-        return total;
-      }
-
-      return total + point.shortfallAnnual / 12;
-    },
-    0
-  );
-}
-
 function getFinalPotBalance(
   rows: ProjectionRow[],
   key: "isaPot" | "lisaPot" | "sippPot" | "csAvcPot"
@@ -2069,7 +1977,7 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 }
 
 function getComparisonStatusLabel(result: ComparisonResult) {
-  if (result.targetMissMonths > 0) {
+  if (!result.assessment.meetsTargetThroughout) {
     return "Needs attention";
   }
 
@@ -2085,29 +1993,13 @@ function renderComparisonStatusCell(result: ComparisonResult) {
   return renderComparisonToneCell(status, tone);
 }
 
-function countTargetMissMonths(
-  rows: ProjectionRow[],
-  settings: PensionSettings
-) {
-  return createRetirementIncomeAssessmentSeries(rows, settings).filter(
-    (point) =>
-      point.age >= settings.requirementAge &&
-      point.age <= settings.lifeExpectancy &&
-      point.shortfallAnnual > 0
-  ).length;
-}
-
 function calculateStatePensionAssumptionAffectsTarget(
   settings: PensionSettings,
-  summary: PensionSummary,
-  targetMissMonths: number
+  assessment: RetirementPlanAssessment
 ) {
   if (
     !usesUnconfirmedStatePension(settings) ||
-    targetMissMonths > 0 ||
-    summary.retirementIncome.ageRanges.some(
-      (range) => range.annualShortfall > 0
-    )
+    !assessment.meetsTargetThroughout
   ) {
     return false;
   }
@@ -2119,20 +2011,12 @@ function calculateStatePensionAssumptionAffectsTarget(
   const rowsWithoutStatePension = createProjectionTable(
     settingsWithoutStatePension
   );
-  const summaryWithoutStatePension = generatePensionSummary(
+  const assessmentWithoutStatePension = assessRetirementPlan(
     rowsWithoutStatePension,
     settingsWithoutStatePension
   );
 
-  return (
-    countTargetMissMonths(
-      rowsWithoutStatePension,
-      settingsWithoutStatePension
-    ) > 0 ||
-    summaryWithoutStatePension.retirementIncome.ageRanges.some(
-      (range) => range.annualShortfall > 0
-    )
-  );
+  return !assessmentWithoutStatePension.meetsTargetThroughout;
 }
 
 function formatTargetMissDuration(months: number) {

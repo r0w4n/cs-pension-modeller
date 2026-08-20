@@ -1075,11 +1075,14 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           The retirement income summary starts with an outcome banner showing
-          whether the scenario appears to meet the selected income target.
-          Temporary ISA, LISA, SIPP and CS AVC withdrawals that run in a bridge
-          period are not treated as permanent pension income. The detailed
-          summary groups projected income by age range, with each range starting
-          when the active income sources change.
+          whether the scenario appears to meet the selected income target. The
+          outcome, plan status and comparison headline metrics are assessed from
+          the same monthly projection used by the retirement income chart. They
+          therefore respect the withdrawal strategy configured for each ISA,
+          LISA, SIPP and CS AVC account. Temporary ISA, LISA, SIPP and CS AVC
+          withdrawals that run in a bridge period are not treated as permanent
+          pension income. The detailed summary groups projected income by age
+          range, with each range starting when the active income sources change.
         </p>
         <p className="section-copy">
           The model can show where income is below the selected
@@ -1087,15 +1090,19 @@ export function MethodologyPage() {
           drawdown can cover that gap.
         </p>
         <p className="section-copy">
-          Bridge analysis first prepares a retirement scenario where Alpha
-          accrual stops at the target retirement age and ISA drawdown can begin
-          at retirement. It then compares net secure income from the selected
-          Civil Service defined-benefit pensions, additional guaranteed income
-          and State Pension with the selected target for each month from
-          retirement to life expectancy. In real-terms mode the target remains
-          in today's-money terms; in nominal mode it is increased from the model
-          start date using the same monthly inflation convention as the main
-          projection.
+          The separate bridge analysis is an illustrative funding diagnostic,
+          not the source of the plan outcome. It first prepares a retirement
+          scenario where Alpha accrual stops at the target retirement age and
+          ISA drawdown can begin at retirement. It then compares net secure
+          income from the selected Civil Service defined-benefit pensions,
+          additional guaranteed income and State Pension with the selected
+          target for each month from retirement to life expectancy. In
+          real-terms mode the target remains in today's-money terms; in nominal
+          mode it is increased from the model start date using the same monthly
+          inflation convention as the main projection. It may model
+          target-filling withdrawals that differ from the withdrawal strategies
+          selected for the main projection, so its figures are presented only as
+          bridge-sizing estimates.
         </p>
         <p className="section-copy">
           ISA, LISA, SIPP and CS AVC bridge balances start from the
@@ -1117,6 +1124,14 @@ export function MethodologyPage() {
           is recorded as an unfunded shortfall. The comparison view also
           estimates the extra monthly saving that would be needed to cover any
           remaining shortfall over the months before retirement.
+        </p>
+        <p className="section-copy">
+          A scenario is labelled as meeting its target only when the main
+          projection has no modelled shortfall from the selected retirement age
+          to the planning horizon. The assessment also derives the first and
+          largest shortfall, lifetime shortfall, secure income once all selected
+          pensions are active, the secure-income position at the planning
+          horizon and the first flexible fund exhausted from those same rows.
         </p>
         <p className="section-copy">A typical bridge scenario might be:</p>
         <FormulaBlock>

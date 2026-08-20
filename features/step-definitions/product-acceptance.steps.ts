@@ -10,6 +10,7 @@ import {
 import { fieldGroups } from "../../src/fieldDefinitions";
 import { knowledgeLinks } from "../../src/knowledgeLinks";
 import {
+  buildComparisonStatusItems,
   buildRetirementOutcomeBanner,
   buildComparisonTableRows,
   createComparisonResult,
@@ -2007,6 +2008,40 @@ When(
   }
 );
 
+Given(
+  "a retirement plan with sufficient ISA savings but zero configured withdrawals",
+  function (this: ProductAcceptanceWorld) {
+    this.settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-01-01",
+      dateOfBirth: "1970-01-01",
+      requirementAge: 57,
+      lifeExpectancy: 58,
+      desiredRetirementIncome: 6000,
+      retirementIncomeTargetBasis: "gross",
+      projectionBasis: "real",
+      taxationEnabled: false,
+      assumedCpiPercent: 0,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showLisa: false,
+      showIsa: true,
+      isaCurrentPot: 100_000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 57,
+      isaRealInterestPercent: 0,
+      isaWithdrawalStrategy: "percentage",
+      isaWithdrawalPercent: 0,
+    };
+  }
+);
+
 Then(
   "the gross pension income should exceed the spending target",
   function (this: ProductAcceptanceWorld) {
@@ -2032,7 +2067,7 @@ Then(
   function (this: ProductAcceptanceWorld) {
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
-    assertCondition(result.targetMissMonths > 0);
+    assertCondition(result.assessment.targetMissMonths > 0);
   }
 );
 
@@ -2042,6 +2077,30 @@ Then(
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
     assertEqual(buildRetirementOutcomeBanner(result).label, expectedLabel);
+  }
+);
+
+Then(
+  "the plan status should be {string}",
+  function (this: ProductAcceptanceWorld, expectedStatus: string) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    const status = buildComparisonStatusItems(result).find(
+      (item) => item.label === "Overall status"
+    );
+    assertEqual(status?.value, expectedStatus);
+  }
+);
+
+Then(
+  "the first projected annual shortfall should be {float}",
+  function (this: ProductAcceptanceWorld, expectedShortfall: number) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertEqual(
+      result.assessment.firstShortfallAnnualAmount,
+      expectedShortfall
+    );
   }
 );
 

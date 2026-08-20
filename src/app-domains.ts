@@ -117,6 +117,12 @@ export {
 } from "./app-domains/retirement-income";
 
 export {
+  assessRetirementPlan,
+  type FlexibleFundAssessmentAccount,
+  type RetirementPlanAssessment,
+} from "./app-domains/retirement-plan-assessment";
+
+export {
   createTargetBasedWithdrawalPreview,
   getBalanceForAccount,
   getFlexibleFundAccountIdForStrategyField,

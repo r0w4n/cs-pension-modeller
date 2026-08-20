@@ -87,7 +87,7 @@ function ComparisonInsightsGrid({
             label: insights.bestTargetResult?.scenario.name ?? "Not available",
             value: insights.bestTargetResult
               ? formatTargetMissDuration(
-                  insights.bestTargetResult.targetMissMonths
+                  insights.bestTargetResult.assessment.targetMissMonths
                 )
               : "Not available",
           },
@@ -102,8 +102,9 @@ function ComparisonInsightsGrid({
               "Not available",
             value: insights.lowestShortfallRiskResult
               ? formatRecurringShortfallOrSurplus(
-                  Math.max(0, -insights.lowestShortfallRiskResult.annualGap),
-                  Math.max(0, insights.lowestShortfallRiskResult.annualGap),
+                  insights.lowestShortfallRiskResult.assessment
+                    .largestAnnualShortfall,
+                  0,
                   retirementIncomeDisplay
                 )
               : "Not available",

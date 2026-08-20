@@ -112,6 +112,14 @@ Feature: Modeller journeys
     Then the retirement outcome should be labelled "Needs checking"
     And the retirement outcome should explain that the State Pension is unconfirmed
 
+  @results @withdrawal-strategy
+  Scenario: Assess the configured withdrawals rather than a hypothetical bridge
+    Given a retirement plan with sufficient ISA savings but zero configured withdrawals
+    When the retirement outcome is assessed
+    Then the retirement outcome should be labelled "Shortfall"
+    And the plan status should be "Needs attention"
+    And the first projected annual shortfall should be 6000.00
+
   @simple-journey @state-pension
   Scenario: Keep an otherwise resilient result on track when State Pension is unconfirmed
     Given an unconfirmed full State Pension assumption

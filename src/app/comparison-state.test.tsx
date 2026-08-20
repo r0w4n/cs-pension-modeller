@@ -170,7 +170,6 @@ describe("comparison state scenario actions", () => {
       currentSettingsSignature: "different-current-plan",
       retirementIncomeDisplay: "annual",
       scenarios: [savedScenario],
-      hideBridgeFundingSection: true,
     });
 
     expect(panel.incomeAgeRangeItems).toEqual(

@@ -212,7 +212,8 @@ The app is organised around a small set of layers:
   calculations for Alpha, nuvos, State Pension, SIPP, ISA, LISA, tax,
   inflation, and bridge analysis.
 - [`src/app-domains/`](src/app-domains) adapts raw projection results into
-  UI-facing journey, form, chart, comparison, and summary structures.
+  UI-facing journey, form, chart, comparison, summary, and canonical retirement
+  plan assessment structures.
 - [`src/pages/`](src/pages) contains the static footer pages for Settings,
   Privacy, Methodology, About, and Feedback-related navigation.
 - [`e2e/`](e2e) contains Playwright journey, accessibility, and production
@@ -233,7 +234,7 @@ flowchart TD
     I --> J["src/projection-domains/<br/>alpha, nuvos, state-pension, sipp, isa, tax, inflation"]
 
     D --> K["window.localStorage"]
-    F --> L["Charts, summaries, comparison views"]
+    F --> L["Retirement plan assessment,<br/>charts, summaries, comparison views"]
     E --> M["Projection rows and pension summary"]
     C --> N["Journey mode / expert mode UI"]
 ```
@@ -248,7 +249,7 @@ flowchart LR
     D --> E["Projection engine<br/>monthly row generation"]
     E --> F["Projection rows"]
     F --> G["Summary generation<br/>src/summary.ts"]
-    F --> H["App-domain adapters<br/>comparison, chart, journey helpers"]
+    F --> H["App-domain adapters<br/>plan assessment, comparison, chart, journey helpers"]
     G --> I["Results summary UI"]
     H --> J["Retirement income chart, comparison panel,<br/>projection table, journey screens"]
     B --> K["Local persistence<br/>window.localStorage"]

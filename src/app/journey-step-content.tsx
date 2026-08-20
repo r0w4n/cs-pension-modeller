@@ -447,9 +447,7 @@ function renderBridgeAnswerStep(
             retirementIncomeDisplay={retirementIncomeDisplay}
             onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
             incomeAgeRangeItems={incomeAgeRangeItems}
-            statusItems={buildStatusItems(currentComparisonResult, {
-              hideBridgeFundingSection: Boolean(step.hideBridgeFundingSection),
-            })}
+            statusItems={buildStatusItems(currentComparisonResult)}
           />
         )}
       </ResultsSummarySection>
@@ -1047,11 +1045,10 @@ function reviewWithdrawalStrategy(accountId: FlexibleFundAccountId) {
 }
 
 function buildStatusItems(
-  currentComparisonResult: ReturnType<typeof createComparisonResult>,
-  options: { hideBridgeFundingSection?: boolean } = {}
+  currentComparisonResult: ReturnType<typeof createComparisonResult>
 ) {
   return currentComparisonResult
-    ? buildComparisonStatusItems(currentComparisonResult, options)
+    ? buildComparisonStatusItems(currentComparisonResult)
     : [];
 }
 

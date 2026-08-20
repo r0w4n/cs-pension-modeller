@@ -153,18 +153,24 @@ describe("comparison table rows", () => {
     expect(getFirstComparisonValue(monthlyRows, "Alpha income")).toContain(
       "/month"
     );
-    expect(getFirstComparisonValue(monthlyRows, "Extra saving")).toContain(
-      "/month"
-    );
+    expect(
+      getFirstComparisonValue(
+        monthlyRows,
+        "Illustrative extra saving for bridge"
+      )
+    ).toContain("/month");
     expect(getFirstComparisonValue(annualRows, "Target income")).toContain(
       "/year"
     );
     expect(getFirstComparisonValue(annualRows, "Alpha income")).toContain(
       "/year"
     );
-    expect(getFirstComparisonValue(annualRows, "Extra saving")).toContain(
-      "/year"
-    );
+    expect(
+      getFirstComparisonValue(
+        annualRows,
+        "Illustrative extra saving for bridge"
+      )
+    ).toContain("/year");
   });
 
   it("can hide bridge funding and flexible assets sections", () => {
@@ -320,8 +326,8 @@ describe("comparison table rows", () => {
     ).toBe("55");
   });
 
-  it("keeps bridge wording for normal status items but hides it when bridge funding is hidden", () => {
-    const settings = createDefaultSettings();
+  it("uses the canonical assessment when the bridge diagnostic disagrees", () => {
+    const settings = createExactTargetScenarioSettings();
     const baseResult = createComparisonResult(
       {
         id: "scenario-1",
@@ -334,9 +340,8 @@ describe("comparison table rows", () => {
     );
     const result = {
       ...baseResult,
-      targetMissMonths: 0,
-      bridgeAnalysis: {
-        ...baseResult.bridgeAnalysis,
+      bridgeFundingEstimate: {
+        ...baseResult.bridgeFundingEstimate,
         planWorks: false,
         additionalMonthlyContributionRequired: 250,
         totalUnfundedShortfall: 10_000,
@@ -346,14 +351,45 @@ describe("comparison table rows", () => {
 
     expect(
       buildComparisonStatusItems(result).find(
+        (item) => item.label === "Overall status"
+      )?.value
+    ).toBe("Looks workable");
+    expect(
+      buildComparisonStatusItems(result).find(
         (item) => item.label === "Main issue"
       )?.value as string
-    ).toContain("Bridge still unfunded");
-    expect(
-      buildComparisonStatusItems(result, {
-        hideBridgeFundingSection: true,
-      }).find((item) => item.label === "Main issue")?.value as string
     ).not.toContain("Bridge");
+  });
+
+  it("reports the configured zero-withdrawal strategy rather than a hypothetical bridge", () => {
+    const settings = createZeroWithdrawalStrategySettings();
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "No ISA withdrawals",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+    const retirementPoint = createRetirementIncomeSeries(
+      result.rows,
+      settings
+    ).find((point) => point.age >= settings.requirementAge);
+
+    expect(result.bridgeFundingEstimate.planWorks).toBe(true);
+    expect(retirementPoint?.shortfallAnnual).toBe(6000);
+    expect(result.assessment.meetsTargetThroughout).toBe(false);
+    expect(buildRetirementOutcomeBanner(result).label).toBe("Shortfall");
+    expect(
+      buildComparisonStatusItems(result).find(
+        (item) => item.label === "Overall status"
+      )?.value
+    ).toBe("Needs attention");
+    expect(
+      getFirstComparisonValue(buildComparisonTableRows([result]), "Plan status")
+    ).toBe("Shortfall with configured withdrawals");
   });
 
   it("discloses the entered salary used as pre-retirement tax context", () => {
@@ -453,7 +489,7 @@ describe("comparison table rows", () => {
           assessedIncomeAnnual: point.assessedIncomeAnnual,
         }))
     ).toEqual([]);
-    expect(result.targetMissMonths).toBe(0);
+    expect(result.assessment.targetMissMonths).toBe(0);
   });
 
   it("treats sub-penny floating-point differences as meeting the target", () => {
@@ -471,7 +507,7 @@ describe("comparison table rows", () => {
 
     expect(result.annualIncome).toBeCloseTo(45_400, 6);
     expect(result.annualGap).toBe(0);
-    expect(result.targetMissMonths).toBe(0);
+    expect(result.assessment.targetMissMonths).toBe(0);
     expect(result.summary.retirementIncome.ageRanges).toEqual([
       expect.objectContaining({
         annualTargetIncome: 45_400,
@@ -479,14 +515,12 @@ describe("comparison table rows", () => {
         annualSurplus: 0,
       }),
     ]);
-    expect(result.bridgeAnalysis.totalUnfundedShortfall).toBe(0);
-    expect(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus).toBe(0);
+    expect(result.bridgeFundingEstimate.totalUnfundedShortfall).toBe(0);
+    expect(result.bridgeFundingEstimate.fullSecureAnnualGuaranteedSurplus).toBe(
+      0
+    );
     expect(buildRetirementOutcomeBanner(result).status).toBe("onTrack");
-    expect(
-      buildComparisonStatusItems(result, {
-        hideBridgeFundingSection: true,
-      })
-    ).toEqual([
+    expect(buildComparisonStatusItems(result)).toEqual([
       { label: "Overall status", value: "Looks workable" },
       {
         label: "Target shortfall",
@@ -525,9 +559,11 @@ describe("comparison table rows", () => {
         shortfallAnnual: 0,
       })
     );
-    expect(result.targetMissMonths).toBe(0);
-    expect(result.bridgeAnalysis.planWorks).toBe(true);
-    expect(result.bridgeAnalysis.fullSecureAnnualGuaranteedSurplus).toBe(6000);
+    expect(result.assessment.targetMissMonths).toBe(0);
+    expect(result.bridgeFundingEstimate.planWorks).toBe(true);
+    expect(result.bridgeFundingEstimate.fullSecureAnnualGuaranteedSurplus).toBe(
+      6000
+    );
     expect(buildRetirementOutcomeBanner(result)).toEqual(
       expect.objectContaining({ status: "onTrack", label: "Looks workable" })
     );
@@ -566,11 +602,7 @@ describe("comparison table rows", () => {
     expect(banner.warning?.message).toContain(
       "meets your target only when the assumed State Pension of £12,548 a year is included"
     );
-    expect(
-      buildComparisonStatusItems(result, {
-        hideBridgeFundingSection: true,
-      })
-    ).toEqual([
+    expect(buildComparisonStatusItems(result)).toEqual([
       { label: "Overall status", value: "Needs checking" },
       {
         label: "Target shortfall",
@@ -611,11 +643,7 @@ describe("comparison table rows", () => {
     expect(banner.warning?.message).toContain(
       "target is still met if this income is excluded"
     );
-    expect(
-      buildComparisonStatusItems(result, {
-        hideBridgeFundingSection: true,
-      })
-    ).toEqual([
+    expect(buildComparisonStatusItems(result)).toEqual([
       { label: "Overall status", value: "Looks workable" },
       {
         label: "Target shortfall",
@@ -673,7 +701,7 @@ describe("comparison table rows", () => {
       JSON.stringify(settings)
     );
 
-    expect(result.targetMissMonths).toBe(0);
+    expect(result.assessment.targetMissMonths).toBe(0);
     expect(result.statePensionAssumptionAffectsTarget).toBe(false);
     const banner = buildRetirementOutcomeBanner(result);
     expect(banner.status).toBe("onTrack");
@@ -706,7 +734,9 @@ describe("comparison table rows", () => {
     }).length;
 
     expect(projectionMonthsInAssessmentPeriod).toBe(157);
-    expect(result.targetMissMonths).toBe(projectionMonthsInAssessmentPeriod);
+    expect(result.assessment.targetMissMonths).toBe(
+      projectionMonthsInAssessmentPeriod
+    );
   });
 
   it("shows expected flexible bridge exhaustion as caution rather than a problem", () => {
@@ -849,6 +879,37 @@ function createFlexibleAssetsScenario(input: { isaCurrentPot: number }) {
     isaRealInterestPercent: 0,
     isaWithdrawalStrategy: "use_by_age" as const,
     isaWithdrawalTargetAge: 59,
+  };
+}
+
+function createZeroWithdrawalStrategySettings() {
+  return {
+    ...createDefaultSettings(),
+    startDate: "2026-01-01",
+    dateOfBirth: "1970-01-01",
+    requirementAge: 57,
+    lifeExpectancy: 58,
+    desiredRetirementIncome: 6000,
+    retirementIncomeTargetBasis: "gross" as const,
+    projectionBasis: "real" as const,
+    taxationEnabled: false,
+    assumedCpiPercent: 0,
+    showAlpha: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: false,
+    showSipp: false,
+    showCsAvc: false,
+    showLisa: false,
+    showIsa: true,
+    isaCurrentPot: 100_000,
+    isaMonthlyContribution: 0,
+    isaDrawAge: 57,
+    isaRealInterestPercent: 0,
+    isaWithdrawalStrategy: "percentage" as const,
+    isaWithdrawalPercent: 0,
   };
 }
 

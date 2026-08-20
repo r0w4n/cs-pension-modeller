@@ -50,9 +50,9 @@ describe("saved scenarios", () => {
         },
         JSON.stringify(settings)
       ),
-      bridgeAnalysis: {
-        ...matchingResult.bridgeAnalysis,
-        planWorks: false,
+      assessment: {
+        ...matchingResult.assessment,
+        meetsTargetThroughout: false,
       },
     };
     const onLoadScenario = vi.fn();

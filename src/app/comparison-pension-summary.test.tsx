@@ -269,6 +269,10 @@ function createComparisonResultFixture({
   statePensionAssumptionAffectsTarget?: boolean;
   ageRanges?: ComparisonResult["summary"]["retirementIncome"]["ageRanges"];
 } = {}): ComparisonResult {
+  const firstShortfallRange = ageRanges.find(
+    (range) => range.annualShortfall > 0
+  );
+
   return {
     scenario: {
       id: "current-model",
@@ -314,7 +318,39 @@ function createComparisonResultFixture({
         factorUnavailable: false,
       },
     },
-    bridgeAnalysis: {},
+    assessment: {
+      assessmentStartDate: "2047-01-01",
+      assessmentEndDate: "2067-01-01",
+      assessmentAvailable: true,
+      meetsTargetThroughout: targetMissMonths === 0,
+      targetMissMonths,
+      firstShortfallDate: firstShortfallRange ? "2061-01-01" : null,
+      firstShortfallAge: firstShortfallRange?.startAge ?? null,
+      firstShortfallAnnualTarget: firstShortfallRange?.annualTargetIncome ?? 0,
+      firstShortfallAnnualAmount: firstShortfallRange?.annualShortfall ?? 0,
+      lastShortfallDate: firstShortfallRange ? "2067-01-01" : null,
+      largestAnnualShortfall: firstShortfallRange?.annualShortfall ?? 0,
+      totalLifetimeShortfall:
+        (firstShortfallRange?.annualShortfall ?? 0) *
+        (firstShortfallRange
+          ? firstShortfallRange.endAge - firstShortfallRange.startAge
+          : 0),
+      lowestAnnualIncome: 15_578.65,
+      retirementAnnualIncome: 15_578.65,
+      retirementAnnualTarget: 31_350,
+      retirementAnnualGap: -15_771.35,
+      allSecureIncomeStartDate: "2054-01-01",
+      allSecureIncomeStartAge: 67,
+      allSecureIncomeStartAgeMonths: 0,
+      allSecureAnnualIncome: 36_667.6,
+      allSecureAnnualSurplus: 5317.6,
+      planningHorizonSecureAnnualIncome: 36_667.6,
+      planningHorizonSecureAnnualSurplus: 5317.6,
+      firstFlexibleFundExhaustionDate: null,
+      firstFlexibleFundExhaustionAge: null,
+      firstFlexibleFundExhaustionAccount: null,
+    },
+    bridgeFundingEstimate: {},
     annualIncome: 36667.6,
     annualTarget: 31350,
     annualGap: 5317.6,
@@ -324,7 +360,6 @@ function createComparisonResultFixture({
     retirementAnnualIncome: 15578.65,
     statePensionAnnualIncome: 36667.6,
     lifeExpectancyAnnualIncome: 36667.6,
-    targetMissMonths,
     statePensionAssumptionAffectsTarget,
     currentMatchesSaved: true,
   } as unknown as ComparisonResult;

@@ -7,16 +7,17 @@ import {
   buildIncomeAgeRangeItems,
   calculateComparisonInsights,
   clonePensionSettings,
-  createComparisonResult,
-  createComparisonScenarioId,
   getSettingsSignature,
   type ComparisonInsights,
   type ComparisonResult,
-  type ComparisonResultCache,
   type ComparisonScenario,
   type IncomeAgeRangeItem,
 } from "../app-domains";
+import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
+import { getCachedComparisonResult } from "./comparison-result-cache";
+import type { ComparisonResultCache } from "./comparison-result-cache";
+import { createComparisonScenarioId } from "./comparison-storage";
 import type { SummaryItem } from "./results-summary";
 
 export const MAX_COMPARISON_SCENARIOS = 5;
@@ -38,6 +39,7 @@ export function useComparisonState({
   comparisonResultCache,
   retirementIncomeSeries,
   retirementIncomeDisplay,
+  retirementPlanResult,
 }: {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
@@ -45,6 +47,7 @@ export function useComparisonState({
   comparisonResultCache?: ComparisonResultCache;
   retirementIncomeSeries?: RetirementIncomePoint[];
   retirementIncomeDisplay?: RetirementIncomeDisplay;
+  retirementPlanResult?: RetirementPlanResult;
 }) {
   const currentSettingsSignature = useMemo(
     () => getSettingsSignature(settings),
@@ -64,36 +67,47 @@ export function useComparisonState({
   const currentResult = useMemo(
     () =>
       currentScenarioIsValid
-        ? createComparisonResult(
-            currentScenario,
+        ? getCachedComparisonResult({
+            scenario: currentScenario,
             currentSettingsSignature,
-            comparisonResultCache
-          )
+            cache: comparisonResultCache,
+            precomputedPlan: retirementPlanResult,
+          })
         : null,
     [
       comparisonResultCache,
       currentScenario,
       currentScenarioIsValid,
       currentSettingsSignature,
+      retirementPlanResult,
     ]
+  );
+  const savedBaseResults = useMemo(
+    () =>
+      scenarios.map((scenario) =>
+        getCachedComparisonResult({
+          scenario,
+          currentSettingsSignature: "",
+          cache: comparisonResultCache,
+        })
+      ),
+    [comparisonResultCache, scenarios]
   );
   const comparisonPanelData = useMemo(
     () =>
       buildComparisonPanelData({
-        comparisonResultCache,
         currentResult,
         currentSettingsSignature,
         retirementIncomeDisplay,
         retirementIncomeSeries,
-        scenarios,
+        savedBaseResults,
       }),
     [
-      comparisonResultCache,
       currentResult,
       currentSettingsSignature,
       retirementIncomeDisplay,
       retirementIncomeSeries,
-      scenarios,
+      savedBaseResults,
     ]
   );
 
@@ -192,23 +206,18 @@ export function useScenarioActions({
 }
 
 export function buildComparisonPanelData({
-  comparisonResultCache,
   currentResult,
   currentSettingsSignature,
   retirementIncomeDisplay,
   retirementIncomeSeries,
-  scenarios,
+  savedBaseResults,
 }: {
-  comparisonResultCache: ComparisonResultCache | undefined;
   currentResult: ComparisonResult | null;
   currentSettingsSignature: string;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
   retirementIncomeSeries?: RetirementIncomePoint[];
-  scenarios: ComparisonScenario[];
+  savedBaseResults: ComparisonResult[];
 }): ComparisonPanelData {
-  const savedBaseResults = scenarios.map((scenario) =>
-    createComparisonResult(scenario, "", comparisonResultCache)
-  );
   const savedResults = savedBaseResults.map((result) => ({
     ...result,
     currentMatchesSaved:

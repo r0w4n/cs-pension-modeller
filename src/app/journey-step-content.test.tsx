@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { deriveInflationAssumptions } from "../projection";
 import { createDefaultSettings, type PensionSettings } from "../settings";
 import {
+  createComparisonResult,
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
 } from "../app-domains";
@@ -11,6 +12,7 @@ import {
   type JourneyStepViewModel,
 } from "./journey-step-content";
 import { FlexibleWithdrawalPriorityEditor } from "./flexible-withdrawal-priority-editor";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 
 const projectionTableMocks = vi.hoisted(() => ({
   section: vi.fn(),
@@ -851,9 +853,22 @@ describe("JourneyStepContent", () => {
 
 function createViewModel(): JourneyStepViewModel {
   const settings = createDefaultSettings();
+  const retirementPlanResult = calculateRetirementPlan(settings);
 
   return {
     settings,
+    retirementPlanResult,
+    currentComparisonResult: createComparisonResult(
+      {
+        id: "current-model",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings),
+      retirementPlanResult
+    ),
     validationIssues: [],
     pensionSummary: null,
     retirementIncomeSeries: [],

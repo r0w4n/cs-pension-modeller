@@ -112,6 +112,73 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      "src/calculation/**/*.ts",
+      "src/projection-domains/**/*.ts",
+      "src/result-projection/**/*.ts",
+      "src/app-domains/**/*.ts",
+    ],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "react",
+              message:
+                "Keep the FCIS functional core and semantic adapters independent of React.",
+            },
+            {
+              name: "react-dom",
+              message:
+                "Keep the FCIS functional core and semantic adapters independent of React.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["../app", "../app/*", "../App"],
+              message:
+                "The FCIS functional core must not depend on the imperative application shell.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "document",
+          message: "Pass browser state through the FCIS imperative shell.",
+        },
+        {
+          name: "localStorage",
+          message: "Pass browser state through the FCIS imperative shell.",
+        },
+        {
+          name: "window",
+          message: "Pass browser state through the FCIS imperative shell.",
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message: "Pass the current time into the FCIS functional core.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='Date'][callee.property.name='now']",
+          message: "Pass the current time into the FCIS functional core.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='Math'][callee.property.name='random']",
+          message: "Generate identifiers in the FCIS imperative shell.",
+        },
+      ],
+    },
+  },
+  {
     files: ["features/**/*.ts"],
     rules: {
       "no-restricted-imports": [

@@ -655,7 +655,11 @@ export function DateSettingField({
           label={field.label}
           value={value}
           idPrefix={field.id}
-          yearRange={getPrimaryDateYearRange(field.id, settings)}
+          yearRange={getPrimaryDateYearRange(
+            field.id,
+            settings,
+            new Date().getUTCFullYear()
+          )}
           disabled={disabled}
           describedBy={validationId}
           hasValidationIssue={Boolean(validationIssue)}
@@ -668,7 +672,11 @@ export function DateSettingField({
           label={field.label}
           value={value}
           idPrefix={field.id}
-          yearRange={getPrimaryDateYearRange(field.id, settings)}
+          yearRange={getPrimaryDateYearRange(
+            field.id,
+            settings,
+            new Date().getUTCFullYear()
+          )}
           disabled={disabled}
           describedBy={validationId}
           hasValidationIssue={Boolean(validationIssue)}

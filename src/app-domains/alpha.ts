@@ -68,11 +68,13 @@ export function getAlphaEffectiveRangeField(
   };
 }
 
-export function getAlphaDateYearRange(fieldId: DateField["id"]) {
+export function getAlphaDateYearRange(
+  fieldId: DateField["id"],
+  currentYear: number
+) {
   if (fieldId !== "alphaPensionAbsDate") {
     return null;
   }
 
-  const currentYear = new Date().getUTCFullYear();
   return { min: 2015, max: currentYear };
 }

@@ -4,15 +4,14 @@ import {
   type deriveInflationAssumptions,
 } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
+import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomePoint,
 } from "../RetirementIncomeChart";
-import {
-  type ComparisonResultCache,
-  type ComparisonScenario,
-} from "../app-domains";
+import { type ComparisonScenario } from "../app-domains";
+import type { ComparisonResultCache } from "./comparison-result-cache";
 import { ComparisonRetirementIncomeChart, DeferredBelowFold } from "./chart";
 import { ComparisonPensionSummary } from "./comparison-pension-summary";
 import { ComparisonResults } from "./comparison-results";
@@ -43,6 +42,7 @@ export type ComparisonPanelProps = {
   validationIssues: PensionValidationIssue[];
   scenarios: ComparisonScenario[];
   comparisonResultCache?: ComparisonResultCache;
+  retirementPlanResult?: RetirementPlanResult;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (settings: PensionSettings) => void;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
@@ -69,6 +69,7 @@ export function ComparisonPanel({
   validationIssues,
   scenarios,
   comparisonResultCache,
+  retirementPlanResult,
   onScenariosChange,
   onLoadScenario,
   retirementIncomeDisplay,
@@ -88,6 +89,7 @@ export function ComparisonPanel({
     validationIssues,
     scenarios,
     comparisonResultCache,
+    retirementPlanResult,
     retirementIncomeSeries,
     retirementIncomeDisplay,
   });

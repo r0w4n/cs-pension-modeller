@@ -47,19 +47,15 @@ export {
   buildIncomeAgeRangeItems,
   buildRetirementOutcomeBanner,
   calculateComparisonInsights,
-  clearStoredComparisonScenarios,
   clonePensionSettings,
   createComparisonResult,
-  createComparisonScenarioId,
   formatCapitalPreservation,
   formatTargetMissDuration,
   getSettingsSignature,
-  loadStoredComparisonScenarios,
-  saveStoredComparisonScenarios,
   type ComparisonInsights,
+  type ComparisonCellValue,
   type IncomeAgeRangeItem,
   type ComparisonResult,
-  type ComparisonResultCache,
   type ComparisonScenario,
   type ComparisonTableRow,
   type RetirementOutcomeBanner,
@@ -116,7 +112,7 @@ export {
   assessRetirementPlan,
   type FlexibleFundAssessmentAccount,
   type RetirementPlanAssessment,
-} from "./app-domains/retirement-plan-assessment";
+} from "./calculation/retirement-plan-assessment";
 
 export {
   createTargetBasedWithdrawalPreview,

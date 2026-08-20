@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { useState } from "react";
 import {
   buildIncomeAgeRangeItems,
+  createComparisonResult,
   type ComparisonScenario,
 } from "../app-domains";
 import {
@@ -165,11 +166,10 @@ describe("comparison state scenario actions", () => {
       retirementIncomeTargetBasis: "gross",
     });
     const panel = buildComparisonPanelData({
-      comparisonResultCache: undefined,
       currentResult: null,
       currentSettingsSignature: "different-current-plan",
       retirementIncomeDisplay: "annual",
-      scenarios: [savedScenario],
+      savedBaseResults: [createComparisonResult(savedScenario, "")],
     });
 
     expect(panel.incomeAgeRangeItems).toEqual(

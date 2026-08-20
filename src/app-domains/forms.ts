@@ -104,9 +104,10 @@ export function getEffectiveRangeField(
 
 export function getPrimaryDateYearRange(
   fieldId: DateField["id"],
-  settings?: PensionSettings
+  settings: PensionSettings | undefined,
+  currentYear: number
 ) {
-  const alphaRange = getAlphaDateYearRange(fieldId);
+  const alphaRange = getAlphaDateYearRange(fieldId, currentYear);
 
   if (alphaRange) {
     return alphaRange;
@@ -118,8 +119,6 @@ export function getPrimaryDateYearRange(
     return statePensionRange;
   }
 
-  const currentYear = new Date().getUTCFullYear();
-
   switch (fieldId) {
     case "dateOfBirth":
       return { min: currentYear - 100, max: currentYear };
@@ -128,9 +127,10 @@ export function getPrimaryDateYearRange(
   }
 }
 
-export function getLumpSumDateYearRange(kind: "start" | "end") {
-  const currentYear = new Date().getUTCFullYear();
-
+export function getLumpSumDateYearRange(
+  kind: "start" | "end",
+  currentYear: number
+) {
   if (kind === "start") {
     return { min: currentYear - 5, max: currentYear + 40 };
   }

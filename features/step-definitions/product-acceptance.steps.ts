@@ -239,6 +239,14 @@ function nodeText(value: unknown) {
     return "";
   }
 
+  if (
+    typeof value === "object" &&
+    "value" in value &&
+    (typeof value.value === "string" || typeof value.value === "number")
+  ) {
+    return String(value.value);
+  }
+
   return "";
 }
 

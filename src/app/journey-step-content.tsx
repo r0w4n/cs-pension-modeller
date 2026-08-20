@@ -21,13 +21,10 @@ import {
 import {
   buildComparisonStatusItems,
   calculateAddedPensionMonthlyIncome,
-  clonePensionSettings,
   createAddedPensionGoalBasis,
-  createComparisonResult,
   estimateAddedPensionMonthlyContribution,
-  getSettingsSignature,
   getWithdrawalStrategyFieldId,
-  type ComparisonResultCache,
+  type ComparisonResult,
   type ComparisonScenario,
   type IncomeAgeRangeItem,
   type FlexibleWithdrawalSummary,
@@ -41,6 +38,8 @@ import {
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "../app-domains";
+import type { RetirementPlanResult } from "../calculation/retirement-plan";
+import type { ComparisonResultCache } from "./comparison-result-cache";
 import { ComparisonRetirementIncomeChart } from "./chart";
 import {
   ComparisonPanel as ComparisonPanelFeature,
@@ -70,6 +69,8 @@ import { FlexibleWithdrawalPriorityEditor } from "./flexible-withdrawal-priority
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
+  retirementPlanResult: RetirementPlanResult;
+  currentComparisonResult: ComparisonResult;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
   retirementIncomeSeries: RetirementIncomePoint[];
@@ -183,23 +184,10 @@ function JourneyResultsStep({
   viewModel: JourneyStepViewModel;
   shouldRenderProjectionTable: boolean;
 }) {
-  const { settings, comparisonResultCache } = viewModel;
-  const currentComparisonResult = useMemo(
-    () =>
-      createComparisonResult(
-        {
-          id: "current-model",
-          name: "Current model",
-          settings: clonePensionSettings(settings),
-          createdAt: "",
-          updatedAt: "",
-        },
-        getSettingsSignature(settings),
-        comparisonResultCache
-      ),
-    [comparisonResultCache, settings]
-  );
   const {
+    settings,
+    retirementPlanResult,
+    currentComparisonResult,
     validationIssues,
     retirementIncomeSeries,
     retirementIncomeChartParameters,
@@ -212,6 +200,7 @@ function JourneyResultsStep({
     incomeAgeRangeItems,
     comparisonRetirementIncomeDisplay,
     comparisonScenarios,
+    comparisonResultCache,
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
@@ -327,6 +316,7 @@ function JourneyResultsStep({
             validationIssues={validationIssues}
             scenarios={comparisonScenarios}
             comparisonResultCache={comparisonResultCache}
+            retirementPlanResult={retirementPlanResult}
             onScenariosChange={onScenariosChange}
             onLoadScenario={onLoadScenario}
             retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
@@ -895,9 +885,7 @@ function reviewWithdrawalStrategy(accountId: FlexibleFundAccountId) {
   });
 }
 
-function buildStatusItems(
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
-) {
+function buildStatusItems(currentComparisonResult: ComparisonResult) {
   return currentComparisonResult
     ? buildComparisonStatusItems(currentComparisonResult)
     : [];

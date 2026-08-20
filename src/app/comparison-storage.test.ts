@@ -5,11 +5,13 @@ import {
 } from "../settings";
 import {
   clearStoredComparisonScenarios,
-  createComparisonResult,
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
+} from "./comparison-storage";
+import {
+  createComparisonResult,
   type ComparisonScenario,
-} from "./comparison";
+} from "../app-domains/comparison";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";

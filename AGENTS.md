@@ -41,20 +41,43 @@ Do not duplicate full feature or scheme inventories here.
 
 This map is for orientation; the README architecture section is canonical:
 
-| Area                                  | Responsibility                                              |
-| ------------------------------------- | ----------------------------------------------------------- |
-| `src/main.tsx`, `src/App.tsx`         | Browser entrypoint and top-level composition                |
-| `src/app/`                            | UI state, persistence, validation, and orchestration        |
-| `src/settings/`                       | Defaults, normalization, storage, and schema migration      |
-| `src/projection-core.ts`, `src/row-*` | Projection pipeline and row generation                      |
-| `src/projection-domains/`             | Pension, savings, tax, inflation, and bridge logic          |
-| `src/app-domains/`                    | UI-facing journey, form, chart, and comparison adapters     |
-| `src/data/`                           | Pension factor tables and source metadata                   |
-| `features/`                           | Gherkin specifications and step definitions                 |
-| `e2e/`                                | Browser journeys, accessibility, and production smoke tests |
+| FCIS layer / area                     | Responsibility                                                         |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| `src/main.tsx`, `src/App.tsx`, UI     | Presentation and top-level composition                                 |
+| `src/app/`                            | Imperative shell: application state, orchestration, effects and caches |
+| `src/settings/`                       | Canonical settings, validation, normalization and schema migration     |
+| `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                            |
+| `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations          |
+| `src/calculation/`                    | Canonical `RetirementPlanResult` calculation and assessment            |
+| `src/result-projection/`              | Pure projection from canonical results to semantic presentation data   |
+| `src/app-domains/`                    | Stateless journey, form, chart and comparison adapters                 |
+| `src/data/`                           | Pension factor tables and source metadata                              |
+| `features/`                           | Gherkin specifications and step definitions                            |
+| `e2e/`                                | Browser journeys, accessibility and production smoke tests             |
 
-Keep financial and domain logic separate from presentation code where
-practical.
+### FCIS Architecture Rules
+
+The required flow is `Presentation -> Application State -> Domain / Calculation
+Engine -> Result Projection -> Presentation`.
+
+- Keep React state, hooks, browser APIs, persistence, analytics, generated IDs,
+  mutable caches, and other effects in `src/app/` or browser entry points.
+- Keep calculation and result-projection functions deterministic. Pass inputs
+  explicitly; do not read local storage, the DOM, the current time, randomness,
+  or mutable application state from the functional core.
+- Use `calculateRetirementPlan` as the canonical active-plan calculation entry
+  point. Extend `RetirementPlanResult` deliberately when downstream projections
+  need more domain data; do not recalculate pension rows in a component.
+- Project canonical results into semantic values before rendering. Result
+  projections must not return JSX or `ReactNode` values.
+- Treat journeys as presentation configurations only. A journey may choose
+  shared fields, copy, ordering, defaults, and visible result components, but it
+  must not have a distinct pension or withdrawal calculation path.
+- Keep bridge analysis as a shared calculation diagnostic used by assessment
+  and comparison, not as a journey architecture or a journey-specific engine.
+- Dependency direction must follow the required flow. Presentation may call
+  application actions; the imperative shell may call the functional core; the
+  core must not import presentation or application-state modules.
 
 ## Change Workflow
 

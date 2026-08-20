@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { isValidElement } from "react";
-import type { ReactNode } from "react";
 import {
   buildComparisonDetailedRows,
   buildComparisonStatusItems,
@@ -913,12 +911,17 @@ function createZeroWithdrawalStrategySettings() {
   };
 }
 
-function getComparisonToneClass(value: ReactNode) {
-  if (!isValidElement<{ className?: string }>(value)) {
-    throw new Error("Expected a rendered comparison tone cell.");
+function getComparisonToneClass(value: unknown) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("tone" in value) ||
+    typeof value.tone !== "string"
+  ) {
+    throw new Error("Expected a semantic comparison tone cell.");
   }
 
-  return value.props.className ?? "";
+  return `comparison-cell comparison-cell--${value.tone}`;
 }
 
 function getFirstComparisonValue(

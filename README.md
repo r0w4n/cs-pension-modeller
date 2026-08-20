@@ -196,45 +196,67 @@ For more detail, see the in-app Methodology page.
 
 ## Architecture
 
-The app is organised around four main layers. Journeys are presentation
-compositions: they choose shared fields, labels, help text, update behaviour,
-and results sections, but they do not select a different calculation engine.
+The app follows a functional core, imperative shell (FCIS) architecture. React,
+browser APIs, persistence, analytics, mutable caches, and orchestration stay in
+the imperative application shell. Pension calculations and result projections
+are deterministic functions in the functional core.
 
-- [`src/main.tsx`](src/main.tsx) boots the React app.
-- [`src/App.tsx`](src/App.tsx) composes the main app screens and feature
-  sections.
-- [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) orchestrates
-  UI state, persistence, validation, derived results, and projection updates.
-- [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) defines the
-  presentation composition for the simplified, early-retirement, and expert
-  journeys. It references shared field definitions and configures shared
-  results sections; journey identity is not passed into the calculation core.
-- [`src/settings/`](src/settings) contains defaults, normalization, validation,
-  storage, and schema migration logic. Each journey owns one canonical
-  `PensionSettings` value: the saved and exported settings are the settings
-  validated and projected, with no separate hidden runtime settings overlay.
-- [`src/projection-core.ts`](src/projection-core.ts),
-  [`src/row-assembly.ts`](src/row-assembly.ts), and the row engines contain the
-  projection pipeline.
-- [`src/projection-domains/`](src/projection-domains) contains domain-specific
-  calculations for Alpha, nuvos, State Pension, SIPP, ISA, LISA, tax,
-  inflation, and bridge analysis.
-- [`src/app-domains/`](src/app-domains) adapts raw projection results into
-  UI-facing form, chart, comparison, summary, and canonical retirement plan
-  assessment structures.
-- [`src/pages/`](src/pages) contains the static footer pages for Settings,
-  Privacy, Methodology, About, and Feedback-related navigation.
-- [`e2e/`](e2e) contains Playwright journey, accessibility, and production
-  smoke checks.
+The dependency and data flow is:
 
 ```mermaid
 flowchart LR
-    A["Journey presentation<br/>shared fields + copy and layout overrides"] --> B["Settings core<br/>canonical PensionSettings"]
-    B --> C["Calculation core<br/>derived inputs, projection domains, monthly rows"]
-    C --> D["Canonical projection and plan assessment"]
-    D --> E["Results layer<br/>configurable shared sections"]
-    B <--> F["Local persistence and JSON import/export"]
+    P1["Presentation<br/>journeys, fields and shared result components"] --> S["Application state / imperative shell<br/>React state, orchestration, persistence and caches"]
+    S --> C["Domain / calculation engine<br/>canonical PensionSettings to RetirementPlanResult"]
+    C --> R["Result projection<br/>semantic chart, summary and comparison data"]
+    R --> P2["Presentation<br/>configurable shared result components"]
+    S <--> IO["Browser effects<br/>local storage, import/export and analytics"]
 ```
+
+The concrete layer responsibilities are:
+
+- [`src/main.tsx`](src/main.tsx), [`src/App.tsx`](src/App.tsx), journey screens,
+  and shared components form the presentation layer. They render state and send
+  user intent to the application layer; they do not invoke pension engines.
+- [`src/app/`](src/app) is the imperative shell. It owns React state,
+  orchestration, deferred calculation, mutable comparison caches, generated
+  identifiers, browser storage, import/export, analytics, and other effects.
+  [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) is the main
+  composition boundary.
+- [`src/settings/`](src/settings) supplies the canonical `PensionSettings`
+  model, defaults, normalization, validation, and schema migration. Browser
+  storage entry points are called by the application shell. Each journey owns
+  one canonical settings value; there is no hidden runtime settings overlay.
+- [`src/projection-core.ts`](src/projection-core.ts),
+  [`src/row-assembly.ts`](src/row-assembly.ts), the row engines, and
+  [`src/projection-domains/`](src/projection-domains) form the pension, savings,
+  tax, inflation, and bridge calculation engine.
+- [`src/calculation/retirement-plan.ts`](src/calculation/retirement-plan.ts)
+  is the canonical calculation entry point. It returns one
+  `RetirementPlanResult` containing validation, monthly rows, pension summary,
+  inflation assumptions, and plan assessment.
+- [`src/result-projection/`](src/result-projection) and the stateless adapters
+  in [`src/app-domains/`](src/app-domains) turn canonical results into semantic
+  chart, summary, comparison, and form data. They do not own browser state or
+  JSX; presentation components decide how semantic values and tones are
+  rendered.
+- [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
+  configuration for the simplified, early-retirement, and expert journeys. It
+  selects shared fields, labels, help text, update behaviour, and result
+  sections; journey identity is not passed into the calculation engine.
+- [`src/pages/`](src/pages) contains the static footer pages, and [`e2e/`](e2e)
+  contains browser journey, accessibility, and production smoke checks.
+
+The FCIS boundary has three practical rules:
+
+1. Effects and mutable state flow inward only through `src/app/`; the functional
+   core does not read browser state, generate IDs, track analytics, or mutate a
+   shared cache.
+2. The calculation engine produces a canonical result once for the active
+   settings. Result projection consumes that result rather than recalculating
+   pension rows from a component.
+3. Result projection returns values and presentation semantics, not React
+   elements. Journeys and result components can vary layout and visibility
+   without introducing journey-specific financial behaviour.
 
 The journey configuration can present the same field differently without
 duplicating its setting or calculation. It can also turn shared results

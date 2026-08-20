@@ -1,9 +1,7 @@
-import type { ReactNode } from "react";
 import {
   calculateRetirementIncomeTargetAtDate,
   createProjectionTable,
   deriveInflationAssumptions,
-  generatePensionSummary,
   generateRetirementBridgeAnalysis,
   prepareBridgeProjectionSettings,
   type PensionSummary,
@@ -13,11 +11,6 @@ import {
 } from "../projection";
 import {
   calculateStatePensionDrawAge,
-  isLocalStorageEnabled,
-  parseStoredSettings,
-  readStorageItem,
-  removeStorageItem,
-  writeStorageItem,
   type FlexibleWithdrawalStrategy,
   type PensionSettings,
   type RetirementIncomeTargetBasis,
@@ -26,7 +19,11 @@ import { addYearsToIsoDate } from "./retirement-income";
 import {
   assessRetirementPlan,
   type RetirementPlanAssessment,
-} from "./retirement-plan-assessment";
+} from "../calculation/retirement-plan-assessment";
+import {
+  calculateRetirementPlan,
+  type RetirementPlanResult,
+} from "../calculation/retirement-plan";
 import { normalizeMoney } from "../money";
 import {
   calculateSmilePhaseTarget,
@@ -40,10 +37,6 @@ import {
   formatPercent,
   formatShortfallOrSurplus,
 } from "./shared";
-
-const COMPARISON_SCENARIOS_STORAGE_KEY =
-  "cs-pension-modeller.comparisonScenarios";
-const MAX_COMPARISON_SCENARIOS = 5;
 
 export type ComparisonScenario = {
   id: string;
@@ -73,18 +66,24 @@ export type ComparisonResult = {
   currentMatchesSaved: boolean;
 };
 
-type CachedComparisonResult = Omit<
+export type CachedComparisonResult = Omit<
   ComparisonResult,
   "scenario" | "currentMatchesSaved"
 >;
 
-export type ComparisonResultCache = Map<string, CachedComparisonResult>;
+export type ComparisonCellValue =
+  | string
+  | number
+  | {
+      value: string | number;
+      tone: "good" | "caution" | "problem";
+    };
 
 export type ComparisonTableRow = {
   key: string;
   section: string;
   metric: string;
-  values: ReactNode[];
+  values: ComparisonCellValue[];
   sectionStart: boolean;
   isSectionDivider?: boolean;
 };
@@ -102,58 +101,6 @@ type SummaryItemLike = {
   value: string;
 };
 
-export function loadStoredComparisonScenarios(): ComparisonScenario[] {
-  if (!isLocalStorageEnabled()) {
-    return [];
-  }
-
-  const storedScenarios = readStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
-
-  if (!storedScenarios) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(storedScenarios) as unknown;
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((scenario, index) =>
-        normalizeStoredComparisonScenario(scenario, index)
-      )
-      .filter((scenario): scenario is ComparisonScenario => Boolean(scenario))
-      .slice(0, MAX_COMPARISON_SCENARIOS);
-  } catch {
-    return [];
-  }
-}
-
-export function saveStoredComparisonScenarios(scenarios: ComparisonScenario[]) {
-  if (!isLocalStorageEnabled()) {
-    return;
-  }
-
-  writeStorageItem(
-    COMPARISON_SCENARIOS_STORAGE_KEY,
-    JSON.stringify(scenarios.slice(0, MAX_COMPARISON_SCENARIOS))
-  );
-}
-
-export function clearStoredComparisonScenarios() {
-  removeStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
-}
-
-export function createComparisonScenarioId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `scenario-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
 export function clonePensionSettings(
   settings: PensionSettings
 ): PensionSettings {
@@ -167,22 +114,15 @@ export function getSettingsSignature(settings: PensionSettings) {
 export function createComparisonResult(
   scenario: ComparisonScenario,
   currentSettingsSignature: string,
-  cache?: ComparisonResultCache
+  precomputedPlan?: RetirementPlanResult
 ): ComparisonResult {
   const settingsSignature = getSettingsSignature(scenario.settings);
-  const cachedResult = cache?.get(settingsSignature);
-
-  if (cachedResult) {
-    return {
-      ...cachedResult,
-      scenario,
-      currentMatchesSaved: settingsSignature === currentSettingsSignature,
-    };
-  }
-
-  const rows = createProjectionTable(scenario.settings);
-  const summary = generatePensionSummary(rows, scenario.settings);
-  const assessment = assessRetirementPlan(rows, scenario.settings);
+  const plan =
+    precomputedPlan &&
+    getSettingsSignature(precomputedPlan.settings) === settingsSignature
+      ? precomputedPlan
+      : calculateRetirementPlan(scenario.settings);
+  const { assessment, rows, summary } = plan;
   const bridgeSettings = prepareBridgeProjectionSettings(scenario.settings);
   const bridgePensionRows = createProjectionTable({
     ...bridgeSettings,
@@ -273,8 +213,6 @@ export function createComparisonResult(
     ),
     statePensionAssumptionAffectsTarget,
   };
-
-  cache?.set(settingsSignature, result);
 
   return {
     ...result,
@@ -367,7 +305,10 @@ export function buildComparisonTableRows(
     (result) => result.scenario.settings.showPremium
   );
   const nuvosTimingRows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   > = anyScenarioUsesNuvos
     ? [
         [
@@ -380,7 +321,10 @@ export function buildComparisonTableRows(
       ]
     : [];
   const nuvosIncomeRows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   > = anyScenarioUsesNuvos
     ? [
         [
@@ -396,7 +340,10 @@ export function buildComparisonTableRows(
       ]
     : [];
   const premiumTimingRows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   > = anyScenarioUsesPremium
     ? [
         [
@@ -409,7 +356,10 @@ export function buildComparisonTableRows(
       ]
     : [];
   const premiumIncomeRows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   > = anyScenarioUsesPremium
     ? [
         [
@@ -775,7 +725,10 @@ export function buildComparisonDetailedRows(
     (result) => result.scenario.settings.showPremium
   );
   const nuvosSecurePensionRows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   > = anyScenarioUsesNuvos
     ? [
         [
@@ -788,7 +741,10 @@ export function buildComparisonDetailedRows(
       ]
     : [];
   const premiumSecurePensionRows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   > = anyScenarioUsesPremium
     ? [
         [
@@ -1722,49 +1678,14 @@ function formatList(values: string[]) {
   return `${uniqueValues.slice(0, -1).join(", ")} and ${uniqueValues.at(-1)}`;
 }
 
-function normalizeStoredComparisonScenario(
-  scenario: unknown,
-  index: number
-): ComparisonScenario | null {
-  if (!scenario || typeof scenario !== "object") {
-    return null;
-  }
-
-  const candidate = scenario as Partial<ComparisonScenario>;
-  const settings = candidate.settings;
-
-  if (!settings || typeof settings !== "object") {
-    return null;
-  }
-
-  const now = new Date().toISOString();
-
-  return {
-    id:
-      typeof candidate.id === "string" && candidate.id
-        ? candidate.id
-        : createComparisonScenarioId(),
-    name:
-      typeof candidate.name === "string" && candidate.name.trim()
-        ? candidate.name
-        : `Scenario ${index + 1}`,
-    settings: parseStoredSettings(settings) ?? clonePensionSettings(settings),
-    createdAt:
-      typeof candidate.createdAt === "string" && candidate.createdAt
-        ? candidate.createdAt
-        : now,
-    updatedAt:
-      typeof candidate.updatedAt === "string" && candidate.updatedAt
-        ? candidate.updatedAt
-        : now,
-  };
-}
-
 function createComparisonSection(
   section: string,
   results: ComparisonResult[],
   rows: Array<
-    [metric: string, getValue: (result: ComparisonResult) => ReactNode]
+    [
+      metric: string,
+      getValue: (result: ComparisonResult) => ComparisonCellValue,
+    ]
   >
 ) {
   const sectionDividerRow: ComparisonTableRow = {
@@ -1787,7 +1708,7 @@ function createComparisonSection(
   return [sectionDividerRow, ...metricRows];
 }
 
-function areAllValuesNa(values: ReactNode[]) {
+function areAllValuesNa(values: ComparisonCellValue[]) {
   return values.every((value) => {
     if (typeof value === "string") {
       return value.trim().toLowerCase() === "n/a";
@@ -2176,12 +2097,10 @@ function getPotDepletionTone(
 }
 
 function renderComparisonToneCell(
-  value: ReactNode,
+  value: string | number,
   tone: "good" | "caution" | "problem"
-) {
-  return (
-    <span className={`comparison-cell comparison-cell--${tone}`}>{value}</span>
-  );
+): ComparisonCellValue {
+  return { value, tone };
 }
 
 function getCapitalPreservationScore(result: ComparisonResult) {

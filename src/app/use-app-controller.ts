@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeChartParameters } from "../RetirementIncomeChart";
@@ -11,9 +11,9 @@ import {
   type PensionSettings,
 } from "../settings";
 import {
-  clearStoredComparisonScenarios,
+  clonePensionSettings,
   DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
-  saveStoredComparisonScenarios,
+  getSettingsSignature,
 } from "../app-domains";
 import {
   loadAcknowledgementState,
@@ -45,6 +45,11 @@ import { useJourneySettings } from "./use-journey-settings";
 import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
+import {
+  clearStoredComparisonScenarios,
+  saveStoredComparisonScenarios,
+} from "./comparison-storage";
+import { getCachedComparisonResult } from "./comparison-result-cache";
 
 export function useAppController() {
   const {
@@ -108,6 +113,7 @@ export function useAppController() {
     incomeAgeRangeItems,
     pensionSummary,
     projectionRows,
+    retirementPlanResult,
     retirementIncomeSeries,
     targetBasedWithdrawalPreviews,
     validationIssues,
@@ -115,6 +121,22 @@ export function useAppController() {
     settings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
   });
+  const currentComparisonResult = useMemo(
+    () =>
+      getCachedComparisonResult({
+        scenario: {
+          id: "current-model",
+          name: "Current model",
+          settings: clonePensionSettings(settings),
+          createdAt: "",
+          updatedAt: "",
+        },
+        currentSettingsSignature: getSettingsSignature(settings),
+        cache: comparisonResultCache,
+        precomputedPlan: retirementPlanResult,
+      }),
+    [comparisonResultCache, retirementPlanResult, settings]
+  );
 
   useUndoShortcut({
     chartUndoStack,
@@ -231,6 +253,8 @@ export function useAppController() {
 
   const journeyStepViewModel: JourneyStepViewModel = {
     settings,
+    retirementPlanResult,
+    currentComparisonResult,
     validationIssues,
     pensionSummary,
     retirementIncomeSeries,

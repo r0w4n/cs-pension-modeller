@@ -1,19 +1,12 @@
 import { useDeferredValue, useMemo } from "react";
+import type { RetirementIncomeDisplay } from "../projection";
+import type { PensionSettings } from "../settings";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import {
-  createProjectionTable,
-  deriveInflationAssumptions,
-  generatePensionSummary,
-  type RetirementIncomeDisplay,
-} from "../projection";
-import { validateSettings, type PensionSettings } from "../settings";
-import {
-  buildIncomeAgeRangeItems,
-  createRetirementIncomeChartLimits,
-  createRetirementIncomeChartParameters,
-  createRetirementIncomeSeries,
-  createTargetBasedWithdrawalPreview,
-  summarizeFlexibleWithdrawalInsights,
-} from "../app-domains";
+  projectRetirementIncomeDisplay,
+  projectRetirementPlanControls,
+  projectRetirementPlanResult,
+} from "../result-projection/retirement-results";
 
 export function useProjectionCalculations({
   settings,
@@ -23,68 +16,41 @@ export function useProjectionCalculations({
   retirementIncomeDisplay: RetirementIncomeDisplay;
 }) {
   const deferredSettings = useDeferredValue(settings);
-  const validationIssues = useMemo(
-    () => validateSettings(deferredSettings),
+  const retirementPlanResult = useMemo(
+    () => calculateRetirementPlan(deferredSettings),
     [deferredSettings]
   );
-  const projectionRows = useMemo(
-    () => createProjectionTable(deferredSettings),
-    [deferredSettings]
+  const resultsProjection = useMemo(
+    () => projectRetirementPlanResult(retirementPlanResult),
+    [retirementPlanResult]
   );
-  const pensionSummary = useMemo(
-    () => generatePensionSummary(projectionRows, deferredSettings),
-    [projectionRows, deferredSettings]
-  );
-  const retirementIncomeSeries = useMemo(
-    () => createRetirementIncomeSeries(projectionRows, deferredSettings),
-    [projectionRows, deferredSettings]
-  );
-  const flexibleWithdrawalSummary = useMemo(
-    () => summarizeFlexibleWithdrawalInsights(projectionRows, deferredSettings),
-    [deferredSettings, projectionRows]
-  );
-  const targetBasedWithdrawalPreviews = useMemo(
+  const resultDisplayProjection = useMemo(
     () =>
-      flexibleWithdrawalSummary.accounts.map((account) =>
-        createTargetBasedWithdrawalPreview({
-          accountId: account.accountId,
-          currentRows: projectionRows,
-          settings: deferredSettings,
-        })
-      ),
-    [deferredSettings, flexibleWithdrawalSummary.accounts, projectionRows]
-  );
-  const retirementIncomeChartParameters = useMemo(
-    () => createRetirementIncomeChartParameters(settings),
-    [settings]
-  );
-  const retirementIncomeChartLimits = useMemo(
-    () => createRetirementIncomeChartLimits(settings),
-    [settings]
-  );
-  const derivedInflationAssumptions = useMemo(
-    () => deriveInflationAssumptions(deferredSettings),
-    [deferredSettings]
-  );
-  const incomeAgeRangeItems = pensionSummary
-    ? buildIncomeAgeRangeItems(
-        pensionSummary,
+      projectRetirementIncomeDisplay(
+        retirementPlanResult,
         retirementIncomeDisplay,
         settings.retirementIncomeTargetBasis
-      )
-    : [];
+      ),
+    [
+      retirementIncomeDisplay,
+      retirementPlanResult,
+      settings.retirementIncomeTargetBasis,
+    ]
+  );
+  const resultControlProjection = useMemo(
+    () => projectRetirementPlanControls(settings),
+    [settings]
+  );
 
   return {
-    retirementIncomeChartLimits,
-    retirementIncomeChartParameters,
+    ...resultsProjection,
+    ...resultDisplayProjection,
+    ...resultControlProjection,
     deferredSettings,
-    derivedInflationAssumptions,
-    incomeAgeRangeItems,
-    flexibleWithdrawalSummary,
-    pensionSummary,
-    projectionRows,
-    retirementIncomeSeries,
-    targetBasedWithdrawalPreviews,
-    validationIssues,
+    derivedInflationAssumptions: retirementPlanResult.inflationAssumptions,
+    pensionSummary: retirementPlanResult.summary,
+    projectionRows: retirementPlanResult.rows,
+    retirementPlanResult,
+    validationIssues: retirementPlanResult.validationIssues,
   };
 }

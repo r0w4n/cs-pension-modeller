@@ -1,5 +1,6 @@
 import {
   buildComparisonTableRows,
+  type ComparisonCellValue,
   type ComparisonResult,
   type ComparisonTableRow,
 } from "../app-domains";
@@ -79,7 +80,7 @@ export function ComparisonSummaryTable({
               ) : (
                 row.metric
               ),
-              ...row.values,
+              ...row.values.map(renderComparisonCell),
             ]}
           />
         </section>
@@ -108,10 +109,22 @@ function ComparisonMobileCard({
         >
           <span>{result.scenario.name || `Scenario ${index + 1}`}</span>
           <div className="projection-mobile-card-value">
-            {row.values[index]}
+            {renderComparisonCell(row.values[index])}
           </div>
         </div>
       ))}
     </article>
   );
+}
+
+function renderComparisonCell(value: ComparisonCellValue | undefined) {
+  if (value && typeof value === "object") {
+    return (
+      <span className={`comparison-cell comparison-cell--${value.tone}`}>
+        {value.value}
+      </span>
+    );
+  }
+
+  return value;
 }

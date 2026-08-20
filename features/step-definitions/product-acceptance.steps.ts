@@ -122,7 +122,7 @@ type MemoryStorage = Storage & {
 };
 
 type JourneyAnswerStep = JourneyStepDefinition & {
-  kind: "bridge-answer" | "expert-answer";
+  kind: "results";
 };
 
 function parseMoney(value: string | number) {
@@ -1759,12 +1759,12 @@ Then(
 );
 
 Then(
-  "the journey result should use the shared bridge answer",
+  "the journey result should use shared results components",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.kind, "bridge-answer");
+    assertEqual(answerStep.kind, "results");
   }
 );
 
@@ -1774,7 +1774,12 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.resultsPresentation, "simple");
+    assertCondition(
+      answerStep.sections.some(
+        (section) =>
+          section.id === "summary" && section.presentation === "simple"
+      )
+    );
   }
 );
 
@@ -1784,7 +1789,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.hideBridgeFundingSection, true);
+    assertCondition(!hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -1794,7 +1799,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.hideBridgeFundingSection === true, false);
+    assertCondition(hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -1804,7 +1809,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.showProjectionTable, true);
+    assertCondition(hasResultSection(answerStep, "projection-table"));
   }
 );
 
@@ -1814,7 +1819,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.showComparisonSection, false);
+    assertCondition(!hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -1824,7 +1829,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.showComparisonSection === false, false);
+    assertCondition(hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -2329,11 +2334,17 @@ Then("guidance notes should be shown", function (this: ProductAcceptanceWorld) {
 
 function getJourneyAnswerStep(journey: JourneyDefinition): JourneyAnswerStep {
   const answerStep = journey.steps.find(
-    (step): step is JourneyAnswerStep =>
-      step.kind === "bridge-answer" || step.kind === "expert-answer"
+    (step): step is JourneyAnswerStep => step.kind === "results"
   );
 
   assertCondition(answerStep, "Journey answer step was not found");
 
   return answerStep;
+}
+
+function hasResultSection(
+  step: JourneyAnswerStep,
+  sectionId: JourneyAnswerStep["sections"][number]["id"]
+) {
+  return step.sections.some((section) => section.id === sectionId);
 }

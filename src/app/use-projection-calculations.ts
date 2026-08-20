@@ -16,13 +16,13 @@ import {
 } from "../app-domains";
 
 export function useProjectionCalculations({
-  effectiveSettings,
+  settings,
   retirementIncomeDisplay,
 }: {
-  effectiveSettings: PensionSettings;
+  settings: PensionSettings;
   retirementIncomeDisplay: RetirementIncomeDisplay;
 }) {
-  const deferredSettings = useDeferredValue(effectiveSettings);
+  const deferredSettings = useDeferredValue(settings);
   const validationIssues = useMemo(
     () => validateSettings(deferredSettings),
     [deferredSettings]
@@ -55,12 +55,12 @@ export function useProjectionCalculations({
     [deferredSettings, flexibleWithdrawalSummary.accounts, projectionRows]
   );
   const retirementIncomeChartParameters = useMemo(
-    () => createRetirementIncomeChartParameters(effectiveSettings),
-    [effectiveSettings]
+    () => createRetirementIncomeChartParameters(settings),
+    [settings]
   );
   const retirementIncomeChartLimits = useMemo(
-    () => createRetirementIncomeChartLimits(effectiveSettings),
-    [effectiveSettings]
+    () => createRetirementIncomeChartLimits(settings),
+    [settings]
   );
   const derivedInflationAssumptions = useMemo(
     () => deriveInflationAssumptions(deferredSettings),
@@ -70,7 +70,7 @@ export function useProjectionCalculations({
     ? buildIncomeAgeRangeItems(
         pensionSummary,
         retirementIncomeDisplay,
-        effectiveSettings.retirementIncomeTargetBasis
+        settings.retirementIncomeTargetBasis
       )
     : [];
 

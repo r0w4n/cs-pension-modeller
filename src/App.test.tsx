@@ -1455,7 +1455,7 @@ describe("App settings form", () => {
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        alphaEpaEnabled: true,
+        alphaEpaEnabled: false,
         alphaEpaPeriods: [
           expect.objectContaining({
             id: "saved-simple-epa-period",
@@ -1503,7 +1503,7 @@ describe("App settings form", () => {
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        showAdditionalGuaranteedIncome: true,
+        showAdditionalGuaranteedIncome: false,
         additionalGuaranteedIncomes: [
           expect.objectContaining({
             id: "saved-simple-additional-income",
@@ -1618,15 +1618,8 @@ describe("App settings form", () => {
         requirementAge: defaultSettings.normalPensionAge,
         alphaPensionLeaveAge: defaultSettings.normalPensionAge,
         alphaPensionDrawAge: defaultSettings.normalPensionAge,
-        alphaEpaEnabled: true,
-        alphaAddedPensionLumpSums: [
-          expect.objectContaining({
-            amount: 5000,
-            startDate: "2026-05-01",
-            cadence: "once",
-            factorType: "self",
-          }),
-        ],
+        alphaEpaEnabled: false,
+        alphaAddedPensionLumpSums: [],
       })
     );
   });
@@ -1762,7 +1755,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("keeps hidden EPA and lump sum settings when visiting the simple journey", () => {
+  it("materializes hidden simple assumptions while retaining the inactive EPA schedule", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1800,7 +1793,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        alphaEpaEnabled: true,
+        alphaEpaEnabled: false,
         alphaEpaPeriods: [
           expect.objectContaining({
             id: "saved-hidden-epa-period",
@@ -1809,14 +1802,7 @@ describe("App settings form", () => {
             endDate: "2027-03-31",
           }),
         ],
-        alphaAddedPensionLumpSums: [
-          expect.objectContaining({
-            amount: 5000,
-            startDate: "2026-05-01",
-            cadence: "once",
-            factorType: "self",
-          }),
-        ],
+        alphaAddedPensionLumpSums: [],
       })
     );
   });

@@ -29,6 +29,8 @@ import {
   getStandalonePensionStartAgeBounds,
   getUseByAgeBounds,
   isOptionalSectionToggleKey,
+  DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
+  type JourneySettingsPresentation,
 } from "../app-domains";
 import {
   reconcileSpendingSmilePhaseAges,
@@ -620,14 +622,14 @@ export function updateSetting({
   showSavedLabel,
   setChartUndoStack,
   setSettings,
-  journeyMode,
+  settingsPresentation = DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
 }: {
   key: SettingsKey;
   value: PensionSettings[SettingsKey];
   showSavedLabel: () => void;
   setChartUndoStack: SetChartUndoStack;
   setSettings: SetSettings;
-  journeyMode?: "bridge" | "simple" | "expert";
+  settingsPresentation?: JourneySettingsPresentation;
 }) {
   showSavedLabel();
   setChartUndoStack([]);
@@ -647,11 +649,13 @@ export function updateSetting({
   }
 
   if (key === "requirementAge") {
-    setSettings((current) =>
-      applyRetirementIncomeChartParameterPatch(current, {
+    setSettings((current) => {
+      const next = applyRetirementIncomeChartParameterPatch(current, {
         retirementAge: value as number,
-      })
-    );
+      });
+
+      return applyRetirementAgePresentation(next, settingsPresentation, true);
+    });
     return;
   }
 
@@ -668,6 +672,7 @@ export function updateSetting({
       key === "dateOfBirth"
         ? calculateNormalPensionAge(normalizedValue as string)
         : current.normalPensionAge;
+    const dateOfBirthUpdate = settingsPresentation.dateOfBirthUpdate;
 
     const next = {
       ...current,
@@ -679,19 +684,26 @@ export function updateSetting({
       ...(key === "dateOfBirth"
         ? {
             normalPensionAge: updatedNormalPensionAge,
-            requirementAge:
-              journeyMode === "expert" &&
-              current.requirementAge === current.normalPensionAge
-                ? updatedNormalPensionAge
-                : current.requirementAge,
-            alphaPensionLeaveAge:
-              journeyMode === "expert" &&
-              current.alphaPensionLeaveAge === current.normalPensionAge
-                ? updatedNormalPensionAge
-                : current.alphaPensionLeaveAge,
+            requirementAge: shouldUpdateNpaLinkedValue(
+              current.requirementAge,
+              current.normalPensionAge,
+              dateOfBirthUpdate
+            )
+              ? updatedNormalPensionAge
+              : current.requirementAge,
+            alphaPensionLeaveAge: shouldUpdateNpaLinkedValue(
+              current.alphaPensionLeaveAge,
+              current.normalPensionAge,
+              dateOfBirthUpdate
+            )
+              ? updatedNormalPensionAge
+              : current.alphaPensionLeaveAge,
             alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
-              journeyMode === "expert" &&
-                current.alphaPensionDrawAge === current.normalPensionAge
+              shouldUpdateNpaLinkedValue(
+                current.alphaPensionDrawAge,
+                current.normalPensionAge,
+                dateOfBirthUpdate
+              )
                 ? updatedNormalPensionAge
                 : current.alphaPensionDrawAge,
               normalizedValue as string
@@ -757,16 +769,47 @@ export function updateRetirementIncomeChartParameters({
   showSavedLabel,
   setChartUndoStack,
   setSettings,
+  settingsPresentation = DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
 }: {
   patch: Partial<RetirementIncomeChartParameters>;
   settings: PensionSettings;
   showSavedLabel: () => void;
   setChartUndoStack: SetChartUndoStack;
   setSettings: SetSettings;
+  settingsPresentation?: JourneySettingsPresentation;
 }) {
   showSavedLabel();
   setChartUndoStack((current) => [...current.slice(-19), settings]);
   setSettings((current) =>
-    applyRetirementIncomeChartParameterPatch(current, patch)
+    applyRetirementAgePresentation(
+      applyRetirementIncomeChartParameterPatch(current, patch),
+      settingsPresentation,
+      patch.retirementAge !== undefined
+    )
   );
+}
+
+function shouldUpdateNpaLinkedValue(
+  currentValue: number,
+  currentNormalPensionAge: number,
+  policy: JourneySettingsPresentation["dateOfBirthUpdate"]
+) {
+  return (
+    policy === "reset-retirement-ages-to-npa" ||
+    (policy === "relink-npa-defaults" &&
+      currentValue === currentNormalPensionAge)
+  );
+}
+
+function applyRetirementAgePresentation(
+  settings: PensionSettings,
+  presentation: JourneySettingsPresentation,
+  retirementAgeChanged: boolean
+) {
+  return retirementAgeChanged && presentation.alignAlphaLeaveAgeToRetirement
+    ? {
+        ...settings,
+        alphaPensionLeaveAge: settings.requirementAge,
+      }
+    : settings;
 }

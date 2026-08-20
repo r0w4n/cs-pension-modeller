@@ -12,6 +12,7 @@ import {
 } from "../settings";
 import {
   clearStoredComparisonScenarios,
+  DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
   saveStoredComparisonScenarios,
 } from "../app-domains";
 import {
@@ -64,7 +65,6 @@ export function useAppController() {
   } = useSavedFeedback();
   const [chartUndoStack, setChartUndoStack] = useState<PensionSettings[]>([]);
   const {
-    effectiveSettings,
     exportParameters,
     loadParameters,
     setActiveJourneySettings,
@@ -112,7 +112,7 @@ export function useAppController() {
     targetBasedWithdrawalPreviews,
     validationIssues,
   } = useProjectionCalculations({
-    effectiveSettings,
+    settings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
   });
 
@@ -150,7 +150,9 @@ export function useAppController() {
       showSavedLabel,
       setChartUndoStack,
       setSettings: setActiveJourneySettings,
-      journeyMode: activeJourneyMode ?? undefined,
+      settingsPresentation:
+        activeJourneyDefinition?.settingsPresentation ??
+        DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
     });
   }
 
@@ -166,10 +168,13 @@ export function useAppController() {
     });
     updateRetirementIncomeChartParametersAction({
       patch,
-      settings: effectiveSettings,
+      settings,
       showSavedLabel,
       setChartUndoStack,
       setSettings: setActiveJourneySettings,
+      settingsPresentation:
+        activeJourneyDefinition?.settingsPresentation ??
+        DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
     });
   }
 
@@ -225,7 +230,7 @@ export function useAppController() {
   }
 
   const journeyStepViewModel: JourneyStepViewModel = {
-    settings: effectiveSettings,
+    settings,
     validationIssues,
     pensionSummary,
     retirementIncomeSeries,
@@ -311,6 +316,6 @@ export function useAppController() {
     updateSetting,
     useDropdownDates,
     validationIssues,
-    visibleSettings: effectiveSettings,
+    visibleSettings: settings,
   };
 }

@@ -91,8 +91,8 @@ Feature: Target-based flexible-fund withdrawals
 
   Scenario: Keep flexible withdrawal controls out of non-expert journeys
     Then non-expert journey steps should not expose flexible withdrawal strategy controls
-    And simplified journey projections should use legacy withdrawal strategies
-    And bridge journey projections should use legacy withdrawal strategies
+    And simplified journey settings should store legacy withdrawal strategies
+    And bridge journey settings should store legacy withdrawal strategies
 
   Scenario: Skip an inaccessible account without changing its priority
     Given the annual income target is 12000.00

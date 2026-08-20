@@ -149,7 +149,10 @@ When(
     updateSetting({
       key: "dateOfBirth",
       value: dateOfBirth,
-      journeyMode: "expert",
+      settingsPresentation: {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      },
       showSavedLabel: () => undefined,
       setChartUndoStack: () => undefined,
       setSettings: (update) => {

@@ -7865,12 +7865,12 @@ export const acceptanceFeatures = [
           {
             id: "line-94",
             keyword: "And",
-            text: "simplified journey projections should use legacy withdrawal strategies",
+            text: "simplified journey settings should store legacy withdrawal strategies",
           },
           {
             id: "line-95",
             keyword: "And",
-            text: "bridge journey projections should use legacy withdrawal strategies",
+            text: "bridge journey settings should store legacy withdrawal strategies",
           },
         ],
         examples: [],
@@ -10181,14 +10181,14 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-29-column-139",
-                    value: "use the shared bridge answer",
+                    value: "use shared results components",
                   },
                   {
-                    id: "line-29-column-170",
+                    id: "line-29-column-171",
                     value: "hide bridge funding details by default",
                   },
                   {
-                    id: "line-29-column-211",
+                    id: "line-29-column-212",
                     value: "hide the comparison section",
                   },
                 ],

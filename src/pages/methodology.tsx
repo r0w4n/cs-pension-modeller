@@ -1105,6 +1105,15 @@ export function MethodologyPage() {
           bridge-sizing estimates.
         </p>
         <p className="section-copy">
+          The simplified, early-retirement and expert journeys are different
+          ways of presenting shared inputs and results. They all pass their
+          saved assumptions through the same validation and projection engine;
+          selecting a journey does not select a different pension calculation. A
+          journey may show fewer inputs or results, or explain them differently,
+          while its stored settings remain the assumptions used by the
+          projection.
+        </p>
+        <p className="section-copy">
           ISA, LISA, SIPP and CS AVC bridge balances start from the
           retirement-date balance immediately before any configured
           main-projection withdrawal. That balance includes applicable

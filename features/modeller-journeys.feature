@@ -26,7 +26,7 @@ Feature: Modeller journeys
 
     Examples:
       | journey                              | targetStep                        | planningStep                | resultExpectation            | bridgeFundingExpectation               | comparisonExpectation       |
-      | Simplified retirement journey        | What would you like to spend each month? | Do you have any other Civil Service pensions? | use the shared bridge answer | hide bridge funding details by default | hide the comparison section |
+      | Simplified retirement journey        | What would you like to spend each month? | Do you have any other Civil Service pensions? | use shared results components | hide bridge funding details by default | hide the comparison section |
       | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default | show the comparison section |
 
   @simple-journey

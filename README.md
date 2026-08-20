@@ -196,15 +196,23 @@ For more detail, see the in-app Methodology page.
 
 ## Architecture
 
-The app is organised around a small set of layers:
+The app is organised around four main layers. Journeys are presentation
+compositions: they choose shared fields, labels, help text, update behaviour,
+and results sections, but they do not select a different calculation engine.
 
 - [`src/main.tsx`](src/main.tsx) boots the React app.
 - [`src/App.tsx`](src/App.tsx) composes the main app screens and feature
   sections.
 - [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) orchestrates
   UI state, persistence, validation, derived results, and projection updates.
+- [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) defines the
+  presentation composition for the simplified, early-retirement, and expert
+  journeys. It references shared field definitions and configures shared
+  results sections; journey identity is not passed into the calculation core.
 - [`src/settings/`](src/settings) contains defaults, normalization, validation,
-  storage, and schema migration logic.
+  storage, and schema migration logic. Each journey owns one canonical
+  `PensionSettings` value: the saved and exported settings are the settings
+  validated and projected, with no separate hidden runtime settings overlay.
 - [`src/projection-core.ts`](src/projection-core.ts),
   [`src/row-assembly.ts`](src/row-assembly.ts), and the row engines contain the
   projection pipeline.
@@ -212,51 +220,37 @@ The app is organised around a small set of layers:
   calculations for Alpha, nuvos, State Pension, SIPP, ISA, LISA, tax,
   inflation, and bridge analysis.
 - [`src/app-domains/`](src/app-domains) adapts raw projection results into
-  UI-facing journey, form, chart, comparison, summary, and canonical retirement
-  plan assessment structures.
+  UI-facing form, chart, comparison, summary, and canonical retirement plan
+  assessment structures.
 - [`src/pages/`](src/pages) contains the static footer pages for Settings,
   Privacy, Methodology, About, and Feedback-related navigation.
 - [`e2e/`](e2e) contains Playwright journey, accessibility, and production
   smoke checks.
 
 ```mermaid
-flowchart TD
-    A["src/main.tsx<br/>React entrypoint"] --> B["src/App.tsx<br/>top-level composition"]
-    B --> C["src/app/use-app-controller.ts<br/>app orchestration"]
-
-    C --> D["src/settings/<br/>defaults, normalization, validation, storage"]
-    C --> E["src/projection-core.ts<br/>projection pipeline"]
-    C --> F["src/app-domains/<br/>UI-specific derived data"]
-
-    E --> G["src/derive-inputs.ts<br/>runtime dates and derived inputs"]
-    E --> H["src/row-engine-base.ts /<br/>src/row-engine-with-pension-increases.ts"]
-    H --> I["src/row-assembly.ts<br/>build row values"]
-    I --> J["src/projection-domains/<br/>alpha, nuvos, state-pension, sipp, isa, tax, inflation"]
-
-    D --> K["window.localStorage"]
-    F --> L["Retirement plan assessment,<br/>charts, summaries, comparison views"]
-    E --> M["Projection rows and pension summary"]
-    C --> N["Journey mode / expert mode UI"]
-```
-
-The main runtime data flow is:
-
-```mermaid
 flowchart LR
-    A["User inputs<br/>forms, journey steps, chart controls"] --> B["Settings state<br/>useAppController"]
-    B --> C["Normalization + validation<br/>src/settings/"]
-    C --> D["Derived dates and assumptions<br/>src/derive-inputs.ts"]
-    D --> E["Projection engine<br/>monthly row generation"]
-    E --> F["Projection rows"]
-    F --> G["Summary generation<br/>src/summary.ts"]
-    F --> H["App-domain adapters<br/>plan assessment, comparison, chart, journey helpers"]
-    G --> I["Results summary UI"]
-    H --> J["Retirement income chart, comparison panel,<br/>projection table, journey screens"]
-    B --> K["Local persistence<br/>window.localStorage"]
+    A["Journey presentation<br/>shared fields + copy and layout overrides"] --> B["Settings core<br/>canonical PensionSettings"]
+    B --> C["Calculation core<br/>derived inputs, projection domains, monthly rows"]
+    C --> D["Canonical projection and plan assessment"]
+    D --> E["Results layer<br/>configurable shared sections"]
+    B <--> F["Local persistence and JSON import/export"]
 ```
 
-Calculation and domain logic should stay separate from presentation code where
-practical.
+The journey configuration can present the same field differently without
+duplicating its setting or calculation. It can also turn shared results
+components on or off, or select their simple, standard, or detailed
+presentation. The current compositions are:
+
+| Journey                              | Input presentation                                                              | Results composition                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Simplified retirement journey        | Short guided sequence with plain-language field labels and constrained defaults | Simple summary, simple retirement-income chart, income details, and concise inflation disclosure         |
+| Work out what I need to retire early | Guided sequence focused on retirement timing and flexible funds                 | Standard summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
+| Expert journey                       | Full field groups and advanced controls                                         | Detailed summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
+
+The bridge analysis remains a shared illustrative funding diagnostic used by
+plan assessment and comparison. It is not a journey-specific calculation path,
+and the main results visual is the retirement-income chart built from the
+canonical projection.
 
 ## Browser Storage And Privacy
 
@@ -286,10 +280,18 @@ restructured. The migration implementations and their compatibility tests live
 in `src/settings/settings-migrations.ts` and
 `src/settings/settings-migrations.test.ts`. Each journey has an independent
 settings section in the same saved file, so changing one journey does not alter
-another. Legacy flat settings and parameter exports remain supported: on first
-load they seed all three sections, with the guided-journey defaults applied to
-the simple and bridge sections. This compatibility path has no time-based
-expiry.
+another. Schema version 16 materialises the Simplified journey assumptions that
+older releases applied only while calculating, so its saved, exported, and
+calculated settings now agree. The migration preserves entered retirement ages
+and does not alter the early-retirement or expert journey settings. Legacy flat
+settings and parameter exports remain supported. In the Simplified workspace,
+inactive EPA and additional-income schedules are retained behind their disabled
+settings; Alpha Added Pension contributions and purchase schedules are cleared
+because that journey does not expose an enable/disable control for them and
+they would otherwise affect its projection. A legacy flat file still seeds all
+three sections, so its full values remain available in the expert workspace,
+with the guided-journey defaults applied separately to the simple and
+early-retirement sections. This compatibility path has no time-based expiry.
 
 ## Analytics
 

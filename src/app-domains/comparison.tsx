@@ -11,11 +11,6 @@ import {
   type RetirementBridgeAnalysis,
   type RetirementIncomeDisplay,
 } from "../projection";
-import type {
-  RetirementIncomeChartLimits,
-  RetirementIncomeChartParameters,
-  RetirementIncomePoint,
-} from "../RetirementIncomeChart";
 import {
   calculateStatePensionDrawAge,
   isLocalStorageEnabled,
@@ -27,12 +22,7 @@ import {
   type PensionSettings,
   type RetirementIncomeTargetBasis,
 } from "../settings";
-import {
-  addYearsToIsoDate,
-  createRetirementIncomeChartLimits,
-  createRetirementIncomeChartParameters,
-  createRetirementIncomeSeries,
-} from "./retirement-income";
+import { addYearsToIsoDate } from "./retirement-income";
 import {
   assessRetirementPlan,
   type RetirementPlanAssessment,
@@ -89,17 +79,6 @@ type CachedComparisonResult = Omit<
 >;
 
 export type ComparisonResultCache = Map<string, CachedComparisonResult>;
-
-export type BridgeAnswerResult = {
-  bridgeSettings: PensionSettings;
-  retirementIncomeChartRows: ProjectionRow[];
-  retirementIncomeChartData: RetirementIncomePoint[];
-  retirementIncomeChartParameters: RetirementIncomeChartParameters;
-  retirementIncomeChartLimits: RetirementIncomeChartLimits;
-  derivedInflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
-};
-
-export type BridgeAnswerResultCache = Map<string, BridgeAnswerResult>;
 
 export type ComparisonTableRow = {
   key: string;
@@ -183,38 +162,6 @@ export function clonePensionSettings(
 
 export function getSettingsSignature(settings: PensionSettings) {
   return JSON.stringify(settings);
-}
-
-export function createBridgeAnswerResult(
-  settings: PensionSettings,
-  cache: BridgeAnswerResultCache
-): BridgeAnswerResult {
-  const settingsSignature = getSettingsSignature(settings);
-  const cachedResult = cache.get(settingsSignature);
-
-  if (cachedResult) {
-    return cachedResult;
-  }
-
-  const bridgeSettings = prepareBridgeProjectionSettings(settings);
-  const retirementIncomeChartRows = createProjectionTable(bridgeSettings);
-  const result = {
-    bridgeSettings,
-    retirementIncomeChartRows,
-    retirementIncomeChartData: createRetirementIncomeSeries(
-      retirementIncomeChartRows,
-      bridgeSettings
-    ),
-    retirementIncomeChartParameters:
-      createRetirementIncomeChartParameters(bridgeSettings),
-    retirementIncomeChartLimits:
-      createRetirementIncomeChartLimits(bridgeSettings),
-    derivedInflationAssumptions: deriveInflationAssumptions(settings),
-  };
-
-  cache.set(settingsSignature, result);
-
-  return result;
 }
 
 export function createComparisonResult(

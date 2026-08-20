@@ -25,12 +25,8 @@ import {
   createAddedPensionGoalBasis,
   createComparisonResult,
   estimateAddedPensionMonthlyContribution,
-  formatDate,
-  formatDecimalAge,
   getSettingsSignature,
   getWithdrawalStrategyFieldId,
-  isExpertRetirementIncomeTargetStep,
-  isSpendingSmileEditorStep,
   type ComparisonResultCache,
   type ComparisonScenario,
   type IncomeAgeRangeItem,
@@ -41,6 +37,7 @@ import {
   type JourneyCurrencyFieldPresentation,
   type JourneyOptionalQuestion,
   type JourneyOptionalSectionCopy,
+  type JourneyResultsSection,
   type JourneyStepDefinition,
   type OptionalSectionToggleKey,
 } from "../app-domains";
@@ -64,7 +61,6 @@ import {
 } from "./form-fields";
 import {
   InflationBasisPanel as InflationBasisPanelFeature,
-  SummarySection as SummarySectionFeature,
   ValidationIssuesSection as ValidationIssuesSectionFeature,
   ResultsSummarySection,
 } from "./results-summary";
@@ -113,61 +109,23 @@ export function JourneyStepContent({
   step,
   viewModel,
 }: JourneyStepContentProps) {
-  const { settings, comparisonResultCache } = viewModel;
   const [optionalQuestionAnswers, setOptionalQuestionAnswers] = useState<
     Partial<Record<OptionalQuestionSettingId, boolean>>
   >({});
   const shouldRenderProjectionTable =
     !useMobileDateDropdowns("(max-width: 640px)");
 
-  const currentComparisonResult = useMemo(
-    () =>
-      createComparisonResult(
-        {
-          id: "current-model",
-          name: "Current model",
-          settings: clonePensionSettings(settings),
-          createdAt: "",
-          updatedAt: "",
-        },
-        getSettingsSignature(settings),
-        comparisonResultCache
-      ),
-    [comparisonResultCache, settings]
-  );
-
   if (step.kind === "optional-sections") {
-    return renderOptionalSectionsStep(
-      step as JourneyStepDefinition & {
-        kind: "optional-sections";
-        toggleKeys?: readonly OptionalSectionToggleKey[];
-        toggleCopy?: JourneyOptionalSectionCopy;
-      },
-      viewModel
-    );
+    return renderOptionalSectionsStep(step, viewModel);
   }
 
-  if (step.kind === "answer") {
-    return renderAnswerStep(viewModel, currentComparisonResult);
-  }
-
-  if (step.kind === "expert-answer") {
-    return renderExpertAnswerStep(
-      viewModel,
-      currentComparisonResult,
-      shouldRenderProjectionTable
-    );
-  }
-
-  if (step.kind === "bridge-answer") {
-    return renderBridgeAnswerStep(
-      step as JourneyStepDefinition & {
-        kind: "bridge-answer";
-        showProjectionTable?: boolean;
-      },
-      viewModel,
-      currentComparisonResult,
-      shouldRenderProjectionTable
+  if (step.kind === "results") {
+    return (
+      <JourneyResultsStep
+        step={step}
+        viewModel={viewModel}
+        shouldRenderProjectionTable={shouldRenderProjectionTable}
+      />
     );
   }
 
@@ -216,98 +174,32 @@ function renderOptionalSectionsStep(
   );
 }
 
-function renderAnswerStep(
-  viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>
-) {
-  const {
-    settings,
-    validationIssues,
-    pensionSummary,
-    retirementIncomeSeries,
-    retirementIncomeChartParameters,
-    retirementIncomeChartLimits,
-    derivedInflationAssumptions,
-    retirementIncomeDisplay,
-    incomeAgeRangeItems,
-    comparisonRetirementIncomeDisplay,
-    comparisonScenarios,
-    comparisonResultCache,
-    onScenariosChange,
-    onLoadScenario,
-    onRetirementIncomeDisplayChange,
-    onComparisonRetirementIncomeDisplayChange,
-    onChangeChartParameters,
-  } = viewModel;
-  if (!pensionSummary) {
-    return null;
-  }
-
-  return (
-    <>
-      <ValidationSummary validationIssues={validationIssues} />
-
-      <PensionSummarySectionFeature
-        activeResult={currentComparisonResult}
-        headingLevel={2}
-        description="Based on your selected retirement age, target income, pension start dates and bridge strategy."
-        retirementIncomeDisplay={retirementIncomeDisplay}
-        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-        incomeAgeRangeItems={incomeAgeRangeItems}
-        statusItems={buildStatusItems(currentComparisonResult)}
-      />
-
-      <SummarySectionFeature
-        title="Key dates"
-        items={buildKeyDateItems(settings, pensionSummary)}
-      />
-
-      <RetirementIncomeChart
-        data={retirementIncomeSeries}
-        alphaLabel="Alpha pension"
-        hideInactiveLegendItems
-        limits={retirementIncomeChartLimits}
-        statePensionEditable
-        validationIssues={validationIssues}
-        onChangeParameters={onChangeChartParameters}
-        {...retirementIncomeChartParameters}
-      />
-
-      <InflationBasisPanelFeature
-        settings={settings}
-        assumptions={derivedInflationAssumptions}
-      />
-
-      <ComparisonPanelFeature
-        settings={settings}
-        validationIssues={validationIssues}
-        scenarios={comparisonScenarios}
-        comparisonResultCache={comparisonResultCache}
-        onScenariosChange={onScenariosChange}
-        onLoadScenario={onLoadScenario}
-        retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
-        onRetirementIncomeDisplayChange={
-          onComparisonRetirementIncomeDisplayChange
-        }
-        derivedInflationAssumptions={derivedInflationAssumptions}
-        retirementIncomeSeries={retirementIncomeSeries}
-        retirementIncomeChartParameters={retirementIncomeChartParameters}
-        retirementIncomeChartLimits={retirementIncomeChartLimits}
-        hideInactiveLegendItems
-        showPensionSummary={false}
-        onChangeChartParameters={onChangeChartParameters}
-      />
-    </>
+function JourneyResultsStep({
+  step,
+  viewModel,
+  shouldRenderProjectionTable,
+}: {
+  step: JourneyStepDefinition & { kind: "results" };
+  viewModel: JourneyStepViewModel;
+  shouldRenderProjectionTable: boolean;
+}) {
+  const { settings, comparisonResultCache } = viewModel;
+  const currentComparisonResult = useMemo(
+    () =>
+      createComparisonResult(
+        {
+          id: "current-model",
+          name: "Current model",
+          settings: clonePensionSettings(settings),
+          createdAt: "",
+          updatedAt: "",
+        },
+        getSettingsSignature(settings),
+        comparisonResultCache
+      ),
+    [comparisonResultCache, settings]
   );
-}
-
-function renderExpertAnswerStep(
-  viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>,
-  shouldRenderProjectionTable: boolean
-) {
   const {
-    settings,
     validationIssues,
     retirementIncomeSeries,
     retirementIncomeChartParameters,
@@ -320,7 +212,6 @@ function renderExpertAnswerStep(
     incomeAgeRangeItems,
     comparisonRetirementIncomeDisplay,
     comparisonScenarios,
-    comparisonResultCache,
     onScenariosChange,
     onLoadScenario,
     onRetirementIncomeDisplayChange,
@@ -328,163 +219,108 @@ function renderExpertAnswerStep(
     onChangeChartParameters,
     onChange,
   } = viewModel;
-  return (
-    <>
-      <ValidationSummary validationIssues={validationIssues} />
-
-      <ResultsSummarySection>
-        <PensionSummarySectionFeature
-          activeResult={currentComparisonResult}
-          headingLevel={2}
-          description="Based on your selected retirement age, target income, pension start dates and bridge strategy.."
-          retirementIncomeDisplay={retirementIncomeDisplay}
-          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-          incomeAgeRangeItems={incomeAgeRangeItems}
-          statusItems={buildStatusItems(currentComparisonResult)}
-          flexibleWithdrawalSummary={flexibleWithdrawalSummary}
-          targetBasedWithdrawalPreviews={targetBasedWithdrawalPreviews}
-          onApplyTargetBasedStrategy={(accountId) =>
-            applyTargetBasedStrategy(onChange, accountId)
-          }
-          onReviewWithdrawalStrategy={reviewWithdrawalStrategy}
-        />
-      </ResultsSummarySection>
-
-      <RetirementIncomeChart
-        data={retirementIncomeSeries}
-        alphaLabel="Alpha pension"
-        showFlexibleWithdrawalInsights
-        residualFlexibleFundInsights={
-          flexibleWithdrawalSummary.residualAccounts
-        }
-        limits={retirementIncomeChartLimits}
-        statePensionEditable
-        validationIssues={validationIssues}
-        onChangeParameters={onChangeChartParameters}
-        {...retirementIncomeChartParameters}
-      />
-
-      <InflationBasisPanelFeature
-        settings={settings}
-        assumptions={derivedInflationAssumptions}
-      />
-
-      <ComparisonSection>
-        <ComparisonPanelFeature
-          settings={settings}
-          validationIssues={validationIssues}
-          scenarios={comparisonScenarios}
-          comparisonResultCache={comparisonResultCache}
-          onScenariosChange={onScenariosChange}
-          onLoadScenario={onLoadScenario}
-          retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
-          onRetirementIncomeDisplayChange={
-            onComparisonRetirementIncomeDisplayChange
-          }
-          showPensionSummary={false}
-        />
-      </ComparisonSection>
-
-      {shouldRenderProjectionTable ? (
-        <ProjectionTableSectionContainer>
-          <ProjectionTableSectionFeature
-            rows={projectionRows}
-            settings={settings}
-          />
-        </ProjectionTableSectionContainer>
-      ) : null}
-    </>
-  );
-}
-
-function renderBridgeAnswerStep(
-  step: JourneyStepDefinition & {
-    kind: "bridge-answer";
-    showComparisonSection?: boolean;
-    showProjectionTable?: boolean;
-  },
-  viewModel: JourneyStepViewModel,
-  currentComparisonResult: ReturnType<typeof createComparisonResult>,
-  shouldRenderProjectionTable: boolean
-) {
-  const {
-    settings,
-    validationIssues,
-    retirementIncomeSeries,
-    retirementIncomeChartParameters,
-    retirementIncomeChartLimits,
-    derivedInflationAssumptions,
-    projectionRows,
-    retirementIncomeDisplay,
-    incomeAgeRangeItems,
-    comparisonRetirementIncomeDisplay,
-    comparisonScenarios,
-    comparisonResultCache,
-    onScenariosChange,
-    onLoadScenario,
-    onRetirementIncomeDisplayChange,
-    onComparisonRetirementIncomeDisplayChange,
-    onChangeChartParameters,
-  } = viewModel;
-  const usesSimpleResults = step.resultsPresentation === "simple";
+  const summaryPresentation = getResultsSection(step, "summary")?.presentation;
+  const chartPresentation = getResultsSection(
+    step,
+    "retirement-income-chart"
+  )?.presentation;
+  const inflationPresentation = getResultsSection(
+    step,
+    "inflation-basis"
+  )?.presentation;
 
   return (
     <>
       <ValidationSummary validationIssues={validationIssues} />
 
-      <ResultsSummarySection>
-        {usesSimpleResults ? (
-          <SimplePensionSummary
-            activeResult={currentComparisonResult}
-            retirementIncomeDisplay={retirementIncomeDisplay}
-            onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-          />
-        ) : (
-          <PensionSummarySectionFeature
-            activeResult={currentComparisonResult}
-            headingLevel={2}
-            description="This summary uses your current journey assumptions and shows projected income by age range."
-            retirementIncomeDisplay={retirementIncomeDisplay}
-            onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
-            incomeAgeRangeItems={incomeAgeRangeItems}
-            statusItems={buildStatusItems(currentComparisonResult)}
-          />
-        )}
-      </ResultsSummarySection>
-
-      <ComparisonRetirementIncomeChart
-        retirementIncomeSeries={retirementIncomeSeries}
-        retirementIncomeChartParameters={retirementIncomeChartParameters}
-        retirementIncomeChartLimits={retirementIncomeChartLimits}
-        hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
-        presentation={usesSimpleResults ? "simple" : "standard"}
-        validationIssues={validationIssues}
-        onChangeChartParameters={onChangeChartParameters}
-      />
-
-      {usesSimpleResults ? (
-        <>
-          <SimplePensionDetails
-            activeResult={currentComparisonResult}
-            retirementIncomeDisplay={retirementIncomeDisplay}
-            incomeAgeRangeItems={incomeAgeRangeItems}
-          />
-          <details className="simple-results-disclosure simple-results-methodology">
-            <summary>How this estimate was worked out</summary>
-            <InflationBasisPanelFeature
-              settings={settings}
-              assumptions={derivedInflationAssumptions}
+      {summaryPresentation ? (
+        <ResultsSummarySection>
+          {summaryPresentation === "simple" ? (
+            <SimplePensionSummary
+              activeResult={currentComparisonResult}
+              retirementIncomeDisplay={retirementIncomeDisplay}
+              onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
             />
-          </details>
-        </>
-      ) : (
+          ) : summaryPresentation === "detailed" ? (
+            <PensionSummarySectionFeature
+              activeResult={currentComparisonResult}
+              headingLevel={2}
+              description="Based on your selected retirement age, target income, pension start dates and withdrawal strategy."
+              retirementIncomeDisplay={retirementIncomeDisplay}
+              onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+              incomeAgeRangeItems={incomeAgeRangeItems}
+              statusItems={buildStatusItems(currentComparisonResult)}
+              flexibleWithdrawalSummary={flexibleWithdrawalSummary}
+              targetBasedWithdrawalPreviews={targetBasedWithdrawalPreviews}
+              onApplyTargetBasedStrategy={(accountId) =>
+                applyTargetBasedStrategy(onChange, accountId)
+              }
+              onReviewWithdrawalStrategy={reviewWithdrawalStrategy}
+            />
+          ) : (
+            <PensionSummarySectionFeature
+              activeResult={currentComparisonResult}
+              headingLevel={2}
+              description="This summary uses your current journey assumptions and shows projected income by age range."
+              retirementIncomeDisplay={retirementIncomeDisplay}
+              onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+              incomeAgeRangeItems={incomeAgeRangeItems}
+              statusItems={buildStatusItems(currentComparisonResult)}
+            />
+          )}
+        </ResultsSummarySection>
+      ) : null}
+
+      {chartPresentation === "detailed" ? (
+        <RetirementIncomeChart
+          data={retirementIncomeSeries}
+          alphaLabel="Alpha pension"
+          showFlexibleWithdrawalInsights
+          residualFlexibleFundInsights={
+            flexibleWithdrawalSummary.residualAccounts
+          }
+          limits={retirementIncomeChartLimits}
+          statePensionEditable
+          validationIssues={validationIssues}
+          onChangeParameters={onChangeChartParameters}
+          {...retirementIncomeChartParameters}
+        />
+      ) : chartPresentation ? (
+        <ComparisonRetirementIncomeChart
+          retirementIncomeSeries={retirementIncomeSeries}
+          retirementIncomeChartParameters={retirementIncomeChartParameters}
+          retirementIncomeChartLimits={retirementIncomeChartLimits}
+          hideInactiveLegendItems={chartPresentation === "simple"}
+          presentation={chartPresentation === "simple" ? "simple" : "standard"}
+          validationIssues={validationIssues}
+          onChangeChartParameters={onChangeChartParameters}
+        />
+      ) : null}
+
+      {hasResultsSection(step, "income-details") ? (
+        <SimplePensionDetails
+          activeResult={currentComparisonResult}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          incomeAgeRangeItems={incomeAgeRangeItems}
+        />
+      ) : null}
+
+      {inflationPresentation === "disclosure" ? (
+        <details className="simple-results-disclosure simple-results-methodology">
+          <summary>How this estimate was worked out</summary>
+          <InflationBasisPanelFeature
+            settings={settings}
+            assumptions={derivedInflationAssumptions}
+          />
+        </details>
+      ) : inflationPresentation === "expanded" ? (
         <InflationBasisPanelFeature
           settings={settings}
           assumptions={derivedInflationAssumptions}
         />
-      )}
+      ) : null}
 
-      {step.showComparisonSection !== false ? (
+      {hasResultsSection(step, "comparison") ? (
         <ComparisonSection>
           <ComparisonPanelFeature
             settings={settings}
@@ -497,15 +333,13 @@ function renderBridgeAnswerStep(
             onRetirementIncomeDisplayChange={
               onComparisonRetirementIncomeDisplayChange
             }
-            hideInactiveLegendItems={Boolean(step.hideInactiveLegendItems)}
-            hideBridgeFundingSection={Boolean(step.hideBridgeFundingSection)}
-            hideFlexibleAssetsSection={Boolean(step.hideFlexibleAssetsSection)}
             showPensionSummary={false}
           />
         </ComparisonSection>
       ) : null}
 
-      {step.showProjectionTable !== false && shouldRenderProjectionTable ? (
+      {hasResultsSection(step, "projection-table") &&
+      shouldRenderProjectionTable ? (
         <ProjectionTableSectionContainer>
           <ProjectionTableSectionFeature
             rows={projectionRows}
@@ -514,6 +348,23 @@ function renderBridgeAnswerStep(
         </ProjectionTableSectionContainer>
       ) : null}
     </>
+  );
+}
+
+function hasResultsSection(
+  step: JourneyStepDefinition & { kind: "results" },
+  sectionId: JourneyResultsSection["id"]
+) {
+  return step.sections.some((section) => section.id === sectionId);
+}
+
+function getResultsSection<SectionId extends JourneyResultsSection["id"]>(
+  step: JourneyStepDefinition & { kind: "results" },
+  sectionId: SectionId
+) {
+  return step.sections.find(
+    (section): section is Extract<JourneyResultsSection, { id: SectionId }> =>
+      section.id === sectionId
   );
 }
 
@@ -572,20 +423,20 @@ function renderFieldsStep(
       showGuidanceNotes={showGuidanceNotes}
       useDropdownDates={useDropdownDates}
       flexibleWithdrawalSummary={
-        step.id.startsWith("expert-")
+        step.showFlexibleWithdrawalInsights
           ? viewModel.flexibleWithdrawalSummary
           : undefined
       }
-      useNpaLinkedDefaults={step.id.startsWith("expert-")}
+      useNpaLinkedDefaults={Boolean(step.useNpaLinkedDefaults)}
     >
-      {isSpendingSmileEditorStep(step.id) ? (
+      {step.showSpendingSmileEditor ? (
         <SpendingSmileEditor
           settings={settings}
           validationIssues={validationIssues}
           onChange={onChange}
         />
       ) : null}
-      {isExpertRetirementIncomeTargetStep(step.id) ? (
+      {step.showFlexibleWithdrawalPriority ? (
         <FlexibleWithdrawalPriorityEditor
           settings={settings}
           onChange={onChange}
@@ -1050,34 +901,6 @@ function buildStatusItems(
   return currentComparisonResult
     ? buildComparisonStatusItems(currentComparisonResult)
     : [];
-}
-
-function buildKeyDateItems(
-  settings: PensionSettings,
-  pensionSummary: PensionSummary
-) {
-  return [
-    ...(settings.showAlpha
-      ? [
-          {
-            label: "Alpha pension starts",
-            value: formatDate(pensionSummary.keyDates.startsAlphaPension),
-          },
-        ]
-      : []),
-    ...(settings.showStatePension
-      ? [
-          {
-            label: "State Pension starts",
-            value: formatDate(pensionSummary.keyDates.startsStatePension),
-          },
-        ]
-      : []),
-    {
-      label: "Normal Pension Age",
-      value: formatDecimalAge(pensionSummary.calculated.normalPensionAge),
-    },
-  ];
 }
 
 function getFieldsByIds(

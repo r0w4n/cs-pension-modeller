@@ -57,20 +57,26 @@ describe("journey module", () => {
           id: "test",
           title: "Test journey",
           description: "Journey description",
+          settingsPresentation: {
+            alignAlphaLeaveAgeToRetirement: false,
+            dateOfBirthUpdate: "preserve-retirement-ages",
+          },
           steps: [
             {
               id: "one",
               eyebrow: "Step 1",
               title: "First step",
               description: "First description",
-              kind: "answer",
+              kind: "results",
+              sections: [],
             },
             {
               id: "two",
               eyebrow: "Step 2",
               title: "Second step",
               description: "Second description",
-              kind: "answer",
+              kind: "results",
+              sections: [],
               visible: (currentSettings) => currentSettings.showAlpha,
             },
           ],
@@ -95,13 +101,18 @@ describe("journey module", () => {
           id: "simple-early-retirement",
           title: "Test journey",
           description: "Journey description",
+          settingsPresentation: {
+            alignAlphaLeaveAgeToRetirement: false,
+            dateOfBirthUpdate: "preserve-retirement-ages",
+          },
           steps: [
             {
               id: "one",
               eyebrow: "Step 1",
               title: "First step",
               description: "First description",
-              kind: "answer",
+              kind: "results",
+              sections: [],
             },
           ],
         }}

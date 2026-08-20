@@ -23,6 +23,29 @@ const journeyContentMocks = vi.hoisted(() => ({
   retirementChart: vi.fn(),
 }));
 
+const STANDARD_RESULTS_SECTIONS = [
+  { id: "summary", presentation: "standard" },
+  { id: "retirement-income-chart", presentation: "standard" },
+  { id: "inflation-basis", presentation: "expanded" },
+  { id: "comparison" },
+  { id: "projection-table" },
+] as const;
+
+const DETAILED_RESULTS_SECTIONS = [
+  { id: "summary", presentation: "detailed" },
+  { id: "retirement-income-chart", presentation: "detailed" },
+  { id: "inflation-basis", presentation: "expanded" },
+  { id: "comparison" },
+  { id: "projection-table" },
+] as const;
+
+const SIMPLE_RESULTS_SECTIONS = [
+  { id: "summary", presentation: "simple" },
+  { id: "retirement-income-chart", presentation: "simple" },
+  { id: "income-details", presentation: "simple" },
+  { id: "inflation-basis", presentation: "disclosure" },
+] as const;
+
 vi.mock("../RetirementIncomeChart", () => ({
   RetirementIncomeChart: (props: unknown) => {
     journeyContentMocks.retirementChart(props);
@@ -389,7 +412,8 @@ describe("JourneyStepContent", () => {
           eyebrow: "Results",
           title: "Results",
           description: "Review results",
-          kind: "expert-answer",
+          kind: "results",
+          sections: DETAILED_RESULTS_SECTIONS,
         }}
         viewModel={createViewModel()}
       />
@@ -409,7 +433,8 @@ describe("JourneyStepContent", () => {
           eyebrow: "Results",
           title: "Results",
           description: "Review results",
-          kind: "expert-answer",
+          kind: "results",
+          sections: DETAILED_RESULTS_SECTIONS,
         }}
         viewModel={createViewModel()}
       />
@@ -431,7 +456,8 @@ describe("JourneyStepContent", () => {
           eyebrow: "Results",
           title: "Results",
           description: "Review results",
-          kind: "bridge-answer",
+          kind: "results",
+          sections: STANDARD_RESULTS_SECTIONS,
         }}
         viewModel={createViewModel()}
       />
@@ -445,16 +471,16 @@ describe("JourneyStepContent", () => {
 
   it.each([
     {
-      kind: "bridge-answer" as const,
+      sections: STANDARD_RESULTS_SECTIONS,
       chartText: "Comparison retirement income chart",
     },
     {
-      kind: "expert-answer" as const,
+      sections: DETAILED_RESULTS_SECTIONS,
       chartText: "Retirement income chart",
     },
   ])(
-    "places the projection basis below the results chart for $kind results",
-    ({ kind, chartText }) => {
+    "places the projection basis below the $chartText",
+    ({ sections, chartText }) => {
       mockMatchMedia(false);
 
       render(
@@ -464,7 +490,8 @@ describe("JourneyStepContent", () => {
             eyebrow: "Results",
             title: "Results",
             description: "Review results",
-            kind,
+            kind: "results",
+            sections,
           }}
           viewModel={createViewModel()}
         />
@@ -499,6 +526,8 @@ describe("JourneyStepContent", () => {
           kind: "fields",
           groupId: "retirement-target",
           fieldIds: ["desiredRetirementIncome", "requirementAge"],
+          showFlexibleWithdrawalPriority: true,
+          showSpendingSmileEditor: true,
         }}
         viewModel={viewModel}
       />
@@ -544,6 +573,8 @@ describe("JourneyStepContent", () => {
           kind: "fields",
           groupId: "retirement-target",
           fieldIds: ["desiredRetirementIncome", "requirementAge"],
+          showFlexibleWithdrawalPriority: true,
+          showSpendingSmileEditor: true,
         }}
         viewModel={viewModel}
       />
@@ -592,6 +623,8 @@ describe("JourneyStepContent", () => {
           kind: "fields",
           groupId: "retirement-target",
           fieldIds: ["desiredRetirementIncome", "requirementAge"],
+          showFlexibleWithdrawalPriority: true,
+          showSpendingSmileEditor: true,
         }}
         viewModel={viewModel}
       />
@@ -650,6 +683,8 @@ describe("JourneyStepContent", () => {
           kind: "fields",
           groupId: "retirement-target",
           fieldIds: ["desiredRetirementIncome", "requirementAge"],
+          showFlexibleWithdrawalPriority: true,
+          showSpendingSmileEditor: true,
         }}
         viewModel={viewModel}
       />
@@ -701,7 +736,7 @@ describe("JourneyStepContent", () => {
     expect(document.querySelectorAll("[data-other-account]")).toHaveLength(2);
   });
 
-  it("keeps flexible withdrawal results and chart presentation out of bridge answers", () => {
+  it("keeps flexible withdrawal results out of standard results", () => {
     mockMatchMedia(false);
 
     render(
@@ -711,7 +746,8 @@ describe("JourneyStepContent", () => {
           eyebrow: "Result",
           title: "Your results",
           description: "Review results",
-          kind: "bridge-answer",
+          kind: "results",
+          sections: STANDARD_RESULTS_SECTIONS,
         }}
         viewModel={createViewModel()}
       />
@@ -726,7 +762,7 @@ describe("JourneyStepContent", () => {
     expect(chartProps?.showFlexibleWithdrawalInsights).not.toBe(true);
   });
 
-  it("can omit comparison controls from a simplified bridge answer", () => {
+  it("can omit comparison controls from simplified results", () => {
     mockMatchMedia(false);
 
     render(
@@ -736,9 +772,8 @@ describe("JourneyStepContent", () => {
           eyebrow: "Result",
           title: "Your results",
           description: "Review results",
-          kind: "bridge-answer",
-          resultsPresentation: "simple",
-          showComparisonSection: false,
+          kind: "results",
+          sections: SIMPLE_RESULTS_SECTIONS,
         }}
         viewModel={createViewModel()}
       />
@@ -757,7 +792,7 @@ describe("JourneyStepContent", () => {
     ).toHaveBeenCalledWith(expect.objectContaining({ presentation: "simple" }));
   });
 
-  it("enables flexible withdrawal results and chart presentation for expert answers", () => {
+  it("enables flexible withdrawal results in detailed results", () => {
     mockMatchMedia(false);
 
     render(
@@ -767,7 +802,8 @@ describe("JourneyStepContent", () => {
           eyebrow: "Result",
           title: "Your results",
           description: "Review results",
-          kind: "expert-answer",
+          kind: "results",
+          sections: DETAILED_RESULTS_SECTIONS,
         }}
         viewModel={createViewModel()}
       />
@@ -780,6 +816,36 @@ describe("JourneyStepContent", () => {
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeDefined();
     expect(chartProps.showFlexibleWithdrawalInsights).toBe(true);
+  });
+
+  it("configures summary and chart presentations independently", () => {
+    mockMatchMedia(false);
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "answer",
+          eyebrow: "Result",
+          title: "Your results",
+          description: "Review results",
+          kind: "results",
+          sections: [
+            { id: "summary", presentation: "standard" },
+            { id: "retirement-income-chart", presentation: "detailed" },
+          ],
+        }}
+        viewModel={createViewModel()}
+      />
+    );
+
+    const summaryProps = journeyContentMocks.pensionSummary.mock
+      .calls[0]?.[0] as Record<string, unknown>;
+
+    expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
+    expect(journeyContentMocks.retirementChart).toHaveBeenCalledOnce();
+    expect(
+      journeyContentMocks.comparisonRetirementIncomeChart
+    ).not.toHaveBeenCalled();
   });
 });
 

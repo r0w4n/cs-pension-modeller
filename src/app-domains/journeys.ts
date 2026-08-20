@@ -153,19 +153,33 @@ export type JourneyOptionalQuestion = {
       };
 };
 
+export type JourneyResultsSection =
+  | {
+      id: "summary";
+      presentation: "simple" | "standard" | "detailed";
+    }
+  | {
+      id: "retirement-income-chart";
+      presentation: "simple" | "standard" | "detailed";
+    }
+  | {
+      id: "income-details";
+      presentation: "simple";
+    }
+  | {
+      id: "inflation-basis";
+      presentation: "disclosure" | "expanded";
+    }
+  | { id: "comparison" }
+  | { id: "projection-table" };
+
 export type JourneyStepDefinition =
   | {
       id: string;
       eyebrow: string;
       title: string;
       description: string;
-      kind: "optional-sections" | "answer" | "bridge-answer" | "expert-answer";
-      hideInactiveLegendItems?: boolean;
-      hideBridgeFundingSection?: boolean;
-      hideFlexibleAssetsSection?: boolean;
-      resultsPresentation?: "simple";
-      showComparisonSection?: boolean;
-      showProjectionTable?: boolean;
+      kind: "optional-sections";
       toggleKeys?: readonly OptionalSectionToggleKey[];
       toggleCopy?: JourneyOptionalSectionCopy;
       visible?: (settings: PensionSettings) => boolean;
@@ -186,23 +200,43 @@ export type JourneyStepDefinition =
       supportLinkLayout?: "inline";
       optionalQuestion?: JourneyOptionalQuestion;
       addedPensionIncomeGoal?: boolean;
+      showFlexibleWithdrawalInsights?: boolean;
+      showFlexibleWithdrawalPriority?: boolean;
+      showSpendingSmileEditor?: boolean;
+      useNpaLinkedDefaults?: boolean;
+      visible?: (settings: PensionSettings) => boolean;
+    }
+  | {
+      id: string;
+      eyebrow: string;
+      title: string;
+      description: string;
+      kind: "results";
+      sections: readonly JourneyResultsSection[];
       visible?: (settings: PensionSettings) => boolean;
     };
+
+export type JourneySettingsPresentation = {
+  alignAlphaLeaveAgeToRetirement: boolean;
+  dateOfBirthUpdate:
+    | "preserve-retirement-ages"
+    | "reset-retirement-ages-to-npa"
+    | "relink-npa-defaults";
+};
+
+export const DEFAULT_JOURNEY_SETTINGS_PRESENTATION: JourneySettingsPresentation =
+  {
+    alignAlphaLeaveAgeToRetirement: false,
+    dateOfBirthUpdate: "preserve-retirement-ages",
+  };
 
 export type JourneyDefinition = {
   id: string;
   title: string;
   description: string;
+  settingsPresentation: JourneySettingsPresentation;
   steps: readonly JourneyStepDefinition[];
 };
-
-export const SPENDING_SMILE_EDITOR_STEP_ID = "expert-retirement-target";
-
-export function isSpendingSmileEditorStep(stepId: string) {
-  return stepId === SPENDING_SMILE_EDITOR_STEP_ID;
-}
-
-export const isExpertRetirementIncomeTargetStep = isSpendingSmileEditorStep;
 
 export const JOURNEY_DEFINITIONS = [
   {
@@ -210,6 +244,10 @@ export const JOURNEY_DEFINITIONS = [
     title: "Work out what I need to retire early",
     description:
       "Build a retirement income plan using your Civil Service pension, State Pension, SIPP, ISA, LISA and other savings. See how your bridging pots could support you before your main pensions start.",
+    settingsPresentation: {
+      alignAlphaLeaveAgeToRetirement: false,
+      dateOfBirthUpdate: "preserve-retirement-ages",
+    },
     steps: [
       {
         id: "target",
@@ -431,8 +469,14 @@ export const JOURNEY_DEFINITIONS = [
         title: "Your results",
         description:
           "Review your projected income, bridge funding, key dates, and assumptions.",
-        kind: "bridge-answer",
-        showProjectionTable: true,
+        kind: "results",
+        sections: [
+          { id: "summary", presentation: "standard" },
+          { id: "retirement-income-chart", presentation: "standard" },
+          { id: "inflation-basis", presentation: "expanded" },
+          { id: "comparison" },
+          { id: "projection-table" },
+        ],
       },
     ],
   },
@@ -441,6 +485,10 @@ export const JOURNEY_DEFINITIONS = [
     title: "Simplified retirement journey",
     description:
       "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like.",
+    settingsPresentation: {
+      alignAlphaLeaveAgeToRetirement: true,
+      dateOfBirthUpdate: "reset-retirement-ages-to-npa",
+    },
     steps: [
       {
         id: "personal",
@@ -839,13 +887,13 @@ export const JOURNEY_DEFINITIONS = [
         title: "Your results",
         description:
           "See how much money you may have each month and where it may come from.",
-        kind: "bridge-answer",
-        hideInactiveLegendItems: true,
-        hideBridgeFundingSection: true,
-        hideFlexibleAssetsSection: true,
-        resultsPresentation: "simple",
-        showComparisonSection: false,
-        showProjectionTable: false,
+        kind: "results",
+        sections: [
+          { id: "summary", presentation: "simple" },
+          { id: "retirement-income-chart", presentation: "simple" },
+          { id: "income-details", presentation: "simple" },
+          { id: "inflation-basis", presentation: "disclosure" },
+        ],
       },
     ],
   },
@@ -854,6 +902,10 @@ export const JOURNEY_DEFINITIONS = [
     title: "Expert journey",
     description:
       "This journey gives you more control over your retirement projection, including detailed assumptions for pensions, savings, tax, inflation, investment growth and partial retirement.",
+    settingsPresentation: {
+      alignAlphaLeaveAgeToRetirement: false,
+      dateOfBirthUpdate: "relink-npa-defaults",
+    },
     steps: createExpertJourneySteps(),
   },
 ] as const satisfies readonly JourneyDefinition[];
@@ -876,7 +928,14 @@ function createExpertJourneySteps(): JourneyStepDefinition[] {
       title: "Your results",
       description:
         "Review your projected income, bridge funding, saved scenarios, and the full month-by-month projection table.",
-      kind: "expert-answer",
+      kind: "results",
+      sections: [
+        { id: "summary", presentation: "detailed" },
+        { id: "retirement-income-chart", presentation: "detailed" },
+        { id: "inflation-basis", presentation: "expanded" },
+        { id: "comparison" },
+        { id: "projection-table" },
+      ],
     },
   ];
 }
@@ -892,6 +951,10 @@ function createExpertJourneyFieldStep(
     kind: "fields",
     groupId: group.id,
     fieldIds: group.fields.map((field) => field.id),
+    showFlexibleWithdrawalInsights: true,
+    showFlexibleWithdrawalPriority: group.id === "retirement-target",
+    showSpendingSmileEditor: group.id === "retirement-target",
+    useNpaLinkedDefaults: true,
     visible: isExpertJourneyGroupVisible(group.id),
   };
 }
@@ -950,27 +1013,7 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
-    retirementIncomeTargetBasis: "after_tax",
-    taxationEnabled: true,
     nuvosPensionDrawAge: settings.nuvosPensionDrawAge,
-    assumedCpiPercent: 0,
-    showStatePension: true,
-    showNuvos: settings.showNuvos,
-    showClassic: settings.showClassic,
-    showClassicPlus: settings.showClassicPlus,
-    showPremium: settings.showPremium,
-    alphaAddedPensionMonthly: 0,
-    classicCalculationMode: "manual",
-    classicPlusCalculationMode: "manual",
-  };
-}
-
-export function applySimpleJourneyAssumptions(
-  settings: PensionSettings
-): PensionSettings {
-  return {
-    ...settings,
-    showAlpha: true,
     showStatePension: true,
     showSipp: false,
     showCsAvc: settings.showCsAvc,
@@ -997,32 +1040,5 @@ export function applySimpleJourneyAssumptions(
     alphaEpaEnabled: false,
     showAdditionalGuaranteedIncome: false,
     alphaAddedPensionLumpSums: [],
-  };
-}
-
-export function mergeSimpleJourneySettings(
-  currentSettings: PensionSettings,
-  nextSettings: PensionSettings
-): PensionSettings {
-  return {
-    ...nextSettings,
-    showAlpha: true,
-    showSipp: currentSettings.showSipp,
-    showIsa: currentSettings.showIsa,
-    showLisa: currentSettings.showLisa,
-    alphaAddedPensionFactorType: currentSettings.alphaAddedPensionFactorType,
-    statePensionApplyFutureGrowth:
-      currentSettings.statePensionApplyFutureGrowth,
-    applyPensionIncreases: true,
-    assumedCpiPercent: 0,
-    taxationEnabled: nextSettings.taxationEnabled,
-    retirementIncomeTargetBasis: nextSettings.retirementIncomeTargetBasis,
-    partialRetirementEnabled: currentSettings.partialRetirementEnabled,
-    alphaEpaEnabled: currentSettings.alphaEpaEnabled,
-    alphaEpaPeriods: currentSettings.alphaEpaPeriods,
-    showAdditionalGuaranteedIncome:
-      currentSettings.showAdditionalGuaranteedIncome,
-    additionalGuaranteedIncomes: currentSettings.additionalGuaranteedIncomes,
-    alphaAddedPensionLumpSums: currentSettings.alphaAddedPensionLumpSums,
   };
 }

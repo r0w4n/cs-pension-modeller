@@ -2,9 +2,7 @@ import {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
-  applySimpleJourneyAssumptions,
   applySimpleJourneyDefaults,
-  mergeSimpleJourneySettings,
   type JourneyStepDefinition,
 } from "./journeys";
 import type { FieldDefinition } from "../fieldDefinitions";
@@ -121,7 +119,7 @@ describe("journey definitions", () => {
   });
 
   it("keeps target-based drawdown out of simplified projections", () => {
-    const settings = applySimpleJourneyAssumptions({
+    const settings = applySimpleJourneyDefaults({
       ...defaultSettings,
       sippWithdrawalStrategy: "meet_income_target",
       csAvcWithdrawalStrategy: "meet_income_target",
@@ -302,13 +300,6 @@ describe("journey definitions", () => {
     expect(applySimpleJourneyDefaults(settingsWithoutAlpha).showAlpha).toBe(
       true
     );
-    expect(applySimpleJourneyAssumptions(settingsWithoutAlpha).showAlpha).toBe(
-      true
-    );
-    expect(
-      mergeSimpleJourneySettings(settingsWithoutAlpha, settingsWithoutAlpha)
-        .showAlpha
-    ).toBe(true);
     expect(applyBridgeJourneyDefaults(settingsWithoutAlpha).showAlpha).toBe(
       false
     );
@@ -322,8 +313,16 @@ describe("journey definitions", () => {
       (step) => step.id === "answer"
     );
 
-    expect(answerStep?.kind).toBe("bridge-answer");
-    expect(answerStep?.resultsPresentation).toBe("simple");
+    expect(answerStep?.kind).toBe("results");
+    if (answerStep?.kind !== "results") {
+      throw new Error("Expected the simple results step");
+    }
+    expect(answerStep.sections).toEqual([
+      { id: "summary", presentation: "simple" },
+      { id: "retirement-income-chart", presentation: "simple" },
+      { id: "income-details", presentation: "simple" },
+      { id: "inflation-basis", presentation: "disclosure" },
+    ]);
   });
 
   it("guides simple journey users to copy the three Alpha statement figures", () => {
@@ -410,7 +409,7 @@ describe("journey definitions", () => {
       "alpha-options"
     );
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         alphaAddedPensionMonthly: 250,
       })
@@ -427,7 +426,7 @@ describe("journey definitions", () => {
       "classicApplyPensionIncreases",
     ]);
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         classicCalculationMode: "estimate",
         classicPlusCalculationMode: "estimate",
@@ -452,7 +451,7 @@ describe("journey definitions", () => {
     ]);
   });
 
-  it("excludes EPA from simple calculations while preserving expert settings", () => {
+  it("materialises the disabled EPA assumption in simple settings", () => {
     const alphaEpaPeriods = [
       {
         id: "saved-epa-period",
@@ -466,18 +465,14 @@ describe("journey definitions", () => {
       alphaEpaEnabled: true,
       alphaEpaPeriods,
     };
-    const simpleSettings = applySimpleJourneyAssumptions(currentSettings);
+    const simpleSettings = applySimpleJourneyDefaults(currentSettings);
 
     expect(simpleSettings.alphaEpaEnabled).toBe(false);
-    expect(mergeSimpleJourneySettings(currentSettings, simpleSettings)).toEqual(
-      expect.objectContaining({
-        alphaEpaEnabled: true,
-        alphaEpaPeriods,
-      })
-    );
+    expect(simpleSettings.alphaEpaPeriods).toEqual(alphaEpaPeriods);
+    expect(currentSettings.alphaEpaEnabled).toBe(true);
   });
 
-  it("excludes additional guaranteed income from simple calculations while preserving expert settings", () => {
+  it("materialises the excluded additional-income assumption in simple settings", () => {
     const additionalGuaranteedIncomes = [
       {
         id: "saved-additional-income",
@@ -495,20 +490,18 @@ describe("journey definitions", () => {
       showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes,
     };
-    const simpleSettings = applySimpleJourneyAssumptions(currentSettings);
+    const simpleSettings = applySimpleJourneyDefaults(currentSettings);
 
     expect(simpleSettings.showAdditionalGuaranteedIncome).toBe(false);
-    expect(mergeSimpleJourneySettings(currentSettings, simpleSettings)).toEqual(
-      expect.objectContaining({
-        showAdditionalGuaranteedIncome: true,
-        additionalGuaranteedIncomes,
-      })
+    expect(simpleSettings.additionalGuaranteedIncomes).toEqual(
+      additionalGuaranteedIncomes
     );
+    expect(currentSettings.showAdditionalGuaranteedIncome).toBe(true);
   });
 
   it("uses flat spending for simple journey calculations", () => {
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         spendingStrategyType: "SPENDING_SMILE",
       }).spendingStrategyType
@@ -516,7 +509,7 @@ describe("journey definitions", () => {
   });
 
   it("uses an after-tax spending target and tax estimates in simple mode", () => {
-    expect(applySimpleJourneyAssumptions(defaultSettings)).toEqual(
+    expect(applySimpleJourneyDefaults(defaultSettings)).toEqual(
       expect.objectContaining({
         retirementIncomeTargetBasis: "after_tax",
         taxationEnabled: true,
@@ -526,7 +519,7 @@ describe("journey definitions", () => {
 
   it("keeps an enabled CS AVC visible in simple journey assumptions", () => {
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         showCsAvc: true,
         showSipp: true,
@@ -543,30 +536,21 @@ describe("journey definitions", () => {
     );
   });
 
-  it("applies a CS AVC toggle while preserving hidden simple journey pots", () => {
-    expect(
-      mergeSimpleJourneySettings(
-        {
-          ...defaultSettings,
-          showCsAvc: false,
-          showSipp: true,
-          showIsa: true,
-          showLisa: true,
-        },
-        {
-          ...defaultSettings,
-          showCsAvc: true,
-          showSipp: false,
-          showIsa: false,
-          showLisa: false,
-        }
-      )
-    ).toEqual(
+  it("stores the same simple settings that are passed to calculations", () => {
+    const simpleSettings = applySimpleJourneyDefaults({
+      ...defaultSettings,
+      showCsAvc: true,
+      showSipp: true,
+      showIsa: true,
+      showLisa: true,
+    });
+
+    expect(simpleSettings).toEqual(
       expect.objectContaining({
         showCsAvc: true,
-        showSipp: true,
-        showIsa: true,
-        showLisa: true,
+        showSipp: false,
+        showIsa: false,
+        showLisa: false,
       })
     );
   });

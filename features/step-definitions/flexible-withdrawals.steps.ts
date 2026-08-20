@@ -2,12 +2,11 @@ import { Given, Then, When } from "@cucumber/cucumber";
 import { fieldGroups } from "../../src/fieldDefinitions";
 import {
   applyBridgeJourneyDefaults,
-  applySimpleJourneyAssumptions,
+  applySimpleJourneyDefaults,
   createRetirementIncomeSeries,
   createTargetBasedWithdrawalPreview,
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
-  isExpertRetirementIncomeTargetStep,
   JOURNEY_DEFINITIONS,
   reorderFlexibleWithdrawalAccounts,
   shouldShowFlexibleWithdrawalPriority,
@@ -87,8 +86,13 @@ Then(
 Then(
   "the funding priority should belong to the expert retirement income target section",
   function () {
+    const targetStep = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "expert-journey"
+    )?.steps.find((step) => step.id === "expert-retirement-target");
+
     assertCondition(
-      isExpertRetirementIncomeTargetStep("expert-retirement-target")
+      targetStep?.kind === "fields" &&
+        targetStep.showFlexibleWithdrawalPriority === true
     );
   }
 );
@@ -96,17 +100,36 @@ Then(
 Then(
   "the funding priority should not belong to simplified or bridge sections",
   function () {
-    assertCondition(!isExpertRetirementIncomeTargetStep("basics"));
-    assertCondition(!isExpertRetirementIncomeTargetStep("target"));
-    assertCondition(!isExpertRetirementIncomeTargetStep("pots"));
+    assertCondition(
+      JOURNEY_DEFINITIONS.filter(
+        (journey) => journey.id !== "expert-journey"
+      ).every((journey) =>
+        journey.steps.every(
+          (step) =>
+            step.kind !== "fields" ||
+            !("showFlexibleWithdrawalPriority" in step) ||
+            step.showFlexibleWithdrawalPriority !== true
+        )
+      )
+    );
   }
 );
 
 Then(
   "the funding priority should not belong to an expert account withdrawal section",
   function () {
-    assertCondition(!isExpertRetirementIncomeTargetStep("expert-sipp"));
-    assertCondition(!isExpertRetirementIncomeTargetStep("expert-isa"));
+    const accountSteps = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "expert-journey"
+    )?.steps.filter(
+      (step) => step.id === "expert-sipp" || step.id === "expert-isa"
+    );
+
+    assertCondition(
+      accountSteps?.every(
+        (step) =>
+          step.kind !== "fields" || step.showFlexibleWithdrawalPriority !== true
+      )
+    );
   }
 );
 
@@ -209,9 +232,9 @@ Then(
 );
 
 Then(
-  "simplified journey projections should use legacy withdrawal strategies",
+  "simplified journey settings should store legacy withdrawal strategies",
   function (this: FlexibleWithdrawalWorld) {
-    const simplifiedSettings = applySimpleJourneyAssumptions({
+    const simplifiedSettings = applySimpleJourneyDefaults({
       ...getSettings(this),
       sippWithdrawalStrategy: "meet_income_target",
       csAvcWithdrawalStrategy: "meet_income_target",
@@ -231,7 +254,7 @@ Then(
 );
 
 Then(
-  "bridge journey projections should use legacy withdrawal strategies",
+  "bridge journey settings should store legacy withdrawal strategies",
   function (this: FlexibleWithdrawalWorld) {
     const bridgeSettings = applyBridgeJourneyDefaults({
       ...getSettings(this),

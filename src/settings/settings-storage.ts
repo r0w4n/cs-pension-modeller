@@ -320,7 +320,7 @@ export function parseStoredSettingsByJourney(
         version: LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
         data: input,
       };
-  const migratedFromLegacy = envelope.version < SETTINGS_SCHEMA_VERSION;
+  const migratedFromLegacy = envelope.version < 14;
   const migratedData = migrateSettingsToLatest(envelope);
 
   if (!isSettingsObject(migratedData)) {

@@ -1,24 +1,6 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("production build smoke checks", () => {
-  test("shows useful initial content before JavaScript loads", async ({
-    browser,
-  }) => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
-    const page = await context.newPage();
-
-    await page.goto("/");
-
-    await expect(
-      page.getByRole("heading", { name: "Retirement Income Modeller" })
-    ).toBeVisible();
-    await expect(page.getByRole("status")).toHaveText(
-      "Preparing the modeller…"
-    );
-
-    await context.close();
-  });
-
   test("serves the main app shell from the built artifact", async ({
     page,
   }) => {

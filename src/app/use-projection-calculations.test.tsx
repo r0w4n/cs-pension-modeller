@@ -89,6 +89,7 @@ describe("useProjectionCalculations", () => {
           settings,
           retirementIncomeDisplay: "annual",
           retirementPlanResultCache: cache,
+          calculationEnabled: true,
         }),
       { initialProps: { settings: initialSettings } }
     );
@@ -101,7 +102,7 @@ describe("useProjectionCalculations", () => {
     const worker = MockCalculationWorker.instances[0];
     expect(worker?.messages).toEqual([updatedSettings]);
     expect(result.current.isProjectionPending).toBe(true);
-    expect(result.current.retirementPlanResult.settings).toEqual(
+    expect(result.current.retirementPlanResult?.settings).toEqual(
       initialSettings
     );
 
@@ -131,6 +132,7 @@ describe("useProjectionCalculations", () => {
         useProjectionCalculations({
           settings,
           retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
         }),
       { initialProps: { settings: initialSettings } }
     );
@@ -154,7 +156,7 @@ describe("useProjectionCalculations", () => {
         result: calculateRetirementPlan(firstSettings),
       });
     });
-    expect(result.current.retirementPlanResult.settings).toEqual(
+    expect(result.current.retirementPlanResult?.settings).toEqual(
       initialSettings
     );
 
@@ -164,5 +166,33 @@ describe("useProjectionCalculations", () => {
     });
     expect(result.current.retirementPlanResult).toEqual(latestPlan);
     expect(result.current.isProjectionPending).toBe(false);
+  });
+
+  it("does not calculate until calculation is enabled", async () => {
+    const settings = createFastSettings();
+    const cache: RetirementPlanResultCache = new Map();
+    const { result, rerender } = renderHook(
+      ({ calculationEnabled }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: cache,
+          calculationEnabled,
+        }),
+      { initialProps: { calculationEnabled: false } }
+    );
+
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.isProjectionPending).toBe(false);
+    expect(MockCalculationWorker.instances).toHaveLength(0);
+    expect(cache).toHaveLength(0);
+
+    rerender({ calculationEnabled: true });
+
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    expect(MockCalculationWorker.instances[0]?.messages).toEqual([settings]);
+    expect(result.current.isProjectionPending).toBe(true);
   });
 });

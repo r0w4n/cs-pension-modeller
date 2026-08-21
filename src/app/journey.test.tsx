@@ -50,6 +50,7 @@ describe("journey module", () => {
 
   it("renders visible steps and advances through the journey", () => {
     const settings = createDefaultSettings();
+    const onActiveStepChange = vi.fn();
 
     render(
       <JourneyFlow
@@ -82,13 +83,20 @@ describe("journey module", () => {
           ],
         }}
         settings={settings}
+        onActiveStepChange={onActiveStepChange}
         renderStepContent={(step) => <p>{step.id}-content</p>}
       />
     );
 
     expect(screen.getByText("one-content")).toBeInTheDocument();
+    expect(onActiveStepChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "one" })
+    );
     fireEvent.click(screen.getByRole("button", { name: "Show my answer" }));
     expect(screen.getByText("two-content")).toBeInTheDocument();
+    expect(onActiveStepChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "two" })
+    );
   });
 
   it("renders the mobile journey steps when the viewport is mobile", () => {

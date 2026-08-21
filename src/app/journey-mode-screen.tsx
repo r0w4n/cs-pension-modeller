@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import { useCallback, type RefObject } from "react";
 import type { PensionSettings } from "../settings";
 import type { JourneyDefinition } from "../app-domains";
 import { Helmet } from "../helmet";
@@ -17,6 +17,7 @@ type JourneyModeScreenProps = {
   settings: PensionSettings;
   settingsFormVersion: number;
   journeyStepViewModel: JourneyStepViewModel;
+  onResultsStepActiveChange: (active: boolean) => void;
 };
 
 export function JourneyModeScreen({
@@ -26,7 +27,15 @@ export function JourneyModeScreen({
   settings,
   settingsFormVersion,
   journeyStepViewModel,
+  onResultsStepActiveChange,
 }: JourneyModeScreenProps) {
+  const handleActiveStepChange = useCallback(
+    (step: JourneyDefinition["steps"][number]) => {
+      onResultsStepActiveChange(step.kind === "results");
+    },
+    [onResultsStepActiveChange]
+  );
+
   return (
     <JourneySection activeModeRef={activeModeRef}>
       <Helmet>
@@ -38,6 +47,7 @@ export function JourneyModeScreen({
         key={`${mode}-${settingsFormVersion}`}
         journey={journey}
         settings={settings}
+        onActiveStepChange={handleActiveStepChange}
         renderStepContent={(step) => (
           <JourneyStepContent step={step} viewModel={journeyStepViewModel} />
         )}

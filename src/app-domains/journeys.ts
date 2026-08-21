@@ -382,8 +382,8 @@ export const JOURNEY_DEFINITIONS = [
           "Check your State Pension forecast and the date it becomes available.",
         kind: "fields",
         fieldIds: [
-          "statePensionForecastConfirmed",
           "currentStatePension",
+          "statePensionForecastConfirmed",
           "statePensionDrawDate",
           "statePensionApplyFutureGrowth",
           "statePensionCpiPercent",

@@ -839,6 +839,38 @@ describe("JourneyStepContent", () => {
     );
   });
 
+  it("shows a calculating state before the first result is available", () => {
+    const viewModel = createViewModel();
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "answer",
+          eyebrow: "Result",
+          title: "Your results",
+          description: "Review results",
+          kind: "results",
+          sections: DETAILED_RESULTS_SECTIONS,
+        }}
+        viewModel={{
+          ...viewModel,
+          retirementPlanResult: null,
+          currentComparisonResult: null,
+          derivedInflationAssumptions: null,
+          isProjectionPending: true,
+        }}
+      />
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calculating your results…"
+    );
+    expect(journeyContentMocks.pensionSummary).not.toHaveBeenCalled();
+    expect(
+      journeyContentMocks.retirementIncomeChartAdapter
+    ).not.toHaveBeenCalled();
+  });
+
   it("configures summary and chart presentations independently", () => {
     mockMatchMedia(false);
 

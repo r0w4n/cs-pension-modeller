@@ -56,6 +56,38 @@ describe("form-fields module", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("places forecast confirmation in a section after the State Pension amount", () => {
+    const settings = createDefaultSettings();
+    const fields = fieldGroups
+      .flatMap((group) => group.fields)
+      .filter(
+        (field) =>
+          field.id === "currentStatePension" ||
+          field.id === "statePensionForecastConfirmed"
+      );
+
+    render(
+      <SettingsFields
+        fields={fields}
+        settings={settings}
+        validationIssues={[]}
+        onChange={vi.fn()}
+        showGuidanceNotes
+        useDropdownDates={false}
+      />
+    );
+
+    const amount = screen.getByLabelText("State Pension forecast (£ per year)");
+    const confirmation = screen.getByLabelText(
+      "This is my personalised State Pension forecast"
+    );
+    const amountSection = amount.closest(".field-card");
+    const confirmationSection = confirmation.closest(".field-card");
+
+    expect(amountSection).not.toBe(confirmationSection);
+    expect(amountSection?.nextElementSibling).toBe(confirmationSection);
+  });
+
   it("shows a non-blocking warning on an over-withdrawing strategy", () => {
     const settings = createDefaultSettings();
     const isaStrategyField = fieldGroups

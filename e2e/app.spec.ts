@@ -58,9 +58,7 @@ test.describe("app end-to-end journeys", () => {
         name: "Retirement income target",
       })
     ).toBeVisible();
-    const calculationWorkerStarted = page.waitForEvent("worker");
     await fillExactNumber(page, "Target retirement age exact value", "60");
-    await calculationWorkerStarted;
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
@@ -72,7 +70,9 @@ test.describe("app end-to-end journeys", () => {
     await expect(page.getByLabel("SIPP withdrawal tax treatment")).toHaveCount(
       0
     );
+    const calculationWorkerStarted = page.waitForEvent("worker");
     await page.getByRole("button", { name: "Show my answer" }).click();
+    await calculationWorkerStarted;
     await expect(
       page.getByRole("heading", { name: "Retirement income over time" })
     ).toBeVisible();

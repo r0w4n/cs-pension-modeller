@@ -380,15 +380,6 @@ export const fieldGroups: FieldGroup[] = [
     description: "Current forecast and optional future uprating assumptions.",
     fields: [
       {
-        id: "statePensionForecastConfirmed",
-        label: "This is my personalised State Pension forecast",
-        type: "checkbox",
-        description:
-          "Select this only when the amount below comes from your personalised GOV.UK State Pension forecast. Until it is confirmed, the amount is shown as an assumption. Results that depend on it are labelled Needs checking; otherwise they remain on track with a caution.",
-        infoUrl: knowledgeLinks.statePensionForecast,
-        infoLinkText: "Check State Pension forecast",
-      },
-      {
         id: "currentStatePension",
         label: "State Pension forecast (£ per year)",
         type: "currency-input",
@@ -400,6 +391,15 @@ export const fieldGroups: FieldGroup[] = [
           "Use your latest GOV.UK forecast. This is separate from Civil Service pensions and depends on your National Insurance record, State Pension start date, and uprating rules.",
         infoUrl: knowledgeLinks.statePensionForecast,
         infoLinkText: "Check State Pension",
+      },
+      {
+        id: "statePensionForecastConfirmed",
+        label: "This is my personalised State Pension forecast",
+        type: "checkbox",
+        description:
+          "Select this only when the amount above comes from your personalised GOV.UK State Pension forecast. Until it is confirmed, the amount is shown as an assumption. Results that depend on it are labelled Needs checking; otherwise they remain on track with a caution.",
+        infoUrl: knowledgeLinks.statePensionForecast,
+        infoLinkText: "Check State Pension forecast",
       },
       {
         id: "statePensionDrawDate",

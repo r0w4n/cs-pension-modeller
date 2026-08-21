@@ -220,8 +220,10 @@ The concrete layer responsibilities are:
 - [`src/app/`](src/app) is the imperative shell. It owns React state,
   orchestration, worker-backed deferred calculation, bounded canonical-result
   and comparison caches, generated identifiers, browser storage, import/export,
-  analytics, and other effects. Parameter changes retain the last completed
-  result while the canonical plan is recalculated away from the browser main
+  analytics, and other effects. The canonical plan is not calculated while the
+  home page or input steps are being viewed; opening the Results step triggers
+  the worker-backed calculation. Parameter changes made on Results retain the
+  last completed result while it is recalculated away from the browser main
   thread; obsolete in-flight calculations are discarded.
   [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) is the main
   composition boundary.

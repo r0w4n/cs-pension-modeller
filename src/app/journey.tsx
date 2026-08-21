@@ -85,12 +85,14 @@ type JourneyFlowProps = {
   journey: JourneyDefinition;
   settings: PensionSettings;
   renderStepContent: (step: JourneyStepDefinition) => ReactNode;
+  onActiveStepChange?: (step: JourneyStepDefinition) => void;
 };
 
 export function JourneyFlow({
   journey,
   settings,
   renderStepContent,
+  onActiveStepChange,
 }: JourneyFlowProps) {
   const visibleSteps = journey.steps.filter(
     (step) => !step.visible || step.visible(settings)
@@ -129,6 +131,8 @@ export function JourneyFlow({
       return;
     }
 
+    onActiveStepChange?.(activeStep);
+
     const trackingKey = `${journey.id}:${activeStep.id}`;
 
     if (trackedStepRef.current === trackingKey) {
@@ -143,7 +147,13 @@ export function JourneyFlow({
       step_count: visibleSteps.length,
       step_kind: activeStep.kind,
     });
-  }, [activeStep, activeStepIndex, journey.id, visibleSteps.length]);
+  }, [
+    activeStep,
+    activeStepIndex,
+    journey.id,
+    onActiveStepChange,
+    visibleSteps.length,
+  ]);
 
   if (!activeStep) {
     return null;

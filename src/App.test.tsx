@@ -813,6 +813,7 @@ describe("App settings form", () => {
     window.history.replaceState({}, "", "/");
     vi.mocked(trackAnalyticsEvent).mockClear();
     vi.mocked(trackPageView).mockClear();
+    vi.mocked(createProjectionTable).mockClear();
   });
 
   afterEach(() => {
@@ -842,6 +843,20 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("heading", { name: "Optional sections" })
     ).not.toBeInTheDocument();
+    expect(createProjectionTable).not.toHaveBeenCalled();
+  });
+
+  it("waits to calculate the active plan until results are opened", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    expect(createProjectionTable).not.toHaveBeenCalled();
+
+    openJourneyStep(/Your results/i);
+
+    expect(createProjectionTable).toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { name: "Your results" })
+    ).toBeInTheDocument();
   });
 
   it("saves the selected modeller mode locally", () => {
@@ -1274,6 +1289,10 @@ describe("App settings form", () => {
     expect(
       screen.queryByLabelText("Current SIPP balance (£)")
     ).not.toBeInTheDocument();
+    expect(createProjectionTable).not.toHaveBeenCalled();
+
+    openJourneyStep(/Your results/i);
+
     expect(
       vi
         .mocked(createProjectionTable)
@@ -1455,6 +1474,7 @@ describe("App settings form", () => {
       screen.queryByRole("heading", { name: "Do you have an Alpha EPA?" })
     ).not.toBeInTheDocument();
     expect(screen.queryByText("EPA purchase periods")).not.toBeInTheDocument();
+    openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: false,
@@ -1503,6 +1523,7 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("button", { name: /Additional guaranteed income/i })
     ).not.toBeInTheDocument();
+    openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         showAdditionalGuaranteedIncome: false,
@@ -1529,6 +1550,7 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("button", { name: /Added Pension/i })
     ).not.toBeInTheDocument();
+    openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({ alphaAddedPensionMonthly: 0 })
     );

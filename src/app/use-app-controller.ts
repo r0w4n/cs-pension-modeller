@@ -52,6 +52,7 @@ import {
 import { getCachedComparisonResult } from "./comparison-result-cache";
 
 export function useAppController() {
+  const [isResultsStepActive, setIsResultsStepActive] = useState(false);
   const {
     activeJourneyDefinition,
     activeJourneyMode,
@@ -126,8 +127,13 @@ export function useAppController() {
     settings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
     retirementPlanResultCache,
+    calculationEnabled: isResultsStepActive,
   });
   const currentComparisonResult = useMemo(() => {
+    if (!retirementPlanResult) {
+      return null;
+    }
+
     const calculatedSettings = retirementPlanResult.settings;
 
     return getCachedComparisonResult({
@@ -305,6 +311,7 @@ export function useAppController() {
       previous_journey_mode: appMode ?? "none",
     });
 
+    setIsResultsStepActive(false);
     selectAppModeAction({
       mode,
       currentMode: appMode,
@@ -334,6 +341,7 @@ export function useAppController() {
     loadParameters,
     localStorageEnabled,
     loadComparisonScenario,
+    onResultsStepActiveChange: setIsResultsStepActive,
     pensionSummary,
     projectionRows,
     clearAllData,

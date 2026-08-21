@@ -26,6 +26,7 @@ function App() {
     journeyStepViewModel,
     loadParameters,
     localStorageEnabled,
+    onResultsStepActiveChange,
     clearAllData,
     selectAppMode,
     setLocalStorageEnabled,
@@ -126,6 +127,7 @@ function App() {
             settings={visibleSettings}
             settingsFormVersion={settingsFormVersion}
             journeyStepViewModel={journeyStepViewModel}
+            onResultsStepActiveChange={onResultsStepActiveChange}
           />
         ) : null}
 

@@ -74,15 +74,17 @@ import { FlexibleWithdrawalPriorityEditor } from "./flexible-withdrawal-priority
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
-  retirementPlanResult: RetirementPlanResult;
-  currentComparisonResult: ComparisonResult;
+  retirementPlanResult: RetirementPlanResult | null;
+  currentComparisonResult: ComparisonResult | null;
   isProjectionPending: boolean;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
   retirementIncomeSeries: RetirementIncomePoint[];
   retirementIncomeChartParameters: RetirementIncomeChartParameters;
   retirementIncomeChartLimits: RetirementIncomeChartLimits;
-  derivedInflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
+  derivedInflationAssumptions: ReturnType<
+    typeof deriveInflationAssumptions
+  > | null;
   flexibleWithdrawalSummary: FlexibleWithdrawalSummary;
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
   projectionRows: ProjectionRow[];
@@ -224,6 +226,21 @@ function JourneyResultsStep({
     step,
     "inflation-basis"
   )?.presentation;
+
+  if (
+    !retirementPlanResult ||
+    !currentComparisonResult ||
+    !derivedInflationAssumptions
+  ) {
+    return (
+      <>
+        <ValidationSummary validationIssues={validationIssues} />
+        <p className="section-copy" role="status">
+          Calculating your results…
+        </p>
+      </>
+    );
+  }
 
   return (
     <>

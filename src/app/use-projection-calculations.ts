@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { RetirementIncomeDisplay } from "../projection";
-import type { PensionSettings } from "../settings";
+import type { RetirementPlanResult } from "../calculation/retirement-plan";
+import { validateSettings, type PensionSettings } from "../settings";
 import {
   projectRetirementIncomeDisplay,
   projectRetirementPlanControls,
@@ -16,38 +17,50 @@ export function useProjectionCalculations({
   settings,
   retirementIncomeDisplay,
   retirementPlanResultCache,
+  calculationEnabled,
 }: {
   settings: PensionSettings;
   retirementIncomeDisplay: RetirementIncomeDisplay;
   retirementPlanResultCache?: RetirementPlanResultCache;
+  calculationEnabled: boolean;
 }) {
   const deferredSettings = useDeferredValue(settings);
-  const [retirementPlanResult, setRetirementPlanResult] = useState(() =>
-    getCachedRetirementPlanResult({
-      settings,
-      cache: retirementPlanResultCache,
-    })
-  );
+  const [retirementPlanResult, setRetirementPlanResult] =
+    useState<RetirementPlanResult | null>(() =>
+      calculationEnabled
+        ? getCachedRetirementPlanResult({
+            settings,
+            cache: retirementPlanResultCache,
+          })
+        : null
+    );
   const deferredSettingsSignature = useMemo(
     () => JSON.stringify(deferredSettings),
     [deferredSettings]
   );
   const settingsSignature = useMemo(() => JSON.stringify(settings), [settings]);
   const calculatedSettingsSignature = useMemo(
-    () => JSON.stringify(retirementPlanResult.settings),
-    [retirementPlanResult.settings]
+    () =>
+      retirementPlanResult
+        ? JSON.stringify(retirementPlanResult.settings)
+        : null,
+    [retirementPlanResult]
   );
   const latestSettingsSignatureRef = useRef(settingsSignature);
   latestSettingsSignatureRef.current = settingsSignature;
 
   useEffect(() => {
+    if (!calculationEnabled) {
+      return;
+    }
+
     if (deferredSettingsSignature === calculatedSettingsSignature) {
       return;
     }
 
     let active = true;
     const commitPlan = (
-      plan: typeof retirementPlanResult,
+      plan: RetirementPlanResult,
       planSettingsSignature: string
     ) => {
       if (
@@ -140,38 +153,60 @@ export function useProjectionCalculations({
     };
   }, [
     calculatedSettingsSignature,
+    calculationEnabled,
     deferredSettings,
     deferredSettingsSignature,
     retirementPlanResultCache,
   ]);
   const resultsProjection = useMemo(
-    () => projectRetirementPlanResult(retirementPlanResult),
+    () =>
+      retirementPlanResult
+        ? projectRetirementPlanResult(retirementPlanResult)
+        : null,
     [retirementPlanResult]
   );
   const resultDisplayProjection = useMemo(
     () =>
-      projectRetirementIncomeDisplay(
-        retirementPlanResult,
-        retirementIncomeDisplay,
-        retirementPlanResult.settings.retirementIncomeTargetBasis
-      ),
+      retirementPlanResult
+        ? projectRetirementIncomeDisplay(
+            retirementPlanResult,
+            retirementIncomeDisplay,
+            retirementPlanResult.settings.retirementIncomeTargetBasis
+          )
+        : null,
     [retirementIncomeDisplay, retirementPlanResult]
   );
   const resultControlProjection = useMemo(
     () => projectRetirementPlanControls(settings),
     [settings]
   );
+  const validationIssues = useMemo(
+    () => validateSettings(settings),
+    [settings]
+  );
 
   return {
-    ...resultsProjection,
-    ...resultDisplayProjection,
+    retirementIncomeSeries: resultsProjection?.retirementIncomeSeries ?? [],
+    flexibleWithdrawalSummary: resultsProjection?.flexibleWithdrawalSummary ?? {
+      accounts: [],
+      residualAccounts: [],
+      affectedAges: [],
+      totalReducibleGrossWithdrawal: 0,
+      totalAvoidableNetSurplus: 0,
+      largestAnnualAvoidableSurplus: 0,
+    },
+    targetBasedWithdrawalPreviews:
+      resultsProjection?.targetBasedWithdrawalPreviews ?? [],
+    incomeAgeRangeItems: resultDisplayProjection?.incomeAgeRangeItems ?? [],
     ...resultControlProjection,
     deferredSettings,
-    isProjectionPending: settingsSignature !== calculatedSettingsSignature,
-    derivedInflationAssumptions: retirementPlanResult.inflationAssumptions,
-    pensionSummary: retirementPlanResult.summary,
-    projectionRows: retirementPlanResult.rows,
+    isProjectionPending:
+      calculationEnabled && settingsSignature !== calculatedSettingsSignature,
+    derivedInflationAssumptions:
+      retirementPlanResult?.inflationAssumptions ?? null,
+    pensionSummary: retirementPlanResult?.summary ?? null,
+    projectionRows: retirementPlanResult?.rows ?? [],
     retirementPlanResult,
-    validationIssues: retirementPlanResult.validationIssues,
+    validationIssues,
   };
 }

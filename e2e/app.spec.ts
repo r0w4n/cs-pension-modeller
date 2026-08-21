@@ -1451,9 +1451,19 @@ async function readLocalStorageItem(page: Page, key: string) {
 }
 
 async function renderDeferredComparisonContent(page: Page) {
-  await page
-    .getByRole("region", { name: "Comparison results" })
+  const comparisonRegion = page.getByRole("region", {
+    name: "Comparison results",
+  });
+
+  await comparisonRegion
+    .getByRole("heading", { name: "Comparison", exact: true })
     .scrollIntoViewIfNeeded();
+  await expect(
+    comparisonRegion.getByRole("heading", {
+      name: "Save this result as a scenario",
+    })
+  ).toBeVisible();
+
   await page.evaluate(async () => {
     const steps = [0.5, 0.9, 1.4, 2.2];
 

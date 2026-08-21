@@ -522,7 +522,7 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
     await expect(
       page.getByRole("spinbutton", {
-        name: "Retirement income target (£ per year)",
+        name: "After-tax income you want in retirement (£ per year)",
       })
     ).toHaveCount(0);
     await page.getByRole("button", { name: "Next" }).click();
@@ -569,10 +569,14 @@ test.describe("app end-to-end journeys", () => {
     }
     await page.getByRole("button", { name: "£45,400" }).click();
 
-    await fillCurrency(page, "Retirement income target (£ per year)", "45400");
+    await fillCurrency(
+      page,
+      "After-tax income you want in retirement (£ per year)",
+      "45400"
+    );
 
     const targetControl = page.getByRole("spinbutton", {
-      name: "Retirement income target (£ per year)",
+      name: "After-tax income you want in retirement (£ per year)",
     });
     const strategyControl = page.getByRole("combobox", {
       name: "Spending strategy",

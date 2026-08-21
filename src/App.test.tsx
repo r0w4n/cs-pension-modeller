@@ -2198,7 +2198,9 @@ describe("App settings form", () => {
       screen.queryByLabelText("Target retirement age")
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText("Retirement income target (£ per year)")
+      screen.queryByLabelText(
+        "After-tax income you want in retirement (£ per year)"
+      )
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Estimate life expectancy" })
@@ -2213,7 +2215,9 @@ describe("App settings form", () => {
       defaultSettings.requirementAge.toString()
     );
     expect(
-      screen.getByLabelText("Retirement income target (£ per year)")
+      screen.getByLabelText(
+        "After-tax income you want in retirement (£ per year)"
+      )
     ).toHaveValue(defaultSettings.desiredRetirementIncome);
     expect(
       screen.getByRole("link", { name: "Retirement Living Standards" })
@@ -2763,11 +2767,15 @@ describe("App settings form", () => {
     openJourneyStep(/Retirement income target/i);
 
     fireEvent.change(
-      screen.getByLabelText("Retirement income target (£ per year)"),
+      screen.getByLabelText(
+        "After-tax income you want in retirement (£ per year)"
+      ),
       { target: { value: "45400" } }
     );
     fireEvent.blur(
-      screen.getByLabelText("Retirement income target (£ per year)")
+      screen.getByLabelText(
+        "After-tax income you want in retirement (£ per year)"
+      )
     );
 
     openJourneyStep(/State pension details/i);
@@ -2797,7 +2805,7 @@ describe("App settings form", () => {
     openJourneyStep(/Retirement income target/i);
 
     const targetInput = screen.getByLabelText(
-      "Retirement income target (£ per year)"
+      "After-tax income you want in retirement (£ per year)"
     );
 
     fireEvent.change(targetInput, {

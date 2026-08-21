@@ -11036,7 +11036,8 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-170-column-9",
-                    value: "Retirement income target (£ per year)",
+                    value:
+                      "After-tax income you want in retirement (£ per year)",
                   },
                 ],
               },

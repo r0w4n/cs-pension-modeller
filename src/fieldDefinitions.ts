@@ -258,7 +258,7 @@ export const fieldGroups: FieldGroup[] = [
     fields: [
       {
         id: "desiredRetirementIncome",
-        label: "Retirement income target (£ per year)",
+        label: "After-tax income you want in retirement (£ per year)",
         type: "currency-input",
         min: 0,
         max: 200000,

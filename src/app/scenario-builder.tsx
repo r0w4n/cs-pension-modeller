@@ -3,6 +3,7 @@ import { MAX_COMPARISON_SCENARIOS } from "./comparison-state";
 export type ScenarioBuilderProps = {
   scenarioCount: number;
   isValid: boolean;
+  isPending?: boolean;
   limitReached: boolean;
   nameValue: string;
   onNameChange: (value: string) => void;
@@ -12,6 +13,7 @@ export type ScenarioBuilderProps = {
 export function ScenarioBuilder({
   scenarioCount,
   isValid,
+  isPending = false,
   limitReached,
   nameValue,
   onNameChange,
@@ -43,7 +45,7 @@ export function ScenarioBuilder({
         <button
           type="button"
           className="primary-button"
-          disabled={!isValid || limitReached}
+          disabled={!isValid || isPending || limitReached}
           onClick={onAdd}
         >
           Add to comparison
@@ -52,6 +54,11 @@ export function ScenarioBuilder({
       {!isValid ? (
         <p className="table-status">
           Fix the current validation issues before adding a scenario.
+        </p>
+      ) : null}
+      {isPending ? (
+        <p className="table-status">
+          Wait for the updated calculation before adding this scenario.
         </p>
       ) : null}
       {limitReached ? (

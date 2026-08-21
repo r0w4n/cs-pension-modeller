@@ -1062,18 +1062,6 @@ When("the bridge plan is analysed", function (this: ProductAcceptanceWorld) {
 });
 
 When(
-  "the earliest sustainable pension draw age is calculated",
-  function (this: ProductAcceptanceWorld) {
-    const bridgeSettings = prepareBridgeProjectionSettings(getSettings(this));
-    const bridgeFundingEstimate =
-      calculateRetirementPlan(bridgeSettings).bridgeFundingEstimate;
-
-    this.settings = bridgeSettings;
-    this.bridgeAnalysis = bridgeFundingEstimate;
-  }
-);
-
-When(
   "the same bridge plan adds guaranteed income of {float} per year from age {float}",
   function (
     this: ProductAcceptanceWorld,
@@ -1107,16 +1095,6 @@ Then(
   "the bridge plan should work on these assumptions",
   function (this: ProductAcceptanceWorld) {
     assertEqual(getBridgeAnalysis(this).planWorks, true);
-  }
-);
-
-Then(
-  "the earliest sustainable pension draw age should be {float}",
-  function (this: ProductAcceptanceWorld, expectedAge: number) {
-    assertEqual(
-      getBridgeAnalysis(this).earliestSustainablePensionDrawAge,
-      expectedAge
-    );
   }
 );
 

@@ -14307,53 +14307,6 @@ export const acceptanceFeatures = [
         ],
         examples: [],
       },
-      {
-        id: "line-84",
-        keyword: "Scenario",
-        name: "Find the earliest Alpha draw age that sustains the retirement target",
-        description: "",
-        tags: ["@sustainable-draw-age"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-85",
-            keyword: "Given",
-            text: "the bridge plan has Alpha pension of 20000.00 per year",
-          },
-          {
-            id: "line-86",
-            keyword: "And",
-            text: "the bridge plan has no State Pension",
-          },
-          {
-            id: "line-87",
-            keyword: "And",
-            text: "the bridge retirement age is 55",
-          },
-          {
-            id: "line-88",
-            keyword: "And",
-            text: "the bridge life expectancy age is 56",
-          },
-          {
-            id: "line-89",
-            keyword: "And",
-            text: "the bridge target income is 5000.00 per year",
-          },
-          {
-            id: "line-90",
-            keyword: "When",
-            text: "the earliest sustainable pension draw age is calculated",
-          },
-          {
-            id: "line-91",
-            keyword: "Then",
-            text: "the earliest sustainable pension draw age should be 55",
-          },
-        ],
-        examples: [],
-      },
     ],
   },
   {

@@ -115,6 +115,7 @@ export function useAppController() {
     derivedInflationAssumptions,
     flexibleWithdrawalSummary,
     incomeAgeRangeItems,
+    isProjectionPending,
     pensionSummary,
     projectionRows,
     retirementPlanResult,
@@ -126,28 +127,28 @@ export function useAppController() {
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
     retirementPlanResultCache,
   });
-  const currentComparisonResult = useMemo(
-    () =>
-      getCachedComparisonResult({
-        scenario: {
-          id: "current-model",
-          name: "Current model",
-          settings: clonePensionSettings(settings),
-          createdAt: "",
-          updatedAt: "",
-        },
-        currentSettingsSignature: getSettingsSignature(settings),
-        cache: comparisonResultCache,
-        precomputedPlan: retirementPlanResult,
-        retirementPlanResultCache,
-      }),
-    [
-      comparisonResultCache,
-      retirementPlanResult,
+  const currentComparisonResult = useMemo(() => {
+    const calculatedSettings = retirementPlanResult.settings;
+
+    return getCachedComparisonResult({
+      scenario: {
+        id: "current-model",
+        name: "Current model",
+        settings: clonePensionSettings(calculatedSettings),
+        createdAt: "",
+        updatedAt: "",
+      },
+      currentSettingsSignature: getSettingsSignature(settings),
+      cache: comparisonResultCache,
+      precomputedPlan: retirementPlanResult,
       retirementPlanResultCache,
-      settings,
-    ]
-  );
+    });
+  }, [
+    comparisonResultCache,
+    retirementPlanResult,
+    retirementPlanResultCache,
+    settings,
+  ]);
 
   useUndoShortcut({
     chartUndoStack,
@@ -264,6 +265,7 @@ export function useAppController() {
 
   const journeyStepViewModel: JourneyStepViewModel = {
     settings,
+    isProjectionPending,
     retirementPlanResult,
     currentComparisonResult,
     validationIssues,

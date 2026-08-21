@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import type { PensionSummary, ProjectionRow } from "./projection";
 import type { PensionSettings } from "./settings";
@@ -3907,7 +3914,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("can hide optional sections without losing their saved values", () => {
+  it("can hide optional sections without losing their saved values", async () => {
     renderAcknowledgedApp();
 
     openJourneyStep(/State pension details/i);
@@ -3977,9 +3984,11 @@ describe("App settings form", () => {
     expect(screen.queryByText("Monthly ISA")).not.toBeInTheDocument();
     expect(screen.queryByText("Monthly State Pension")).not.toBeInTheDocument();
     const ageRangeTable = screen.getByLabelText("Income by age range table");
-    expect(
-      within(ageRangeTable).queryByText(/SIPP withdrawal/)
-    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        within(ageRangeTable).queryByText(/SIPP withdrawal/)
+      ).not.toBeInTheDocument()
+    );
     expect(
       within(ageRangeTable).queryByText(/ISA withdrawal/)
     ).not.toBeInTheDocument();
@@ -4295,7 +4304,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows inline validation when the ABS year is after the current date", () => {
+  it("shows inline validation when the ABS year is after the current date", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-31T12:00:00Z"));
     renderAcknowledgedApp();
@@ -4306,6 +4315,10 @@ describe("App settings form", () => {
       target: { value: "2026" },
     });
     fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(
       screen.getAllByText(

@@ -14,6 +14,7 @@ import {
 import {
   MAX_COMPARISON_SCENARIOS,
   buildComparisonPanelData,
+  useComparisonState,
   useScenarioActions,
 } from "./comparison-state";
 
@@ -182,5 +183,29 @@ describe("comparison state scenario actions", () => {
     expect(panel.incomeAgeRangeItems).toEqual(
       buildIncomeAgeRangeItems(panel.activeResult!.summary, "annual", "gross")
     );
+  });
+
+  it("keeps comparison projection aligned with the last completed plan", () => {
+    const calculatedSettings = createDefaultSettings();
+    const pendingSettings = {
+      ...calculatedSettings,
+      desiredRetirementIncome:
+        calculatedSettings.desiredRetirementIncome + 1000,
+    };
+    const retirementPlanResult = calculateRetirementPlan(calculatedSettings);
+    const { result } = renderHook(() =>
+      useComparisonState({
+        settings: pendingSettings,
+        validationIssues: [],
+        scenarios: [],
+        retirementPlanResult,
+      })
+    );
+
+    expect(result.current.currentScenario.settings).toEqual(calculatedSettings);
+    expect(result.current.currentResult?.scenario.settings).toEqual(
+      calculatedSettings
+    );
+    expect(result.current.currentResult?.currentMatchesSaved).toBe(false);
   });
 });

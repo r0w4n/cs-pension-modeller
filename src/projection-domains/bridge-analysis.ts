@@ -1,5 +1,4 @@
 import {
-  MODEL_AGE_STEP,
   getPartialRetirementStartDate,
   getPreRetirementMonthlyEmploymentTaxContext,
   type PensionSettings,
@@ -50,18 +49,6 @@ export type ProjectionRowLike = {
   classicAutomaticLumpSumIncludingReduction?: number;
   classicPlusAutomaticLumpSumIncludingReduction?: number;
 };
-
-type ProjectPensionRows = (settings: PensionSettings) => ProjectionRowLike[];
-
-type RetirementBridgeAnalysisOptions =
-  | {
-      calculateSafeDrawAge?: false;
-      projectPensionRows?: never;
-    }
-  | {
-      calculateSafeDrawAge: true;
-      projectPensionRows: ProjectPensionRows;
-    };
 
 export type BridgePhase = {
   startDate: string;
@@ -141,7 +128,6 @@ export type RetirementBridgeAnalysis = {
   requiredIsaAtRetirement: number;
   requiredSippAtAccess: number;
   additionalMonthlyContributionRequired: number;
-  earliestSustainablePensionDrawAge: number | null;
   fullSecureIncomeStartDate: string | null;
   fullSecureIncomeStartAge: number | null;
   fullSecureIncomeStartAgeMonths: number | null;
@@ -316,8 +302,7 @@ export function prepareBridgeProjectionSettings(
 
 export function generateRetirementBridgeAnalysis(
   pensionRows: ProjectionRowLike[],
-  settings: PensionSettings,
-  options: RetirementBridgeAnalysisOptions = {}
+  settings: PensionSettings
 ): RetirementBridgeAnalysis {
   let effectiveRates = deriveBridgeTaxYearEffectiveRates(
     pensionRows,
@@ -350,18 +335,7 @@ export function generateRetirementBridgeAnalysis(
     }
   }
 
-  if (!options.calculateSafeDrawAge) {
-    return analysis;
-  }
-
-  return {
-    ...analysis,
-    earliestSustainablePensionDrawAge:
-      calculateEarliestSustainablePensionDrawAge(
-        settings,
-        options.projectPensionRows
-      ),
-  };
+  return analysis;
 }
 
 function generateRetirementBridgeAnalysisPass(
@@ -610,7 +584,7 @@ function generateRetirementBridgeAnalysisPass(
     calculateWholeMonthDifference(settings.startDate, retirementDate)
   );
 
-  const analysisWithoutSafeDrawAge: RetirementBridgeAnalysis = {
+  const analysis: RetirementBridgeAnalysis = {
     target: {
       retirementDate,
       retirementAge: settings.requirementAge,
@@ -629,7 +603,6 @@ function generateRetirementBridgeAnalysisPass(
       totalUnfundedShortfall > 0
         ? totalUnfundedShortfall / monthsUntilRetirement
         : 0,
-    earliestSustainablePensionDrawAge: null,
     fullSecureIncomeStartDate: fullSecureIncomeStartRow
       ? fullSecureIncomeStartDate
       : null,
@@ -662,7 +635,7 @@ function generateRetirementBridgeAnalysisPass(
     potProjection: buildBridgePotProjection(monthlyRows, settings),
   };
 
-  return analysisWithoutSafeDrawAge;
+  return analysis;
 }
 
 function applyBridgePotGrowth(input: {
@@ -1692,57 +1665,6 @@ function addPotDepletionMilestone(input: {
   input.milestoneDates.push(input.rowDate);
 
   return true;
-}
-
-function calculateEarliestSustainablePensionDrawAge(
-  settings: PensionSettings,
-  projectPensionRows: ProjectPensionRows
-) {
-  if (!settings.showAlpha && !settings.showNuvos) {
-    return null;
-  }
-
-  const earliestAge = Math.max(55, settings.requirementAge);
-  const latestAge = Math.min(
-    settings.showAlpha ? settings.normalPensionAge : 70,
-    settings.showNuvos ? 65 : 70
-  );
-  const earliestQuarter = Math.ceil(earliestAge / MODEL_AGE_STEP);
-  const latestQuarter = Math.floor(latestAge / MODEL_AGE_STEP);
-
-  for (let quarter = earliestQuarter; quarter <= latestQuarter; quarter += 1) {
-    const age = quarter * MODEL_AGE_STEP;
-    const candidateSettings = prepareBridgeProjectionSettings({
-      ...settings,
-      alphaPensionDrawAge: settings.showAlpha
-        ? age
-        : settings.alphaPensionDrawAge,
-      nuvosPensionDrawAge: settings.showNuvos
-        ? age
-        : settings.nuvosPensionDrawAge,
-    });
-
-    const pensionRows = projectPensionRows({
-      ...candidateSettings,
-      showSipp: false,
-      showCsAvc: false,
-      showIsa: false,
-      showLisa: false,
-    });
-    const analysis = generateRetirementBridgeAnalysis(
-      pensionRows,
-      candidateSettings
-    );
-
-    if (
-      analysis.planWorks &&
-      analysis.stableAnnualGuaranteedSurplus >= -MONEY_TOLERANCE
-    ) {
-      return age;
-    }
-  }
-
-  return null;
 }
 
 function findFirstRowAtOrAfterDate(

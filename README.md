@@ -218,9 +218,11 @@ The concrete layer responsibilities are:
   and shared components form the presentation layer. They render state and send
   user intent to the application layer; they do not invoke pension engines.
 - [`src/app/`](src/app) is the imperative shell. It owns React state,
-  orchestration, deferred calculation, bounded canonical-result and comparison
-  caches, generated identifiers, browser storage, import/export, analytics, and
-  other effects.
+  orchestration, worker-backed deferred calculation, bounded canonical-result
+  and comparison caches, generated identifiers, browser storage, import/export,
+  analytics, and other effects. Parameter changes retain the last completed
+  result while the canonical plan is recalculated away from the browser main
+  thread; obsolete in-flight calculations are discarded.
   [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) is the main
   composition boundary.
 - [`src/settings/`](src/settings) supplies the canonical `PensionSettings`

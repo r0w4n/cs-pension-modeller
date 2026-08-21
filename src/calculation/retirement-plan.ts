@@ -95,7 +95,5 @@ function calculateBridgeFundingEstimate(settings: PensionSettings) {
     showLisa: false,
   });
 
-  return generateRetirementBridgeAnalysis(pensionRows, bridgeSettings, {
-    calculateSafeDrawAge: true,
-  });
+  return generateRetirementBridgeAnalysis(pensionRows, bridgeSettings);
 }

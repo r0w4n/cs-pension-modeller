@@ -58,7 +58,9 @@ test.describe("app end-to-end journeys", () => {
         name: "Retirement income target",
       })
     ).toBeVisible();
+    const calculationWorkerStarted = page.waitForEvent("worker");
     await fillExactNumber(page, "Target retirement age exact value", "60");
+    await calculationWorkerStarted;
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();
     await page.getByRole("button", { name: "Next" }).click();

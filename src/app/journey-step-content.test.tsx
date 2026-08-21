@@ -812,6 +812,33 @@ describe("JourneyStepContent", () => {
     expect(chartProps.residualFlexibleFundInsights).toBeDefined();
   });
 
+  it("announces when displayed results are waiting for recalculation", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.isProjectionPending = true;
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "answer",
+          eyebrow: "Result",
+          title: "Your results",
+          description: "Review results",
+          kind: "results",
+          sections: DETAILED_RESULTS_SECTIONS,
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Updating calculated results…"
+    );
+    expect(journeyContentMocks.comparisonPanel).toHaveBeenCalledWith(
+      expect.objectContaining({ isProjectionPending: true })
+    );
+  });
+
   it("configures summary and chart presentations independently", () => {
     mockMatchMedia(false);
 
@@ -862,6 +889,7 @@ function createViewModel(): JourneyStepViewModel {
       JSON.stringify(settings),
       retirementPlanResult
     ),
+    isProjectionPending: false,
     validationIssues: [],
     pensionSummary: null,
     retirementIncomeSeries: [],

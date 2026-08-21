@@ -53,6 +53,7 @@ export function useComparisonState({
   retirementIncomeDisplay?: RetirementIncomeDisplay;
   retirementPlanResult?: RetirementPlanResult;
 }) {
+  const calculatedSettings = retirementPlanResult?.settings ?? settings;
   const currentSettingsSignature = useMemo(
     () => getSettingsSignature(settings),
     [settings]
@@ -62,11 +63,11 @@ export function useComparisonState({
     () => ({
       id: "current-model",
       name: "Current model",
-      settings: clonePensionSettings(settings),
+      settings: clonePensionSettings(calculatedSettings),
       createdAt: "",
       updatedAt: "",
     }),
-    [settings]
+    [calculatedSettings]
   );
   const currentResult = useMemo(
     () =>

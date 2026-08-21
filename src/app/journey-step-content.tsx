@@ -76,6 +76,7 @@ export type JourneyStepViewModel = {
   settings: PensionSettings;
   retirementPlanResult: RetirementPlanResult;
   currentComparisonResult: ComparisonResult;
+  isProjectionPending: boolean;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
   retirementIncomeSeries: RetirementIncomePoint[];
@@ -193,6 +194,7 @@ function JourneyResultsStep({
     settings,
     retirementPlanResult,
     currentComparisonResult,
+    isProjectionPending,
     validationIssues,
     retirementIncomeSeries,
     retirementIncomeChartParameters,
@@ -226,6 +228,12 @@ function JourneyResultsStep({
   return (
     <>
       <ValidationSummary validationIssues={validationIssues} />
+
+      {isProjectionPending ? (
+        <p className="section-copy" role="status">
+          Updating calculated results…
+        </p>
+      ) : null}
 
       {summaryPresentation ? (
         <ResultsSummarySection>
@@ -310,6 +318,7 @@ function JourneyResultsStep({
             scenarios={comparisonScenarios}
             comparisonResultCache={comparisonResultCache}
             retirementPlanResult={retirementPlanResult}
+            isProjectionPending={isProjectionPending}
             onScenariosChange={onScenariosChange}
             onLoadScenario={onLoadScenario}
             retirementIncomeDisplay={comparisonRetirementIncomeDisplay}

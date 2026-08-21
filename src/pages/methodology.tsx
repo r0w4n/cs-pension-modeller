@@ -1162,13 +1162,6 @@ export function MethodologyPage() {
           projection; it is distinct from the separate bridge analysis described
           above.
         </p>
-        <p className="section-copy">
-          Where requested by the comparison view, the model tests quarter-year
-          Alpha and nuvos draw ages from the later of age 55 and the selected
-          retirement age up to the relevant normal pension age. The first age
-          that passes the bridge-plan and stable guaranteed-income checks is
-          shown as the earliest sustainable pension draw age, if one is found.
-        </p>
       </section>
 
       <section>

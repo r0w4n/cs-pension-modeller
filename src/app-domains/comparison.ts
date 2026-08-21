@@ -645,16 +645,6 @@ export function buildComparisonDetailedRows(
           ),
       ],
       [
-        "Earliest sustainable pension draw age",
-        (result) =>
-          result.bridgeFundingEstimate.earliestSustainablePensionDrawAge ===
-          null
-            ? "Not found"
-            : formatDecimalAge(
-                result.bridgeFundingEstimate.earliestSustainablePensionDrawAge
-              ),
-      ],
-      [
         "All secure pensions active from",
         (result) =>
           result.assessment.allSecureIncomeStartDate === null ||

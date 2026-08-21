@@ -44,6 +44,7 @@ export type ComparisonPanelProps = {
   scenarios: ComparisonScenario[];
   comparisonResultCache?: ComparisonResultCache;
   retirementPlanResult?: RetirementPlanResult;
+  isProjectionPending?: boolean;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (settings: PensionSettings) => void;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
@@ -71,6 +72,7 @@ export function ComparisonPanel({
   scenarios,
   comparisonResultCache,
   retirementPlanResult,
+  isProjectionPending = false,
   onScenariosChange,
   onLoadScenario,
   retirementIncomeDisplay,
@@ -143,6 +145,7 @@ export function ComparisonPanel({
         <ScenarioBuilder
           scenarioCount={scenarios.length}
           isValid={currentScenarioIsValid}
+          isPending={isProjectionPending}
           limitReached={scenarioActions.comparisonLimitReached}
           nameValue={scenarioActions.scenarioNameDraft}
           onNameChange={scenarioActions.setScenarioNameDraft}

@@ -166,9 +166,9 @@ Feature: Modeller journeys
       | Your Birth Month and Year     |
       | Life Expectancy (Age)         |
     And the "Retirement income target" journey step should contain these fields:
-      | field                                                   |
-      | After-tax income you want in retirement (£ per year)    |
-      | Target retirement age                                   |
+      | field                   |
+      | After-tax income target |
+      | Target retirement age   |
     And the expert retirement income target should be an after-tax spending target
     And the expert retirement income target should offer these quick-select amounts:
       | amount |

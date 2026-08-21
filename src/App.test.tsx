@@ -2198,9 +2198,7 @@ describe("App settings form", () => {
       screen.queryByLabelText("Target retirement age")
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText(
-        "After-tax income you want in retirement (£ per year)"
-      )
+      screen.queryByLabelText("After-tax income target")
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Estimate life expectancy" })
@@ -2214,11 +2212,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
-    expect(
-      screen.getByLabelText(
-        "After-tax income you want in retirement (£ per year)"
-      )
-    ).toHaveValue(defaultSettings.desiredRetirementIncome);
+    expect(screen.getByLabelText("After-tax income target")).toHaveValue(
+      defaultSettings.desiredRetirementIncome
+    );
     expect(
       screen.getByRole("link", { name: "Retirement Living Standards" })
     ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
@@ -2766,17 +2762,10 @@ describe("App settings form", () => {
 
     openJourneyStep(/Retirement income target/i);
 
-    fireEvent.change(
-      screen.getByLabelText(
-        "After-tax income you want in retirement (£ per year)"
-      ),
-      { target: { value: "45400" } }
-    );
-    fireEvent.blur(
-      screen.getByLabelText(
-        "After-tax income you want in retirement (£ per year)"
-      )
-    );
+    fireEvent.change(screen.getByLabelText("After-tax income target"), {
+      target: { value: "45400" },
+    });
+    fireEvent.blur(screen.getByLabelText("After-tax income target"));
 
     openJourneyStep(/State pension details/i);
 
@@ -2804,9 +2793,7 @@ describe("App settings form", () => {
 
     openJourneyStep(/Retirement income target/i);
 
-    const targetInput = screen.getByLabelText(
-      "After-tax income you want in retirement (£ per year)"
-    );
+    const targetInput = screen.getByLabelText("After-tax income target");
 
     fireEvent.change(targetInput, {
       target: { value: "50000" },

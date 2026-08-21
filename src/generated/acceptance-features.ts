@@ -6573,7 +6573,7 @@ export const acceptanceFeatures = [
       {
         id: "line-33",
         keyword: "Scenario",
-        name: "Hide bridge and flexible asset sections when they are not relevant",
+        name: "Hide the flexible asset section when it is not relevant",
         description: "",
         tags: ["@optional-sections"],
         status: "covered",
@@ -6587,15 +6587,10 @@ export const acceptanceFeatures = [
           {
             id: "line-35",
             keyword: "When",
-            text: "comparison table rows are built without bridge funding and flexible assets",
+            text: "comparison table rows are built without flexible assets",
           },
           {
             id: "line-36",
-            keyword: "Then",
-            text: 'the comparison should not include the "Bridge funding" section',
-          },
-          {
-            id: "line-37",
             keyword: "And",
             text: 'the comparison should not include the "Flexible assets" section',
           },
@@ -6603,7 +6598,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-40",
+        id: "line-39",
         keyword: "Scenario",
         name: "Show nuvos comparison rows only when a compared scenario includes nuvos",
         description: "",
@@ -6612,27 +6607,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-41",
+            id: "line-40",
             keyword: "Given",
             text: 'a default retirement scenario named "Current model"',
           },
           {
-            id: "line-42",
+            id: "line-41",
             keyword: "And",
             text: 'a retirement scenario named "Saved with nuvos" includes nuvos pension',
           },
           {
-            id: "line-43",
+            id: "line-42",
             keyword: "When",
             text: "comparison table rows are built",
           },
           {
-            id: "line-44",
+            id: "line-43",
             keyword: "Then",
             text: 'the "nuvos start" comparison value for "Current model" should be "n/a"',
           },
           {
-            id: "line-45",
+            id: "line-44",
             keyword: "And",
             text: 'the "nuvos start" comparison value for "Saved with nuvos" should be "65"',
           },
@@ -6640,7 +6635,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-48",
+        id: "line-47",
         keyword: "Scenario",
         name: "Show phased-spending assumptions when a compared scenario uses them",
         description: "",
@@ -6649,47 +6644,47 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-49",
+            id: "line-48",
             keyword: "Given",
             text: 'a default retirement scenario named "Flat plan"',
           },
           {
-            id: "line-50",
+            id: "line-49",
             keyword: "And",
             text: 'a retirement scenario named "Phased plan" uses Go-Go, Slow-Go, No-Go spending',
           },
           {
-            id: "line-51",
+            id: "line-50",
             keyword: "When",
             text: "comparison table rows are built",
           },
           {
-            id: "line-52",
+            id: "line-51",
             keyword: "Then",
             text: 'the comparison should include the "Spending target" section',
           },
           {
-            id: "line-53",
+            id: "line-52",
             keyword: "And",
             text: 'the "Spending strategy" comparison value for "Flat plan" should be "Flat spending"',
           },
           {
-            id: "line-54",
+            id: "line-53",
             keyword: "And",
             text: 'the "Spending strategy" comparison value for "Phased plan" should be "Go-Go, Slow-Go, No-Go"',
           },
           {
-            id: "line-55",
+            id: "line-54",
             keyword: "And",
             text: 'the "Slow-go target" comparison value for "Flat plan" should be "n/a"',
           },
           {
-            id: "line-56",
+            id: "line-55",
             keyword: "And",
             text: 'the "Slow-go target" comparison value for "Phased plan" should include "80%"',
           },
           {
-            id: "line-57",
+            id: "line-56",
             keyword: "And",
             text: 'the "No-go starts" comparison value for "Phased plan" should be "84"',
           },
@@ -7206,7 +7201,7 @@ export const acceptanceFeatures = [
       {
         id: "line-102",
         keyword: "Scenario",
-        name: "Use CS AVC to reduce the early retirement bridge funding gap",
+        name: "Use configured CS AVC withdrawals to reduce an early retirement shortfall",
         description: "",
         tags: ["@bridge"],
         status: "covered",
@@ -7245,17 +7240,17 @@ export const acceptanceFeatures = [
           {
             id: "line-109",
             keyword: "When",
-            text: "the CS AVC bridge plan is analysed",
+            text: "the CS AVC retirement plan is calculated",
           },
           {
             id: "line-110",
             keyword: "Then",
-            text: 'at least one CS AVC bridge phase should include "Civil Service AVC"',
+            text: "the retirement income summary should include CS AVC withdrawals",
           },
           {
             id: "line-111",
             keyword: "And",
-            text: "the unfunded bridge shortfall should be lower than the same plan without CS AVC",
+            text: "the lifetime shortfall should be lower than the same plan without CS AVC",
           },
         ],
         examples: [],
@@ -14172,12 +14167,12 @@ export const acceptanceFeatures = [
           {
             id: "line-40",
             keyword: "When",
-            text: "the bridge plan is analysed",
+            text: "the bridge retirement plan is calculated",
           },
           {
             id: "line-41",
             keyword: "Then",
-            text: "the bridge plan should work on these assumptions",
+            text: "the configured withdrawals should meet the income target at retirement",
           },
           {
             id: "line-42",
@@ -14187,7 +14182,7 @@ export const acceptanceFeatures = [
           {
             id: "line-43",
             keyword: "And",
-            text: "the first bridge phase should show no secure income source",
+            text: "the retirement income summary should include configured ISA withdrawals",
           },
         ],
         examples: [],
@@ -14239,22 +14234,22 @@ export const acceptanceFeatures = [
           {
             id: "line-54",
             keyword: "When",
-            text: "the bridge plan is analysed",
+            text: "the bridge retirement plan is calculated",
           },
           {
             id: "line-55",
             keyword: "Then",
-            text: "the bridge plan should work on these assumptions",
+            text: "the configured withdrawals should meet the income target at retirement",
           },
           {
             id: "line-56",
             keyword: "And",
-            text: 'at least one bridge phase should include "State Pension"',
+            text: "the retirement income summary should include State Pension",
           },
           {
             id: "line-57",
             keyword: "And",
-            text: "the stable annual secure income should be 12000.00",
+            text: "the secure income position at modelling end should be 0.00",
           },
         ],
         examples: [],
@@ -14296,22 +14291,22 @@ export const acceptanceFeatures = [
           {
             id: "line-66",
             keyword: "When",
-            text: "the bridge plan is analysed",
+            text: "the bridge retirement plan is calculated",
           },
           {
             id: "line-67",
             keyword: "Then",
-            text: "the bridge plan should work on these assumptions",
+            text: "the configured withdrawals should meet the income target at retirement",
           },
           {
             id: "line-68",
             keyword: "And",
-            text: 'at least one bridge phase should include "classic"',
+            text: "the retirement income summary should include classic pension",
           },
           {
             id: "line-69",
             keyword: "And",
-            text: "the full secure annual income should be 12000.00",
+            text: "the secure income position at modelling end should be 6000.00",
           },
         ],
         examples: [],
@@ -14319,7 +14314,7 @@ export const acceptanceFeatures = [
       {
         id: "line-72",
         keyword: "Scenario",
-        name: "Use additional guaranteed income to reduce the bridge funding need",
+        name: "Use additional guaranteed income to reduce the projected shortfall",
         description: "",
         tags: ["@additional-guaranteed-income"],
         status: "covered",
@@ -14358,7 +14353,7 @@ export const acceptanceFeatures = [
           {
             id: "line-79",
             keyword: "When",
-            text: "the bridge plan is analysed",
+            text: "the bridge retirement plan is calculated",
           },
           {
             id: "line-80",
@@ -14368,7 +14363,7 @@ export const acceptanceFeatures = [
           {
             id: "line-81",
             keyword: "Then",
-            text: "the total bridge funding need should be lower with the guaranteed income",
+            text: "the lifetime shortfall should be lower with the guaranteed income",
           },
         ],
         examples: [],

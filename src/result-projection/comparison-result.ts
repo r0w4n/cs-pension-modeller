@@ -25,7 +25,6 @@ export type ComparisonResult = {
   rows: ProjectionRow[];
   summary: PensionSummary;
   assessment: RetirementPlanAssessment;
-  bridgeFundingEstimate: RetirementPlanResult["bridgeFundingEstimate"];
   annualIncome: number;
   annualTarget: number;
   annualGap: number;
@@ -66,7 +65,7 @@ export function createComparisonResult(
     );
   }
 
-  const { assessment, bridgeFundingEstimate, rows, summary } = plan;
+  const { assessment, rows, summary } = plan;
   const retirementDate = addYearsToIsoDate(
     scenario.settings.dateOfBirth,
     scenario.settings.requirementAge
@@ -83,7 +82,6 @@ export function createComparisonResult(
     rows,
     summary,
     assessment,
-    bridgeFundingEstimate,
     annualIncome,
     annualTarget,
     annualGap: normalizeMoney(annualIncome - annualTarget),

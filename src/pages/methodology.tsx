@@ -18,7 +18,6 @@ const PROJECTED_SOURCES = [
   "Civil Service Additional Voluntary Contribution (CS AVC) pension savings",
   "ISA savings",
   "Lifetime ISA (LISA) savings",
-  "Optional bridge funding before defined-benefit or State Pension income starts",
   "Simplified UK Income Tax",
   "Partial retirement effects",
   "Comparison between saved scenarios",
@@ -100,7 +99,7 @@ const LISA_PROJECTS = [
   "selected withdrawal strategy",
 ] as const;
 
-const BRIDGE_SENSITIVITIES = [
+const FLEXIBLE_WITHDRAWAL_SENSITIVITIES = [
   "retirement age",
   "Alpha draw age",
   "Premium draw age",
@@ -154,7 +153,7 @@ const COMPARISON_OUTPUTS = [
   "lowest projected income",
   "years and lifetime amount below target",
   "secure pension income at key ages",
-  "bridge-funding gaps before and after pension-pot and LISA access",
+  "income shortfalls before and after pension-pot and LISA access",
   "ISA, LISA, SIPP and CS AVC depletion ages",
 ] as const;
 
@@ -167,8 +166,8 @@ export function MethodologyPage() {
     <StaticPageLayout
       eyebrow="Civil Service Pensions"
       title="Methodology"
-      lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, drawdown, tax and bridge funding."
-      description="Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."
+      lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, flexible withdrawals, tax and income shortfalls."
+      description="Read how the modeller projects pension income, flexible withdrawals, tax, inflation, and other assumptions."
     >
       <section>
         <p className="section-copy">
@@ -1062,10 +1061,12 @@ export function MethodologyPage() {
       </section>
 
       <section>
-        <h2>Bridge funding methodology</h2>
+        <h2>Flexible withdrawals before later pensions</h2>
         <p className="section-copy">
-          Bridge funding is the use of temporary savings or pension withdrawals
-          to cover income gaps before later income streams begin.
+          A user can configure temporary ISA, LISA, SIPP or CS AVC withdrawals
+          before later pension income begins. These withdrawals are calculated
+          as part of the same monthly retirement projection as every other
+          income source; there is no separate bridge-funding calculation.
         </p>
         <p className="section-copy">
           The retirement income summary starts with an outcome banner showing
@@ -1081,22 +1082,7 @@ export function MethodologyPage() {
         <p className="section-copy">
           The model can show where income is below the selected
           retirement-income target and whether ISA, LISA, SIPP or CS AVC
-          drawdown can cover that gap.
-        </p>
-        <p className="section-copy">
-          The separate bridge analysis is an illustrative funding diagnostic,
-          not the source of the plan outcome. It first prepares a retirement
-          scenario where Alpha accrual stops at the target retirement age and
-          ISA drawdown can begin at retirement. It then compares net secure
-          income from the selected Civil Service defined-benefit pensions,
-          additional guaranteed income and State Pension with the selected
-          target for each month from retirement to life expectancy. In
-          real-terms mode the target remains in today's-money terms; in nominal
-          mode it is increased from the model start date using the same monthly
-          inflation convention as the main projection. It may model
-          target-filling withdrawals that differ from the withdrawal strategies
-          selected for the main projection, so its figures are presented only as
-          bridge-sizing estimates.
+          drawdown covers that gap under the selected withdrawal strategies.
         </p>
         <p className="section-copy">
           The simplified, early-retirement and expert journeys are different
@@ -1108,25 +1094,14 @@ export function MethodologyPage() {
           projection.
         </p>
         <p className="section-copy">
-          ISA, LISA, SIPP and CS AVC bridge balances start from the
-          retirement-date balance immediately before any configured
-          main-projection withdrawal. That balance includes applicable
-          investment growth, regular saving, scheduled lump sums and
-          partial-retirement saving reductions up to retirement. The bridge
-          calculation then applies only the temporary withdrawal needed for that
-          month's modelled shortfall. Investment growth during the bridge uses
-          the same real or nominal growth conversion as the main pot
-          projections.
-        </p>
-        <p className="section-copy">
-          Before pension-pot and LISA access, any shortfall is tracked as an
-          ISA-only bridge requirement. From SIPP access onwards, the bridge
-          calculation draws from SIPP first. From CS AVC access onwards, it can
-          then draw from CS AVC. From LISA access onwards, it can then draw from
-          LISA before ISA, limited by the balances available. Any remaining gap
-          is recorded as an unfunded shortfall. The comparison view also
-          estimates the extra monthly saving that would be needed to cover any
-          remaining shortfall over the months before retirement.
+          Account balances include applicable investment growth, regular saving,
+          scheduled lump sums and partial-retirement saving reductions. Each
+          account then follows its configured access age and withdrawal
+          strategy. The coordinated target-based strategy can use available
+          flexible accounts to help meet the active target, while fixed,
+          life-expectancy and use-by-age strategies follow their configured
+          withdrawal amounts. Any remaining gap appears as a shortfall in the
+          chart, assessment and comparison results.
         </p>
         <p className="section-copy">
           A scenario is labelled as meeting its target only when the main
@@ -1136,15 +1111,19 @@ export function MethodologyPage() {
           pensions are active, the secure-income position at the planning
           horizon and the first flexible fund exhausted from those same rows.
         </p>
-        <p className="section-copy">A typical bridge scenario might be:</p>
+        <p className="section-copy">
+          A typical early-retirement scenario might be:
+        </p>
         <FormulaBlock>
           {
             "Retire early -> use ISA -> use SIPP/CS AVC/LISA -> Alpha starts -> State Pension starts"
           }
         </FormulaBlock>
-        <p className="section-copy">The bridge analysis is sensitive to:</p>
+        <p className="section-copy">
+          The projected withdrawals and shortfalls are sensitive to:
+        </p>
         <ul className="section-copy">
-          {BRIDGE_SENSITIVITIES.map((item) => (
+          {FLEXIBLE_WITHDRAWAL_SENSITIVITIES.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
@@ -1152,9 +1131,7 @@ export function MethodologyPage() {
           The retirement income chart should be interpreted as a planning view,
           not a guarantee. A shortfall shown in the chart may mean that savings
           are exhausted, pension income starts too late, or the income target is
-          too high for the selected assumptions. This chart uses the main
-          projection; it is distinct from the separate bridge analysis described
-          above.
+          too high for the selected assumptions.
         </p>
       </section>
 
@@ -1182,7 +1159,7 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           Partial retirement can materially affect both future pension accrual
-          and bridge-funding capacity.
+          and the capacity to fund early-retirement withdrawals.
         </p>
         <p className="section-copy">
           Partial retirement does not directly reduce existing accrued pension,

@@ -16,16 +16,9 @@ describe("calculateRetirementPlan", () => {
     expect(firstResult.rows.length).toBeGreaterThan(0);
     expect(firstResult.summary).toBeDefined();
     expect(firstResult.assessment).toBeDefined();
-    expect(firstResult.bridgeFundingEstimate).toBeDefined();
     expect(firstResult.targetBasedWithdrawalPreviews).toBeDefined();
     expect(typeof firstResult.statePensionAssumptionAffectsTarget).toBe(
       "boolean"
     );
-    expect(Object.keys(firstResult.bridgeFundingEstimate).sort()).toEqual([
-      "additionalMonthlyContributionRequired",
-      "requiredIsaAtRetirement",
-      "requiredSippAtAccess",
-      "totalBridgeRequired",
-    ]);
   });
 });

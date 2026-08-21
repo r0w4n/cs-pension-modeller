@@ -1,12 +1,9 @@
 import {
   createProjectionTable,
   deriveInflationAssumptions,
-  generateRetirementBridgeAnalysis,
   generatePensionSummary,
-  prepareBridgeProjectionSettings,
   type PensionSummary,
   type ProjectionRow,
-  type RetirementBridgeAnalysis,
 } from "../projection";
 import {
   validateSettings,
@@ -28,26 +25,16 @@ export type RetirementPlanResult = {
   rows: ProjectionRow[];
   summary: PensionSummary;
   assessment: RetirementPlanAssessment;
-  bridgeFundingEstimate: BridgeFundingEstimate;
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
   statePensionAssumptionAffectsTarget: boolean;
   inflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
 };
-
-export type BridgeFundingEstimate = Pick<
-  RetirementBridgeAnalysis,
-  | "totalBridgeRequired"
-  | "requiredIsaAtRetirement"
-  | "requiredSippAtAccess"
-  | "additionalMonthlyContributionRequired"
->;
 
 export function calculateRetirementPlan(
   settings: PensionSettings
 ): RetirementPlanResult {
   const validationIssues = validateSettings(settings);
   const rows = createProjectionTable(settings);
-  const bridgeFundingEstimate = calculateBridgeFundingEstimate(settings);
   const assessment = assessRetirementPlan(rows, settings);
 
   return {
@@ -56,7 +43,6 @@ export function calculateRetirementPlan(
     rows,
     summary: generatePensionSummary(rows, settings),
     assessment,
-    bridgeFundingEstimate,
     targetBasedWithdrawalPreviews: calculateTargetBasedWithdrawalPreviews(
       rows,
       settings
@@ -91,28 +77,4 @@ function calculateStatePensionAssumptionAffectsTarget(
     rowsWithoutStatePension,
     settingsWithoutStatePension
   ).meetsTargetThroughout;
-}
-
-function calculateBridgeFundingEstimate(settings: PensionSettings) {
-  const bridgeSettings = prepareBridgeProjectionSettings(settings);
-  const pensionRows = createProjectionTable({
-    ...bridgeSettings,
-    showSipp: false,
-    showCsAvc: false,
-    showIsa: false,
-    showLisa: false,
-  });
-
-  const analysis = generateRetirementBridgeAnalysis(
-    pensionRows,
-    bridgeSettings
-  );
-
-  return {
-    totalBridgeRequired: analysis.totalBridgeRequired,
-    requiredIsaAtRetirement: analysis.requiredIsaAtRetirement,
-    requiredSippAtAccess: analysis.requiredSippAtAccess,
-    additionalMonthlyContributionRequired:
-      analysis.additionalMonthlyContributionRequired,
-  };
 }

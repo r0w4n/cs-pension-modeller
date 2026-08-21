@@ -22,24 +22,6 @@ function createComparisonResult(
 }
 
 describe("comparison table rows", () => {
-  it("reuses the canonical bridge funding estimate from a precomputed plan", () => {
-    const settings = createDefaultSettings();
-    const plan = calculateRetirementPlan(settings);
-    const result = createComparisonResult(
-      {
-        id: "scenario-1",
-        name: "Current model",
-        settings,
-        createdAt: "",
-        updatedAt: "",
-      },
-      JSON.stringify(settings),
-      plan
-    );
-
-    expect(result.bridgeFundingEstimate).toBe(plan.bridgeFundingEstimate);
-  });
-
   it("uses section divider rows and simplified default metric labels", () => {
     const settings = createDefaultSettings();
     const result = createComparisonResult(
@@ -181,27 +163,15 @@ describe("comparison table rows", () => {
     expect(getFirstComparisonValue(monthlyRows, "Alpha income")).toContain(
       "/month"
     );
-    expect(
-      getFirstComparisonValue(
-        monthlyRows,
-        "Illustrative extra saving for bridge"
-      )
-    ).toContain("/month");
     expect(getFirstComparisonValue(annualRows, "Target income")).toContain(
       "/year"
     );
     expect(getFirstComparisonValue(annualRows, "Alpha income")).toContain(
       "/year"
     );
-    expect(
-      getFirstComparisonValue(
-        annualRows,
-        "Illustrative extra saving for bridge"
-      )
-    ).toContain("/year");
   });
 
-  it("can hide bridge funding and flexible assets sections", () => {
+  it("can hide the flexible assets section", () => {
     const settings = createDefaultSettings();
     const result = createComparisonResult(
       {
@@ -215,15 +185,9 @@ describe("comparison table rows", () => {
     );
 
     const rows = buildComparisonTableRows([result], {
-      hideBridgeFundingSection: true,
       hideFlexibleAssetsSection: true,
     });
 
-    expect(
-      rows.some(
-        (row) => row.isSectionDivider && row.section === "Bridge funding"
-      )
-    ).toBe(false);
     expect(
       rows.some(
         (row) => row.isSectionDivider && row.section === "Flexible assets"
@@ -340,7 +304,7 @@ describe("comparison table rows", () => {
     ).not.toContain("Bridge");
   });
 
-  it("reports the configured zero-withdrawal strategy rather than a hypothetical bridge", () => {
+  it("reports the configured zero-withdrawal strategy from the canonical projection", () => {
     const settings = createZeroWithdrawalStrategySettings();
     const result = createComparisonResult(
       {
@@ -366,8 +330,10 @@ describe("comparison table rows", () => {
       )?.value
     ).toBe("Needs attention");
     expect(
-      getFirstComparisonValue(buildComparisonTableRows([result]), "Plan status")
-    ).toBe("Shortfall with configured withdrawals");
+      buildComparisonTableRows([result]).some(
+        (row) => row.metric === "Plan status"
+      )
+    ).toBe(false);
   });
 
   it("discloses the entered salary used as pre-retirement tax context", () => {

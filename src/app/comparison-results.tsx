@@ -16,13 +16,11 @@ export function ComparisonResults({
   results,
   insights,
   retirementIncomeDisplay = "annual",
-  hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: {
   results: ComparisonResult[];
   insights: ComparisonInsights;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
-  hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 }) {
   if (results.length === 0) {
@@ -50,7 +48,6 @@ export function ComparisonResults({
       <ComparisonSummaryTable
         results={results}
         retirementIncomeDisplay={retirementIncomeDisplay}
-        hideBridgeFundingSection={hideBridgeFundingSection}
         hideFlexibleAssetsSection={hideFlexibleAssetsSection}
       />
     </>

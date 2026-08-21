@@ -46,7 +46,8 @@ It supports:
 - avoidable flexible-fund surplus insights with gross reducible withdrawals,
   estimated unallocated net surplus, residual-balance warnings, account
   attribution, and non-destructive target-based previews
-- bridge analysis for the period before secure pension income starts
+- configured flexible withdrawals and shortfall assessment before secure
+  pension income starts
 - simplified 2026/27 Income Tax liability estimates for England, Wales,
   Northern Ireland and Scotland, comparing gross income with income after the
   modelled liability
@@ -68,7 +69,7 @@ For each projection month, the model can calculate values such as:
 - monthly Civil Service pension income once drawn
 - monthly State Pension once it starts
 - State Pension deferral uplift and future uprating where enabled
-- ISA, LISA and SIPP balances, withdrawals, and bridge funding
+- ISA, LISA and SIPP balances and configured withdrawals
 - gross retirement income by source
 - estimated Income Tax liability and take-home income where taxation is enabled
   or an after-tax spending target is selected
@@ -231,16 +232,14 @@ The concrete layer responsibilities are:
 - [`src/projection-core.ts`](src/projection-core.ts),
   [`src/row-assembly.ts`](src/row-assembly.ts), the row engines, and
   [`src/projection-domains/`](src/projection-domains) form the pension, savings,
-  tax, inflation, and bridge calculation engine.
+  tax, inflation, and flexible-withdrawal calculation engine.
 - [`src/calculation/retirement-plan.ts`](src/calculation/retirement-plan.ts)
   is the canonical calculation entry point. It returns one
   `RetirementPlanResult` containing validation, monthly rows, pension summary,
-  inflation assumptions, plan assessment, the user-facing bridge funding
-  estimate, State Pension sensitivity, and target-based withdrawal previews.
-  The bridge domain retains its more detailed phase and pot diagnostics for
-  calculation verification; comparison and result projections consume the
-  canonical user-facing estimate rather than starting alternate pension
-  projections.
+  inflation assumptions, plan assessment, State Pension sensitivity, and
+  target-based withdrawal previews. Flexible accounts follow the configured
+  withdrawal strategies in this canonical projection; result projections do
+  not start an alternate pension or bridge-funding calculation.
 - [`src/calculation/retirement-income-assessment.ts`](src/calculation/retirement-income-assessment.ts)
   derives the calculation-owned income assessment used by the canonical plan
   assessment. Added-pension goal modelling and withdrawal-strategy previews are
@@ -299,10 +298,10 @@ presentation. The current compositions are:
 | Work out what I need to retire early | Guided sequence focused on retirement timing and flexible funds                 | Standard summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
 | Expert journey                       | Full field groups and advanced controls                                         | Detailed summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
 
-The bridge analysis remains a shared illustrative funding diagnostic owned by
-the canonical `RetirementPlanResult` and consumed by comparison projections. It
-is not a journey-specific calculation path, and the main results visual is the
-retirement-income chart built from the canonical projection.
+Early-retirement withdrawals and any remaining shortfall come directly from the
+canonical `RetirementPlanResult`. They are not calculated through a
+journey-specific or separate bridge-funding path, and the main results visual is
+the retirement-income chart built from that canonical projection.
 
 ## Browser Storage And Privacy
 

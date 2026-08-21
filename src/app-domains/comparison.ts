@@ -119,13 +119,11 @@ export function buildComparisonTableRows(
   results: ComparisonResult[],
   options: {
     retirementIncomeDisplay?: RetirementIncomeDisplay;
-    hideBridgeFundingSection?: boolean;
     hideFlexibleAssetsSection?: boolean;
   } = {}
 ): ComparisonTableRow[] {
   const {
     retirementIncomeDisplay = "annual",
-    hideBridgeFundingSection = false,
     hideFlexibleAssetsSection = false,
   } = options;
   const anyScenarioUsesNuvos = results.some(
@@ -355,54 +353,6 @@ export function buildComparisonTableRows(
             : "n/a",
       ],
     ]),
-    ...(!hideBridgeFundingSection
-      ? [
-          createComparisonSection("Bridge funding", results, [
-            [
-              "Plan status",
-              (result) =>
-                result.assessment.meetsTargetThroughout
-                  ? "Meets target with configured withdrawals"
-                  : "Shortfall with configured withdrawals",
-            ],
-            [
-              "ISA-only gap before SIPP access",
-              (result) =>
-                formatCurrencyDetailed(
-                  result.bridgeFundingEstimate.requiredIsaAtRetirement
-                ),
-            ],
-            [
-              "Later top-up gap after SIPP access",
-              (result) =>
-                formatCurrencyDetailed(
-                  result.bridgeFundingEstimate.requiredSippAtAccess
-                ),
-            ],
-            [
-              "Projected lifetime shortfall",
-              (result) =>
-                renderComparisonToneCell(
-                  formatCurrencyDetailed(
-                    result.assessment.totalLifetimeShortfall
-                  ),
-                  result.assessment.totalLifetimeShortfall > 0
-                    ? "caution"
-                    : "good"
-                ),
-            ],
-            [
-              "Illustrative extra saving for bridge",
-              (result) =>
-                formatRecurringMonthlyCurrency(
-                  result.bridgeFundingEstimate
-                    .additionalMonthlyContributionRequired,
-                  retirementIncomeDisplay
-                ),
-            ],
-          ]),
-        ]
-      : []),
     ...(!hideFlexibleAssetsSection
       ? [
           createComparisonSection("Flexible assets", results, [
@@ -636,14 +586,7 @@ export function buildComparisonDetailedRows(
             : "n/a",
       ],
     ]),
-    createComparisonSection("Bridge mechanics", results, [
-      [
-        "Bridge spending to cover",
-        (result) =>
-          formatCurrencyDetailed(
-            result.bridgeFundingEstimate.totalBridgeRequired
-          ),
-      ],
+    createComparisonSection("Later income and flexible funds", results, [
       [
         "All secure pensions active from",
         (result) =>
@@ -1611,15 +1554,6 @@ function formatRecurringAnnualCurrency(
   return display === "monthly"
     ? formatMonthlyCurrency(annualValue / 12)
     : formatAnnualCurrency(annualValue);
-}
-
-function formatRecurringMonthlyCurrency(
-  monthlyValue: number,
-  display: RetirementIncomeDisplay
-) {
-  return display === "monthly"
-    ? formatMonthlyCurrency(monthlyValue)
-    : formatAnnualCurrency(monthlyValue * 12);
 }
 
 function formatAnnualPosition(value: number) {

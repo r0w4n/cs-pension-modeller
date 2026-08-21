@@ -52,10 +52,6 @@ import {
   createPensionLumpSumAllowanceState,
   calculateMonthlyStatePension,
   calculateStatePensionDeferralIncreasePercent,
-  createProjectionTable,
-  generatePensionSummary,
-  generateRetirementBridgeAnalysis,
-  prepareBridgeProjectionSettings,
 } from "../../src/projection";
 import {
   calculateNormalPensionAge,
@@ -120,9 +116,8 @@ type ProductAcceptanceWorld = {
   chartLegendKeys?: string[];
   standardChartTitle?: string;
   simpleChartTitle?: string;
-  bridgeAnalysis?: ReturnType<typeof generateRetirementBridgeAnalysis>;
-  bridgeSummary?: ReturnType<typeof generatePensionSummary>;
-  bridgeFundingNeedBeforeGuaranteedIncome?: number;
+  bridgePlan?: ReturnType<typeof calculateRetirementPlan>;
+  bridgeShortfallBeforeGuaranteedIncome?: number;
   comparisonResults?: ComparisonResult[];
   comparisonRows?: ComparisonTableRow[];
   selectedJourney?: JourneyDefinition;
@@ -171,15 +166,6 @@ function assertEqual<T>(actual: T, expected: T) {
   }
 }
 
-function assertDeepEqual(actual: unknown, expected: unknown) {
-  const actualJson = JSON.stringify(actual);
-  const expectedJson = JSON.stringify(expected);
-
-  if (actualJson !== expectedJson) {
-    throw new Error(`Expected ${actualJson} to equal ${expectedJson}`);
-  }
-}
-
 function expectMoney(
   actual: number | undefined,
   expected: string | number,
@@ -207,27 +193,17 @@ function updateSettings(
   };
 }
 
-function analyseBridgePlan(world: ProductAcceptanceWorld) {
-  const bridgeSettings = prepareBridgeProjectionSettings(getSettings(world));
-  const pensionRows = createProjectionTable({
-    ...bridgeSettings,
-    showSipp: false,
-    showIsa: false,
-    showLisa: false,
-  });
-
-  world.settings = bridgeSettings;
-  world.bridgeSummary = generatePensionSummary(pensionRows, bridgeSettings);
-  world.bridgeAnalysis = generateRetirementBridgeAnalysis(
-    pensionRows,
-    bridgeSettings
-  );
+function calculateBridgePlan(world: ProductAcceptanceWorld) {
+  world.bridgePlan = calculateRetirementPlan(getSettings(world));
 }
 
-function getBridgeAnalysis(world: ProductAcceptanceWorld) {
-  assertCondition(world.bridgeAnalysis, "Bridge analysis has not been run");
+function getBridgePlan(world: ProductAcceptanceWorld) {
+  assertCondition(
+    world.bridgePlan,
+    "Bridge retirement plan has not been calculated"
+  );
 
-  return world.bridgeAnalysis;
+  return world.bridgePlan;
 }
 
 function getComparisonRow(world: ProductAcceptanceWorld, metric: string) {
@@ -396,7 +372,7 @@ Then(
 );
 
 Given(
-  "bridge analysis outputs are rounded to {int} decimal places",
+  "retirement plan outputs are rounded to {int} decimal places",
   function (this: ProductAcceptanceWorld, precision: number) {
     this.precision = precision;
   }
@@ -884,6 +860,10 @@ Given(
       showClassicPlus: false,
       showNuvos: false,
       showPremium: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
     });
   }
 );
@@ -961,6 +941,7 @@ Given(
     statePensionDrawDate: string
   ) {
     updateSettings(this, {
+      startDate: "2025-04-01",
       dateOfBirth: "1960-04-01",
       showStatePension: true,
       currentStatePension,
@@ -976,7 +957,9 @@ Given(
       showIsa: true,
       isaCurrentPot,
       isaMonthlyContribution: 0,
+      isaDrawAge: getSettings(this).requirementAge,
       isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: getSettings(this).lifeExpectancy,
     });
   }
 );
@@ -997,7 +980,12 @@ Given(
 Given(
   "the bridge retirement age is {float}",
   function (this: ProductAcceptanceWorld, requirementAge: number) {
-    updateSettings(this, { requirementAge });
+    const settings = getSettings(this);
+    updateSettings(this, {
+      requirementAge,
+      isaDrawAge: settings.showIsa ? requirementAge : settings.isaDrawAge,
+      sippDrawAge: settings.showSipp ? requirementAge : settings.sippDrawAge,
+    });
   }
 );
 
@@ -1046,7 +1034,22 @@ Then(
 Given(
   "the bridge life expectancy age is {float}",
   function (this: ProductAcceptanceWorld, lifeExpectancy: number) {
-    updateSettings(this, { lifeExpectancy });
+    const settings = getSettings(this);
+    updateSettings(this, {
+      lifeExpectancy,
+      isaWithdrawalTargetAge: settings.showIsa
+        ? lifeExpectancy
+        : settings.isaWithdrawalTargetAge,
+      sippWithdrawalTargetAge: settings.showSipp
+        ? lifeExpectancy
+        : settings.sippWithdrawalTargetAge,
+      csAvcWithdrawalTargetAge: settings.showCsAvc
+        ? lifeExpectancy
+        : settings.csAvcWithdrawalTargetAge,
+      lisaWithdrawalTargetAge: settings.showLisa
+        ? lifeExpectancy
+        : settings.lisaWithdrawalTargetAge,
+    });
   }
 );
 
@@ -1057,9 +1060,12 @@ Given(
   }
 );
 
-When("the bridge plan is analysed", function (this: ProductAcceptanceWorld) {
-  analyseBridgePlan(this);
-});
+When(
+  "the bridge retirement plan is calculated",
+  function (this: ProductAcceptanceWorld) {
+    calculateBridgePlan(this);
+  }
+);
 
 When(
   "the same bridge plan adds guaranteed income of {float} per year from age {float}",
@@ -1068,10 +1074,8 @@ When(
     annualAmount: number,
     startAge: number
   ) {
-    const previousAnalysis = getBridgeAnalysis(this);
-    this.bridgeFundingNeedBeforeGuaranteedIncome =
-      previousAnalysis.totalBridgeRequired +
-      previousAnalysis.totalUnfundedShortfall;
+    this.bridgeShortfallBeforeGuaranteedIncome =
+      getBridgePlan(this).assessment.totalLifetimeShortfall;
     updateSettings(this, {
       showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
@@ -1087,26 +1091,25 @@ When(
         },
       ],
     });
-    analyseBridgePlan(this);
+    calculateBridgePlan(this);
   }
 );
 
 Then(
-  "the bridge plan should work on these assumptions",
+  "the configured withdrawals should meet the income target at retirement",
   function (this: ProductAcceptanceWorld) {
-    assertEqual(getBridgeAnalysis(this).planWorks, true);
+    assertCondition(
+      getBridgePlan(this).assessment.retirementAnnualGap >= 0,
+      "Expected configured withdrawals to meet the income target at retirement"
+    );
   }
 );
 
 Then(
   "the retirement income summary should not include Alpha pension",
   function (this: ProductAcceptanceWorld) {
-    assertCondition(
-      this.bridgeSummary,
-      "Bridge summary has not been generated"
-    );
     assertEqual(
-      this.bridgeSummary.retirementIncome.sources.some(
+      getBridgePlan(this).summary.retirementIncome.sources.some(
         (source) => source.key === "alpha"
       ),
       false
@@ -1115,62 +1118,65 @@ Then(
 );
 
 Then(
-  "the first bridge phase should show no secure income source",
+  "the retirement income summary should include configured ISA withdrawals",
   function (this: ProductAcceptanceWorld) {
-    assertDeepEqual(getBridgeAnalysis(this).phases[0]?.incomeSourcesActive, [
-      "None",
-    ]);
+    assertCondition(
+      [
+        ...getBridgePlan(this).summary.retirementIncome.sources,
+        ...getBridgePlan(this).summary.retirementIncome.bridgeWithdrawals,
+      ].some((source) => source.key === "isa"),
+      "Expected the retirement income summary to include ISA withdrawals"
+    );
   }
 );
 
 Then(
-  "at least one bridge phase should include {string}",
-  function (this: ProductAcceptanceWorld, sourceLabel: string) {
+  "the retirement income summary should include State Pension",
+  function (this: ProductAcceptanceWorld) {
     assertCondition(
-      getBridgeAnalysis(this).phases.some((phase) =>
-        phase.incomeSourcesActive.includes(sourceLabel)
+      getBridgePlan(this).summary.retirementIncome.sources.some(
+        (source) => source.key === "statePension"
       ),
-      `Expected a bridge phase to include ${sourceLabel}`
+      "Expected the retirement income summary to include State Pension"
     );
   }
 );
 
 Then(
-  "the stable annual secure income should be {float}",
-  function (this: ProductAcceptanceWorld, expected: number) {
-    expectMoney(
-      getBridgeAnalysis(this).stableAnnualGuaranteedIncome,
-      expected,
-      this.precision
-    );
-  }
-);
-
-Then(
-  "the full secure annual income should be {float}",
-  function (this: ProductAcceptanceWorld, expected: number) {
-    expectMoney(
-      getBridgeAnalysis(this).fullSecureAnnualGuaranteedIncome,
-      expected,
-      this.precision
-    );
-  }
-);
-
-Then(
-  "the total bridge funding need should be lower with the guaranteed income",
+  "the retirement income summary should include classic pension",
   function (this: ProductAcceptanceWorld) {
     assertCondition(
-      this.bridgeFundingNeedBeforeGuaranteedIncome !== undefined,
-      "Initial bridge funding need was not recorded"
+      getBridgePlan(this).summary.retirementIncome.sources.some(
+        (source) => source.key === "classic"
+      ),
+      "Expected the retirement income summary to include classic pension"
     );
-    const nextFundingNeed =
-      getBridgeAnalysis(this).totalBridgeRequired +
-      getBridgeAnalysis(this).totalUnfundedShortfall;
+  }
+);
+
+Then(
+  "the secure income position at modelling end should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      getBridgePlan(this).assessment.planningHorizonSecureAnnualSurplus,
+      expected,
+      this.precision
+    );
+  }
+);
+
+Then(
+  "the lifetime shortfall should be lower with the guaranteed income",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.bridgeShortfallBeforeGuaranteedIncome !== undefined,
+      "Initial lifetime shortfall was not recorded"
+    );
+    const nextShortfall = getBridgePlan(this).assessment.totalLifetimeShortfall;
 
     assertCondition(
-      nextFundingNeed < this.bridgeFundingNeedBeforeGuaranteedIncome,
-      `Expected ${nextFundingNeed} to be lower than ${this.bridgeFundingNeedBeforeGuaranteedIncome}`
+      nextShortfall < this.bridgeShortfallBeforeGuaranteedIncome,
+      `Expected ${nextShortfall} to be lower than ${this.bridgeShortfallBeforeGuaranteedIncome}`
     );
   }
 );
@@ -1274,12 +1280,11 @@ When(
 );
 
 When(
-  "comparison table rows are built without bridge funding and flexible assets",
+  "comparison table rows are built without flexible assets",
   function (this: ProductAcceptanceWorld) {
     this.comparisonRows = buildComparisonTableRows(
       this.comparisonResults ?? [],
       {
-        hideBridgeFundingSection: true,
         hideFlexibleAssetsSection: true,
       }
     );

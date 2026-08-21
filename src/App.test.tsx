@@ -2035,7 +2035,7 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("heading", { name: "Comparison" })
     ).toBeInTheDocument();
-    expect(screen.getByText("Bridge funding")).toBeInTheDocument();
+    expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
     expect(screen.getByText("Flexible assets")).toBeInTheDocument();
     expect(screen.getByText("Total secure income")).toBeInTheDocument();
     expect(

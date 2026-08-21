@@ -462,7 +462,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Result",
         title: "Your results",
         description:
-          "Review your projected income, bridge funding, key dates, and assumptions.",
+          "Review your projected income, flexible withdrawals, key dates, and assumptions.",
         kind: "results",
         sections: [
           { id: "summary", presentation: "standard" },
@@ -921,7 +921,7 @@ function createExpertJourneySteps(): JourneyStepDefinition[] {
       eyebrow: "Result",
       title: "Your results",
       description:
-        "Review your projected income, bridge funding, saved scenarios, and the full month-by-month projection table.",
+        "Review your projected income, flexible withdrawals, saved scenarios, and the full month-by-month projection table.",
       kind: "results",
       sections: [
         { id: "summary", presentation: "detailed" },

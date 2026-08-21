@@ -1,10 +1,5 @@
 import type { FlexibleFundAccountId, PensionSettings } from "./settings";
 import {
-  generateRetirementBridgeAnalysis as generateRetirementBridgeAnalysisDomain,
-  prepareBridgeProjectionSettings as prepareBridgeProjectionSettingsDomain,
-  type RetirementBridgeAnalysis as RetirementBridgeAnalysisDomain,
-} from "./projection-domains/bridge-analysis";
-import {
   createProjectionRuntimeDates,
   deriveProjectionInputs,
 } from "./derive-inputs";
@@ -213,8 +208,6 @@ export type RetirementIncomeSummary = {
   totalAnnualIncome: number;
 };
 
-export type RetirementBridgeAnalysis = RetirementBridgeAnalysisDomain;
-
 export {
   addMonths,
   addYears,
@@ -280,17 +273,4 @@ export function createProjectionTable(
   }
 
   return taxedRows;
-}
-
-export function prepareBridgeProjectionSettings(
-  settings: PensionSettings
-): PensionSettings {
-  return prepareBridgeProjectionSettingsDomain(settings);
-}
-
-export function generateRetirementBridgeAnalysis(
-  pensionRows: ProjectionRow[],
-  settings: PensionSettings
-): RetirementBridgeAnalysis {
-  return generateRetirementBridgeAnalysisDomain(pensionRows, settings);
 }

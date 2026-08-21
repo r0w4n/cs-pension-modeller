@@ -11,14 +11,12 @@ import { ProjectionTableFrame, type TableColumn } from "./projection-table";
 export type ComparisonSummaryTableProps = {
   results: ComparisonResult[];
   retirementIncomeDisplay?: RetirementIncomeDisplay;
-  hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 };
 
 export function ComparisonSummaryTable({
   results,
   retirementIncomeDisplay = "annual",
-  hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: ComparisonSummaryTableProps) {
   const columns: TableColumn[] = [
@@ -31,7 +29,6 @@ export function ComparisonSummaryTable({
   ];
   const rows = buildComparisonTableRows(results, {
     retirementIncomeDisplay,
-    hideBridgeFundingSection,
     hideFlexibleAssetsSection,
   });
   const showMobileCards = useMobileDateDropdowns("(max-width: 640px)");

@@ -344,7 +344,6 @@ function createComparisonResultFixture({
       firstFlexibleFundExhaustionAge: null,
       firstFlexibleFundExhaustionAccount: null,
     },
-    bridgeFundingEstimate: {},
     annualIncome: 36667.6,
     annualTarget: 31350,
     annualGap: 5317.6,

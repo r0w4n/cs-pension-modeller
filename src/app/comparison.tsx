@@ -54,7 +54,6 @@ export type ComparisonPanelProps = {
   retirementIncomeChartParameters?: RetirementIncomeChartParameters;
   retirementIncomeChartLimits?: RetirementIncomeChartLimits;
   hideInactiveLegendItems?: boolean;
-  hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
   showPensionSummary?: boolean;
   onChangeChartParameters?: (
@@ -82,7 +81,6 @@ export function ComparisonPanel({
   retirementIncomeChartParameters,
   retirementIncomeChartLimits,
   hideInactiveLegendItems,
-  hideBridgeFundingSection,
   hideFlexibleAssetsSection,
   showPensionSummary = true,
   onChangeChartParameters,
@@ -158,7 +156,6 @@ export function ComparisonPanel({
           results={results}
           insights={insights}
           retirementIncomeDisplay={retirementIncomeDisplay}
-          hideBridgeFundingSection={hideBridgeFundingSection}
           hideFlexibleAssetsSection={hideFlexibleAssetsSection}
         />
       </DeferredBelowFold>

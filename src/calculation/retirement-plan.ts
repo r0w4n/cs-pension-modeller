@@ -28,11 +28,19 @@ export type RetirementPlanResult = {
   rows: ProjectionRow[];
   summary: PensionSummary;
   assessment: RetirementPlanAssessment;
-  bridgeFundingEstimate: RetirementBridgeAnalysis;
+  bridgeFundingEstimate: BridgeFundingEstimate;
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
   statePensionAssumptionAffectsTarget: boolean;
   inflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
 };
+
+export type BridgeFundingEstimate = Pick<
+  RetirementBridgeAnalysis,
+  | "totalBridgeRequired"
+  | "requiredIsaAtRetirement"
+  | "requiredSippAtAccess"
+  | "additionalMonthlyContributionRequired"
+>;
 
 export function calculateRetirementPlan(
   settings: PensionSettings
@@ -95,5 +103,16 @@ function calculateBridgeFundingEstimate(settings: PensionSettings) {
     showLisa: false,
   });
 
-  return generateRetirementBridgeAnalysis(pensionRows, bridgeSettings);
+  const analysis = generateRetirementBridgeAnalysis(
+    pensionRows,
+    bridgeSettings
+  );
+
+  return {
+    totalBridgeRequired: analysis.totalBridgeRequired,
+    requiredIsaAtRetirement: analysis.requiredIsaAtRetirement,
+    requiredSippAtAccess: analysis.requiredSippAtAccess,
+    additionalMonthlyContributionRequired:
+      analysis.additionalMonthlyContributionRequired,
+  };
 }

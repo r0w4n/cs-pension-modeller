@@ -4,7 +4,6 @@ import {
   type ProjectionRow,
 } from "../projection";
 import {
-  calculateStatePensionDrawAge,
   type PensionSettings,
   type RetirementIncomeTargetBasis,
 } from "../settings";
@@ -34,8 +33,6 @@ export type ComparisonResult = {
   lisaDepletedAge: number | null;
   sippDepletedAge: number | null;
   csAvcDepletedAge: number | null;
-  retirementAnnualIncome: number;
-  statePensionAnnualIncome: number;
   lifeExpectancyAnnualIncome: number;
   statePensionAssumptionAffectsTarget: boolean;
   currentMatchesSaved: boolean;
@@ -82,11 +79,6 @@ export function createComparisonResult(
     summary,
     scenario.settings.retirementIncomeTargetBasis
   );
-  const statePensionAge = calculateStatePensionDrawAge(
-    scenario.settings.dateOfBirth,
-    scenario.settings.statePensionDrawDate
-  );
-
   return {
     rows,
     summary,
@@ -130,12 +122,6 @@ export function createComparisonResult(
         scenario.settings.lisaWithdrawalStrategy === "use_by_age"
         ? scenario.settings.lisaWithdrawalTargetAge
         : null
-    ),
-    retirementAnnualIncome: assessment.retirementAnnualIncome,
-    statePensionAnnualIncome: findAnnualIncomeAtAge(
-      rows,
-      statePensionAge,
-      scenario.settings.retirementIncomeTargetBasis
     ),
     lifeExpectancyAnnualIncome: findAnnualIncomeAtAge(
       rows,

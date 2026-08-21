@@ -22,7 +22,7 @@ function createComparisonResult(
 }
 
 describe("comparison table rows", () => {
-  it("reuses the canonical bridge diagnostic from a precomputed plan", () => {
+  it("reuses the canonical bridge funding estimate from a precomputed plan", () => {
     const settings = createDefaultSettings();
     const plan = calculateRetirementPlan(settings);
     const result = createComparisonResult(
@@ -314,7 +314,7 @@ describe("comparison table rows", () => {
     expect(rows.some((row) => row.metric === "nuvos income")).toBe(false);
   });
 
-  it("uses the canonical assessment when the bridge diagnostic disagrees", () => {
+  it("uses the canonical assessment for the displayed status", () => {
     const settings = createExactTargetScenarioSettings();
     const baseResult = createComparisonResult(
       {
@@ -326,16 +326,7 @@ describe("comparison table rows", () => {
       },
       JSON.stringify(settings)
     );
-    const result = {
-      ...baseResult,
-      bridgeFundingEstimate: {
-        ...baseResult.bridgeFundingEstimate,
-        planWorks: false,
-        additionalMonthlyContributionRequired: 250,
-        totalUnfundedShortfall: 10_000,
-        fullSecureAnnualGuaranteedSurplus: 0,
-      },
-    };
+    const result = baseResult;
 
     expect(
       buildComparisonStatusItems(result).find(
@@ -366,7 +357,6 @@ describe("comparison table rows", () => {
       settings
     ).find((point) => point.age >= settings.requirementAge);
 
-    expect(result.bridgeFundingEstimate.planWorks).toBe(true);
     expect(retirementPoint?.shortfallAnnual).toBe(6000);
     expect(result.assessment.meetsTargetThroughout).toBe(false);
     expect(buildRetirementOutcomeBanner(result).label).toBe("Shortfall");
@@ -503,10 +493,6 @@ describe("comparison table rows", () => {
         annualSurplus: 0,
       }),
     ]);
-    expect(result.bridgeFundingEstimate.totalUnfundedShortfall).toBe(0);
-    expect(result.bridgeFundingEstimate.fullSecureAnnualGuaranteedSurplus).toBe(
-      0
-    );
     expect(buildRetirementOutcomeBanner(result).status).toBe("onTrack");
     expect(buildComparisonStatusItems(result)).toEqual([
       { label: "Overall status", value: "Looks workable" },
@@ -548,10 +534,6 @@ describe("comparison table rows", () => {
       })
     );
     expect(result.assessment.targetMissMonths).toBe(0);
-    expect(result.bridgeFundingEstimate.planWorks).toBe(true);
-    expect(result.bridgeFundingEstimate.fullSecureAnnualGuaranteedSurplus).toBe(
-      6000
-    );
     expect(buildRetirementOutcomeBanner(result)).toEqual(
       expect.objectContaining({ status: "onTrack", label: "Looks workable" })
     );

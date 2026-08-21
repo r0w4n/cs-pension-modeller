@@ -213,59 +213,6 @@ export type RetirementIncomeSummary = {
   totalAnnualIncome: number;
 };
 
-export type BridgePhase = {
-  startDate: string;
-  endDate: string;
-  startAge: number;
-  startAgeMonths: number;
-  endAge: number;
-  endAgeMonths: number;
-  label: string;
-  incomeSourcesActive: string[];
-  potUsed: string;
-  annualTargetIncome: number;
-  annualAlphaPension: number;
-  annualNuvosPension: number;
-  annualPremiumPension: number;
-  annualAdditionalGuaranteedIncome: number;
-  annualStatePension: number;
-  annualIsaBridge: number;
-  annualLisaBridge: number;
-  annualSippBridge: number;
-  annualCsAvcBridge: number;
-  annualShortfall: number;
-  annualSurplus: number;
-  totalIsaBridge: number;
-  totalLisaBridge: number;
-  totalSippBridge: number;
-  totalCsAvcBridge: number;
-  totalBridgeRequired: number;
-  unfundedShortfall: number;
-};
-
-export type BridgePotProjectionRow = {
-  date: string;
-  age: number;
-  ageMonths: number;
-  monthlyAlphaPension: number;
-  monthlyNuvosPension: number;
-  monthlyPremiumPension: number;
-  monthlyStatePension: number;
-  monthlyTargetIncome: number;
-  isaBalance: number;
-  lisaBalance: number;
-  sippBalance: number;
-  csAvcBalance: number;
-  isaDrawdown: number;
-  lisaDrawdown: number;
-  sippDrawdown: number;
-  csAvcDrawdown: number;
-  unfundedShortfall: number;
-  growth: number;
-  milestones: string[];
-  milestoneDates: string[];
-};
-
 export type RetirementBridgeAnalysis = RetirementBridgeAnalysisDomain;
 
 export {

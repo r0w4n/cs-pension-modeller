@@ -21,8 +21,11 @@ describe("calculateRetirementPlan", () => {
     expect(typeof firstResult.statePensionAssumptionAffectsTarget).toBe(
       "boolean"
     );
-    expect(firstResult.bridgeFundingEstimate.target.retirementAge).toBe(
-      settings.requirementAge
-    );
+    expect(Object.keys(firstResult.bridgeFundingEstimate).sort()).toEqual([
+      "additionalMonthlyContributionRequired",
+      "requiredIsaAtRetirement",
+      "requiredSippAtAccess",
+      "totalBridgeRequired",
+    ]);
   });
 });

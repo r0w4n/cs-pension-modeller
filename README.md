@@ -235,10 +235,12 @@ The concrete layer responsibilities are:
 - [`src/calculation/retirement-plan.ts`](src/calculation/retirement-plan.ts)
   is the canonical calculation entry point. It returns one
   `RetirementPlanResult` containing validation, monthly rows, pension summary,
-  inflation assumptions, plan assessment, the shared bridge funding diagnostic,
-  State Pension sensitivity, and target-based withdrawal previews. Comparison
-  and result projections consume those canonical diagnostics rather than
-  starting alternate pension projections.
+  inflation assumptions, plan assessment, the user-facing bridge funding
+  estimate, State Pension sensitivity, and target-based withdrawal previews.
+  The bridge domain retains its more detailed phase and pot diagnostics for
+  calculation verification; comparison and result projections consume the
+  canonical user-facing estimate rather than starting alternate pension
+  projections.
 - [`src/calculation/retirement-income-assessment.ts`](src/calculation/retirement-income-assessment.ts)
   derives the calculation-owned income assessment used by the canonical plan
   assessment. Added-pension goal modelling and withdrawal-strategy previews are

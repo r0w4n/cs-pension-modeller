@@ -12,16 +12,11 @@ export type FlexibleFundAssessmentAccount =
   "ISA" | "LISA" | "SIPP" | "Civil Service AVC";
 
 export type RetirementPlanAssessment = {
-  assessmentStartDate: string | null;
-  assessmentEndDate: string | null;
-  assessmentAvailable: boolean;
   meetsTargetThroughout: boolean;
   targetMissMonths: number;
-  firstShortfallDate: string | null;
   firstShortfallAge: number | null;
   firstShortfallAnnualTarget: number;
   firstShortfallAnnualAmount: number;
-  lastShortfallDate: string | null;
   largestAnnualShortfall: number;
   totalLifetimeShortfall: number;
   lowestAnnualIncome: number;
@@ -33,7 +28,6 @@ export type RetirementPlanAssessment = {
   allSecureIncomeStartAgeMonths: number | null;
   allSecureAnnualIncome: number;
   allSecureAnnualSurplus: number;
-  planningHorizonSecureAnnualIncome: number;
   planningHorizonSecureAnnualSurplus: number;
   firstFlexibleFundExhaustionDate: string | null;
   firstFlexibleFundExhaustionAge: number | null;
@@ -64,12 +58,7 @@ export function assessRetirementPlan(
       point.age <= settings.lifeExpectancy
   );
   const retirementPoint = assessmentPoints[0];
-  const planningHorizonPoint = assessmentPoints.at(-1);
-
   return {
-    assessmentStartDate: retirementPoint?.date ?? null,
-    assessmentEndDate: planningHorizonPoint?.date ?? null,
-    assessmentAvailable: assessmentPoints.length > 0,
     ...assessShortfalls(assessmentPoints),
     ...assessRetirementPoint(retirementPoint, settings),
     ...assessSecureIncome(assessmentPoints, settings),
@@ -82,13 +71,10 @@ function assessShortfalls(assessmentPoints: AssessmentPoint[]) {
     (point) => point.shortfallAnnual > 0
   );
   const firstShortfallPoint = shortfallPoints[0];
-  const lastShortfallPoint = shortfallPoints.at(-1);
-
   return {
     meetsTargetThroughout:
       assessmentPoints.length > 0 && shortfallPoints.length === 0,
     targetMissMonths: shortfallPoints.length,
-    firstShortfallDate: firstShortfallPoint?.date ?? null,
     firstShortfallAge: firstShortfallPoint?.age ?? null,
     firstShortfallAnnualTarget: normalizeMoney(
       firstShortfallPoint?.targetIncomeAnnual ?? 0
@@ -96,7 +82,6 @@ function assessShortfalls(assessmentPoints: AssessmentPoint[]) {
     firstShortfallAnnualAmount: normalizeMoney(
       firstShortfallPoint?.shortfallAnnual ?? 0
     ),
-    lastShortfallDate: lastShortfallPoint?.date ?? null,
     largestAnnualShortfall: normalizeMoney(
       Math.max(0, ...shortfallPoints.map((point) => point.shortfallAnnual))
     ),
@@ -165,9 +150,6 @@ function assessSecureIncome(
       allSecureAnnualIncome -
         (allSecureIncomeStartPoint?.targetIncomeAnnual ??
           settings.desiredRetirementIncome)
-    ),
-    planningHorizonSecureAnnualIncome: normalizeMoney(
-      planningHorizonSecureAnnualIncome
     ),
     planningHorizonSecureAnnualSurplus: normalizeMoney(
       planningHorizonSecureAnnualIncome -

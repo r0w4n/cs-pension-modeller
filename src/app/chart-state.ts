@@ -642,9 +642,6 @@ export function updateSetting({
     setSettings((current) => ({
       ...current,
       [key]: nextValue,
-      ...(key === "taxationEnabled" && !nextValue
-        ? { retirementIncomeTargetBasis: "gross" as const }
-        : {}),
     }));
 
     return;

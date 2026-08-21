@@ -122,6 +122,28 @@ describe("comparison scenario storage", () => {
     ).not.toThrow();
   });
 
+  it("migrates saved gross targets to the current after-tax meaning", () => {
+    window.localStorage.setItem(
+      COMPARISON_SCENARIOS_STORAGE_KEY,
+      JSON.stringify([
+        createScenario("gross-scenario", "Gross scenario", {
+          ...createDefaultSettings(),
+          taxationEnabled: false,
+          retirementIncomeTargetBasis: "gross",
+        }),
+      ])
+    );
+
+    const [loadedScenario] = loadStoredComparisonScenarios();
+
+    expect(loadedScenario?.settings).toEqual(
+      expect.objectContaining({
+        taxationEnabled: true,
+        retirementIncomeTargetBasis: "after_tax",
+      })
+    );
+  });
+
   it("returns an empty list for corrupted storage or when local storage is disabled", () => {
     window.localStorage.setItem(COMPARISON_SCENARIOS_STORAGE_KEY, "{bad json");
     expect(loadStoredComparisonScenarios()).toEqual([]);

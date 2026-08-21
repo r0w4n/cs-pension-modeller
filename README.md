@@ -80,9 +80,9 @@ For each projection month, the model can calculate values such as:
 The current app is driven by inputs grouped around:
 
 - personal details: birth month/year and planning horizon
-- retirement income target: an explicit before-tax income or after-tax spending
-  basis, with a selected Retirement Living Standards baseline and either flat
-  spending or expert Go-Go, Slow-Go, No-Go phase percentages
+- retirement income target: an annual after-tax spending amount, with a
+  selected Retirement Living Standards baseline and either flat spending or
+  expert Go-Go, Slow-Go, No-Go phase percentages
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
@@ -171,10 +171,9 @@ Some important assumptions and simplifications are:
   allowance, receive the modelled government bonus on eligible additions, stop
   at age 50, and are modelled for retirement withdrawals from age 60.
 - Income Tax is enabled for new plans by default and uses the selected 2026/27
-  regime throughout the projection. The retirement income target has an
-  explicit basis: gross targets are compared with income before tax, while
-  after-tax targets are compared with income available to spend after estimated
-  Income Tax. Selecting an after-tax target enables the tax estimate.
+  regime throughout the projection. The retirement income target represents
+  money available to spend after estimated Income Tax, so it is compared with
+  projected take-home income and requires the tax estimate.
   Scottish pension income uses the published starter, basic, intermediate,
   higher, advanced and top bands. Modelled taxable income is grouped into
   April-to-March years and one annual liability is allocated across taxable

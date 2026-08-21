@@ -2,10 +2,11 @@ import {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
+  applyExpertJourneyDefaults,
   applySimpleJourneyDefaults,
   type JourneyStepDefinition,
 } from "./journeys";
-import type { FieldDefinition } from "../fieldDefinitions";
+import { fieldGroups, type FieldDefinition } from "../fieldDefinitions";
 import { knowledgeLinks } from "../knowledgeLinks";
 import { defaultSettings } from "../settings";
 
@@ -74,11 +75,40 @@ describe("journey definitions", () => {
     );
     expect([
       ...getJourneyStepFieldIds("expert-journey", "expert-retirement-target"),
-    ]).toEqual([
-      "desiredRetirementIncome",
-      "requirementAge",
-      "retirementIncomeTargetBasis",
-    ]);
+    ]).toEqual(["desiredRetirementIncome", "requirementAge"]);
+  });
+
+  it("uses an after-tax target with the restored expert quick selects", () => {
+    const targetGroup = fieldGroups.find(
+      (group) => group.id === "retirement-target"
+    );
+    const targetField = targetGroup?.fields.find(
+      (field) => field.id === "desiredRetirementIncome"
+    );
+
+    expect(applyExpertJourneyDefaults(defaultSettings)).toEqual(
+      expect.objectContaining({
+        retirementIncomeTargetBasis: "after_tax",
+        taxationEnabled: true,
+      })
+    );
+    expect(targetGroup?.description).toBe(
+      "Set your target retirement age and the annual amount you would like available to spend after tax."
+    );
+    expect(targetField?.description).toBe(
+      "How much would you like to have available to spend each year in retirement, after tax?"
+    );
+    expect(
+      targetField?.type === "currency-input" ? targetField.presets : []
+    ).toEqual(
+      [11250, 13900, 22700, 31350, 32700, 45400].map((value) => ({
+        value,
+        label: `£${value.toLocaleString("en-GB")}`,
+      }))
+    );
+    expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).not.toContain(
+      "taxationEnabled"
+    );
   });
 
   it("keeps the SIPP tax-free withdrawal assumption with the SIPP inputs", () => {

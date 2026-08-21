@@ -169,7 +169,15 @@ Feature: Modeller journeys
       | field                                          |
       | Retirement income target (£ per year)          |
       | Target retirement age                          |
-      | What does your retirement income target mean?  |
+    And the expert retirement income target should be an after-tax spending target
+    And the expert retirement income target should offer these quick-select amounts:
+      | amount |
+      | 11250  |
+      | 13900  |
+      | 22700  |
+      | 31350  |
+      | 32700  |
+      | 45400  |
     And the "SIPP details" journey step should include the field "SIPP withdrawal tax treatment"
     And the "SIPP details" journey step should include the field "SIPP tax-free withdrawal share (%)"
     But the "Tax assumptions" journey step should not include the field "SIPP withdrawal tax treatment"

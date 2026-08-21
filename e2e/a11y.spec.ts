@@ -200,7 +200,6 @@ test.describe("accessibility", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
 
-    await page.getByRole("checkbox", { name: "Taxation" }).check();
     await page.getByRole("button", { name: /Alpha pension details/i }).click();
     await fillCurrency(
       page,

@@ -15,6 +15,7 @@ import {
 } from "../settings";
 import {
   applyBridgeJourneyDefaults,
+  applyExpertJourneyDefaults,
   applySimpleJourneyDefaults,
 } from "../app-domains/journeys";
 import type { AppMode } from "./app-persistence";
@@ -131,6 +132,6 @@ function applyLegacyJourneyDefaults(
   return {
     simple: applySimpleJourneyDefaults(settings.simple),
     bridge: applyBridgeJourneyDefaults(settings.bridge),
-    expert: settings.expert,
+    expert: applyExpertJourneyDefaults(settings.expert),
   };
 }

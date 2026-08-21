@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { RetirementIncomeDisplay } from "../projection";
 import type { PensionSettings } from "../settings";
 import {
@@ -37,6 +37,8 @@ export function useProjectionCalculations({
     () => JSON.stringify(retirementPlanResult.settings),
     [retirementPlanResult.settings]
   );
+  const latestSettingsSignatureRef = useRef(settingsSignature);
+  latestSettingsSignatureRef.current = settingsSignature;
 
   useEffect(() => {
     if (deferredSettingsSignature === calculatedSettingsSignature) {
@@ -44,27 +46,32 @@ export function useProjectionCalculations({
     }
 
     let active = true;
-    const commitPlan = (plan: typeof retirementPlanResult) => {
-      if (active) {
+    const commitPlan = (
+      plan: typeof retirementPlanResult,
+      planSettingsSignature: string
+    ) => {
+      if (
+        active &&
+        planSettingsSignature === latestSettingsSignatureRef.current
+      ) {
         setRetirementPlanResult(plan);
       }
     };
     const calculateOnMainThread = () => {
-      queueMicrotask(() => {
-        commitPlan(
-          getCachedRetirementPlanResult({
-            settings: deferredSettings,
-            cache: retirementPlanResultCache,
-          })
-        );
-      });
+      commitPlan(
+        getCachedRetirementPlanResult({
+          settings: deferredSettings,
+          cache: retirementPlanResultCache,
+        }),
+        deferredSettingsSignature
+      );
     };
     const cachedPlan = retirementPlanResultCache?.get(
       deferredSettingsSignature
     );
 
     if (cachedPlan) {
-      queueMicrotask(() => commitPlan(cachedPlan));
+      commitPlan(cachedPlan, deferredSettingsSignature);
       return () => {
         active = false;
       };
@@ -110,7 +117,7 @@ export function useProjectionCalculations({
         precomputedPlan: event.data.result,
       });
       worker.terminate();
-      commitPlan(result);
+      commitPlan(result, deferredSettingsSignature);
     };
     const handleError = () => {
       if (!active) {

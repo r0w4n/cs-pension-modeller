@@ -183,7 +183,8 @@ describe("settings-storage", () => {
 
     expect(loaded.requirementAge).toBe(61);
     expect(loaded.desiredRetirementIncome).toBe(60000);
-    expect(loaded.retirementIncomeTargetBasis).toBe("gross");
+    expect(loaded.retirementIncomeTargetBasis).toBe("after_tax");
+    expect(loaded.taxationEnabled).toBe(true);
     expect(loaded.statePensionForecastConfirmed).toBe(false);
   });
 

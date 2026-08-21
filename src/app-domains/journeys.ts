@@ -82,12 +82,6 @@ export const OPTIONAL_SECTION_TOGGLES = [
     description:
       "Includes known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
   },
-  {
-    key: "taxationEnabled",
-    label: "Taxation",
-    description:
-      "Estimates retirement income after modelled Income Tax liability using the selected assumptions. It does not reproduce PAYE deductions or National Insurance.",
-  },
 ] as const;
 
 export type OptionalSectionToggleKey =
@@ -999,6 +993,16 @@ export function applyBridgeJourneyDefaults(
     taxationEnabled: true,
     retirementIncomeTargetBasis: "after_tax",
     partialRetirementEnabled: false,
+  };
+}
+
+export function applyExpertJourneyDefaults(
+  settings: PensionSettings
+): PensionSettings {
+  return {
+    ...settings,
+    taxationEnabled: true,
+    retirementIncomeTargetBasis: "after_tax",
   };
 }
 

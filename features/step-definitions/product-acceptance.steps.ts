@@ -1653,6 +1653,49 @@ Then(
 );
 
 Then(
+  "the expert retirement income target should be an after-tax spending target",
+  function (this: ProductAcceptanceWorld) {
+    const targetGroup = fieldGroups.find(
+      (group) => group.id === "retirement-target"
+    );
+    const targetField = targetGroup?.fields.find(
+      (field) => field.id === "desiredRetirementIncome"
+    );
+
+    assertCondition(targetGroup, "Expected the retirement target field group");
+    assertCondition(targetField, "Expected the retirement income target field");
+    assertEqual(
+      targetField.description,
+      "How much would you like to have available to spend each year in retirement, after tax?"
+    );
+    assertCondition(
+      !targetGroup.fields.some(
+        (field) => field.id === "retirementIncomeTargetBasis"
+      ),
+      "Expected the Expert journey not to ask for a target basis"
+    );
+  }
+);
+
+Then(
+  "the expert retirement income target should offer these quick-select amounts:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    const targetField = fieldGroups
+      .find((group) => group.id === "retirement-target")
+      ?.fields.find((field) => field.id === "desiredRetirementIncome");
+
+    assertCondition(
+      targetField?.type === "currency-input",
+      "Expected the retirement income target to be a currency input"
+    );
+    assertEqual(
+      JSON.stringify(targetField.presets?.map((preset) => preset.value)),
+      JSON.stringify(table.hashes().map((row) => Number(row.amount)))
+    );
+  }
+);
+
+Then(
   "the simplified pension choices should not offer Alpha as an optional pension",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");

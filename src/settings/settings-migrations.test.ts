@@ -14,6 +14,7 @@ import {
   migrateFromV13ToV14,
   migrateFromV14ToV15,
   migrateFromV15ToV16,
+  migrateFromV16ToV17,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -342,7 +343,11 @@ describe("settings-migrations", () => {
           alphaAddedPensionLumpSums: [],
         },
         bridge: migratedLegacySettings,
-        expert: migratedLegacySettings,
+        expert: {
+          ...migratedLegacySettings,
+          taxationEnabled: true,
+          retirementIncomeTargetBasis: "after_tax",
+        },
       },
     });
   });
@@ -442,6 +447,35 @@ describe("settings-migrations", () => {
         },
         bridge,
         expert,
+      },
+    });
+  });
+
+  it("migrates the Expert journey to the after-tax target meaning", () => {
+    const simple = { retirementIncomeTargetBasis: "after_tax" };
+    const bridge = { retirementIncomeTargetBasis: "after_tax" };
+
+    expect(
+      migrateFromV16ToV17({
+        journeys: {
+          simple,
+          bridge,
+          expert: {
+            desiredRetirementIncome: 40_000,
+            taxationEnabled: false,
+            retirementIncomeTargetBasis: "gross",
+          },
+        },
+      })
+    ).toEqual({
+      journeys: {
+        simple,
+        bridge,
+        expert: {
+          desiredRetirementIncome: 40_000,
+          taxationEnabled: true,
+          retirementIncomeTargetBasis: "after_tax",
+        },
       },
     });
   });

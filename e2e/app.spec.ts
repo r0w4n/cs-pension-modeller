@@ -276,9 +276,9 @@ test.describe("app end-to-end journeys", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
 
-    await expect(
-      page.getByRole("checkbox", { name: "Taxation" })
-    ).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Taxation" })).toHaveCount(
+      0
+    );
     await page.getByRole("button", { name: /SIPP details/i }).click();
     const sippWithdrawalTaxTreatment = page.getByRole("combobox", {
       name: "SIPP withdrawal tax treatment",
@@ -547,6 +547,28 @@ test.describe("app end-to-end journeys", () => {
     });
     await expect(retirementAgeControl).toHaveValue("68");
 
+    await expect(
+      page.getByText(
+        "How much would you like to have available to spend each year in retirement, after tax?"
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", {
+        name: "What does your retirement income target mean?",
+      })
+    ).toHaveCount(0);
+    for (const amount of [
+      "£11,250",
+      "£13,900",
+      "£22,700",
+      "£31,350",
+      "£32,700",
+      "£45,400",
+    ]) {
+      await expect(page.getByRole("button", { name: amount })).toBeVisible();
+    }
+    await page.getByRole("button", { name: "£45,400" }).click();
+
     await fillCurrency(page, "Retirement income target (£ per year)", "45400");
 
     const targetControl = page.getByRole("spinbutton", {
@@ -808,6 +830,9 @@ test.describe("app end-to-end journeys", () => {
       .poll(() => slowGoResultHandle.getAttribute("d"))
       .not.toBe(initialSlowGoPath);
     const releasedSlowGoPath = await slowGoResultHandle.getAttribute("d");
+    const initialSlowGoYValues = getDistinctPathYValues(initialSlowGoPath);
+    const releasedSlowGoYValues = getDistinctPathYValues(releasedSlowGoPath);
+    expect(releasedSlowGoYValues).not.toEqual(initialSlowGoYValues);
     await slowGoResultHandle.evaluate((path) => {
       const svgPath = path as SVGPathElement;
       svgPath.dataset.dragPathHistory = JSON.stringify([
@@ -830,6 +855,10 @@ test.describe("app end-to-end journeys", () => {
       });
     });
     await page.mouse.up();
+    const calculationStatus = page.getByText("Updating calculated results…", {
+      exact: true,
+    });
+    await expect(calculationStatus).toBeVisible();
     await expect
       .poll(async () => {
         const stored = await readLocalStorageItem(
@@ -843,6 +872,20 @@ test.describe("app end-to-end journeys", () => {
         );
       })
       .not.toBe(80);
+    const storedSettings = await readLocalStorageItem(
+      page,
+      "cs-pension-modeller.settings"
+    );
+    const committedSlowGoPercentage = readJourneySettingsValue(
+      storedSettings,
+      "expert",
+      (settings) => settings.spendingSmile?.slowGoPercentage
+    );
+    await expect(slowGoResultHandle).toHaveAttribute(
+      "aria-valuenow",
+      String(committedSlowGoPercentage)
+    );
+    await expect(calculationStatus).toHaveCount(0);
     await slowGoResultHandle.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -855,11 +898,16 @@ test.describe("app end-to-end journeys", () => {
           (path as SVGPathElement).dataset.dragPathHistory ?? "[]"
         ) as Array<string | null>
     );
-    expect(dragPathHistory).not.toContain(initialSlowGoPath);
-    await expect(slowGoResultHandle).toHaveAttribute(
-      "d",
-      releasedSlowGoPath ?? ""
-    );
+    expect(
+      dragPathHistory.some((path) =>
+        getDistinctPathYValues(path).some((value) =>
+          initialSlowGoYValues.includes(value)
+        )
+      )
+    ).toBe(false);
+    expect(
+      getDistinctPathYValues(await slowGoResultHandle.getAttribute("d"))
+    ).not.toEqual(initialSlowGoYValues);
   });
 
   test("shows income-target funding priority only in the expert target step", async ({
@@ -1206,20 +1254,23 @@ async function navigateToJourneyResult(page: Page) {
 }
 
 async function countDistinctPathYValues(targetPath: Locator) {
-  return targetPath.evaluate((element) => {
-    const path = element.getAttribute("d") ?? "";
-    const coordinatePairs = Array.from(
-      path.matchAll(/(?:M|L)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)
-    );
-    const verticalCoordinates = Array.from(
-      path.matchAll(/V(-?\d+(?:\.\d+)?)/g)
-    );
+  return getDistinctPathYValues(await targetPath.getAttribute("d")).length;
+}
 
-    return new Set([
-      ...coordinatePairs.map((match) => match[2]),
-      ...verticalCoordinates.map((match) => match[1]),
-    ]).size;
-  });
+function getDistinctPathYValues(path: string | null) {
+  const coordinatePairs = Array.from(
+    (path ?? "").matchAll(/(?:M|L)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)
+  );
+  const verticalCoordinates = Array.from(
+    (path ?? "").matchAll(/V(-?\d+(?:\.\d+)?)/g)
+  );
+
+  return Array.from(
+    new Set([
+      ...coordinatePairs.map((match) => match[2] ?? ""),
+      ...verticalCoordinates.map((match) => match[1] ?? ""),
+    ])
+  );
 }
 
 async function addAdditionalIncome(

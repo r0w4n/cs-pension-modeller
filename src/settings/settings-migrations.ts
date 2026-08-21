@@ -320,6 +320,20 @@ export function migrateFromV15ToV16(data: unknown) {
   };
 }
 
+export function migrateFromV16ToV17(data: unknown) {
+  if (!isRecord(data) || !isRecord(data.journeys)) {
+    return { journeys: {} };
+  }
+
+  return {
+    ...data,
+    journeys: {
+      ...data.journeys,
+      expert: materializeAfterTaxTarget(data.journeys.expert),
+    },
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -336,6 +350,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   13: migrateFromV13ToV14,
   14: migrateFromV14ToV15,
   15: migrateFromV15ToV16,
+  16: migrateFromV16ToV17,
 };
 
 export function migrateSettingsToLatest(
@@ -441,6 +456,18 @@ function materializeSimpleJourneyAssumptions(data: unknown) {
     alphaEpaEnabled: false,
     showAdditionalGuaranteedIncome: false,
     alphaAddedPensionLumpSums: [],
+  };
+}
+
+function materializeAfterTaxTarget(data: unknown) {
+  if (!isRecord(data)) {
+    return data;
+  }
+
+  return {
+    ...data,
+    taxationEnabled: true,
+    retirementIncomeTargetBasis: "after_tax",
   };
 }
 

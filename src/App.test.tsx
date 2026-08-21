@@ -585,7 +585,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     statePensionForecastConfirmed:
       defaultSettings.statePensionForecastConfirmed,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
-    retirementIncomeTargetBasis: defaultSettings.retirementIncomeTargetBasis,
+    retirementIncomeTargetBasis: "after_tax",
     spendingStrategyType: defaultSettings.spendingStrategyType,
     spendingSmile: defaultSettings.spendingSmile,
     flexibleWithdrawalPriority: defaultSettings.flexibleWithdrawalPriority,
@@ -2172,7 +2172,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("SIPP")).toBeChecked();
     expect(screen.getByLabelText("State Pension")).toBeChecked();
     expect(screen.getByLabelText("ISA")).toBeChecked();
-    expect(screen.getByLabelText("Taxation")).toBeChecked();
+    expect(screen.queryByLabelText("Taxation")).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("State Pension Age")
     ).not.toBeInTheDocument();
@@ -2479,7 +2479,7 @@ describe("App settings form", () => {
         "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
       )
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£2,950.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,850.00")).toBeInTheDocument();
     expect(within(ageRangeTable).getByText("£2,641.67")).toBeInTheDocument();
     expect(
       screen.getAllByText("Starts Drawing Alpha Pension").length
@@ -2621,7 +2621,6 @@ describe("App settings form", () => {
       "ISA",
       "LISA",
       "Additional guaranteed income",
-      "Taxation",
     ]);
   });
 
@@ -2717,7 +2716,7 @@ describe("App settings form", () => {
         "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
       )
     ).toBeInTheDocument();
-    expect(screen.getByText("£35,400.00")).toBeInTheDocument();
+    expect(screen.getByText("£34,200.00")).toBeInTheDocument();
     expect(screen.getByText("£31,700.00")).toBeInTheDocument();
   });
 
@@ -3998,7 +3997,7 @@ describe("App settings form", () => {
     expect(
       within(ageRangeTable).getByText("Alpha pension")
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£1,600.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£1,500.00")).toBeInTheDocument();
     expect(
       screen.queryByRole("columnheader", { name: "Monthly State pension" })
     ).not.toBeInTheDocument();

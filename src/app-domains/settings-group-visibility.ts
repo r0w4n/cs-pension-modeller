@@ -16,7 +16,6 @@ export function isSettingsGroupVisible(
     isa: "showIsa",
     lisa: "showLisa",
     "additional-income": "showAdditionalGuaranteedIncome",
-    tax: "taxationEnabled",
     "partial-retirement": "partialRetirementEnabled",
   };
   const visibilityField = visibilityFields[groupId];

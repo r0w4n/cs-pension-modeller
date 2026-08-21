@@ -82,6 +82,8 @@ function normalizeStoredComparisonScenario(
   }
 
   const now = new Date().toISOString();
+  const parsedSettings =
+    parseStoredSettings(settings) ?? clonePensionSettings(settings);
 
   return {
     id:
@@ -92,7 +94,11 @@ function normalizeStoredComparisonScenario(
       typeof candidate.name === "string" && candidate.name.trim()
         ? candidate.name
         : `Scenario ${index + 1}`,
-    settings: parseStoredSettings(settings) ?? clonePensionSettings(settings),
+    settings: {
+      ...parsedSettings,
+      taxationEnabled: true,
+      retirementIncomeTargetBasis: "after_tax",
+    },
     createdAt:
       typeof candidate.createdAt === "string" && candidate.createdAt
         ? candidate.createdAt

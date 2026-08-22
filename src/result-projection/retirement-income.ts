@@ -27,6 +27,8 @@ import { addYearsToIsoDate } from "../model-date";
 import { getSpendingSmileStartAgeBounds } from "../spending-smile";
 import { createRetirementIncomeAssessmentSeries } from "../calculation/retirement-income-assessment";
 
+const CHART_FLEXIBLE_MONTHLY_CONTRIBUTION_MAX = 2000;
+
 export function createRetirementIncomeSeries(
   rows: ProjectionRow[],
   settings: PensionSettings
@@ -393,13 +395,21 @@ export function createRetirementIncomeChartLimits(
       max: ALPHA_ADDED_PENSION_MONTHLY_MAX,
       step: 25,
     },
-    isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
+    isaMonthlyContribution: {
+      min: 0,
+      max: CHART_FLEXIBLE_MONTHLY_CONTRIBUTION_MAX,
+      step: 25,
+    },
     lisaMonthlyContribution: {
       min: 0,
       max: LISA_MONTHLY_CONTRIBUTION_MAX,
       step: 25,
     },
-    sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
+    sippMonthlyContribution: {
+      min: 0,
+      max: CHART_FLEXIBLE_MONTHLY_CONTRIBUTION_MAX,
+      step: 25,
+    },
     retirementAge: {
       min: currentPlanningAge,
       max: Math.max(

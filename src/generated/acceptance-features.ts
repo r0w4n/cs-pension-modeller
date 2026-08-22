@@ -8142,6 +8142,28 @@ export const acceptanceFeatures = [
         ],
         examples: [],
       },
+      {
+        id: "line-149",
+        keyword: "Scenario",
+        name: "Bound the chart contribution drag controls",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-150",
+            keyword: "When",
+            text: "the retirement income chart limits are prepared",
+          },
+          {
+            id: "line-151",
+            keyword: "Then",
+            text: "the ISA and SIPP contribution drag controls should have a monthly maximum of 2000.00",
+          },
+        ],
+        examples: [],
+      },
     ],
   },
   {

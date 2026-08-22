@@ -5,7 +5,10 @@ import {
   applySimpleJourneyDefaults,
   JOURNEY_DEFINITIONS,
 } from "../../src/app-domains";
-import { createRetirementIncomeSeries } from "../../src/result-projection/retirement-income";
+import {
+  createRetirementIncomeChartLimits,
+  createRetirementIncomeSeries,
+} from "../../src/result-projection/retirement-income";
 import {
   calculateTargetBasedWithdrawalPreview,
   type TargetBasedWithdrawalPreview,
@@ -33,10 +36,27 @@ type FlexibleWithdrawalWorld = {
   settings?: PensionSettings;
   rows?: ProjectionRow[];
   chartSeries?: ReturnType<typeof createRetirementIncomeSeries>;
+  chartLimits?: ReturnType<typeof createRetirementIncomeChartLimits>;
   restoredSettings?: PensionSettings;
   selectors?: Array<{ options?: readonly { value: string; label: string }[] }>;
   targetBasedPreview?: TargetBasedWithdrawalPreview;
 };
+
+When(
+  "the retirement income chart limits are prepared",
+  function (this: FlexibleWithdrawalWorld) {
+    this.chartLimits = createRetirementIncomeChartLimits(getSettings(this));
+  }
+);
+
+Then(
+  "the ISA and SIPP contribution drag controls should have a monthly maximum of {float}",
+  function (this: FlexibleWithdrawalWorld, expected: number) {
+    assertCondition(this.chartLimits);
+    assertEqual(this.chartLimits.isaMonthlyContribution.max, expected);
+    assertEqual(this.chartLimits.sippMonthlyContribution.max, expected);
+  }
+);
 
 Given(
   "a target-based flexible withdrawal scenario",

@@ -489,9 +489,11 @@ describe("retirement-income chart limits", () => {
     const limits = createRetirementIncomeChartLimits(settings);
 
     expect(limits.alphaMonthlyAddedPension.max).toBe(2000);
+    expect(limits.isaMonthlyContribution.max).toBe(2000);
     expect(limits.lisaMonthlyContribution.max).toBe(
       LISA_MONTHLY_CONTRIBUTION_MAX
     );
+    expect(limits.sippMonthlyContribution.max).toBe(2000);
     expect(limits.sippAccessAge.min).toBe(60);
   });
 

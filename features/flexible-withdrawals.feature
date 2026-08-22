@@ -145,3 +145,7 @@ Feature: Target-based flexible-fund withdrawals
     When the flexible withdrawal settings are exported and parsed
     Then the restored ISA strategy should be target-based
     And SIPP should remain before ISA in the target-based priority
+
+  Scenario: Bound the chart contribution drag controls
+    When the retirement income chart limits are prepared
+    Then the ISA and SIPP contribution drag controls should have a monthly maximum of 2000.00

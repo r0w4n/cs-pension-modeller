@@ -102,13 +102,13 @@ const baseProps: RetirementIncomeChartProps = {
   limits: {
     targetIncomeAnnual: { min: 0, max: 200000, step: 600 },
     alphaMonthlyAddedPension: { min: 0, max: 2000, step: 25 },
-    isaMonthlyContribution: { min: 0, max: 5000, step: 25 },
+    isaMonthlyContribution: { min: 0, max: 2000, step: 25 },
     lisaMonthlyContribution: {
       min: 0,
       max: LISA_MONTHLY_CONTRIBUTION_MAX,
       step: 25,
     },
-    sippMonthlyContribution: { min: 0, max: 5000, step: 25 },
+    sippMonthlyContribution: { min: 0, max: 2000, step: 25 },
     retirementAge: { min: 40, max: 67, step: 0.25 },
     slowGoStartAge: { min: 61, max: 79, step: 0.25 },
     noGoStartAge: { min: 76, max: 80, step: 0.25 },
@@ -307,6 +307,17 @@ function getPathYSpan(path: string) {
 }
 
 describe("RetirementIncomeChart", () => {
+  it("caps ISA and SIPP contribution drag controls at £2,000 per month", () => {
+    renderChart({ showIsa: true, showSipp: true });
+
+    expect(
+      screen.getByRole("slider", { name: "ISA contribution" })
+    ).toHaveAttribute("max", "2000");
+    expect(
+      screen.getByRole("slider", { name: "SIPP contribution" })
+    ).toHaveAttribute("max", "2000");
+  });
+
   it("shows the standard chart title as retirement income over time", () => {
     renderChart();
 

@@ -228,21 +228,90 @@ describe("journey definitions", () => {
     }
   });
 
-  it("includes LISA controls in the early retirement bridging pots step", () => {
-    const bridgePotFields = getJourneyStepFieldIds(
-      "early-retirement-bridge",
-      "pots"
+  it("lets the bridge journey select flexible pots independently", () => {
+    const bridgeJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    );
+    const potChoicesStep = bridgeJourney?.steps.find(
+      (step) => step.id === "pots"
     );
 
-    expect([...bridgePotFields]).toEqual(
-      expect.arrayContaining([
-        "lisaCurrentPot",
-        "lisaMonthlyContribution",
-        "lisaDrawAge",
-        "lisaRealInterestPercent",
-        "taxSippTaxFreeWithdrawalPercent",
-      ])
+    expect(potChoicesStep?.kind).toBe("optional-sections");
+    if (potChoicesStep?.kind !== "optional-sections") {
+      throw new Error("Expected the bridge pot choices step");
+    }
+
+    expect(potChoicesStep.toggleKeys).toEqual([
+      "showIsa",
+      "showLisa",
+      "showSipp",
+      "showCsAvc",
+    ]);
+    expect(
+      potChoicesStep.toggleKeys?.map(
+        (key) => potChoicesStep.toggleCopy?.[key]?.label
+      )
+    ).toEqual([
+      "ISA",
+      "Lifetime ISA (LISA)",
+      "SIPP or personal pension",
+      "Civil Service AVC",
+    ]);
+
+    const pensionChoicesStep = bridgeJourney?.steps.find(
+      (step) => step.id === "include"
     );
+    expect(pensionChoicesStep?.kind).toBe("optional-sections");
+    if (pensionChoicesStep?.kind !== "optional-sections") {
+      throw new Error("Expected the bridge pension choices step");
+    }
+    expect(pensionChoicesStep.toggleKeys).not.toContain("showCsAvc");
+  });
+
+  it("shows bridge pot details only for selected pots", () => {
+    const bridgeJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    );
+    const settings = {
+      ...defaultSettings,
+      showIsa: true,
+      showLisa: false,
+      showSipp: false,
+      showCsAvc: true,
+    };
+    const bridgeSteps: readonly JourneyStepDefinition[] =
+      bridgeJourney?.steps ?? [];
+    const visibleStepIds = bridgeSteps
+      .filter((step) => !step.visible || step.visible(settings))
+      .map((step) => step.id);
+
+    expect(visibleStepIds).toContain("isa");
+    expect(visibleStepIds).not.toContain("lisa");
+    expect(visibleStepIds).not.toContain("sipp");
+    expect(visibleStepIds).toContain("cs-avc");
+    expect(visibleStepIds).toContain("pot-tax");
+  });
+
+  it("keeps each bridge pot's fields in its conditional detail step", () => {
+    expect([
+      ...getJourneyStepFieldIds("early-retirement-bridge", "isa"),
+    ]).toEqual([
+      "isaCurrentPot",
+      "isaMonthlyContribution",
+      "isaDrawAge",
+      "isaRealInterestPercent",
+    ]);
+    expect([
+      ...getJourneyStepFieldIds("early-retirement-bridge", "lisa"),
+    ]).toEqual([
+      "lisaCurrentPot",
+      "lisaMonthlyContribution",
+      "lisaDrawAge",
+      "lisaRealInterestPercent",
+    ]);
+    expect(
+      getJourneyStepFieldIds("early-retirement-bridge", "pot-tax")
+    ).toContain("taxSippTaxFreeWithdrawalPercent");
   });
 
   it("keeps EPA out of the optional sections page", () => {

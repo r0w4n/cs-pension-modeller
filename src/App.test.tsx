@@ -785,7 +785,7 @@ function renderAcknowledgedApp(
 }
 
 function advanceJourneyToResult() {
-  for (let index = 0; index < 10; index += 1) {
+  for (let index = 0; index < 20; index += 1) {
     const nextButton =
       screen.queryByRole("button", { name: "Next" }) ??
       screen.queryByRole("button", { name: "Show my answer" });
@@ -1888,7 +1888,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("restores the original early retirement journey as a separate route", () => {
+  it("lets the early retirement journey choose which bridging pots to include", () => {
     renderAcknowledgedApp({ mode: "bridge" });
 
     expect(
@@ -1905,9 +1905,50 @@ describe("App settings form", () => {
 
     openJourneyStep(/Your bridging pots/);
 
+    expect(screen.getByRole("checkbox", { name: /^ISA$/ })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "SIPP or personal pension" })
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Civil Service AVC" })
+    ).not.toBeChecked();
+    expect(
+      screen
+        .getAllByRole("checkbox")
+        .map((checkbox) => checkbox.getAttribute("aria-label"))
+    ).toEqual([
+      "ISA",
+      "Lifetime ISA (LISA)",
+      "SIPP or personal pension",
+      "Civil Service AVC",
+    ]);
+    expect(
+      screen.queryByLabelText("Current ISA balance (£)")
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    );
+    expect(
+      screen.queryByRole("button", { name: /Your Lifetime ISA/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    );
+    expect(
+      screen.getByRole("button", { name: /Your Lifetime ISA/i })
+    ).toBeInTheDocument();
+
+    openJourneyStep(/Your ISA/);
     expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
       defaultSettings.isaDrawAge.toString()
     );
+
+    openJourneyStep(/Your Lifetime ISA/);
     expect(
       screen.getByLabelText("Current LISA balance (£)")
     ).toBeInTheDocument();

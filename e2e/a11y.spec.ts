@@ -150,7 +150,11 @@ test.describe("accessibility", () => {
     await clickNextAndExpectStep(page, "Additional guaranteed income");
     await clickNextAndExpectStep(page, "Your bridging pots");
 
+    await expectNoAxeViolations(page, "bridge pot selection");
+    await clickNextAndExpectStep(page, "Your ISA");
     await fillCurrency(page, "Current ISA balance (£)", "35000");
+    await clickNextAndExpectStep(page, "Your Lifetime ISA");
+    await clickNextAndExpectStep(page, "Your SIPP or personal pension");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
     await expect(
@@ -160,6 +164,7 @@ test.describe("accessibility", () => {
       page.getByRole("combobox", { name: "SIPP withdrawal strategy" })
     ).toHaveCount(0);
     await expectNoAxeViolations(page, "bridge account controls");
+    await clickNextAndExpectStep(page, "Your pension pot tax assumptions");
     await expect(
       page.getByRole("button", { name: "Show my answer" })
     ).toBeVisible();

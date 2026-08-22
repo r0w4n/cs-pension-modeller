@@ -263,7 +263,8 @@ export function JourneyFlow({
                 }}
               />
             </div>
-            {journey.id === "simple-early-retirement" ? (
+            {journey.id === "simple-early-retirement" ||
+            journey.id === "early-retirement-bridge" ? (
               <details className="journey-mobile-step-disclosure">
                 <summary>View all steps</summary>
                 {renderMobileStepList()}

@@ -271,7 +271,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Step 3",
         title: "Your Civil Service pensions",
         description:
-          "We include State Pension, ISA, LISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
+          "We include State Pension by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
         toggleKeys: [
           "showAlpha",
@@ -279,7 +279,6 @@ export const JOURNEY_DEFINITIONS = [
           "showClassicPlus",
           "showNuvos",
           "showPremium",
-          "showCsAvc",
         ],
       },
       {
@@ -406,56 +405,138 @@ export const JOURNEY_DEFINITIONS = [
       },
       {
         id: "pots",
-        eyebrow: "Step 5",
+        eyebrow: "Bridge funding",
         title: "Your bridging pots",
         description:
-          "Bridge pots are flexible savings and pensions used to cover income gaps before pension income fully starts. Keep Civil Service AVC, ISA, LISA and SIPP separate so the model respects tax relief, access ages, bonuses, and drawdown timing.",
+          "Select the savings and pension pots that you could use before your main pension income starts. ISA, LISA and SIPP are included initially; untick any you do not have or do not want to use in this scenario. Values you entered are kept if you hide a pot and select it again later.",
+        kind: "optional-sections",
+        toggleKeys: ["showIsa", "showLisa", "showSipp", "showCsAvc"],
+        toggleCopy: {
+          showIsa: {
+            label: "ISA",
+            description:
+              "Include an ISA that could provide tax-free withdrawals before your pensions start.",
+          },
+          showLisa: {
+            label: "Lifetime ISA (LISA)",
+            description:
+              "Include a Lifetime ISA that could provide tax-free retirement withdrawals from age 60.",
+          },
+          showSipp: {
+            label: "SIPP or personal pension",
+            description:
+              "Include a defined contribution pension pot that you manage outside the Civil Service defined benefit schemes.",
+          },
+          showCsAvc: {
+            label: "Civil Service AVC",
+            description:
+              "Include a separate invested pension pot built through Civil Service Additional Voluntary Contributions.",
+          },
+        },
+      },
+      {
+        id: "isa",
+        eyebrow: "Optional",
+        title: "Your ISA",
+        description:
+          "Add the ISA balance and contributions that could help fund the period before your pensions start.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
           "isaMonthlyContribution",
           "isaDrawAge",
           "isaRealInterestPercent",
+        ],
+        fieldLabels: {
+          isaCurrentPot: "Current ISA balance (£)",
+          isaMonthlyContribution:
+            "Planned monthly ISA contribution before retirement",
+        },
+        visible: (settings) => settings.showIsa,
+      },
+      {
+        id: "lisa",
+        eyebrow: "Optional",
+        title: "Your Lifetime ISA",
+        description:
+          "Add the Lifetime ISA balance and contributions that could help fund retirement from age 60.",
+        kind: "fields",
+        fieldIds: [
           "lisaCurrentPot",
           "lisaMonthlyContribution",
           "lisaDrawAge",
           "lisaRealInterestPercent",
+        ],
+        fieldLabels: {
+          lisaCurrentPot: "Current LISA balance (£)",
+          lisaMonthlyContribution:
+            "Planned monthly LISA contribution before age 50",
+          lisaDrawAge: "LISA access age",
+        },
+        visible: (settings) => settings.showLisa,
+      },
+      {
+        id: "sipp",
+        eyebrow: "Optional",
+        title: "Your SIPP or personal pension",
+        description:
+          "Add the personal pension balance and contributions that could help fund retirement once the pot is accessible.",
+        kind: "fields",
+        fieldIds: [
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
           "sippHasProtectedPensionAge",
           "sippTaxReliefRate",
           "sippRealInterestPercent",
-          "taxSippWithdrawalTreatment",
-          "taxSippTaxFreeWithdrawalPercent",
+        ],
+        fieldLabels: {
+          sippCurrentPot: "Current SIPP balance (£)",
+          sippMonthlyContribution:
+            "Planned monthly SIPP contribution before retirement",
+          sippDrawAge: "SIPP access age",
+        },
+        visible: (settings) => settings.showSipp,
+      },
+      {
+        id: "cs-avc",
+        eyebrow: "Optional",
+        title: "Your Civil Service AVC",
+        description:
+          "Add the Civil Service AVC balance and contributions that could help fund retirement once the pot is accessible.",
+        kind: "fields",
+        fieldIds: [
           "csAvcCurrentPot",
           "csAvcMonthlyContribution",
           "csAvcDrawAge",
           "csAvcHasProtectedPensionAge",
           "csAvcRealInterestPercent",
+        ],
+        fieldLabels: {
+          csAvcCurrentPot: "Current CS AVC balance (£)",
+          csAvcMonthlyContribution:
+            "Planned monthly CS AVC contribution before retirement",
+          csAvcDrawAge: "CS AVC access age",
+        },
+        visible: (settings) => settings.showCsAvc,
+      },
+      {
+        id: "pot-tax",
+        eyebrow: "Optional",
+        title: "Your pension pot tax assumptions",
+        description:
+          "Confirm how withdrawals from your selected pension pots should be treated for estimated Income Tax and tax-free cash.",
+        kind: "fields",
+        fieldIds: [
+          "taxSippWithdrawalTreatment",
+          "taxSippTaxFreeWithdrawalPercent",
           "taxCsAvcWithdrawalTreatment",
           "taxCsAvcTaxFreeWithdrawalPercent",
           "taxTrackLumpSumAllowance",
           "taxLumpSumAllowance",
           "taxLumpSumAllowanceUsed",
         ],
-        fieldLabels: {
-          isaCurrentPot: "Current ISA balance (£)",
-          isaMonthlyContribution:
-            "Planned monthly ISA contribution before retirement",
-          lisaCurrentPot: "Current LISA balance (£)",
-          lisaMonthlyContribution:
-            "Planned monthly LISA contribution before age 50",
-          lisaDrawAge: "LISA access age",
-          sippCurrentPot: "Current SIPP balance (£)",
-          sippMonthlyContribution:
-            "Planned monthly SIPP contribution before retirement",
-          sippDrawAge: "SIPP access age",
-          csAvcCurrentPot: "Current CS AVC balance (£)",
-          csAvcMonthlyContribution:
-            "Planned monthly CS AVC contribution before retirement",
-          csAvcDrawAge: "CS AVC access age",
-        },
+        visible: (settings) => settings.showSipp || settings.showCsAvc,
       },
       {
         id: "answer",

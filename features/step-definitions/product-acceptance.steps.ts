@@ -1756,6 +1756,35 @@ Then(
 );
 
 Then(
+  "the bridge pot choices should explain:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const potChoicesStep = this.selectedJourney.steps.find(
+      (step) => step.id === "pots"
+    );
+
+    assertCondition(
+      potChoicesStep?.kind === "optional-sections",
+      "Expected a bridge pot choices step"
+    );
+    const actualChoices = potChoicesStep.toggleKeys?.map((key) => {
+      const copy = potChoicesStep.toggleCopy?.[key];
+
+      assertCondition(copy, `Expected bridge copy for ${key}`);
+      assertCondition(
+        copy.description.length > 30,
+        `Expected a useful plain-English explanation for ${copy.label}`
+      );
+
+      return copy.label;
+    });
+    const expectedChoices = table.hashes().map((row) => row.choice);
+
+    assertEqual(JSON.stringify(actualChoices), JSON.stringify(expectedChoices));
+  }
+);
+
+Then(
   "the expert optional sections should allow Alpha pension to be disabled",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1781,6 +1810,13 @@ Then(
 When("Alpha pension is disabled", function (this: ProductAcceptanceWorld) {
   updateSettings(this, { showAlpha: false });
 });
+
+When(
+  "ISA is excluded from the bridge plan",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { showIsa: false });
+  }
+);
 
 Then(
   "the {string} journey step should not be visible",

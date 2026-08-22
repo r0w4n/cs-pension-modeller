@@ -145,6 +145,19 @@ Feature: Modeller journeys
       | How old would you like to be when this pension starts?  |
       | Allow for this pension rising with prices?              |
 
+  @bridge-journey @optional-sections
+  Scenario: Choose which flexible pots are available for an early-retirement bridge
+    Given default modeller settings
+    When the "Work out what I need to retire early" journey is loaded
+    Then the bridge pot choices should explain:
+      | choice                   |
+      | ISA                      |
+      | Lifetime ISA (LISA)      |
+      | SIPP or personal pension |
+      | Civil Service AVC        |
+    When ISA is excluded from the bridge plan
+    Then the "Your ISA" journey step should not be visible
+
   @expert-journey
   Scenario: Separate the expert retirement target from personal details
     Given default modeller settings

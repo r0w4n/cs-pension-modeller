@@ -406,9 +406,30 @@ test.describe("app end-to-end journeys", () => {
     );
     await clickNextAndExpectStep(page, "Your bridging pots");
 
+    await expect(
+      page.getByRole("checkbox", { name: "ISA", exact: true })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "SIPP or personal pension" })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "Civil Service AVC" })
+    ).not.toBeChecked();
+    await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).uncheck();
+    await expect(
+      page.locator('.journey-step-button[data-step-id="lisa"]')
+    ).toHaveCount(0);
+    await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).check();
+    await clickNextAndExpectStep(page, "Your ISA");
+
     await fillCurrency(page, "Current ISA balance (£)", "35000");
+    await clickNextAndExpectStep(page, "Your Lifetime ISA");
     await fillCurrency(page, "Current LISA balance (£)", "12000");
     await fillExactNumber(page, "LISA access age exact value", "60");
+    await clickNextAndExpectStep(page, "Your SIPP or personal pension");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
     await expect(
@@ -423,6 +444,7 @@ test.describe("app end-to-end journeys", () => {
         exact: true,
       })
     ).toHaveCount(0);
+    await clickNextAndExpectStep(page, "Your pension pot tax assumptions");
     await expect(
       page.getByRole("button", { name: "Show my answer" })
     ).toBeVisible();

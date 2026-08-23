@@ -124,13 +124,28 @@ test.describe("accessibility", () => {
   }, testInfo) => {
     await acknowledgeAndOpenMode(page, "bridge");
 
-    await fillExactNumber(page, "Target retirement age exact value", "58");
+    await clickNextAndExpectStep(
+      page,
+      "What would you like to spend each month?"
+    );
     await fillCurrency(
       page,
-      "After-tax income you want in retirement (£ per year)",
-      "34000"
+      "How much would you like available to spend each month after tax?",
+      "2833.33"
     );
-    await clickNextAndExpectStep(page, "Your personal details");
+    await expect(
+      page.getByRole("heading", { name: "Not sure what amount to choose?" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveCount(0);
+    await expectNoAxeViolations(page, "bridge target");
+    await clickNextAndExpectStep(page, "What age would you like to retire?");
+    await fillExactNumber(
+      page,
+      "How old would you like to be when you retire? exact value",
+      "58"
+    );
 
     await clickNextAndExpectStep(page, "Your Civil Service pensions");
     await clickNextAndExpectStep(page, "Your Alpha pension");
@@ -147,10 +162,21 @@ test.describe("accessibility", () => {
     );
     await clickNextAndExpectStep(page, "State Pension");
 
-    await clickNextAndExpectStep(page, "Additional guaranteed income");
-    await clickNextAndExpectStep(page, "Your bridging pots");
+    await clickNextAndExpectStep(page, "Your bridging money");
+    await expectNoAxeViolations(page, "bridge money selection");
+    await page
+      .getByRole("checkbox", { name: "Other guaranteed income" })
+      .check();
+    await clickNextAndExpectStep(
+      page,
+      "How should your bridging money be used?"
+    );
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "bridge withdrawal plan");
 
-    await expectNoAxeViolations(page, "bridge pot selection");
+    await clickNextAndExpectStep(page, "Additional guaranteed income");
     await clickNextAndExpectStep(page, "Your ISA");
     await fillCurrency(page, "Current ISA balance (£)", "35000");
     await clickNextAndExpectStep(page, "Your Lifetime ISA");
@@ -165,10 +191,12 @@ test.describe("accessibility", () => {
     ).toHaveCount(0);
     await expectNoAxeViolations(page, "bridge account controls");
     await clickNextAndExpectStep(page, "Your pension pot tax assumptions");
+    await clickNextAndExpectStep(page, "Check your plan");
+    await expectNoAxeViolations(page, "bridge plan review");
     await expect(
-      page.getByRole("button", { name: "Show my answer" })
+      page.getByRole("button", { name: "Calculate my plan" })
     ).toBeVisible();
-    await page.getByRole("button", { name: "Show my answer" }).click();
+    await page.getByRole("button", { name: "Calculate my plan" }).click();
     await renderDeferredComparisonContent(page);
 
     await expect(
@@ -310,7 +338,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Work out what I need to retire early/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your retirement target" })
+      page.getByRole("heading", { name: "Your personal details" })
     ).toBeVisible();
     return;
   }

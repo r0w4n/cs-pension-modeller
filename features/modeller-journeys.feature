@@ -27,7 +27,7 @@ Feature: Modeller journeys
     Examples:
       | journey                              | targetStep                        | planningStep                | resultExpectation            | bridgeFundingExpectation               | comparisonExpectation       |
       | Simplified retirement journey        | What would you like to spend each month? | Do you have any other Civil Service pensions? | use shared results components | hide bridge funding details by default | hide the comparison section |
-      | Work out what I need to retire early | Your retirement target            | Your bridging pots          | show the projection table    | show bridge funding details by default | show the comparison section |
+      | Work out what I need to retire early | What would you like to spend each month? | Your bridging money         | show the projection table    | show bridge funding details by default | show the comparison section |
 
   @simple-journey
   Scenario: Start the simplified journey with personal details
@@ -146,7 +146,7 @@ Feature: Modeller journeys
       | Allow for this pension rising with prices?              |
 
   @bridge-journey @optional-sections
-  Scenario: Choose which flexible pots are available for an early-retirement bridge
+  Scenario: Choose which flexible pots and other income are available for an early-retirement bridge
     Given default modeller settings
     When the "Work out what I need to retire early" journey is loaded
     Then the bridge pot choices should explain:
@@ -155,8 +155,38 @@ Feature: Modeller journeys
       | Lifetime ISA (LISA)      |
       | SIPP or personal pension |
       | Civil Service AVC        |
+      | Other guaranteed income  |
+    And the "Your ISA" journey step should include the field "ISA withdrawal rate (%)"
+    And the "Your ISA" journey step should include the field "ISA use-by age"
     When ISA is excluded from the bridge plan
     Then the "Your ISA" journey step should not be visible
+
+  @bridge-journey
+  Scenario: Start with the simple questions and review a bridge plan before calculation
+    Given default modeller settings
+    When the "Work out what I need to retire early" journey is loaded
+    Then the default visible journey steps should start with:
+      | title                                         |
+      | Your personal details                         |
+      | What would you like to spend each month?      |
+      | What age would you like to retire?            |
+      | Your Civil Service pensions                   |
+    And the "What would you like to spend each month?" journey step should use the simple target-income presentation
+    And the "What would you like to spend each month?" journey step should link to the Retirement Living Standards
+    And the "What would you like to spend each month?" journey step should place its support link beside the field
+    And the "State Pension" journey step should appear before the "Your bridging money" journey step
+    And the "Your bridging money" journey step should appear before the "How should your bridging money be used?" journey step
+    And the "How should your bridging money be used?" journey step should appear before the "Your ISA" journey step
+    And the bridge withdrawal-plan step should expose spending and pot-withdrawal strategies
+    And the "Check your plan" journey step should appear before the "Your results" journey step
+
+  @bridge-journey @optional-sections
+  Scenario: Keep other guaranteed income out until it is selected
+    Given default modeller settings
+    When the "Work out what I need to retire early" journey is loaded
+    Then the "Additional guaranteed income" journey step should not be visible
+    When other guaranteed income is included in the bridge plan
+    Then the "Additional guaranteed income" journey step should be visible
 
   @expert-journey
   Scenario: Separate the expert retirement target from personal details

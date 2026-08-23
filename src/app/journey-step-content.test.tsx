@@ -85,7 +85,20 @@ vi.mock("./results-summary", () => ({
   ResultsSummarySection: ({ children }: { children: ReactNode }) => (
     <section>{children}</section>
   ),
-  SummarySection: () => <div>Summary section</div>,
+  SummarySection: ({
+    title,
+    items,
+  }: {
+    title: string;
+    items: Array<{ label: string; value: string }>;
+  }) => (
+    <section>
+      <h3>{title}</h3>
+      {items.map((item) => (
+        <p key={item.label}>{`${item.label}: ${item.value}`}</p>
+      ))}
+    </section>
+  ),
   ValidationIssuesSection: () => <div>Validation issues</div>,
 }));
 
@@ -753,6 +766,47 @@ describe("JourneyStepContent", () => {
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
     expect(chartProps?.showFlexibleWithdrawalInsights).not.toBe(true);
+  });
+
+  it("renders a pre-calculation bridge plan review from the selected settings", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      desiredRetirementIncome: 32700,
+      showSipp: true,
+      sippCurrentPot: 95000,
+      sippWithdrawalStrategy: "meet_income_target",
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "check-plan",
+          eyebrow: "Review",
+          title: "Check your plan",
+          description: "Review choices",
+          kind: "review",
+          presentation: "bridge-plan",
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Retirement target" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Spending target after estimated tax: £2,725 a month/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "SIPP: £95,000 current balance; Use to meet income target"
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Planning illustration only" })
+    ).toBeInTheDocument();
   });
 
   it("can omit comparison controls from simplified results", () => {

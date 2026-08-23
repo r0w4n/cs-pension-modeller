@@ -298,9 +298,11 @@ export function JourneyFlow({
             disabled={isLastStep}
             onClick={() => goToStep(activeStepIndex + 1)}
           >
-            {activeStepIndex === visibleSteps.length - 2
-              ? "Show my answer"
-              : "Next"}
+            {activeStep.kind === "review"
+              ? "Calculate my plan"
+              : activeStepIndex === visibleSteps.length - 2
+                ? "Show my answer"
+                : "Next"}
           </button>
         </div>
       </section>

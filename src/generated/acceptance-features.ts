@@ -7656,7 +7656,7 @@ export const acceptanceFeatures = [
       {
         id: "line-56",
         keyword: "Scenario",
-        name: "Configure priority in the expert retirement income target",
+        name: "Configure priority in the expert target and bridge withdrawal plan",
         description: "",
         tags: [],
         status: "covered",
@@ -7675,12 +7675,12 @@ export const acceptanceFeatures = [
           {
             id: "line-59",
             keyword: "Then",
-            text: "the funding priority should belong to the expert retirement income target section",
+            text: "the funding priority should belong to the expert target and bridge withdrawal-plan sections",
           },
           {
             id: "line-60",
             keyword: "And",
-            text: "the funding priority should not belong to simplified or bridge sections",
+            text: "the funding priority should not belong to simplified sections",
           },
           {
             id: "line-61",
@@ -7846,7 +7846,7 @@ export const acceptanceFeatures = [
       {
         id: "line-92",
         keyword: "Scenario",
-        name: "Keep flexible withdrawal controls out of non-expert journeys",
+        name: "Expose flexible withdrawal controls only where the journey explains the decision",
         description: "",
         tags: [],
         status: "covered",
@@ -7855,15 +7855,20 @@ export const acceptanceFeatures = [
           {
             id: "line-93",
             keyword: "Then",
-            text: "non-expert journey steps should not expose flexible withdrawal strategy controls",
+            text: "the simplified journey should not expose flexible withdrawal strategy controls",
           },
           {
             id: "line-94",
             keyword: "And",
-            text: "simplified journey settings should store legacy withdrawal strategies",
+            text: "the bridge withdrawal-plan step should expose flexible withdrawal strategy controls",
           },
           {
             id: "line-95",
+            keyword: "And",
+            text: "simplified journey settings should store legacy withdrawal strategies",
+          },
+          {
+            id: "line-96",
             keyword: "And",
             text: "bridge journey settings should store legacy withdrawal strategies",
           },
@@ -7871,7 +7876,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-97",
+        id: "line-98",
         keyword: "Scenario",
         name: "Skip an inaccessible account without changing its priority",
         description: "",
@@ -7880,42 +7885,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-98",
+            id: "line-99",
             keyword: "Given",
             text: "the annual income target is 12000.00",
           },
           {
-            id: "line-99",
+            id: "line-100",
             keyword: "And",
             text: "a LISA with 20000.00 uses the target-based strategy from age 62",
           },
           {
-            id: "line-100",
+            id: "line-101",
             keyword: "And",
             text: "an ISA with 20000.00 uses the target-based strategy",
           },
           {
-            id: "line-101",
+            id: "line-102",
             keyword: "And",
             text: "LISA is before ISA in the target-based priority",
           },
           {
-            id: "line-102",
+            id: "line-103",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-103",
+            id: "line-104",
             keyword: "Then",
             text: "annual LISA withdrawals at retirement should be 0.00",
           },
           {
-            id: "line-104",
+            id: "line-105",
             keyword: "And",
             text: "annual ISA withdrawals at retirement should be 12000.00",
           },
           {
-            id: "line-105",
+            id: "line-106",
             keyword: "And",
             text: "LISA should remain before ISA in the target-based priority",
           },
@@ -7923,7 +7928,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-107",
+        id: "line-108",
         keyword: "Scenario",
         name: "Gross up a taxable target-based withdrawal",
         description: "",
@@ -7932,37 +7937,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-108",
+            id: "line-109",
             keyword: "Given",
             text: "the annual income target is 12000.00",
           },
           {
-            id: "line-109",
+            id: "line-110",
             keyword: "And",
             text: "the income target is after estimated tax",
           },
           {
-            id: "line-110",
+            id: "line-111",
             keyword: "And",
             text: "Income Tax applies with no Personal Allowance",
           },
           {
-            id: "line-111",
+            id: "line-112",
             keyword: "And",
             text: "a SIPP with 50000.00 uses the target-based strategy",
           },
           {
-            id: "line-112",
+            id: "line-113",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-113",
+            id: "line-114",
             keyword: "Then",
             text: "annual net income at retirement should be 12000.00",
           },
           {
-            id: "line-114",
+            id: "line-115",
             keyword: "And",
             text: "gross annual SIPP withdrawals should be higher than 12000.00",
           },
@@ -7970,7 +7975,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-116",
+        id: "line-117",
         keyword: "Scenario",
         name: "Report avoidable surplus without changing an explicit strategy",
         description: "",
@@ -7979,37 +7984,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-117",
+            id: "line-118",
             keyword: "Given",
             text: "the flat annual income target is 24000.00",
           },
           {
-            id: "line-118",
+            id: "line-119",
             keyword: "And",
             text: "guaranteed annual net income is 20000.00",
           },
           {
-            id: "line-119",
+            id: "line-120",
             keyword: "And",
             text: "an ISA explicitly withdraws 12000.00 per year",
           },
           {
-            id: "line-120",
+            id: "line-121",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-121",
+            id: "line-122",
             keyword: "Then",
             text: "avoidable flexible-fund surplus at retirement should be 8000.00",
           },
           {
-            id: "line-122",
+            id: "line-123",
             keyword: "And",
             text: "the annual ISA withdrawal identified as reducible should be 8000.00",
           },
           {
-            id: "line-123",
+            id: "line-124",
             keyword: "And",
             text: "the ISA strategy should remain Annual percentage",
           },
@@ -8017,7 +8022,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-125",
+        id: "line-126",
         keyword: "Scenario",
         name: "Preview target-based withdrawals without changing the saved strategy",
         description: "",
@@ -8026,37 +8031,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-126",
+            id: "line-127",
             keyword: "Given",
             text: "the flat annual income target is 24000.00",
           },
           {
-            id: "line-127",
+            id: "line-128",
             keyword: "And",
             text: "guaranteed annual net income is 20000.00",
           },
           {
-            id: "line-128",
+            id: "line-129",
             keyword: "And",
             text: "an ISA explicitly withdraws 12000.00 per year",
           },
           {
-            id: "line-129",
+            id: "line-130",
             keyword: "When",
             text: "target-based ISA withdrawals are previewed",
           },
           {
-            id: "line-130",
+            id: "line-131",
             keyword: "Then",
             text: "the preview should reduce ISA withdrawals",
           },
           {
-            id: "line-131",
+            id: "line-132",
             keyword: "And",
             text: "the preview should reduce unallocated surplus",
           },
           {
-            id: "line-132",
+            id: "line-133",
             keyword: "And",
             text: "the ISA strategy should remain Annual percentage",
           },
@@ -8064,7 +8069,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-134",
+        id: "line-135",
         keyword: "Scenario",
         name: "Do not blame flexible funds for guaranteed-income surplus",
         description: "",
@@ -8073,32 +8078,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-135",
+            id: "line-136",
             keyword: "Given",
             text: "the flat annual income target is 24000.00",
           },
           {
-            id: "line-136",
+            id: "line-137",
             keyword: "And",
             text: "guaranteed annual net income is 27000.00",
           },
           {
-            id: "line-137",
+            id: "line-138",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-138",
+            id: "line-139",
             keyword: "Then",
             text: "unavoidable surplus at retirement should be 3000.00",
           },
           {
-            id: "line-139",
+            id: "line-140",
             keyword: "And",
             text: "avoidable flexible-fund surplus at retirement should be 0.00",
           },
           {
-            id: "line-140",
+            id: "line-141",
             keyword: "And",
             text: "no flexible withdrawal should be identified as reducible",
           },
@@ -8106,7 +8111,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-142",
+        id: "line-143",
         keyword: "Scenario",
         name: "Preserve and restore the opt-in strategy",
         description: "",
@@ -8115,27 +8120,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-143",
+            id: "line-144",
             keyword: "Given",
             text: "an ISA with 50000.00 uses the target-based strategy",
           },
           {
-            id: "line-144",
+            id: "line-145",
             keyword: "And",
             text: "SIPP is before ISA in the target-based priority",
           },
           {
-            id: "line-145",
+            id: "line-146",
             keyword: "When",
             text: "the flexible withdrawal settings are exported and parsed",
           },
           {
-            id: "line-146",
+            id: "line-147",
             keyword: "Then",
             text: "the restored ISA strategy should be target-based",
           },
           {
-            id: "line-147",
+            id: "line-148",
             keyword: "And",
             text: "SIPP should remain before ISA in the target-based priority",
           },
@@ -8143,7 +8148,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-149",
+        id: "line-150",
         keyword: "Scenario",
         name: "Bound the chart contribution drag controls",
         description: "",
@@ -8152,12 +8157,12 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-150",
+            id: "line-151",
             keyword: "When",
             text: "the retirement income chart limits are prepared",
           },
           {
-            id: "line-151",
+            id: "line-152",
             keyword: "Then",
             text: "the ISA and SIPP contribution drag controls should have a monthly maximum of 2000.00",
           },
@@ -10219,22 +10224,22 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-30-column-48",
-                    value: "Your retirement target",
+                    value: "What would you like to spend each month?",
                   },
                   {
-                    id: "line-30-column-84",
-                    value: "Your bridging pots",
+                    id: "line-30-column-91",
+                    value: "Your bridging money",
                   },
                   {
-                    id: "line-30-column-114",
+                    id: "line-30-column-121",
                     value: "show the projection table",
                   },
                   {
-                    id: "line-30-column-145",
+                    id: "line-30-column-152",
                     value: "show bridge funding details by default",
                   },
                   {
-                    id: "line-30-column-186",
+                    id: "line-30-column-193",
                     value: "show the comparison section",
                   },
                 ],
@@ -10883,7 +10888,7 @@ export const acceptanceFeatures = [
       {
         id: "line-149",
         keyword: "Scenario",
-        name: "Choose which flexible pots are available for an early-retirement bridge",
+        name: "Choose which flexible pots and other income are available for an early-retirement bridge",
         description: "",
         tags: ["@bridge-journey", "@optional-sections"],
         status: "covered",
@@ -10949,15 +10954,34 @@ export const acceptanceFeatures = [
                   },
                 ],
               },
+              {
+                id: "line-158",
+                cells: [
+                  {
+                    id: "line-158-column-9",
+                    value: "Other guaranteed income",
+                  },
+                ],
+              },
             ],
           },
           {
-            id: "line-158",
+            id: "line-159",
+            keyword: "And",
+            text: 'the "Your ISA" journey step should include the field "ISA withdrawal rate (%)"',
+          },
+          {
+            id: "line-160",
+            keyword: "And",
+            text: 'the "Your ISA" journey step should include the field "ISA use-by age"',
+          },
+          {
+            id: "line-161",
             keyword: "When",
             text: "ISA is excluded from the bridge plan",
           },
           {
-            id: "line-159",
+            id: "line-162",
             keyword: "Then",
             text: 'the "Your ISA" journey step should not be visible',
           },
@@ -10965,62 +10989,35 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-162",
+        id: "line-165",
         keyword: "Scenario",
-        name: "Separate the expert retirement target from personal details",
+        name: "Start with the simple questions and review a bridge plan before calculation",
         description: "",
-        tags: ["@expert-journey"],
+        tags: ["@bridge-journey"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-163",
+            id: "line-166",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-164",
+            id: "line-167",
             keyword: "When",
-            text: 'the "Expert journey" journey is loaded',
+            text: 'the "Work out what I need to retire early" journey is loaded',
           },
           {
-            id: "line-165",
+            id: "line-168",
             keyword: "Then",
-            text: "the default visible journey steps should be:",
+            text: "the default visible journey steps should start with:",
             table: [
-              {
-                id: "line-166",
-                cells: [
-                  {
-                    id: "line-166-column-9",
-                    value: "title",
-                  },
-                ],
-              },
-              {
-                id: "line-167",
-                cells: [
-                  {
-                    id: "line-167-column-9",
-                    value: "Optional sections",
-                  },
-                ],
-              },
-              {
-                id: "line-168",
-                cells: [
-                  {
-                    id: "line-168-column-9",
-                    value: "Personal details",
-                  },
-                ],
-              },
               {
                 id: "line-169",
                 cells: [
                   {
                     id: "line-169-column-9",
-                    value: "Retirement income target",
+                    value: "title",
                   },
                 ],
               },
@@ -11029,7 +11026,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-170-column-9",
-                    value: "Inflation and projection basis",
+                    value: "Your personal details",
                   },
                 ],
               },
@@ -11038,7 +11035,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-171-column-9",
-                    value: "State Pension details",
+                    value: "What would you like to spend each month?",
                   },
                 ],
               },
@@ -11047,7 +11044,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-172-column-9",
-                    value: "Alpha pension details",
+                    value: "What age would you like to retire?",
                   },
                 ],
               },
@@ -11056,33 +11053,211 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-173-column-9",
+                    value: "Your Civil Service pensions",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-174",
+            keyword: "And",
+            text: 'the "What would you like to spend each month?" journey step should use the simple target-income presentation',
+          },
+          {
+            id: "line-175",
+            keyword: "And",
+            text: 'the "What would you like to spend each month?" journey step should link to the Retirement Living Standards',
+          },
+          {
+            id: "line-176",
+            keyword: "And",
+            text: 'the "What would you like to spend each month?" journey step should place its support link beside the field',
+          },
+          {
+            id: "line-177",
+            keyword: "And",
+            text: 'the "State Pension" journey step should appear before the "Your bridging money" journey step',
+          },
+          {
+            id: "line-178",
+            keyword: "And",
+            text: 'the "Your bridging money" journey step should appear before the "How should your bridging money be used?" journey step',
+          },
+          {
+            id: "line-179",
+            keyword: "And",
+            text: 'the "How should your bridging money be used?" journey step should appear before the "Your ISA" journey step',
+          },
+          {
+            id: "line-180",
+            keyword: "And",
+            text: "the bridge withdrawal-plan step should expose spending and pot-withdrawal strategies",
+          },
+          {
+            id: "line-181",
+            keyword: "And",
+            text: 'the "Check your plan" journey step should appear before the "Your results" journey step',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-184",
+        keyword: "Scenario",
+        name: "Keep other guaranteed income out until it is selected",
+        description: "",
+        tags: ["@bridge-journey", "@optional-sections"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-185",
+            keyword: "Given",
+            text: "default modeller settings",
+          },
+          {
+            id: "line-186",
+            keyword: "When",
+            text: 'the "Work out what I need to retire early" journey is loaded',
+          },
+          {
+            id: "line-187",
+            keyword: "Then",
+            text: 'the "Additional guaranteed income" journey step should not be visible',
+          },
+          {
+            id: "line-188",
+            keyword: "When",
+            text: "other guaranteed income is included in the bridge plan",
+          },
+          {
+            id: "line-189",
+            keyword: "Then",
+            text: 'the "Additional guaranteed income" journey step should be visible',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-192",
+        keyword: "Scenario",
+        name: "Separate the expert retirement target from personal details",
+        description: "",
+        tags: ["@expert-journey"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-193",
+            keyword: "Given",
+            text: "default modeller settings",
+          },
+          {
+            id: "line-194",
+            keyword: "When",
+            text: 'the "Expert journey" journey is loaded',
+          },
+          {
+            id: "line-195",
+            keyword: "Then",
+            text: "the default visible journey steps should be:",
+            table: [
+              {
+                id: "line-196",
+                cells: [
+                  {
+                    id: "line-196-column-9",
+                    value: "title",
+                  },
+                ],
+              },
+              {
+                id: "line-197",
+                cells: [
+                  {
+                    id: "line-197-column-9",
+                    value: "Optional sections",
+                  },
+                ],
+              },
+              {
+                id: "line-198",
+                cells: [
+                  {
+                    id: "line-198-column-9",
+                    value: "Personal details",
+                  },
+                ],
+              },
+              {
+                id: "line-199",
+                cells: [
+                  {
+                    id: "line-199-column-9",
+                    value: "Retirement income target",
+                  },
+                ],
+              },
+              {
+                id: "line-200",
+                cells: [
+                  {
+                    id: "line-200-column-9",
+                    value: "Inflation and projection basis",
+                  },
+                ],
+              },
+              {
+                id: "line-201",
+                cells: [
+                  {
+                    id: "line-201-column-9",
+                    value: "State Pension details",
+                  },
+                ],
+              },
+              {
+                id: "line-202",
+                cells: [
+                  {
+                    id: "line-202-column-9",
+                    value: "Alpha pension details",
+                  },
+                ],
+              },
+              {
+                id: "line-203",
+                cells: [
+                  {
+                    id: "line-203-column-9",
                     value: "SIPP details",
                   },
                 ],
               },
               {
-                id: "line-174",
+                id: "line-204",
                 cells: [
                   {
-                    id: "line-174-column-9",
+                    id: "line-204-column-9",
                     value: "ISA details",
                   },
                 ],
               },
               {
-                id: "line-175",
+                id: "line-205",
                 cells: [
                   {
-                    id: "line-175-column-9",
+                    id: "line-205-column-9",
                     value: "Tax assumptions",
                   },
                 ],
               },
               {
-                id: "line-176",
+                id: "line-206",
                 cells: [
                   {
-                    id: "line-176-column-9",
+                    id: "line-206-column-9",
                     value: "Your results",
                   },
                 ],
@@ -11090,33 +11265,33 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-177",
+            id: "line-207",
             keyword: "And",
             text: 'the "Personal details" journey step should contain these fields:',
             table: [
               {
-                id: "line-178",
+                id: "line-208",
                 cells: [
                   {
-                    id: "line-178-column-9",
+                    id: "line-208-column-9",
                     value: "field",
                   },
                 ],
               },
               {
-                id: "line-179",
+                id: "line-209",
                 cells: [
                   {
-                    id: "line-179-column-9",
+                    id: "line-209-column-9",
                     value: "Your Birth Month and Year",
                   },
                 ],
               },
               {
-                id: "line-180",
+                id: "line-210",
                 cells: [
                   {
-                    id: "line-180-column-9",
+                    id: "line-210-column-9",
                     value: "Life Expectancy (Age)",
                   },
                 ],
@@ -11124,33 +11299,33 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-181",
+            id: "line-211",
             keyword: "And",
             text: 'the "Retirement income target" journey step should contain these fields:',
             table: [
               {
-                id: "line-182",
+                id: "line-212",
                 cells: [
                   {
-                    id: "line-182-column-9",
+                    id: "line-212-column-9",
                     value: "field",
                   },
                 ],
               },
               {
-                id: "line-183",
+                id: "line-213",
                 cells: [
                   {
-                    id: "line-183-column-9",
+                    id: "line-213-column-9",
                     value: "After-tax income target",
                   },
                 ],
               },
               {
-                id: "line-184",
+                id: "line-214",
                 cells: [
                   {
-                    id: "line-184-column-9",
+                    id: "line-214-column-9",
                     value: "Target retirement age",
                   },
                 ],
@@ -11158,74 +11333,74 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-185",
+            id: "line-215",
             keyword: "And",
             text: "the expert retirement income target should be an after-tax spending target",
           },
           {
-            id: "line-186",
+            id: "line-216",
             keyword: "And",
             text: "the expert retirement income target should offer these quick-select amounts:",
             table: [
               {
-                id: "line-187",
+                id: "line-217",
                 cells: [
                   {
-                    id: "line-187-column-9",
+                    id: "line-217-column-9",
                     value: "amount",
                   },
                 ],
               },
               {
-                id: "line-188",
+                id: "line-218",
                 cells: [
                   {
-                    id: "line-188-column-9",
+                    id: "line-218-column-9",
                     value: "11250",
                   },
                 ],
               },
               {
-                id: "line-189",
+                id: "line-219",
                 cells: [
                   {
-                    id: "line-189-column-9",
+                    id: "line-219-column-9",
                     value: "13900",
                   },
                 ],
               },
               {
-                id: "line-190",
+                id: "line-220",
                 cells: [
                   {
-                    id: "line-190-column-9",
+                    id: "line-220-column-9",
                     value: "22700",
                   },
                 ],
               },
               {
-                id: "line-191",
+                id: "line-221",
                 cells: [
                   {
-                    id: "line-191-column-9",
+                    id: "line-221-column-9",
                     value: "31350",
                   },
                 ],
               },
               {
-                id: "line-192",
+                id: "line-222",
                 cells: [
                   {
-                    id: "line-192-column-9",
+                    id: "line-222-column-9",
                     value: "32700",
                   },
                 ],
               },
               {
-                id: "line-193",
+                id: "line-223",
                 cells: [
                   {
-                    id: "line-193-column-9",
+                    id: "line-223-column-9",
                     value: "45400",
                   },
                 ],
@@ -11233,22 +11408,22 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-194",
+            id: "line-224",
             keyword: "And",
             text: 'the "SIPP details" journey step should include the field "SIPP withdrawal tax treatment"',
           },
           {
-            id: "line-195",
+            id: "line-225",
             keyword: "And",
             text: 'the "SIPP details" journey step should include the field "SIPP tax-free withdrawal share (%)"',
           },
           {
-            id: "line-196",
+            id: "line-226",
             keyword: "But",
             text: 'the "Tax assumptions" journey step should not include the field "SIPP withdrawal tax treatment"',
           },
           {
-            id: "line-197",
+            id: "line-227",
             keyword: "And",
             text: 'the "Tax assumptions" journey step should not include the field "SIPP tax-free withdrawal share (%)"',
           },
@@ -11256,7 +11431,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-200",
+        id: "line-230",
         keyword: "Scenario",
         name: "Exclude Alpha pension from an expert scenario",
         description: "",
@@ -11265,27 +11440,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-201",
+            id: "line-231",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-202",
+            id: "line-232",
             keyword: "When",
             text: 'the "Expert journey" journey is loaded',
           },
           {
-            id: "line-203",
+            id: "line-233",
             keyword: "Then",
             text: "the expert optional sections should allow Alpha pension to be disabled",
           },
           {
-            id: "line-204",
+            id: "line-234",
             keyword: "When",
             text: "Alpha pension is disabled",
           },
           {
-            id: "line-205",
+            id: "line-235",
             keyword: "Then",
             text: 'the "Alpha pension details" journey step should not be visible',
           },
@@ -11293,7 +11468,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-208",
+        id: "line-238",
         keyword: "Scenario",
         name: "Bridge journey enables bridge pots and Income Tax by default",
         description: "",
@@ -11302,27 +11477,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-209",
+            id: "line-239",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-210",
+            id: "line-240",
             keyword: "When",
             text: "bridge journey defaults are applied",
           },
           {
-            id: "line-211",
+            id: "line-241",
             keyword: "Then",
             text: "State Pension, ISA, LISA and SIPP should be included",
           },
           {
-            id: "line-212",
+            id: "line-242",
             keyword: "And",
             text: "Income Tax modelling should be on",
           },
           {
-            id: "line-213",
+            id: "line-243",
             keyword: "And",
             text: "ISA, LISA and SIPP withdrawals should use the use-by-age strategy",
           },
@@ -11330,7 +11505,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-216",
+        id: "line-246",
         keyword: "Scenario",
         name: "Keep journey settings separate while supporting older parameter files",
         description: "",
@@ -11339,27 +11514,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-217",
+            id: "line-247",
             keyword: "Given",
             text: "each journey has a different retirement age",
           },
           {
-            id: "line-218",
+            id: "line-248",
             keyword: "When",
             text: "the journey settings are exported and parsed",
           },
           {
-            id: "line-219",
+            id: "line-249",
             keyword: "Then",
             text: "each journey should retain its own retirement age",
           },
           {
-            id: "line-220",
+            id: "line-250",
             keyword: "When",
             text: "a legacy flat parameter file with retirement age 64 is parsed",
           },
           {
-            id: "line-221",
+            id: "line-251",
             keyword: "Then",
             text: "all three journeys should use the legacy retirement age 64",
           },
@@ -11367,7 +11542,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-224",
+        id: "line-254",
         keyword: "Scenario",
         name: "Exclude disabled income sources from the results chart key",
         description: "",
@@ -11376,91 +11551,91 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-225",
+            id: "line-255",
             keyword: "Given",
             text: "the results chart has these income sources:",
             table: [
               {
-                id: "line-226",
+                id: "line-256",
                 cells: [
                   {
-                    id: "line-226-column-9",
+                    id: "line-256-column-9",
                     value: "source",
                   },
                   {
-                    id: "line-226-column-31",
+                    id: "line-256-column-31",
                     value: "enabled",
                   },
                   {
-                    id: "line-226-column-41",
+                    id: "line-256-column-41",
                     value: "active",
                   },
                 ],
               },
               {
-                id: "line-227",
+                id: "line-257",
                 cells: [
                   {
-                    id: "line-227-column-9",
+                    id: "line-257-column-9",
                     value: "Alpha pension",
                   },
                   {
-                    id: "line-227-column-31",
+                    id: "line-257-column-31",
                     value: "yes",
                   },
                   {
-                    id: "line-227-column-41",
+                    id: "line-257-column-41",
                     value: "yes",
                   },
                 ],
               },
               {
-                id: "line-228",
+                id: "line-258",
                 cells: [
                   {
-                    id: "line-228-column-9",
+                    id: "line-258-column-9",
                     value: "Civil Service AVC",
                   },
                   {
-                    id: "line-228-column-31",
+                    id: "line-258-column-31",
                     value: "no",
                   },
                   {
-                    id: "line-228-column-41",
+                    id: "line-258-column-41",
                     value: "no",
                   },
                 ],
               },
               {
-                id: "line-229",
+                id: "line-259",
                 cells: [
                   {
-                    id: "line-229-column-9",
+                    id: "line-259-column-9",
                     value: "LISA",
                   },
                   {
-                    id: "line-229-column-31",
+                    id: "line-259-column-31",
                     value: "no",
                   },
                   {
-                    id: "line-229-column-41",
+                    id: "line-259-column-41",
                     value: "no",
                   },
                 ],
               },
               {
-                id: "line-230",
+                id: "line-260",
                 cells: [
                   {
-                    id: "line-230-column-9",
+                    id: "line-260-column-9",
                     value: "SIPP",
                   },
                   {
-                    id: "line-230-column-31",
+                    id: "line-260-column-31",
                     value: "yes",
                   },
                   {
-                    id: "line-230-column-41",
+                    id: "line-260-column-41",
                     value: "no",
                   },
                 ],
@@ -11468,27 +11643,27 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-231",
+            id: "line-261",
             keyword: "When",
             text: "the chart key is prepared without hiding inactive enabled sources",
           },
           {
-            id: "line-232",
+            id: "line-262",
             keyword: "Then",
             text: 'the chart key should include "Alpha pension"',
           },
           {
-            id: "line-233",
+            id: "line-263",
             keyword: "And",
             text: 'the chart key should include "SIPP"',
           },
           {
-            id: "line-234",
+            id: "line-264",
             keyword: "But",
             text: 'the chart key should not include "Civil Service AVC"',
           },
           {
-            id: "line-235",
+            id: "line-265",
             keyword: "And",
             text: 'the chart key should not include "LISA"',
           },
@@ -11496,7 +11671,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-238",
+        id: "line-268",
         keyword: "Scenario",
         name: "Describe the chart as the whole retirement income projection",
         description: "",
@@ -11505,17 +11680,17 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-239",
+            id: "line-269",
             keyword: "When",
             text: "retirement income chart titles are prepared",
           },
           {
-            id: "line-240",
+            id: "line-270",
             keyword: "Then",
             text: 'the standard results chart title should be "Retirement income over time"',
           },
           {
-            id: "line-241",
+            id: "line-271",
             keyword: "And",
             text: 'the simple results chart title should be "How your retirement income may change"',
           },

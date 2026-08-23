@@ -53,11 +53,11 @@ Feature: Target-based flexible-fund withdrawals
     When the retirement income chart series is prepared
     Then flexible funding should not exceed the active income target during the handover
 
-  Scenario: Configure priority in the expert retirement income target
+  Scenario: Configure priority in the expert target and bridge withdrawal plan
     Given an ISA with 20000.00 uses the target-based strategy
     And a SIPP with 20000.00 uses the target-based strategy
-    Then the funding priority should belong to the expert retirement income target section
-    And the funding priority should not belong to simplified or bridge sections
+    Then the funding priority should belong to the expert target and bridge withdrawal-plan sections
+    And the funding priority should not belong to simplified sections
     And the funding priority should not belong to an expert account withdrawal section
 
   Scenario: Reorder target-based accounts accessibly
@@ -89,8 +89,9 @@ Feature: Target-based flexible-fund withdrawals
     And the target-based priority should be empty
     And the other-strategy accounts should include SIPP and ISA
 
-  Scenario: Keep flexible withdrawal controls out of non-expert journeys
-    Then non-expert journey steps should not expose flexible withdrawal strategy controls
+  Scenario: Expose flexible withdrawal controls only where the journey explains the decision
+    Then the simplified journey should not expose flexible withdrawal strategy controls
+    And the bridge withdrawal-plan step should expose flexible withdrawal strategy controls
     And simplified journey settings should store legacy withdrawal strategies
     And bridge journey settings should store legacy withdrawal strategies
 

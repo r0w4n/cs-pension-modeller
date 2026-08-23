@@ -788,7 +788,8 @@ function advanceJourneyToResult() {
   for (let index = 0; index < 20; index += 1) {
     const nextButton =
       screen.queryByRole("button", { name: "Next" }) ??
-      screen.queryByRole("button", { name: "Show my answer" });
+      screen.queryByRole("button", { name: "Show my answer" }) ??
+      screen.queryByRole("button", { name: "Calculate my plan" });
 
     if (!nextButton) {
       return;
@@ -1673,7 +1674,10 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue("60");
 
     openJourneyStep(/Your Alpha pension/i);
 
@@ -1731,7 +1735,10 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue("60");
     expect(readStoredSettingsPayload("simple")).toEqual(
       expect.objectContaining({
         requirementAge: 68,
@@ -1897,13 +1904,35 @@ describe("App settings form", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Your retirement target" })
+      screen.getByRole("heading", { name: "Your personal details" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
-      defaultSettings.requirementAge.toString()
-    );
 
-    openJourneyStep(/Your bridging pots/);
+    openJourneyStep(/What would you like to spend each month\?/i);
+
+    expect(
+      screen.getByLabelText(
+        "How much would you like available to spend each month after tax?"
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Not sure what amount to choose?" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+    expect(
+      screen.queryByRole("combobox", { name: "Spending strategy" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Income-target funding priority" })
+    ).not.toBeInTheDocument();
+
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue(defaultSettings.requirementAge.toString());
+
+    openJourneyStep(/Your bridging money/);
 
     expect(screen.getByRole("checkbox", { name: /^ISA$/ })).toBeChecked();
     expect(
@@ -1916,6 +1945,9 @@ describe("App settings form", () => {
       screen.getByRole("checkbox", { name: "Civil Service AVC" })
     ).not.toBeChecked();
     expect(
+      screen.getByRole("checkbox", { name: "Other guaranteed income" })
+    ).not.toBeChecked();
+    expect(
       screen
         .getAllByRole("checkbox")
         .map((checkbox) => checkbox.getAttribute("aria-label"))
@@ -1924,7 +1956,18 @@ describe("App settings form", () => {
       "Lifetime ISA (LISA)",
       "SIPP or personal pension",
       "Civil Service AVC",
+      "Other guaranteed income",
     ]);
+
+    openJourneyStep(/How should your bridging money be used\?/i);
+    expect(
+      screen.getByRole("combobox", { name: "Spending strategy" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeInTheDocument();
+
+    openJourneyStep(/Your bridging money/);
     expect(
       screen.queryByLabelText("Current ISA balance (£)")
     ).not.toBeInTheDocument();
@@ -1943,9 +1986,22 @@ describe("App settings form", () => {
       screen.getByRole("button", { name: /Your Lifetime ISA/i })
     ).toBeInTheDocument();
 
+    expect(
+      screen.queryByRole("button", { name: /Additional guaranteed income/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Other guaranteed income" })
+    );
+    expect(
+      screen.getByRole("button", { name: /Additional guaranteed income/i })
+    ).toBeInTheDocument();
+
     openJourneyStep(/Your ISA/);
     expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
       defaultSettings.isaDrawAge.toString()
+    );
+    expect(screen.getByLabelText("ISA use-by age")).toHaveValue(
+      defaultSettings.isaWithdrawalTargetAge.toString()
     );
 
     openJourneyStep(/Your Lifetime ISA/);
@@ -2166,7 +2222,11 @@ describe("App settings form", () => {
   it("keeps the bridge target retirement age stable after slider release", () => {
     renderAcknowledgedApp({ mode: "bridge" });
 
-    const targetAgeSlider = screen.getByLabelText("Target retirement age");
+    openJourneyStep(/What age would you like to retire\?/i);
+
+    const targetAgeSlider = screen.getByLabelText(
+      "How old would you like to be when you retire?"
+    );
 
     fireEvent.change(targetAgeSlider, {
       target: { value: "55" },
@@ -2177,10 +2237,14 @@ describe("App settings form", () => {
 
     expect(targetAgeSlider).toHaveValue("55");
     expect(
-      screen.getByLabelText("Target retirement age exact value")
+      screen.getByLabelText(
+        "How old would you like to be when you retire? exact value"
+      )
     ).toHaveValue(55);
     expect(
-      screen.getByLabelText("Target retirement age exact value")
+      screen.getByLabelText(
+        "How old would you like to be when you retire? exact value"
+      )
     ).toHaveAttribute("step", "0.25");
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
@@ -2205,17 +2269,23 @@ describe("App settings form", () => {
     );
     renderAcknowledgedApp({ mode: "bridge" });
 
+    openJourneyStep(/What age would you like to retire\?/i);
+
     const targetAgeInput = screen.getByLabelText(
-      "Target retirement age exact value"
+      "How old would you like to be when you retire? exact value"
     );
     fireEvent.focus(targetAgeInput);
     fireEvent.change(targetAgeInput, { target: { value: "60" } });
     fireEvent.blur(targetAgeInput);
 
     expect(
-      screen.getByLabelText("Target retirement age exact value")
+      screen.getByLabelText(
+        "How old would you like to be when you retire? exact value"
+      )
     ).toHaveValue(60);
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue("60");
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 60,

@@ -205,6 +205,15 @@ export type JourneyStepDefinition =
       eyebrow: string;
       title: string;
       description: string;
+      kind: "review";
+      presentation: "bridge-plan";
+      visible?: (settings: PensionSettings) => boolean;
+    }
+  | {
+      id: string;
+      eyebrow: string;
+      title: string;
+      description: string;
       kind: "results";
       sections: readonly JourneyResultsSection[];
       visible?: (settings: PensionSettings) => boolean;
@@ -232,6 +241,79 @@ export type JourneyDefinition = {
   steps: readonly JourneyStepDefinition[];
 };
 
+const MONTHLY_SPENDING_TARGET_STEP = {
+  title: "What would you like to spend each month?",
+  description:
+    "Think about the money you would like available each month after estimated tax when you stop working. A rough answer is fine. You can change it later.",
+  kind: "fields",
+  fieldIds: ["desiredRetirementIncome", "taxRegime"],
+  fieldLabels: {
+    desiredRetirementIncome:
+      "How much would you like available to spend each month after tax?",
+    taxRegime: "Which UK tax rules should we use?",
+  },
+  fieldDescriptions: {
+    desiredRetirementIncome:
+      "Enter the amount you would like to have left each month after estimated tax. Use today’s prices, as if you were spending the money now. This is a rough planning amount, not a promise of what you will receive.",
+    taxRegime:
+      "Choose Scotland if you expect to pay Scottish Income Tax in retirement. Otherwise choose England, Wales or Northern Ireland.",
+  },
+  currencyFieldPresentation: {
+    desiredRetirementIncome: {
+      displayDivisor: 12,
+      showAnnualEquivalent: true,
+      presets: [
+        {
+          value: 13900,
+          label: "Minimum — £1,158 a month",
+          description: "One-person household example: £13,900 a year",
+        },
+        {
+          value: 32700,
+          label: "Moderate — £2,725 a month",
+          description: "One-person household example: £32,700 a year",
+        },
+        {
+          value: 45400,
+          label: "Comfortable — £3,783 a month",
+          description: "One-person household example: £45,400 a year",
+        },
+      ],
+    },
+  },
+  hideFieldInfoLinks: true,
+  supportLinkLayout: "inline",
+  supportLink: {
+    heading: "Not sure what amount to choose?",
+    description:
+      "These one-person household examples come from the Retirement Living Standards. Your housing costs, household and personal circumstances can make your spending different, so use them only as a starting point.",
+    href: knowledgeLinks.retirementLivingStandards,
+    label: "Help me choose a retirement income",
+  },
+} as const satisfies Omit<
+  Extract<JourneyStepDefinition, { kind: "fields" }>,
+  "id" | "eyebrow"
+>;
+
+const RETIREMENT_AGE_STEP = {
+  title: "What age would you like to retire?",
+  description:
+    "Choose the age when you would like to stop working. This can be earlier than the age your Alpha pension can normally start.",
+  kind: "fields",
+  fieldIds: ["requirementAge"],
+  fieldLabels: {
+    requirementAge: "How old would you like to be when you retire?",
+  },
+  fieldDescriptions: {
+    requirementAge:
+      "We use this as the age you stop working and stop building more Alpha pension through your job. If your pension starts later, the results show the time between stopping work and receiving it.",
+  },
+  hideFieldInfoLinks: true,
+} as const satisfies Omit<
+  Extract<JourneyStepDefinition, { kind: "fields" }>,
+  "id" | "eyebrow"
+>;
+
 export const JOURNEY_DEFINITIONS = [
   {
     id: "early-retirement-bridge",
@@ -244,31 +326,27 @@ export const JOURNEY_DEFINITIONS = [
     },
     steps: [
       {
-        id: "target",
-        eyebrow: "Step 1",
-        title: "Your retirement target",
-        description:
-          "Set the age you want to stop work and the annual income you want available to spend after estimated Income Tax.",
-        kind: "fields",
-        fieldIds: ["requirementAge", "desiredRetirementIncome", "taxRegime"],
-        fieldLabels: {
-          requirementAge: "Target retirement age",
-          desiredRetirementIncome:
-            "After-tax income you want in retirement (£ per year)",
-        },
-      },
-      {
         id: "personal",
-        eyebrow: "Step 2",
+        eyebrow: "Step 1",
         title: "Your personal details",
         description:
-          "Set the details that define current age, access ages, and the length of the bridge.",
+          "Start with the details that determine your current age, pension access ages, and how long this illustration should run.",
         kind: "fields",
         fieldIds: ["dateOfBirth", "lifeExpectancy"],
       },
       {
-        id: "include",
+        id: "target",
+        eyebrow: "Step 2",
+        ...MONTHLY_SPENDING_TARGET_STEP,
+      },
+      {
+        id: "retirement-age",
         eyebrow: "Step 3",
+        ...RETIREMENT_AGE_STEP,
+      },
+      {
+        id: "include",
+        eyebrow: "Step 4",
         title: "Your Civil Service pensions",
         description:
           "We include State Pension by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
@@ -283,7 +361,7 @@ export const JOURNEY_DEFINITIONS = [
       },
       {
         id: "alpha",
-        eyebrow: "Step 4",
+        eyebrow: "Pension details",
         title: "Your Alpha pension",
         description:
           "Add the Alpha pension you have built up and the age you would prefer to draw it.",
@@ -394,23 +472,19 @@ export const JOURNEY_DEFINITIONS = [
         },
       },
       {
-        id: "additional-income",
-        eyebrow: "Optional",
-        title: "Additional guaranteed income",
-        description:
-          "Add known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
-        kind: "fields",
-        groupId: "additional-income",
-        fieldIds: [],
-      },
-      {
         id: "pots",
         eyebrow: "Bridge funding",
-        title: "Your bridging pots",
+        title: "Your bridging money",
         description:
-          "Select the savings and pension pots that you could use before your main pension income starts. ISA, LISA and SIPP are included initially; untick any you do not have or do not want to use in this scenario. Values you entered are kept if you hide a pot and select it again later.",
+          "Select the flexible savings, pension pots, and other guaranteed income that could support your retirement. ISA, LISA and SIPP are included initially; untick anything you do not have or do not want to use in this scenario. Values you entered are kept if you hide an option and select it again later.",
         kind: "optional-sections",
-        toggleKeys: ["showIsa", "showLisa", "showSipp", "showCsAvc"],
+        toggleKeys: [
+          "showIsa",
+          "showLisa",
+          "showSipp",
+          "showCsAvc",
+          "showAdditionalGuaranteedIncome",
+        ],
         toggleCopy: {
           showIsa: {
             label: "ISA",
@@ -432,7 +506,34 @@ export const JOURNEY_DEFINITIONS = [
             description:
               "Include a separate invested pension pot built through Civil Service Additional Voluntary Contributions.",
           },
+          showAdditionalGuaranteedIncome: {
+            label: "Other guaranteed income",
+            description:
+              "Include known retirement income outside the modelled Civil Service pensions, such as another defined benefit pension or an annuity.",
+          },
         },
+      },
+      {
+        id: "bridge-strategy",
+        eyebrow: "Withdrawal plan",
+        title: "How should your bridging money be used?",
+        description:
+          "Choose whether your spending target changes later in retirement, then set the withdrawal instruction for each selected pot and the order for pots used to meet your income target.",
+        kind: "fields",
+        fieldIds: [],
+        showSpendingSmileEditor: true,
+        showFlexibleWithdrawalPriority: true,
+      },
+      {
+        id: "additional-income",
+        eyebrow: "Optional",
+        title: "Additional guaranteed income",
+        description:
+          "Add known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
+        kind: "fields",
+        groupId: "additional-income",
+        fieldIds: [],
+        visible: (settings) => settings.showAdditionalGuaranteedIncome,
       },
       {
         id: "isa",
@@ -446,6 +547,8 @@ export const JOURNEY_DEFINITIONS = [
           "isaMonthlyContribution",
           "isaDrawAge",
           "isaRealInterestPercent",
+          "isaWithdrawalPercent",
+          "isaWithdrawalTargetAge",
         ],
         fieldLabels: {
           isaCurrentPot: "Current ISA balance (£)",
@@ -466,6 +569,8 @@ export const JOURNEY_DEFINITIONS = [
           "lisaMonthlyContribution",
           "lisaDrawAge",
           "lisaRealInterestPercent",
+          "lisaWithdrawalPercent",
+          "lisaWithdrawalTargetAge",
         ],
         fieldLabels: {
           lisaCurrentPot: "Current LISA balance (£)",
@@ -489,6 +594,8 @@ export const JOURNEY_DEFINITIONS = [
           "sippHasProtectedPensionAge",
           "sippTaxReliefRate",
           "sippRealInterestPercent",
+          "sippWithdrawalPercent",
+          "sippWithdrawalTargetAge",
         ],
         fieldLabels: {
           sippCurrentPot: "Current SIPP balance (£)",
@@ -511,6 +618,8 @@ export const JOURNEY_DEFINITIONS = [
           "csAvcDrawAge",
           "csAvcHasProtectedPensionAge",
           "csAvcRealInterestPercent",
+          "csAvcWithdrawalPercent",
+          "csAvcWithdrawalTargetAge",
         ],
         fieldLabels: {
           csAvcCurrentPot: "Current CS AVC balance (£)",
@@ -537,6 +646,15 @@ export const JOURNEY_DEFINITIONS = [
           "taxLumpSumAllowanceUsed",
         ],
         visible: (settings) => settings.showSipp || settings.showCsAvc,
+      },
+      {
+        id: "check-plan",
+        eyebrow: "Review",
+        title: "Check your plan",
+        description:
+          "Review the choices the model will use. Go back to change any section, then calculate and view this planning illustration.",
+        kind: "review",
+        presentation: "bridge-plan",
       },
       {
         id: "answer",
@@ -580,71 +698,12 @@ export const JOURNEY_DEFINITIONS = [
       {
         id: "target",
         eyebrow: "Step 2",
-        title: "What would you like to spend each month?",
-        description:
-          "Think about the money you would like available each month after estimated tax when you stop working. A rough answer is fine. You can change it later.",
-        kind: "fields",
-        fieldIds: ["desiredRetirementIncome", "taxRegime"],
-        fieldLabels: {
-          desiredRetirementIncome:
-            "How much would you like available to spend each month after tax?",
-          taxRegime: "Which UK tax rules should we use?",
-        },
-        fieldDescriptions: {
-          desiredRetirementIncome:
-            "Enter the amount you would like to have left each month after estimated tax. Use today’s prices, as if you were spending the money now. This is a rough planning amount, not a promise of what you will receive.",
-          taxRegime:
-            "Choose Scotland if you expect to pay Scottish Income Tax in retirement. Otherwise choose England, Wales or Northern Ireland.",
-        },
-        currencyFieldPresentation: {
-          desiredRetirementIncome: {
-            displayDivisor: 12,
-            showAnnualEquivalent: true,
-            presets: [
-              {
-                value: 13900,
-                label: "Minimum — £1,158 a month",
-                description: "One-person household example: £13,900 a year",
-              },
-              {
-                value: 32700,
-                label: "Moderate — £2,725 a month",
-                description: "One-person household example: £32,700 a year",
-              },
-              {
-                value: 45400,
-                label: "Comfortable — £3,783 a month",
-                description: "One-person household example: £45,400 a year",
-              },
-            ],
-          },
-        },
-        hideFieldInfoLinks: true,
-        supportLinkLayout: "inline",
-        supportLink: {
-          heading: "Not sure what amount to choose?",
-          description:
-            "These one-person household examples come from the Retirement Living Standards. Your housing costs, household and personal circumstances can make your spending different, so use them only as a starting point.",
-          href: knowledgeLinks.retirementLivingStandards,
-          label: "Help me choose a retirement income",
-        },
+        ...MONTHLY_SPENDING_TARGET_STEP,
       },
       {
         id: "retirement-age",
         eyebrow: "Step 3",
-        title: "What age would you like to retire?",
-        description:
-          "Choose the age when you would like to stop working. This can be earlier than the age your Alpha pension can normally start.",
-        kind: "fields",
-        fieldIds: ["requirementAge"],
-        fieldLabels: {
-          requirementAge: "How old would you like to be when you retire?",
-        },
-        fieldDescriptions: {
-          requirementAge:
-            "We use this as the age you stop working and stop building more Alpha pension through your job. If your pension starts later, the results show the time between stopping work and receiving it.",
-        },
-        hideFieldInfoLinks: true,
+        ...RETIREMENT_AGE_STEP,
       },
       {
         id: "alpha",

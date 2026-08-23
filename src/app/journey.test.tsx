@@ -149,4 +149,44 @@ describe("journey module", () => {
       ).toBeInTheDocument();
     }
   );
+
+  it("labels the action after a plan review as Calculate my plan", () => {
+    render(
+      <JourneyFlow
+        journey={{
+          id: "early-retirement-bridge",
+          title: "Bridge journey",
+          description: "Journey description",
+          settingsPresentation: {
+            alignAlphaLeaveAgeToRetirement: false,
+            dateOfBirthUpdate: "preserve-retirement-ages",
+          },
+          steps: [
+            {
+              id: "check-plan",
+              eyebrow: "Review",
+              title: "Check your plan",
+              description: "Review choices",
+              kind: "review",
+              presentation: "bridge-plan",
+            },
+            {
+              id: "answer",
+              eyebrow: "Result",
+              title: "Your results",
+              description: "Review results",
+              kind: "results",
+              sections: [],
+            },
+          ],
+        }}
+        settings={createDefaultSettings()}
+        renderStepContent={(step) => <p>{step.id}-content</p>}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Calculate my plan" }));
+
+    expect(screen.getByText("answer-content")).toBeInTheDocument();
+  });
 });

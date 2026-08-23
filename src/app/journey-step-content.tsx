@@ -18,6 +18,7 @@ import {
   type PensionValidationIssue,
 } from "../settings";
 import {
+  buildBridgePlanReview,
   buildComparisonStatusItems,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
@@ -67,6 +68,7 @@ import {
   InflationBasisPanel as InflationBasisPanelFeature,
   ValidationIssuesSection as ValidationIssuesSectionFeature,
   ResultsSummarySection,
+  SummarySection,
 } from "./results-summary";
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
 import { SpendingSmileEditor } from "./spending-smile-editor";
@@ -128,6 +130,10 @@ export function JourneyStepContent({
     return renderOptionalSectionsStep(step, viewModel);
   }
 
+  if (step.kind === "review") {
+    return <JourneyReviewStep step={step} viewModel={viewModel} />;
+  }
+
   if (step.kind === "results") {
     return (
       <JourneyResultsStep
@@ -156,6 +162,43 @@ export function JourneyStepContent({
   }
 
   return null;
+}
+
+function JourneyReviewStep({
+  step,
+  viewModel,
+}: {
+  step: JourneyStepDefinition & { kind: "review" };
+  viewModel: JourneyStepViewModel;
+}) {
+  const reviewSections =
+    step.presentation === "bridge-plan"
+      ? buildBridgePlanReview(viewModel.settings)
+      : [];
+
+  return (
+    <div className="journey-plan-review">
+      <ValidationSummary validationIssues={viewModel.validationIssues} />
+      {reviewSections.map((section) => (
+        <SummarySection
+          key={section.title}
+          title={section.title}
+          items={section.items}
+          description={section.description}
+          headingLevel={4}
+          variant="feature"
+        />
+      ))}
+      <aside className="journey-assumption-callout" aria-label="Planning note">
+        <h4>Planning illustration only</h4>
+        <p>
+          These choices are assumptions, not guaranteed outcomes. Check pension
+          amounts and access dates against official statements before making an
+          important decision.
+        </p>
+      </aside>
+    </div>
+  );
 }
 
 function renderOptionalSectionsStep(
@@ -443,6 +486,7 @@ function renderFieldsStep(
           settings={settings}
           validationIssues={validationIssues}
           onChange={onChange}
+          expertMode={Boolean(step.useNpaLinkedDefaults)}
         />
       ) : null}
       {step.showFlexibleWithdrawalPriority ? (

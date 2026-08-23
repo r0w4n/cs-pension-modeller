@@ -108,32 +108,40 @@ Then(
 );
 
 Then(
-  "the funding priority should belong to the expert retirement income target section",
+  "the funding priority should belong to the expert target and bridge withdrawal-plan sections",
   function () {
-    const targetStep = JOURNEY_DEFINITIONS.find(
-      (journey) => journey.id === "expert-journey"
-    )?.steps.find((step) => step.id === "expert-retirement-target");
+    const targetSteps = [
+      JOURNEY_DEFINITIONS.find(
+        (journey) => journey.id === "expert-journey"
+      )?.steps.find((step) => step.id === "expert-retirement-target"),
+      JOURNEY_DEFINITIONS.find(
+        (journey) => journey.id === "early-retirement-bridge"
+      )?.steps.find((step) => step.id === "bridge-strategy"),
+    ];
 
     assertCondition(
-      targetStep?.kind === "fields" &&
-        targetStep.showFlexibleWithdrawalPriority === true
+      targetSteps.every(
+        (step) =>
+          step?.kind === "fields" &&
+          step.showFlexibleWithdrawalPriority === true
+      )
     );
   }
 );
 
 Then(
-  "the funding priority should not belong to simplified or bridge sections",
+  "the funding priority should not belong to simplified sections",
   function () {
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+
     assertCondition(
-      JOURNEY_DEFINITIONS.filter(
-        (journey) => journey.id !== "expert-journey"
-      ).every((journey) =>
-        journey.steps.every(
-          (step) =>
-            step.kind !== "fields" ||
-            !("showFlexibleWithdrawalPriority" in step) ||
-            step.showFlexibleWithdrawalPriority !== true
-        )
+      simpleJourney?.steps.every(
+        (step) =>
+          step.kind !== "fields" ||
+          !("showFlexibleWithdrawalPriority" in step) ||
+          step.showFlexibleWithdrawalPriority !== true
       )
     );
   }
@@ -233,7 +241,7 @@ Then(
 );
 
 Then(
-  "non-expert journey steps should not expose flexible withdrawal strategy controls",
+  "the simplified journey should not expose flexible withdrawal strategy controls",
   function () {
     const strategyFieldIds = new Set([
       "sippWithdrawalStrategy",
@@ -241,16 +249,29 @@ Then(
       "isaWithdrawalStrategy",
       "lisaWithdrawalStrategy",
     ]);
-    const nonExpertFieldIds = JOURNEY_DEFINITIONS.filter(
-      (journey) => journey.id !== "expert-journey"
-    ).flatMap((journey) =>
-      journey.steps.flatMap((step) =>
+    const simpleFieldIds =
+      JOURNEY_DEFINITIONS.find(
+        (journey) => journey.id === "simple-early-retirement"
+      )?.steps.flatMap((step) =>
         step.kind === "fields" ? step.fieldIds : []
-      )
-    );
+      ) ?? [];
 
     assertCondition(
-      nonExpertFieldIds.every((fieldId) => !strategyFieldIds.has(fieldId))
+      simpleFieldIds.every((fieldId) => !strategyFieldIds.has(fieldId))
+    );
+  }
+);
+
+Then(
+  "the bridge withdrawal-plan step should expose flexible withdrawal strategy controls",
+  function () {
+    const targetStep = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    )?.steps.find((step) => step.id === "bridge-strategy");
+
+    assertCondition(
+      targetStep?.kind === "fields" &&
+        targetStep.showFlexibleWithdrawalPriority === true
     );
   }
 );

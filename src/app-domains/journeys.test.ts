@@ -129,7 +129,7 @@ describe("journey definitions", () => {
     ).toContain("taxRegime");
   });
 
-  it("keeps flexible withdrawal strategy controls exclusive to expert mode", () => {
+  it("keeps withdrawal strategy fields out of guided field groups", () => {
     const strategyFieldIds = [
       "sippWithdrawalStrategy",
       "csAvcWithdrawalStrategy",
@@ -145,6 +145,34 @@ describe("journey definitions", () => {
       expect(getJourneyFieldIds("simple-early-retirement")).not.toContain(
         fieldId
       );
+    }
+  });
+
+  it("keeps the bridge target focused and puts withdrawal decisions in their own step", () => {
+    const bridgeTarget = getJourneyStep("early-retirement-bridge", "target");
+    const bridgeStrategy = getJourneyStep(
+      "early-retirement-bridge",
+      "bridge-strategy"
+    );
+    const expertTarget = getJourneyStep(
+      "expert-journey",
+      "expert-retirement-target"
+    );
+
+    expect(bridgeTarget?.kind).toBe("fields");
+    if (bridgeTarget?.kind !== "fields") {
+      throw new Error("Expected a bridge retirement target field step");
+    }
+    expect(bridgeTarget.showSpendingSmileEditor).not.toBe(true);
+    expect(bridgeTarget.showFlexibleWithdrawalPriority).not.toBe(true);
+
+    for (const strategyStep of [bridgeStrategy, expertTarget]) {
+      expect(strategyStep?.kind).toBe("fields");
+      if (strategyStep?.kind !== "fields") {
+        throw new Error("Expected a withdrawal strategy field step");
+      }
+      expect(strategyStep.showSpendingSmileEditor).toBe(true);
+      expect(strategyStep.showFlexibleWithdrawalPriority).toBe(true);
     }
   });
 
@@ -246,6 +274,7 @@ describe("journey definitions", () => {
       "showLisa",
       "showSipp",
       "showCsAvc",
+      "showAdditionalGuaranteedIncome",
     ]);
     expect(
       potChoicesStep.toggleKeys?.map(
@@ -256,6 +285,7 @@ describe("journey definitions", () => {
       "Lifetime ISA (LISA)",
       "SIPP or personal pension",
       "Civil Service AVC",
+      "Other guaranteed income",
     ]);
 
     const pensionChoicesStep = bridgeJourney?.steps.find(
@@ -266,6 +296,66 @@ describe("journey definitions", () => {
       throw new Error("Expected the bridge pension choices step");
     }
     expect(pensionChoicesStep.toggleKeys).not.toContain("showCsAvc");
+  });
+
+  it("makes other guaranteed income a conditional bridge selection", () => {
+    const step = getJourneyStep("early-retirement-bridge", "additional-income");
+
+    expect(
+      step?.visible?.({
+        ...defaultSettings,
+        showAdditionalGuaranteedIncome: false,
+      })
+    ).toBe(false);
+    expect(
+      step?.visible?.({
+        ...defaultSettings,
+        showAdditionalGuaranteedIncome: true,
+      })
+    ).toBe(true);
+  });
+
+  it("starts bridge planning with the simple question order and ends with a review", () => {
+    const bridgeJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    );
+    const bridgeStepIds = bridgeJourney?.steps.map((step) => step.id) ?? [];
+    const bridgeTarget = getJourneyStep("early-retirement-bridge", "target");
+    const simpleTarget = getJourneyStep("simple-early-retirement", "target");
+
+    expect(bridgeStepIds.slice(0, 4)).toEqual([
+      "personal",
+      "target",
+      "retirement-age",
+      "include",
+    ]);
+    expect(bridgeTarget).toEqual(
+      expect.objectContaining({
+        title: simpleTarget?.title,
+        description: simpleTarget?.description,
+        fieldIds:
+          simpleTarget?.kind === "fields" ? simpleTarget.fieldIds : undefined,
+        currencyFieldPresentation:
+          simpleTarget?.kind === "fields"
+            ? simpleTarget.currencyFieldPresentation
+            : undefined,
+      })
+    );
+    expect(bridgeStepIds.indexOf("check-plan")).toBe(
+      bridgeStepIds.indexOf("answer") - 1
+    );
+    expect(bridgeStepIds.indexOf("state")).toBeLessThan(
+      bridgeStepIds.indexOf("pots")
+    );
+    expect(bridgeStepIds.indexOf("pots")).toBeLessThan(
+      bridgeStepIds.indexOf("bridge-strategy")
+    );
+    expect(bridgeStepIds.indexOf("bridge-strategy")).toBeLessThan(
+      bridgeStepIds.indexOf("isa")
+    );
+    expect(getJourneyStep("early-retirement-bridge", "check-plan")).toEqual(
+      expect.objectContaining({ kind: "review", presentation: "bridge-plan" })
+    );
   });
 
   it("shows bridge pot details only for selected pots", () => {
@@ -300,6 +390,8 @@ describe("journey definitions", () => {
       "isaMonthlyContribution",
       "isaDrawAge",
       "isaRealInterestPercent",
+      "isaWithdrawalPercent",
+      "isaWithdrawalTargetAge",
     ]);
     expect([
       ...getJourneyStepFieldIds("early-retirement-bridge", "lisa"),
@@ -308,10 +400,20 @@ describe("journey definitions", () => {
       "lisaMonthlyContribution",
       "lisaDrawAge",
       "lisaRealInterestPercent",
+      "lisaWithdrawalPercent",
+      "lisaWithdrawalTargetAge",
     ]);
     expect(
       getJourneyStepFieldIds("early-retirement-bridge", "pot-tax")
     ).toContain("taxSippTaxFreeWithdrawalPercent");
+    expect([
+      ...getJourneyStepFieldIds("early-retirement-bridge", "sipp"),
+    ]).toEqual(
+      expect.arrayContaining([
+        "sippWithdrawalPercent",
+        "sippWithdrawalTargetAge",
+      ])
+    );
   });
 
   it("keeps EPA out of the optional sections page", () => {

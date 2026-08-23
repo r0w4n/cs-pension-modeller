@@ -36,7 +36,7 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Your retirement target" })
+      page.getByRole("heading", { name: "Your personal details" })
     ).toBeVisible();
 
     await page
@@ -360,8 +360,31 @@ test.describe("app end-to-end journeys", () => {
 
     await acknowledgeAndOpenMode(page, "bridge");
 
+    await clickNextAndExpectStep(
+      page,
+      "What would you like to spend each month?"
+    );
+    await fillCurrency(
+      page,
+      "How much would you like available to spend each month after tax?",
+      "2833.33"
+    );
+    await expect(
+      page.getByRole("heading", { name: "Not sure what amount to choose?" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toHaveCount(0);
+
+    await clickNextAndExpectStep(page, "What age would you like to retire?");
     const retirementAgeInput = page.getByRole("spinbutton", {
-      name: "Target retirement age exact value",
+      name: "How old would you like to be when you retire? exact value",
     });
     await expect(retirementAgeInput).toHaveAttribute("step", "0.25");
     await retirementAgeInput.fill("58.2");
@@ -371,18 +394,18 @@ test.describe("app end-to-end journeys", () => {
         "Enter a whole year, or add 3, 6 or 9 months (for example 67.25)."
       )
     ).toBeVisible();
-    await fillExactNumber(page, "Target retirement age exact value", "58.25");
+    await fillExactNumber(
+      page,
+      "How old would you like to be when you retire? exact value",
+      "58.25"
+    );
     await expect(
       page.getByText("Selected age: 58 years 3 months")
     ).toBeVisible();
-    await fillCurrency(
-      page,
-      "After-tax income you want in retirement (£ per year)",
-      "34000"
-    );
-    await clickNextAndExpectStep(page, "Your personal details");
-
     await clickNextAndExpectStep(page, "Your Civil Service pensions");
+    await expect(
+      page.getByRole("checkbox", { name: "Civil Service AVC" })
+    ).toHaveCount(0);
     await clickNextAndExpectStep(page, "Your Alpha pension");
 
     await fillCurrency(
@@ -397,14 +420,7 @@ test.describe("app end-to-end journeys", () => {
     );
     await clickNextAndExpectStep(page, "State Pension");
 
-    await clickNextAndExpectStep(page, "Additional guaranteed income");
-    await addAdditionalIncome(
-      page,
-      "Previous employer DB pension",
-      "5000",
-      "60"
-    );
-    await clickNextAndExpectStep(page, "Your bridging pots");
+    await clickNextAndExpectStep(page, "Your bridging money");
 
     await expect(
       page.getByRole("checkbox", { name: "ISA", exact: true })
@@ -418,11 +434,41 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("checkbox", { name: "Civil Service AVC" })
     ).not.toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "Other guaranteed income" })
+    ).not.toBeChecked();
+    await page
+      .getByRole("checkbox", { name: "Other guaranteed income" })
+      .check();
     await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).uncheck();
     await expect(
       page.locator('.journey-step-button[data-step-id="lisa"]')
     ).toHaveCount(0);
     await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).check();
+    await clickNextAndExpectStep(
+      page,
+      "How should your bridging money be used?"
+    );
+    await expect(
+      page.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveValue("FLAT");
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeVisible();
+    await page
+      .getByRole("combobox", {
+        name: "ISA withdrawal strategy",
+        exact: true,
+      })
+      .selectOption("meet_income_target");
+
+    await clickNextAndExpectStep(page, "Additional guaranteed income");
+    await addAdditionalIncome(
+      page,
+      "Previous employer DB pension",
+      "5000",
+      "60"
+    );
     await clickNextAndExpectStep(page, "Your ISA");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
@@ -445,10 +491,15 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toHaveCount(0);
     await clickNextAndExpectStep(page, "Your pension pot tax assumptions");
+    await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+    await clickNextAndExpectStep(page, "Check your plan");
     await expect(
-      page.getByRole("button", { name: "Show my answer" })
+      page.getByText("£35,000 current balance; Use to meet income target")
     ).toBeVisible();
-    await page.getByRole("button", { name: "Show my answer" }).click();
+    await expect(
+      page.getByText("Previous employer DB pension", { exact: true })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Calculate my plan" }).click();
     await expect(
       page.getByRole("heading", { name: "Retirement income over time" })
     ).toBeVisible();
@@ -1219,7 +1270,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Work out what I need to retire early/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your retirement target" })
+      page.getByRole("heading", { name: "Your personal details" })
     ).toBeVisible();
     return;
   }
@@ -1267,7 +1318,7 @@ async function navigateToJourneyResult(page: Page) {
     }
 
     const next = page.getByRole("button", {
-      name: /^(Next|Show my answer)$/,
+      name: /^(Next|Show my answer|Calculate my plan)$/,
     });
     await next.click();
   }

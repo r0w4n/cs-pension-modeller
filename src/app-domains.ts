@@ -87,3 +87,9 @@ export {
 } from "./app-domains/state-pension";
 
 export { isTaxAssumptionField } from "./app-domains/tax";
+
+export {
+  buildBridgePlanReview,
+  type BridgePlanReviewItem,
+  type BridgePlanReviewSection,
+} from "./app-domains/bridge-plan-review";

@@ -1500,6 +1500,21 @@ Then(
 );
 
 Then(
+  "the default visible journey steps should start with:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const settings = this.settings ?? createDefaultSettings();
+    const actualTitles = this.selectedJourney.steps
+      .filter((step) => !step.visible || step.visible(settings))
+      .slice(0, table.hashes().length)
+      .map((step) => step.title);
+    const expectedTitles = table.hashes().map((row) => row.title);
+
+    assertEqual(JSON.stringify(actualTitles), JSON.stringify(expectedTitles));
+  }
+);
+
+Then(
   "the {string} journey step should contain these fields:",
   function (this: ProductAcceptanceWorld, stepTitle: string, table: DataTable) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1785,6 +1800,61 @@ Then(
 );
 
 Then(
+  "the {string} journey step should use the simple target-income presentation",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const bridgeStep = this.selectedJourney.steps.find(
+      (step) => step.title === stepTitle
+    );
+    const simpleStep = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    )?.steps.find((step) => step.id === "target");
+
+    assertCondition(
+      bridgeStep?.kind === "fields" && simpleStep?.kind === "fields",
+      "Expected target field steps"
+    );
+    assertEqual(
+      JSON.stringify({
+        title: bridgeStep.title,
+        description: bridgeStep.description,
+        fieldIds: bridgeStep.fieldIds,
+        fieldLabels: bridgeStep.fieldLabels,
+        fieldDescriptions: bridgeStep.fieldDescriptions,
+        currencyFieldPresentation: bridgeStep.currencyFieldPresentation,
+        supportLink: bridgeStep.supportLink,
+      }),
+      JSON.stringify({
+        title: simpleStep.title,
+        description: simpleStep.description,
+        fieldIds: simpleStep.fieldIds,
+        fieldLabels: simpleStep.fieldLabels,
+        fieldDescriptions: simpleStep.fieldDescriptions,
+        currencyFieldPresentation: simpleStep.currencyFieldPresentation,
+        supportLink: simpleStep.supportLink,
+      })
+    );
+  }
+);
+
+Then(
+  "the bridge withdrawal-plan step should expose spending and pot-withdrawal strategies",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const targetStep = this.selectedJourney.steps.find(
+      (step) => step.id === "bridge-strategy"
+    );
+
+    assertCondition(
+      targetStep?.kind === "fields" &&
+        targetStep.showSpendingSmileEditor === true &&
+        targetStep.showFlexibleWithdrawalPriority === true,
+      "Expected bridge withdrawal-plan spending and pot-withdrawal controls"
+    );
+  }
+);
+
+Then(
   "the expert optional sections should allow Alpha pension to be disabled",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1815,6 +1885,30 @@ When(
   "ISA is excluded from the bridge plan",
   function (this: ProductAcceptanceWorld) {
     updateSettings(this, { showIsa: false });
+  }
+);
+
+When(
+  "other guaranteed income is included in the bridge plan",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { showAdditionalGuaranteedIncome: true });
+  }
+);
+
+Then(
+  "the {string} journey step should be visible",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const settings = getSettings(this);
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      !step.visible || step.visible(settings),
+      `Expected journey step "${stepTitle}" to be visible`
+    );
   }
 );
 

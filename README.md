@@ -46,7 +46,8 @@ It supports:
 - avoidable flexible-fund surplus insights with gross reducible withdrawals,
   estimated unallocated net surplus, residual-balance warnings, account
   attribution, and non-destructive target-based previews
-- bridge analysis for the period before secure pension income starts
+- configured flexible withdrawals and shortfall assessment before secure
+  pension income starts
 - simplified 2026/27 Income Tax liability estimates for England, Wales,
   Northern Ireland and Scotland, comparing gross income with income after the
   modelled liability
@@ -68,7 +69,7 @@ For each projection month, the model can calculate values such as:
 - monthly Civil Service pension income once drawn
 - monthly State Pension once it starts
 - State Pension deferral uplift and future uprating where enabled
-- ISA, LISA and SIPP balances, withdrawals, and bridge funding
+- ISA, LISA and SIPP balances and configured withdrawals
 - gross retirement income by source
 - estimated Income Tax liability and take-home income where taxation is enabled
   or an after-tax spending target is selected
@@ -80,9 +81,9 @@ For each projection month, the model can calculate values such as:
 The current app is driven by inputs grouped around:
 
 - personal details: birth month/year and planning horizon
-- retirement income target: an explicit before-tax income or after-tax spending
-  basis, with a selected Retirement Living Standards baseline and either flat
-  spending or expert Go-Go, Slow-Go, No-Go phase percentages
+- retirement income target: an annual after-tax spending amount, with a
+  selected Retirement Living Standards baseline and either flat spending or
+  expert Go-Go, Slow-Go, No-Go phase percentages
 - projection basis: real or nominal values, inflation assumptions, investment
   growth assumptions, and pension increase settings
 - Alpha pension: ABS year, accrued pension, pensionable earnings, leave age,
@@ -171,10 +172,9 @@ Some important assumptions and simplifications are:
   allowance, receive the modelled government bonus on eligible additions, stop
   at age 50, and are modelled for retirement withdrawals from age 60.
 - Income Tax is enabled for new plans by default and uses the selected 2026/27
-  regime throughout the projection. The retirement income target has an
-  explicit basis: gross targets are compared with income before tax, while
-  after-tax targets are compared with income available to spend after estimated
-  Income Tax. Selecting an after-tax target enables the tax estimate.
+  regime throughout the projection. The retirement income target represents
+  money available to spend after estimated Income Tax, so it is compared with
+  projected take-home income and requires the tax estimate.
   Scottish pension income uses the published starter, basic, intermediate,
   higher, advanced and top bands. Modelled taxable income is grouped into
   April-to-March years and one annual liability is allocated across taxable
@@ -196,66 +196,114 @@ For more detail, see the in-app Methodology page.
 
 ## Architecture
 
-The app is organised around a small set of layers:
+The app follows a functional core, imperative shell (FCIS) architecture. React,
+browser APIs, persistence, analytics, mutable caches, and orchestration stay in
+the imperative application shell. Pension calculations and result projections
+are deterministic functions in the functional core.
 
-- [`src/main.tsx`](src/main.tsx) boots the React app.
-- [`src/App.tsx`](src/App.tsx) composes the main app screens and feature
-  sections.
-- [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) orchestrates
-  UI state, persistence, validation, derived results, and projection updates.
-- [`src/settings/`](src/settings) contains defaults, normalization, validation,
-  storage, and schema migration logic.
-- [`src/projection-core.ts`](src/projection-core.ts),
-  [`src/row-assembly.ts`](src/row-assembly.ts), and the row engines contain the
-  projection pipeline.
-- [`src/projection-domains/`](src/projection-domains) contains domain-specific
-  calculations for Alpha, nuvos, State Pension, SIPP, ISA, LISA, tax,
-  inflation, and bridge analysis.
-- [`src/app-domains/`](src/app-domains) adapts raw projection results into
-  UI-facing journey, form, chart, comparison, and summary structures.
-- [`src/pages/`](src/pages) contains the static footer pages for Settings,
-  Privacy, Methodology, About, and Feedback-related navigation.
-- [`e2e/`](e2e) contains Playwright journey, accessibility, and production
-  smoke checks.
-
-```mermaid
-flowchart TD
-    A["src/main.tsx<br/>React entrypoint"] --> B["src/App.tsx<br/>top-level composition"]
-    B --> C["src/app/use-app-controller.ts<br/>app orchestration"]
-
-    C --> D["src/settings/<br/>defaults, normalization, validation, storage"]
-    C --> E["src/projection-core.ts<br/>projection pipeline"]
-    C --> F["src/app-domains/<br/>UI-specific derived data"]
-
-    E --> G["src/derive-inputs.ts<br/>runtime dates and derived inputs"]
-    E --> H["src/row-engine-base.ts /<br/>src/row-engine-with-pension-increases.ts"]
-    H --> I["src/row-assembly.ts<br/>build row values"]
-    I --> J["src/projection-domains/<br/>alpha, nuvos, state-pension, sipp, isa, tax, inflation"]
-
-    D --> K["window.localStorage"]
-    F --> L["Charts, summaries, comparison views"]
-    E --> M["Projection rows and pension summary"]
-    C --> N["Journey mode / expert mode UI"]
-```
-
-The main runtime data flow is:
+The dependency and data flow is:
 
 ```mermaid
 flowchart LR
-    A["User inputs<br/>forms, journey steps, chart controls"] --> B["Settings state<br/>useAppController"]
-    B --> C["Normalization + validation<br/>src/settings/"]
-    C --> D["Derived dates and assumptions<br/>src/derive-inputs.ts"]
-    D --> E["Projection engine<br/>monthly row generation"]
-    E --> F["Projection rows"]
-    F --> G["Summary generation<br/>src/summary.ts"]
-    F --> H["App-domain adapters<br/>comparison, chart, journey helpers"]
-    G --> I["Results summary UI"]
-    H --> J["Retirement income chart, comparison panel,<br/>projection table, journey screens"]
-    B --> K["Local persistence<br/>window.localStorage"]
+    P1["Presentation<br/>journeys, fields and shared result components"] --> S["Application state / imperative shell<br/>React state, orchestration, persistence and caches"]
+    S --> C["Domain / calculation engine<br/>canonical PensionSettings to RetirementPlanResult"]
+    C --> R["Result projection<br/>semantic chart, summary and comparison data"]
+    R --> P2["Presentation<br/>configurable shared result components"]
+    S <--> IO["Browser effects<br/>local storage, import/export and analytics"]
 ```
 
-Calculation and domain logic should stay separate from presentation code where
-practical.
+The concrete layer responsibilities are:
+
+- [`src/main.tsx`](src/main.tsx), [`src/App.tsx`](src/App.tsx), journey screens,
+  and shared components form the presentation layer. They render state and send
+  user intent to the application layer; they do not invoke pension engines.
+- [`src/app/`](src/app) is the imperative shell. It owns React state,
+  orchestration, worker-backed deferred calculation, bounded canonical-result
+  and comparison caches, generated identifiers, browser storage, import/export,
+  analytics, and other effects. The canonical plan is not calculated while the
+  home page or input steps are being viewed; opening the Results step triggers
+  the worker-backed calculation. Parameter changes made on Results retain the
+  last completed result while it is recalculated away from the browser main
+  thread; obsolete in-flight calculations are discarded.
+  [`src/app/use-app-controller.ts`](src/app/use-app-controller.ts) is the main
+  composition boundary.
+- [`src/settings/`](src/settings) supplies the canonical `PensionSettings`
+  model, defaults, normalization, validation, and schema migration. Browser
+  storage entry points are called by the application shell. Each journey owns
+  one canonical settings value; there is no hidden runtime settings overlay.
+- [`src/projection-core.ts`](src/projection-core.ts),
+  [`src/row-assembly.ts`](src/row-assembly.ts), the row engines, and
+  [`src/projection-domains/`](src/projection-domains) form the pension, savings,
+  tax, inflation, and flexible-withdrawal calculation engine.
+- [`src/calculation/retirement-plan.ts`](src/calculation/retirement-plan.ts)
+  is the canonical calculation entry point. It returns one
+  `RetirementPlanResult` containing validation, monthly rows, pension summary,
+  inflation assumptions, plan assessment, State Pension sensitivity, and
+  target-based withdrawal previews. Flexible accounts follow the configured
+  withdrawal strategies in this canonical projection; result projections do
+  not start an alternate pension or bridge-funding calculation.
+- [`src/calculation/retirement-income-assessment.ts`](src/calculation/retirement-income-assessment.ts)
+  derives the calculation-owned income assessment used by the canonical plan
+  assessment. Added-pension goal modelling and withdrawal-strategy previews are
+  also calculation-owned. These functions have no dependency on chart or
+  presentation adapters.
+- [`src/result-projection/`](src/result-projection) turns canonical results into
+  semantic chart series, chart limits, withdrawal insights, formatted age
+  ranges, summary, and comparison data. Comparison-result construction is
+  separated from the larger comparison-table adapter, and shared output
+  formatting has an explicit module. The stateless journey and form adapters in
+  [`src/app-domains/`](src/app-domains) sit downstream; neither layer owns
+  browser state or JSX. Callers use the owning module directly rather than
+  forwarding modules that obscure ownership.
+- The retirement-income chart follows the same boundary internally:
+  [`src/result-projection/retirement-income-chart-model.ts`](src/result-projection/retirement-income-chart-model.ts)
+  defines its semantic contract and
+  [`src/result-projection/retirement-income-chart-layout.ts`](src/result-projection/retirement-income-chart-layout.ts)
+  contains deterministic series and layout projection. The shared React
+  composition remains in [`src/RetirementIncomeChart.tsx`](src/RetirementIncomeChart.tsx),
+  while [`src/app/retirement-income-chart-adapter.tsx`](src/app/retirement-income-chart-adapter.tsx)
+  and the adjacent heading, controls, mobile-navigation, and accessibility
+  components adapt it to each journey's selected presentation.
+- [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
+  configuration for the simplified, early-retirement, and expert journeys. It
+  selects shared fields, labels, help text, update behaviour, and result
+  sections. Settings-group visibility remains alongside this journey
+  presentation configuration; journey identity is not passed into the
+  calculation engine.
+- [`src/pages/`](src/pages) contains the static footer pages, and [`e2e/`](e2e)
+  contains browser journey, accessibility, and production smoke checks.
+
+The FCIS boundary has four practical rules:
+
+1. Effects and mutable state flow inward only through `src/app/`; the functional
+   core does not read browser state, generate IDs, track analytics, or mutate a
+   shared cache.
+2. The calculation engine produces a canonical result once for the active
+   settings. Result projection consumes that result and never starts a pension
+   projection or alternate-strategy calculation.
+3. Result projection returns values and presentation semantics, not React
+   elements. Journeys and result components can vary layout and visibility
+   without introducing journey-specific financial behaviour.
+4. Source dependencies point inward: calculation code cannot import result or
+   presentation adapters, and result projection cannot import `app-domains`.
+   ESLint enforces these boundaries even though result data flows outward to
+   presentation.
+
+The journey configuration can present the same field differently without
+duplicating its setting or calculation. It can also turn shared results
+components on or off, or select their simple, standard, or detailed
+presentation. The current compositions are:
+
+| Journey                              | Input presentation                                                              | Results composition                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Simplified retirement journey        | Short guided sequence with plain-language field labels and constrained defaults | Simple summary, simple retirement-income chart, income details, and concise inflation disclosure         |
+| Work out what I need to retire early | Guided sequence focused on retirement timing and flexible funds                 | Standard summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
+| Expert journey                       | Full field groups and advanced controls                                         | Detailed summary and retirement-income chart, expanded inflation basis, comparison, and projection table |
+
+Early-retirement withdrawals and any remaining shortfall come directly from the
+canonical `RetirementPlanResult`. They are not calculated through a
+journey-specific or separate bridge-funding path, and the main results visual is
+the retirement-income chart built from that canonical projection.
 
 ## Browser Storage And Privacy
 
@@ -285,10 +333,18 @@ restructured. The migration implementations and their compatibility tests live
 in `src/settings/settings-migrations.ts` and
 `src/settings/settings-migrations.test.ts`. Each journey has an independent
 settings section in the same saved file, so changing one journey does not alter
-another. Legacy flat settings and parameter exports remain supported: on first
-load they seed all three sections, with the guided-journey defaults applied to
-the simple and bridge sections. This compatibility path has no time-based
-expiry.
+another. Schema version 16 materialises the Simplified journey assumptions that
+older releases applied only while calculating, so its saved, exported, and
+calculated settings now agree. The migration preserves entered retirement ages
+and does not alter the early-retirement or expert journey settings. Legacy flat
+settings and parameter exports remain supported. In the Simplified workspace,
+inactive EPA and additional-income schedules are retained behind their disabled
+settings; Alpha Added Pension contributions and purchase schedules are cleared
+because that journey does not expose an enable/disable control for them and
+they would otherwise affect its projection. A legacy flat file still seeds all
+three sections, so its full values remain available in the expert workspace,
+with the guided-journey defaults applied separately to the simple and
+early-retirement sections. This compatibility path has no time-based expiry.
 
 ## Analytics
 

@@ -1,4 +1,4 @@
-import { createProjectionTable, type ProjectionRow } from "../projection";
+import type { ProjectionRow } from "../projection";
 import {
   FLEXIBLE_FUND_ACCOUNT_CONFIG,
   FLEXIBLE_FUND_ACCOUNT_IDS,
@@ -29,16 +29,6 @@ export type ResidualFlexibleFundInsight = {
   endingBalance: number;
   planningHorizonAge: number;
   wasUsed: boolean;
-};
-
-export type TargetBasedWithdrawalPreview = {
-  accountId: FlexibleFundAccountId;
-  currentGrossWithdrawals: number;
-  targetBasedGrossWithdrawals: number;
-  currentUnallocatedSurplus: number;
-  targetBasedUnallocatedSurplus: number;
-  currentEndingBalance: number;
-  targetBasedEndingBalance: number;
 };
 
 const MINIMUM_DISPLAYED_RESIDUAL_BALANCE = 1;
@@ -194,45 +184,6 @@ export function getBalanceForAccount(
   return row[FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].balanceField];
 }
 
-export function createTargetBasedWithdrawalPreview(input: {
-  accountId: TargetBasedWithdrawalPreview["accountId"];
-  currentRows: ProjectionRow[];
-  settings: PensionSettings;
-}): TargetBasedWithdrawalPreview {
-  const strategyField = getWithdrawalStrategyFieldId(input.accountId);
-  const previewRows = createProjectionTable({
-    ...input.settings,
-    [strategyField]: "meet_income_target",
-  });
-  const currentDisplayedRows = getDisplayedRows(
-    input.currentRows,
-    input.settings
-  );
-  const previewDisplayedRows = getDisplayedRows(previewRows, input.settings);
-  const currentEndingRow = currentDisplayedRows.at(-1);
-  const previewEndingRow = previewDisplayedRows.at(-1);
-
-  return {
-    accountId: input.accountId,
-    currentGrossWithdrawals: sumWithdrawals(
-      currentDisplayedRows,
-      input.accountId
-    ),
-    targetBasedGrossWithdrawals: sumWithdrawals(
-      previewDisplayedRows,
-      input.accountId
-    ),
-    currentUnallocatedSurplus: sumAvoidableSurplus(currentDisplayedRows),
-    targetBasedUnallocatedSurplus: sumAvoidableSurplus(previewDisplayedRows),
-    currentEndingBalance: currentEndingRow
-      ? getBalanceForAccount(currentEndingRow, input.accountId)
-      : 0,
-    targetBasedEndingBalance: previewEndingRow
-      ? getBalanceForAccount(previewEndingRow, input.accountId)
-      : 0,
-  };
-}
-
 function createResidualFlexibleFundInsights(
   rows: ProjectionRow[],
   settings: PensionSettings
@@ -277,21 +228,4 @@ function getWithdrawalStrategy(
 
 function getDisplayedRows(rows: ProjectionRow[], settings: PensionSettings) {
   return rows.filter((row) => row.date >= settings.startDate);
-}
-
-function sumWithdrawals(
-  rows: ProjectionRow[],
-  accountId: FlexibleFundAccountId
-) {
-  return rows.reduce(
-    (total, row) => total + getWithdrawalForAccount(row, accountId),
-    0
-  );
-}
-
-function sumAvoidableSurplus(rows: ProjectionRow[]) {
-  return rows.reduce(
-    (total, row) => total + (row.monthlyAvoidableFlexibleSurplus ?? 0),
-    0
-  );
 }

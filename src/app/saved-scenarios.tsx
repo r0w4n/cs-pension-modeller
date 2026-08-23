@@ -1,9 +1,9 @@
 import type { PensionSettings } from "../settings";
-import {
-  formatCurrencyDetailed,
-  type ComparisonResult,
-  type ComparisonScenario,
-} from "../app-domains";
+import type {
+  ComparisonResult,
+  ComparisonScenario,
+} from "../result-projection/comparison-result";
+import { formatCurrencyDetailed } from "../result-projection/formatting";
 
 export function SavedScenariosSection({
   scenarios,
@@ -54,7 +54,7 @@ export function SavedScenariosSection({
               </label>
               <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
               <span>
-                {result.bridgeAnalysis.planWorks
+                {result.assessment.meetsTargetThroughout
                   ? "Looks workable"
                   : "Needs attention"}
               </span>

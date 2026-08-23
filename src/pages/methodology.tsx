@@ -18,7 +18,6 @@ const PROJECTED_SOURCES = [
   "Civil Service Additional Voluntary Contribution (CS AVC) pension savings",
   "ISA savings",
   "Lifetime ISA (LISA) savings",
-  "Optional bridge funding before defined-benefit or State Pension income starts",
   "Simplified UK Income Tax",
   "Partial retirement effects",
   "Comparison between saved scenarios",
@@ -100,7 +99,7 @@ const LISA_PROJECTS = [
   "selected withdrawal strategy",
 ] as const;
 
-const BRIDGE_SENSITIVITIES = [
+const FLEXIBLE_WITHDRAWAL_SENSITIVITIES = [
   "retirement age",
   "Alpha draw age",
   "Premium draw age",
@@ -154,7 +153,7 @@ const COMPARISON_OUTPUTS = [
   "lowest projected income",
   "years and lifetime amount below target",
   "secure pension income at key ages",
-  "bridge-funding gaps before and after pension-pot and LISA access",
+  "income shortfalls before and after pension-pot and LISA access",
   "ISA, LISA, SIPP and CS AVC depletion ages",
 ] as const;
 
@@ -167,8 +166,8 @@ export function MethodologyPage() {
     <StaticPageLayout
       eyebrow="Civil Service Pensions"
       title="Methodology"
-      lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, drawdown, tax and bridge funding."
-      description="Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."
+      lead="This page explains how the Civil Service Pension Modeller projects retirement income, pension accrual, savings balances, flexible withdrawals, tax and income shortfalls."
+      description="Read how the modeller projects pension income, flexible withdrawals, tax, inflation, and other assumptions."
     >
       <section>
         <p className="section-copy">
@@ -214,21 +213,18 @@ export function MethodologyPage() {
       </section>
 
       <section>
-        <h2>Retirement target basis</h2>
+        <h2>Retirement income target</h2>
         <p className="section-copy">
-          A retirement target has an explicit basis. A gross target is compared
-          with projected income before tax. An after-tax target is compared with
-          projected take-home income after the modeller&apos;s simplified Income
-          Tax estimate. The target, income, shortfall and surplus calculations
-          use the same basis.
+          The retirement income target represents money available to spend after
+          the modeller&apos;s simplified Income Tax estimate. The target is
+          therefore compared with projected take-home income, and target,
+          shortfall and surplus calculations use that same after-tax basis.
         </p>
         <p className="section-copy">
-          The simplified journey asks how much spending money should be
-          available each month after estimated tax and shows its yearly
-          equivalent. New bridge plans also default to an after-tax target,
-          while the expert journey and migrated settings retain a gross target
-          unless the basis is changed explicitly. Selecting an after-tax target
-          enables the tax estimate needed for the comparison.
+          The simplified journey asks for a monthly spending amount and shows
+          its yearly equivalent. The bridge and expert journeys ask for the
+          annual amount. Income Tax estimation is enabled because it is needed
+          to make these comparisons.
         </p>
         <p className="section-copy">
           Retirement Living Standards examples describe expenditure rather than
@@ -261,12 +257,10 @@ export function MethodologyPage() {
           is 2.5%, the real return is approximately 2.44%, not simply 2.5%.
         </p>
         <p className="section-copy">
-          The retirement-income target is treated according to its selected
-          basis. An after-tax target represents the amount available to spend
-          after estimated Income Tax; a gross target represents income before
-          tax. In real terms, the target stays flat in today&apos;s money. In
-          nominal terms, the target increases over time with the inflation
-          assumption.
+          The retirement-income target represents the amount available to spend
+          after estimated Income Tax. In real terms, the target stays flat in
+          today&apos;s money. In nominal terms, the target increases over time
+          with the inflation assumption.
         </p>
         <p className="section-copy">
           In real-terms projections, the model removes the main inflation
@@ -998,7 +992,7 @@ export function MethodologyPage() {
           calculates guaranteed income and any withdrawals required by Annual
           percentage, Use by age or Zero at death. It then considers eligible
           target-based accounts in the saved priority order and withdraws only
-          enough to close the remaining gap on the selected target basis.
+          enough to close the remaining after-tax spending gap.
         </p>
         <p className="section-copy">
           The coordinator consumes the active target produced by the target
@@ -1008,12 +1002,11 @@ export function MethodologyPage() {
           without changing their saved priority.
         </p>
         <p className="section-copy">
-          For an after-tax target, ISA and LISA withdrawals meet the gap
-          directly. For taxable SIPP and Civil Service AVC withdrawals, the
-          model repeatedly recalculates Income Tax to estimate the gross amount
-          needed. This includes the selected tax-free withdrawal share and the
-          modelled allowance and tax bands. A before-tax target is instead
-          compared directly with gross withdrawals.
+          ISA and LISA withdrawals meet the after-tax gap directly. For taxable
+          SIPP and Civil Service AVC withdrawals, the model repeatedly
+          recalculates Income Tax to estimate the gross amount needed. This
+          includes the selected tax-free withdrawal share and the modelled
+          allowance and tax bands.
         </p>
         <p className="section-copy">
           Existing withdrawal strategies remain explicit instructions and are
@@ -1068,65 +1061,69 @@ export function MethodologyPage() {
       </section>
 
       <section>
-        <h2>Bridge funding methodology</h2>
+        <h2>Flexible withdrawals before later pensions</h2>
         <p className="section-copy">
-          Bridge funding is the use of temporary savings or pension withdrawals
-          to cover income gaps before later income streams begin.
+          A user can configure temporary ISA, LISA, SIPP or CS AVC withdrawals
+          before later pension income begins. These withdrawals are calculated
+          as part of the same monthly retirement projection as every other
+          income source; there is no separate bridge-funding calculation.
         </p>
         <p className="section-copy">
           The retirement income summary starts with an outcome banner showing
-          whether the scenario appears to meet the selected income target.
-          Temporary ISA, LISA, SIPP and CS AVC withdrawals that run in a bridge
-          period are not treated as permanent pension income. The detailed
-          summary groups projected income by age range, with each range starting
-          when the active income sources change.
+          whether the scenario appears to meet the selected income target. The
+          outcome, plan status and comparison headline metrics are assessed from
+          the same monthly projection used by the retirement income chart. They
+          therefore respect the withdrawal strategy configured for each ISA,
+          LISA, SIPP and CS AVC account. Temporary ISA, LISA, SIPP and CS AVC
+          withdrawals that run in a bridge period are not treated as permanent
+          pension income. The detailed summary groups projected income by age
+          range, with each range starting when the active income sources change.
         </p>
         <p className="section-copy">
           The model can show where income is below the selected
           retirement-income target and whether ISA, LISA, SIPP or CS AVC
-          drawdown can cover that gap.
+          drawdown covers that gap under the selected withdrawal strategies.
         </p>
         <p className="section-copy">
-          Bridge analysis first prepares a retirement scenario where Alpha
-          accrual stops at the target retirement age and ISA drawdown can begin
-          at retirement. It then compares net secure income from the selected
-          Civil Service defined-benefit pensions, additional guaranteed income
-          and State Pension with the selected target for each month from
-          retirement to life expectancy. In real-terms mode the target remains
-          in today's-money terms; in nominal mode it is increased from the model
-          start date using the same monthly inflation convention as the main
+          The simplified, early-retirement and expert journeys are different
+          ways of presenting shared inputs and results. They all pass their
+          saved assumptions through the same validation and projection engine;
+          selecting a journey does not select a different pension calculation. A
+          journey may show fewer inputs or results, or explain them differently,
+          while its stored settings remain the assumptions used by the
           projection.
         </p>
         <p className="section-copy">
-          ISA, LISA, SIPP and CS AVC bridge balances start from the
-          retirement-date balance immediately before any configured
-          main-projection withdrawal. That balance includes applicable
-          investment growth, regular saving, scheduled lump sums and
-          partial-retirement saving reductions up to retirement. The bridge
-          calculation then applies only the temporary withdrawal needed for that
-          month's modelled shortfall. Investment growth during the bridge uses
-          the same real or nominal growth conversion as the main pot
-          projections.
+          Account balances include applicable investment growth, regular saving,
+          scheduled lump sums and partial-retirement saving reductions. Each
+          account then follows its configured access age and withdrawal
+          strategy. The coordinated target-based strategy can use available
+          flexible accounts to help meet the active target, while fixed,
+          life-expectancy and use-by-age strategies follow their configured
+          withdrawal amounts. Any remaining gap appears as a shortfall in the
+          chart, assessment and comparison results.
         </p>
         <p className="section-copy">
-          Before pension-pot and LISA access, any shortfall is tracked as an
-          ISA-only bridge requirement. From SIPP access onwards, the bridge
-          calculation draws from SIPP first. From CS AVC access onwards, it can
-          then draw from CS AVC. From LISA access onwards, it can then draw from
-          LISA before ISA, limited by the balances available. Any remaining gap
-          is recorded as an unfunded shortfall. The comparison view also
-          estimates the extra monthly saving that would be needed to cover any
-          remaining shortfall over the months before retirement.
+          A scenario is labelled as meeting its target only when the main
+          projection has no modelled shortfall from the selected retirement age
+          to the planning horizon. The assessment also derives the first and
+          largest shortfall, lifetime shortfall, secure income once all selected
+          pensions are active, the secure-income position at the planning
+          horizon and the first flexible fund exhausted from those same rows.
         </p>
-        <p className="section-copy">A typical bridge scenario might be:</p>
+        <p className="section-copy">
+          A typical early-retirement scenario might be:
+        </p>
         <FormulaBlock>
           {
             "Retire early -> use ISA -> use SIPP/CS AVC/LISA -> Alpha starts -> State Pension starts"
           }
         </FormulaBlock>
-        <p className="section-copy">The bridge analysis is sensitive to:</p>
+        <p className="section-copy">
+          The projected withdrawals and shortfalls are sensitive to:
+        </p>
         <ul className="section-copy">
-          {BRIDGE_SENSITIVITIES.map((item) => (
+          {FLEXIBLE_WITHDRAWAL_SENSITIVITIES.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
@@ -1134,16 +1131,7 @@ export function MethodologyPage() {
           The retirement income chart should be interpreted as a planning view,
           not a guarantee. A shortfall shown in the chart may mean that savings
           are exhausted, pension income starts too late, or the income target is
-          too high for the selected assumptions. This chart uses the main
-          projection; it is distinct from the separate bridge analysis described
-          above.
-        </p>
-        <p className="section-copy">
-          Where requested by the comparison view, the model tests quarter-year
-          Alpha and nuvos draw ages from the later of age 55 and the selected
-          retirement age up to the relevant normal pension age. The first age
-          that passes the bridge-plan and stable guaranteed-income checks is
-          shown as the earliest sustainable pension draw age, if one is found.
+          too high for the selected assumptions.
         </p>
       </section>
 
@@ -1171,7 +1159,7 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           Partial retirement can materially affect both future pension accrual
-          and bridge-funding capacity.
+          and the capacity to fund early-retirement withdrawals.
         </p>
         <p className="section-copy">
           Partial retirement does not directly reduce existing accrued pension,

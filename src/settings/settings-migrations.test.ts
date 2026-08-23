@@ -13,6 +13,8 @@ import {
   migrateFromV12ToV13,
   migrateFromV13ToV14,
   migrateFromV14ToV15,
+  migrateFromV15ToV16,
+  migrateFromV16ToV17,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
@@ -317,9 +319,35 @@ describe("settings-migrations", () => {
       })
     ).toEqual({
       journeys: {
-        simple: migratedLegacySettings,
+        simple: {
+          ...migratedLegacySettings,
+          showAlpha: true,
+          showStatePension: true,
+          showSipp: false,
+          showIsa: false,
+          showLisa: false,
+          alphaAddedPensionMonthly: 0,
+          classicCalculationMode: "manual",
+          classicPlusCalculationMode: "manual",
+          alphaAddedPensionFactorType: "self",
+          statePensionApplyFutureGrowth: false,
+          assumedCpiPercent: 0,
+          sippWithdrawalStrategy: "use_by_age",
+          isaWithdrawalStrategy: "use_by_age",
+          lisaWithdrawalStrategy: "use_by_age",
+          taxationEnabled: true,
+          retirementIncomeTargetBasis: "after_tax",
+          partialRetirementEnabled: false,
+          alphaEpaEnabled: false,
+          showAdditionalGuaranteedIncome: false,
+          alphaAddedPensionLumpSums: [],
+        },
         bridge: migratedLegacySettings,
-        expert: migratedLegacySettings,
+        expert: {
+          ...migratedLegacySettings,
+          taxationEnabled: true,
+          retirementIncomeTargetBasis: "after_tax",
+        },
       },
     });
   });
@@ -382,6 +410,72 @@ describe("settings-migrations", () => {
         },
         bridge: { sippDrawAge: 63 },
         expert: { alphaPensionDrawAge: 68.25 },
+      },
+    });
+  });
+
+  it("materializes the simplified journey assumptions without changing its ages or other journeys", () => {
+    const bridge = { requirementAge: 61, showSipp: true };
+    const expert = { requirementAge: 68, showSipp: true };
+
+    expect(
+      migrateFromV15ToV16({
+        journeys: {
+          simple: {
+            requirementAge: 57.25,
+            alphaPensionLeaveAge: 57.25,
+            showSipp: true,
+            taxationEnabled: false,
+            alphaEpaPeriods: [{ id: "existing-epa-period" }],
+            alphaAddedPensionLumpSums: [{ amount: 5_000 }],
+          },
+          bridge,
+          expert,
+        },
+      })
+    ).toMatchObject({
+      journeys: {
+        simple: {
+          requirementAge: 57.25,
+          alphaPensionLeaveAge: 57.25,
+          showSipp: false,
+          taxationEnabled: true,
+          retirementIncomeTargetBasis: "after_tax",
+          sippWithdrawalStrategy: "use_by_age",
+          alphaEpaPeriods: [{ id: "existing-epa-period" }],
+          alphaAddedPensionLumpSums: [],
+        },
+        bridge,
+        expert,
+      },
+    });
+  });
+
+  it("migrates the Expert journey to the after-tax target meaning", () => {
+    const simple = { retirementIncomeTargetBasis: "after_tax" };
+    const bridge = { retirementIncomeTargetBasis: "after_tax" };
+
+    expect(
+      migrateFromV16ToV17({
+        journeys: {
+          simple,
+          bridge,
+          expert: {
+            desiredRetirementIncome: 40_000,
+            taxationEnabled: false,
+            retirementIncomeTargetBasis: "gross",
+          },
+        },
+      })
+    ).toEqual({
+      journeys: {
+        simple,
+        bridge,
+        expert: {
+          desiredRetirementIncome: 40_000,
+          taxationEnabled: true,
+          retirementIncomeTargetBasis: "after_tax",
+        },
       },
     });
   });

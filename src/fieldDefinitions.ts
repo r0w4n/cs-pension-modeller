@@ -254,18 +254,26 @@ export const fieldGroups: FieldGroup[] = [
     eyebrow: "Retirement Income Target",
     title: "Retirement income target",
     description:
-      "Choose your target retirement age, the annual income target you want to assess, what that target means for tax, and whether it remains level or changes through retirement.",
+      "Set your target retirement age and the annual amount you would like available to spend after tax.",
     fields: [
       {
         id: "desiredRetirementIncome",
-        label: "Retirement income target (£ per year)",
+        label: "After-tax income target",
         type: "currency-input",
         min: 0,
         max: 200000,
         step: 1,
         format: "currency",
+        presets: [
+          { value: 11250, label: "£11,250" },
+          { value: 13900, label: "£13,900" },
+          { value: 22700, label: "£22,700" },
+          { value: 31350, label: "£31,350" },
+          { value: 32700, label: "£32,700" },
+          { value: 45400, label: "£45,400" },
+        ],
         description:
-          "Your underlying annual target before the modeller applies any Go-Go, Slow-Go, No-Go phase percentage. Use the target-basis question to say whether this is income before tax or spending money after estimated tax. The presets come from Retirement Living Standards benchmarks, but your own costs may differ.",
+          "How much would you like to have available to spend each year in retirement, after tax?",
         infoUrl: knowledgeLinks.retirementLivingStandards,
         infoLinkText: "Retirement Living Standards",
       },
@@ -280,24 +288,6 @@ export const fieldGroups: FieldGroup[] = [
         format: "age",
         description:
           "The age from which you want the modeller to assess whether your retirement income target is being met. In expert mode this defaults to your Alpha Normal Pension Age (NPA). In the bridge journey this is your target retirement age, so an earlier age gives pots longer to cover.",
-      },
-      {
-        id: "retirementIncomeTargetBasis",
-        label: "What does your retirement income target mean?",
-        type: "select",
-        options: [
-          {
-            value: "gross",
-            label: "Income before estimated tax",
-          },
-          {
-            value: "after_tax",
-            label: "Money available after estimated tax",
-          },
-        ],
-        description:
-          "Choose whether the target is income before tax or spending money available after the model's estimated Income Tax.",
-        fullWidth: true,
       },
     ],
   },
@@ -390,15 +380,6 @@ export const fieldGroups: FieldGroup[] = [
     description: "Current forecast and optional future uprating assumptions.",
     fields: [
       {
-        id: "statePensionForecastConfirmed",
-        label: "This is my personalised State Pension forecast",
-        type: "checkbox",
-        description:
-          "Select this only when the amount below comes from your personalised GOV.UK State Pension forecast. Until it is confirmed, the amount is shown as an assumption. Results that depend on it are labelled Needs checking; otherwise they remain on track with a caution.",
-        infoUrl: knowledgeLinks.statePensionForecast,
-        infoLinkText: "Check State Pension forecast",
-      },
-      {
         id: "currentStatePension",
         label: "State Pension forecast (£ per year)",
         type: "currency-input",
@@ -410,6 +391,15 @@ export const fieldGroups: FieldGroup[] = [
           "Use your latest GOV.UK forecast. This is separate from Civil Service pensions and depends on your National Insurance record, State Pension start date, and uprating rules.",
         infoUrl: knowledgeLinks.statePensionForecast,
         infoLinkText: "Check State Pension",
+      },
+      {
+        id: "statePensionForecastConfirmed",
+        label: "This is my personalised State Pension forecast",
+        type: "checkbox",
+        description:
+          "Select this only when the amount above comes from your personalised GOV.UK State Pension forecast. Until it is confirmed, the amount is shown as an assumption. Results that depend on it are labelled Needs checking; otherwise they remain on track with a caution.",
+        infoUrl: knowledgeLinks.statePensionForecast,
+        infoLinkText: "Check State Pension forecast",
       },
       {
         id: "statePensionDrawDate",

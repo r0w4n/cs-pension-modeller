@@ -5,66 +5,33 @@ export {
 } from "./app-domains/alpha";
 
 export {
-  calculateAddedPensionMonthlyIncome,
-  createAddedPensionGoalBasis,
-  estimateAddedPensionMonthlyContribution,
-  type AddedPensionGoalBasis,
-} from "./app-domains/added-pension-goal";
-
-export {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
+  DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
   applyBridgeJourneyDefaults,
-  applySimpleJourneyAssumptions,
   applySimpleJourneyDefaults,
-  isSpendingSmileEditorStep,
-  isExpertRetirementIncomeTargetStep,
   isOptionalSectionToggleKey,
-  SPENDING_SMILE_EDITOR_STEP_ID,
   type JourneyDefinition,
   type JourneyCurrencyFieldPresentation,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyOptionalQuestion,
   type JourneyOptionalSectionCopy,
+  type JourneyResultsSection,
   type JourneyStepDefinition,
+  type JourneySettingsPresentation,
   type OptionalSectionToggleKey,
 } from "./app-domains/journeys";
 
 export {
-  getEarliestSippChartStartAge,
-  getPartialRetirementStartAgeBounds,
-  getPensionStartAgeBounds,
-  getSippChartAccessAgeBounds,
-  getStatePensionAgeBounds,
-  getStandalonePensionStartAgeBounds,
-  getUseByAgeBounds,
-  type ChartAgeBounds,
-} from "./app-domains/retirement-income-chart-bounds";
-
-export {
   buildComparisonStatusItems,
   buildComparisonTableRows,
-  buildIncomeAgeRangeItems,
   buildRetirementOutcomeBanner,
   calculateComparisonInsights,
-  clearStoredComparisonScenarios,
-  clonePensionSettings,
-  createBridgeAnswerResult,
-  createComparisonResult,
-  createComparisonScenarioId,
   formatCapitalPreservation,
   formatTargetMissDuration,
-  getSettingsSignature,
-  loadStoredComparisonScenarios,
-  saveStoredComparisonScenarios,
-  type BridgeAnswerResult,
-  type BridgeAnswerResultCache,
   type ComparisonInsights,
-  type IncomeAgeRangeItem,
-  type ComparisonResult,
-  type ComparisonResultCache,
-  type ComparisonScenario,
+  type ComparisonCellValue,
   type ComparisonTableRow,
   type RetirementOutcomeBanner,
   type RetirementOutcomeStatus,
@@ -96,43 +63,10 @@ export { isNuvosPensionIncreaseField } from "./app-domains/nuvos";
 export { isPartialRetirementField } from "./app-domains/partial-retirement";
 
 export {
-  addYearsToIsoDate,
-  clampNumber,
-  formatAge,
-  formatAgeValue,
-  formatCurrencyDetailed,
-  formatDate,
-  formatDecimalAge,
-  formatModelledReturn,
-  formatPercent,
-  formatShortfallOrSurplus,
-  isSettingsGroupVisible,
-} from "./app-domains/shared";
-
-export {
-  calculateCurrentPlanningAge,
-  createRetirementIncomeChartLimits,
-  createRetirementIncomeChartParameters,
-  createRetirementIncomeSeries,
-} from "./app-domains/retirement-income";
-
-export {
-  createTargetBasedWithdrawalPreview,
-  getBalanceForAccount,
-  getFlexibleFundAccountIdForStrategyField,
-  getFlexibleFundAccountLabel,
-  getFlexibleWithdrawalNonPriorityAccounts,
-  getFlexibleWithdrawalPriorityAccounts,
-  getWithdrawalForAccount,
-  getWithdrawalStrategyFieldId,
-  reorderFlexibleWithdrawalAccounts,
-  shouldShowFlexibleWithdrawalPriority,
-  summarizeFlexibleWithdrawalInsights,
-  type FlexibleWithdrawalAccountInsight,
-  type FlexibleWithdrawalSummary,
-  type ResidualFlexibleFundInsight,
-  type TargetBasedWithdrawalPreview,
-} from "./app-domains/flexible-withdrawals";
+  assessRetirementPlan,
+  type FlexibleFundAssessmentAccount,
+  type RetirementPlanAssessment,
+} from "./calculation/retirement-plan-assessment";
 
 export {
   getSippEffectiveRangeField,
@@ -153,3 +87,9 @@ export {
 } from "./app-domains/state-pension";
 
 export { isTaxAssumptionField } from "./app-domains/tax";
+
+export {
+  buildBridgePlanReview,
+  type BridgePlanReviewItem,
+  type BridgePlanReviewSection,
+} from "./app-domains/bridge-plan-review";

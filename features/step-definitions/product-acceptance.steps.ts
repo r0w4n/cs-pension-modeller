@@ -10,12 +10,16 @@ import {
 import { fieldGroups } from "../../src/fieldDefinitions";
 import { knowledgeLinks } from "../../src/knowledgeLinks";
 import {
+  buildComparisonStatusItems,
   buildRetirementOutcomeBanner,
   buildComparisonTableRows,
-  createComparisonResult,
-  type ComparisonResult,
   type ComparisonTableRow,
 } from "../../src/app-domains/comparison";
+import {
+  createComparisonResult as projectComparisonResult,
+  type ComparisonResult,
+  type ComparisonScenario,
+} from "../../src/result-projection/comparison-result";
 import {
   loadAcknowledgementState,
   loadStoredAppMode,
@@ -29,6 +33,7 @@ import {
 } from "../../src/app/app-persistence";
 import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
 import { getRetirementIncomeChartTitle } from "../../src/RetirementIncomeChart";
+import { calculateRetirementPlan } from "../../src/calculation/retirement-plan";
 import {
   calculateRetirementChartOverlays,
   RETIREMENT_CHART_OVERLAY_META,
@@ -47,10 +52,6 @@ import {
   createPensionLumpSumAllowanceState,
   calculateMonthlyStatePension,
   calculateStatePensionDeferralIncreasePercent,
-  createProjectionTable,
-  generatePensionSummary,
-  generateRetirementBridgeAnalysis,
-  prepareBridgeProjectionSettings,
 } from "../../src/projection";
 import {
   calculateNormalPensionAge,
@@ -61,6 +62,17 @@ import {
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
+
+function createComparisonResult(
+  scenario: ComparisonScenario,
+  currentSettingsSignature: string
+) {
+  return projectComparisonResult(
+    scenario,
+    currentSettingsSignature,
+    calculateRetirementPlan(scenario.settings)
+  );
+}
 
 type ProductAcceptanceWorld = {
   precision?: number;
@@ -104,9 +116,8 @@ type ProductAcceptanceWorld = {
   chartLegendKeys?: string[];
   standardChartTitle?: string;
   simpleChartTitle?: string;
-  bridgeAnalysis?: ReturnType<typeof generateRetirementBridgeAnalysis>;
-  bridgeSummary?: ReturnType<typeof generatePensionSummary>;
-  bridgeFundingNeedBeforeGuaranteedIncome?: number;
+  bridgePlan?: ReturnType<typeof calculateRetirementPlan>;
+  bridgeShortfallBeforeGuaranteedIncome?: number;
   comparisonResults?: ComparisonResult[];
   comparisonRows?: ComparisonTableRow[];
   selectedJourney?: JourneyDefinition;
@@ -121,7 +132,7 @@ type MemoryStorage = Storage & {
 };
 
 type JourneyAnswerStep = JourneyStepDefinition & {
-  kind: "bridge-answer" | "expert-answer";
+  kind: "results";
 };
 
 function parseMoney(value: string | number) {
@@ -155,15 +166,6 @@ function assertEqual<T>(actual: T, expected: T) {
   }
 }
 
-function assertDeepEqual(actual: unknown, expected: unknown) {
-  const actualJson = JSON.stringify(actual);
-  const expectedJson = JSON.stringify(expected);
-
-  if (actualJson !== expectedJson) {
-    throw new Error(`Expected ${actualJson} to equal ${expectedJson}`);
-  }
-}
-
 function expectMoney(
   actual: number | undefined,
   expected: string | number,
@@ -191,27 +193,17 @@ function updateSettings(
   };
 }
 
-function analyseBridgePlan(world: ProductAcceptanceWorld) {
-  const bridgeSettings = prepareBridgeProjectionSettings(getSettings(world));
-  const pensionRows = createProjectionTable({
-    ...bridgeSettings,
-    showSipp: false,
-    showIsa: false,
-    showLisa: false,
-  });
-
-  world.settings = bridgeSettings;
-  world.bridgeSummary = generatePensionSummary(pensionRows, bridgeSettings);
-  world.bridgeAnalysis = generateRetirementBridgeAnalysis(
-    pensionRows,
-    bridgeSettings
-  );
+function calculateBridgePlan(world: ProductAcceptanceWorld) {
+  world.bridgePlan = calculateRetirementPlan(getSettings(world));
 }
 
-function getBridgeAnalysis(world: ProductAcceptanceWorld) {
-  assertCondition(world.bridgeAnalysis, "Bridge analysis has not been run");
+function getBridgePlan(world: ProductAcceptanceWorld) {
+  assertCondition(
+    world.bridgePlan,
+    "Bridge retirement plan has not been calculated"
+  );
 
-  return world.bridgeAnalysis;
+  return world.bridgePlan;
 }
 
 function getComparisonRow(world: ProductAcceptanceWorld, metric: string) {
@@ -236,6 +228,14 @@ function nodeText(value: unknown) {
 
   if (value === null || value === undefined) {
     return "";
+  }
+
+  if (
+    typeof value === "object" &&
+    "value" in value &&
+    (typeof value.value === "string" || typeof value.value === "number")
+  ) {
+    return String(value.value);
   }
 
   return "";
@@ -372,7 +372,7 @@ Then(
 );
 
 Given(
-  "bridge analysis outputs are rounded to {int} decimal places",
+  "retirement plan outputs are rounded to {int} decimal places",
   function (this: ProductAcceptanceWorld, precision: number) {
     this.precision = precision;
   }
@@ -860,6 +860,10 @@ Given(
       showClassicPlus: false,
       showNuvos: false,
       showPremium: false,
+      showSipp: false,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
     });
   }
 );
@@ -937,6 +941,7 @@ Given(
     statePensionDrawDate: string
   ) {
     updateSettings(this, {
+      startDate: "2025-04-01",
       dateOfBirth: "1960-04-01",
       showStatePension: true,
       currentStatePension,
@@ -952,7 +957,9 @@ Given(
       showIsa: true,
       isaCurrentPot,
       isaMonthlyContribution: 0,
+      isaDrawAge: getSettings(this).requirementAge,
       isaWithdrawalStrategy: "use_by_age",
+      isaWithdrawalTargetAge: getSettings(this).lifeExpectancy,
     });
   }
 );
@@ -973,7 +980,12 @@ Given(
 Given(
   "the bridge retirement age is {float}",
   function (this: ProductAcceptanceWorld, requirementAge: number) {
-    updateSettings(this, { requirementAge });
+    const settings = getSettings(this);
+    updateSettings(this, {
+      requirementAge,
+      isaDrawAge: settings.showIsa ? requirementAge : settings.isaDrawAge,
+      sippDrawAge: settings.showSipp ? requirementAge : settings.sippDrawAge,
+    });
   }
 );
 
@@ -1022,7 +1034,22 @@ Then(
 Given(
   "the bridge life expectancy age is {float}",
   function (this: ProductAcceptanceWorld, lifeExpectancy: number) {
-    updateSettings(this, { lifeExpectancy });
+    const settings = getSettings(this);
+    updateSettings(this, {
+      lifeExpectancy,
+      isaWithdrawalTargetAge: settings.showIsa
+        ? lifeExpectancy
+        : settings.isaWithdrawalTargetAge,
+      sippWithdrawalTargetAge: settings.showSipp
+        ? lifeExpectancy
+        : settings.sippWithdrawalTargetAge,
+      csAvcWithdrawalTargetAge: settings.showCsAvc
+        ? lifeExpectancy
+        : settings.csAvcWithdrawalTargetAge,
+      lisaWithdrawalTargetAge: settings.showLisa
+        ? lifeExpectancy
+        : settings.lisaWithdrawalTargetAge,
+    });
   }
 );
 
@@ -1033,27 +1060,10 @@ Given(
   }
 );
 
-When("the bridge plan is analysed", function (this: ProductAcceptanceWorld) {
-  analyseBridgePlan(this);
-});
-
 When(
-  "the earliest sustainable pension draw age is calculated",
+  "the bridge retirement plan is calculated",
   function (this: ProductAcceptanceWorld) {
-    const bridgeSettings = prepareBridgeProjectionSettings(getSettings(this));
-    const pensionRows = createProjectionTable({
-      ...bridgeSettings,
-      showSipp: false,
-      showIsa: false,
-      showLisa: false,
-    });
-
-    this.settings = bridgeSettings;
-    this.bridgeAnalysis = generateRetirementBridgeAnalysis(
-      pensionRows,
-      bridgeSettings,
-      { calculateSafeDrawAge: true }
-    );
+    calculateBridgePlan(this);
   }
 );
 
@@ -1064,10 +1074,8 @@ When(
     annualAmount: number,
     startAge: number
   ) {
-    const previousAnalysis = getBridgeAnalysis(this);
-    this.bridgeFundingNeedBeforeGuaranteedIncome =
-      previousAnalysis.totalBridgeRequired +
-      previousAnalysis.totalUnfundedShortfall;
+    this.bridgeShortfallBeforeGuaranteedIncome =
+      getBridgePlan(this).assessment.totalLifetimeShortfall;
     updateSettings(this, {
       showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
@@ -1083,23 +1091,16 @@ When(
         },
       ],
     });
-    analyseBridgePlan(this);
+    calculateBridgePlan(this);
   }
 );
 
 Then(
-  "the bridge plan should work on these assumptions",
+  "the configured withdrawals should meet the income target at retirement",
   function (this: ProductAcceptanceWorld) {
-    assertEqual(getBridgeAnalysis(this).planWorks, true);
-  }
-);
-
-Then(
-  "the earliest sustainable pension draw age should be {float}",
-  function (this: ProductAcceptanceWorld, expectedAge: number) {
-    assertEqual(
-      getBridgeAnalysis(this).earliestSustainablePensionDrawAge,
-      expectedAge
+    assertCondition(
+      getBridgePlan(this).assessment.retirementAnnualGap >= 0,
+      "Expected configured withdrawals to meet the income target at retirement"
     );
   }
 );
@@ -1107,12 +1108,8 @@ Then(
 Then(
   "the retirement income summary should not include Alpha pension",
   function (this: ProductAcceptanceWorld) {
-    assertCondition(
-      this.bridgeSummary,
-      "Bridge summary has not been generated"
-    );
     assertEqual(
-      this.bridgeSummary.retirementIncome.sources.some(
+      getBridgePlan(this).summary.retirementIncome.sources.some(
         (source) => source.key === "alpha"
       ),
       false
@@ -1121,62 +1118,65 @@ Then(
 );
 
 Then(
-  "the first bridge phase should show no secure income source",
+  "the retirement income summary should include configured ISA withdrawals",
   function (this: ProductAcceptanceWorld) {
-    assertDeepEqual(getBridgeAnalysis(this).phases[0]?.incomeSourcesActive, [
-      "None",
-    ]);
+    assertCondition(
+      [
+        ...getBridgePlan(this).summary.retirementIncome.sources,
+        ...getBridgePlan(this).summary.retirementIncome.bridgeWithdrawals,
+      ].some((source) => source.key === "isa"),
+      "Expected the retirement income summary to include ISA withdrawals"
+    );
   }
 );
 
 Then(
-  "at least one bridge phase should include {string}",
-  function (this: ProductAcceptanceWorld, sourceLabel: string) {
+  "the retirement income summary should include State Pension",
+  function (this: ProductAcceptanceWorld) {
     assertCondition(
-      getBridgeAnalysis(this).phases.some((phase) =>
-        phase.incomeSourcesActive.includes(sourceLabel)
+      getBridgePlan(this).summary.retirementIncome.sources.some(
+        (source) => source.key === "statePension"
       ),
-      `Expected a bridge phase to include ${sourceLabel}`
+      "Expected the retirement income summary to include State Pension"
     );
   }
 );
 
 Then(
-  "the stable annual secure income should be {float}",
-  function (this: ProductAcceptanceWorld, expected: number) {
-    expectMoney(
-      getBridgeAnalysis(this).stableAnnualGuaranteedIncome,
-      expected,
-      this.precision
-    );
-  }
-);
-
-Then(
-  "the full secure annual income should be {float}",
-  function (this: ProductAcceptanceWorld, expected: number) {
-    expectMoney(
-      getBridgeAnalysis(this).fullSecureAnnualGuaranteedIncome,
-      expected,
-      this.precision
-    );
-  }
-);
-
-Then(
-  "the total bridge funding need should be lower with the guaranteed income",
+  "the retirement income summary should include classic pension",
   function (this: ProductAcceptanceWorld) {
     assertCondition(
-      this.bridgeFundingNeedBeforeGuaranteedIncome !== undefined,
-      "Initial bridge funding need was not recorded"
+      getBridgePlan(this).summary.retirementIncome.sources.some(
+        (source) => source.key === "classic"
+      ),
+      "Expected the retirement income summary to include classic pension"
     );
-    const nextFundingNeed =
-      getBridgeAnalysis(this).totalBridgeRequired +
-      getBridgeAnalysis(this).totalUnfundedShortfall;
+  }
+);
+
+Then(
+  "the secure income position at modelling end should be {float}",
+  function (this: ProductAcceptanceWorld, expected: number) {
+    expectMoney(
+      getBridgePlan(this).assessment.planningHorizonSecureAnnualSurplus,
+      expected,
+      this.precision
+    );
+  }
+);
+
+Then(
+  "the lifetime shortfall should be lower with the guaranteed income",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.bridgeShortfallBeforeGuaranteedIncome !== undefined,
+      "Initial lifetime shortfall was not recorded"
+    );
+    const nextShortfall = getBridgePlan(this).assessment.totalLifetimeShortfall;
 
     assertCondition(
-      nextFundingNeed < this.bridgeFundingNeedBeforeGuaranteedIncome,
-      `Expected ${nextFundingNeed} to be lower than ${this.bridgeFundingNeedBeforeGuaranteedIncome}`
+      nextShortfall < this.bridgeShortfallBeforeGuaranteedIncome,
+      `Expected ${nextShortfall} to be lower than ${this.bridgeShortfallBeforeGuaranteedIncome}`
     );
   }
 );
@@ -1280,12 +1280,11 @@ When(
 );
 
 When(
-  "comparison table rows are built without bridge funding and flexible assets",
+  "comparison table rows are built without flexible assets",
   function (this: ProductAcceptanceWorld) {
     this.comparisonRows = buildComparisonTableRows(
       this.comparisonResults ?? [],
       {
-        hideBridgeFundingSection: true,
         hideFlexibleAssetsSection: true,
       }
     );
@@ -1501,6 +1500,21 @@ Then(
 );
 
 Then(
+  "the default visible journey steps should start with:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const settings = this.settings ?? createDefaultSettings();
+    const actualTitles = this.selectedJourney.steps
+      .filter((step) => !step.visible || step.visible(settings))
+      .slice(0, table.hashes().length)
+      .map((step) => step.title);
+    const expectedTitles = table.hashes().map((row) => row.title);
+
+    assertEqual(JSON.stringify(actualTitles), JSON.stringify(expectedTitles));
+  }
+);
+
+Then(
   "the {string} journey step should contain these fields:",
   function (this: ProductAcceptanceWorld, stepTitle: string, table: DataTable) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1659,6 +1673,49 @@ Then(
 );
 
 Then(
+  "the expert retirement income target should be an after-tax spending target",
+  function (this: ProductAcceptanceWorld) {
+    const targetGroup = fieldGroups.find(
+      (group) => group.id === "retirement-target"
+    );
+    const targetField = targetGroup?.fields.find(
+      (field) => field.id === "desiredRetirementIncome"
+    );
+
+    assertCondition(targetGroup, "Expected the retirement target field group");
+    assertCondition(targetField, "Expected the retirement income target field");
+    assertEqual(
+      targetField.description,
+      "How much would you like to have available to spend each year in retirement, after tax?"
+    );
+    assertCondition(
+      !targetGroup.fields.some(
+        (field) => field.id === "retirementIncomeTargetBasis"
+      ),
+      "Expected the Expert journey not to ask for a target basis"
+    );
+  }
+);
+
+Then(
+  "the expert retirement income target should offer these quick-select amounts:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    const targetField = fieldGroups
+      .find((group) => group.id === "retirement-target")
+      ?.fields.find((field) => field.id === "desiredRetirementIncome");
+
+    assertCondition(
+      targetField?.type === "currency-input",
+      "Expected the retirement income target to be a currency input"
+    );
+    assertEqual(
+      JSON.stringify(targetField.presets?.map((preset) => preset.value)),
+      JSON.stringify(table.hashes().map((row) => Number(row.amount)))
+    );
+  }
+);
+
+Then(
   "the simplified pension choices should not offer Alpha as an optional pension",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1714,6 +1771,90 @@ Then(
 );
 
 Then(
+  "the bridge pot choices should explain:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const potChoicesStep = this.selectedJourney.steps.find(
+      (step) => step.id === "pots"
+    );
+
+    assertCondition(
+      potChoicesStep?.kind === "optional-sections",
+      "Expected a bridge pot choices step"
+    );
+    const actualChoices = potChoicesStep.toggleKeys?.map((key) => {
+      const copy = potChoicesStep.toggleCopy?.[key];
+
+      assertCondition(copy, `Expected bridge copy for ${key}`);
+      assertCondition(
+        copy.description.length > 30,
+        `Expected a useful plain-English explanation for ${copy.label}`
+      );
+
+      return copy.label;
+    });
+    const expectedChoices = table.hashes().map((row) => row.choice);
+
+    assertEqual(JSON.stringify(actualChoices), JSON.stringify(expectedChoices));
+  }
+);
+
+Then(
+  "the {string} journey step should use the simple target-income presentation",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const bridgeStep = this.selectedJourney.steps.find(
+      (step) => step.title === stepTitle
+    );
+    const simpleStep = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    )?.steps.find((step) => step.id === "target");
+
+    assertCondition(
+      bridgeStep?.kind === "fields" && simpleStep?.kind === "fields",
+      "Expected target field steps"
+    );
+    assertEqual(
+      JSON.stringify({
+        title: bridgeStep.title,
+        description: bridgeStep.description,
+        fieldIds: bridgeStep.fieldIds,
+        fieldLabels: bridgeStep.fieldLabels,
+        fieldDescriptions: bridgeStep.fieldDescriptions,
+        currencyFieldPresentation: bridgeStep.currencyFieldPresentation,
+        supportLink: bridgeStep.supportLink,
+      }),
+      JSON.stringify({
+        title: simpleStep.title,
+        description: simpleStep.description,
+        fieldIds: simpleStep.fieldIds,
+        fieldLabels: simpleStep.fieldLabels,
+        fieldDescriptions: simpleStep.fieldDescriptions,
+        currencyFieldPresentation: simpleStep.currencyFieldPresentation,
+        supportLink: simpleStep.supportLink,
+      })
+    );
+  }
+);
+
+Then(
+  "the bridge withdrawal-plan step should expose spending and pot-withdrawal strategies",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const targetStep = this.selectedJourney.steps.find(
+      (step) => step.id === "bridge-strategy"
+    );
+
+    assertCondition(
+      targetStep?.kind === "fields" &&
+        targetStep.showSpendingSmileEditor === true &&
+        targetStep.showFlexibleWithdrawalPriority === true,
+      "Expected bridge withdrawal-plan spending and pot-withdrawal controls"
+    );
+  }
+);
+
+Then(
   "the expert optional sections should allow Alpha pension to be disabled",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1740,6 +1881,37 @@ When("Alpha pension is disabled", function (this: ProductAcceptanceWorld) {
   updateSettings(this, { showAlpha: false });
 });
 
+When(
+  "ISA is excluded from the bridge plan",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { showIsa: false });
+  }
+);
+
+When(
+  "other guaranteed income is included in the bridge plan",
+  function (this: ProductAcceptanceWorld) {
+    updateSettings(this, { showAdditionalGuaranteedIncome: true });
+  }
+);
+
+Then(
+  "the {string} journey step should be visible",
+  function (this: ProductAcceptanceWorld, stepTitle: string) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const settings = getSettings(this);
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+
+    assertCondition(step, `Journey step "${stepTitle}" not found`);
+    assertCondition(
+      !step.visible || step.visible(settings),
+      `Expected journey step "${stepTitle}" to be visible`
+    );
+  }
+);
+
 Then(
   "the {string} journey step should not be visible",
   function (this: ProductAcceptanceWorld, stepTitle: string) {
@@ -1758,12 +1930,12 @@ Then(
 );
 
 Then(
-  "the journey result should use the shared bridge answer",
+  "the journey result should use shared results components",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.kind, "bridge-answer");
+    assertEqual(answerStep.kind, "results");
   }
 );
 
@@ -1773,7 +1945,12 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.resultsPresentation, "simple");
+    assertCondition(
+      answerStep.sections.some(
+        (section) =>
+          section.id === "summary" && section.presentation === "simple"
+      )
+    );
   }
 );
 
@@ -1783,7 +1960,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.hideBridgeFundingSection, true);
+    assertCondition(!hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -1793,7 +1970,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.hideBridgeFundingSection === true, false);
+    assertCondition(hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -1803,7 +1980,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.showProjectionTable, true);
+    assertCondition(hasResultSection(answerStep, "projection-table"));
   }
 );
 
@@ -1813,7 +1990,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.showComparisonSection, false);
+    assertCondition(!hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -1823,7 +2000,7 @@ Then(
     assertCondition(this.selectedJourney, "No journey has been selected");
     const answerStep = getJourneyAnswerStep(this.selectedJourney);
 
-    assertEqual(answerStep.showComparisonSection === false, false);
+    assertCondition(hasResultSection(answerStep, "comparison"));
   }
 );
 
@@ -2007,6 +2184,40 @@ When(
   }
 );
 
+Given(
+  "a retirement plan with sufficient ISA savings but zero configured withdrawals",
+  function (this: ProductAcceptanceWorld) {
+    this.settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-01-01",
+      dateOfBirth: "1970-01-01",
+      requirementAge: 57,
+      lifeExpectancy: 58,
+      desiredRetirementIncome: 6000,
+      retirementIncomeTargetBasis: "gross",
+      projectionBasis: "real",
+      taxationEnabled: false,
+      assumedCpiPercent: 0,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showLisa: false,
+      showIsa: true,
+      isaCurrentPot: 100_000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 57,
+      isaRealInterestPercent: 0,
+      isaWithdrawalStrategy: "percentage",
+      isaWithdrawalPercent: 0,
+    };
+  }
+);
+
 Then(
   "the gross pension income should exceed the spending target",
   function (this: ProductAcceptanceWorld) {
@@ -2032,7 +2243,7 @@ Then(
   function (this: ProductAcceptanceWorld) {
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
-    assertCondition(result.targetMissMonths > 0);
+    assertCondition(result.assessment.targetMissMonths > 0);
   }
 );
 
@@ -2042,6 +2253,30 @@ Then(
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
     assertEqual(buildRetirementOutcomeBanner(result).label, expectedLabel);
+  }
+);
+
+Then(
+  "the plan status should be {string}",
+  function (this: ProductAcceptanceWorld, expectedStatus: string) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    const status = buildComparisonStatusItems(result).find(
+      (item) => item.label === "Overall status"
+    );
+    assertEqual(status?.value, expectedStatus);
+  }
+);
+
+Then(
+  "the first projected annual shortfall should be {float}",
+  function (this: ProductAcceptanceWorld, expectedShortfall: number) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertEqual(
+      result.assessment.firstShortfallAnnualAmount,
+      expectedShortfall
+    );
   }
 );
 
@@ -2270,11 +2505,17 @@ Then("guidance notes should be shown", function (this: ProductAcceptanceWorld) {
 
 function getJourneyAnswerStep(journey: JourneyDefinition): JourneyAnswerStep {
   const answerStep = journey.steps.find(
-    (step): step is JourneyAnswerStep =>
-      step.kind === "bridge-answer" || step.kind === "expert-answer"
+    (step): step is JourneyAnswerStep => step.kind === "results"
   );
 
   assertCondition(answerStep, "Journey answer step was not found");
 
   return answerStep;
+}
+
+function hasResultSection(
+  step: JourneyAnswerStep,
+  sectionId: JourneyAnswerStep["sections"][number]["id"]
+) {
+  return step.sections.some((section) => section.id === sectionId);
 }

@@ -4,7 +4,8 @@ import type {
   RangeField,
   SelectField,
 } from "../fieldDefinitions";
-import { clampNumber, getEffectiveRangeField } from "../app-domains";
+import { getEffectiveRangeField } from "../app-domains";
+import { clampNumber } from "../number";
 import {
   calculateDefaultSippDrawAge,
   calculateMinimumCsAvcAccessAge,

@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -16,9 +15,8 @@ import {
 } from "../settings";
 import {
   applyBridgeJourneyDefaults,
-  applySimpleJourneyAssumptions,
+  applyExpertJourneyDefaults,
   applySimpleJourneyDefaults,
-  mergeSimpleJourneySettings,
 } from "../app-domains/journeys";
 import type { AppMode } from "./app-persistence";
 
@@ -77,44 +75,7 @@ export function useJourneySettings({
     saveSettingsByJourney(settingsByJourney);
   }, [settingsByJourney]);
 
-  const effectiveSettings = useMemo(
-    () =>
-      activeJourneyMode === "simple"
-        ? applySimpleJourneyAssumptions(settings)
-        : settings,
-    [activeJourneyMode, settings]
-  );
-
-  const setActiveJourneySettings = useCallback(
-    (
-      value: PensionSettings | ((current: PensionSettings) => PensionSettings)
-    ) => {
-      if (activeJourneyMode === "simple") {
-        setSettings((current) => {
-          const baseSettings = applySimpleJourneyAssumptions(current);
-          const nextSettings =
-            typeof value === "function" ? value(baseSettings) : value;
-          const journeySettings =
-            nextSettings.dateOfBirth !== current.dateOfBirth
-              ? applySimpleJourneyDefaults(nextSettings)
-              : nextSettings;
-          const retirementAlignedSettings =
-            journeySettings.requirementAge !== baseSettings.requirementAge
-              ? {
-                  ...journeySettings,
-                  alphaPensionLeaveAge: journeySettings.requirementAge,
-                }
-              : journeySettings;
-
-          return mergeSimpleJourneySettings(current, retirementAlignedSettings);
-        });
-        return;
-      }
-
-      setSettings(value);
-    },
-    [activeJourneyMode, setSettings]
-  );
+  const setActiveJourneySettings = setSettings;
 
   function loadParameters(input: unknown) {
     const imported = parseStoredSettingsByJourney(input);
@@ -154,7 +115,6 @@ export function useJourneySettings({
   }
 
   return {
-    effectiveSettings,
     exportParameters,
     loadParameters,
     setActiveJourneySettings,
@@ -172,6 +132,6 @@ function applyLegacyJourneyDefaults(
   return {
     simple: applySimpleJourneyDefaults(settings.simple),
     bridge: applyBridgeJourneyDefaults(settings.bridge),
-    expert: settings.expert,
+    expert: applyExpertJourneyDefaults(settings.expert),
   };
 }

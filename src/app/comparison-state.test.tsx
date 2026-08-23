@@ -1,9 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { useState } from "react";
 import {
-  buildIncomeAgeRangeItems,
+  createComparisonResult,
   type ComparisonScenario,
-} from "../app-domains";
+} from "../result-projection/comparison-result";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
+import { buildIncomeAgeRangeItems } from "../result-projection/income-age-ranges";
 import {
   createDefaultSettings,
   type PensionSettings,
@@ -12,6 +14,7 @@ import {
 import {
   MAX_COMPARISON_SCENARIOS,
   buildComparisonPanelData,
+  useComparisonState,
   useScenarioActions,
 } from "./comparison-state";
 
@@ -165,16 +168,44 @@ describe("comparison state scenario actions", () => {
       retirementIncomeTargetBasis: "gross",
     });
     const panel = buildComparisonPanelData({
-      comparisonResultCache: undefined,
       currentResult: null,
       currentSettingsSignature: "different-current-plan",
       retirementIncomeDisplay: "annual",
-      scenarios: [savedScenario],
-      hideBridgeFundingSection: true,
+      savedBaseResults: [
+        createComparisonResult(
+          savedScenario,
+          "",
+          calculateRetirementPlan(savedScenario.settings)
+        ),
+      ],
     });
 
     expect(panel.incomeAgeRangeItems).toEqual(
       buildIncomeAgeRangeItems(panel.activeResult!.summary, "annual", "gross")
     );
+  });
+
+  it("keeps comparison projection aligned with the last completed plan", () => {
+    const calculatedSettings = createDefaultSettings();
+    const pendingSettings = {
+      ...calculatedSettings,
+      desiredRetirementIncome:
+        calculatedSettings.desiredRetirementIncome + 1000,
+    };
+    const retirementPlanResult = calculateRetirementPlan(calculatedSettings);
+    const { result } = renderHook(() =>
+      useComparisonState({
+        settings: pendingSettings,
+        validationIssues: [],
+        scenarios: [],
+        retirementPlanResult,
+      })
+    );
+
+    expect(result.current.currentScenario.settings).toEqual(calculatedSettings);
+    expect(result.current.currentResult?.scenario.settings).toEqual(
+      calculatedSettings
+    );
+    expect(result.current.currentResult?.currentMatchesSaved).toBe(false);
   });
 });

@@ -50,6 +50,7 @@ describe("journey module", () => {
 
   it("renders visible steps and advances through the journey", () => {
     const settings = createDefaultSettings();
+    const onActiveStepChange = vi.fn();
 
     render(
       <JourneyFlow
@@ -57,72 +58,135 @@ describe("journey module", () => {
           id: "test",
           title: "Test journey",
           description: "Journey description",
+          settingsPresentation: {
+            alignAlphaLeaveAgeToRetirement: false,
+            dateOfBirthUpdate: "preserve-retirement-ages",
+          },
           steps: [
             {
               id: "one",
               eyebrow: "Step 1",
               title: "First step",
               description: "First description",
-              kind: "answer",
+              kind: "results",
+              sections: [],
             },
             {
               id: "two",
               eyebrow: "Step 2",
               title: "Second step",
               description: "Second description",
-              kind: "answer",
+              kind: "results",
+              sections: [],
               visible: (currentSettings) => currentSettings.showAlpha,
             },
           ],
         }}
         settings={settings}
+        onActiveStepChange={onActiveStepChange}
         renderStepContent={(step) => <p>{step.id}-content</p>}
       />
     );
 
     expect(screen.getByText("one-content")).toBeInTheDocument();
+    expect(onActiveStepChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "one" })
+    );
     fireEvent.click(screen.getByRole("button", { name: "Show my answer" }));
     expect(screen.getByText("two-content")).toBeInTheDocument();
+    expect(onActiveStepChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "two" })
+    );
   });
 
-  it("renders the mobile journey steps when the viewport is mobile", () => {
-    mockMatchMedia(true);
-    const settings = createDefaultSettings();
+  it.each(["simple-early-retirement", "early-retirement-bridge"])(
+    "collapses the %s mobile journey steps behind a disclosure",
+    (journeyId) => {
+      mockMatchMedia(true);
+      const settings = createDefaultSettings();
 
+      render(
+        <JourneyFlow
+          journey={{
+            id: journeyId,
+            title: "Test journey",
+            description: "Journey description",
+            settingsPresentation: {
+              alignAlphaLeaveAgeToRetirement: false,
+              dateOfBirthUpdate: "preserve-retirement-ages",
+            },
+            steps: [
+              {
+                id: "one",
+                eyebrow: "Step 1",
+                title: "First step",
+                description: "First description",
+                kind: "results",
+                sections: [],
+              },
+            ],
+          }}
+          settings={settings}
+          renderStepContent={(step) => <p>{step.id}-content</p>}
+        />
+      );
+
+      const mobileStepList = document.querySelector(
+        ".journey-mobile-step-list"
+      );
+      const stepDisclosure = screen.getByText("View all steps");
+
+      expect(mobileStepList).toBeInTheDocument();
+      expect(stepDisclosure.closest("details")).not.toHaveAttribute("open");
+
+      fireEvent.click(stepDisclosure);
+
+      expect(stepDisclosure.closest("details")).toHaveAttribute("open");
+      expect(
+        within(mobileStepList as HTMLElement).getByRole("button", {
+          name: /First step/,
+        })
+      ).toBeInTheDocument();
+    }
+  );
+
+  it("labels the action after a plan review as Calculate my plan", () => {
     render(
       <JourneyFlow
         journey={{
-          id: "simple-early-retirement",
-          title: "Test journey",
+          id: "early-retirement-bridge",
+          title: "Bridge journey",
           description: "Journey description",
+          settingsPresentation: {
+            alignAlphaLeaveAgeToRetirement: false,
+            dateOfBirthUpdate: "preserve-retirement-ages",
+          },
           steps: [
             {
-              id: "one",
-              eyebrow: "Step 1",
-              title: "First step",
-              description: "First description",
-              kind: "answer",
+              id: "check-plan",
+              eyebrow: "Review",
+              title: "Check your plan",
+              description: "Review choices",
+              kind: "review",
+              presentation: "bridge-plan",
+            },
+            {
+              id: "answer",
+              eyebrow: "Result",
+              title: "Your results",
+              description: "Review results",
+              kind: "results",
+              sections: [],
             },
           ],
         }}
-        settings={settings}
+        settings={createDefaultSettings()}
         renderStepContent={(step) => <p>{step.id}-content</p>}
       />
     );
 
-    const mobileStepList = document.querySelector(".journey-mobile-step-list");
-    const stepDisclosure = screen.getByText("View all steps");
+    fireEvent.click(screen.getByRole("button", { name: "Calculate my plan" }));
 
-    expect(mobileStepList).toBeInTheDocument();
-    expect(stepDisclosure.closest("details")).not.toHaveAttribute("open");
-
-    fireEvent.click(stepDisclosure);
-
-    expect(stepDisclosure.closest("details")).toHaveAttribute("open");
-    expect(
-      within(mobileStepList as HTMLElement).getByRole("button", {
-        name: /First step/,
-      })
-    ).toBeInTheDocument();
+    expect(screen.getByText("answer-content")).toBeInTheDocument();
   });
 });

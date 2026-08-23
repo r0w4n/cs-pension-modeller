@@ -16,9 +16,8 @@ import {
 import {
   getPrimaryDateYearRange,
   getStatePensionDefaultDrawDate,
-  formatAgeValue,
-  formatDate,
 } from "../app-domains";
+import { formatAgeValue, formatDate } from "../result-projection/formatting";
 import type {
   DateParts,
   DateSelectFieldProps,
@@ -655,7 +654,11 @@ export function DateSettingField({
           label={field.label}
           value={value}
           idPrefix={field.id}
-          yearRange={getPrimaryDateYearRange(field.id, settings)}
+          yearRange={getPrimaryDateYearRange(
+            field.id,
+            settings,
+            new Date().getUTCFullYear()
+          )}
           disabled={disabled}
           describedBy={validationId}
           hasValidationIssue={Boolean(validationIssue)}
@@ -668,7 +671,11 @@ export function DateSettingField({
           label={field.label}
           value={value}
           idPrefix={field.id}
-          yearRange={getPrimaryDateYearRange(field.id, settings)}
+          yearRange={getPrimaryDateYearRange(
+            field.id,
+            settings,
+            new Date().getUTCFullYear()
+          )}
           disabled={disabled}
           describedBy={validationId}
           hasValidationIssue={Boolean(validationIssue)}

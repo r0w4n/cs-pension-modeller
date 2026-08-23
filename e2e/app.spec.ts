@@ -36,7 +36,7 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Your retirement target" })
+      page.getByRole("heading", { name: "Your personal details" })
     ).toBeVisible();
 
     await page
@@ -70,7 +70,9 @@ test.describe("app end-to-end journeys", () => {
     await expect(page.getByLabel("SIPP withdrawal tax treatment")).toHaveCount(
       0
     );
+    const calculationWorkerStarted = page.waitForEvent("worker");
     await page.getByRole("button", { name: "Show my answer" }).click();
+    await calculationWorkerStarted;
     await expect(
       page.getByRole("heading", { name: "Retirement income over time" })
     ).toBeVisible();
@@ -274,9 +276,9 @@ test.describe("app end-to-end journeys", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
 
-    await expect(
-      page.getByRole("checkbox", { name: "Taxation" })
-    ).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Taxation" })).toHaveCount(
+      0
+    );
     await page.getByRole("button", { name: /SIPP details/i }).click();
     const sippWithdrawalTaxTreatment = page.getByRole("combobox", {
       name: "SIPP withdrawal tax treatment",
@@ -358,8 +360,31 @@ test.describe("app end-to-end journeys", () => {
 
     await acknowledgeAndOpenMode(page, "bridge");
 
+    await clickNextAndExpectStep(
+      page,
+      "What would you like to spend each month?"
+    );
+    await fillCurrency(
+      page,
+      "How much would you like available to spend each month after tax?",
+      "2833.33"
+    );
+    await expect(
+      page.getByRole("heading", { name: "Not sure what amount to choose?" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toHaveCount(0);
+
+    await clickNextAndExpectStep(page, "What age would you like to retire?");
     const retirementAgeInput = page.getByRole("spinbutton", {
-      name: "Target retirement age exact value",
+      name: "How old would you like to be when you retire? exact value",
     });
     await expect(retirementAgeInput).toHaveAttribute("step", "0.25");
     await retirementAgeInput.fill("58.2");
@@ -369,18 +394,18 @@ test.describe("app end-to-end journeys", () => {
         "Enter a whole year, or add 3, 6 or 9 months (for example 67.25)."
       )
     ).toBeVisible();
-    await fillExactNumber(page, "Target retirement age exact value", "58.25");
+    await fillExactNumber(
+      page,
+      "How old would you like to be when you retire? exact value",
+      "58.25"
+    );
     await expect(
       page.getByText("Selected age: 58 years 3 months")
     ).toBeVisible();
-    await fillCurrency(
-      page,
-      "After-tax income you want in retirement (£ per year)",
-      "34000"
-    );
-    await clickNextAndExpectStep(page, "Your personal details");
-
     await clickNextAndExpectStep(page, "Your Civil Service pensions");
+    await expect(
+      page.getByRole("checkbox", { name: "Civil Service AVC" })
+    ).toHaveCount(0);
     await clickNextAndExpectStep(page, "Your Alpha pension");
 
     await fillCurrency(
@@ -395,6 +420,48 @@ test.describe("app end-to-end journeys", () => {
     );
     await clickNextAndExpectStep(page, "State Pension");
 
+    await clickNextAndExpectStep(page, "Your bridging money");
+
+    await expect(
+      page.getByRole("checkbox", { name: "ISA", exact: true })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "SIPP or personal pension" })
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "Civil Service AVC" })
+    ).not.toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "Other guaranteed income" })
+    ).not.toBeChecked();
+    await page
+      .getByRole("checkbox", { name: "Other guaranteed income" })
+      .check();
+    await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).uncheck();
+    await expect(
+      page.locator('.journey-step-button[data-step-id="lisa"]')
+    ).toHaveCount(0);
+    await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).check();
+    await clickNextAndExpectStep(
+      page,
+      "How should your bridging money be used?"
+    );
+    await expect(
+      page.getByRole("combobox", { name: "Spending strategy" })
+    ).toHaveValue("FLAT");
+    await expect(
+      page.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeVisible();
+    await page
+      .getByRole("combobox", {
+        name: "ISA withdrawal strategy",
+        exact: true,
+      })
+      .selectOption("meet_income_target");
+
     await clickNextAndExpectStep(page, "Additional guaranteed income");
     await addAdditionalIncome(
       page,
@@ -402,11 +469,13 @@ test.describe("app end-to-end journeys", () => {
       "5000",
       "60"
     );
-    await clickNextAndExpectStep(page, "Your bridging pots");
+    await clickNextAndExpectStep(page, "Your ISA");
 
     await fillCurrency(page, "Current ISA balance (£)", "35000");
+    await clickNextAndExpectStep(page, "Your Lifetime ISA");
     await fillCurrency(page, "Current LISA balance (£)", "12000");
     await fillExactNumber(page, "LISA access age exact value", "60");
+    await clickNextAndExpectStep(page, "Your SIPP or personal pension");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");
     await fillExactNumber(page, "SIPP access age exact value", "58");
     await expect(
@@ -421,10 +490,16 @@ test.describe("app end-to-end journeys", () => {
         exact: true,
       })
     ).toHaveCount(0);
+    await clickNextAndExpectStep(page, "Your pension pot tax assumptions");
+    await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+    await clickNextAndExpectStep(page, "Check your plan");
     await expect(
-      page.getByRole("button", { name: "Show my answer" })
+      page.getByText("£35,000 current balance; Use to meet income target")
     ).toBeVisible();
-    await page.getByRole("button", { name: "Show my answer" }).click();
+    await expect(
+      page.getByText("Previous employer DB pension", { exact: true })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Calculate my plan" }).click();
     await expect(
       page.getByRole("heading", { name: "Retirement income over time" })
     ).toBeVisible();
@@ -520,7 +595,7 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
     await expect(
       page.getByRole("spinbutton", {
-        name: "Retirement income target (£ per year)",
+        name: "After-tax income target",
       })
     ).toHaveCount(0);
     await page.getByRole("button", { name: "Next" }).click();
@@ -545,10 +620,32 @@ test.describe("app end-to-end journeys", () => {
     });
     await expect(retirementAgeControl).toHaveValue("68");
 
-    await fillCurrency(page, "Retirement income target (£ per year)", "45400");
+    await expect(
+      page.getByText(
+        "How much would you like to have available to spend each year in retirement, after tax?"
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", {
+        name: "What does your retirement income target mean?",
+      })
+    ).toHaveCount(0);
+    for (const amount of [
+      "£11,250",
+      "£13,900",
+      "£22,700",
+      "£31,350",
+      "£32,700",
+      "£45,400",
+    ]) {
+      await expect(page.getByRole("button", { name: amount })).toBeVisible();
+    }
+    await page.getByRole("button", { name: "£45,400" }).click();
+
+    await fillCurrency(page, "After-tax income target", "45400");
 
     const targetControl = page.getByRole("spinbutton", {
-      name: "Retirement income target (£ per year)",
+      name: "After-tax income target",
     });
     const strategyControl = page.getByRole("combobox", {
       name: "Spending strategy",
@@ -806,6 +903,9 @@ test.describe("app end-to-end journeys", () => {
       .poll(() => slowGoResultHandle.getAttribute("d"))
       .not.toBe(initialSlowGoPath);
     const releasedSlowGoPath = await slowGoResultHandle.getAttribute("d");
+    const initialSlowGoYValues = getDistinctPathYValues(initialSlowGoPath);
+    const releasedSlowGoYValues = getDistinctPathYValues(releasedSlowGoPath);
+    expect(releasedSlowGoYValues).not.toEqual(initialSlowGoYValues);
     await slowGoResultHandle.evaluate((path) => {
       const svgPath = path as SVGPathElement;
       svgPath.dataset.dragPathHistory = JSON.stringify([
@@ -828,6 +928,10 @@ test.describe("app end-to-end journeys", () => {
       });
     });
     await page.mouse.up();
+    const calculationStatus = page.getByText("Updating calculated results…", {
+      exact: true,
+    });
+    await expect(calculationStatus).toBeVisible();
     await expect
       .poll(async () => {
         const stored = await readLocalStorageItem(
@@ -841,6 +945,20 @@ test.describe("app end-to-end journeys", () => {
         );
       })
       .not.toBe(80);
+    const storedSettings = await readLocalStorageItem(
+      page,
+      "cs-pension-modeller.settings"
+    );
+    const committedSlowGoPercentage = readJourneySettingsValue(
+      storedSettings,
+      "expert",
+      (settings) => settings.spendingSmile?.slowGoPercentage
+    );
+    await expect(slowGoResultHandle).toHaveAttribute(
+      "aria-valuenow",
+      String(committedSlowGoPercentage)
+    );
+    await expect(calculationStatus).toHaveCount(0);
     await slowGoResultHandle.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -853,11 +971,16 @@ test.describe("app end-to-end journeys", () => {
           (path as SVGPathElement).dataset.dragPathHistory ?? "[]"
         ) as Array<string | null>
     );
-    expect(dragPathHistory).not.toContain(initialSlowGoPath);
-    await expect(slowGoResultHandle).toHaveAttribute(
-      "d",
-      releasedSlowGoPath ?? ""
-    );
+    expect(
+      dragPathHistory.some((path) =>
+        getDistinctPathYValues(path).some((value) =>
+          initialSlowGoYValues.includes(value)
+        )
+      )
+    ).toBe(false);
+    expect(
+      getDistinctPathYValues(await slowGoResultHandle.getAttribute("d"))
+    ).not.toEqual(initialSlowGoYValues);
   });
 
   test("shows income-target funding priority only in the expert target step", async ({
@@ -1147,7 +1270,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Work out what I need to retire early/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your retirement target" })
+      page.getByRole("heading", { name: "Your personal details" })
     ).toBeVisible();
     return;
   }
@@ -1195,7 +1318,7 @@ async function navigateToJourneyResult(page: Page) {
     }
 
     const next = page.getByRole("button", {
-      name: /^(Next|Show my answer)$/,
+      name: /^(Next|Show my answer|Calculate my plan)$/,
     });
     await next.click();
   }
@@ -1204,20 +1327,23 @@ async function navigateToJourneyResult(page: Page) {
 }
 
 async function countDistinctPathYValues(targetPath: Locator) {
-  return targetPath.evaluate((element) => {
-    const path = element.getAttribute("d") ?? "";
-    const coordinatePairs = Array.from(
-      path.matchAll(/(?:M|L)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)
-    );
-    const verticalCoordinates = Array.from(
-      path.matchAll(/V(-?\d+(?:\.\d+)?)/g)
-    );
+  return getDistinctPathYValues(await targetPath.getAttribute("d")).length;
+}
 
-    return new Set([
-      ...coordinatePairs.map((match) => match[2]),
-      ...verticalCoordinates.map((match) => match[1]),
-    ]).size;
-  });
+function getDistinctPathYValues(path: string | null) {
+  const coordinatePairs = Array.from(
+    (path ?? "").matchAll(/(?:M|L)(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)
+  );
+  const verticalCoordinates = Array.from(
+    (path ?? "").matchAll(/V(-?\d+(?:\.\d+)?)/g)
+  );
+
+  return Array.from(
+    new Set([
+      ...coordinatePairs.map((match) => match[2] ?? ""),
+      ...verticalCoordinates.map((match) => match[1] ?? ""),
+    ])
+  );
 }
 
 async function addAdditionalIncome(
@@ -1394,9 +1520,19 @@ async function readLocalStorageItem(page: Page, key: string) {
 }
 
 async function renderDeferredComparisonContent(page: Page) {
-  await page
-    .getByRole("region", { name: "Comparison results" })
+  const comparisonRegion = page.getByRole("region", {
+    name: "Comparison results",
+  });
+
+  await comparisonRegion
+    .getByRole("heading", { name: "Comparison", exact: true })
     .scrollIntoViewIfNeeded();
+  await expect(
+    comparisonRegion.getByRole("heading", {
+      name: "Save this result as a scenario",
+    })
+  ).toBeVisible();
+
   await page.evaluate(async () => {
     const steps = [0.5, 0.9, 1.4, 2.2];
 

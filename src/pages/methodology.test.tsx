@@ -8,7 +8,7 @@ describe("MethodologyPage", () => {
     expect(document.title).toBe("Methodology | Civil Service Pension Modeller");
     expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
       "content",
-      "Read how the modeller projects pension income, bridge funding, tax, inflation, and other assumptions."
+      "Read how the modeller projects pension income, flexible withdrawals, tax, inflation, and other assumptions."
     );
     expect(
       screen.getByRole("heading", { name: "Methodology" })
@@ -220,7 +220,7 @@ describe("MethodologyPage", () => {
     );
   });
 
-  it("documents currently modelled pension, savings, bridge, and comparison mechanisms", () => {
+  it("documents currently modelled pension, savings, withdrawal, and comparison mechanisms", () => {
     render(<MethodologyPage />);
 
     expect(
@@ -238,15 +238,17 @@ describe("MethodologyPage", () => {
       screen.getByText(/grosses up net additions by 1 \/ 0.8/)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Before pension-pot and LISA access/)
-    ).toHaveTextContent("draws from SIPP first");
+      screen.getByRole("heading", {
+        name: "Flexible withdrawals before later pensions",
+      })
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/The retirement income summary starts/)
     ).toHaveTextContent(
       "each range starting when the active income sources change"
     );
-    expect(screen.getByText(/From LISA access onwards/)).toHaveTextContent(
-      "draw from LISA before ISA"
+    expect(screen.getByText(/Account balances include/)).toHaveTextContent(
+      "Each account then follows its configured access age and withdrawal strategy"
     );
     expect(
       screen.getByText(/highest of the main inflation assumption/)

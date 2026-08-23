@@ -1,18 +1,28 @@
 import { render, screen } from "@testing-library/react";
-import { ComparisonRetirementIncomeChart, DeferredBelowFold } from "./chart";
+import { DeferredBelowFold } from "./deferred-below-fold";
+import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";
 import { createDefaultSettings } from "../settings";
 import {
   createRetirementIncomeChartLimits,
   createRetirementIncomeChartParameters,
-} from "../app-domains";
+} from "../result-projection/retirement-income";
 
-vi.mock("../RetirementIncomeChart", () => ({
-  RetirementIncomeChart: (props: { alphaLabel: string }) => (
-    <div>Chart {props.alphaLabel}</div>
-  ),
+const chartAdapterMocks = vi.hoisted(() => ({
+  retirementIncomeChart: vi.fn(),
 }));
 
-describe("chart module", () => {
+vi.mock("../RetirementIncomeChart", () => ({
+  RetirementIncomeChart: (props: { alphaLabel: string }) => {
+    chartAdapterMocks.retirementIncomeChart(props);
+    return <div>Chart {props.alphaLabel}</div>;
+  },
+}));
+
+describe("retirement income chart adapters", () => {
+  beforeEach(() => {
+    chartAdapterMocks.retirementIncomeChart.mockClear();
+  });
+
   it("renders deferred content immediately when forced", () => {
     render(
       <DeferredBelowFold estimatedHeight={120} forceRender>
@@ -23,11 +33,11 @@ describe("chart module", () => {
     expect(screen.getByText("Deferred body")).toBeInTheDocument();
   });
 
-  it("renders the comparison retirement income chart when all inputs are present", () => {
+  it("renders the journey retirement income chart when all inputs are present", () => {
     const settings = createDefaultSettings();
 
     render(
-      <ComparisonRetirementIncomeChart
+      <RetirementIncomeChartAdapter
         retirementIncomeSeries={[
           {
             date: "2026-01-01",
@@ -68,5 +78,41 @@ describe("chart module", () => {
     );
 
     expect(screen.getByText("Chart Alpha pension")).toBeInTheDocument();
+  });
+
+  it("maps the detailed journey presentation onto the shared chart", () => {
+    const settings = createDefaultSettings();
+    const residualFlexibleFundInsights = [
+      {
+        accountId: "isa" as const,
+        label: "ISA",
+        endingBalance: 4_000,
+        planningHorizonAge: 100,
+        wasUsed: true,
+      },
+    ];
+
+    render(
+      <RetirementIncomeChartAdapter
+        retirementIncomeSeries={[]}
+        retirementIncomeChartParameters={createRetirementIncomeChartParameters(
+          settings
+        )}
+        retirementIncomeChartLimits={createRetirementIncomeChartLimits(
+          settings
+        )}
+        residualFlexibleFundInsights={residualFlexibleFundInsights}
+        presentation="detailed"
+        onChangeChartParameters={vi.fn()}
+      />
+    );
+
+    expect(chartAdapterMocks.retirementIncomeChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        presentation: "standard",
+        showFlexibleWithdrawalInsights: true,
+        residualFlexibleFundInsights,
+      })
+    );
   });
 });

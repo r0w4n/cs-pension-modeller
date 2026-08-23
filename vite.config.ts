@@ -10,6 +10,7 @@ export default defineConfig({
   base: "./",
   plugins: [react()],
   build: {
+    sourcemap: true,
     rollupOptions: {
       input: {
         main: resolveInputPath("./index.html"),

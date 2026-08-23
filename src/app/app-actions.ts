@@ -1,6 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { PensionSettings } from "../settings";
-import { clonePensionSettings } from "../app-domains";
+import { clonePensionSettings } from "../result-projection/comparison-result";
 import { saveStoredAppMode, type AppMode } from "./app-persistence";
 
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;

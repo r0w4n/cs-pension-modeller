@@ -4,7 +4,10 @@ import {
   type RetirementIncomeDisplay,
 } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
-import { formatModelledReturn, formatPercent } from "../app-domains";
+import {
+  formatModelledReturn,
+  formatPercent,
+} from "../result-projection/formatting";
 import { resolveAppBaseHref } from "./app-base";
 
 type ResultsSummarySectionProps = {
@@ -21,7 +24,7 @@ export type SummaryItem = {
 type SummarySectionProps = {
   title: string;
   items: SummaryItem[];
-  headingLevel?: 2 | 3;
+  headingLevel?: 2 | 3 | 4;
   description?: string;
   groupTitle?: string;
   variant?: "compact" | "feature";
@@ -45,7 +48,7 @@ export function SummarySection({
   controls,
   footer,
 }: SummarySectionProps) {
-  const Heading = headingLevel === 2 ? "h2" : "h3";
+  const Heading = headingLevel === 2 ? "h2" : headingLevel === 4 ? "h4" : "h3";
 
   return (
     <section className={`summary-section summary-section--${variant}`}>

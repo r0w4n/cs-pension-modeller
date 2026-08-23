@@ -6,12 +6,14 @@ import type {
 import type { ReactNode } from "react";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
 import {
-  type FlexibleWithdrawalSummary,
-  getFlexibleFundAccountIdForStrategyField,
   isFieldDisabled,
   isFieldHiddenOnMobile,
   shouldRenderField,
 } from "../app-domains";
+import {
+  getFlexibleFundAccountIdForStrategyField,
+  type FlexibleWithdrawalSummary,
+} from "../result-projection/flexible-withdrawals";
 import { AddedPensionLumpSumsEditor } from "./form-field-lump-sums";
 import {
   DateInputFieldEditor,

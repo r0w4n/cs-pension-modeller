@@ -594,35 +594,6 @@ export function calculateAnnualAlphaPensionIncludingReduction(
     : accruedAlphaPension * reductionFactor;
 }
 
-export function calculateAnnualAlphaPensionIncludingEpaReduction(input: {
-  standardAlphaPension: number;
-  epaAlphaPension: number;
-  reductionFactor: number;
-  epaReductionFactor: number;
-}) {
-  const {
-    standardAlphaPension,
-    epaAlphaPension,
-    reductionFactor,
-    epaReductionFactor,
-  } = input;
-
-  const breakdown = calculateAlphaPensionComponentBreakdown([
-    {
-      component: "standardAlpha",
-      unreducedAnnualAmount: standardAlphaPension,
-      paymentFactor: reductionFactor,
-    },
-    {
-      component: "epaAlpha",
-      unreducedAnnualAmount: epaAlphaPension,
-      paymentFactor: epaReductionFactor,
-    },
-  ]);
-
-  return breakdown[breakdown.length - 1].payableAnnualAmount;
-}
-
 export function calculateAnnualAlphaPensionIncludingEpaPortionReductions(input: {
   standardAlphaPension: number;
   epaAlphaPensions: AlphaEpaPensionPortions;
@@ -659,20 +630,6 @@ export function calculateMonthlyAlphaPensionGross(
   if (rowDate < alphaPensionDrawDate) {
     return 0;
   }
-
-  return annualAlphaPensionIncludingReduction / 12;
-}
-
-export function calculateMonthlyAlphaPensionIncludingReduction(
-  accruedAlphaPension: number,
-  alphaPensionDrawDate: string,
-  npaDate: string,
-  reductionFactor: number
-) {
-  const annualAlphaPensionIncludingReduction =
-    alphaPensionDrawDate > npaDate
-      ? accruedAlphaPension
-      : accruedAlphaPension * reductionFactor;
 
   return annualAlphaPensionIncludingReduction / 12;
 }

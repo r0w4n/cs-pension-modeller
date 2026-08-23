@@ -8,7 +8,7 @@ import {
   calculateMinimumPensionAccessAge,
   type PensionSettings,
 } from "../settings";
-import { calculateCurrentPlanningAge } from "./retirement-income";
+import { calculateCurrentPlanningAge } from "../result-projection/retirement-income";
 
 const ALPHA_EPA_FIELD_IDS = new Set<FieldDefinition["id"]>([
   "alphaEpaYearsBeforeNpa",
@@ -68,11 +68,13 @@ export function getAlphaEffectiveRangeField(
   };
 }
 
-export function getAlphaDateYearRange(fieldId: DateField["id"]) {
+export function getAlphaDateYearRange(
+  fieldId: DateField["id"],
+  currentYear: number
+) {
   if (fieldId !== "alphaPensionAbsDate") {
     return null;
   }
 
-  const currentYear = new Date().getUTCFullYear();
   return { min: 2015, max: currentYear };
 }

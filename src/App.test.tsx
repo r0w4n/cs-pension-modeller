@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import type { PensionSummary, ProjectionRow } from "./projection";
 import type { PensionSettings } from "./settings";
@@ -578,7 +585,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     statePensionForecastConfirmed:
       defaultSettings.statePensionForecastConfirmed,
     desiredRetirementIncome: defaultSettings.desiredRetirementIncome,
-    retirementIncomeTargetBasis: defaultSettings.retirementIncomeTargetBasis,
+    retirementIncomeTargetBasis: "after_tax",
     spendingStrategyType: defaultSettings.spendingStrategyType,
     spendingSmile: defaultSettings.spendingSmile,
     flexibleWithdrawalPriority: defaultSettings.flexibleWithdrawalPriority,
@@ -778,10 +785,11 @@ function renderAcknowledgedApp(
 }
 
 function advanceJourneyToResult() {
-  for (let index = 0; index < 10; index += 1) {
+  for (let index = 0; index < 20; index += 1) {
     const nextButton =
       screen.queryByRole("button", { name: "Next" }) ??
-      screen.queryByRole("button", { name: "Show my answer" });
+      screen.queryByRole("button", { name: "Show my answer" }) ??
+      screen.queryByRole("button", { name: "Calculate my plan" });
 
     if (!nextButton) {
       return;
@@ -806,6 +814,7 @@ describe("App settings form", () => {
     window.history.replaceState({}, "", "/");
     vi.mocked(trackAnalyticsEvent).mockClear();
     vi.mocked(trackPageView).mockClear();
+    vi.mocked(createProjectionTable).mockClear();
   });
 
   afterEach(() => {
@@ -835,6 +844,20 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("heading", { name: "Optional sections" })
     ).not.toBeInTheDocument();
+    expect(createProjectionTable).not.toHaveBeenCalled();
+  });
+
+  it("waits to calculate the active plan until results are opened", () => {
+    renderAcknowledgedApp({ mode: "simple" });
+
+    expect(createProjectionTable).not.toHaveBeenCalled();
+
+    openJourneyStep(/Your results/i);
+
+    expect(createProjectionTable).toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { name: "Your results" })
+    ).toBeInTheDocument();
   });
 
   it("saves the selected modeller mode locally", () => {
@@ -1267,6 +1290,10 @@ describe("App settings form", () => {
     expect(
       screen.queryByLabelText("Current SIPP balance (£)")
     ).not.toBeInTheDocument();
+    expect(createProjectionTable).not.toHaveBeenCalled();
+
+    openJourneyStep(/Your results/i);
+
     expect(
       vi
         .mocked(createProjectionTable)
@@ -1448,6 +1475,7 @@ describe("App settings form", () => {
       screen.queryByRole("heading", { name: "Do you have an Alpha EPA?" })
     ).not.toBeInTheDocument();
     expect(screen.queryByText("EPA purchase periods")).not.toBeInTheDocument();
+    openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         alphaEpaEnabled: false,
@@ -1455,7 +1483,7 @@ describe("App settings form", () => {
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        alphaEpaEnabled: true,
+        alphaEpaEnabled: false,
         alphaEpaPeriods: [
           expect.objectContaining({
             id: "saved-simple-epa-period",
@@ -1496,6 +1524,7 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("button", { name: /Additional guaranteed income/i })
     ).not.toBeInTheDocument();
+    openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         showAdditionalGuaranteedIncome: false,
@@ -1503,7 +1532,7 @@ describe("App settings form", () => {
     );
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        showAdditionalGuaranteedIncome: true,
+        showAdditionalGuaranteedIncome: false,
         additionalGuaranteedIncomes: [
           expect.objectContaining({
             id: "saved-simple-additional-income",
@@ -1522,6 +1551,7 @@ describe("App settings form", () => {
     expect(
       screen.queryByRole("button", { name: /Added Pension/i })
     ).not.toBeInTheDocument();
+    openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({ alphaAddedPensionMonthly: 0 })
     );
@@ -1618,15 +1648,8 @@ describe("App settings form", () => {
         requirementAge: defaultSettings.normalPensionAge,
         alphaPensionLeaveAge: defaultSettings.normalPensionAge,
         alphaPensionDrawAge: defaultSettings.normalPensionAge,
-        alphaEpaEnabled: true,
-        alphaAddedPensionLumpSums: [
-          expect.objectContaining({
-            amount: 5000,
-            startDate: "2026-05-01",
-            cadence: "once",
-            factorType: "self",
-          }),
-        ],
+        alphaEpaEnabled: false,
+        alphaAddedPensionLumpSums: [],
       })
     );
   });
@@ -1651,7 +1674,10 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue("60");
 
     openJourneyStep(/Your Alpha pension/i);
 
@@ -1709,7 +1735,10 @@ describe("App settings form", () => {
       })
     );
 
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue("60");
     expect(readStoredSettingsPayload("simple")).toEqual(
       expect.objectContaining({
         requirementAge: 68,
@@ -1762,7 +1791,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("keeps hidden EPA and lump sum settings when visiting the simple journey", () => {
+  it("materializes hidden simple assumptions while retaining the inactive EPA schedule", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify(
@@ -1800,7 +1829,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        alphaEpaEnabled: true,
+        alphaEpaEnabled: false,
         alphaEpaPeriods: [
           expect.objectContaining({
             id: "saved-hidden-epa-period",
@@ -1809,14 +1838,7 @@ describe("App settings form", () => {
             endDate: "2027-03-31",
           }),
         ],
-        alphaAddedPensionLumpSums: [
-          expect.objectContaining({
-            amount: 5000,
-            startDate: "2026-05-01",
-            cadence: "once",
-            factorType: "self",
-          }),
-        ],
+        alphaAddedPensionLumpSums: [],
       })
     );
   });
@@ -1873,7 +1895,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("restores the original early retirement journey as a separate route", () => {
+  it("lets the early retirement journey choose which bridging pots to include", () => {
     renderAcknowledgedApp({ mode: "bridge" });
 
     expect(
@@ -1882,17 +1904,107 @@ describe("App settings form", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Your retirement target" })
+      screen.getByRole("heading", { name: "Your personal details" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue(
-      defaultSettings.requirementAge.toString()
+
+    openJourneyStep(/What would you like to spend each month\?/i);
+
+    expect(
+      screen.getByLabelText(
+        "How much would you like available to spend each month after tax?"
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Not sure what amount to choose?" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Help me choose a retirement income/i })
+    ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
+    expect(
+      screen.queryByRole("combobox", { name: "Spending strategy" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Income-target funding priority" })
+    ).not.toBeInTheDocument();
+
+    openJourneyStep(/What age would you like to retire\?/i);
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue(defaultSettings.requirementAge.toString());
+
+    openJourneyStep(/Your bridging money/);
+
+    expect(screen.getByRole("checkbox", { name: /^ISA$/ })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "SIPP or personal pension" })
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Civil Service AVC" })
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Other guaranteed income" })
+    ).not.toBeChecked();
+    expect(
+      screen
+        .getAllByRole("checkbox")
+        .map((checkbox) => checkbox.getAttribute("aria-label"))
+    ).toEqual([
+      "ISA",
+      "Lifetime ISA (LISA)",
+      "SIPP or personal pension",
+      "Civil Service AVC",
+      "Other guaranteed income",
+    ]);
+
+    openJourneyStep(/How should your bridging money be used\?/i);
+    expect(
+      screen.getByRole("combobox", { name: "Spending strategy" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeInTheDocument();
+
+    openJourneyStep(/Your bridging money/);
+    expect(
+      screen.queryByLabelText("Current ISA balance (£)")
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
     );
+    expect(
+      screen.queryByRole("button", { name: /Your Lifetime ISA/i })
+    ).not.toBeInTheDocument();
 
-    openJourneyStep(/Your bridging pots/);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    );
+    expect(
+      screen.getByRole("button", { name: /Your Lifetime ISA/i })
+    ).toBeInTheDocument();
 
+    expect(
+      screen.queryByRole("button", { name: /Additional guaranteed income/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Other guaranteed income" })
+    );
+    expect(
+      screen.getByRole("button", { name: /Additional guaranteed income/i })
+    ).toBeInTheDocument();
+
+    openJourneyStep(/Your ISA/);
     expect(screen.getByLabelText("ISA draw start age")).toHaveValue(
       defaultSettings.isaDrawAge.toString()
     );
+    expect(screen.getByLabelText("ISA use-by age")).toHaveValue(
+      defaultSettings.isaWithdrawalTargetAge.toString()
+    );
+
+    openJourneyStep(/Your Lifetime ISA/);
     expect(
       screen.getByLabelText("Current LISA balance (£)")
     ).toBeInTheDocument();
@@ -2042,7 +2154,7 @@ describe("App settings form", () => {
     expect(
       await screen.findByRole("heading", { name: "Comparison" })
     ).toBeInTheDocument();
-    expect(screen.getByText("Bridge funding")).toBeInTheDocument();
+    expect(screen.queryByText("Bridge funding")).not.toBeInTheDocument();
     expect(screen.getByText("Flexible assets")).toBeInTheDocument();
     expect(screen.getByText("Total secure income")).toBeInTheDocument();
     expect(
@@ -2110,7 +2222,11 @@ describe("App settings form", () => {
   it("keeps the bridge target retirement age stable after slider release", () => {
     renderAcknowledgedApp({ mode: "bridge" });
 
-    const targetAgeSlider = screen.getByLabelText("Target retirement age");
+    openJourneyStep(/What age would you like to retire\?/i);
+
+    const targetAgeSlider = screen.getByLabelText(
+      "How old would you like to be when you retire?"
+    );
 
     fireEvent.change(targetAgeSlider, {
       target: { value: "55" },
@@ -2121,10 +2237,14 @@ describe("App settings form", () => {
 
     expect(targetAgeSlider).toHaveValue("55");
     expect(
-      screen.getByLabelText("Target retirement age exact value")
+      screen.getByLabelText(
+        "How old would you like to be when you retire? exact value"
+      )
     ).toHaveValue(55);
     expect(
-      screen.getByLabelText("Target retirement age exact value")
+      screen.getByLabelText(
+        "How old would you like to be when you retire? exact value"
+      )
     ).toHaveAttribute("step", "0.25");
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
@@ -2149,17 +2269,23 @@ describe("App settings form", () => {
     );
     renderAcknowledgedApp({ mode: "bridge" });
 
+    openJourneyStep(/What age would you like to retire\?/i);
+
     const targetAgeInput = screen.getByLabelText(
-      "Target retirement age exact value"
+      "How old would you like to be when you retire? exact value"
     );
     fireEvent.focus(targetAgeInput);
     fireEvent.change(targetAgeInput, { target: { value: "60" } });
     fireEvent.blur(targetAgeInput);
 
     expect(
-      screen.getByLabelText("Target retirement age exact value")
+      screen.getByLabelText(
+        "How old would you like to be when you retire? exact value"
+      )
     ).toHaveValue(60);
-    expect(screen.getByLabelText("Target retirement age")).toHaveValue("60");
+    expect(
+      screen.getByLabelText("How old would you like to be when you retire?")
+    ).toHaveValue("60");
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
         requirementAge: 60,
@@ -2179,7 +2305,7 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("SIPP")).toBeChecked();
     expect(screen.getByLabelText("State Pension")).toBeChecked();
     expect(screen.getByLabelText("ISA")).toBeChecked();
-    expect(screen.getByLabelText("Taxation")).toBeChecked();
+    expect(screen.queryByLabelText("Taxation")).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("State Pension Age")
     ).not.toBeInTheDocument();
@@ -2205,7 +2331,7 @@ describe("App settings form", () => {
       screen.queryByLabelText("Target retirement age")
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText("Retirement income target (£ per year)")
+      screen.queryByLabelText("After-tax income target")
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Estimate life expectancy" })
@@ -2219,9 +2345,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("Target retirement age")).toHaveValue(
       defaultSettings.requirementAge.toString()
     );
-    expect(
-      screen.getByLabelText("Retirement income target (£ per year)")
-    ).toHaveValue(defaultSettings.desiredRetirementIncome);
+    expect(screen.getByLabelText("After-tax income target")).toHaveValue(
+      defaultSettings.desiredRetirementIncome
+    );
     expect(
       screen.getByRole("link", { name: "Retirement Living Standards" })
     ).toHaveAttribute("href", "https://www.retirementlivingstandards.org.uk/");
@@ -2486,7 +2612,7 @@ describe("App settings form", () => {
         "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
       )
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£2,950.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,850.00")).toBeInTheDocument();
     expect(within(ageRangeTable).getByText("£2,641.67")).toBeInTheDocument();
     expect(
       screen.getAllByText("Starts Drawing Alpha Pension").length
@@ -2628,7 +2754,6 @@ describe("App settings form", () => {
       "ISA",
       "LISA",
       "Additional guaranteed income",
-      "Taxation",
     ]);
   });
 
@@ -2724,7 +2849,7 @@ describe("App settings form", () => {
         "Alpha pension, SIPP withdrawal, ISA withdrawal, State Pension"
       )
     ).toBeInTheDocument();
-    expect(screen.getByText("£35,400.00")).toBeInTheDocument();
+    expect(screen.getByText("£34,200.00")).toBeInTheDocument();
     expect(screen.getByText("£31,700.00")).toBeInTheDocument();
   });
 
@@ -2770,13 +2895,10 @@ describe("App settings form", () => {
 
     openJourneyStep(/Retirement income target/i);
 
-    fireEvent.change(
-      screen.getByLabelText("Retirement income target (£ per year)"),
-      { target: { value: "45400" } }
-    );
-    fireEvent.blur(
-      screen.getByLabelText("Retirement income target (£ per year)")
-    );
+    fireEvent.change(screen.getByLabelText("After-tax income target"), {
+      target: { value: "45400" },
+    });
+    fireEvent.blur(screen.getByLabelText("After-tax income target"));
 
     openJourneyStep(/State pension details/i);
 
@@ -2804,9 +2926,7 @@ describe("App settings form", () => {
 
     openJourneyStep(/Retirement income target/i);
 
-    const targetInput = screen.getByLabelText(
-      "Retirement income target (£ per year)"
-    );
+    const targetInput = screen.getByLabelText("After-tax income target");
 
     fireEvent.change(targetInput, {
       target: { value: "50000" },
@@ -3921,7 +4041,7 @@ describe("App settings form", () => {
     );
   });
 
-  it("can hide optional sections without losing their saved values", () => {
+  it("can hide optional sections without losing their saved values", async () => {
     renderAcknowledgedApp();
 
     openJourneyStep(/State pension details/i);
@@ -3991,9 +4111,11 @@ describe("App settings form", () => {
     expect(screen.queryByText("Monthly ISA")).not.toBeInTheDocument();
     expect(screen.queryByText("Monthly State Pension")).not.toBeInTheDocument();
     const ageRangeTable = screen.getByLabelText("Income by age range table");
-    expect(
-      within(ageRangeTable).queryByText(/SIPP withdrawal/)
-    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        within(ageRangeTable).queryByText(/SIPP withdrawal/)
+      ).not.toBeInTheDocument()
+    );
     expect(
       within(ageRangeTable).queryByText(/ISA withdrawal/)
     ).not.toBeInTheDocument();
@@ -4003,7 +4125,7 @@ describe("App settings form", () => {
     expect(
       within(ageRangeTable).getByText("Alpha pension")
     ).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£1,600.00")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£1,500.00")).toBeInTheDocument();
     expect(
       screen.queryByRole("columnheader", { name: "Monthly State pension" })
     ).not.toBeInTheDocument();
@@ -4309,7 +4431,7 @@ describe("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows inline validation when the ABS year is after the current date", () => {
+  it("shows inline validation when the ABS year is after the current date", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-31T12:00:00Z"));
     renderAcknowledgedApp();
@@ -4320,6 +4442,10 @@ describe("App settings form", () => {
       target: { value: "2026" },
     });
     fireEvent.blur(screen.getByLabelText("Last Annual Benefits Statement"));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(
       screen.getAllByText(

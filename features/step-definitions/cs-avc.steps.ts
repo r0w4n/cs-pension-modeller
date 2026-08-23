@@ -3,12 +3,10 @@ import { fieldGroups } from "../../src/fieldDefinitions";
 import {
   createProjectionTable,
   generatePensionSummary,
-  generateRetirementBridgeAnalysis,
-  prepareBridgeProjectionSettings,
   type ProjectionRow,
-  type RetirementBridgeAnalysis,
   type PensionSummary,
 } from "../../src/projection";
+import { calculateRetirementPlan } from "../../src/calculation/retirement-plan";
 import {
   calculateCsAvcPotAtDate,
   calculateTotalCsAvcContributions,
@@ -42,8 +40,8 @@ type CsAvcWorld = {
   monthlyTax?: number;
   monthlyTaxWithoutCsAvc?: number;
   taxableCsAvcIncome?: number;
-  bridgeAnalysis?: RetirementBridgeAnalysis;
-  bridgeAnalysisWithoutCsAvc?: RetirementBridgeAnalysis;
+  retirementPlan?: ReturnType<typeof calculateRetirementPlan>;
+  retirementPlanWithoutCsAvc?: ReturnType<typeof calculateRetirementPlan>;
   summary?: PensionSummary;
   copy?: string;
 };
@@ -227,7 +225,7 @@ function createCsAvcBridgeSettings(world: CsAvcWorld): PensionSettings {
     lifeExpectancy: 68,
     requirementAge: 57,
     showAlpha: true,
-    alphaPensionAbsDate: "2026",
+    alphaPensionAbsDate: "2025",
     alphaPensionDrawAge: 67,
     alphaPensionLeaveAge: 57,
     accruedPensionAtLastAbs: 18_000,
@@ -594,24 +592,17 @@ When(
   }
 );
 
-When("the CS AVC bridge plan is analysed", function (this: CsAvcWorld) {
-  const bridgeSettings = prepareBridgeProjectionSettings(getSettings(this));
-  const pensionRows = createProjectionTable(bridgeSettings);
+When("the CS AVC retirement plan is calculated", function (this: CsAvcWorld) {
+  const settings = getSettings(this);
   const settingsWithoutCsAvc = {
-    ...bridgeSettings,
+    ...settings,
     showCsAvc: false,
     csAvcCurrentPot: 0,
   };
 
-  this.settings = bridgeSettings;
-  this.bridgeAnalysis = generateRetirementBridgeAnalysis(
-    pensionRows,
-    bridgeSettings
-  );
-  this.bridgeAnalysisWithoutCsAvc = generateRetirementBridgeAnalysis(
-    createProjectionTable(settingsWithoutCsAvc),
-    settingsWithoutCsAvc
-  );
+  this.retirementPlan = calculateRetirementPlan(settings);
+  this.retirementPlanWithoutCsAvc =
+    calculateRetirementPlan(settingsWithoutCsAvc);
 });
 
 When(
@@ -819,29 +810,30 @@ Then(
 );
 
 Then(
-  "at least one CS AVC bridge phase should include {string}",
-  function (this: CsAvcWorld, expectedSource: string) {
-    assertCondition(this.bridgeAnalysis, "Expected bridge analysis");
+  "the retirement income summary should include CS AVC withdrawals",
+  function (this: CsAvcWorld) {
+    assertCondition(this.retirementPlan, "Expected retirement plan");
     assertCondition(
-      this.bridgeAnalysis.phases.some((phase) =>
-        phase.potUsed.includes(expectedSource)
-      ),
-      `Expected a bridge phase to include ${expectedSource}`
+      [
+        ...this.retirementPlan.summary.retirementIncome.sources,
+        ...this.retirementPlan.summary.retirementIncome.bridgeWithdrawals,
+      ].some((source) => source.key === "csAvc"),
+      "Expected the retirement income summary to include CS AVC withdrawals"
     );
   }
 );
 
 Then(
-  "the unfunded bridge shortfall should be lower than the same plan without CS AVC",
+  "the lifetime shortfall should be lower than the same plan without CS AVC",
   function (this: CsAvcWorld) {
-    assertCondition(this.bridgeAnalysis, "Expected bridge analysis");
+    assertCondition(this.retirementPlan, "Expected retirement plan");
     assertCondition(
-      this.bridgeAnalysisWithoutCsAvc,
-      "Expected baseline bridge analysis"
+      this.retirementPlanWithoutCsAvc,
+      "Expected baseline retirement plan"
     );
     assertCondition(
-      this.bridgeAnalysis.totalUnfundedShortfall <
-        this.bridgeAnalysisWithoutCsAvc.totalUnfundedShortfall
+      this.retirementPlan.assessment.totalLifetimeShortfall <
+        this.retirementPlanWithoutCsAvc.assessment.totalLifetimeShortfall
     );
   }
 );

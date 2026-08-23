@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
-import type { RetirementIncomeChartParameters } from "../RetirementIncomeChart";
+import type { RetirementIncomeChartParameters } from "../result-projection/retirement-income-chart-model";
 import {
   clearAllLocalStorageData,
   clearStoredSettings,
@@ -10,10 +10,11 @@ import {
   saveSettingsByJourney,
   type PensionSettings,
 } from "../settings";
+import { DEFAULT_JOURNEY_SETTINGS_PRESENTATION } from "../app-domains";
 import {
-  clearStoredComparisonScenarios,
-  saveStoredComparisonScenarios,
-} from "../app-domains";
+  clonePensionSettings,
+  getSettingsSignature,
+} from "../result-projection/comparison-result";
 import {
   loadAcknowledgementState,
   loadStoredGuidanceNotes,
@@ -44,8 +45,14 @@ import { useJourneySettings } from "./use-journey-settings";
 import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
+import {
+  clearStoredComparisonScenarios,
+  saveStoredComparisonScenarios,
+} from "./comparison-storage";
+import { getCachedComparisonResult } from "./comparison-result-cache";
 
 export function useAppController() {
+  const [isResultsStepActive, setIsResultsStepActive] = useState(false);
   const {
     activeJourneyDefinition,
     activeJourneyMode,
@@ -64,7 +71,6 @@ export function useAppController() {
   } = useSavedFeedback();
   const [chartUndoStack, setChartUndoStack] = useState<PensionSettings[]>([]);
   const {
-    effectiveSettings,
     exportParameters,
     loadParameters,
     setActiveJourneySettings,
@@ -90,8 +96,12 @@ export function useAppController() {
   ] = useState<RetirementIncomeDisplay>(
     loadStoredComparisonRetirementIncomeDisplay
   );
-  const { comparisonResultCache, comparisonScenarios, setComparisonScenarios } =
-    useComparisonState();
+  const {
+    comparisonResultCache,
+    comparisonScenarios,
+    retirementPlanResultCache,
+    setComparisonScenarios,
+  } = useComparisonState();
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
@@ -106,15 +116,45 @@ export function useAppController() {
     derivedInflationAssumptions,
     flexibleWithdrawalSummary,
     incomeAgeRangeItems,
+    isProjectionPending,
     pensionSummary,
     projectionRows,
+    retirementPlanResult,
     retirementIncomeSeries,
     targetBasedWithdrawalPreviews,
     validationIssues,
   } = useProjectionCalculations({
-    effectiveSettings,
+    settings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
+    retirementPlanResultCache,
+    calculationEnabled: isResultsStepActive,
   });
+  const currentComparisonResult = useMemo(() => {
+    if (!retirementPlanResult) {
+      return null;
+    }
+
+    const calculatedSettings = retirementPlanResult.settings;
+
+    return getCachedComparisonResult({
+      scenario: {
+        id: "current-model",
+        name: "Current model",
+        settings: clonePensionSettings(calculatedSettings),
+        createdAt: "",
+        updatedAt: "",
+      },
+      currentSettingsSignature: getSettingsSignature(settings),
+      cache: comparisonResultCache,
+      precomputedPlan: retirementPlanResult,
+      retirementPlanResultCache,
+    });
+  }, [
+    comparisonResultCache,
+    retirementPlanResult,
+    retirementPlanResultCache,
+    settings,
+  ]);
 
   useUndoShortcut({
     chartUndoStack,
@@ -150,7 +190,9 @@ export function useAppController() {
       showSavedLabel,
       setChartUndoStack,
       setSettings: setActiveJourneySettings,
-      journeyMode: activeJourneyMode ?? undefined,
+      settingsPresentation:
+        activeJourneyDefinition?.settingsPresentation ??
+        DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
     });
   }
 
@@ -166,10 +208,13 @@ export function useAppController() {
     });
     updateRetirementIncomeChartParametersAction({
       patch,
-      settings: effectiveSettings,
+      settings,
       showSavedLabel,
       setChartUndoStack,
       setSettings: setActiveJourneySettings,
+      settingsPresentation:
+        activeJourneyDefinition?.settingsPresentation ??
+        DEFAULT_JOURNEY_SETTINGS_PRESENTATION,
     });
   }
 
@@ -225,7 +270,10 @@ export function useAppController() {
   }
 
   const journeyStepViewModel: JourneyStepViewModel = {
-    settings: effectiveSettings,
+    settings,
+    isProjectionPending,
+    retirementPlanResult,
+    currentComparisonResult,
     validationIssues,
     pensionSummary,
     retirementIncomeSeries,
@@ -263,6 +311,7 @@ export function useAppController() {
       previous_journey_mode: appMode ?? "none",
     });
 
+    setIsResultsStepActive(false);
     selectAppModeAction({
       mode,
       currentMode: appMode,
@@ -292,6 +341,7 @@ export function useAppController() {
     loadParameters,
     localStorageEnabled,
     loadComparisonScenario,
+    onResultsStepActiveChange: setIsResultsStepActive,
     pensionSummary,
     projectionRows,
     clearAllData,
@@ -311,6 +361,6 @@ export function useAppController() {
     updateSetting,
     useDropdownDates,
     validationIssues,
-    visibleSettings: effectiveSettings,
+    visibleSettings: settings,
   };
 }

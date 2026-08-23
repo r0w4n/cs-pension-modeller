@@ -2,18 +2,24 @@ import { Given, Then, When } from "@cucumber/cucumber";
 import { fieldGroups } from "../../src/fieldDefinitions";
 import {
   applyBridgeJourneyDefaults,
-  applySimpleJourneyAssumptions,
+  applySimpleJourneyDefaults,
+  JOURNEY_DEFINITIONS,
+} from "../../src/app-domains";
+import {
+  createRetirementIncomeChartLimits,
   createRetirementIncomeSeries,
-  createTargetBasedWithdrawalPreview,
+} from "../../src/result-projection/retirement-income";
+import {
+  calculateTargetBasedWithdrawalPreview,
+  type TargetBasedWithdrawalPreview,
+} from "../../src/calculation/target-based-withdrawal-previews";
+import {
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
-  isExpertRetirementIncomeTargetStep,
-  JOURNEY_DEFINITIONS,
   reorderFlexibleWithdrawalAccounts,
   shouldShowFlexibleWithdrawalPriority,
   summarizeFlexibleWithdrawalInsights,
-  type TargetBasedWithdrawalPreview,
-} from "../../src/app-domains";
+} from "../../src/result-projection/flexible-withdrawals";
 import {
   createProjectionTable,
   type ProjectionRow,
@@ -30,10 +36,27 @@ type FlexibleWithdrawalWorld = {
   settings?: PensionSettings;
   rows?: ProjectionRow[];
   chartSeries?: ReturnType<typeof createRetirementIncomeSeries>;
+  chartLimits?: ReturnType<typeof createRetirementIncomeChartLimits>;
   restoredSettings?: PensionSettings;
   selectors?: Array<{ options?: readonly { value: string; label: string }[] }>;
   targetBasedPreview?: TargetBasedWithdrawalPreview;
 };
+
+When(
+  "the retirement income chart limits are prepared",
+  function (this: FlexibleWithdrawalWorld) {
+    this.chartLimits = createRetirementIncomeChartLimits(getSettings(this));
+  }
+);
+
+Then(
+  "the ISA and SIPP contribution drag controls should have a monthly maximum of {float}",
+  function (this: FlexibleWithdrawalWorld, expected: number) {
+    assertCondition(this.chartLimits);
+    assertEqual(this.chartLimits.isaMonthlyContribution.max, expected);
+    assertEqual(this.chartLimits.sippMonthlyContribution.max, expected);
+  }
+);
 
 Given(
   "a target-based flexible withdrawal scenario",
@@ -85,28 +108,60 @@ Then(
 );
 
 Then(
-  "the funding priority should belong to the expert retirement income target section",
+  "the funding priority should belong to the expert target and bridge withdrawal-plan sections",
   function () {
+    const targetSteps = [
+      JOURNEY_DEFINITIONS.find(
+        (journey) => journey.id === "expert-journey"
+      )?.steps.find((step) => step.id === "expert-retirement-target"),
+      JOURNEY_DEFINITIONS.find(
+        (journey) => journey.id === "early-retirement-bridge"
+      )?.steps.find((step) => step.id === "bridge-strategy"),
+    ];
+
     assertCondition(
-      isExpertRetirementIncomeTargetStep("expert-retirement-target")
+      targetSteps.every(
+        (step) =>
+          step?.kind === "fields" &&
+          step.showFlexibleWithdrawalPriority === true
+      )
     );
   }
 );
 
 Then(
-  "the funding priority should not belong to simplified or bridge sections",
+  "the funding priority should not belong to simplified sections",
   function () {
-    assertCondition(!isExpertRetirementIncomeTargetStep("basics"));
-    assertCondition(!isExpertRetirementIncomeTargetStep("target"));
-    assertCondition(!isExpertRetirementIncomeTargetStep("pots"));
+    const simpleJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    );
+
+    assertCondition(
+      simpleJourney?.steps.every(
+        (step) =>
+          step.kind !== "fields" ||
+          !("showFlexibleWithdrawalPriority" in step) ||
+          step.showFlexibleWithdrawalPriority !== true
+      )
+    );
   }
 );
 
 Then(
   "the funding priority should not belong to an expert account withdrawal section",
   function () {
-    assertCondition(!isExpertRetirementIncomeTargetStep("expert-sipp"));
-    assertCondition(!isExpertRetirementIncomeTargetStep("expert-isa"));
+    const accountSteps = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "expert-journey"
+    )?.steps.filter(
+      (step) => step.id === "expert-sipp" || step.id === "expert-isa"
+    );
+
+    assertCondition(
+      accountSteps?.every(
+        (step) =>
+          step.kind !== "fields" || step.showFlexibleWithdrawalPriority !== true
+      )
+    );
   }
 );
 
@@ -186,7 +241,7 @@ Then(
 );
 
 Then(
-  "non-expert journey steps should not expose flexible withdrawal strategy controls",
+  "the simplified journey should not expose flexible withdrawal strategy controls",
   function () {
     const strategyFieldIds = new Set([
       "sippWithdrawalStrategy",
@@ -194,24 +249,37 @@ Then(
       "isaWithdrawalStrategy",
       "lisaWithdrawalStrategy",
     ]);
-    const nonExpertFieldIds = JOURNEY_DEFINITIONS.filter(
-      (journey) => journey.id !== "expert-journey"
-    ).flatMap((journey) =>
-      journey.steps.flatMap((step) =>
+    const simpleFieldIds =
+      JOURNEY_DEFINITIONS.find(
+        (journey) => journey.id === "simple-early-retirement"
+      )?.steps.flatMap((step) =>
         step.kind === "fields" ? step.fieldIds : []
-      )
-    );
+      ) ?? [];
 
     assertCondition(
-      nonExpertFieldIds.every((fieldId) => !strategyFieldIds.has(fieldId))
+      simpleFieldIds.every((fieldId) => !strategyFieldIds.has(fieldId))
     );
   }
 );
 
 Then(
-  "simplified journey projections should use legacy withdrawal strategies",
+  "the bridge withdrawal-plan step should expose flexible withdrawal strategy controls",
+  function () {
+    const targetStep = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    )?.steps.find((step) => step.id === "bridge-strategy");
+
+    assertCondition(
+      targetStep?.kind === "fields" &&
+        targetStep.showFlexibleWithdrawalPriority === true
+    );
+  }
+);
+
+Then(
+  "simplified journey settings should store legacy withdrawal strategies",
   function (this: FlexibleWithdrawalWorld) {
-    const simplifiedSettings = applySimpleJourneyAssumptions({
+    const simplifiedSettings = applySimpleJourneyDefaults({
       ...getSettings(this),
       sippWithdrawalStrategy: "meet_income_target",
       csAvcWithdrawalStrategy: "meet_income_target",
@@ -231,7 +299,7 @@ Then(
 );
 
 Then(
-  "bridge journey projections should use legacy withdrawal strategies",
+  "bridge journey settings should store legacy withdrawal strategies",
   function (this: FlexibleWithdrawalWorld) {
     const bridgeSettings = applyBridgeJourneyDefaults({
       ...getSettings(this),
@@ -483,7 +551,7 @@ When(
   function (this: FlexibleWithdrawalWorld) {
     const settings = getSettings(this);
     const rows = createProjectionTable(settings);
-    this.targetBasedPreview = createTargetBasedWithdrawalPreview({
+    this.targetBasedPreview = calculateTargetBasedWithdrawalPreview({
       accountId: "isa",
       currentRows: rows,
       settings,

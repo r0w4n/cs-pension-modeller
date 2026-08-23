@@ -2,12 +2,11 @@ import {
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
   applyBridgeJourneyDefaults,
-  applySimpleJourneyAssumptions,
+  applyExpertJourneyDefaults,
   applySimpleJourneyDefaults,
-  mergeSimpleJourneySettings,
   type JourneyStepDefinition,
 } from "./journeys";
-import type { FieldDefinition } from "../fieldDefinitions";
+import { fieldGroups, type FieldDefinition } from "../fieldDefinitions";
 import { knowledgeLinks } from "../knowledgeLinks";
 import { defaultSettings } from "../settings";
 
@@ -76,11 +75,40 @@ describe("journey definitions", () => {
     );
     expect([
       ...getJourneyStepFieldIds("expert-journey", "expert-retirement-target"),
-    ]).toEqual([
-      "desiredRetirementIncome",
-      "requirementAge",
-      "retirementIncomeTargetBasis",
-    ]);
+    ]).toEqual(["desiredRetirementIncome", "requirementAge"]);
+  });
+
+  it("uses an after-tax target with the restored expert quick selects", () => {
+    const targetGroup = fieldGroups.find(
+      (group) => group.id === "retirement-target"
+    );
+    const targetField = targetGroup?.fields.find(
+      (field) => field.id === "desiredRetirementIncome"
+    );
+
+    expect(applyExpertJourneyDefaults(defaultSettings)).toEqual(
+      expect.objectContaining({
+        retirementIncomeTargetBasis: "after_tax",
+        taxationEnabled: true,
+      })
+    );
+    expect(targetGroup?.description).toBe(
+      "Set your target retirement age and the annual amount you would like available to spend after tax."
+    );
+    expect(targetField?.description).toBe(
+      "How much would you like to have available to spend each year in retirement, after tax?"
+    );
+    expect(
+      targetField?.type === "currency-input" ? targetField.presets : []
+    ).toEqual(
+      [11250, 13900, 22700, 31350, 32700, 45400].map((value) => ({
+        value,
+        label: `£${value.toLocaleString("en-GB")}`,
+      }))
+    );
+    expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).not.toContain(
+      "taxationEnabled"
+    );
   });
 
   it("keeps the SIPP tax-free withdrawal assumption with the SIPP inputs", () => {
@@ -101,7 +129,7 @@ describe("journey definitions", () => {
     ).toContain("taxRegime");
   });
 
-  it("keeps flexible withdrawal strategy controls exclusive to expert mode", () => {
+  it("keeps withdrawal strategy fields out of guided field groups", () => {
     const strategyFieldIds = [
       "sippWithdrawalStrategy",
       "csAvcWithdrawalStrategy",
@@ -120,8 +148,36 @@ describe("journey definitions", () => {
     }
   });
 
+  it("keeps the bridge target focused and puts withdrawal decisions in their own step", () => {
+    const bridgeTarget = getJourneyStep("early-retirement-bridge", "target");
+    const bridgeStrategy = getJourneyStep(
+      "early-retirement-bridge",
+      "bridge-strategy"
+    );
+    const expertTarget = getJourneyStep(
+      "expert-journey",
+      "expert-retirement-target"
+    );
+
+    expect(bridgeTarget?.kind).toBe("fields");
+    if (bridgeTarget?.kind !== "fields") {
+      throw new Error("Expected a bridge retirement target field step");
+    }
+    expect(bridgeTarget.showSpendingSmileEditor).not.toBe(true);
+    expect(bridgeTarget.showFlexibleWithdrawalPriority).not.toBe(true);
+
+    for (const strategyStep of [bridgeStrategy, expertTarget]) {
+      expect(strategyStep?.kind).toBe("fields");
+      if (strategyStep?.kind !== "fields") {
+        throw new Error("Expected a withdrawal strategy field step");
+      }
+      expect(strategyStep.showSpendingSmileEditor).toBe(true);
+      expect(strategyStep.showFlexibleWithdrawalPriority).toBe(true);
+    }
+  });
+
   it("keeps target-based drawdown out of simplified projections", () => {
-    const settings = applySimpleJourneyAssumptions({
+    const settings = applySimpleJourneyDefaults({
       ...defaultSettings,
       sippWithdrawalStrategy: "meet_income_target",
       csAvcWithdrawalStrategy: "meet_income_target",
@@ -200,19 +256,162 @@ describe("journey definitions", () => {
     }
   });
 
-  it("includes LISA controls in the early retirement bridging pots step", () => {
-    const bridgePotFields = getJourneyStepFieldIds(
-      "early-retirement-bridge",
-      "pots"
+  it("lets the bridge journey select flexible pots independently", () => {
+    const bridgeJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    );
+    const potChoicesStep = bridgeJourney?.steps.find(
+      (step) => step.id === "pots"
     );
 
-    expect([...bridgePotFields]).toEqual(
+    expect(potChoicesStep?.kind).toBe("optional-sections");
+    if (potChoicesStep?.kind !== "optional-sections") {
+      throw new Error("Expected the bridge pot choices step");
+    }
+
+    expect(potChoicesStep.toggleKeys).toEqual([
+      "showIsa",
+      "showLisa",
+      "showSipp",
+      "showCsAvc",
+      "showAdditionalGuaranteedIncome",
+    ]);
+    expect(
+      potChoicesStep.toggleKeys?.map(
+        (key) => potChoicesStep.toggleCopy?.[key]?.label
+      )
+    ).toEqual([
+      "ISA",
+      "Lifetime ISA (LISA)",
+      "SIPP or personal pension",
+      "Civil Service AVC",
+      "Other guaranteed income",
+    ]);
+
+    const pensionChoicesStep = bridgeJourney?.steps.find(
+      (step) => step.id === "include"
+    );
+    expect(pensionChoicesStep?.kind).toBe("optional-sections");
+    if (pensionChoicesStep?.kind !== "optional-sections") {
+      throw new Error("Expected the bridge pension choices step");
+    }
+    expect(pensionChoicesStep.toggleKeys).not.toContain("showCsAvc");
+  });
+
+  it("makes other guaranteed income a conditional bridge selection", () => {
+    const step = getJourneyStep("early-retirement-bridge", "additional-income");
+
+    expect(
+      step?.visible?.({
+        ...defaultSettings,
+        showAdditionalGuaranteedIncome: false,
+      })
+    ).toBe(false);
+    expect(
+      step?.visible?.({
+        ...defaultSettings,
+        showAdditionalGuaranteedIncome: true,
+      })
+    ).toBe(true);
+  });
+
+  it("starts bridge planning with the simple question order and ends with a review", () => {
+    const bridgeJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    );
+    const bridgeStepIds = bridgeJourney?.steps.map((step) => step.id) ?? [];
+    const bridgeTarget = getJourneyStep("early-retirement-bridge", "target");
+    const simpleTarget = getJourneyStep("simple-early-retirement", "target");
+
+    expect(bridgeStepIds.slice(0, 4)).toEqual([
+      "personal",
+      "target",
+      "retirement-age",
+      "include",
+    ]);
+    expect(bridgeTarget).toEqual(
+      expect.objectContaining({
+        title: simpleTarget?.title,
+        description: simpleTarget?.description,
+        fieldIds:
+          simpleTarget?.kind === "fields" ? simpleTarget.fieldIds : undefined,
+        currencyFieldPresentation:
+          simpleTarget?.kind === "fields"
+            ? simpleTarget.currencyFieldPresentation
+            : undefined,
+      })
+    );
+    expect(bridgeStepIds.indexOf("check-plan")).toBe(
+      bridgeStepIds.indexOf("answer") - 1
+    );
+    expect(bridgeStepIds.indexOf("state")).toBeLessThan(
+      bridgeStepIds.indexOf("pots")
+    );
+    expect(bridgeStepIds.indexOf("pots")).toBeLessThan(
+      bridgeStepIds.indexOf("bridge-strategy")
+    );
+    expect(bridgeStepIds.indexOf("bridge-strategy")).toBeLessThan(
+      bridgeStepIds.indexOf("isa")
+    );
+    expect(getJourneyStep("early-retirement-bridge", "check-plan")).toEqual(
+      expect.objectContaining({ kind: "review", presentation: "bridge-plan" })
+    );
+  });
+
+  it("shows bridge pot details only for selected pots", () => {
+    const bridgeJourney = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "early-retirement-bridge"
+    );
+    const settings = {
+      ...defaultSettings,
+      showIsa: true,
+      showLisa: false,
+      showSipp: false,
+      showCsAvc: true,
+    };
+    const bridgeSteps: readonly JourneyStepDefinition[] =
+      bridgeJourney?.steps ?? [];
+    const visibleStepIds = bridgeSteps
+      .filter((step) => !step.visible || step.visible(settings))
+      .map((step) => step.id);
+
+    expect(visibleStepIds).toContain("isa");
+    expect(visibleStepIds).not.toContain("lisa");
+    expect(visibleStepIds).not.toContain("sipp");
+    expect(visibleStepIds).toContain("cs-avc");
+    expect(visibleStepIds).toContain("pot-tax");
+  });
+
+  it("keeps each bridge pot's fields in its conditional detail step", () => {
+    expect([
+      ...getJourneyStepFieldIds("early-retirement-bridge", "isa"),
+    ]).toEqual([
+      "isaCurrentPot",
+      "isaMonthlyContribution",
+      "isaDrawAge",
+      "isaRealInterestPercent",
+      "isaWithdrawalPercent",
+      "isaWithdrawalTargetAge",
+    ]);
+    expect([
+      ...getJourneyStepFieldIds("early-retirement-bridge", "lisa"),
+    ]).toEqual([
+      "lisaCurrentPot",
+      "lisaMonthlyContribution",
+      "lisaDrawAge",
+      "lisaRealInterestPercent",
+      "lisaWithdrawalPercent",
+      "lisaWithdrawalTargetAge",
+    ]);
+    expect(
+      getJourneyStepFieldIds("early-retirement-bridge", "pot-tax")
+    ).toContain("taxSippTaxFreeWithdrawalPercent");
+    expect([
+      ...getJourneyStepFieldIds("early-retirement-bridge", "sipp"),
+    ]).toEqual(
       expect.arrayContaining([
-        "lisaCurrentPot",
-        "lisaMonthlyContribution",
-        "lisaDrawAge",
-        "lisaRealInterestPercent",
-        "taxSippTaxFreeWithdrawalPercent",
+        "sippWithdrawalPercent",
+        "sippWithdrawalTargetAge",
       ])
     );
   });
@@ -302,13 +501,6 @@ describe("journey definitions", () => {
     expect(applySimpleJourneyDefaults(settingsWithoutAlpha).showAlpha).toBe(
       true
     );
-    expect(applySimpleJourneyAssumptions(settingsWithoutAlpha).showAlpha).toBe(
-      true
-    );
-    expect(
-      mergeSimpleJourneySettings(settingsWithoutAlpha, settingsWithoutAlpha)
-        .showAlpha
-    ).toBe(true);
     expect(applyBridgeJourneyDefaults(settingsWithoutAlpha).showAlpha).toBe(
       false
     );
@@ -322,8 +514,16 @@ describe("journey definitions", () => {
       (step) => step.id === "answer"
     );
 
-    expect(answerStep?.kind).toBe("bridge-answer");
-    expect(answerStep?.resultsPresentation).toBe("simple");
+    expect(answerStep?.kind).toBe("results");
+    if (answerStep?.kind !== "results") {
+      throw new Error("Expected the simple results step");
+    }
+    expect(answerStep.sections).toEqual([
+      { id: "summary", presentation: "simple" },
+      { id: "retirement-income-chart", presentation: "simple" },
+      { id: "income-details", presentation: "simple" },
+      { id: "inflation-basis", presentation: "disclosure" },
+    ]);
   });
 
   it("guides simple journey users to copy the three Alpha statement figures", () => {
@@ -410,7 +610,7 @@ describe("journey definitions", () => {
       "alpha-options"
     );
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         alphaAddedPensionMonthly: 250,
       })
@@ -427,7 +627,7 @@ describe("journey definitions", () => {
       "classicApplyPensionIncreases",
     ]);
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         classicCalculationMode: "estimate",
         classicPlusCalculationMode: "estimate",
@@ -452,7 +652,7 @@ describe("journey definitions", () => {
     ]);
   });
 
-  it("excludes EPA from simple calculations while preserving expert settings", () => {
+  it("materialises the disabled EPA assumption in simple settings", () => {
     const alphaEpaPeriods = [
       {
         id: "saved-epa-period",
@@ -466,18 +666,14 @@ describe("journey definitions", () => {
       alphaEpaEnabled: true,
       alphaEpaPeriods,
     };
-    const simpleSettings = applySimpleJourneyAssumptions(currentSettings);
+    const simpleSettings = applySimpleJourneyDefaults(currentSettings);
 
     expect(simpleSettings.alphaEpaEnabled).toBe(false);
-    expect(mergeSimpleJourneySettings(currentSettings, simpleSettings)).toEqual(
-      expect.objectContaining({
-        alphaEpaEnabled: true,
-        alphaEpaPeriods,
-      })
-    );
+    expect(simpleSettings.alphaEpaPeriods).toEqual(alphaEpaPeriods);
+    expect(currentSettings.alphaEpaEnabled).toBe(true);
   });
 
-  it("excludes additional guaranteed income from simple calculations while preserving expert settings", () => {
+  it("materialises the excluded additional-income assumption in simple settings", () => {
     const additionalGuaranteedIncomes = [
       {
         id: "saved-additional-income",
@@ -495,20 +691,18 @@ describe("journey definitions", () => {
       showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes,
     };
-    const simpleSettings = applySimpleJourneyAssumptions(currentSettings);
+    const simpleSettings = applySimpleJourneyDefaults(currentSettings);
 
     expect(simpleSettings.showAdditionalGuaranteedIncome).toBe(false);
-    expect(mergeSimpleJourneySettings(currentSettings, simpleSettings)).toEqual(
-      expect.objectContaining({
-        showAdditionalGuaranteedIncome: true,
-        additionalGuaranteedIncomes,
-      })
+    expect(simpleSettings.additionalGuaranteedIncomes).toEqual(
+      additionalGuaranteedIncomes
     );
+    expect(currentSettings.showAdditionalGuaranteedIncome).toBe(true);
   });
 
   it("uses flat spending for simple journey calculations", () => {
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         spendingStrategyType: "SPENDING_SMILE",
       }).spendingStrategyType
@@ -516,7 +710,7 @@ describe("journey definitions", () => {
   });
 
   it("uses an after-tax spending target and tax estimates in simple mode", () => {
-    expect(applySimpleJourneyAssumptions(defaultSettings)).toEqual(
+    expect(applySimpleJourneyDefaults(defaultSettings)).toEqual(
       expect.objectContaining({
         retirementIncomeTargetBasis: "after_tax",
         taxationEnabled: true,
@@ -526,7 +720,7 @@ describe("journey definitions", () => {
 
   it("keeps an enabled CS AVC visible in simple journey assumptions", () => {
     expect(
-      applySimpleJourneyAssumptions({
+      applySimpleJourneyDefaults({
         ...defaultSettings,
         showCsAvc: true,
         showSipp: true,
@@ -543,30 +737,21 @@ describe("journey definitions", () => {
     );
   });
 
-  it("applies a CS AVC toggle while preserving hidden simple journey pots", () => {
-    expect(
-      mergeSimpleJourneySettings(
-        {
-          ...defaultSettings,
-          showCsAvc: false,
-          showSipp: true,
-          showIsa: true,
-          showLisa: true,
-        },
-        {
-          ...defaultSettings,
-          showCsAvc: true,
-          showSipp: false,
-          showIsa: false,
-          showLisa: false,
-        }
-      )
-    ).toEqual(
+  it("stores the same simple settings that are passed to calculations", () => {
+    const simpleSettings = applySimpleJourneyDefaults({
+      ...defaultSettings,
+      showCsAvc: true,
+      showSipp: true,
+      showIsa: true,
+      showLisa: true,
+    });
+
+    expect(simpleSettings).toEqual(
       expect.objectContaining({
         showCsAvc: true,
-        showSipp: true,
-        showIsa: true,
-        showLisa: true,
+        showSipp: false,
+        showIsa: false,
+        showLisa: false,
       })
     );
   });

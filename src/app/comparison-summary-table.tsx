@@ -1,8 +1,9 @@
 import {
   buildComparisonTableRows,
-  type ComparisonResult,
+  type ComparisonCellValue,
   type ComparisonTableRow,
 } from "../app-domains";
+import type { ComparisonResult } from "../result-projection/comparison-result";
 import type { RetirementIncomeDisplay } from "../projection";
 import { useMobileDateDropdowns } from "./form-fields";
 import { ProjectionTableFrame, type TableColumn } from "./projection-table";
@@ -10,14 +11,12 @@ import { ProjectionTableFrame, type TableColumn } from "./projection-table";
 export type ComparisonSummaryTableProps = {
   results: ComparisonResult[];
   retirementIncomeDisplay?: RetirementIncomeDisplay;
-  hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 };
 
 export function ComparisonSummaryTable({
   results,
   retirementIncomeDisplay = "annual",
-  hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: ComparisonSummaryTableProps) {
   const columns: TableColumn[] = [
@@ -30,7 +29,6 @@ export function ComparisonSummaryTable({
   ];
   const rows = buildComparisonTableRows(results, {
     retirementIncomeDisplay,
-    hideBridgeFundingSection,
     hideFlexibleAssetsSection,
   });
   const showMobileCards = useMobileDateDropdowns("(max-width: 640px)");
@@ -40,7 +38,7 @@ export function ComparisonSummaryTable({
     return (
       <section className="summary-section summary-section--compact">
         <div className="summary-section-inner">
-          <section className="bridge-table-section">
+          <section className="comparison-table-section">
             <div className="projection-mobile-cards projection-mobile-cards--active">
               {rows
                 .filter((row) => !row.isSectionDivider)
@@ -61,7 +59,7 @@ export function ComparisonSummaryTable({
   return (
     <section className="summary-section summary-section--compact">
       <div className="summary-section-inner">
-        <section className="bridge-table-section">
+        <section className="comparison-table-section">
           <ProjectionTableFrame
             columns={columns}
             rows={rows}
@@ -79,7 +77,7 @@ export function ComparisonSummaryTable({
               ) : (
                 row.metric
               ),
-              ...row.values,
+              ...row.values.map(renderComparisonCell),
             ]}
           />
         </section>
@@ -108,10 +106,22 @@ function ComparisonMobileCard({
         >
           <span>{result.scenario.name || `Scenario ${index + 1}`}</span>
           <div className="projection-mobile-card-value">
-            {row.values[index]}
+            {renderComparisonCell(row.values[index])}
           </div>
         </div>
       ))}
     </article>
   );
+}
+
+function renderComparisonCell(value: ComparisonCellValue | undefined) {
+  if (value && typeof value === "object") {
+    return (
+      <span className={`comparison-cell comparison-cell--${value.tone}`}>
+        {value.value}
+      </span>
+    );
+  }
+
+  return value;
 }

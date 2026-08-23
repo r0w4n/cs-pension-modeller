@@ -1,0 +1,146 @@
+export type RetirementIncomePoint = {
+  date: string;
+  age: number;
+  targetIncomeAnnual: number;
+  isaIncomeAnnual: number;
+  lisaIncomeAnnual: number;
+  sippIncomeAnnual: number;
+  csAvcIncomeAnnual: number;
+  alphaIncomeAnnual: number;
+  classicIncomeAnnual: number;
+  classicPlusIncomeAnnual: number;
+  nuvosIncomeAnnual: number;
+  premiumIncomeAnnual: number;
+  additionalGuaranteedIncomeAnnual: number;
+  additionalGuaranteedIncomeStreams?: RetirementIncomeAdditionalIncomePoint[];
+  partialRetirementIncomeAnnual: number;
+  statePensionIncomeAnnual: number;
+  totalIncomeAnnual: number;
+  takeHomeIncomeAnnual?: number;
+  assessedIncomeAnnual: number;
+  shortfallAnnual: number;
+  guaranteedNetIncomeAnnual: number;
+  unavoidableSurplusAnnual: number;
+  avoidableFlexibleSurplusAnnual: number;
+  flexibleWithdrawalInsights: RetirementIncomeFlexibleWithdrawalInsight[];
+  isaBalance?: number;
+  lisaBalance?: number;
+  sippBalance?: number;
+  csAvcBalance?: number;
+};
+
+export type RetirementIncomeFlexibleWithdrawalInsight = {
+  accountId: string;
+  label: string;
+  reducibleGrossAnnual: number;
+  avoidableNetAnnual: number;
+};
+
+export type RetirementIncomeAdditionalIncomePoint = {
+  id: string;
+  label: string;
+  annualAmount: number;
+};
+
+export type RetirementIncomeChartParameters = {
+  targetIncomeAnnual: number;
+  spendingSmileEnabled: boolean;
+  goGoPercentage: number;
+  slowGoStartAge: number;
+  slowGoPercentage: number;
+  noGoStartAge: number;
+  noGoPercentage: number;
+  alphaMonthlyAddedPension: number;
+  isaMonthlyContribution: number;
+  lisaMonthlyContribution: number;
+  sippMonthlyContribution: number;
+  retirementAge: number;
+  alphaLeaveAge: number;
+  sippAccessAge: number;
+  sippUseByAge: number;
+  isaAccessAge: number;
+  lisaAccessAge: number;
+  alphaStartAge: number;
+  nuvosStartAge: number;
+  premiumStartAge: number;
+  isaUseByAge: number;
+  lisaUseByAge: number;
+  partialRetirementStartAge: number;
+  partialRetirementWorkPercent: number;
+  partialRetirementEnabled: boolean;
+  statePensionAge: number;
+  showAlpha: boolean;
+  showClassic: boolean;
+  showClassicPlus: boolean;
+  showCsAvc: boolean;
+  showIsa: boolean;
+  showLisa: boolean;
+  showSipp: boolean;
+  sippUseByAgeEnabled: boolean;
+  showNuvos: boolean;
+  showPremium: boolean;
+  isaUseByAgeEnabled: boolean;
+  lisaUseByAgeEnabled: boolean;
+  showStatePension: boolean;
+};
+
+export type ChartNumberLimit = {
+  min: number;
+  max: number;
+  step: number;
+};
+
+export type RetirementIncomeChartLimits = {
+  targetIncomeAnnual: ChartNumberLimit;
+  alphaMonthlyAddedPension: ChartNumberLimit;
+  isaMonthlyContribution: ChartNumberLimit;
+  lisaMonthlyContribution: ChartNumberLimit;
+  sippMonthlyContribution: ChartNumberLimit;
+  retirementAge: ChartNumberLimit;
+  slowGoStartAge: ChartNumberLimit;
+  noGoStartAge: ChartNumberLimit;
+  alphaLeaveAge: ChartNumberLimit;
+  sippAccessAge: ChartNumberLimit;
+  sippUseByAge: ChartNumberLimit;
+  isaAccessAge: ChartNumberLimit;
+  lisaAccessAge: ChartNumberLimit;
+  alphaStartAge: ChartNumberLimit;
+  nuvosStartAge: ChartNumberLimit;
+  premiumStartAge: ChartNumberLimit;
+  isaUseByAge: ChartNumberLimit;
+  lisaUseByAge: ChartNumberLimit;
+  partialRetirementStartAge: ChartNumberLimit;
+  partialRetirementWorkPercent: ChartNumberLimit;
+  statePensionAge: ChartNumberLimit;
+};
+
+export type RetirementIncomeMilestoneKey =
+  | "retirementAge"
+  | "slowGoStartAge"
+  | "noGoStartAge"
+  | "alphaLeaveAge"
+  | "sippAccessAge"
+  | "sippUseByAge"
+  | "isaAccessAge"
+  | "lisaAccessAge"
+  | "alphaStartAge"
+  | "nuvosStartAge"
+  | "premiumStartAge"
+  | "isaUseByAge"
+  | "lisaUseByAge"
+  | "partialRetirementStartAge"
+  | "statePensionAge";
+
+export type RetirementIncomeMilestone = {
+  key: RetirementIncomeMilestoneKey;
+  label: string;
+  shortLabel: string;
+  age: number;
+  colour: string;
+  editable: boolean;
+};
+
+export type VisibleRetirementIncomeMilestone = RetirementIncomeMilestone & {
+  plotAge: number;
+  layoutAge: number;
+};

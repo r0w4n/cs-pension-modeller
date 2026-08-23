@@ -41,20 +41,49 @@ Do not duplicate full feature or scheme inventories here.
 
 This map is for orientation; the README architecture section is canonical:
 
-| Area                                  | Responsibility                                              |
-| ------------------------------------- | ----------------------------------------------------------- |
-| `src/main.tsx`, `src/App.tsx`         | Browser entrypoint and top-level composition                |
-| `src/app/`                            | UI state, persistence, validation, and orchestration        |
-| `src/settings/`                       | Defaults, normalization, storage, and schema migration      |
-| `src/projection-core.ts`, `src/row-*` | Projection pipeline and row generation                      |
-| `src/projection-domains/`             | Pension, savings, tax, inflation, and bridge logic          |
-| `src/app-domains/`                    | UI-facing journey, form, chart, and comparison adapters     |
-| `src/data/`                           | Pension factor tables and source metadata                   |
-| `features/`                           | Gherkin specifications and step definitions                 |
-| `e2e/`                                | Browser journeys, accessibility, and production smoke tests |
+| FCIS layer / area                     | Responsibility                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `src/main.tsx`, `src/App.tsx`, UI     | Presentation and top-level composition                                            |
+| `src/app/`                            | Imperative shell: application state, orchestration, effects and caches            |
+| `src/settings/`                       | Canonical settings, validation, normalization and schema migration                |
+| `src/projection-core.ts`, `src/row-*` | Pure projection pipeline and row generation                                       |
+| `src/projection-domains/`             | Pure pension, savings, tax, inflation and bridge calculations                     |
+| `src/calculation/`                    | Canonical result, assessments, diagnostics and alternate-strategy calculations    |
+| `src/result-projection/`              | Pure semantic chart, withdrawal, age-range, formatting and comparison projections |
+| `src/app-domains/`                    | Downstream journey, form and comparison presentation adapters                     |
+| `src/app/retirement-income-chart-*`   | Shared chart presentation adapters, controls and accessible equivalents           |
+| `src/data/`                           | Pension factor tables and source metadata                                         |
+| `features/`                           | Gherkin specifications and step definitions                                       |
+| `e2e/`                                | Browser journeys, accessibility and production smoke tests                        |
 
-Keep financial and domain logic separate from presentation code where
-practical.
+### FCIS Architecture Rules
+
+The required flow is `Presentation -> Application State -> Domain / Calculation
+Engine -> Result Projection -> Presentation`.
+
+- Keep React state, hooks, browser APIs, persistence, analytics, generated IDs,
+  mutable caches, and other effects in `src/app/` or browser entry points.
+- Keep calculation and result-projection functions deterministic. Pass inputs
+  explicitly; do not read local storage, the DOM, the current time, randomness,
+  or mutable application state from the functional core.
+- Use `calculateRetirementPlan` as the canonical active-plan calculation entry
+  point. Extend `RetirementPlanResult` deliberately when downstream projections
+  need more domain data; do not recalculate pension rows in a component or
+  result-projection function.
+- Project canonical results into semantic values before rendering. Result
+  projections must not return JSX or `ReactNode` values.
+- Keep source dependencies pointing inward: calculation must not import
+  `result-projection` or `app-domains`, and result projection must not import
+  `app-domains`. The ESLint boundary rules are mandatory.
+- Treat journeys as presentation configurations only. A journey may choose
+  shared fields, copy, ordering, defaults, and visible result components, but it
+  must not have a distinct pension or withdrawal calculation path.
+- Keep bridge analysis in the canonical `RetirementPlanResult`. Result and
+  comparison projections consume that shared diagnostic; they must not start a
+  separate bridge projection or treat it as a journey-specific engine.
+- Dependency direction must follow the required flow. Presentation may call
+  application actions; the imperative shell may call the functional core; the
+  core must not import presentation or application-state modules.
 
 ## Change Workflow
 

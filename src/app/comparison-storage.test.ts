@@ -5,11 +5,14 @@ import {
 } from "../settings";
 import {
   clearStoredComparisonScenarios,
-  createComparisonResult,
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
+} from "./comparison-storage";
+import {
+  createComparisonResult,
   type ComparisonScenario,
-} from "./comparison";
+} from "../result-projection/comparison-result";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";
@@ -110,7 +113,35 @@ describe("comparison scenario storage", () => {
 
     expect(loadedScenario?.settings.classicPensionDrawAge).toBe(60);
     expect(loadedScenario?.settings.classicPlusPensionDrawAge).toBe(60);
-    expect(() => createComparisonResult(loadedScenario, "")).not.toThrow();
+    expect(() =>
+      createComparisonResult(
+        loadedScenario,
+        "",
+        calculateRetirementPlan(loadedScenario.settings)
+      )
+    ).not.toThrow();
+  });
+
+  it("migrates saved gross targets to the current after-tax meaning", () => {
+    window.localStorage.setItem(
+      COMPARISON_SCENARIOS_STORAGE_KEY,
+      JSON.stringify([
+        createScenario("gross-scenario", "Gross scenario", {
+          ...createDefaultSettings(),
+          taxationEnabled: false,
+          retirementIncomeTargetBasis: "gross",
+        }),
+      ])
+    );
+
+    const [loadedScenario] = loadStoredComparisonScenarios();
+
+    expect(loadedScenario?.settings).toEqual(
+      expect.objectContaining({
+        taxationEnabled: true,
+        retirementIncomeTargetBasis: "after_tax",
+      })
+    );
   });
 
   it("returns an empty list for corrupted storage or when local storage is disabled", () => {

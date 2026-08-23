@@ -375,7 +375,7 @@ describe("settings unit tests", () => {
       showAdditionalGuaranteedIncome:
         defaultSettings.showAdditionalGuaranteedIncome,
       additionalGuaranteedIncomes: [],
-      taxationEnabled: false,
+      taxationEnabled: true,
       taxRegime: defaultSettings.taxRegime,
       partialRetirementEnabled: defaultSettings.partialRetirementEnabled,
       partialRetirementStartAge: defaultSettings.partialRetirementStartAge,
@@ -385,7 +385,7 @@ describe("settings unit tests", () => {
       currentStatePension: 0,
       statePensionForecastConfirmed: false,
       desiredRetirementIncome: 43900,
-      retirementIncomeTargetBasis: "gross",
+      retirementIncomeTargetBasis: "after_tax",
       spendingStrategyType: defaultSettings.spendingStrategyType,
       spendingSmile: {
         ...defaultSettings.spendingSmile,

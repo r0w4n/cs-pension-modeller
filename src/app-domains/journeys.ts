@@ -7,7 +7,7 @@ import {
 } from "../fieldDefinitions";
 import { knowledgeLinks } from "../knowledgeLinks";
 import type { PensionSettings } from "../settings";
-import { isSettingsGroupVisible } from "./shared";
+import { isSettingsGroupVisible } from "./settings-group-visibility";
 
 export const OPTIONAL_SECTION_TOGGLES = [
   {
@@ -82,12 +82,6 @@ export const OPTIONAL_SECTION_TOGGLES = [
     description:
       "Includes known retirement income from outside the modelled Civil Service pensions, such as another DB pension, an annuity, or a guaranteed annual income.",
   },
-  {
-    key: "taxationEnabled",
-    label: "Taxation",
-    description:
-      "Estimates retirement income after modelled Income Tax liability using the selected assumptions. It does not reproduce PAYE deductions or National Insurance.",
-  },
 ] as const;
 
 export type OptionalSectionToggleKey =
@@ -153,19 +147,33 @@ export type JourneyOptionalQuestion = {
       };
 };
 
+export type JourneyResultsSection =
+  | {
+      id: "summary";
+      presentation: "simple" | "standard" | "detailed";
+    }
+  | {
+      id: "retirement-income-chart";
+      presentation: "simple" | "standard" | "detailed";
+    }
+  | {
+      id: "income-details";
+      presentation: "simple";
+    }
+  | {
+      id: "inflation-basis";
+      presentation: "disclosure" | "expanded";
+    }
+  | { id: "comparison" }
+  | { id: "projection-table" };
+
 export type JourneyStepDefinition =
   | {
       id: string;
       eyebrow: string;
       title: string;
       description: string;
-      kind: "optional-sections" | "answer" | "bridge-answer" | "expert-answer";
-      hideInactiveLegendItems?: boolean;
-      hideBridgeFundingSection?: boolean;
-      hideFlexibleAssetsSection?: boolean;
-      resultsPresentation?: "simple";
-      showComparisonSection?: boolean;
-      showProjectionTable?: boolean;
+      kind: "optional-sections";
       toggleKeys?: readonly OptionalSectionToggleKey[];
       toggleCopy?: JourneyOptionalSectionCopy;
       visible?: (settings: PensionSettings) => boolean;
@@ -186,23 +194,125 @@ export type JourneyStepDefinition =
       supportLinkLayout?: "inline";
       optionalQuestion?: JourneyOptionalQuestion;
       addedPensionIncomeGoal?: boolean;
+      showFlexibleWithdrawalInsights?: boolean;
+      showFlexibleWithdrawalPriority?: boolean;
+      showSpendingSmileEditor?: boolean;
+      useNpaLinkedDefaults?: boolean;
+      visible?: (settings: PensionSettings) => boolean;
+    }
+  | {
+      id: string;
+      eyebrow: string;
+      title: string;
+      description: string;
+      kind: "review";
+      presentation: "bridge-plan";
+      visible?: (settings: PensionSettings) => boolean;
+    }
+  | {
+      id: string;
+      eyebrow: string;
+      title: string;
+      description: string;
+      kind: "results";
+      sections: readonly JourneyResultsSection[];
       visible?: (settings: PensionSettings) => boolean;
     };
+
+export type JourneySettingsPresentation = {
+  alignAlphaLeaveAgeToRetirement: boolean;
+  dateOfBirthUpdate:
+    | "preserve-retirement-ages"
+    | "reset-retirement-ages-to-npa"
+    | "relink-npa-defaults";
+};
+
+export const DEFAULT_JOURNEY_SETTINGS_PRESENTATION: JourneySettingsPresentation =
+  {
+    alignAlphaLeaveAgeToRetirement: false,
+    dateOfBirthUpdate: "preserve-retirement-ages",
+  };
 
 export type JourneyDefinition = {
   id: string;
   title: string;
   description: string;
+  settingsPresentation: JourneySettingsPresentation;
   steps: readonly JourneyStepDefinition[];
 };
 
-export const SPENDING_SMILE_EDITOR_STEP_ID = "expert-retirement-target";
+const MONTHLY_SPENDING_TARGET_STEP = {
+  title: "What would you like to spend each month?",
+  description:
+    "Think about the money you would like available each month after estimated tax when you stop working. A rough answer is fine. You can change it later.",
+  kind: "fields",
+  fieldIds: ["desiredRetirementIncome", "taxRegime"],
+  fieldLabels: {
+    desiredRetirementIncome:
+      "How much would you like available to spend each month after tax?",
+    taxRegime: "Which UK tax rules should we use?",
+  },
+  fieldDescriptions: {
+    desiredRetirementIncome:
+      "Enter the amount you would like to have left each month after estimated tax. Use today’s prices, as if you were spending the money now. This is a rough planning amount, not a promise of what you will receive.",
+    taxRegime:
+      "Choose Scotland if you expect to pay Scottish Income Tax in retirement. Otherwise choose England, Wales or Northern Ireland.",
+  },
+  currencyFieldPresentation: {
+    desiredRetirementIncome: {
+      displayDivisor: 12,
+      showAnnualEquivalent: true,
+      presets: [
+        {
+          value: 13900,
+          label: "Minimum — £1,158 a month",
+          description: "One-person household example: £13,900 a year",
+        },
+        {
+          value: 32700,
+          label: "Moderate — £2,725 a month",
+          description: "One-person household example: £32,700 a year",
+        },
+        {
+          value: 45400,
+          label: "Comfortable — £3,783 a month",
+          description: "One-person household example: £45,400 a year",
+        },
+      ],
+    },
+  },
+  hideFieldInfoLinks: true,
+  supportLinkLayout: "inline",
+  supportLink: {
+    heading: "Not sure what amount to choose?",
+    description:
+      "These one-person household examples come from the Retirement Living Standards. Your housing costs, household and personal circumstances can make your spending different, so use them only as a starting point.",
+    href: knowledgeLinks.retirementLivingStandards,
+    label: "Help me choose a retirement income",
+  },
+} as const satisfies Omit<
+  Extract<JourneyStepDefinition, { kind: "fields" }>,
+  "id" | "eyebrow"
+>;
 
-export function isSpendingSmileEditorStep(stepId: string) {
-  return stepId === SPENDING_SMILE_EDITOR_STEP_ID;
-}
-
-export const isExpertRetirementIncomeTargetStep = isSpendingSmileEditorStep;
+const RETIREMENT_AGE_STEP = {
+  title: "What age would you like to retire?",
+  description:
+    "Choose the age when you would like to stop working. This can be earlier than the age your Alpha pension can normally start.",
+  kind: "fields",
+  fieldIds: ["requirementAge"],
+  fieldLabels: {
+    requirementAge: "How old would you like to be when you retire?",
+  },
+  fieldDescriptions: {
+    requirementAge:
+      "We use this as the age you stop working and stop building more Alpha pension through your job. If your pension starts later, the results show the time between stopping work and receiving it.",
+  },
+  hideFieldInfoLinks: true,
+} as const satisfies Omit<
+  Extract<JourneyStepDefinition, { kind: "fields" }>,
+  "id" | "eyebrow"
+>;
 
 export const JOURNEY_DEFINITIONS = [
   {
@@ -210,36 +320,36 @@ export const JOURNEY_DEFINITIONS = [
     title: "Work out what I need to retire early",
     description:
       "Build a retirement income plan using your Civil Service pension, State Pension, SIPP, ISA, LISA and other savings. See how your bridging pots could support you before your main pensions start.",
+    settingsPresentation: {
+      alignAlphaLeaveAgeToRetirement: false,
+      dateOfBirthUpdate: "preserve-retirement-ages",
+    },
     steps: [
       {
-        id: "target",
-        eyebrow: "Step 1",
-        title: "Your retirement target",
-        description:
-          "Set the age you want to stop work and the annual income you want available to spend after estimated Income Tax.",
-        kind: "fields",
-        fieldIds: ["requirementAge", "desiredRetirementIncome", "taxRegime"],
-        fieldLabels: {
-          requirementAge: "Target retirement age",
-          desiredRetirementIncome:
-            "After-tax income you want in retirement (£ per year)",
-        },
-      },
-      {
         id: "personal",
-        eyebrow: "Step 2",
+        eyebrow: "Step 1",
         title: "Your personal details",
         description:
-          "Set the details that define current age, access ages, and the length of the bridge.",
+          "Start with the details that determine your current age, pension access ages, and how long this illustration should run.",
         kind: "fields",
         fieldIds: ["dateOfBirth", "lifeExpectancy"],
       },
       {
-        id: "include",
+        id: "target",
+        eyebrow: "Step 2",
+        ...MONTHLY_SPENDING_TARGET_STEP,
+      },
+      {
+        id: "retirement-age",
         eyebrow: "Step 3",
+        ...RETIREMENT_AGE_STEP,
+      },
+      {
+        id: "include",
+        eyebrow: "Step 4",
         title: "Your Civil Service pensions",
         description:
-          "We include State Pension, ISA, LISA and SIPP by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
+          "We include State Pension by default. Tell us which Civil Service pensions you have. Settings you have entered are kept if you hide a section and come back later.",
         kind: "optional-sections",
         toggleKeys: [
           "showAlpha",
@@ -247,12 +357,11 @@ export const JOURNEY_DEFINITIONS = [
           "showClassicPlus",
           "showNuvos",
           "showPremium",
-          "showCsAvc",
         ],
       },
       {
         id: "alpha",
-        eyebrow: "Step 4",
+        eyebrow: "Pension details",
         title: "Your Alpha pension",
         description:
           "Add the Alpha pension you have built up and the age you would prefer to draw it.",
@@ -350,8 +459,8 @@ export const JOURNEY_DEFINITIONS = [
           "Check your State Pension forecast and the date it becomes available.",
         kind: "fields",
         fieldIds: [
-          "statePensionForecastConfirmed",
           "currentStatePension",
+          "statePensionForecastConfirmed",
           "statePensionDrawDate",
           "statePensionApplyFutureGrowth",
           "statePensionCpiPercent",
@@ -363,6 +472,59 @@ export const JOURNEY_DEFINITIONS = [
         },
       },
       {
+        id: "pots",
+        eyebrow: "Bridge funding",
+        title: "Your bridging money",
+        description:
+          "Select the flexible savings, pension pots, and other guaranteed income that could support your retirement. ISA, LISA and SIPP are included initially; untick anything you do not have or do not want to use in this scenario. Values you entered are kept if you hide an option and select it again later.",
+        kind: "optional-sections",
+        toggleKeys: [
+          "showIsa",
+          "showLisa",
+          "showSipp",
+          "showCsAvc",
+          "showAdditionalGuaranteedIncome",
+        ],
+        toggleCopy: {
+          showIsa: {
+            label: "ISA",
+            description:
+              "Include an ISA that could provide tax-free withdrawals before your pensions start.",
+          },
+          showLisa: {
+            label: "Lifetime ISA (LISA)",
+            description:
+              "Include a Lifetime ISA that could provide tax-free retirement withdrawals from age 60.",
+          },
+          showSipp: {
+            label: "SIPP or personal pension",
+            description:
+              "Include a defined contribution pension pot that you manage outside the Civil Service defined benefit schemes.",
+          },
+          showCsAvc: {
+            label: "Civil Service AVC",
+            description:
+              "Include a separate invested pension pot built through Civil Service Additional Voluntary Contributions.",
+          },
+          showAdditionalGuaranteedIncome: {
+            label: "Other guaranteed income",
+            description:
+              "Include known retirement income outside the modelled Civil Service pensions, such as another defined benefit pension or an annuity.",
+          },
+        },
+      },
+      {
+        id: "bridge-strategy",
+        eyebrow: "Withdrawal plan",
+        title: "How should your bridging money be used?",
+        description:
+          "Choose whether your spending target changes later in retirement, then set the withdrawal instruction for each selected pot and the order for pots used to meet your income target.",
+        kind: "fields",
+        fieldIds: [],
+        showSpendingSmileEditor: true,
+        showFlexibleWithdrawalPriority: true,
+      },
+      {
         id: "additional-income",
         eyebrow: "Optional",
         title: "Additional guaranteed income",
@@ -371,68 +533,143 @@ export const JOURNEY_DEFINITIONS = [
         kind: "fields",
         groupId: "additional-income",
         fieldIds: [],
+        visible: (settings) => settings.showAdditionalGuaranteedIncome,
       },
       {
-        id: "pots",
-        eyebrow: "Step 5",
-        title: "Your bridging pots",
+        id: "isa",
+        eyebrow: "Optional",
+        title: "Your ISA",
         description:
-          "Bridge pots are flexible savings and pensions used to cover income gaps before pension income fully starts. Keep Civil Service AVC, ISA, LISA and SIPP separate so the model respects tax relief, access ages, bonuses, and drawdown timing.",
+          "Add the ISA balance and contributions that could help fund the period before your pensions start.",
         kind: "fields",
         fieldIds: [
           "isaCurrentPot",
           "isaMonthlyContribution",
           "isaDrawAge",
           "isaRealInterestPercent",
+          "isaWithdrawalPercent",
+          "isaWithdrawalTargetAge",
+        ],
+        fieldLabels: {
+          isaCurrentPot: "Current ISA balance (£)",
+          isaMonthlyContribution:
+            "Planned monthly ISA contribution before retirement",
+        },
+        visible: (settings) => settings.showIsa,
+      },
+      {
+        id: "lisa",
+        eyebrow: "Optional",
+        title: "Your Lifetime ISA",
+        description:
+          "Add the Lifetime ISA balance and contributions that could help fund retirement from age 60.",
+        kind: "fields",
+        fieldIds: [
           "lisaCurrentPot",
           "lisaMonthlyContribution",
           "lisaDrawAge",
           "lisaRealInterestPercent",
+          "lisaWithdrawalPercent",
+          "lisaWithdrawalTargetAge",
+        ],
+        fieldLabels: {
+          lisaCurrentPot: "Current LISA balance (£)",
+          lisaMonthlyContribution:
+            "Planned monthly LISA contribution before age 50",
+          lisaDrawAge: "LISA access age",
+        },
+        visible: (settings) => settings.showLisa,
+      },
+      {
+        id: "sipp",
+        eyebrow: "Optional",
+        title: "Your SIPP or personal pension",
+        description:
+          "Add the personal pension balance and contributions that could help fund retirement once the pot is accessible.",
+        kind: "fields",
+        fieldIds: [
           "sippCurrentPot",
           "sippMonthlyContribution",
           "sippDrawAge",
           "sippHasProtectedPensionAge",
           "sippTaxReliefRate",
           "sippRealInterestPercent",
-          "taxSippWithdrawalTreatment",
-          "taxSippTaxFreeWithdrawalPercent",
+          "sippWithdrawalPercent",
+          "sippWithdrawalTargetAge",
+        ],
+        fieldLabels: {
+          sippCurrentPot: "Current SIPP balance (£)",
+          sippMonthlyContribution:
+            "Planned monthly SIPP contribution before retirement",
+          sippDrawAge: "SIPP access age",
+        },
+        visible: (settings) => settings.showSipp,
+      },
+      {
+        id: "cs-avc",
+        eyebrow: "Optional",
+        title: "Your Civil Service AVC",
+        description:
+          "Add the Civil Service AVC balance and contributions that could help fund retirement once the pot is accessible.",
+        kind: "fields",
+        fieldIds: [
           "csAvcCurrentPot",
           "csAvcMonthlyContribution",
           "csAvcDrawAge",
           "csAvcHasProtectedPensionAge",
           "csAvcRealInterestPercent",
+          "csAvcWithdrawalPercent",
+          "csAvcWithdrawalTargetAge",
+        ],
+        fieldLabels: {
+          csAvcCurrentPot: "Current CS AVC balance (£)",
+          csAvcMonthlyContribution:
+            "Planned monthly CS AVC contribution before retirement",
+          csAvcDrawAge: "CS AVC access age",
+        },
+        visible: (settings) => settings.showCsAvc,
+      },
+      {
+        id: "pot-tax",
+        eyebrow: "Optional",
+        title: "Your pension pot tax assumptions",
+        description:
+          "Confirm how withdrawals from your selected pension pots should be treated for estimated Income Tax and tax-free cash.",
+        kind: "fields",
+        fieldIds: [
+          "taxSippWithdrawalTreatment",
+          "taxSippTaxFreeWithdrawalPercent",
           "taxCsAvcWithdrawalTreatment",
           "taxCsAvcTaxFreeWithdrawalPercent",
           "taxTrackLumpSumAllowance",
           "taxLumpSumAllowance",
           "taxLumpSumAllowanceUsed",
         ],
-        fieldLabels: {
-          isaCurrentPot: "Current ISA balance (£)",
-          isaMonthlyContribution:
-            "Planned monthly ISA contribution before retirement",
-          lisaCurrentPot: "Current LISA balance (£)",
-          lisaMonthlyContribution:
-            "Planned monthly LISA contribution before age 50",
-          lisaDrawAge: "LISA access age",
-          sippCurrentPot: "Current SIPP balance (£)",
-          sippMonthlyContribution:
-            "Planned monthly SIPP contribution before retirement",
-          sippDrawAge: "SIPP access age",
-          csAvcCurrentPot: "Current CS AVC balance (£)",
-          csAvcMonthlyContribution:
-            "Planned monthly CS AVC contribution before retirement",
-          csAvcDrawAge: "CS AVC access age",
-        },
+        visible: (settings) => settings.showSipp || settings.showCsAvc,
+      },
+      {
+        id: "check-plan",
+        eyebrow: "Review",
+        title: "Check your plan",
+        description:
+          "Review the choices the model will use. Go back to change any section, then calculate and view this planning illustration.",
+        kind: "review",
+        presentation: "bridge-plan",
       },
       {
         id: "answer",
         eyebrow: "Result",
         title: "Your results",
         description:
-          "Review your projected income, bridge funding, key dates, and assumptions.",
-        kind: "bridge-answer",
-        showProjectionTable: true,
+          "Review your projected income, flexible withdrawals, key dates, and assumptions.",
+        kind: "results",
+        sections: [
+          { id: "summary", presentation: "standard" },
+          { id: "retirement-income-chart", presentation: "standard" },
+          { id: "inflation-basis", presentation: "expanded" },
+          { id: "comparison" },
+          { id: "projection-table" },
+        ],
       },
     ],
   },
@@ -441,6 +678,10 @@ export const JOURNEY_DEFINITIONS = [
     title: "Simplified retirement journey",
     description:
       "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like.",
+    settingsPresentation: {
+      alignAlphaLeaveAgeToRetirement: true,
+      dateOfBirthUpdate: "reset-retirement-ages-to-npa",
+    },
     steps: [
       {
         id: "personal",
@@ -457,71 +698,12 @@ export const JOURNEY_DEFINITIONS = [
       {
         id: "target",
         eyebrow: "Step 2",
-        title: "What would you like to spend each month?",
-        description:
-          "Think about the money you would like available each month after estimated tax when you stop working. A rough answer is fine. You can change it later.",
-        kind: "fields",
-        fieldIds: ["desiredRetirementIncome", "taxRegime"],
-        fieldLabels: {
-          desiredRetirementIncome:
-            "How much would you like available to spend each month after tax?",
-          taxRegime: "Which UK tax rules should we use?",
-        },
-        fieldDescriptions: {
-          desiredRetirementIncome:
-            "Enter the amount you would like to have left each month after estimated tax. Use today’s prices, as if you were spending the money now. This is a rough planning amount, not a promise of what you will receive.",
-          taxRegime:
-            "Choose Scotland if you expect to pay Scottish Income Tax in retirement. Otherwise choose England, Wales or Northern Ireland.",
-        },
-        currencyFieldPresentation: {
-          desiredRetirementIncome: {
-            displayDivisor: 12,
-            showAnnualEquivalent: true,
-            presets: [
-              {
-                value: 13900,
-                label: "Minimum — £1,158 a month",
-                description: "One-person household example: £13,900 a year",
-              },
-              {
-                value: 32700,
-                label: "Moderate — £2,725 a month",
-                description: "One-person household example: £32,700 a year",
-              },
-              {
-                value: 45400,
-                label: "Comfortable — £3,783 a month",
-                description: "One-person household example: £45,400 a year",
-              },
-            ],
-          },
-        },
-        hideFieldInfoLinks: true,
-        supportLinkLayout: "inline",
-        supportLink: {
-          heading: "Not sure what amount to choose?",
-          description:
-            "These one-person household examples come from the Retirement Living Standards. Your housing costs, household and personal circumstances can make your spending different, so use them only as a starting point.",
-          href: knowledgeLinks.retirementLivingStandards,
-          label: "Help me choose a retirement income",
-        },
+        ...MONTHLY_SPENDING_TARGET_STEP,
       },
       {
         id: "retirement-age",
         eyebrow: "Step 3",
-        title: "What age would you like to retire?",
-        description:
-          "Choose the age when you would like to stop working. This can be earlier than the age your Alpha pension can normally start.",
-        kind: "fields",
-        fieldIds: ["requirementAge"],
-        fieldLabels: {
-          requirementAge: "How old would you like to be when you retire?",
-        },
-        fieldDescriptions: {
-          requirementAge:
-            "We use this as the age you stop working and stop building more Alpha pension through your job. If your pension starts later, the results show the time between stopping work and receiving it.",
-        },
-        hideFieldInfoLinks: true,
+        ...RETIREMENT_AGE_STEP,
       },
       {
         id: "alpha",
@@ -839,13 +1021,13 @@ export const JOURNEY_DEFINITIONS = [
         title: "Your results",
         description:
           "See how much money you may have each month and where it may come from.",
-        kind: "bridge-answer",
-        hideInactiveLegendItems: true,
-        hideBridgeFundingSection: true,
-        hideFlexibleAssetsSection: true,
-        resultsPresentation: "simple",
-        showComparisonSection: false,
-        showProjectionTable: false,
+        kind: "results",
+        sections: [
+          { id: "summary", presentation: "simple" },
+          { id: "retirement-income-chart", presentation: "simple" },
+          { id: "income-details", presentation: "simple" },
+          { id: "inflation-basis", presentation: "disclosure" },
+        ],
       },
     ],
   },
@@ -854,6 +1036,10 @@ export const JOURNEY_DEFINITIONS = [
     title: "Expert journey",
     description:
       "This journey gives you more control over your retirement projection, including detailed assumptions for pensions, savings, tax, inflation, investment growth and partial retirement.",
+    settingsPresentation: {
+      alignAlphaLeaveAgeToRetirement: false,
+      dateOfBirthUpdate: "relink-npa-defaults",
+    },
     steps: createExpertJourneySteps(),
   },
 ] as const satisfies readonly JourneyDefinition[];
@@ -875,8 +1061,15 @@ function createExpertJourneySteps(): JourneyStepDefinition[] {
       eyebrow: "Result",
       title: "Your results",
       description:
-        "Review your projected income, bridge funding, saved scenarios, and the full month-by-month projection table.",
-      kind: "expert-answer",
+        "Review your projected income, flexible withdrawals, saved scenarios, and the full month-by-month projection table.",
+      kind: "results",
+      sections: [
+        { id: "summary", presentation: "detailed" },
+        { id: "retirement-income-chart", presentation: "detailed" },
+        { id: "inflation-basis", presentation: "expanded" },
+        { id: "comparison" },
+        { id: "projection-table" },
+      ],
     },
   ];
 }
@@ -892,6 +1085,10 @@ function createExpertJourneyFieldStep(
     kind: "fields",
     groupId: group.id,
     fieldIds: group.fields.map((field) => field.id),
+    showFlexibleWithdrawalInsights: true,
+    showFlexibleWithdrawalPriority: group.id === "retirement-target",
+    showSpendingSmileEditor: group.id === "retirement-target",
+    useNpaLinkedDefaults: true,
     visible: isExpertJourneyGroupVisible(group.id),
   };
 }
@@ -939,6 +1136,16 @@ export function applyBridgeJourneyDefaults(
   };
 }
 
+export function applyExpertJourneyDefaults(
+  settings: PensionSettings
+): PensionSettings {
+  return {
+    ...settings,
+    taxationEnabled: true,
+    retirementIncomeTargetBasis: "after_tax",
+  };
+}
+
 export function applySimpleJourneyDefaults(
   settings: PensionSettings
 ): PensionSettings {
@@ -950,27 +1157,7 @@ export function applySimpleJourneyDefaults(
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
     alphaPensionDrawAge: normalPensionAge,
-    retirementIncomeTargetBasis: "after_tax",
-    taxationEnabled: true,
     nuvosPensionDrawAge: settings.nuvosPensionDrawAge,
-    assumedCpiPercent: 0,
-    showStatePension: true,
-    showNuvos: settings.showNuvos,
-    showClassic: settings.showClassic,
-    showClassicPlus: settings.showClassicPlus,
-    showPremium: settings.showPremium,
-    alphaAddedPensionMonthly: 0,
-    classicCalculationMode: "manual",
-    classicPlusCalculationMode: "manual",
-  };
-}
-
-export function applySimpleJourneyAssumptions(
-  settings: PensionSettings
-): PensionSettings {
-  return {
-    ...settings,
-    showAlpha: true,
     showStatePension: true,
     showSipp: false,
     showCsAvc: settings.showCsAvc,
@@ -997,32 +1184,5 @@ export function applySimpleJourneyAssumptions(
     alphaEpaEnabled: false,
     showAdditionalGuaranteedIncome: false,
     alphaAddedPensionLumpSums: [],
-  };
-}
-
-export function mergeSimpleJourneySettings(
-  currentSettings: PensionSettings,
-  nextSettings: PensionSettings
-): PensionSettings {
-  return {
-    ...nextSettings,
-    showAlpha: true,
-    showSipp: currentSettings.showSipp,
-    showIsa: currentSettings.showIsa,
-    showLisa: currentSettings.showLisa,
-    alphaAddedPensionFactorType: currentSettings.alphaAddedPensionFactorType,
-    statePensionApplyFutureGrowth:
-      currentSettings.statePensionApplyFutureGrowth,
-    applyPensionIncreases: true,
-    assumedCpiPercent: 0,
-    taxationEnabled: nextSettings.taxationEnabled,
-    retirementIncomeTargetBasis: nextSettings.retirementIncomeTargetBasis,
-    partialRetirementEnabled: currentSettings.partialRetirementEnabled,
-    alphaEpaEnabled: currentSettings.alphaEpaEnabled,
-    alphaEpaPeriods: currentSettings.alphaEpaPeriods,
-    showAdditionalGuaranteedIncome:
-      currentSettings.showAdditionalGuaranteedIncome,
-    additionalGuaranteedIncomes: currentSettings.additionalGuaranteedIncomes,
-    alphaAddedPensionLumpSums: currentSettings.alphaAddedPensionLumpSums,
   };
 }

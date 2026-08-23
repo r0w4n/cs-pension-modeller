@@ -92,7 +92,10 @@ describe("chart-state", () => {
     updateSetting({
       key: "dateOfBirth",
       value: "1977-06-01",
-      journeyMode: "expert",
+      settingsPresentation: {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      },
       showSavedLabel: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {
@@ -120,7 +123,10 @@ describe("chart-state", () => {
     updateSetting({
       key: "dateOfBirth",
       value: "1977-06-01",
-      journeyMode: "expert",
+      settingsPresentation: {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      },
       showSavedLabel: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {
@@ -142,7 +148,10 @@ describe("chart-state", () => {
     updateSetting({
       key: "dateOfBirth",
       value: "1977-06-01",
-      journeyMode: "expert",
+      settingsPresentation: {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      },
       showSavedLabel: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {
@@ -164,7 +173,10 @@ describe("chart-state", () => {
     updateSetting({
       key: "dateOfBirth",
       value: "1977-06-01",
-      journeyMode: "expert",
+      settingsPresentation: {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      },
       showSavedLabel: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {
@@ -186,7 +198,10 @@ describe("chart-state", () => {
     updateSetting({
       key: "dateOfBirth",
       value: "1977-06-01",
-      journeyMode: "expert",
+      settingsPresentation: {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      },
       showSavedLabel: vi.fn(),
       setChartUndoStack: vi.fn(),
       setSettings: (update) => {

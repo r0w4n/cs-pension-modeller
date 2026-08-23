@@ -1,11 +1,13 @@
 import {
   formatCapitalPreservation,
-  formatCurrencyDetailed,
-  formatDecimalAge,
   formatTargetMissDuration,
   type ComparisonInsights,
-  type ComparisonResult,
 } from "../app-domains";
+import type { ComparisonResult } from "../result-projection/comparison-result";
+import {
+  formatCurrencyDetailed,
+  formatDecimalAge,
+} from "../result-projection/formatting";
 import type { RetirementIncomeDisplay } from "../projection";
 import { ComparisonSummaryTable } from "./comparison-summary-table";
 import { SummarySection } from "./results-summary";
@@ -14,13 +16,11 @@ export function ComparisonResults({
   results,
   insights,
   retirementIncomeDisplay = "annual",
-  hideBridgeFundingSection = false,
   hideFlexibleAssetsSection = false,
 }: {
   results: ComparisonResult[];
   insights: ComparisonInsights;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
-  hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
 }) {
   if (results.length === 0) {
@@ -48,7 +48,6 @@ export function ComparisonResults({
       <ComparisonSummaryTable
         results={results}
         retirementIncomeDisplay={retirementIncomeDisplay}
-        hideBridgeFundingSection={hideBridgeFundingSection}
         hideFlexibleAssetsSection={hideFlexibleAssetsSection}
       />
     </>
@@ -87,7 +86,7 @@ function ComparisonInsightsGrid({
             label: insights.bestTargetResult?.scenario.name ?? "Not available",
             value: insights.bestTargetResult
               ? formatTargetMissDuration(
-                  insights.bestTargetResult.targetMissMonths
+                  insights.bestTargetResult.assessment.targetMissMonths
                 )
               : "Not available",
           },
@@ -102,8 +101,9 @@ function ComparisonInsightsGrid({
               "Not available",
             value: insights.lowestShortfallRiskResult
               ? formatRecurringShortfallOrSurplus(
-                  Math.max(0, -insights.lowestShortfallRiskResult.annualGap),
-                  Math.max(0, insights.lowestShortfallRiskResult.annualGap),
+                  insights.lowestShortfallRiskResult.assessment
+                    .largestAnnualShortfall,
+                  0,
                   retirementIncomeDisplay
                 )
               : "Not available",

@@ -54,10 +54,12 @@ export function SpendingSmileEditor({
   settings,
   validationIssues,
   onChange,
+  expertMode = true,
 }: {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   onChange: SettingsFieldOnChange;
+  expertMode?: boolean;
 }) {
   const strategy = settings.spendingSmile;
   const enabled = settings.spendingStrategyType === "SPENDING_SMILE";
@@ -74,7 +76,7 @@ export function SpendingSmileEditor({
       type === "SPENDING_SMILE"
         ? "spending_smile_enabled"
         : "spending_smile_disabled",
-      { expert_mode: true }
+      { expert_mode: expertMode }
     );
     onChange("spendingStrategyType", type);
   }
@@ -91,7 +93,7 @@ export function SpendingSmileEditor({
     );
     trackAnalyticsEvent("spending_smile_phase_age_changed", {
       phase,
-      expert_mode: true,
+      expert_mode: expertMode,
     });
   }
 

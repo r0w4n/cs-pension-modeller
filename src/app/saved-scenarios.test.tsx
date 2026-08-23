@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { createComparisonResult } from "../app-domains";
+import { createComparisonResult } from "../result-projection/comparison-result";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import { createDefaultSettings } from "../settings";
 import { SavedScenariosSection } from "./saved-scenarios";
 
@@ -33,7 +34,8 @@ describe("saved scenarios", () => {
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
       },
-      JSON.stringify(settings)
+      JSON.stringify(settings),
+      calculateRetirementPlan(settings)
     );
     const alternateSettings = {
       ...settings,
@@ -48,11 +50,12 @@ describe("saved scenarios", () => {
           createdAt: "2026-01-02T00:00:00.000Z",
           updatedAt: "2026-01-02T00:00:00.000Z",
         },
-        JSON.stringify(settings)
+        JSON.stringify(settings),
+        calculateRetirementPlan(alternateSettings)
       ),
-      bridgeAnalysis: {
-        ...matchingResult.bridgeAnalysis,
-        planWorks: false,
+      assessment: {
+        ...matchingResult.assessment,
+        meetsTargetThroughout: false,
       },
     };
     const onLoadScenario = vi.fn();

@@ -4,16 +4,16 @@ import {
   type deriveInflationAssumptions,
 } from "../projection";
 import type { PensionSettings, PensionValidationIssue } from "../settings";
+import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomePoint,
-} from "../RetirementIncomeChart";
-import {
-  type ComparisonResultCache,
-  type ComparisonScenario,
-} from "../app-domains";
-import { ComparisonRetirementIncomeChart, DeferredBelowFold } from "./chart";
+} from "../result-projection/retirement-income-chart-model";
+import type { ComparisonScenario } from "../result-projection/comparison-result";
+import type { ComparisonResultCache } from "./comparison-result-cache";
+import { DeferredBelowFold } from "./deferred-below-fold";
+import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";
 import { ComparisonPensionSummary } from "./comparison-pension-summary";
 import { ComparisonResults } from "./comparison-results";
 import {
@@ -43,6 +43,8 @@ export type ComparisonPanelProps = {
   validationIssues: PensionValidationIssue[];
   scenarios: ComparisonScenario[];
   comparisonResultCache?: ComparisonResultCache;
+  retirementPlanResult?: RetirementPlanResult;
+  isProjectionPending?: boolean;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (settings: PensionSettings) => void;
   retirementIncomeDisplay?: RetirementIncomeDisplay;
@@ -52,7 +54,6 @@ export type ComparisonPanelProps = {
   retirementIncomeChartParameters?: RetirementIncomeChartParameters;
   retirementIncomeChartLimits?: RetirementIncomeChartLimits;
   hideInactiveLegendItems?: boolean;
-  hideBridgeFundingSection?: boolean;
   hideFlexibleAssetsSection?: boolean;
   showPensionSummary?: boolean;
   onChangeChartParameters?: (
@@ -69,6 +70,8 @@ export function ComparisonPanel({
   validationIssues,
   scenarios,
   comparisonResultCache,
+  retirementPlanResult,
+  isProjectionPending = false,
   onScenariosChange,
   onLoadScenario,
   retirementIncomeDisplay,
@@ -78,7 +81,6 @@ export function ComparisonPanel({
   retirementIncomeChartParameters,
   retirementIncomeChartLimits,
   hideInactiveLegendItems,
-  hideBridgeFundingSection,
   hideFlexibleAssetsSection,
   showPensionSummary = true,
   onChangeChartParameters,
@@ -88,9 +90,9 @@ export function ComparisonPanel({
     validationIssues,
     scenarios,
     comparisonResultCache,
+    retirementPlanResult,
     retirementIncomeSeries,
     retirementIncomeDisplay,
-    hideBridgeFundingSection,
   });
   const scenarioActions = useScenarioActions({
     scenarios,
@@ -141,6 +143,7 @@ export function ComparisonPanel({
         <ScenarioBuilder
           scenarioCount={scenarios.length}
           isValid={currentScenarioIsValid}
+          isPending={isProjectionPending}
           limitReached={scenarioActions.comparisonLimitReached}
           nameValue={scenarioActions.scenarioNameDraft}
           onNameChange={scenarioActions.setScenarioNameDraft}
@@ -153,7 +156,6 @@ export function ComparisonPanel({
           results={results}
           insights={insights}
           retirementIncomeDisplay={retirementIncomeDisplay}
-          hideBridgeFundingSection={hideBridgeFundingSection}
           hideFlexibleAssetsSection={hideFlexibleAssetsSection}
         />
       </DeferredBelowFold>
@@ -173,7 +175,7 @@ export function ComparisonPanel({
         estimatedHeight={420}
         forceRender={validationIssues.length > 0}
       >
-        <ComparisonRetirementIncomeChart
+        <RetirementIncomeChartAdapter
           retirementIncomeSeries={retirementIncomeSeries}
           retirementIncomeChartParameters={retirementIncomeChartParameters}
           retirementIncomeChartLimits={retirementIncomeChartLimits}

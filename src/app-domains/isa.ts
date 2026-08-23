@@ -1,6 +1,6 @@
 import type { FieldDefinition, RangeField } from "../fieldDefinitions";
 import type { PensionSettings } from "../settings";
-import { calculateCurrentPlanningAge } from "./retirement-income";
+import { calculateCurrentPlanningAge } from "../result-projection/retirement-income";
 
 export function shouldRenderIsaField(
   fieldId: FieldDefinition["id"],

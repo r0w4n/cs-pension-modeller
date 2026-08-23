@@ -20,6 +20,9 @@ export function OptionalSectionToggleGrid({
   const visibleToggles = toggleKeys
     ? OPTIONAL_SECTION_TOGGLES.filter((toggle) =>
         toggleKeys.includes(toggle.key)
+      ).sort(
+        (left, right) =>
+          toggleKeys.indexOf(left.key) - toggleKeys.indexOf(right.key)
       )
     : OPTIONAL_SECTION_TOGGLES;
 

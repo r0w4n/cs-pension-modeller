@@ -99,16 +99,16 @@ Feature: Civil Service AVC modelling
     And the monthly Income Tax estimate should include taxable CS AVC income
 
   @bridge
-  Scenario: Use CS AVC to reduce the early retirement bridge funding gap
+  Scenario: Use configured CS AVC withdrawals to reduce an early retirement shortfall
     Given the CS AVC bridge plan has Alpha pension of 18000.00 per year from age 67
     And the CS AVC bridge plan has State Pension of 12000.00 per year from age 67
     And the CS AVC bridge plan has a CS AVC balance of 50000.00
     And the CS AVC bridge retirement age is 57
     And the CS AVC bridge life expectancy age is 68
     And the CS AVC bridge target income is 24000.00 per year
-    When the CS AVC bridge plan is analysed
-    Then at least one CS AVC bridge phase should include "Civil Service AVC"
-    And the unfunded bridge shortfall should be lower than the same plan without CS AVC
+    When the CS AVC retirement plan is calculated
+    Then the retirement income summary should include CS AVC withdrawals
+    And the lifetime shortfall should be lower than the same plan without CS AVC
 
   @summary
   Scenario: Keep secure pension income separate from flexible CS AVC income

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createRetirementIncomeSeries } from "../app-domains/retirement-income";
+import { createRetirementIncomeSeries } from "../result-projection/retirement-income";
 import { applyRetirementIncomeChartParameterPatch } from "../app/chart-state";
 import { createProjectionTable, generatePensionSummary } from "../projection";
 import { defaultSettings, type PensionSettings } from "../settings";

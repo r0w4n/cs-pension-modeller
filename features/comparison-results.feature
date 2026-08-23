@@ -30,10 +30,9 @@ Feature: Scenario comparison results
       | annual  | /year  |
 
   @optional-sections
-  Scenario: Hide bridge and flexible asset sections when they are not relevant
+  Scenario: Hide the flexible asset section when it is not relevant
     Given a default retirement scenario named "Current model"
-    When comparison table rows are built without bridge funding and flexible assets
-    Then the comparison should not include the "Bridge funding" section
+    When comparison table rows are built without flexible assets
     And the comparison should not include the "Flexible assets" section
 
   @legacy-pension

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { trackPageView } from "./analytics";
-import { createRetirementIncomeSeries } from "./app-domains";
+import { createRetirementIncomeSeries } from "./result-projection/retirement-income";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
 import { ModeSelection } from "./app/mode-selection";
 import { JourneyModeScreen } from "./app/journey-mode-screen";
@@ -26,6 +26,7 @@ function App() {
     journeyStepViewModel,
     loadParameters,
     localStorageEnabled,
+    onResultsStepActiveChange,
     clearAllData,
     selectAppMode,
     setLocalStorageEnabled,
@@ -126,6 +127,7 @@ function App() {
             settings={visibleSettings}
             settingsFormVersion={settingsFormVersion}
             journeyStepViewModel={journeyStepViewModel}
+            onResultsStepActiveChange={onResultsStepActiveChange}
           />
         ) : null}
 

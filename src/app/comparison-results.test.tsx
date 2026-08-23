@@ -1,8 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import {
-  createComparisonResult,
-  type ComparisonInsights,
-} from "../app-domains";
+import type { ComparisonInsights } from "../app-domains";
+import { createComparisonResult } from "../result-projection/comparison-result";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import { createDefaultSettings } from "../settings";
 import { ComparisonResults } from "./comparison-results";
 
@@ -42,7 +41,8 @@ describe("comparison results", () => {
         createdAt: "",
         updatedAt: "",
       },
-      JSON.stringify(settings)
+      JSON.stringify(settings),
+      calculateRetirementPlan(settings)
     );
     const insights: ComparisonInsights = {
       earliestRetirementResult: null,

@@ -36,4 +36,27 @@ describe("comparison module", () => {
     expect(setScenarioNameDraft).toHaveBeenCalledWith("My scenario");
     expect(addCurrentScenario).toHaveBeenCalled();
   });
+
+  it("waits for an updated calculation before adding a scenario", () => {
+    render(
+      <ScenarioBuilder
+        scenarioCount={0}
+        isValid
+        isPending
+        limitReached={false}
+        nameValue=""
+        onNameChange={vi.fn()}
+        onAdd={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Add to comparison" })
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Wait for the updated calculation before adding this scenario."
+      )
+    ).toBeInTheDocument();
+  });
 });

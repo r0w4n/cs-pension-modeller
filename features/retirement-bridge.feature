@@ -5,7 +5,7 @@ Feature: Early retirement bridge planning
   can cover the period between stopping work and later pension income.
 
   Background:
-    Given bridge analysis outputs are rounded to 2 decimal places
+    Given retirement plan outputs are rounded to 2 decimal places
 
   @retirement-age
   Scenario: Move an aligned Alpha draw age with a later retirement age
@@ -37,10 +37,10 @@ Feature: Early retirement bridge planning
     And the bridge retirement age is 60
     And the bridge life expectancy age is 61
     And the bridge target income is 6000.00 per year
-    When the bridge plan is analysed
-    Then the bridge plan should work on these assumptions
+    When the bridge retirement plan is calculated
+    Then the configured withdrawals should meet the income target at retirement
     And the retirement income summary should not include Alpha pension
-    And the first bridge phase should show no secure income source
+    And the retirement income summary should include configured ISA withdrawals
 
   @state-pension
   Scenario: Show State Pension changing the bridge income sources
@@ -51,10 +51,10 @@ Feature: Early retirement bridge planning
     And the bridge retirement age is 66
     And the bridge life expectancy age is 68
     And the bridge target income is 12000.00 per year
-    When the bridge plan is analysed
-    Then the bridge plan should work on these assumptions
-    And at least one bridge phase should include "State Pension"
-    And the stable annual secure income should be 12000.00
+    When the bridge retirement plan is calculated
+    Then the configured withdrawals should meet the income target at retirement
+    And the retirement income summary should include State Pension
+    And the secure income position at modelling end should be 0.00
 
   @classic
   Scenario: Treat classic pension as secure income throughout the bridge result
@@ -63,29 +63,19 @@ Feature: Early retirement bridge planning
     And the bridge retirement age is 60
     And the bridge life expectancy age is 61
     And the bridge target income is 6000.00 per year
-    When the bridge plan is analysed
-    Then the bridge plan should work on these assumptions
-    And at least one bridge phase should include "classic"
-    And the full secure annual income should be 12000.00
+    When the bridge retirement plan is calculated
+    Then the configured withdrawals should meet the income target at retirement
+    And the retirement income summary should include classic pension
+    And the secure income position at modelling end should be 6000.00
 
   @additional-guaranteed-income
-  Scenario: Use additional guaranteed income to reduce the bridge funding need
+  Scenario: Use additional guaranteed income to reduce the projected shortfall
     Given the bridge plan has no Civil Service pension
     And the bridge plan has no State Pension
     And the bridge retirement age is 58
     And the bridge life expectancy age is 62
     And the bridge target income is 18000.00 per year
     And the bridge plan has an ISA balance of 30000.00
-    When the bridge plan is analysed
+    When the bridge retirement plan is calculated
     And the same bridge plan adds guaranteed income of 6000.00 per year from age 60
-    Then the total bridge funding need should be lower with the guaranteed income
-
-  @sustainable-draw-age
-  Scenario: Find the earliest Alpha draw age that sustains the retirement target
-    Given the bridge plan has Alpha pension of 20000.00 per year
-    And the bridge plan has no State Pension
-    And the bridge retirement age is 55
-    And the bridge life expectancy age is 56
-    And the bridge target income is 5000.00 per year
-    When the earliest sustainable pension draw age is calculated
-    Then the earliest sustainable pension draw age should be 55
+    Then the lifetime shortfall should be lower with the guaranteed income

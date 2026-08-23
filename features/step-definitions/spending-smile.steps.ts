@@ -1,7 +1,7 @@
 import { Given, Then, When } from "@cucumber/cucumber";
 import { fieldGroups } from "../../src/fieldDefinitions";
 import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
-import { isSpendingSmileEditorStep } from "../../src/app-domains";
+import { JOURNEY_DEFINITIONS } from "../../src/app-domains";
 import {
   reconcileSpendingSmilePhaseAges,
   resolveAnnualSpendingTarget,
@@ -224,8 +224,12 @@ Then(
     const targetGroup = fieldGroups.find(
       (group) => group.id === "retirement-target"
     );
+    const targetStep = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "expert-journey"
+    )?.steps.find((step) => step.id === `expert-${targetGroup?.id ?? ""}`);
     assertEqual(
-      isSpendingSmileEditorStep(`expert-${targetGroup?.id ?? ""}`),
+      targetStep?.kind === "fields" &&
+        targetStep.showSpendingSmileEditor === true,
       true
     );
   }

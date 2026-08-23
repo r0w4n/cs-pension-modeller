@@ -17,6 +17,25 @@ const importResolvers = [
   }),
   createNodeResolver(),
 ];
+const functionalCoreRestrictedImportPaths = [
+  {
+    name: "react",
+    message:
+      "Keep the FCIS functional core and semantic adapters independent of React.",
+  },
+  {
+    name: "react-dom",
+    message:
+      "Keep the FCIS functional core and semantic adapters independent of React.",
+  },
+];
+const imperativeShellImportPatterns = [
+  {
+    group: ["../app", "../app/*", "../App"],
+    message:
+      "The FCIS functional core must not depend on the imperative application shell.",
+  },
+];
 
 export default tseslint.config(
   {
@@ -109,6 +128,142 @@ export default tseslint.config(
     files: ["src/projection.ts", "src/RetirementIncomeChart.tsx"],
     rules: {
       "sonarjs/cyclomatic-complexity": ["error", { threshold: 35 }],
+    },
+  },
+  {
+    files: [
+      "src/calculation/**/*.ts",
+      "src/projection-domains/**/*.ts",
+      "src/result-projection/**/*.ts",
+      "src/app-domains/**/*.ts",
+    ],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: functionalCoreRestrictedImportPaths,
+          patterns: imperativeShellImportPatterns,
+        },
+      ],
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "document",
+          message: "Pass browser state through the FCIS imperative shell.",
+        },
+        {
+          name: "localStorage",
+          message: "Pass browser state through the FCIS imperative shell.",
+        },
+        {
+          name: "window",
+          message: "Pass browser state through the FCIS imperative shell.",
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message: "Pass the current time into the FCIS functional core.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='Date'][callee.property.name='now']",
+          message: "Pass the current time into the FCIS functional core.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='Math'][callee.property.name='random']",
+          message: "Generate identifiers in the FCIS imperative shell.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/calculation/**/*.ts", "src/projection-domains/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: functionalCoreRestrictedImportPaths,
+          patterns: [
+            ...imperativeShellImportPatterns,
+            {
+              group: [
+                "../app-domains",
+                "../app-domains/*",
+                "../result-projection",
+                "../result-projection/*",
+              ],
+              message:
+                "The FCIS calculation engine must not depend on downstream result or presentation adapters.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/result-projection/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            ...functionalCoreRestrictedImportPaths,
+            {
+              name: "../projection",
+              importNames: ["createProjectionTable"],
+              message:
+                "Result projection must consume canonical calculation output rather than starting a pension projection.",
+            },
+          ],
+          patterns: [
+            ...imperativeShellImportPatterns,
+            {
+              group: ["../app-domains", "../app-domains/*"],
+              message:
+                "FCIS result projection must not depend on presentation-domain adapters.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/app-domains/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            ...functionalCoreRestrictedImportPaths,
+            {
+              name: "../projection",
+              importNames: ["createProjectionTable", "generatePensionSummary"],
+              message:
+                "Presentation-domain adapters must consume calculation or result-projection outputs rather than start pension projections.",
+            },
+            {
+              name: "../calculation/retirement-plan",
+              importNames: ["calculateRetirementPlan"],
+              message:
+                "The application shell owns canonical plan calculation orchestration.",
+            },
+            {
+              name: "../calculation/retirement-plan-assessment",
+              importNames: ["assessRetirementPlan"],
+              message:
+                "Presentation-domain adapters must consume canonical plan assessments.",
+            },
+          ],
+          patterns: imperativeShellImportPatterns,
+        },
+      ],
     },
   },
   {

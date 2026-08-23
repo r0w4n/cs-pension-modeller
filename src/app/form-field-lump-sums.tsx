@@ -92,7 +92,10 @@ export function AddedPensionLumpSumsEditor({
                   label={`${itemLabel} start date ${index + 1}`}
                   value={lumpSum.startDate}
                   idPrefix={`lump-sum-start-${lumpSum.id}`}
-                  yearRange={getLumpSumDateYearRange("start")}
+                  yearRange={getLumpSumDateYearRange(
+                    "start",
+                    new Date().getUTCFullYear()
+                  )}
                   describedBy={validationId}
                   hasValidationIssue={hasValidationIssue}
                   onChange={(nextValue) =>
@@ -164,7 +167,10 @@ export function AddedPensionLumpSumsEditor({
                       label={`${itemLabel} end date ${index + 1}`}
                       value={lumpSum.endDate}
                       idPrefix={`lump-sum-end-${lumpSum.id}`}
-                      yearRange={getLumpSumDateYearRange("end")}
+                      yearRange={getLumpSumDateYearRange(
+                        "end",
+                        new Date().getUTCFullYear()
+                      )}
                       describedBy={validationId}
                       hasValidationIssue={hasValidationIssue}
                       onChange={(nextValue) =>

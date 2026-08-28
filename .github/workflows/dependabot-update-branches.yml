@@ -1,0 +1,74 @@
+name: Update Dependabot branches
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: dependabot-update-branches
+  cancel-in-progress: false
+
+jobs:
+  update-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update open Dependabot branches behind main
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const openPulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: "open",
+              base: "main",
+              per_page: 100,
+            });
+
+            const dependabotPulls = openPulls.filter(
+              (pull) =>
+                pull.user?.login === "dependabot[bot]" &&
+                pull.draft === false,
+            );
+
+            for (const pull of dependabotPulls) {
+              const { data: comparison } = await github.rest.repos.compareCommits({
+                owner,
+                repo,
+                base: "main",
+                head: pull.head.ref,
+              });
+
+              if (comparison.behind_by === 0) {
+                core.notice(`PR #${pull.number} is already up to date.`);
+                continue;
+              }
+
+              try {
+                await github.request(
+                  "PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch",
+                  {
+                    owner,
+                    repo,
+                    pull_number: pull.number,
+                    expected_head_sha: pull.head.sha,
+                  },
+                );
+                console.log(`Requested an update for Dependabot PR #${pull.number}.`);
+              } catch (error) {
+                if ([403, 422].includes(error.status)) {
+                  core.warning(
+                    `Could not update PR #${pull.number}: ${error.message}`,
+                  );
+                  continue;
+                }
+
+                throw error;
+              }
+            }

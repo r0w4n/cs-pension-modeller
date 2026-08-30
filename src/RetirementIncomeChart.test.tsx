@@ -994,65 +994,14 @@ describe("RetirementIncomeChart", () => {
     });
   });
 
-  it("updates monthly added pension when the Alpha pension top edge is dragged", () => {
-    mockChartResize(960);
+  it("does not expose the Alpha added pension chart edge as a drag control", () => {
+    renderChart({ alphaMonthlyAddedPension: 250 });
 
-    const onChangeParameters =
-      vi.fn<RetirementIncomeChartProps["onChangeParameters"]>();
-    renderChart({ onChangeParameters });
-    const svg = document.querySelector(".retirement-income-chart-svg");
-
-    if (!(svg instanceof SVGSVGElement)) {
-      throw new Error("Expected retirement income chart SVG to be rendered");
-    }
-
-    Object.defineProperty(svg, "getBoundingClientRect", {
-      configurable: true,
-      value: () => ({
-        bottom: 460,
-        height: 460,
-        left: 0,
-        right: 960,
-        top: 0,
-        width: 960,
-        x: 0,
-        y: 0,
-        toJSON: () => "",
-      }),
-    });
-
-    const alphaEdge = screen.getByRole("slider", {
-      name: "Alpha added pension top edge",
-    });
-
-    fireEvent.pointerDown(alphaEdge, {
-      button: 0,
-      clientX: 500,
-      clientY: 260,
-      isPrimary: true,
-      pointerId: 1,
-      pointerType: "mouse",
-    });
-    fireEvent.pointerMove(alphaEdge, {
-      clientX: 500,
-      clientY: 230,
-      isPrimary: true,
-      pointerId: 1,
-      pointerType: "mouse",
-    });
-    fireEvent.pointerUp(alphaEdge, {
-      clientX: 500,
-      clientY: 230,
-      isPrimary: true,
-      pointerId: 1,
-      pointerType: "mouse",
-    });
-
-    expect(onChangeParameters).toHaveBeenCalled();
-    const patch = onChangeParameters.mock.calls[0]?.[0];
-    expect(patch).toBeDefined();
-    expect(patch.alphaMonthlyAddedPension).toBeGreaterThan(0);
-    expect(patch.alphaMonthlyAddedPension! % 25).toBe(0);
+    expect(
+      screen.queryByRole("slider", {
+        name: "Alpha added pension top edge",
+      })
+    ).not.toBeInTheDocument();
   });
 
   it("extends the x-axis left while a milestone is dragged beyond the plot edge", () => {

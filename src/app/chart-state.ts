@@ -59,7 +59,6 @@ export function applyRetirementIncomeChartParameterPatch(
   const context = createChartStateContext(next);
 
   applyIncomeAndContributionPatch(next, patch, context);
-  applyVisibilityPatch(next, patch);
 
   const statePensionAge = applyStatePensionPatch(next, patch, context);
 
@@ -194,51 +193,6 @@ function applySpendingSmileStartAgePatch(
       next.requirementAge,
       next.lifeExpectancy
     );
-  }
-}
-
-function applyVisibilityPatch(
-  next: PensionSettings,
-  patch: Partial<RetirementIncomeChartParameters>
-) {
-  if (patch.showAlpha !== undefined) {
-    next.showAlpha = patch.showAlpha;
-  }
-
-  if (patch.showClassic !== undefined) {
-    next.showClassic = patch.showClassic;
-  }
-
-  if (patch.showClassicPlus !== undefined) {
-    next.showClassicPlus = patch.showClassicPlus;
-  }
-
-  if (patch.showCsAvc !== undefined) {
-    next.showCsAvc = patch.showCsAvc;
-  }
-
-  if (patch.showIsa !== undefined) {
-    next.showIsa = patch.showIsa;
-  }
-
-  if (patch.showLisa !== undefined) {
-    next.showLisa = patch.showLisa;
-  }
-
-  if (patch.showSipp !== undefined) {
-    next.showSipp = patch.showSipp;
-  }
-
-  if (patch.showNuvos !== undefined) {
-    next.showNuvos = patch.showNuvos;
-  }
-
-  if (patch.showPremium !== undefined) {
-    next.showPremium = patch.showPremium;
-  }
-
-  if (patch.showStatePension !== undefined) {
-    next.showStatePension = patch.showStatePension;
   }
 }
 

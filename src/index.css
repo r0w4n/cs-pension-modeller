@@ -1391,37 +1391,13 @@ h3 {
   white-space: normal;
 }
 
-.retirement-income-legend > span,
-.retirement-income-legend-toggle {
+.retirement-income-legend > span {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.retirement-income-legend-toggle {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.retirement-income-legend-toggle[aria-pressed="false"] {
-  color: #526377;
-}
-
-.retirement-income-legend-toggle[aria-pressed="false"] > span {
-  opacity: 0.48;
-}
-
-.retirement-income-legend-toggle:focus-visible {
-  outline: 2px solid rgba(17, 100, 102, 0.4);
-  outline-offset: 3px;
-}
-
-.retirement-income-legend > span > span,
-.retirement-income-legend-toggle > span {
+.retirement-income-legend > span > span {
   flex: 0 0 auto;
   width: 0.75rem;
   height: 0.75rem;

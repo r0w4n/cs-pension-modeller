@@ -2120,18 +2120,6 @@ describe("App settings form", () => {
     ).toHaveTextContent(
       "Results depend on your inputs, so check important decisions against your official pension statement"
     );
-    expect(
-      screen.queryByLabelText("Toggle chart ISA bridge source")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("Toggle chart SIPP bridge source")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("Toggle chart nuvos pension source")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("Toggle chart partial retirement source")
-    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Assumptions version/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", {
@@ -3641,31 +3629,6 @@ describe("App settings form", () => {
 
     expect(screen.queryByLabelText("Target income")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Target income line")).toBeInTheDocument();
-  });
-
-  it("removes partial retirement from the chart key when it is disabled", () => {
-    renderAcknowledgedApp();
-
-    fireEvent.click(screen.getByLabelText("Partial retirement"));
-
-    advanceJourneyToResult();
-
-    const partialRetirementKey = screen.getByLabelText(
-      "Toggle chart partial retirement source"
-    );
-
-    expect(partialRetirementKey).toHaveAttribute("aria-pressed", "true");
-
-    fireEvent.click(partialRetirementKey);
-
-    expect(readStoredSettingsPayload()).toEqual(
-      expect.objectContaining({
-        partialRetirementEnabled: false,
-      })
-    );
-    expect(
-      screen.queryByLabelText("Toggle chart partial retirement source")
-    ).not.toBeInTheDocument();
   });
 
   it("only commits chart control slider changes when the pointer is released", () => {

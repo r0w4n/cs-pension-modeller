@@ -2748,46 +2748,12 @@ export function RetirementIncomeChart({
             const key = series.incomeKey;
             const label =
               key === "alphaIncomeAnnual" ? alphaLabel : series.label;
-            const enabled = key
-              ? isIncomeSourceEnabled(key, {
-                  showAlpha,
-                  showClassic,
-                  showClassicPlus,
-                  showCsAvc,
-                  partialRetirementEnabled,
-                  showIsa,
-                  showLisa,
-                  showNuvos,
-                  showPremium,
-                  showSipp,
-                  showStatePension,
-                })
-              : true;
-            const togglePatch = key
-              ? getIncomeSourceTogglePatch(key, !enabled)
-              : null;
-
-            if (isSimplePresentation || !key || !togglePatch) {
-              return (
-                <span key={series.key}>
-                  <span style={{ background: series.colour }} />
-                  {label}
-                </span>
-              );
-            }
 
             return (
-              <button
-                key={series.key}
-                type="button"
-                className="retirement-income-legend-toggle"
-                aria-label={getIncomeSourceToggleLabel(key)}
-                aria-pressed={enabled}
-                onClick={() => onChangeParameters(togglePatch)}
-              >
+              <span key={series.key}>
                 <span style={{ background: series.colour }} />
                 {label}
-              </button>
+              </span>
             );
           })}
           {hasEstimatedIncomeTax ? (
@@ -3013,65 +2979,6 @@ function isIncomeSourceEnabled(
   }
 
   return true;
-}
-
-function getIncomeSourceTogglePatch(
-  key: IncomeKey,
-  enabled: boolean
-): Partial<RetirementIncomeChartParameters> | null {
-  if (key === "alphaIncomeAnnual") {
-    return { showAlpha: enabled };
-  }
-
-  if (key === "classicIncomeAnnual") {
-    return { showClassic: enabled };
-  }
-
-  if (key === "classicPlusIncomeAnnual") {
-    return { showClassicPlus: enabled };
-  }
-
-  if (key === "csAvcIncomeAnnual") {
-    return { showCsAvc: enabled };
-  }
-
-  if (key === "isaIncomeAnnual") {
-    return { showIsa: enabled };
-  }
-
-  if (key === "lisaIncomeAnnual") {
-    return { showLisa: enabled };
-  }
-
-  if (key === "sippIncomeAnnual") {
-    return { showSipp: enabled };
-  }
-
-  if (key === "nuvosIncomeAnnual") {
-    return { showNuvos: enabled };
-  }
-
-  if (key === "premiumIncomeAnnual") {
-    return { showPremium: enabled };
-  }
-
-  if (key === "partialRetirementIncomeAnnual") {
-    return { partialRetirementEnabled: enabled };
-  }
-
-  if (key === "statePensionIncomeAnnual") {
-    return { showStatePension: enabled };
-  }
-
-  return null;
-}
-
-function getIncomeSourceToggleLabel(key: IncomeKey) {
-  if (key === "partialRetirementIncomeAnnual") {
-    return "Toggle chart partial retirement source";
-  }
-
-  return `Toggle chart ${sourceMeta[key].label} source`;
 }
 
 function formatCurrency(value: number) {

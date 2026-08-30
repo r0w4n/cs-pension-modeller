@@ -1196,8 +1196,7 @@ h3 {
   stroke-dasharray: 8 7;
 }
 
-.retirement-income-target-line-hitbox,
-.retirement-income-alpha-added-pension-hitbox {
+.retirement-income-target-line-hitbox {
   fill: none;
   stroke: transparent;
   stroke-width: 18;
@@ -1214,11 +1213,6 @@ h3 {
 
 .retirement-income-smile-phase-hitbox:hover {
   stroke: rgba(11, 77, 194, 0.12);
-}
-
-.retirement-income-alpha-added-pension-hitbox:focus-visible {
-  stroke: rgba(115, 83, 191, 0.22);
-  outline: none;
 }
 
 .retirement-income-milestone line {

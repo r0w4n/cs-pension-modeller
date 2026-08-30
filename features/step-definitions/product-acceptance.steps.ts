@@ -8,6 +8,7 @@ import {
   type JourneyStepDefinition,
 } from "../../src/app-domains/journeys";
 import { fieldGroups } from "../../src/fieldDefinitions";
+import { TWO_PERSON_RETIREMENT_LIVING_STANDARDS } from "../../src/data/retirement-living-standards";
 import { knowledgeLinks } from "../../src/knowledgeLinks";
 import {
   buildComparisonStatusItems,
@@ -34,10 +35,15 @@ import {
 import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
 import { getRetirementIncomeChartTitle } from "../../src/RetirementIncomeChart";
 import { calculateRetirementPlan } from "../../src/calculation/retirement-plan";
+import { calculateJointRetirementProjection } from "../../src/calculation/joint-retirement-plan";
 import {
   calculateRetirementChartOverlays,
   RETIREMENT_CHART_OVERLAY_META,
 } from "../../src/app-domains/retirement-chart-overlays";
+import {
+  getRetirementIncomeChartPresentation,
+  type RetirementIncomeChartPresentation,
+} from "../../src/app-domains/retirement-income-chart-presentation";
 import {
   selectRetirementChartLegendKeys,
   type RetirementChartLegendSource,
@@ -55,13 +61,18 @@ import {
 } from "../../src/projection";
 import {
   calculateNormalPensionAge,
+  createDefaultPartnerSettings,
   createDefaultSettings,
   getStoredSettingsEnvelope,
   parseStoredSettingsByJourney,
   saveLocalStoragePreference,
+  validateSettings,
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
+import { createHouseholdChartEvents } from "../../src/result-projection/joint-retirement-chart";
+import { getRetirementIncomeEventsForDate } from "../../src/result-projection/retirement-income-chart-layout";
+import type { RetirementIncomeChartEvent } from "../../src/result-projection/retirement-income-chart-model";
 
 function createComparisonResult(
   scenario: ComparisonScenario,
@@ -125,6 +136,9 @@ type ProductAcceptanceWorld = {
   appModeLoaded?: ReturnType<typeof loadStoredAppMode>;
   guidanceNotesLoaded?: boolean;
   journeySettings?: PensionSettingsByJourney;
+  jointProjection?: ReturnType<typeof calculateJointRetirementProjection>;
+  jointChartPresentation?: RetirementIncomeChartPresentation;
+  jointChartEvents?: RetirementIncomeChartEvent[];
 };
 
 type MemoryStorage = Storage & {
@@ -1711,6 +1725,231 @@ Then(
     assertEqual(
       JSON.stringify(targetField.presets?.map((preset) => preset.value)),
       JSON.stringify(table.hashes().map((row) => Number(row.amount)))
+    );
+  }
+);
+
+Then(
+  "the two-person Retirement Living Standards quick-selects should be:",
+  function (this: ProductAcceptanceWorld, table: DataTable) {
+    assertEqual(
+      JSON.stringify(
+        TWO_PERSON_RETIREMENT_LIVING_STANDARDS.annualExpenditure.map(
+          (preset) => preset.value
+        )
+      ),
+      JSON.stringify(table.hashes().map((row) => Number(row.amount)))
+    );
+  }
+);
+
+Given(
+  "two people retire in the same calendar month",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    const partner = {
+      ...createDefaultPartnerSettings(),
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 95,
+    };
+
+    this.settings = {
+      ...settings,
+      dateOfBirth: "1970-06-15",
+      requirementAge: 60,
+      lifeExpectancy: 95,
+      partner,
+      jointRetirement: {
+        ...settings.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 0,
+      },
+    };
+  }
+);
+
+Given(
+  "a staggered two-person household",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    const partner = {
+      ...createDefaultPartnerSettings(),
+      dateOfBirth: "1972-06-01",
+      requirementAge: 63,
+      lifeExpectancy: 95,
+    };
+
+    this.settings = {
+      ...settings,
+      dateOfBirth: "1970-06-15",
+      requirementAge: 60,
+      lifeExpectancy: 95,
+      partner,
+      jointRetirement: {
+        ...settings.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 30_000,
+        fullyRetiredDesiredRetirementIncome: 45_400,
+      },
+    };
+  }
+);
+
+When(
+  "the joint household projection is calculated",
+  function (this: ProductAcceptanceWorld) {
+    this.jointProjection = calculateJointRetirementProjection(
+      getSettings(this)
+    );
+  }
+);
+
+Then(
+  "the joint result should retain separate You and Partner projections",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    assertCondition(
+      this.jointProjection.people.you.rows.length > 0,
+      "Expected Your projection rows"
+    );
+    assertCondition(
+      this.jointProjection.people.partner.rows.length > 0,
+      "Expected Partner projection rows"
+    );
+    assertCondition(
+      this.jointProjection.rows.some(
+        (row) => row.people.you !== null && row.people.partner !== null
+      ),
+      "Expected calendar-aligned household rows for both people"
+    );
+  }
+);
+
+Then(
+  "the joint result should use one canonical household target",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    const targets = this.jointProjection.rows
+      .map((row) => row.target)
+      .filter((target): target is number => target !== null && target > 0);
+    assertCondition(targets.length > 0, "Expected household target rows");
+    assertCondition(
+      targets.includes(
+        getSettings(this).jointRetirement.fullyRetiredDesiredRetirementIncome
+      ),
+      "Expected the canonical fully-retired household target"
+    );
+  }
+);
+
+Then(
+  "the joint result should have one household retirement month",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    assertEqual(
+      this.jointProjection.firstRetirementMonth,
+      this.jointProjection.bothRetiredMonth
+    );
+  }
+);
+
+When(
+  "the read-only household chart presentation is prepared",
+  function (this: ProductAcceptanceWorld) {
+    this.jointChartPresentation =
+      getRetirementIncomeChartPresentation("readonly-household");
+  }
+);
+
+Then(
+  "inline household milestone annotations should be disabled",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(this.jointChartPresentation?.showInlineMilestones, false);
+    assertEqual(this.jointChartPresentation?.readOnly, true);
+  }
+);
+
+Then(
+  "household period inspection should remain enabled",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(this.jointChartPresentation?.showPeriodInspection, true);
+  }
+);
+
+When(
+  "household chart events are projected",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.settings = {
+      ...settings,
+      showAlpha: true,
+      alphaPensionDrawAge: settings.requirementAge,
+      partner: settings.partner
+        ? { ...settings.partner, showStatePension: true }
+        : settings.partner,
+    };
+    this.jointChartEvents = createHouseholdChartEvents(getSettings(this));
+  }
+);
+
+Then(
+  "household chart events should retain You and Partner ownership",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointChartEvents, "Expected household chart events");
+    assertCondition(
+      this.jointChartEvents.some((event) => event.owner === "you"),
+      "Expected Your event ownership"
+    );
+    assertCondition(
+      this.jointChartEvents.some((event) => event.owner === "partner"),
+      "Expected Partner event ownership"
+    );
+  }
+);
+
+Then(
+  "simultaneous household events should be grouped by calendar month",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointChartEvents, "Expected household chart events");
+    const retirementEvent = this.jointChartEvents.find(
+      (event) => event.key === "you-retirement"
+    );
+    assertCondition(retirementEvent, "Expected Your retirement event");
+    const grouped = getRetirementIncomeEventsForDate(
+      this.jointChartEvents,
+      retirementEvent.date
+    );
+    assertCondition(
+      grouped.some((event) => event.key === "you-alpha-start"),
+      "Expected simultaneous retirement and Alpha events in one month"
+    );
+  }
+);
+
+Then(
+  "the household should not require a transition target",
+  function (this: ProductAcceptanceWorld) {
+    const issues = validateSettings(getSettings(this));
+    assertCondition(
+      !issues.some(
+        (issue) =>
+          issue.field === "jointRetirement" &&
+          issue.message.includes("period when one person is retired")
+      ),
+      "Expected no transition-target validation issue for one calendar month"
+    );
+  }
+);
+
+Then(
+  "the household target should start when both people retire",
+  function (this: ProductAcceptanceWorld) {
+    const plan = calculateRetirementPlan(getSettings(this));
+    assertCondition(plan.jointProjection, "Expected a household projection");
+    assertEqual(
+      plan.jointProjection.firstRetirementMonth,
+      plan.jointProjection.bothRetiredMonth
     );
   }
 );

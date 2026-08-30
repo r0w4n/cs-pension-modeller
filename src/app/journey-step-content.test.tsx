@@ -1,7 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { deriveInflationAssumptions } from "../projection";
-import { createDefaultSettings, type PensionSettings } from "../settings";
+import {
+  createDefaultPartnerSettings,
+  createDefaultSettings,
+  type PensionSettings,
+} from "../settings";
 import { createComparisonResult } from "../result-projection/comparison-result";
 import {
   createRetirementIncomeChartLimits,
@@ -21,6 +25,7 @@ const projectionTableMocks = vi.hoisted(() => ({
 const journeyContentMocks = vi.hoisted(() => ({
   retirementIncomeChartAdapter: vi.fn(),
   comparisonPanel: vi.fn(),
+  jointRetirementResults: vi.fn(),
   pensionSummary: vi.fn(),
 }));
 
@@ -80,7 +85,15 @@ vi.mock("./projection-table", () => ({
   },
 }));
 
+vi.mock("./joint-retirement-results", () => ({
+  JointRetirementResults: (props: unknown) => {
+    journeyContentMocks.jointRetirementResults(props);
+    return <div>Joint retirement results</div>;
+  },
+}));
+
 vi.mock("./results-summary", () => ({
+  AssumptionsVersionStrip: () => <div>Planning tool only</div>,
   InflationBasisPanel: () => <div>Inflation basis</div>,
   ResultsSummarySection: ({ children }: { children: ReactNode }) => (
     <section>{children}</section>
@@ -98,6 +111,25 @@ vi.mock("./results-summary", () => ({
         <p key={item.label}>{`${item.label}: ${item.value}`}</p>
       ))}
     </section>
+  ),
+  SummaryToggle: ({
+    options,
+    onChange,
+  }: {
+    options: Array<{ value: string; label: string }>;
+    onChange: (value: string) => void;
+  }) => (
+    <div>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   ),
   ValidationIssuesSection: () => <div>Validation issues</div>,
 }));
@@ -122,6 +154,7 @@ describe("JourneyStepContent", () => {
     projectionTableMocks.section.mockClear();
     journeyContentMocks.retirementIncomeChartAdapter.mockClear();
     journeyContentMocks.comparisonPanel.mockClear();
+    journeyContentMocks.jointRetirementResults.mockClear();
     journeyContentMocks.pensionSummary.mockClear();
   });
 
@@ -178,6 +211,152 @@ describe("JourneyStepContent", () => {
     expect(incomeCard).not.toBeNull();
     expect(supportCard?.parentElement).toBe(incomeCard?.parentElement);
     expect(supportCard?.parentElement).toHaveClass("field-grid");
+  });
+
+  it("shows Partner personal-detail errors only on Partner fields", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      jointRetirement: {
+        ...viewModel.settings.jointRetirement,
+        enabled: true,
+      },
+      partner: createDefaultPartnerSettings(),
+    };
+    viewModel.validationIssues = [
+      {
+        field: "dateOfBirth",
+        message: "Enter Partner's birth date.",
+        personId: "partner",
+      },
+      {
+        field: "lifeExpectancy",
+        message: "Enter Partner's life expectancy.",
+        personId: "partner",
+      },
+    ];
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "personal",
+          eyebrow: "Step 1",
+          title: "Personal details",
+          description: "Set the household's personal details.",
+          kind: "fields",
+          groupId: "personal",
+          fieldIds: ["dateOfBirth", "lifeExpectancy"],
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.getByText("Your Birth Month and Year").closest(".field-card")
+    ).not.toHaveClass("field-card--invalid");
+    expect(
+      screen.getByText("Partner's Birth Month and Year").closest(".field-card")
+    ).toHaveClass("field-card--invalid");
+    expect(
+      screen.getByText("Life Expectancy (Age)").closest(".field-card")
+    ).not.toHaveClass("field-card--invalid");
+    expect(
+      screen.getByText("Partner Life Expectancy (Age)").closest(".field-card")
+    ).toHaveClass("field-card--invalid");
+    expect(
+      screen.getByLabelText("Partner's Birth Month and Year month")
+    ).toHaveAttribute("id", "partner-dateOfBirth-month");
+    expect(
+      screen.getByLabelText("Partner's Birth Month and Year year")
+    ).toHaveAttribute("id", "partner-dateOfBirth-year");
+    const ids = [...document.querySelectorAll("[id]")].map(
+      (element) => element.id
+    );
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("does not substitute a one-person result while household details are invalid", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    const settings = {
+      ...viewModel.settings,
+      jointRetirement: {
+        ...viewModel.settings.jointRetirement,
+        enabled: true,
+      },
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "",
+      },
+    };
+    const retirementPlanResult = calculateRetirementPlan(settings);
+    viewModel.settings = settings;
+    viewModel.retirementPlanResult = retirementPlanResult;
+    viewModel.validationIssues = retirementPlanResult.validationIssues;
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "results",
+          eyebrow: "Results",
+          title: "Results",
+          description: "Review results",
+          kind: "results",
+          sections: [{ id: "summary", presentation: "standard" }],
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Household results need more details",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Joint retirement results")
+    ).not.toBeInTheDocument();
+    expect(
+      journeyContentMocks.retirementIncomeChartAdapter
+    ).not.toHaveBeenCalled();
+  });
+
+  it("renders the partial-retirement salary as the shared range control", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      partialRetirementEnabled: true,
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "partial-retirement",
+          eyebrow: "Partial Retirement",
+          title: "Partial retirement details",
+          description: "Set partial retirement assumptions.",
+          kind: "fields",
+          groupId: "partial-retirement",
+          fieldIds: [
+            "partialRetirementStartAge",
+            "fullSalary",
+            "partialRetirementWorkPercent",
+          ],
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    expect(
+      screen.getByLabelText("Full salary before retirement (£ per year)")
+    ).toHaveClass("range-input");
+    expect(
+      screen.getByLabelText(
+        "Full salary before retirement (£ per year) exact value"
+      )
+    ).toHaveClass("number-input");
   });
 
   it("shows the income gap before estimating Added Pension needed", async () => {

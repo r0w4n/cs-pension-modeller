@@ -30,6 +30,20 @@ describe("state-pension domain", () => {
     ]);
   });
 
+  it("waits for a valid date of birth before checking the life-expectancy horizon", () => {
+    const issues = validateStatePensionRules({
+      settings: {
+        showStatePension: true,
+        statePensionDrawDate: "2050-01-01",
+      },
+      // This is the derived horizon while a person has not yet entered a DOB.
+      lifeExpectancyDate: "NaN-NaN-NaN",
+      defaultStatePensionDrawDate: "2040-01-01",
+    });
+
+    expect(issues).toEqual([]);
+  });
+
   it("coerces stored values", () => {
     const storedSettings = {
       showStatePension: true,

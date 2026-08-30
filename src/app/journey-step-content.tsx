@@ -73,6 +73,14 @@ import {
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
 import { SpendingSmileEditor } from "./spending-smile-editor";
 import { FlexibleWithdrawalPriorityEditor } from "./flexible-withdrawal-priority-editor";
+import { isSettingsGroupVisible } from "../app-domains/settings-group-visibility";
+import {
+  JointHouseholdTargetFields,
+  JointPartnerTaxFields,
+  JointRetirementToggle,
+  PartnerOptionalSections,
+} from "./joint-retirement-controls";
+import { JointRetirementResults } from "./joint-retirement-results";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -222,6 +230,12 @@ function renderOptionalSectionsStep(
         toggleKeys={toggleKeys}
         toggleCopy={step.toggleCopy}
       />
+      {step.id === "optional-sections" ? (
+        <>
+          <JointRetirementToggle settings={settings} onChange={onChange} />
+          <PartnerOptionalSections settings={settings} onChange={onChange} />
+        </>
+      ) : null}
     </>
   );
 }
@@ -282,6 +296,22 @@ function JourneyResultsStep({
           Calculating your results…
         </p>
       </>
+    );
+  }
+
+  if (settings.jointRetirement.enabled) {
+    return (
+      <JointJourneyResultsStep
+        settings={settings}
+        retirementPlanResult={retirementPlanResult}
+        isProjectionPending={isProjectionPending}
+        validationIssues={validationIssues}
+        chartParameters={retirementIncomeChartParameters}
+        chartLimits={retirementIncomeChartLimits}
+        onChange={onChange}
+        inflationPresentation={inflationPresentation}
+        derivedInflationAssumptions={derivedInflationAssumptions}
+      />
     );
   }
 
@@ -403,6 +433,86 @@ function JourneyResultsStep({
   );
 }
 
+function JointJourneyResultsStep({
+  settings,
+  retirementPlanResult,
+  isProjectionPending,
+  validationIssues,
+  chartParameters,
+  chartLimits,
+  onChange,
+  inflationPresentation,
+  derivedInflationAssumptions,
+}: {
+  settings: PensionSettings;
+  retirementPlanResult: RetirementPlanResult;
+  isProjectionPending: boolean;
+  validationIssues: PensionValidationIssue[];
+  chartParameters: RetirementIncomeChartParameters;
+  chartLimits: RetirementIncomeChartLimits;
+  onChange: SettingsFieldOnChange;
+  inflationPresentation:
+    | Extract<JourneyResultsSection, { id: "inflation-basis" }>["presentation"]
+    | undefined;
+  derivedInflationAssumptions: NonNullable<
+    JourneyStepViewModel["derivedInflationAssumptions"]
+  >;
+}) {
+  return (
+    <>
+      <ValidationSummary validationIssues={validationIssues} />
+
+      {isProjectionPending ? (
+        <p className="section-copy" role="status">
+          Updating calculated results…
+        </p>
+      ) : null}
+
+      {retirementPlanResult.jointProjection ? (
+        <JointRetirementResults
+          projection={retirementPlanResult.jointProjection}
+          settings={settings}
+          chartParameters={chartParameters}
+          chartLimits={chartLimits}
+          validationIssues={validationIssues}
+          onChange={onChange}
+        />
+      ) : (
+        <section
+          className="panel"
+          aria-labelledby="household-results-unavailable-title"
+        >
+          <div className="panel-heading">
+            <h2 id="household-results-unavailable-title">
+              Household results need more details
+            </h2>
+            <p className="section-copy">
+              Complete the highlighted settings before the combined household
+              projection can be shown. While two-person modelling is enabled,
+              this page does not show a single-person result in its place.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {inflationPresentation === "disclosure" ? (
+        <details className="simple-results-disclosure simple-results-methodology">
+          <summary>How this estimate was worked out</summary>
+          <InflationBasisPanelFeature
+            settings={settings}
+            assumptions={derivedInflationAssumptions}
+          />
+        </details>
+      ) : inflationPresentation === "expanded" ? (
+        <InflationBasisPanelFeature
+          settings={settings}
+          assumptions={derivedInflationAssumptions}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function hasResultsSection(
   step: JourneyStepDefinition & { kind: "results" },
   sectionId: JourneyResultsSection["id"]
@@ -470,7 +580,9 @@ function renderFieldsStep(
         step.hideFieldInfoLinks
       )}
       settings={settings}
-      validationIssues={validationIssues}
+      validationIssues={validationIssues.filter(
+        (issue) => issue.personId !== "partner"
+      )}
       onChange={onChange}
       showGuidanceNotes={showGuidanceNotes}
       useDropdownDates={useDropdownDates}
@@ -504,6 +616,7 @@ function renderFieldsStep(
       ) : null}
     </SettingsFieldsFeature>
   );
+  const partner = settings.partner;
 
   return (
     <>
@@ -523,9 +636,63 @@ function renderFieldsStep(
         >
           {settingsFields}
         </OptionalFieldsQuestion>
+      ) : step.groupId === "retirement-target" &&
+        settings.jointRetirement.enabled ? (
+        <JointHouseholdTargetFields
+          settings={settings}
+          onChange={onChange}
+          showGuidanceNotes={showGuidanceNotes}
+          showSpendingSmileEditor={Boolean(step.showSpendingSmileEditor)}
+          validationIssues={validationIssues}
+        />
       ) : (
         settingsFields
       )}
+
+      {step.groupId === "tax" && settings.jointRetirement.enabled ? (
+        <JointPartnerTaxFields
+          settings={settings}
+          onChange={onChange}
+          showGuidanceNotes={showGuidanceNotes}
+        />
+      ) : null}
+
+      {shouldShowPartnerFields(step.groupId, settings) && partner ? (
+        <section
+          className="settings-section"
+          aria-labelledby={`partner-${step.id}`}
+        >
+          <div className="section-heading">
+            <h3 id={`partner-${step.id}`}>Partner</h3>
+          </div>
+          <SettingsFieldsFeature
+            fields={getFieldsByIds(
+              step.fieldIds,
+              undefined,
+              undefined,
+              step.currencyFieldPresentation,
+              step.hideFieldInfoLinks
+            ).map((field) => ({
+              ...field,
+              label: getPartnerFieldLabel(field.label),
+            }))}
+            settings={partner as PensionSettings}
+            validationIssues={validationIssues.filter(
+              (issue) => issue.personId === "partner"
+            )}
+            onChange={(key, value) =>
+              onChange("partner", {
+                ...partner,
+                [key]: value,
+              })
+            }
+            showGuidanceNotes={showGuidanceNotes}
+            useDropdownDates={useDropdownDates}
+            useNpaLinkedDefaults={Boolean(step.useNpaLinkedDefaults)}
+            domIdPrefix="partner"
+          />
+        </section>
+      ) : null}
 
       {step.groupId ? (
         <SettingsGroupSupplementaryEditor
@@ -538,6 +705,30 @@ function renderFieldsStep(
       ) : null}
     </>
   );
+}
+
+function shouldShowPartnerFields(
+  groupId: string | undefined,
+  settings: PensionSettings
+) {
+  if (
+    !groupId ||
+    !settings.jointRetirement.enabled ||
+    !settings.partner ||
+    groupId === "retirement-target" ||
+    groupId === "inflation" ||
+    groupId === "tax"
+  ) {
+    return false;
+  }
+
+  return isSettingsGroupVisible(groupId, settings.partner as PensionSettings);
+}
+
+function getPartnerFieldLabel(label: string) {
+  return label.startsWith("Your ")
+    ? `Partner's ${label.slice("Your ".length)}`
+    : `Partner ${label}`;
 }
 
 function JourneySupportPanel({
@@ -913,7 +1104,13 @@ function ValidationSummary({
   validationIssues: PensionValidationIssue[];
 }) {
   return validationIssues.length > 0 ? (
-    <ValidationIssuesSectionFeature validationIssues={validationIssues} />
+    <ValidationIssuesSectionFeature
+      validationIssues={validationIssues.map((issue) =>
+        issue.personId === "partner"
+          ? { ...issue, message: `Partner: ${issue.message}` }
+          : issue
+      )}
+    />
   ) : null;
 }
 

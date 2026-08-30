@@ -227,6 +227,126 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
   });
 
+  test("expert two-person targets use aligned household controls and two-person quick-selects", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await page
+      .getByRole("checkbox", { name: "Model retirement for two people" })
+      .check();
+    await page
+      .getByRole("button", { name: "Retirement income target" })
+      .click();
+
+    await expect(
+      page.getByRole("heading", { name: "Household retirement income target" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("slider", { name: "Your retirement age" })
+    ).toHaveClass("range-input");
+    await expect(
+      page.getByRole("slider", {
+        name: "Your gross annual employment income before retirement",
+      })
+    ).toHaveClass("range-input");
+    await expect(
+      page.getByRole("slider", {
+        name: "Partner gross annual employment income before retirement",
+      })
+    ).toHaveClass("range-input");
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Partner gross annual employment income before retirement exact value",
+      })
+    ).toHaveValue("42000");
+    await expect(
+      page.getByLabel("Household target once you are both retired")
+    ).toHaveClass("number-input");
+    await expect(
+      page.getByRole("button", { name: "Minimum £22,500" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Moderate £45,400" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Comfortable £62,700" })
+    ).toBeVisible();
+  });
+
+  test("expert two-person results reuse the established chart and monthly table", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+
+    await page
+      .getByRole("checkbox", { name: "Model retirement for two people" })
+      .check();
+    await navigateToJourneyResult(page);
+
+    await expect(
+      page.getByRole("heading", { name: "Household retirement income summary" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Retirement income over time" })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Your State Pension", { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Partner State Pension", { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("slider", { name: "Target income line" })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("slider", { name: "Added Alpha pension" })
+    ).toHaveCount(0);
+    await expect(
+      page.locator(".retirement-income-static-milestone")
+    ).toHaveCount(0);
+    await expect(page.locator(".retirement-income-milestone")).toHaveCount(0);
+    const periodInspector = page.getByTestId(
+      "retirement-income-period-inspector"
+    );
+    await expect(periodInspector).toBeVisible();
+    await periodInspector.focus();
+    const periodDetails = page.getByTestId("retirement-income-period-details");
+    await expect(periodDetails).toBeVisible();
+    await expect(
+      periodDetails.getByRole("heading", { name: "Events" })
+    ).toBeVisible();
+    await expect(
+      periodDetails
+        .getByRole("listitem")
+        .filter({ hasText: /You retire|Partner retires/ })
+        .first()
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Monthly household income projection table",
+      })
+    ).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Partner retirement income" })
+      .click();
+    await expect(
+      page.getByRole("heading", {
+        name: "Monthly Partner’s income projection table",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Retirement income over time" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("slider", { name: "Target income line" })
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("slider", { name: /Retire, age/ })
+    ).toBeVisible();
+  });
+
   test("expert retirement age defaults follow Normal Pension Age", async ({
     page,
   }) => {

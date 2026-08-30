@@ -42,6 +42,7 @@ export type RangeField = {
     | "statePensionWageGrowthPercent"
     | "partialRetirementStartAge"
     | "partialRetirementWorkPercent"
+    | "fullSalary"
     | "alphaAddedPensionMonthly"
     | "alphaPensionLeaveAge"
     | "pensionableEarnings"
@@ -134,7 +135,6 @@ export type CurrencyInputField = {
     | "nuvosAccruedPensionAtLastAbs"
     | "premiumAnnualPensionAtValuationDate"
     | "desiredRetirementIncome"
-    | "fullSalary"
     | "sippCurrentPot"
     | "csAvcCurrentPot"
     | "isaCurrentPot"
@@ -353,10 +353,11 @@ export const fieldGroups: FieldGroup[] = [
       {
         id: "fullSalary",
         label: "Full salary before retirement (£ per year)",
-        type: "currency-input",
+        type: "range",
         min: 0,
         max: 300000,
-        step: 1,
+        step: 500,
+        inputStep: 1,
         format: "currency",
         description:
           "Used for partial-retirement work income and SIPP/ISA contribution modelling. When Income Tax modelling is enabled, the model also uses this amount as unshown taxable-income context before partial or full retirement, so employment and retirement income share one tax-year calculation. Alpha pension accrual still uses pensionable earnings, which may be different from full salary.",

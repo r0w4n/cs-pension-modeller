@@ -9874,6 +9874,144 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/joint-retirement-chart.feature",
+    name: "Joint retirement results chart",
+    description:
+      "The joint results chart keeps the established person chart for each member\n  while presenting a read-only, owner-attributed household timeline.",
+    tags: ["@expert-journey", "@two-person", "@results-chart"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-7",
+        keyword: "Scenario",
+        name: "Build the combined household result from calendar-aligned people",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-8",
+            keyword: "Given",
+            text: "a staggered two-person household",
+          },
+          {
+            id: "line-9",
+            keyword: "When",
+            text: "the joint household projection is calculated",
+          },
+          {
+            id: "line-10",
+            keyword: "Then",
+            text: "the joint result should retain separate You and Partner projections",
+          },
+          {
+            id: "line-11",
+            keyword: "And",
+            text: "the joint result should use one canonical household target",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-13",
+        keyword: "Scenario",
+        name: "Keep a same-month household on the combined timeline",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-14",
+            keyword: "Given",
+            text: "default modeller settings",
+          },
+          {
+            id: "line-15",
+            keyword: "And",
+            text: "two people retire in the same calendar month",
+          },
+          {
+            id: "line-16",
+            keyword: "When",
+            text: "the joint household projection is calculated",
+          },
+          {
+            id: "line-17",
+            keyword: "Then",
+            text: "the joint result should have one household retirement month",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-19",
+        keyword: "Scenario",
+        name: "Hide inline milestones while retaining Combined period inspection",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-20",
+            keyword: "Given",
+            text: "a staggered two-person household",
+          },
+          {
+            id: "line-21",
+            keyword: "When",
+            text: "the read-only household chart presentation is prepared",
+          },
+          {
+            id: "line-22",
+            keyword: "Then",
+            text: "inline household milestone annotations should be disabled",
+          },
+          {
+            id: "line-23",
+            keyword: "And",
+            text: "household period inspection should remain enabled",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-25",
+        keyword: "Scenario",
+        name: "Group owner-attributed household events for inspection",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-26",
+            keyword: "Given",
+            text: "a staggered two-person household",
+          },
+          {
+            id: "line-27",
+            keyword: "When",
+            text: "household chart events are projected",
+          },
+          {
+            id: "line-28",
+            keyword: "Then",
+            text: "household chart events should retain You and Partner ownership",
+          },
+          {
+            id: "line-29",
+            keyword: "And",
+            text: "simultaneous household events should be grouped by calendar month",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
     path: "features/local-privacy.feature",
     name: "Local-only preferences and data controls",
     description:
@@ -11470,6 +11608,97 @@ export const acceptanceFeatures = [
       {
         id: "line-238",
         keyword: "Scenario",
+        name: "Keep two-person household spending quick-selects distinct from one-person amounts",
+        description: "",
+        tags: [
+          "@expert-journey",
+          "@two-person",
+          "@retirement-living-standards",
+        ],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-239",
+            keyword: "Then",
+            text: "the two-person Retirement Living Standards quick-selects should be:",
+            table: [
+              {
+                id: "line-240",
+                cells: [
+                  {
+                    id: "line-240-column-9",
+                    value: "amount",
+                  },
+                ],
+              },
+              {
+                id: "line-241",
+                cells: [
+                  {
+                    id: "line-241-column-9",
+                    value: "22500",
+                  },
+                ],
+              },
+              {
+                id: "line-242",
+                cells: [
+                  {
+                    id: "line-242-column-9",
+                    value: "45400",
+                  },
+                ],
+              },
+              {
+                id: "line-243",
+                cells: [
+                  {
+                    id: "line-243-column-9",
+                    value: "62700",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-246",
+        keyword: "Scenario",
+        name: "Treat retirement in the same calendar month as simultaneous",
+        description: "",
+        tags: ["@expert-journey", "@two-person", "@household-timing"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-247",
+            keyword: "Given",
+            text: "default modeller settings",
+          },
+          {
+            id: "line-248",
+            keyword: "And",
+            text: "two people retire in the same calendar month",
+          },
+          {
+            id: "line-249",
+            keyword: "Then",
+            text: "the household should not require a transition target",
+          },
+          {
+            id: "line-250",
+            keyword: "And",
+            text: "the household target should start when both people retire",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-253",
+        keyword: "Scenario",
         name: "Bridge journey enables bridge pots and Income Tax by default",
         description: "",
         tags: ["@defaults"],
@@ -11477,27 +11706,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-239",
+            id: "line-254",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-240",
+            id: "line-255",
             keyword: "When",
             text: "bridge journey defaults are applied",
           },
           {
-            id: "line-241",
+            id: "line-256",
             keyword: "Then",
             text: "State Pension, ISA, LISA and SIPP should be included",
           },
           {
-            id: "line-242",
+            id: "line-257",
             keyword: "And",
             text: "Income Tax modelling should be on",
           },
           {
-            id: "line-243",
+            id: "line-258",
             keyword: "And",
             text: "ISA, LISA and SIPP withdrawals should use the use-by-age strategy",
           },
@@ -11505,7 +11734,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-246",
+        id: "line-261",
         keyword: "Scenario",
         name: "Keep journey settings separate while supporting older parameter files",
         description: "",
@@ -11514,27 +11743,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-247",
+            id: "line-262",
             keyword: "Given",
             text: "each journey has a different retirement age",
           },
           {
-            id: "line-248",
+            id: "line-263",
             keyword: "When",
             text: "the journey settings are exported and parsed",
           },
           {
-            id: "line-249",
+            id: "line-264",
             keyword: "Then",
             text: "each journey should retain its own retirement age",
           },
           {
-            id: "line-250",
+            id: "line-265",
             keyword: "When",
             text: "a legacy flat parameter file with retirement age 64 is parsed",
           },
           {
-            id: "line-251",
+            id: "line-266",
             keyword: "Then",
             text: "all three journeys should use the legacy retirement age 64",
           },
@@ -11542,7 +11771,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-254",
+        id: "line-269",
         keyword: "Scenario",
         name: "Exclude disabled income sources from the results chart key",
         description: "",
@@ -11551,91 +11780,91 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-255",
+            id: "line-270",
             keyword: "Given",
             text: "the results chart has these income sources:",
             table: [
               {
-                id: "line-256",
+                id: "line-271",
                 cells: [
                   {
-                    id: "line-256-column-9",
+                    id: "line-271-column-9",
                     value: "source",
                   },
                   {
-                    id: "line-256-column-31",
+                    id: "line-271-column-31",
                     value: "enabled",
                   },
                   {
-                    id: "line-256-column-41",
+                    id: "line-271-column-41",
                     value: "active",
                   },
                 ],
               },
               {
-                id: "line-257",
+                id: "line-272",
                 cells: [
                   {
-                    id: "line-257-column-9",
+                    id: "line-272-column-9",
                     value: "Alpha pension",
                   },
                   {
-                    id: "line-257-column-31",
+                    id: "line-272-column-31",
                     value: "yes",
                   },
                   {
-                    id: "line-257-column-41",
+                    id: "line-272-column-41",
                     value: "yes",
                   },
                 ],
               },
               {
-                id: "line-258",
+                id: "line-273",
                 cells: [
                   {
-                    id: "line-258-column-9",
+                    id: "line-273-column-9",
                     value: "Civil Service AVC",
                   },
                   {
-                    id: "line-258-column-31",
+                    id: "line-273-column-31",
                     value: "no",
                   },
                   {
-                    id: "line-258-column-41",
+                    id: "line-273-column-41",
                     value: "no",
                   },
                 ],
               },
               {
-                id: "line-259",
+                id: "line-274",
                 cells: [
                   {
-                    id: "line-259-column-9",
+                    id: "line-274-column-9",
                     value: "LISA",
                   },
                   {
-                    id: "line-259-column-31",
+                    id: "line-274-column-31",
                     value: "no",
                   },
                   {
-                    id: "line-259-column-41",
+                    id: "line-274-column-41",
                     value: "no",
                   },
                 ],
               },
               {
-                id: "line-260",
+                id: "line-275",
                 cells: [
                   {
-                    id: "line-260-column-9",
+                    id: "line-275-column-9",
                     value: "SIPP",
                   },
                   {
-                    id: "line-260-column-31",
+                    id: "line-275-column-31",
                     value: "yes",
                   },
                   {
-                    id: "line-260-column-41",
+                    id: "line-275-column-41",
                     value: "no",
                   },
                 ],
@@ -11643,27 +11872,27 @@ export const acceptanceFeatures = [
             ],
           },
           {
-            id: "line-261",
+            id: "line-276",
             keyword: "When",
             text: "the chart key is prepared without hiding inactive enabled sources",
           },
           {
-            id: "line-262",
+            id: "line-277",
             keyword: "Then",
             text: 'the chart key should include "Alpha pension"',
           },
           {
-            id: "line-263",
+            id: "line-278",
             keyword: "And",
             text: 'the chart key should include "SIPP"',
           },
           {
-            id: "line-264",
+            id: "line-279",
             keyword: "But",
             text: 'the chart key should not include "Civil Service AVC"',
           },
           {
-            id: "line-265",
+            id: "line-280",
             keyword: "And",
             text: 'the chart key should not include "LISA"',
           },
@@ -11671,7 +11900,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-268",
+        id: "line-283",
         keyword: "Scenario",
         name: "Describe the chart as the whole retirement income projection",
         description: "",
@@ -11680,17 +11909,17 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-269",
+            id: "line-284",
             keyword: "When",
             text: "retirement income chart titles are prepared",
           },
           {
-            id: "line-270",
+            id: "line-285",
             keyword: "Then",
             text: 'the standard results chart title should be "Retirement income over time"',
           },
           {
-            id: "line-271",
+            id: "line-286",
             keyword: "And",
             text: 'the simple results chart title should be "How your retirement income may change"',
           },

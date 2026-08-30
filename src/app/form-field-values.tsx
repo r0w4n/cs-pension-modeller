@@ -37,6 +37,7 @@ export function SelectSettingField({
   hideOnMobile = false,
   validationIssue,
   warning,
+  domIdPrefix,
 }: {
   field: SelectField;
   value: string;
@@ -46,8 +47,10 @@ export function SelectSettingField({
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
   warning?: { id: string; message: string };
+  domIdPrefix?: string;
 }) {
-  const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const domId = getFieldDomId(field.id, domIdPrefix);
+  const validationId = validationIssue ? `${domId}-validation` : undefined;
   const describedBy = [validationId, warning?.id].filter(Boolean).join(" ");
 
   return (
@@ -65,6 +68,7 @@ export function SelectSettingField({
       <SelectSettingFieldEditor
         field={field}
         value={value}
+        inputId={domId}
         disabled={disabled}
         describedBy={describedBy || undefined}
         hasValidationIssue={Boolean(validationIssue)}
@@ -86,6 +90,7 @@ export function SelectSettingField({
 function SelectSettingFieldEditor({
   field,
   value,
+  inputId,
   disabled = false,
   describedBy,
   hasValidationIssue = false,
@@ -93,6 +98,7 @@ function SelectSettingFieldEditor({
 }: {
   field: SelectField;
   value: string;
+  inputId: string;
   disabled?: boolean;
   describedBy?: string;
   hasValidationIssue?: boolean;
@@ -100,7 +106,7 @@ function SelectSettingFieldEditor({
 }) {
   return (
     <select
-      id={field.id}
+      id={inputId}
       aria-label={field.label}
       className="select-input"
       value={value}
@@ -126,6 +132,8 @@ export function CurrencySettingField({
   disabled = false,
   hideOnMobile = false,
   validationIssue,
+  resetValue: resetValueOverride,
+  domIdPrefix,
 }: {
   field: CurrencyInputField;
   value: number;
@@ -134,9 +142,13 @@ export function CurrencySettingField({
   disabled?: boolean;
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
+  /** Lets an adapter preserve an independently owned setting's default. */
+  resetValue?: number;
+  domIdPrefix?: string;
 }) {
-  const validationId = validationIssue ? `${field.id}-validation` : undefined;
-  const resetValue = defaultSettings[field.id];
+  const domId = getFieldDomId(field.id, domIdPrefix);
+  const validationId = validationIssue ? `${domId}-validation` : undefined;
+  const resetValue = resetValueOverride ?? defaultSettings[field.id];
   const displayDivisor = field.displayDivisor ?? 1;
 
   return (
@@ -300,6 +312,8 @@ export function RangeSettingField({
   hideOnMobile = false,
   validationIssue,
   useNpaLinkedDefaults = false,
+  resetValue: resetValueOverride,
+  domIdPrefix,
 }: {
   field: RangeField;
   value: number;
@@ -310,6 +324,9 @@ export function RangeSettingField({
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
   useNpaLinkedDefaults?: boolean;
+  /** Lets an adapter preserve an independently owned setting's default. */
+  resetValue?: number;
+  domIdPrefix?: string;
 }) {
   const effectiveField = getEffectiveRangeField(field, settings);
   const preservesBelowMinimumValue =
@@ -343,14 +360,17 @@ export function RangeSettingField({
     displayedRangeValue,
     preservesBelowMinimumValue,
   });
-  const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const domId = getFieldDomId(field.id, domIdPrefix);
+  const validationId = validationIssue ? `${domId}-validation` : undefined;
   const ageStepValidationId = hasInvalidAgeStep
-    ? `${field.id}-age-step-validation`
+    ? `${domId}-age-step-validation`
     : undefined;
   const describedBy = joinIds(validationId, ageStepValidationId);
   const hasAnyValidationIssue = Boolean(validationIssue) || hasInvalidAgeStep;
   const ariaInvalid = getAriaInvalid(hasAnyValidationIssue);
-  const resetValue = getRangeResetValue(field, settings, useNpaLinkedDefaults);
+  const resetValue =
+    resetValueOverride ??
+    getRangeResetValue(field, settings, useNpaLinkedDefaults);
   const resetLabel =
     field.id === "requirementAge"
       ? "Reset retirement age to default value"
@@ -578,6 +598,10 @@ function normalizeRangeValue(value: number, isAgeField: boolean) {
 
 function getAgeValueText(isAgeField: boolean, value: number) {
   return isAgeField ? formatModelAge(value) : undefined;
+}
+
+function getFieldDomId(fieldId: string, domIdPrefix?: string) {
+  return domIdPrefix ? `${domIdPrefix}-${fieldId}` : fieldId;
 }
 
 function joinIds(...ids: Array<string | undefined>) {

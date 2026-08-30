@@ -24,6 +24,7 @@ import {
   type AddedPensionLumpSum,
   type PensionSettings,
   type PensionValidationIssue,
+  type SpendingSmileStrategy,
 } from "./settings-types";
 import { MAX_SUPPORTED_MODELLING_AGE } from "../spending-smile";
 
@@ -164,7 +165,7 @@ export function validateSettings(
 ): PensionValidationIssue[] {
   const context = createValidationContext(settings);
 
-  return [
+  const ownIssues = [
     ...validatePersonalDetailsRules(settings, context.lifeExpectancyDate),
     ...validateStatePensionRules(context),
     ...validateAlphaPensionRules(context),
@@ -178,9 +179,119 @@ export function validateSettings(
     ...validatePartialRetirementRules(context),
     ...validateAdditionalGuaranteedIncomeRules(settings),
     ...validateTaxRules(settings),
-    ...validateSpendingSmileRules(settings),
+    // Joint mode owns its spending strategy under jointRetirement. A saved
+    // single-person profile is deliberately inactive there, so it must not
+    // prevent an otherwise valid household projection.
+    ...(settings.jointRetirement.enabled
+      ? []
+      : validateSpendingSmileRules(settings)),
     ...validateLumpSumRules(context),
   ];
+
+  if (!settings.jointRetirement.enabled) {
+    return ownIssues;
+  }
+
+  if (!settings.partner) {
+    return [
+      ...ownIssues,
+      {
+        field: "jointRetirement",
+        message:
+          "Add Partner details before calculating a two-person household.",
+      },
+    ];
+  }
+
+  const partnerSettings = createPartnerCalculationSettings(settings);
+  const partnerIssues = validateSettings(partnerSettings).map((issue) => ({
+    ...issue,
+    personId: "partner" as const,
+  }));
+
+  return [
+    ...ownIssues.map((issue) => ({ ...issue, personId: "you" as const })),
+    ...partnerIssues,
+    ...validateJointHouseholdRules(settings, partnerSettings),
+  ];
+}
+
+/** Shared assumptions stay at household level; every other value is owned. */
+export function createPartnerCalculationSettings(settings: PensionSettings) {
+  if (!settings.partner) {
+    throw new Error("Partner settings are required for a joint calculation.");
+  }
+
+  return {
+    ...settings.partner,
+    startDate: settings.startDate,
+    projectionBasis: settings.projectionBasis,
+    inflationRateAnnual: settings.inflationRateAnnual,
+    taxationEnabled: settings.taxationEnabled,
+    taxRegime: settings.taxRegime,
+    taxPersonalAllowance: settings.taxPersonalAllowance,
+    taxPersonalAllowanceTaperThreshold:
+      settings.taxPersonalAllowanceTaperThreshold,
+    taxBasicRateLimit: settings.taxBasicRateLimit,
+    taxAdditionalRateThreshold: settings.taxAdditionalRateThreshold,
+    taxBasicRatePercent: settings.taxBasicRatePercent,
+    taxHigherRatePercent: settings.taxHigherRatePercent,
+    taxAdditionalRatePercent: settings.taxAdditionalRatePercent,
+    retirementIncomeTargetBasis: "after_tax" as const,
+    desiredRetirementIncome: 0,
+    spendingStrategyType: "FLAT" as const,
+    flexibleWithdrawalPriority: [],
+    partner: undefined,
+    jointRetirement: { ...settings.jointRetirement, enabled: false },
+  };
+}
+
+function validateJointHouseholdRules(
+  settings: PensionSettings,
+  partner: PensionSettings
+): PensionValidationIssue[] {
+  const youRetirementDate = toCalendarMonth(
+    addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge)
+  );
+  const partnerRetirementDate = toCalendarMonth(
+    addYearsToIsoDate(partner.dateOfBirth, partner.requirementAge)
+  );
+  const issues: PensionValidationIssue[] = [];
+
+  if (
+    youRetirementDate !== partnerRetirementDate &&
+    settings.jointRetirement.transitionDesiredRetirementIncome <= 0
+  ) {
+    issues.push({
+      field: "jointRetirement",
+      message:
+        "Enter a positive household target for the period when one person is retired.",
+    });
+  }
+  if (settings.jointRetirement.fullyRetiredDesiredRetirementIncome <= 0) {
+    issues.push({
+      field: "jointRetirement",
+      message:
+        "Enter a positive household target for when both people are retired.",
+    });
+  }
+
+  const reference =
+    partnerRetirementDate >= youRetirementDate
+      ? { settings: partner, label: "Partner's" }
+      : { settings, label: "your" };
+  issues.push(
+    ...validateSpendingSmileStrategy({
+      strategyType: settings.jointRetirement.spendingStrategyType,
+      strategy: settings.jointRetirement.spendingSmile,
+      retirementAge: reference.settings.requirementAge,
+      lifeExpectancy: reference.settings.lifeExpectancy,
+      field: "jointRetirement",
+      retirementReferenceLabel: reference.label,
+    })
+  );
+
+  return issues;
 }
 
 function validateTaxRules(settings: PensionSettings): PensionValidationIssue[] {
@@ -201,10 +312,39 @@ function validateTaxRules(settings: PensionSettings): PensionValidationIssue[] {
   ];
 }
 
+function toCalendarMonth(date: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date.slice(0, 7)}-01` : date;
+}
+
 function validateSpendingSmileRules(
   settings: PensionSettings
 ): PensionValidationIssue[] {
-  if (settings.spendingStrategyType !== "SPENDING_SMILE") {
+  return validateSpendingSmileStrategy({
+    strategyType: settings.spendingStrategyType,
+    strategy: settings.spendingSmile,
+    retirementAge: settings.requirementAge,
+    lifeExpectancy: settings.lifeExpectancy,
+    field: "spendingSmile",
+    retirementReferenceLabel: "your",
+  });
+}
+
+function validateSpendingSmileStrategy({
+  strategyType,
+  strategy,
+  retirementAge,
+  lifeExpectancy,
+  field,
+  retirementReferenceLabel,
+}: {
+  strategyType: PensionSettings["spendingStrategyType"];
+  strategy: SpendingSmileStrategy;
+  retirementAge: number;
+  lifeExpectancy: number;
+  field: PensionValidationIssue["field"];
+  retirementReferenceLabel: string;
+}): PensionValidationIssue[] {
+  if (strategyType !== "SPENDING_SMILE") {
     return [];
   }
 
@@ -212,61 +352,56 @@ function validateSpendingSmileRules(
 
   (
     [
-      ["Go-go", "goGoPercentage", settings.spendingSmile.goGoPercentage],
-      ["Slow-go", "slowGoPercentage", settings.spendingSmile.slowGoPercentage],
-      ["No-go", "noGoPercentage", settings.spendingSmile.noGoPercentage],
+      ["Go-go", "goGoPercentage", strategy.goGoPercentage],
+      ["Slow-go", "slowGoPercentage", strategy.slowGoPercentage],
+      ["No-go", "noGoPercentage", strategy.noGoPercentage],
     ] as const
   ).forEach(([phase, itemId, percentage]) => {
     if (percentage <= 0) {
       issues.push({
-        field: "spendingSmile",
+        field,
         itemId,
         message: `${phase} percentage must be greater than 0%.`,
       });
     } else if (!Number.isInteger(percentage)) {
       issues.push({
-        field: "spendingSmile",
+        field,
         itemId,
         message: `${phase} percentage must be a whole number.`,
       });
     }
   });
 
-  if (settings.spendingSmile.slowGoStartAge <= settings.requirementAge) {
+  if (strategy.slowGoStartAge <= retirementAge) {
     issues.push({
-      field: "spendingSmile",
+      field,
       itemId: "slowGoStartAge",
-      message: "Slow-go years must start after your retirement age.",
+      message: `Slow-go years must start after ${retirementReferenceLabel} retirement age.`,
     });
   }
 
-  if (
-    settings.spendingSmile.noGoStartAge <= settings.spendingSmile.slowGoStartAge
-  ) {
+  if (strategy.noGoStartAge <= strategy.slowGoStartAge) {
     issues.push({
-      field: "spendingSmile",
+      field,
       itemId: "noGoStartAge",
       message: "No-go years must start after the Slow-go years.",
     });
   }
 
-  const maximumPhaseAge = Math.min(
-    MAX_SUPPORTED_MODELLING_AGE,
-    settings.lifeExpectancy
-  );
+  const maximumPhaseAge = Math.min(MAX_SUPPORTED_MODELLING_AGE, lifeExpectancy);
   (
     [
-      ["Slow-go", "slowGoStartAge", settings.spendingSmile.slowGoStartAge],
-      ["No-go", "noGoStartAge", settings.spendingSmile.noGoStartAge],
+      ["Slow-go", "slowGoStartAge", strategy.slowGoStartAge],
+      ["No-go", "noGoStartAge", strategy.noGoStartAge],
     ] as const
   ).forEach(([phase, itemId, startAge]) => {
     if (startAge > maximumPhaseAge) {
       issues.push({
-        field: "spendingSmile",
+        field,
         itemId,
         message:
           maximumPhaseAge < MAX_SUPPORTED_MODELLING_AGE
-            ? `${phase} age cannot be later than your modelled life expectancy of age ${maximumPhaseAge}.`
+            ? `${phase} age cannot be later than ${retirementReferenceLabel} modelled life expectancy of age ${maximumPhaseAge}.`
             : `${phase} age cannot be later than age ${MAX_SUPPORTED_MODELLING_AGE}.`,
       });
     }

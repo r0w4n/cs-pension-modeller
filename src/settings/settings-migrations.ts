@@ -334,6 +334,40 @@ export function migrateFromV16ToV17(data: unknown) {
   };
 }
 
+export function migrateFromV17ToV18(data: unknown) {
+  if (!isRecord(data) || !isRecord(data.journeys)) {
+    return { journeys: {} };
+  }
+
+  return {
+    ...data,
+    journeys: Object.fromEntries(
+      Object.entries(data.journeys).map(([journey, settings]) => [
+        journey,
+        isRecord(settings)
+          ? {
+              ...settings,
+              jointRetirement: {
+                enabled: false,
+                transitionDesiredRetirementIncome:
+                  typeof settings.desiredRetirementIncome === "number"
+                    ? settings.desiredRetirementIncome
+                    : 0,
+                fullyRetiredDesiredRetirementIncome:
+                  typeof settings.desiredRetirementIncome === "number"
+                    ? settings.desiredRetirementIncome
+                    : 0,
+                spendingStrategyType: "FLAT",
+                spendingSmile: settings.spendingSmile,
+                flexibleWithdrawalPriority: [],
+              },
+            }
+          : settings,
+      ])
+    ),
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -351,6 +385,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   14: migrateFromV14ToV15,
   15: migrateFromV15ToV16,
   16: migrateFromV16ToV17,
+  17: migrateFromV17ToV18,
 };
 
 export function migrateSettingsToLatest(

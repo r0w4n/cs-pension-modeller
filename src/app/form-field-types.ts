@@ -22,6 +22,8 @@ export type FieldProps = {
   validationIssue?: PensionValidationIssue;
   warning?: { id: string; message: string };
   useNpaLinkedDefaults?: boolean;
+  /** Prefixes DOM ids when the same setting is shown for a second person. */
+  domIdPrefix?: string;
 };
 
 export type DateParts = {

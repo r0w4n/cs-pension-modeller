@@ -1280,6 +1280,80 @@ h3 {
   pointer-events: none;
 }
 
+.joint-chart-view-selector {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0.25rem 0 -0.25rem;
+}
+
+.retirement-income-period-inspector {
+  cursor: crosshair;
+  outline: none;
+}
+
+.retirement-income-period-inspector:focus-visible {
+  stroke: var(--focus-ring);
+  stroke-width: 2;
+}
+
+.retirement-income-period-details {
+  position: absolute;
+  z-index: 2;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: min(22rem, calc(100% - 1.5rem));
+  max-height: calc(100% - 1.5rem);
+  overflow: auto;
+  padding: 0.75rem;
+  border: 1px solid rgba(17, 100, 102, 0.26);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 8px 24px rgba(18, 32, 51, 0.16);
+  color: var(--text);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+  pointer-events: none;
+}
+
+.retirement-income-period-details-date {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--accent-strong);
+  font-size: var(--font-size-body);
+}
+
+.retirement-income-period-details h4 {
+  margin: 0.6rem 0 0.25rem;
+  font-size: var(--font-size-body-sm);
+}
+
+.retirement-income-period-details-values {
+  display: grid;
+  gap: 0.18rem;
+  margin: 0;
+}
+
+.retirement-income-period-details-values > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+.retirement-income-period-details-values dt,
+.retirement-income-period-details-values dd {
+  margin: 0;
+}
+
+.retirement-income-period-details-values dd {
+  text-align: right;
+  font-weight: 700;
+}
+
+.retirement-income-period-details ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
 .retirement-income-drag-age rect {
   fill: rgba(255, 255, 255, 0.96);
   stroke: rgba(29, 98, 209, 0.42);
@@ -3058,6 +3132,17 @@ h3 {
 
   .retirement-income-legend--overlay {
     justify-content: flex-start;
+  }
+
+  .retirement-income-period-details {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-height: none;
+    margin-top: 0.75rem;
+    overflow: visible;
+    box-shadow: none;
   }
 
   .retirement-income-mobile-navigation {

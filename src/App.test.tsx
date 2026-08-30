@@ -709,6 +709,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxLumpSumAllowance: defaultSettings.taxLumpSumAllowance,
     taxLumpSumAllowanceUsed: defaultSettings.taxLumpSumAllowanceUsed,
     taxRegime: defaultSettings.taxRegime,
+    jointRetirement: defaultSettings.jointRetirement,
     ...overrides,
   };
 }
@@ -2754,6 +2755,7 @@ describe("App settings form", () => {
       "ISA",
       "LISA",
       "Additional guaranteed income",
+      "Model retirement for two people",
     ]);
   });
 

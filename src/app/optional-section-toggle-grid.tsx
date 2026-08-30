@@ -6,6 +6,44 @@ import {
 import type { PensionSettings } from "../settings";
 import type { SettingsFieldOnChange } from "./form-fields";
 
+export type CheckboxFieldGridItem = {
+  id: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+};
+
+/** Shared field-card presentation for independent yes/no options. */
+export function CheckboxFieldGrid({
+  items,
+}: {
+  items: readonly CheckboxFieldGridItem[];
+}) {
+  return (
+    <div className="field-grid">
+      {items.map((item) => (
+        <label key={item.id} className="field-card checkbox-field-card">
+          <span className="field-header">
+            <span className="field-label-group">
+              <span className="field-label">{item.label}</span>
+            </span>
+          </span>
+          <span className="checkbox-row">
+            <input
+              aria-label={item.label}
+              type="checkbox"
+              checked={item.checked}
+              onChange={(event) => item.onChange(event.target.checked)}
+            />
+            <span>{item.description}</span>
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export function OptionalSectionToggleGrid({
   settings,
   onChange,
@@ -27,29 +65,18 @@ export function OptionalSectionToggleGrid({
     : OPTIONAL_SECTION_TOGGLES;
 
   return (
-    <div className="field-grid">
-      {visibleToggles.map((toggle) => {
+    <CheckboxFieldGrid
+      items={visibleToggles.map((toggle) => {
         const copy = toggleCopy?.[toggle.key] ?? toggle;
 
-        return (
-          <label key={toggle.key} className="field-card checkbox-field-card">
-            <span className="field-header">
-              <span className="field-label-group">
-                <span className="field-label">{copy.label}</span>
-              </span>
-            </span>
-            <span className="checkbox-row">
-              <input
-                aria-label={copy.label}
-                type="checkbox"
-                checked={settings[toggle.key]}
-                onChange={(event) => onChange(toggle.key, event.target.checked)}
-              />
-              <span>{copy.description}</span>
-            </span>
-          </label>
-        );
+        return {
+          id: toggle.key,
+          label: copy.label,
+          description: copy.description,
+          checked: settings[toggle.key],
+          onChange: (checked) => onChange(toggle.key, checked),
+        };
       })}
-    </div>
+    />
   );
 }

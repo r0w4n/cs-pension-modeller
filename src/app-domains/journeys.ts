@@ -1110,7 +1110,12 @@ function isExpertJourneyGroupVisible(groupId: string) {
     groupId === "partial-retirement"
   ) {
     return (settings: PensionSettings) =>
-      isSettingsGroupVisible(groupId, settings);
+      isSettingsGroupVisible(groupId, settings) ||
+      Boolean(
+        settings.jointRetirement.enabled &&
+        settings.partner &&
+        isSettingsGroupVisible(groupId, settings.partner as PensionSettings)
+      );
   }
 
   return undefined;

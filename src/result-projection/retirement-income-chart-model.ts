@@ -1,6 +1,8 @@
 export type RetirementIncomePoint = {
   date: string;
   age: number;
+  /** Optional presentation coordinate for non-age timelines such as households. */
+  timelineValue?: number;
   targetIncomeAnnual: number;
   isaIncomeAnnual: number;
   lisaIncomeAnnual: number;
@@ -17,6 +19,8 @@ export type RetirementIncomePoint = {
   statePensionIncomeAnnual: number;
   totalIncomeAnnual: number;
   takeHomeIncomeAnnual?: number;
+  /** Canonical estimated Income Tax for derived household points. */
+  estimatedIncomeTaxAnnual?: number;
   assessedIncomeAnnual: number;
   shortfallAnnual: number;
   guaranteedNetIncomeAnnual: number;
@@ -27,6 +31,29 @@ export type RetirementIncomePoint = {
   lisaBalance?: number;
   sippBalance?: number;
   csAvcBalance?: number;
+  /** Owner-attributed sources used by the household chart projection. */
+  incomeSeries?: RetirementIncomeChartSeriesValue[];
+};
+
+export type RetirementIncomeChartSeriesValue = {
+  key: string;
+  annualAmount: number;
+};
+
+export type RetirementIncomeChartSeriesDefinition = {
+  key: string;
+  label: string;
+  colour: string;
+  owner?: "you" | "partner";
+  sourceType?: string;
+};
+
+export type RetirementIncomeChartEvent = {
+  key: string;
+  label: string;
+  date: string;
+  timelineValue: number;
+  owner?: "you" | "partner";
 };
 
 export type RetirementIncomeFlexibleWithdrawalInsight = {

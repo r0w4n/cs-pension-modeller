@@ -76,6 +76,24 @@ export type SpendingSmileStrategy = {
   noGoPercentage: number;
 };
 
+/** A stable calculation identifier; labels are deliberately kept out of the core. */
+export type PersonId = "you" | "partner";
+
+export type HouseholdFlexibleFundAccountId =
+  `${PersonId}:${FlexibleFundAccountId}`;
+
+export type JointRetirementSettings = {
+  /** Partner data is retained while this is false, but does not validate or calculate. */
+  enabled: boolean;
+  /** Annual after-estimated-Income-Tax target between the two retirement months. */
+  transitionDesiredRetirementIncome: number;
+  /** Annual after-estimated-Income-Tax target once both people are retired. */
+  fullyRetiredDesiredRetirementIncome: number;
+  spendingStrategyType: SpendingStrategyType;
+  spendingSmile: SpendingSmileStrategy;
+  flexibleWithdrawalPriority: HouseholdFlexibleFundAccountId[];
+};
+
 export type AdditionalGuaranteedIncome = {
   id: string;
   name: string;
@@ -226,12 +244,30 @@ export type PensionSettings = {
   taxTrackLumpSumAllowance: boolean;
   taxLumpSumAllowance: number;
   taxLumpSumAllowanceUsed: number;
+  /**
+   * The existing top-level fields remain the canonical settings for You. This
+   * avoids altering legacy storage and calculation inputs while allowing the
+   * same person-level modelling rules to be supplied for Partner.
+   */
+  partner?: PartnerSettings;
+  jointRetirement: JointRetirementSettings;
 };
+
+/**
+ * A partner uses the same person-level model as You. Shared household
+ * assumptions are overwritten from the top-level settings when calculated.
+ */
+export type PartnerSettings = Omit<
+  PensionSettings,
+  "partner" | "jointRetirement"
+>;
 
 export type PensionValidationIssue = {
   field: keyof PensionSettings;
   message: string;
   itemId?: string;
+  /** Present only for a person-specific issue in active joint modelling. */
+  personId?: PersonId;
 };
 
 export type StoredPensionSettings = Omit<

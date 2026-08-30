@@ -15,11 +15,35 @@ import {
   migrateFromV14ToV15,
   migrateFromV15ToV16,
   migrateFromV16ToV17,
+  migrateFromV17ToV18,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
 
 describe("settings-migrations", () => {
+  it("adds dormant joint household settings without copying existing financial data", () => {
+    expect(
+      migrateFromV17ToV18({
+        journeys: {
+          expert: { desiredRetirementIncome: 32_000 },
+        },
+      })
+    ).toEqual({
+      journeys: {
+        expert: {
+          desiredRetirementIncome: 32_000,
+          jointRetirement: {
+            enabled: false,
+            transitionDesiredRetirementIncome: 32_000,
+            fullyRetiredDesiredRetirementIncome: 32_000,
+            spendingStrategyType: "FLAT",
+            spendingSmile: undefined,
+            flexibleWithdrawalPriority: [],
+          },
+        },
+      },
+    });
+  });
   it("renames targetRetirementAge to requirementAge", () => {
     expect(
       migrateFromV1ToV2({
@@ -307,6 +331,20 @@ describe("settings-migrations", () => {
       taxLumpSumAllowanceUsed: 0,
       statePensionForecastConfirmed: false,
       alphaEpaPeriods: [],
+      jointRetirement: {
+        enabled: false,
+        transitionDesiredRetirementIncome: 0,
+        fullyRetiredDesiredRetirementIncome: 0,
+        spendingStrategyType: "FLAT",
+        spendingSmile: {
+          goGoPercentage: 100,
+          slowGoStartAge: 75,
+          slowGoPercentage: 85,
+          noGoStartAge: 85,
+          noGoPercentage: 70,
+        },
+        flexibleWithdrawalPriority: [],
+      },
     };
 
     expect(

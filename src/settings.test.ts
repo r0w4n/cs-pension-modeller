@@ -9,6 +9,7 @@ import {
   calculateStatePensionDrawDate,
   calculateStatePensionDrawDateFromAge,
   createAlphaAbsDateFromYear,
+  createDefaultPartnerSettings,
   createDefaultSettings,
   defaultSettings,
   formatLocalIsoDate,
@@ -180,6 +181,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     taxTrackLumpSumAllowance: defaultSettings.taxTrackLumpSumAllowance,
     taxLumpSumAllowance: defaultSettings.taxLumpSumAllowance,
     taxLumpSumAllowanceUsed: defaultSettings.taxLumpSumAllowanceUsed,
+    jointRetirement: defaultSettings.jointRetirement,
     ...overrides,
   };
 }
@@ -225,6 +227,18 @@ describe("settings unit tests", () => {
   it("uses today for the default calculation start date", () => {
     expect(getTodayIsoDate()).toBe("2026-04-25");
     expect(createDefaultSettings().startDate).toBe("2026-04-25");
+  });
+
+  it("starts a new Partner with State Pension, SIPP and ISA selected", () => {
+    const partner = createDefaultPartnerSettings();
+
+    expect(partner).toMatchObject({
+      dateOfBirth: defaultSettings.dateOfBirth,
+      fullSalary: defaultSettings.fullSalary,
+      showStatePension: true,
+      showSipp: true,
+      showIsa: true,
+    });
   });
 
   it("formats today from local calendar parts instead of the UTC ISO date", () => {
@@ -522,6 +536,14 @@ describe("settings unit tests", () => {
       taxTrackLumpSumAllowance: false,
       taxLumpSumAllowance: 268275,
       taxLumpSumAllowanceUsed: 0,
+      jointRetirement: {
+        enabled: false,
+        transitionDesiredRetirementIncome: 43899.6,
+        fullyRetiredDesiredRetirementIncome: 43899.6,
+        spendingStrategyType: "FLAT",
+        spendingSmile: defaultSettings.jointRetirement.spendingSmile,
+        flexibleWithdrawalPriority: [],
+      },
     });
   });
 

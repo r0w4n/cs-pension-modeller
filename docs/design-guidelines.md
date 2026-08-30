@@ -74,6 +74,14 @@ to maximise reuse.
 
 ## Forms And Questions
 
+- Treat the existing settings form components as the default implementation
+  pattern, not merely visual inspiration. When a new setting has an equivalent
+  existing field type, reuse its field card, grid placement, label/header,
+  help, validation, reset and responsive behaviour.
+- Do not introduce a bespoke input, wrapper, or near-match styling for an
+  equivalent field just to deliver a feature more quickly. A genuinely new
+  interaction must have a clear user benefit, review its accessibility and
+  maintenance impact, and have explicit user agreement before implementation.
 - Ask plain-English questions and use labels describing the information needed,
   not internal model fields.
 - Put units and tax or time bases next to entered values and repeat them in

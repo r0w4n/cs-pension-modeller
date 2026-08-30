@@ -4,6 +4,9 @@ import {
   type AddedPensionLumpSum,
   type AlphaEpaPeriod,
   type FlexibleFundAccountId,
+  type HouseholdFlexibleFundAccountId,
+  type JointRetirementSettings,
+  type PartnerSettings,
   type PensionSettings,
 } from "./settings-types";
 import { normalizeAdditionalGuaranteedIncomes } from "./settings-domains/additional-guaranteed-income";
@@ -276,6 +279,12 @@ export function normalizeSetting<K extends keyof PensionSettings>(
   value: PensionSettings[K]
 ): PensionSettings[K] {
   switch (key) {
+    // Nested settings are normalised as a complete household record during
+    // storage/import. A field update must retain the structured value here;
+    // treating either object as a numeric setting causes the form to throw.
+    case "partner":
+    case "jointRetirement":
+      return value;
     case "startDate":
     case "dateOfBirth":
       return normalizePersonalDateSetting(
@@ -436,6 +445,8 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     "retirementIncomeTargetBasis",
     settings.retirementIncomeTargetBasis
   );
+
+  const partner = normalizePartnerSettings(settings.partner);
 
   return {
     startDate: normalizeSetting("startDate", settings.startDate),
@@ -865,7 +876,93 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       "taxLumpSumAllowanceUsed",
       settings.taxLumpSumAllowanceUsed
     ),
+    ...(partner ? { partner } : {}),
+    jointRetirement: normalizeJointRetirement(
+      settings.jointRetirement,
+      desiredRetirementIncome
+    ),
   };
+}
+
+function normalizePartnerSettings(
+  partner: PartnerSettings | undefined
+): PartnerSettings | undefined {
+  if (!partner) {
+    return undefined;
+  }
+
+  // Keep the Partner's independent default (or an explicitly blank value)
+  // rather than copying Your date of birth during normalization.
+  const suppliedDateOfBirth =
+    typeof partner.dateOfBirth === "string" ? partner.dateOfBirth : "";
+  const normalized = normalizeSettings({
+    ...defaultSettings,
+    ...partner,
+    partner: undefined,
+    jointRetirement: defaultSettings.jointRetirement,
+  });
+  const {
+    partner: _partner,
+    jointRetirement: _jointRetirement,
+    ...person
+  } = normalized;
+
+  return { ...person, dateOfBirth: suppliedDateOfBirth };
+}
+
+function normalizeJointRetirement(
+  value: JointRetirementSettings | undefined,
+  singlePersonTarget: number
+): JointRetirementSettings {
+  const fallback = defaultSettings.jointRetirement;
+  const supplied = value ?? fallback;
+  const priority = Array.isArray(supplied.flexibleWithdrawalPriority)
+    ? supplied.flexibleWithdrawalPriority.filter(
+        (entry, index): entry is HouseholdFlexibleFundAccountId =>
+          isHouseholdFlexibleFundAccountId(entry) &&
+          supplied.flexibleWithdrawalPriority.indexOf(entry) === index
+      )
+    : [];
+
+  return {
+    enabled: supplied.enabled === true,
+    transitionDesiredRetirementIncome: normalizeHouseholdTarget(
+      supplied.transitionDesiredRetirementIncome,
+      singlePersonTarget
+    ),
+    fullyRetiredDesiredRetirementIncome: normalizeHouseholdTarget(
+      supplied.fullyRetiredDesiredRetirementIncome,
+      singlePersonTarget
+    ),
+    spendingStrategyType:
+      supplied.spendingStrategyType === "SPENDING_SMILE"
+        ? "SPENDING_SMILE"
+        : "FLAT",
+    // The joint phase values are dormant while Flat spending is selected and
+    // are reconciled against the later retiree when the joint target engine
+    // activates them. Do not mutate them merely because You's horizon changes.
+    spendingSmile: normalizeSpendingSmile(
+      supplied.spendingSmile,
+      singlePersonTarget
+    ),
+    flexibleWithdrawalPriority: priority,
+  };
+}
+
+function normalizeHouseholdTarget(value: unknown, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed)
+    ? Math.max(0, Math.min(300_000, parsed))
+    : fallback;
+}
+
+function isHouseholdFlexibleFundAccountId(
+  value: unknown
+): value is HouseholdFlexibleFundAccountId {
+  return (
+    typeof value === "string" &&
+    /^(you|partner):(sipp|csAvc|lisa|isa)$/.test(value)
+  );
 }
 
 export {

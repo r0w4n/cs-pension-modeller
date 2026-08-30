@@ -54,6 +54,8 @@ It supports:
 - real-terms and nominal-terms projection bases
 - saved scenarios for side-by-side comparison
 - projection charts, summaries, and detailed projection tables
+- optional two-person household modelling in the Expert journey, with separate
+  person-level pension, asset, tax and planning-horizon assumptions
 
 The app presents results as planning estimates. It should not present modelled
 figures as guaranteed outcomes.
@@ -81,6 +83,9 @@ For each projection month, the model can calculate values such as:
 The current app is driven by inputs grouped around:
 
 - personal details: birth month/year and planning horizon
+- Expert journey only: optional You + Partner household modelling, including
+  separate retirement ages and targets while one person is retired and after
+  both are retired
 - retirement income target: an annual after-tax spending amount, with a
   selected Retirement Living Standards baseline and either flat spending or
   expert Go-Go, Slow-Go, No-Go phase percentages
@@ -190,6 +195,18 @@ Some important assumptions and simplifications are:
   personal tax circumstance, employment income that differs from the entered
   salary assumption, future tax-year changes, tax-code adjustments, savings or
   dividend income, annual-allowance charges, or benefit interactions.
+- In Expert two-person mode, each person is modelled as a separate taxpayer
+  with their own Personal Allowance and pension lump-sum allowance ledger.
+  Household income is assessed against one shared after-tax spending target;
+  the still-working person’s modelled employment income is included after the
+  other person fully retires. National Insurance is not modelled, so this is
+  not a payroll take-home forecast. The projection continues to the later
+  planning horizon, but does not model survivor pensions, inheritance, asset
+  transfers, or an automatic spending reduction after the first horizon.
+  Two-person target quick-selects use Pensions UK&apos;s 3 June 2026 annual
+  Retirement Living Standards expenditure references (£22,500 Minimum,
+  £45,400 Moderate and £62,700 Comfortable); they exclude housing costs and
+  are not personal income recommendations.
 - Results are deterministic scenario outputs, not probabilistic forecasts.
 
 For more detail, see the in-app Methodology page.
@@ -264,6 +281,13 @@ The concrete layer responsibilities are:
   while [`src/app/retirement-income-chart-adapter.tsx`](src/app/retirement-income-chart-adapter.tsx)
   and the adjacent heading, controls, mobile-navigation, and accessibility
   components adapt it to each journey's selected presentation.
+- Joint Expert results keep that same chart composition for the editable You
+  and Partner views. The read-only Combined view projects the canonical joint
+  result onto a calendar timeline with owner-attributed series, household
+  target/tax/shortfall values, period event inspection, and an accessible text
+  equivalent. Household milestones remain semantic event data but are not
+  permanently annotated across the Combined plot; this does not introduce a
+  second calculation path.
 - [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
   configuration for the simplified, early-retirement, and expert journeys. It
   selects shared fields, labels, help text, update behaviour, and result

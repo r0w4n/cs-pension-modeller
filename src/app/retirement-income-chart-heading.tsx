@@ -54,13 +54,17 @@ export function getRetirementIncomeChartTitle(isSimplePresentation: boolean) {
 export function RetirementIncomeChartDescription({
   chartDescriptionId,
   isSimplePresentation,
+  descriptionOverride,
 }: {
   chartDescriptionId: string;
   isSimplePresentation: boolean;
+  descriptionOverride?: string;
 }) {
-  const description = isSimplePresentation
-    ? "The coloured areas show where your estimated income comes from as you get older. The line shows the amount you said you would like to spend. The tax pattern shows estimated Income Tax, and red hatching shows where the estimate gives you less than that."
-    : "Stacked gross income chart showing ISA, SIPP, partial retirement income, Civil Service pensions, additional guaranteed income and State Pension against the target retirement income over age. Estimated Income Tax is shown with horizontal blue-grey hatching between income after estimated Income Tax and gross income. Shortfall is shown with red diagonal hatching.";
+  const description =
+    descriptionOverride ??
+    (isSimplePresentation
+      ? "The coloured areas show where your estimated income comes from as you get older. The line shows the amount you said you would like to spend. The tax pattern shows estimated Income Tax, and red hatching shows where the estimate gives you less than that."
+      : "Stacked gross income chart showing ISA, SIPP, partial retirement income, Civil Service pensions, additional guaranteed income and State Pension against the target retirement income over age. Estimated Income Tax is shown with horizontal blue-grey hatching between income after estimated Income Tax and gross income. Shortfall is shown with red diagonal hatching.");
 
   return (
     <p

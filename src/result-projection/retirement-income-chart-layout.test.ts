@@ -8,6 +8,7 @@ import {
   createVisibleChartData,
   createWholeYearTicks,
   getChartIncomeValue,
+  getRetirementIncomeEventsForDate,
   hasActiveIncome,
 } from "./retirement-income-chart-layout";
 
@@ -136,5 +137,30 @@ describe("retirement income chart layout", () => {
     expect(
       bringActiveMarkerToFront(markers, "retirementAge").map(({ key }) => key)
     ).toEqual(["statePensionAge", "retirementAge"]);
+  });
+
+  it("groups inspection events by calendar month", () => {
+    const events = [
+      {
+        key: "retirement",
+        label: "You retire",
+        date: "2045-06-20",
+        timelineValue: 2045.47,
+        owner: "you" as const,
+      },
+      {
+        key: "state",
+        label: "Partner's State Pension starts",
+        date: "2045-07-01",
+        timelineValue: 2045.5,
+        owner: "partner" as const,
+      },
+    ];
+
+    expect(
+      getRetirementIncomeEventsForDate(events, "2045-06-01").map(
+        ({ key }) => key
+      )
+    ).toEqual(["retirement"]);
   });
 });

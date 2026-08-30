@@ -8,6 +8,7 @@ import {
 import {
   RetirementIncomeChart,
   type RetirementIncomeChartProps,
+  type RetirementIncomeChartReadOnlyProps,
   type RetirementIncomePoint,
 } from "./RetirementIncomeChart";
 import { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings";
@@ -131,6 +132,21 @@ const baseProps: RetirementIncomeChartProps = {
 
 function renderChart(props: Partial<RetirementIncomeChartProps> = {}) {
   return render(<RetirementIncomeChart {...baseProps} {...props} />);
+}
+
+function renderReadonlyHouseholdChart(
+  props: Partial<RetirementIncomeChartReadOnlyProps> = {}
+) {
+  const { onChangeParameters: _onChangeParameters, ...readonlyBaseProps } =
+    baseProps;
+  return render(
+    <RetirementIncomeChart
+      {...readonlyBaseProps}
+      {...props}
+      readOnly
+      interactionMode="readonly-household"
+    />
+  );
 }
 
 function mockChartResize(width: number, height = 420) {
@@ -548,6 +564,67 @@ describe("RetirementIncomeChart", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 
     expect(getTargetLinePath()).toMatch(/^M0,/);
+  });
+
+  it("supports a static household display without single-person controls", () => {
+    renderReadonlyHouseholdChart({
+      alphaLabel: "Household gross income",
+      chartDescription:
+        "Gross household income is shown against the shared household target.",
+      useDataTargets: true,
+      periodEvents: [
+        {
+          key: "you-retirement",
+          label: "You retire",
+          date: "2045-07-01",
+          timelineValue: 2045.5,
+          owner: "you",
+        },
+        {
+          key: "you-alpha-start",
+          label: "Your Alpha pension starts",
+          date: "2045-07-01",
+          timelineValue: 2045.5,
+          owner: "you",
+        },
+      ],
+      data: [
+        { ...basePoint, targetIncomeAnnual: 0 },
+        {
+          ...basePoint,
+          age: 60,
+          date: "2045-07-01",
+          alphaIncomeAnnual: 45_000,
+          assessedIncomeAnnual: 38_000,
+          targetIncomeAnnual: 40_000,
+          takeHomeIncomeAnnual: 38_000,
+          totalIncomeAnnual: 45_000,
+        },
+      ],
+    });
+
+    expect(
+      screen.getByText(
+        "Gross household income is shown against the shared household target."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText("Household gross income")).toBeInTheDocument();
+    expect(screen.queryAllByRole("slider")).toHaveLength(0);
+    expect(
+      document.querySelector(".retirement-income-milestone")
+    ).not.toBeInTheDocument();
+    fireEvent.focus(screen.getByTestId("retirement-income-period-inspector"));
+    expect(
+      screen.getByTestId("retirement-income-period-details")
+    ).toHaveTextContent("You retire");
+    expect(
+      screen.getByTestId("retirement-income-period-details")
+    ).toHaveTextContent("Your Alpha pension starts");
+    expect(
+      document
+        .querySelector(".retirement-income-target-line")
+        ?.getAttribute("d")
+    ).not.toBeNull();
   });
 
   it("keeps upward target income drags from repeatedly inflating the y scale", () => {

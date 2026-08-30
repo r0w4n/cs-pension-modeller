@@ -117,6 +117,7 @@ export function StatePensionAgeField({
   hideOnMobile = false,
   validationIssue,
   useNpaLinkedDefaults = false,
+  domIdPrefix,
 }: {
   field: DateField;
   value: string;
@@ -127,6 +128,7 @@ export function StatePensionAgeField({
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
   useNpaLinkedDefaults?: boolean;
+  domIdPrefix?: string;
 }) {
   const minimumStatePensionAge = calculateMinimumStatePensionDrawAge(
     settings.dateOfBirth
@@ -159,7 +161,9 @@ export function StatePensionAgeField({
         Math.max(minimumStatePensionAge, draftValue ?? currentStatePensionAge)
       );
   const displayedExactValue = draftExactValue ?? displayedRangeValue.toString();
-  const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const validationId = validationIssue
+    ? `${getFieldDomId(field.id, domIdPrefix)}-validation`
+    : undefined;
 
   const commitAgeValue = (nextValue: number) => {
     const normalizedAge = normalizeStatePensionDrawAge(
@@ -307,12 +311,14 @@ export function YearSettingField({
   onChange,
   showGuidanceNotes,
   validationIssue,
+  domIdPrefix,
 }: {
   field: DateField & { type: "year" };
   value: string;
   onChange: SettingsFieldOnChange;
   showGuidanceNotes: boolean;
   validationIssue?: PensionValidationIssue;
+  domIdPrefix?: string;
 }) {
   const draftYear = getAlphaAbsYear(value);
   const currentYear = new Date().getUTCFullYear();
@@ -332,6 +338,7 @@ export function YearSettingField({
       onChange={onChange}
       showGuidanceNotes={showGuidanceNotes}
       validationIssue={validationIssue}
+      domIdPrefix={domIdPrefix}
     />
   );
 }
@@ -354,6 +361,7 @@ function YearSettingFieldEditor({
   onChange,
   showGuidanceNotes,
   validationIssue,
+  domIdPrefix,
 }: {
   field: DateField & { type: "year" };
   initialYear: string;
@@ -362,9 +370,12 @@ function YearSettingFieldEditor({
   onChange: SettingsFieldOnChange;
   showGuidanceNotes: boolean;
   validationIssue?: PensionValidationIssue;
+  domIdPrefix?: string;
 }) {
   const [localYear, setLocalYear] = useState(initialYear);
-  const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const validationId = validationIssue
+    ? `${getFieldDomId(field.id, domIdPrefix)}-validation`
+    : undefined;
 
   return (
     <label
@@ -611,6 +622,7 @@ export function DateSettingField({
   disabled = false,
   hideOnMobile = false,
   validationIssue,
+  domIdPrefix,
 }: {
   field: DateField;
   value: string;
@@ -621,8 +633,10 @@ export function DateSettingField({
   disabled?: boolean;
   hideOnMobile?: boolean;
   validationIssue?: PensionValidationIssue;
+  domIdPrefix?: string;
 }) {
-  const validationId = validationIssue ? `${field.id}-validation` : undefined;
+  const fieldDomId = getFieldDomId(field.id, domIdPrefix);
+  const validationId = validationIssue ? `${fieldDomId}-validation` : undefined;
   const statePensionDefaultDrawDate =
     field.id === "statePensionDrawDate"
       ? getStatePensionDefaultDrawDate(settings)
@@ -653,7 +667,7 @@ export function DateSettingField({
         <MonthSelectField
           label={field.label}
           value={value}
-          idPrefix={field.id}
+          idPrefix={fieldDomId}
           yearRange={getPrimaryDateYearRange(
             field.id,
             settings,
@@ -670,7 +684,7 @@ export function DateSettingField({
         <DateSelectField
           label={field.label}
           value={value}
-          idPrefix={field.id}
+          idPrefix={fieldDomId}
           yearRange={getPrimaryDateYearRange(
             field.id,
             settings,
@@ -729,6 +743,10 @@ const monthOptions = [
   { value: "11", label: "November" },
   { value: "12", label: "December" },
 ] as const;
+
+function getFieldDomId(fieldId: string, domIdPrefix?: string) {
+  return domIdPrefix ? `${domIdPrefix}-${fieldId}` : fieldId;
+}
 
 function getDateParts(value: string): DateParts {
   const [year = "", month = "", day = ""] = value.split("-");

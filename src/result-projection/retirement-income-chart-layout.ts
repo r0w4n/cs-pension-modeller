@@ -2,10 +2,20 @@ import * as d3 from "d3";
 import type { PensionValidationIssue } from "../settings";
 import type {
   RetirementIncomeChartParameters,
+  RetirementIncomeChartEvent,
   RetirementIncomeMilestone,
   RetirementIncomeMilestoneKey,
   RetirementIncomePoint,
+  RetirementIncomeChartSeriesDefinition,
 } from "./retirement-income-chart-model";
+
+export function getRetirementIncomeEventsForDate(
+  events: RetirementIncomeChartEvent[],
+  date: string
+) {
+  const month = date.slice(0, 7);
+  return events.filter((event) => event.date.slice(0, 7) === month);
+}
 
 export type IncomeKey =
   | "isaIncomeAnnual"
@@ -38,13 +48,13 @@ export const incomeKeys: IncomeKey[] = [
   "statePensionIncomeAnnual",
 ];
 
-type ChartIncomeSeriesDefinition = {
-  key: string;
-  label: string;
-  colour: string;
-  incomeKey?: IncomeKey;
-  additionalIncomeId?: string;
-};
+export type ChartIncomeSeriesDefinition =
+  RetirementIncomeChartSeriesDefinition & {
+    key: string;
+    incomeKey?: IncomeKey;
+    additionalIncomeId?: string;
+    customIncomeKey?: string;
+  };
 
 const additionalIncomeColours = [
   "#6d7d10",
@@ -517,14 +527,19 @@ function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {
 
 export function createChartIncomeSeriesDefinitions(
   keys: IncomeKey[],
-  data: RetirementIncomePoint[]
-) {
+  data: RetirementIncomePoint[],
+  customDefinitions: RetirementIncomeChartSeriesDefinition[] = []
+): ChartIncomeSeriesDefinition[] {
   return [
     ...keys.map((key) => ({
       key,
       label: sourceMeta[key].label,
       colour: sourceMeta[key].colour,
       incomeKey: key,
+    })),
+    ...customDefinitions.map((definition) => ({
+      ...definition,
+      customIncomeKey: definition.key,
     })),
     ...createAdditionalIncomeSeriesDefinitions(data),
   ];
@@ -590,6 +605,14 @@ export function getChartIncomeValue(
     );
   }
 
+  if (series.customIncomeKey) {
+    return (
+      point.incomeSeries?.find(
+        (candidate) => candidate.key === series.customIncomeKey
+      )?.annualAmount ?? 0
+    );
+  }
+
   return series.incomeKey ? point[series.incomeKey] : 0;
 }
 
@@ -634,9 +657,9 @@ export function hasActiveIncome(
 }
 
 export function createMarkerLayouts<
-  T extends MilestoneMarker & { layoutAge?: number },
+  T extends { key: string; age: number; layoutAge?: number },
 >(markers: T[], xScale: d3.ScaleLinear<number, number>, plotHeight: number) {
-  const rowByKey = new Map<MilestoneKey, number>();
+  const rowByKey = new Map<string, number>();
   const minimumGap = HANDLE_LABEL_WIDTH + 6;
   const rowRightEdges: number[] = [];
 

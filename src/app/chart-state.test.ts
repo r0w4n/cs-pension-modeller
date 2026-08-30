@@ -54,6 +54,27 @@ describe("chart-state", () => {
     expect(next.showAlpha).toBe(false);
   });
 
+  it("retains nested joint household settings without treating them as numeric", () => {
+    const current = createDefaultSettings();
+    let next = current;
+    const jointRetirement = {
+      ...current.jointRetirement,
+      enabled: true,
+    };
+
+    updateSetting({
+      key: "jointRetirement",
+      value: jointRetirement,
+      showSavedLabel: vi.fn(),
+      setChartUndoStack: vi.fn(),
+      setSettings: (update) => {
+        next = typeof update === "function" ? update(next) : update;
+      },
+    });
+
+    expect(next.jointRetirement).toEqual(jointRetirement);
+  });
+
   it("applies Civil Service AVC visibility changes from the chart key", () => {
     const current = {
       ...createDefaultSettings(),

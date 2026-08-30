@@ -234,6 +234,21 @@ Feature: Modeller journeys
     When Alpha pension is disabled
     Then the "Alpha pension details" journey step should not be visible
 
+  @expert-journey @two-person @retirement-living-standards
+  Scenario: Keep two-person household spending quick-selects distinct from one-person amounts
+    Then the two-person Retirement Living Standards quick-selects should be:
+      | amount |
+      | 22500  |
+      | 45400  |
+      | 62700  |
+
+  @expert-journey @two-person @household-timing
+  Scenario: Treat retirement in the same calendar month as simultaneous
+    Given default modeller settings
+    And two people retire in the same calendar month
+    Then the household should not require a transition target
+    And the household target should start when both people retire
+
   @defaults
   Scenario: Bridge journey enables bridge pots and Income Tax by default
     Given default modeller settings

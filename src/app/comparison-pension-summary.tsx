@@ -411,7 +411,7 @@ export function SimplePensionDetails({
   );
 }
 
-function RetirementOutcomeBannerView({
+export function RetirementOutcomeBannerView({
   outcome,
   simple = false,
 }: {

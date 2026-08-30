@@ -55,17 +55,26 @@ export function SpendingSmileEditor({
   validationIssues,
   onChange,
   expertMode = true,
+  retirementReferenceLabel = "your",
+  targetLabel = "your selected retirement income target",
+  validationField = "spendingSmile",
+  domIdPrefix = "",
 }: {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   onChange: SettingsFieldOnChange;
   expertMode?: boolean;
+  retirementReferenceLabel?: string;
+  targetLabel?: string;
+  validationField?: PensionValidationIssue["field"];
+  domIdPrefix?: string;
 }) {
   const strategy = settings.spendingSmile;
   const enabled = settings.spendingStrategyType === "SPENDING_SMILE";
   const smileValidationIssues = validationIssues.filter(
-    (issue) => issue.field === "spendingSmile"
+    (issue) => issue.field === validationField
   );
+  const strategyInputId = getSpendingSmileDomId(domIdPrefix, "strategy");
 
   function updateStrategy(next: SpendingSmileStrategy) {
     onChange("spendingSmile", next);
@@ -100,11 +109,11 @@ export function SpendingSmileEditor({
   return (
     <div className="spending-smile-editor">
       <div className="field-card spending-strategy-field">
-        <label className="field-label" htmlFor="spending-strategy">
+        <label className="field-label" htmlFor={strategyInputId}>
           Spending strategy
         </label>
         <select
-          id="spending-strategy"
+          id={strategyInputId}
           className="select-input"
           value={settings.spendingStrategyType}
           onChange={(event) =>
@@ -133,6 +142,9 @@ export function SpendingSmileEditor({
             validationIssues={smileValidationIssues}
             onStrategyChange={updateStrategy}
             onStartAgeChange={setStartAge}
+            retirementReferenceLabel={retirementReferenceLabel}
+            targetLabel={targetLabel}
+            domIdPrefix={domIdPrefix}
           />
 
           {(["slowGo", "noGo"] as const).map((phase) => (
@@ -144,11 +156,18 @@ export function SpendingSmileEditor({
               validationIssues={smileValidationIssues}
               onStrategyChange={updateStrategy}
               onStartAgeChange={setStartAge}
+              retirementReferenceLabel={retirementReferenceLabel}
+              targetLabel={targetLabel}
+              domIdPrefix={domIdPrefix}
             />
           ))}
 
           <div className="spending-smile-configuration">
-            <SpendingProfileChart settings={settings} strategy={strategy} />
+            <SpendingProfileChart
+              settings={settings}
+              strategy={strategy}
+              domIdPrefix={domIdPrefix}
+            />
 
             {isIncreasingProfile(strategy) ? (
               <p className="spending-smile-warning">
@@ -171,6 +190,9 @@ function SpendingPhaseCard({
   validationIssues,
   onStrategyChange,
   onStartAgeChange,
+  retirementReferenceLabel,
+  targetLabel,
+  domIdPrefix,
 }: {
   phase: PhaseKey;
   settings: PensionSettings;
@@ -178,6 +200,9 @@ function SpendingPhaseCard({
   validationIssues: PensionValidationIssue[];
   onStrategyChange: (strategy: SpendingSmileStrategy) => void;
   onStartAgeChange: (phase: "slowGo" | "noGo", value: number) => void;
+  retirementReferenceLabel: string;
+  targetLabel: string;
+  domIdPrefix: string;
 }) {
   const details = phaseDetails[phase];
   const percentage = strategy[details.percentageField];
@@ -194,7 +219,7 @@ function SpendingPhaseCard({
   );
   const validationId =
     phaseValidationIssues.length > 0
-      ? `spending-smile-${phase}-validation`
+      ? getSpendingSmileDomId(domIdPrefix, `${phase}-validation`)
       : undefined;
   const startAge =
     phase === "goGo"
@@ -258,7 +283,7 @@ function SpendingPhaseCard({
 
       {phase === "goGo" ? (
         <p className="spending-phase-range">
-          Starts at your retirement age:{" "}
+          Starts at {retirementReferenceLabel} retirement age:{" "}
           {formatModelAge(settings.requirementAge)}
         </p>
       ) : (
@@ -377,7 +402,7 @@ function SpendingPhaseCard({
       </div>
 
       <p className="spending-phase-derived">
-        {percentage}% of your selected retirement income target:{" "}
+        {percentage}% of {targetLabel}:{" "}
         <strong>{formatCurrency(calculatedTarget)} per year</strong>
       </p>
       <FieldValidationMessages
@@ -410,9 +435,11 @@ function getPhaseStartAgeBounds(
 function SpendingProfileChart({
   settings,
   strategy,
+  domIdPrefix,
 }: {
   settings: PensionSettings;
   strategy: SpendingSmileStrategy;
+  domIdPrefix: string;
 }) {
   const startAge = settings.requirementAge;
   const endAge = Math.max(startAge + 1, settings.lifeExpectancy);
@@ -460,6 +487,11 @@ function SpendingProfileChart({
     ...(noGoReached ? [`H ${noX}`, `V ${y(phaseTargets.noGo)}`] : []),
     `H ${endX}`,
   ].join(" ");
+  const titleId = getSpendingSmileDomId(domIdPrefix, "profile-title");
+  const descriptionId = getSpendingSmileDomId(
+    domIdPrefix,
+    "profile-description"
+  );
 
   return (
     <figure className="spending-profile-chart">
@@ -470,12 +502,10 @@ function SpendingProfileChart({
       <svg
         viewBox="0 0 500 190"
         role="img"
-        aria-labelledby="spending-profile-title spending-profile-description"
+        aria-labelledby={`${titleId} ${descriptionId}`}
       >
-        <title id="spending-profile-title">
-          Go-Go, Slow-Go, No-Go spending profile
-        </title>
-        <desc id="spending-profile-description">
+        <title id={titleId}>Go-Go, Slow-Go, No-Go spending profile</title>
+        <desc id={descriptionId}>
           Go-go annual spending is {formatCurrency(phaseTargets.goGo)} from age{" "}
           {startAge}, Slow-go annual spending is{" "}
           {formatCurrency(phaseTargets.slowGo)} from age{" "}
@@ -619,4 +649,8 @@ function isIncreasingProfile(strategy: SpendingSmileStrategy) {
     strategy.slowGoPercentage > strategy.goGoPercentage ||
     strategy.noGoPercentage > strategy.slowGoPercentage
   );
+}
+
+function getSpendingSmileDomId(prefix: string, suffix: string) {
+  return prefix ? `${prefix}-${suffix}` : `spending-${suffix}`;
 }

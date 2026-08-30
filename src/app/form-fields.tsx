@@ -44,6 +44,7 @@ type SettingsFieldsProps = {
   children?: ReactNode;
   flexibleWithdrawalSummary?: FlexibleWithdrawalSummary;
   useNpaLinkedDefaults?: boolean;
+  domIdPrefix?: string;
 };
 
 export {
@@ -64,6 +65,7 @@ export function SettingsFields({
   children,
   flexibleWithdrawalSummary,
   useNpaLinkedDefaults = false,
+  domIdPrefix,
 }: SettingsFieldsProps) {
   const visibleFields = fields.filter((field) =>
     shouldRenderField(field.id, settings)
@@ -88,9 +90,11 @@ export function SettingsFields({
           )}
           warning={getFlexibleWithdrawalFieldWarning(
             field.id,
-            flexibleWithdrawalSummary
+            flexibleWithdrawalSummary,
+            domIdPrefix
           )}
           useNpaLinkedDefaults={useNpaLinkedDefaults}
+          domIdPrefix={domIdPrefix}
         />
       ))}
       {children}
@@ -117,6 +121,7 @@ function Field({
   validationIssue,
   warning,
   useNpaLinkedDefaults = false,
+  domIdPrefix,
 }: FieldProps) {
   if (field.id === "statePensionDrawDate") {
     return (
@@ -130,6 +135,7 @@ function Field({
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
         useNpaLinkedDefaults={useNpaLinkedDefaults}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
@@ -146,6 +152,7 @@ function Field({
         disabled={disabled}
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
@@ -162,6 +169,7 @@ function Field({
         disabled={disabled}
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
@@ -174,6 +182,7 @@ function Field({
         onChange={onChange}
         showGuidanceNotes={showGuidanceNotes}
         validationIssue={validationIssue}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
@@ -190,6 +199,7 @@ function Field({
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
         useNpaLinkedDefaults={useNpaLinkedDefaults}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
@@ -205,14 +215,16 @@ function Field({
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
         warning={warning}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
 
   if (field.type === "checkbox") {
-    const validationId = validationIssue ? `${field.id}-validation` : undefined;
+    const domId = getFieldDomId(field.id, domIdPrefix);
+    const validationId = validationIssue ? `${domId}-validation` : undefined;
     const descriptionId = showGuidanceNotes
-      ? `${field.id}-description`
+      ? `${domId}-description`
       : undefined;
     const describedBy = [descriptionId, validationId].filter(Boolean).join(" ");
 
@@ -251,6 +263,7 @@ function Field({
         disabled={disabled}
         hideOnMobile={hideOnMobile}
         validationIssue={validationIssue}
+        domIdPrefix={domIdPrefix}
       />
     );
   }
@@ -260,7 +273,8 @@ function Field({
 
 function getFlexibleWithdrawalFieldWarning(
   fieldId: SettingsKey,
-  summary?: FlexibleWithdrawalSummary
+  summary?: FlexibleWithdrawalSummary,
+  domIdPrefix?: string
 ) {
   const accountId = getFlexibleFundAccountIdForStrategyField(fieldId);
 
@@ -289,9 +303,13 @@ function getFlexibleWithdrawalFieldWarning(
   }).format(insight.reducibleGrossWithdrawal);
 
   return {
-    id: `${fieldId}-withdrawal-warning`,
+    id: `${getFieldDomId(fieldId, domIdPrefix)}-withdrawal-warning`,
     message: `This strategy is projected to withdraw approximately ${formattedAmount} more than is needed to meet the income target ${ageRange}. Consider “Use to meet income target”.`,
   };
+}
+
+function getFieldDomId(fieldId: string, domIdPrefix?: string) {
+  return domIdPrefix ? `${domIdPrefix}-${fieldId}` : fieldId;
 }
 
 function getValidationIssueForField(

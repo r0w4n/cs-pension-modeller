@@ -18,6 +18,10 @@ import {
   calculateTargetBasedWithdrawalPreviews,
   type TargetBasedWithdrawalPreview,
 } from "./target-based-withdrawal-previews";
+import {
+  calculateJointRetirementProjection,
+  type JointRetirementProjection,
+} from "./joint-retirement-plan";
 
 export type RetirementPlanResult = {
   settings: PensionSettings;
@@ -28,6 +32,8 @@ export type RetirementPlanResult = {
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
   statePensionAssumptionAffectsTarget: boolean;
   inflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
+  /** Present only for active two-person Expert plans. */
+  jointProjection?: JointRetirementProjection;
 };
 
 export function calculateRetirementPlan(
@@ -36,6 +42,12 @@ export function calculateRetirementPlan(
   const validationIssues = validateSettings(settings);
   const rows = createProjectionTable(settings);
   const assessment = assessRetirementPlan(rows, settings);
+  const jointProjection =
+    settings.jointRetirement.enabled &&
+    settings.partner &&
+    validationIssues.length === 0
+      ? calculateJointRetirementProjection(settings)
+      : undefined;
 
   return {
     settings,
@@ -50,6 +62,7 @@ export function calculateRetirementPlan(
     statePensionAssumptionAffectsTarget:
       calculateStatePensionAssumptionAffectsTarget(settings, assessment),
     inflationAssumptions: deriveInflationAssumptions(settings),
+    jointProjection,
   };
 }
 
@@ -58,6 +71,7 @@ function calculateStatePensionAssumptionAffectsTarget(
   assessment: RetirementPlanAssessment
 ) {
   if (
+    settings.jointRetirement.enabled ||
     !settings.showStatePension ||
     settings.statePensionForecastConfirmed ||
     !assessment.meetsTargetThroughout

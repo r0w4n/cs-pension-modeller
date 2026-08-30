@@ -53,6 +53,7 @@ import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomeChartEvent,
+  RetirementIncomeChartStaticMilestone,
   RetirementIncomeChartSeriesDefinition,
   RetirementIncomeMilestone,
   RetirementIncomeMilestoneKey,
@@ -102,7 +103,7 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   showFlexibleWithdrawalInsights?: boolean;
   /** Uses each projected row's target without applying the single-target editor. */
   useDataTargets?: boolean;
-  /** Hides person-specific age markers where a chart represents a household. */
+  /** Controls whether the chart's milestone markers are shown. */
   showMilestoneMarkers?: boolean;
   /** Selects the x-axis semantics for a shared household timeline. */
   timelineMode?: "age" | "calendar";
@@ -110,6 +111,8 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   seriesDefinitions?: RetirementIncomeChartSeriesDefinition[];
   /** Semantic household events exposed through period inspection. */
   periodEvents?: RetirementIncomeChartEvent[];
+  /** Read-only milestones shown using the shared chart marker styling. */
+  staticMilestones?: RetirementIncomeChartStaticMilestone[];
   /** Suppress the personal shortfall overlay when the target is shared. */
   showShortfallOverlay?: boolean;
   /** Called when a target segment is edited, with the displayed age/timeline. */
@@ -300,6 +303,7 @@ export function RetirementIncomeChart({
   timelineMode = "age",
   seriesDefinitions,
   periodEvents = [],
+  staticMilestones = [],
   showShortfallOverlay = true,
   onChangeTargetIncome,
   presentation = "standard",
@@ -1056,6 +1060,18 @@ export function RetirementIncomeChart({
     xScale,
     plotHeight
   );
+  const staticMarkerLayouts = createMarkerLayouts(
+    staticMilestones.map((marker) => ({
+      ...marker,
+      age: marker.timelineValue,
+      layoutAge: marker.timelineValue,
+      editable: false as const,
+    })),
+    xScale,
+    plotHeight
+  );
+  const displayedStaticMarkerLayouts =
+    isStaticPresentation && showMilestoneMarkers ? staticMarkerLayouts : [];
   const renderedMarkerLayouts = useMemo(
     () => bringActiveMarkerToFront(markerLayouts, activeMarkerDragKey),
     [activeMarkerDragKey, markerLayouts]
@@ -2881,6 +2897,60 @@ export function RetirementIncomeChart({
                       transform={`rotate(90 ${x} ${marker.handleY})`}
                     >
                       {handleLabel}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+
+            {displayedStaticMarkerLayouts.map((marker) => {
+              const x = xScale(marker.age);
+
+              return (
+                <g
+                  key={marker.key}
+                  className="retirement-income-milestone retirement-income-static-milestone retirement-income-milestone--static"
+                  role="img"
+                  aria-label={marker.label}
+                  data-testid={`retirement-income-static-milestone-${marker.key}`}
+                >
+                  <line
+                    x1={x}
+                    x2={x}
+                    y1={marker.handleY + HANDLE_LABEL_HEIGHT / 2}
+                    y2={plotHeight}
+                    stroke={marker.colour}
+                    aria-hidden="true"
+                  />
+                  <g className="retirement-income-milestone-drag-label">
+                    <rect
+                      x={x - 22}
+                      y={marker.handleY - HANDLE_LABEL_HEIGHT / 2 - 10}
+                      width={44}
+                      height={HANDLE_LABEL_HEIGHT + 20}
+                      fill="transparent"
+                      aria-hidden="true"
+                    />
+                    <rect
+                      x={x - HANDLE_LABEL_WIDTH / 2}
+                      y={marker.handleY - HANDLE_LABEL_HEIGHT / 2}
+                      width={HANDLE_LABEL_WIDTH}
+                      height={HANDLE_LABEL_HEIGHT}
+                      rx={HANDLE_LABEL_WIDTH / 2}
+                      className="retirement-income-milestone-handle"
+                      fill={marker.colour}
+                      aria-hidden="true"
+                    />
+                    <text
+                      x={x}
+                      y={marker.handleY}
+                      className="retirement-income-milestone-handle-label"
+                      dominantBaseline="middle"
+                      textAnchor="middle"
+                      transform={`rotate(90 ${x} ${marker.handleY})`}
+                      aria-hidden="true"
+                    >
+                      {marker.shortLabel}
                     </text>
                   </g>
                 </g>

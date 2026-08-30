@@ -256,11 +256,13 @@ export function MethodologyPage() {
           shown only in Combined.
         </p>
         <p className="section-copy">
-          To keep the household projection readable, Combined does not print
-          every retirement, pension and account event across the plot. These
-          events remain available when a calendar period is inspected and in the
-          chart&apos;s accessible description. This presentation change does not
-          alter the underlying household calculation.
+          To keep the household projection readable, Combined uses the familiar
+          chart markers for the two key retirement milestones rather than
+          printing every retirement, pension and account event across the plot.
+          The complete event set remains available when a calendar period is
+          inspected and in the chart&apos;s accessible description. This
+          presentation change does not alter the underlying household
+          calculation.
         </p>
       </section>
 

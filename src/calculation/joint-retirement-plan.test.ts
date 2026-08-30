@@ -130,7 +130,10 @@ describe("calculateJointRetirementProjection", () => {
     });
     const projection = calculateJointRetirementProjection(settings);
     const transitionRow = findMonth(projection, "2035-06");
+    const beforeFirstRetirementRow = findMonth(projection, "2030-05");
 
+    expect(beforeFirstRetirementRow?.household.grossIncome).toBe(0);
+    expect(beforeFirstRetirementRow?.household.estimatedIncomeTax).toBe(0);
     expect(transitionRow?.people.you?.monthlyEmploymentIncome).toBe(0);
     expect(transitionRow?.people.partner?.monthlyEmploymentIncome).toBe(4_000);
     expect(transitionRow?.people.partner?.monthlyIncomeTax).toBeGreaterThan(0);

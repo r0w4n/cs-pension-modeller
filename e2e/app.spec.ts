@@ -272,6 +272,23 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("button", { name: "Comfortable £62,700" })
     ).toBeVisible();
+    const householdFundingPriority = page.getByRole("region", {
+      name: "Income-target funding priority",
+    });
+    await expect(householdFundingPriority).toBeVisible();
+    await expect(
+      householdFundingPriority.getByRole("region", {
+        name: "Other withdrawal strategies",
+      })
+    ).toBeVisible();
+    const partnerIsaStrategy = householdFundingPriority.getByRole("combobox", {
+      name: "Partner ISA withdrawal strategy",
+    });
+    await expect(partnerIsaStrategy).toHaveValue("use_by_age");
+    await partnerIsaStrategy.selectOption("meet_income_target");
+    await expect(
+      householdFundingPriority.locator('[data-priority-account="partner:isa"]')
+    ).toBeVisible();
   });
 
   test("expert two-person results reuse the established chart and monthly table", async ({
@@ -304,8 +321,8 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveCount(0);
     await expect(
       page.locator(".retirement-income-static-milestone")
-    ).toHaveCount(0);
-    await expect(page.locator(".retirement-income-milestone")).toHaveCount(0);
+    ).toHaveCount(2);
+    await expect(page.locator(".retirement-income-milestone")).toHaveCount(2);
     const periodInspector = page.getByTestId(
       "retirement-income-period-inspector"
     );

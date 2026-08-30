@@ -16,10 +16,11 @@ Feature: Joint retirement results chart
     When the joint household projection is calculated
     Then the joint result should have one household retirement month
 
-  Scenario: Hide inline milestones while retaining Combined period inspection
+  Scenario: Show key retirement markers while retaining Combined period inspection
     Given a staggered two-person household
     When the read-only household chart presentation is prepared
     Then inline household milestone annotations should be disabled
+    And key household retirement markers should use the shared chart marker style
     And household period inspection should remain enabled
 
   Scenario: Group owner-attributed household events for inspection

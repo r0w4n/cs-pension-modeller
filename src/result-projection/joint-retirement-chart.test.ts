@@ -3,7 +3,10 @@ import {
   createDefaultSettings,
 } from "../settings";
 import { getRetirementIncomeEventsForDate } from "./retirement-income-chart-layout";
-import { createHouseholdChartEvents } from "./joint-retirement-chart";
+import {
+  createHouseholdChartEvents,
+  createHouseholdChartMilestones,
+} from "./joint-retirement-chart";
 
 describe("joint retirement chart events", () => {
   it("retains and groups owner-attributed household events by calendar month", () => {
@@ -38,5 +41,35 @@ describe("joint retirement chart events", () => {
     );
     expect(events.some((event) => event.owner === "you")).toBe(true);
     expect(events.some((event) => event.owner === "partner")).toBe(true);
+  });
+
+  it("selects owner-qualified retirement markers for the shared chart", () => {
+    const base = createDefaultSettings();
+    const settings = {
+      ...base,
+      dateOfBirth: "1985-06-01",
+      requirementAge: 60,
+      jointRetirement: { ...base.jointRetirement, enabled: true },
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1982-03-01",
+        requirementAge: 63,
+      },
+    };
+
+    expect(createHouseholdChartMilestones(settings)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "you-retirement",
+          shortLabel: "You retire",
+          colour: "#0f6f72",
+        }),
+        expect.objectContaining({
+          key: "partner-retirement",
+          shortLabel: "Partner retires",
+          colour: "#2563a8",
+        }),
+      ])
+    );
   });
 });

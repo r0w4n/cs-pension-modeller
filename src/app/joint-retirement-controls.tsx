@@ -17,6 +17,16 @@ import type { SettingsFieldOnChange } from "./form-fields";
 import { CurrencySettingField, RangeSettingField } from "./form-field-values";
 import { CheckboxFieldGrid } from "./optional-section-toggle-grid";
 import { SpendingSmileEditor } from "./spending-smile-editor";
+import {
+  getHouseholdFlexibleFundAccountLabel,
+  getHouseholdFlexibleWithdrawalNonPriorityAccounts,
+  getHouseholdFlexibleWithdrawalPriorityAccounts,
+  getHouseholdWithdrawalStrategy,
+  getWithdrawalStrategyFieldId,
+  shouldShowHouseholdFlexibleWithdrawalPriority,
+  splitHouseholdFlexibleFundAccountId,
+} from "../result-projection/flexible-withdrawals";
+import { FundingPriorityEditor } from "./flexible-withdrawal-priority-editor";
 
 const RETIREMENT_AGE_FIELD = getSharedRangeField("requirementAge");
 const FULL_SALARY_FIELD = getSharedRangeField("fullSalary");
@@ -335,119 +345,56 @@ function JointFundingPriority({
   if (!partner) {
     return null;
   }
-  const accounts = (["you", "partner"] as const).flatMap((owner) => {
-    const person = owner === "you" ? settings : (partner as PensionSettings);
-    return (["sipp", "csAvc", "isa", "lisa"] as const)
-      .filter((account) => isTargetAccount(person, account))
-      .map((account) => `${owner}:${account}` as const);
-  });
-  const order = [
-    ...settings.jointRetirement.flexibleWithdrawalPriority.filter((account) =>
-      accounts.includes(account)
-    ),
-    ...accounts.filter(
-      (account) =>
-        !settings.jointRetirement.flexibleWithdrawalPriority.includes(account)
-    ),
-  ];
+  const priorityAccounts =
+    getHouseholdFlexibleWithdrawalPriorityAccounts(settings);
+  const nonPriorityAccounts =
+    getHouseholdFlexibleWithdrawalNonPriorityAccounts(settings);
 
-  if (order.length === 0) {
+  if (!shouldShowHouseholdFlexibleWithdrawalPriority(settings)) {
     return null;
   }
 
-  const save = (next: typeof order) =>
-    onChange("jointRetirement", {
-      ...settings.jointRetirement,
-      flexibleWithdrawalPriority: [
-        ...next,
-        ...settings.jointRetirement.flexibleWithdrawalPriority.filter(
-          (account) => !accounts.includes(account)
-        ),
-      ],
-    });
-
   return (
-    <section
-      className="field-card flexible-withdrawal-priority"
-      aria-labelledby="joint-funding-priority-title"
-    >
-      <div className="field-header">
-        <h4 id="joint-funding-priority-title">
-          Income-target funding priority
-        </h4>
-      </div>
-      <p className="field-help">
-        Accounts owned by either person that use “Use to meet income target” are
-        coordinated in this order. Taxable withdrawals use the owner&apos;s tax
-        position and pension lump-sum allowance.
-      </p>
-      <ol className="flexible-withdrawal-priority-list">
-        {order.map((account, index) => (
-          <li key={account}>
-            <span className="flexible-withdrawal-priority-account">
-              <strong aria-hidden="true">{index + 1}</strong>
-              {formatHouseholdAccount(account)}
-            </span>
-            <span className="flexible-withdrawal-priority-controls">
-              <button
-                type="button"
-                className="secondary-button"
-                aria-label={`Move ${formatHouseholdAccount(account)} earlier in the funding priority`}
-                disabled={index === 0}
-                onClick={() => save(moveItem(order, index, index - 1))}
-              >
-                Up
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                aria-label={`Move ${formatHouseholdAccount(account)} later in the funding priority`}
-                disabled={index === order.length - 1}
-                onClick={() => save(moveItem(order, index, index + 1))}
-              >
-                Down
-              </button>
-            </span>
-          </li>
-        ))}
-      </ol>
-    </section>
+    <FundingPriorityEditor
+      idPrefix="joint-funding"
+      priorityAccounts={priorityAccounts}
+      nonPriorityAccounts={nonPriorityAccounts}
+      getAccountLabel={getHouseholdFlexibleFundAccountLabel}
+      getStrategy={(accountId) =>
+        getHouseholdWithdrawalStrategy(settings, accountId)
+      }
+      onStrategyChange={(accountId, strategy) => {
+        const [owner, flexibleAccountId] =
+          splitHouseholdFlexibleFundAccountId(accountId);
+        const strategyFieldId = getWithdrawalStrategyFieldId(flexibleAccountId);
+        if (owner === "you") {
+          onChange(strategyFieldId, strategy);
+          return;
+        }
+        onChange("partner", { ...partner, [strategyFieldId]: strategy });
+      }}
+      onPriorityOrderChange={(reorderedAccounts) =>
+        onChange("jointRetirement", {
+          ...settings.jointRetirement,
+          flexibleWithdrawalPriority: [
+            ...reorderedAccounts,
+            ...settings.jointRetirement.flexibleWithdrawalPriority.filter(
+              (account) => !reorderedAccounts.includes(account)
+            ),
+          ],
+        })
+      }
+      helpText={
+        <>
+          Accounts owned by either person that use “Use to meet income target”
+          are coordinated in this order. Other strategies keep their own
+          instructions. Taxable withdrawals use the owner&apos;s tax position
+          and pension lump-sum allowance.
+        </>
+      }
+      emptyMessage="Include a SIPP, Civil Service AVC, LISA or ISA for either person to set its withdrawal strategy and household funding priority here."
+    />
   );
-}
-
-function isTargetAccount(
-  person: PensionSettings,
-  account: "sipp" | "csAvc" | "isa" | "lisa"
-) {
-  const showField =
-    account === "csAvc"
-      ? "showCsAvc"
-      : `show${account[0].toUpperCase()}${account.slice(1)}`;
-  const strategyField = `${account}WithdrawalStrategy`;
-  return (
-    person[showField as keyof PensionSettings] === true &&
-    person[strategyField as keyof PensionSettings] === "meet_income_target"
-  );
-}
-
-function formatHouseholdAccount(account: string) {
-  const [owner, source] = account.split(":");
-  const label =
-    source === "csAvc"
-      ? "Civil Service AVC"
-      : source === "sipp"
-        ? "SIPP"
-        : source === "lisa"
-          ? "LISA"
-          : "ISA";
-  return `${owner === "you" ? "Your" : "Partner"} ${label}`;
-}
-
-function moveItem<T>(items: readonly T[], from: number, to: number) {
-  const next = [...items];
-  const [item] = next.splice(from, 1);
-  next.splice(to, 0, item);
-  return next;
 }
 
 export function JointPartnerTaxFields({

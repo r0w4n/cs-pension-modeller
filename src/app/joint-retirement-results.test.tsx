@@ -51,6 +51,10 @@ describe("JointRetirementResults", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Your State Pension")).toBeInTheDocument();
     expect(screen.getByText("Partner State Pension")).toBeInTheDocument();
+    expect(screen.getByText("Your SIPP")).toBeInTheDocument();
+    expect(screen.getByText("Partner SIPP")).toBeInTheDocument();
+    expect(screen.getByText("Your ISA")).toBeInTheDocument();
+    expect(screen.getByText("Partner ISA")).toBeInTheDocument();
     expect(
       screen.getByTestId("retirement-income-chart-data-equivalent")
     ).toHaveTextContent(
@@ -63,11 +67,13 @@ describe("JointRetirementResults", () => {
       screen.getByTestId("retirement-income-chart-data-equivalent")
     ).toHaveTextContent("Household events available through period inspection");
     expect(
-      document.querySelector(".retirement-income-static-milestone")
-    ).not.toBeInTheDocument();
+      screen.getByTestId("retirement-income-static-milestone-you-retirement")
+    ).toBeInTheDocument();
     expect(
-      document.querySelector(".retirement-income-milestone")
-    ).not.toBeInTheDocument();
+      screen.getByTestId(
+        "retirement-income-static-milestone-partner-retirement"
+      )
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("slider", { name: "Target income line" })
     ).not.toBeInTheDocument();
@@ -114,5 +120,10 @@ describe("JointRetirementResults", () => {
     expect(screen.getByLabelText("Chart key")).not.toHaveTextContent(
       "Shortfall"
     );
+    expect(
+      screen.getByText(
+        /Estimated Income Tax can appear before Partner’s retirement/
+      )
+    ).toBeInTheDocument();
   });
 });

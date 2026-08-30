@@ -285,9 +285,10 @@ The concrete layer responsibilities are:
   and Partner views. The read-only Combined view projects the canonical joint
   result onto a calendar timeline with owner-attributed series, household
   target/tax/shortfall values, period event inspection, and an accessible text
-  equivalent. Household milestones remain semantic event data but are not
-  permanently annotated across the Combined plot; this does not introduce a
-  second calculation path.
+  equivalent. The two key retirement milestones use the familiar vertical
+  marker treatment; the remaining household events remain semantic event data
+  available through period inspection. This does not introduce a second
+  calculation path.
 - [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
   configuration for the simplified, early-retirement, and expert journeys. It
   selects shared fields, labels, help text, update behaviour, and result

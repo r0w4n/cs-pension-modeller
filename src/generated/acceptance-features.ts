@@ -7846,7 +7846,7 @@ export const acceptanceFeatures = [
       {
         id: "line-92",
         keyword: "Scenario",
-        name: "Expose flexible withdrawal controls only where the journey explains the decision",
+        name: "Configure owner-qualified household funding in the joint target",
         description: "",
         tags: [],
         status: "covered",
@@ -7854,21 +7854,58 @@ export const acceptanceFeatures = [
         steps: [
           {
             id: "line-93",
-            keyword: "Then",
-            text: "the simplified journey should not expose flexible withdrawal strategy controls",
+            keyword: "Given",
+            text: "joint retirement with Your SIPP and Partner ISA using other strategies",
           },
           {
             id: "line-94",
-            keyword: "And",
-            text: "the bridge withdrawal-plan step should expose flexible withdrawal strategy controls",
+            keyword: "Then",
+            text: "the household funding priority should remain available",
           },
           {
             id: "line-95",
             keyword: "And",
-            text: "simplified journey settings should store legacy withdrawal strategies",
+            text: "the household other-strategy accounts should include Your SIPP and Partner ISA",
           },
           {
             id: "line-96",
+            keyword: "When",
+            text: "Partner ISA changes to the target-based strategy",
+          },
+          {
+            id: "line-97",
+            keyword: "Then",
+            text: "the household target-based priority should include only Partner ISA",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-99",
+        keyword: "Scenario",
+        name: "Expose flexible withdrawal controls only where the journey explains the decision",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-100",
+            keyword: "Then",
+            text: "the simplified journey should not expose flexible withdrawal strategy controls",
+          },
+          {
+            id: "line-101",
+            keyword: "And",
+            text: "the bridge withdrawal-plan step should expose flexible withdrawal strategy controls",
+          },
+          {
+            id: "line-102",
+            keyword: "And",
+            text: "simplified journey settings should store legacy withdrawal strategies",
+          },
+          {
+            id: "line-103",
             keyword: "And",
             text: "bridge journey settings should store legacy withdrawal strategies",
           },
@@ -7876,7 +7913,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-98",
+        id: "line-105",
         keyword: "Scenario",
         name: "Skip an inaccessible account without changing its priority",
         description: "",
@@ -7885,42 +7922,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-99",
+            id: "line-106",
             keyword: "Given",
             text: "the annual income target is 12000.00",
           },
           {
-            id: "line-100",
+            id: "line-107",
             keyword: "And",
             text: "a LISA with 20000.00 uses the target-based strategy from age 62",
           },
           {
-            id: "line-101",
+            id: "line-108",
             keyword: "And",
             text: "an ISA with 20000.00 uses the target-based strategy",
           },
           {
-            id: "line-102",
+            id: "line-109",
             keyword: "And",
             text: "LISA is before ISA in the target-based priority",
           },
           {
-            id: "line-103",
+            id: "line-110",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-104",
+            id: "line-111",
             keyword: "Then",
             text: "annual LISA withdrawals at retirement should be 0.00",
           },
           {
-            id: "line-105",
+            id: "line-112",
             keyword: "And",
             text: "annual ISA withdrawals at retirement should be 12000.00",
           },
           {
-            id: "line-106",
+            id: "line-113",
             keyword: "And",
             text: "LISA should remain before ISA in the target-based priority",
           },
@@ -7928,7 +7965,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-108",
+        id: "line-115",
         keyword: "Scenario",
         name: "Gross up a taxable target-based withdrawal",
         description: "",
@@ -7937,37 +7974,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-109",
+            id: "line-116",
             keyword: "Given",
             text: "the annual income target is 12000.00",
           },
           {
-            id: "line-110",
+            id: "line-117",
             keyword: "And",
             text: "the income target is after estimated tax",
           },
           {
-            id: "line-111",
+            id: "line-118",
             keyword: "And",
             text: "Income Tax applies with no Personal Allowance",
           },
           {
-            id: "line-112",
+            id: "line-119",
             keyword: "And",
             text: "a SIPP with 50000.00 uses the target-based strategy",
           },
           {
-            id: "line-113",
+            id: "line-120",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-114",
+            id: "line-121",
             keyword: "Then",
             text: "annual net income at retirement should be 12000.00",
           },
           {
-            id: "line-115",
+            id: "line-122",
             keyword: "And",
             text: "gross annual SIPP withdrawals should be higher than 12000.00",
           },
@@ -7975,7 +8012,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-117",
+        id: "line-124",
         keyword: "Scenario",
         name: "Report avoidable surplus without changing an explicit strategy",
         description: "",
@@ -7984,37 +8021,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-118",
+            id: "line-125",
             keyword: "Given",
             text: "the flat annual income target is 24000.00",
           },
           {
-            id: "line-119",
+            id: "line-126",
             keyword: "And",
             text: "guaranteed annual net income is 20000.00",
           },
           {
-            id: "line-120",
+            id: "line-127",
             keyword: "And",
             text: "an ISA explicitly withdraws 12000.00 per year",
           },
           {
-            id: "line-121",
+            id: "line-128",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-122",
+            id: "line-129",
             keyword: "Then",
             text: "avoidable flexible-fund surplus at retirement should be 8000.00",
           },
           {
-            id: "line-123",
+            id: "line-130",
             keyword: "And",
             text: "the annual ISA withdrawal identified as reducible should be 8000.00",
           },
           {
-            id: "line-124",
+            id: "line-131",
             keyword: "And",
             text: "the ISA strategy should remain Annual percentage",
           },
@@ -8022,7 +8059,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-126",
+        id: "line-133",
         keyword: "Scenario",
         name: "Preview target-based withdrawals without changing the saved strategy",
         description: "",
@@ -8031,37 +8068,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-127",
+            id: "line-134",
             keyword: "Given",
             text: "the flat annual income target is 24000.00",
           },
           {
-            id: "line-128",
+            id: "line-135",
             keyword: "And",
             text: "guaranteed annual net income is 20000.00",
           },
           {
-            id: "line-129",
+            id: "line-136",
             keyword: "And",
             text: "an ISA explicitly withdraws 12000.00 per year",
           },
           {
-            id: "line-130",
+            id: "line-137",
             keyword: "When",
             text: "target-based ISA withdrawals are previewed",
           },
           {
-            id: "line-131",
+            id: "line-138",
             keyword: "Then",
             text: "the preview should reduce ISA withdrawals",
           },
           {
-            id: "line-132",
+            id: "line-139",
             keyword: "And",
             text: "the preview should reduce unallocated surplus",
           },
           {
-            id: "line-133",
+            id: "line-140",
             keyword: "And",
             text: "the ISA strategy should remain Annual percentage",
           },
@@ -8069,7 +8106,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-135",
+        id: "line-142",
         keyword: "Scenario",
         name: "Do not blame flexible funds for guaranteed-income surplus",
         description: "",
@@ -8078,32 +8115,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-136",
+            id: "line-143",
             keyword: "Given",
             text: "the flat annual income target is 24000.00",
           },
           {
-            id: "line-137",
+            id: "line-144",
             keyword: "And",
             text: "guaranteed annual net income is 27000.00",
           },
           {
-            id: "line-138",
+            id: "line-145",
             keyword: "When",
             text: "the flexible withdrawal projection is calculated",
           },
           {
-            id: "line-139",
+            id: "line-146",
             keyword: "Then",
             text: "unavoidable surplus at retirement should be 3000.00",
           },
           {
-            id: "line-140",
+            id: "line-147",
             keyword: "And",
             text: "avoidable flexible-fund surplus at retirement should be 0.00",
           },
           {
-            id: "line-141",
+            id: "line-148",
             keyword: "And",
             text: "no flexible withdrawal should be identified as reducible",
           },
@@ -8111,7 +8148,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-143",
+        id: "line-150",
         keyword: "Scenario",
         name: "Preserve and restore the opt-in strategy",
         description: "",
@@ -8120,27 +8157,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-144",
+            id: "line-151",
             keyword: "Given",
             text: "an ISA with 50000.00 uses the target-based strategy",
           },
           {
-            id: "line-145",
+            id: "line-152",
             keyword: "And",
             text: "SIPP is before ISA in the target-based priority",
           },
           {
-            id: "line-146",
+            id: "line-153",
             keyword: "When",
             text: "the flexible withdrawal settings are exported and parsed",
           },
           {
-            id: "line-147",
+            id: "line-154",
             keyword: "Then",
             text: "the restored ISA strategy should be target-based",
           },
           {
-            id: "line-148",
+            id: "line-155",
             keyword: "And",
             text: "SIPP should remain before ISA in the target-based priority",
           },
@@ -8148,7 +8185,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-150",
+        id: "line-157",
         keyword: "Scenario",
         name: "Bound the chart contribution drag controls",
         description: "",
@@ -8157,12 +8194,12 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-151",
+            id: "line-158",
             keyword: "When",
             text: "the retirement income chart limits are prepared",
           },
           {
-            id: "line-152",
+            id: "line-159",
             keyword: "Then",
             text: "the ISA and SIPP contribution drag controls should have a monthly maximum of 2000.00",
           },
@@ -9948,7 +9985,7 @@ export const acceptanceFeatures = [
       {
         id: "line-19",
         keyword: "Scenario",
-        name: "Hide inline milestones while retaining Combined period inspection",
+        name: "Show key retirement markers while retaining Combined period inspection",
         description: "",
         tags: [],
         status: "covered",
@@ -9972,13 +10009,18 @@ export const acceptanceFeatures = [
           {
             id: "line-23",
             keyword: "And",
+            text: "key household retirement markers should use the shared chart marker style",
+          },
+          {
+            id: "line-24",
+            keyword: "And",
             text: "household period inspection should remain enabled",
           },
         ],
         examples: [],
       },
       {
-        id: "line-25",
+        id: "line-26",
         keyword: "Scenario",
         name: "Group owner-attributed household events for inspection",
         description: "",
@@ -9987,22 +10029,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-26",
+            id: "line-27",
             keyword: "Given",
             text: "a staggered two-person household",
           },
           {
-            id: "line-27",
+            id: "line-28",
             keyword: "When",
             text: "household chart events are projected",
           },
           {
-            id: "line-28",
+            id: "line-29",
             keyword: "Then",
             text: "household chart events should retain You and Partner ownership",
           },
           {
-            id: "line-29",
+            id: "line-30",
             keyword: "And",
             text: "simultaneous household events should be grouped by calendar month",
           },

@@ -4,7 +4,10 @@ import {
   type PensionSettings,
   type PersonId,
 } from "../settings";
-import type { RetirementIncomeChartEvent } from "./retirement-income-chart-model";
+import type {
+  RetirementIncomeChartEvent,
+  RetirementIncomeChartStaticMilestone,
+} from "./retirement-income-chart-model";
 
 type PersonEventContext = {
   owner: PersonId;
@@ -40,6 +43,28 @@ export function createHouseholdChartEvents(
       left.timelineValue - right.timelineValue ||
       left.label.localeCompare(right.label)
   );
+}
+
+/**
+ * Selects the two highest-signal household milestones for the chart itself.
+ * The complete event list remains available through period inspection so the
+ * plot stays readable when several sources start in the same month.
+ */
+export function createHouseholdChartMilestones(
+  settings: PensionSettings
+): RetirementIncomeChartStaticMilestone[] {
+  return createHouseholdChartEvents(settings)
+    .filter(
+      (event) =>
+        event.key === "you-retirement" || event.key === "partner-retirement"
+    )
+    .map((event) => ({
+      key: event.key,
+      label: event.label,
+      shortLabel: event.owner === "partner" ? "Partner retires" : "You retire",
+      timelineValue: event.timelineValue,
+      colour: event.owner === "partner" ? "#2563a8" : "#0f6f72",
+    }));
 }
 
 // The branches mirror the independently enabled person-owned sources so event

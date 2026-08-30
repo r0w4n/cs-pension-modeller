@@ -56,6 +56,15 @@ export type RetirementIncomeChartEvent = {
   owner?: "you" | "partner";
 };
 
+/** Read-only milestone marker supplied by a derived chart such as Combined. */
+export type RetirementIncomeChartStaticMilestone = {
+  key: string;
+  label: string;
+  shortLabel: string;
+  timelineValue: number;
+  colour: string;
+};
+
 export type RetirementIncomeFlexibleWithdrawalInsight = {
   accountId: string;
   label: string;

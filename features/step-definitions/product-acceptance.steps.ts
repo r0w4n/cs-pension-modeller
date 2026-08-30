@@ -70,7 +70,10 @@ import {
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
-import { createHouseholdChartEvents } from "../../src/result-projection/joint-retirement-chart";
+import {
+  createHouseholdChartEvents,
+  createHouseholdChartMilestones,
+} from "../../src/result-projection/joint-retirement-chart";
 import { getRetirementIncomeEventsForDate } from "../../src/result-projection/retirement-income-chart-layout";
 import type { RetirementIncomeChartEvent } from "../../src/result-projection/retirement-income-chart-model";
 
@@ -139,6 +142,7 @@ type ProductAcceptanceWorld = {
   jointProjection?: ReturnType<typeof calculateJointRetirementProjection>;
   jointChartPresentation?: RetirementIncomeChartPresentation;
   jointChartEvents?: RetirementIncomeChartEvent[];
+  jointChartMilestones?: ReturnType<typeof createHouseholdChartMilestones>;
 };
 
 type MemoryStorage = Storage & {
@@ -1867,6 +1871,20 @@ Then(
   function (this: ProductAcceptanceWorld) {
     assertEqual(this.jointChartPresentation?.showInlineMilestones, false);
     assertEqual(this.jointChartPresentation?.readOnly, true);
+  }
+);
+
+Then(
+  "key household retirement markers should use the shared chart marker style",
+  function (this: ProductAcceptanceWorld) {
+    this.jointChartMilestones = createHouseholdChartMilestones(
+      getSettings(this)
+    );
+    assertEqual(this.jointChartMilestones.length, 2);
+    assertCondition(
+      this.jointChartMilestones.every((marker) => marker.timelineValue > 0),
+      "Expected both retirement markers to have a timeline position"
+    );
   }
 );
 

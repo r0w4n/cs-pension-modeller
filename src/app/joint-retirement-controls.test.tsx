@@ -181,6 +181,73 @@ describe("joint retirement controls", () => {
       expect.objectContaining({ spendingStrategyType: "FLAT" })
     );
   });
+
+  it("keeps household funding controls visible and edits either person's strategy", () => {
+    const settings = createJointSettings("1990-06-01");
+
+    render(
+      <JointHouseholdTargetFields
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes={false}
+      />
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Income-target funding priority" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Other withdrawal strategies" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", {
+        name: "Your SIPP withdrawal strategy",
+      })
+    ).toHaveValue("use_by_age");
+    const partnerIsaStrategy = screen.getByRole("combobox", {
+      name: "Partner ISA withdrawal strategy",
+    });
+    expect(partnerIsaStrategy).toHaveValue("use_by_age");
+
+    fireEvent.change(partnerIsaStrategy, {
+      target: { value: "meet_income_target" },
+    });
+
+    expect(onChange).toHaveBeenCalledWith("partner", {
+      ...settings.partner,
+      isaWithdrawalStrategy: "meet_income_target",
+    });
+  });
+
+  it("uses the established keyboard reordering interaction for household accounts", () => {
+    const settings = createJointSettings("1990-06-01");
+    settings.sippWithdrawalStrategy = "meet_income_target";
+    settings.partner.sippWithdrawalStrategy = "meet_income_target";
+    settings.jointRetirement.flexibleWithdrawalPriority = [
+      "you:sipp",
+      "partner:sipp",
+    ];
+
+    render(
+      <JointHouseholdTargetFields
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes={false}
+      />
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", {
+        name: "Reorder Partner SIPP. Priority 2 of 2.",
+      }),
+      { key: "ArrowUp" }
+    );
+
+    expect(onChange).toHaveBeenCalledWith("jointRetirement", {
+      ...settings.jointRetirement,
+      flexibleWithdrawalPriority: ["partner:sipp", "you:sipp"],
+    });
+  });
 });
 
 function createJointSettings(partnerDateOfBirth: string) {

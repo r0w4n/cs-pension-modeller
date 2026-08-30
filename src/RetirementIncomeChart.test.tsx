@@ -588,6 +588,15 @@ describe("RetirementIncomeChart", () => {
           owner: "you",
         },
       ],
+      staticMilestones: [
+        {
+          key: "you-retirement",
+          label: "You retire",
+          shortLabel: "You retire",
+          timelineValue: 2045.5,
+          colour: "#0f6f72",
+        },
+      ],
       data: [
         { ...basePoint, targetIncomeAnnual: 0 },
         {
@@ -611,8 +620,8 @@ describe("RetirementIncomeChart", () => {
     expect(screen.getByText("Household gross income")).toBeInTheDocument();
     expect(screen.queryAllByRole("slider")).toHaveLength(0);
     expect(
-      document.querySelector(".retirement-income-milestone")
-    ).not.toBeInTheDocument();
+      screen.getByTestId("retirement-income-static-milestone-you-retirement")
+    ).toBeInTheDocument();
     fireEvent.focus(screen.getByTestId("retirement-income-period-inspector"));
     expect(
       screen.getByTestId("retirement-income-period-details")

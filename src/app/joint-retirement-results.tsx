@@ -23,6 +23,7 @@ import type {
 } from "../result-projection/retirement-income-chart-model";
 import {
   createHouseholdChartEvents,
+  createHouseholdChartMilestones,
   describeHouseholdChartEvent,
 } from "../result-projection/joint-retirement-chart";
 import {
@@ -107,6 +108,10 @@ export function JointRetirementResults({
   );
   const combinedEvents = useMemo(
     () => createHouseholdChartEvents(settings),
+    [settings]
+  );
+  const combinedMilestones = useMemo(
+    () => createHouseholdChartMilestones(settings),
     [settings]
   );
   const combinedChartAccessibilitySummary = useMemo(
@@ -242,12 +247,12 @@ export function JointRetirementResults({
           retirementIncomeChartLimits={chartLimits}
           alphaLabel="Household gross income"
           chartDescription="Gross household income is shown against the shared household target. Estimated Income Tax is shown with horizontal blue-grey hatching between combined take-home and gross income, and red hatching shows when the household estimate is below its target. The target begins when the first person retires and can change when the second person retires."
-          hideInactiveLegendItems
           readOnly
           useDataTargets
           timelineMode="calendar"
           seriesDefinitions={combinedSeriesDefinitions}
           periodEvents={combinedEvents}
+          staticMilestones={combinedMilestones}
           chartDataAccessibilitySummary={combinedChartAccessibilitySummary}
           presentation="standard"
         />
@@ -261,7 +266,7 @@ export function JointRetirementResults({
             (issue) =>
               issue.personId === view || issue.field === "jointRetirement"
           )}
-          chartDescription={`This is ${view === "you" ? "Your" : "Partner’s"} editable retirement-income chart. The target line is the shared household target; household shortfall is shown in Combined.`}
+          chartDescription={`This is ${view === "you" ? "Your" : "Partner’s"} editable retirement-income chart. The target line is the shared household target; household shortfall is shown in Combined. Estimated Income Tax can appear before ${view === "you" ? "your" : "Partner’s"} retirement where a pension or employment income starts earlier.`}
           showShortfallOverlay={false}
           useDataTargets
           presentation="standard"

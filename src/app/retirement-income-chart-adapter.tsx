@@ -3,6 +3,7 @@ import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomeChartEvent,
+  RetirementIncomeChartStaticMilestone,
   RetirementIncomeChartSeriesDefinition,
   RetirementIncomePoint,
 } from "../result-projection/retirement-income-chart-model";
@@ -29,6 +30,7 @@ export function RetirementIncomeChartAdapter({
   timelineMode = "age",
   seriesDefinitions,
   periodEvents,
+  staticMilestones,
   showShortfallOverlay = true,
   onChangeTargetIncome,
   presentation = "standard",
@@ -51,6 +53,7 @@ export function RetirementIncomeChartAdapter({
   timelineMode?: "age" | "calendar";
   seriesDefinitions?: RetirementIncomeChartSeriesDefinition[];
   periodEvents?: RetirementIncomeChartEvent[];
+  staticMilestones?: RetirementIncomeChartStaticMilestone[];
   showShortfallOverlay?: boolean;
   onChangeTargetIncome?: (value: number, age?: number) => void;
   presentation?: RetirementIncomeChartPresentation;
@@ -87,6 +90,7 @@ export function RetirementIncomeChartAdapter({
     timelineMode,
     seriesDefinitions,
     periodEvents,
+    staticMilestones,
     showShortfallOverlay,
     onChangeTargetIncome,
     validationIssues,

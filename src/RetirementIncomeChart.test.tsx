@@ -1246,12 +1246,12 @@ describe("RetirementIncomeChart", () => {
     "shows $label in the chart key only while it is enabled",
     ({ label, setting }) => {
       const { rerender } = renderChart({ [setting]: true });
+      const chartKey = screen.getByLabelText("Chart key");
 
       expect(
-        screen.getByRole("button", {
-          name: `Toggle chart ${label} source`,
-        })
-      ).toHaveTextContent(label);
+        within(chartKey).getByText(label, { exact: true })
+      ).toBeInTheDocument();
+      expect(within(chartKey).queryByRole("button")).not.toBeInTheDocument();
 
       rerender(
         <RetirementIncomeChart {...baseProps} {...{ [setting]: false }} />
@@ -1264,6 +1264,16 @@ describe("RetirementIncomeChart", () => {
       ).not.toBeInTheDocument();
     }
   );
+
+  it("keeps chart key items informational", () => {
+    const onChangeParameters = vi.fn();
+    renderChart({ showIsa: true, onChangeParameters });
+
+    const chartKey = screen.getByLabelText("Chart key");
+    fireEvent.click(within(chartKey).getByText("ISA", { exact: true }));
+
+    expect(onChangeParameters).not.toHaveBeenCalled();
+  });
 
   it("hides the additional income legend item when it has no chart values", () => {
     renderChart({ hideInactiveLegendItems: true });

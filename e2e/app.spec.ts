@@ -291,7 +291,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
   });
 
-  test("expert two-person results reuse the established chart and monthly table", async ({
+  test("expert two-person results use one editable household chart and monthly table", async ({
     page,
   }) => {
     await acknowledgeAndOpenMode(page, "expert");
@@ -305,7 +305,16 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("heading", { name: "Household retirement income summary" })
     ).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Retirement income over time" })
+      page.getByRole("group", { name: "Retirement income summary display" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Income at different periods" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Plan status" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Household Retirement Plan" })
     ).toBeVisible();
     await expect(
       page.getByText("Your State Pension", { exact: true })
@@ -315,14 +324,16 @@ test.describe("app end-to-end journeys", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("slider", { name: "Target income line" })
-    ).toHaveCount(0);
+    ).toHaveCount(1);
     await expect(
-      page.getByRole("slider", { name: "Added Alpha pension" })
-    ).toHaveCount(0);
+      page.getByRole("slider", { name: "You: Retire" })
+    ).toBeVisible();
     await expect(
-      page.locator(".retirement-income-static-milestone")
-    ).toHaveCount(2);
-    await expect(page.locator(".retirement-income-milestone")).toHaveCount(2);
+      page.getByRole("slider", { name: "Partner: Retire" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("group", { name: "Joint results chart view" })
+    ).toHaveCount(0);
     const periodInspector = page.getByTestId(
       "retirement-income-period-inspector"
     );
@@ -345,22 +356,15 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toBeVisible();
 
-    await page
-      .getByRole("button", { name: "Partner retirement income" })
-      .click();
+    await renderDeferredComparisonContent(page);
+    const comparisonResults = page.getByRole("region", {
+      name: "Comparison results",
+    });
     await expect(
-      page.getByRole("heading", {
-        name: "Monthly Partner’s income projection table",
-      })
+      comparisonResults.getByText("Target income", { exact: true })
     ).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Retirement income over time" })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("slider", { name: "Target income line" })
-    ).toHaveCount(1);
-    await expect(
-      page.getByRole("slider", { name: /Retire, age/ })
+      comparisonResults.getByText("Both retired", { exact: true })
     ).toBeVisible();
   });
 

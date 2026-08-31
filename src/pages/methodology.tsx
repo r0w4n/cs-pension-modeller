@@ -247,13 +247,13 @@ export function MethodologyPage() {
           costs.
         </p>
         <p className="section-copy">
-          Joint Expert results default to a read-only Combined chart on a
-          calendar timeline. It keeps each income source attributed to You or
-          Partner and uses the canonical household target, estimated Income Tax,
-          take-home income and shortfall. The You and Partner views reuse the
-          editable retirement-income chart for that person; their target line
-          remains the shared household reference and household shortfall is
-          shown only in Combined.
+          Joint Expert results use one editable Household Retirement Plan chart
+          on a calendar timeline. It keeps each income source attributed to You
+          or Partner and uses the canonical household target, estimated Income
+          Tax, take-home income and shortfall. The underlying person projections
+          remain separate for their own accounts, withdrawal strategies and tax
+          treatment. The chart keeps the established controls inline with the
+          chart while leaving all household financial data visible.
         </p>
         <p className="section-copy">
           To keep the household projection readable, Combined uses the familiar
@@ -1063,6 +1063,11 @@ export function MethodologyPage() {
           assumptions, not a conclusion that the remaining balance is unwanted
           or that contributions should be reduced.
         </p>
+        <p className="section-copy">
+          In two-person modelling, this check is applied separately to each
+          person&apos;s target-based accounts using that person&apos;s remaining
+          pot at their selected planning horizon.
+        </p>
       </section>
 
       <section>
@@ -1422,6 +1427,12 @@ export function MethodologyPage() {
           pensions, inheritance or asset transfers when one planning horizon is
           reached, and it does not automatically reduce the household target at
           that point.
+        </p>
+        <p className="section-copy">
+          Comparisons are kept within the same model type. Two-person scenarios
+          use their coordinated household target, assessment, timing and
+          flexible-fund metrics; a saved scenario from the other model type is
+          not silently combined into that table and remains available to load.
         </p>
       </section>
     </StaticPageLayout>

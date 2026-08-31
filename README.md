@@ -281,14 +281,18 @@ The concrete layer responsibilities are:
   while [`src/app/retirement-income-chart-adapter.tsx`](src/app/retirement-income-chart-adapter.tsx)
   and the adjacent heading, controls, mobile-navigation, and accessibility
   components adapt it to each journey's selected presentation.
-- Joint Expert results keep that same chart composition for the editable You
-  and Partner views. The read-only Combined view projects the canonical joint
-  result onto a calendar timeline with owner-attributed series, household
-  target/tax/shortfall values, period event inspection, and an accessible text
-  equivalent. The two key retirement milestones use the familiar vertical
-  marker treatment; the remaining household events remain semantic event data
-  available through period inspection. This does not introduce a second
-  calculation path.
+- Joint Expert results use one editable Household Retirement Plan chart. It
+  projects the canonical coordinated joint result onto a calendar timeline
+  with owner-attributed series, household target/tax/shortfall values, period
+  event inspection, and an accessible text equivalent. Existing retirement
+  marker and input controls are reused for each person and source. The
+  underlying person projections remain separate for calculation and tax
+  purposes.
+- Comparison scenarios are kept within the same model type: single-person
+  scenarios compare with single-person metrics, and two-person scenarios use
+  the coordinated household target, assessment, timing, and flexible-fund
+  metrics. Mixed-mode saved scenarios remain available to load but are not
+  combined into one comparison table.
 - [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
   configuration for the simplified, early-retirement, and expert journeys. It
   selects shared fields, labels, help text, update behaviour, and result

@@ -72,6 +72,7 @@ export {
 export {
   validateSettings,
   createPartnerCalculationSettings,
+  createPartnerIndividualSettings,
 } from "./settings/settings-validate";
 
 export {

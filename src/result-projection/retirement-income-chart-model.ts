@@ -65,6 +65,18 @@ export type RetirementIncomeChartStaticMilestone = {
   colour: string;
 };
 
+/**
+ * An owner-aware strategy control projected onto a derived chart timeline.
+ * The limit is expressed in the same timeline units as `timelineValue` so the
+ * shared chart can reuse its existing marker drag behaviour.
+ */
+export type RetirementIncomeChartEditableMilestone =
+  RetirementIncomeChartStaticMilestone & {
+    limit: ChartNumberLimit;
+    owner: "you" | "partner";
+    sourceType: string;
+  };
+
 export type RetirementIncomeFlexibleWithdrawalInsight = {
   accountId: string;
   label: string;

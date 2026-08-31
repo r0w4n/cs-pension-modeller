@@ -90,6 +90,11 @@ describe("calculateJointRetirementProjection", () => {
 
     expect(projection.firstRetirementMonth).toBe("2030-06-01");
     expect(projection.bothRetiredMonth).toBe("2030-06-01");
+    const calendarMonths = projection.rows.map((row) => row.date.slice(0, 7));
+    expect(new Set(calendarMonths).size).toBe(calendarMonths.length);
+    const alignedMonth = findMonth(projection, "2065-06");
+    expect(alignedMonth?.people.you?.date.startsWith("2065-06")).toBe(true);
+    expect(alignedMonth?.people.partner?.date.startsWith("2065-06")).toBe(true);
     expect(
       projection.rows.find((row) => row.date.startsWith("2030-06"))?.target
     ).toBe(40_000);
@@ -175,5 +180,115 @@ describe("calculateJointRetirementProjection", () => {
     expect(findMonth(projection, "2035-06")?.target).toBe(30_000);
     expect(findMonth(projection, "2044-06")?.target).toBe(40_000);
     expect(findMonth(projection, "2045-06")?.target).toBe(32_000);
+  });
+
+  it("retains stand-alone withdrawals while coordinating household funding", () => {
+    const defaults = createDefaultSettings();
+    const settings = normalizeSettings({
+      ...defaults,
+      dateOfBirth: "1977-04-01",
+      requirementAge: 55,
+      lifeExpectancy: 85,
+      desiredRetirementIncome: 31_350,
+      retirementIncomeTargetBasis: "after_tax",
+      showAlpha: true,
+      alphaPensionLeaveAge: 55,
+      alphaPensionDrawAge: 57,
+      accruedPensionAtLastAbs: 16_000,
+      pensionableEarnings: 70_000,
+      showSipp: true,
+      sippCurrentPot: 45_000,
+      sippMonthlyContribution: 1_100,
+      sippDrawAge: 57,
+      sippWithdrawalStrategy: "meet_income_target",
+      showIsa: true,
+      isaCurrentPot: 45_000,
+      isaMonthlyContribution: 150,
+      isaDrawAge: 55,
+      isaWithdrawalStrategy: "meet_income_target",
+      flexibleWithdrawalPriority: ["sipp", "isa"],
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1986-10-01",
+        requirementAge: 65,
+        lifeExpectancy: 85,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 45_400,
+        fullyRetiredDesiredRetirementIncome: 45_400,
+      },
+    });
+
+    const projection = calculateJointRetirementProjection(settings);
+    const individualRows = projection.individuals.you.rows;
+    const householdRows = projection.people.you.rows;
+
+    expect(individualRows.some((row) => row.monthlyIsaPension > 0)).toBe(true);
+    expect(individualRows.some((row) => row.monthlySippPension > 0)).toBe(true);
+    expect(individualRows.some((row) => row.monthlyIncomeTax > 0)).toBe(true);
+    expect(householdRows.some((row) => row.monthlyIsaPension > 0)).toBe(true);
+    expect(householdRows.some((row) => row.monthlySippPension > 0)).toBe(true);
+  });
+
+  it("carries coordinated target-account balances forward after each withdrawal", () => {
+    const defaults = createDefaultSettings();
+    const partner = {
+      ...createDefaultPartnerSettings(),
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 75,
+      taxationEnabled: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+    };
+    const settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 75,
+      desiredRetirementIncome: 12_000,
+      retirementIncomeTargetBasis: "gross",
+      taxationEnabled: false,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: true,
+      sippCurrentPot: 100_000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target",
+      showIsa: false,
+      flexibleWithdrawalPriority: ["sipp"],
+      partner,
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 12_000,
+        fullyRetiredDesiredRetirementIncome: 12_000,
+        flexibleWithdrawalPriority: ["you:sipp"],
+      },
+    });
+
+    const projection = calculateJointRetirementProjection(settings);
+    const individualRowsByMonth = new Map(
+      projection.individuals.you.rows.map((row) => [row.date.slice(0, 7), row])
+    );
+    const coordinatedWithdrawalRows = projection.people.you.rows.filter(
+      (row) => row.monthlySippPension > 0
+    );
+
+    expect(coordinatedWithdrawalRows.length).toBeGreaterThan(1);
+    for (const row of coordinatedWithdrawalRows) {
+      const individualRow = individualRowsByMonth.get(row.date.slice(0, 7));
+      expect(individualRow).toBeDefined();
+      expect(row.monthlySippPension).toBeCloseTo(
+        individualRow?.monthlySippPension ?? 0,
+        2
+      );
+      expect(row.sippPot).toBeCloseTo(individualRow?.sippPot ?? 0, 2);
+    }
   });
 });

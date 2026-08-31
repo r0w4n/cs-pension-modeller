@@ -3,21 +3,24 @@ import type {
   HouseholdProjectionRow,
   JointRetirementProjection,
 } from "../calculation/joint-retirement-plan";
+import type { ProjectionRow, RetirementIncomeDisplay } from "../projection";
 import {
-  calculateDateAge,
-  createPartnerCalculationSettings,
-  formatCurrency,
+  createPartnerIndividualSettings,
   type PensionSettings,
   type PensionValidationIssue,
 } from "../settings";
+import { addYearsToIsoDate } from "../model-date";
 import {
   formatCurrencyDetailed,
   formatDate,
+  formatShortfallOrSurplus,
 } from "../result-projection/formatting";
 import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
   RetirementIncomeChartEvent,
+  RetirementIncomeChartEditableMilestone,
+  RetirementIncomeMilestoneKey,
   RetirementIncomePoint,
   RetirementIncomeChartSeriesDefinition,
 } from "../result-projection/retirement-income-chart-model";
@@ -31,19 +34,21 @@ import {
   createRetirementIncomeChartParameters,
   createRetirementIncomeSeries,
 } from "../result-projection/retirement-income";
-import { sourceMeta } from "../result-projection/retirement-income-chart-layout";
-import { addYearsToIsoDate } from "../model-date";
+import { summarizeFlexibleWithdrawalInsights } from "../result-projection/flexible-withdrawals";
+import { createRetirementIncomeMilestones } from "../result-projection/retirement-income-chart-controls";
+import {
+  incomeKeys,
+  isRetirementIncomeSourceEnabled,
+  sourceMeta,
+} from "../result-projection/retirement-income-chart-layout";
 import { applyRetirementIncomeChartParameterPatch } from "./chart-state";
+import { snapToLimit } from "./chart-drag-constraints";
 import type { SettingsFieldOnChange } from "./form-fields";
 import {
-  updateSpendingSmilePercentage,
-  updateSpendingSmileStartAge,
-} from "../spending-smile";
-import {
   AssumptionsVersionStrip,
+  RetirementIncomeDisplayToggle,
   ResultsSummarySection,
   SummarySection,
-  SummaryToggle,
 } from "./results-summary";
 import { RetirementOutcomeBannerView } from "./comparison-pension-summary";
 import type { RetirementOutcomeBanner } from "../app-domains";
@@ -53,21 +58,25 @@ import {
   type TableColumn,
 } from "./projection-table";
 import { RetirementIncomeChartAdapter } from "./retirement-income-chart-adapter";
+import {
+  createFlexibleAccountWarnings,
+  RetirementIncomeControlGrid,
+} from "./retirement-income-chart-controls";
 
-type View = "combined" | "you" | "partner";
-type PersonView = Exclude<View, "combined">;
+type PersonView = "you" | "partner";
 
 type JointTableRow = HouseholdProjectionRow & {
   milestones: string[];
   milestoneDates: string[];
 };
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
 export function JointRetirementResults({
   projection,
   settings,
   chartParameters,
   chartLimits,
+  retirementIncomeDisplay = "annual",
+  onRetirementIncomeDisplayChange,
   validationIssues = [],
   onChange,
 }: {
@@ -75,36 +84,43 @@ export function JointRetirementResults({
   settings: PensionSettings;
   chartParameters: RetirementIncomeChartParameters;
   chartLimits: RetirementIncomeChartLimits;
+  retirementIncomeDisplay?: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange?: (display: RetirementIncomeDisplay) => void;
   validationIssues?: PensionValidationIssue[];
   onChange?: SettingsFieldOnChange;
 }) {
-  const [view, setView] = useState<View>("combined");
   const [showMilestonesOnly, setShowMilestonesOnly] = useState(true);
-  const personBundles = useMemo(
-    () => createJointPersonChartBundles(projection, settings),
+  const personControlBundles = useMemo(
+    () => createPersonControlBundles(settings),
+    [settings]
+  );
+  const householdBundles = useMemo(
+    () => createHouseholdPersonChartBundles(projection, settings),
     [projection, settings]
   );
-  const firstShortfall = projection.rows.find(
-    (row) => row.household.shortfall > 0
-  );
-  const maxShortfall = Math.max(
-    0,
-    ...projection.rows.map((row) => row.household.shortfall)
-  );
   const tableRows = useMemo(
-    () => createJointTableRows(projection.rows, view),
-    [projection.rows, view]
+    () => createJointTableRows(projection.rows),
+    [projection.rows]
   );
   const visibleTableRows = showMilestonesOnly
     ? tableRows.filter((row) => row.milestones.length > 0)
     : tableRows;
   const combinedSeries = useMemo(
-    () => createJointRetirementIncomeSeries(projection, personBundles),
-    [personBundles, projection]
+    () => createJointRetirementIncomeSeries(projection, householdBundles),
+    [householdBundles, projection]
   );
   const combinedSeriesDefinitions = useMemo(
-    () => createHouseholdSeriesDefinitions(personBundles),
-    [personBundles]
+    () => createHouseholdSeriesDefinitions(householdBundles),
+    [householdBundles]
+  );
+  const incomePeriodItems = useMemo(
+    () =>
+      createHouseholdIncomePeriodItems(
+        projection,
+        combinedSeries,
+        combinedSeriesDefinitions
+      ),
+    [combinedSeries, combinedSeriesDefinitions, projection]
   );
   const combinedEvents = useMemo(
     () => createHouseholdChartEvents(settings),
@@ -113,6 +129,10 @@ export function JointRetirementResults({
   const combinedMilestones = useMemo(
     () => createHouseholdChartMilestones(settings),
     [settings]
+  );
+  const editableMilestones = useMemo(
+    () => createHouseholdEditableMilestones(personControlBundles),
+    [personControlBundles]
   );
   const combinedChartAccessibilitySummary = useMemo(
     () =>
@@ -128,45 +148,6 @@ export function JointRetirementResults({
     (row) => row.milestones.length > 0
   ).length;
   const outcome = buildHouseholdOutcome(projection);
-  const hasTransitionTarget =
-    projection.firstRetirementMonth !== projection.bothRetiredMonth;
-  const summaryItems = [
-    {
-      label: "Household target starts",
-      value: formatDate(projection.firstRetirementMonth),
-    },
-    {
-      label: "Both people retired",
-      value: formatDate(projection.bothRetiredMonth),
-    },
-    ...(hasTransitionTarget
-      ? [
-          {
-            label: "Transition household target",
-            value: formatCurrency(
-              settings.jointRetirement.transitionDesiredRetirementIncome
-            ),
-          },
-        ]
-      : []),
-    {
-      label: "Fully-retired household target",
-      value: formatCurrency(
-        settings.jointRetirement.fullyRetiredDesiredRetirementIncome
-      ),
-    },
-    {
-      label: "Largest modelled monthly household shortfall",
-      value: formatCurrency(maxShortfall),
-    },
-    {
-      label: "First household shortfall",
-      value: firstShortfall
-        ? formatDate(firstShortfall.date)
-        : "No shortfall modelled",
-    },
-  ];
-
   return (
     <>
       <ResultsSummarySection>
@@ -175,16 +156,28 @@ export function JointRetirementResults({
           headingLevel={2}
           variant="feature"
           description="This planning estimate combines both people’s income after estimating Income Tax separately, then assesses it against the shared household target."
-          items={summaryItems}
+          items={[]}
+          controls={
+            onRetirementIncomeDisplayChange ? (
+              <RetirementIncomeDisplayToggle
+                value={retirementIncomeDisplay}
+                onChange={onRetirementIncomeDisplayChange}
+              />
+            ) : undefined
+          }
           footer={
             <>
               <RetirementOutcomeBannerView outcome={outcome} />
+              <HouseholdIncomePeriodSummary
+                items={incomePeriodItems}
+                display={retirementIncomeDisplay}
+              />
               <div className="summary-status-block">
                 <h3>How the household assessment works</h3>
                 <p>
-                  The target belongs to the household. Select You or Partner
-                  below to inspect that person’s contribution; their income is
-                  not treated as a separate spending target.
+                  The Household Retirement Plan keeps each person’s pensions,
+                  savings, withdrawals and estimated Income Tax separate while
+                  showing how they work together against the shared target.
                 </p>
               </div>
               <div className="summary-status-block">
@@ -209,109 +202,99 @@ export function JointRetirementResults({
                   </div>
                 </dl>
               </div>
+              <div className="summary-status-block">
+                <h3>Plan status</h3>
+                <p className="section-copy">
+                  This section highlights whether the household estimate appears
+                  to meet the shared target and where the assumptions may need
+                  attention.
+                </p>
+                <dl className="snapshot-list">
+                  {createHouseholdStatusItems(projection, outcome).map(
+                    ({ label, value }) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    )
+                  )}
+                </dl>
+              </div>
               <AssumptionsVersionStrip />
             </>
           }
         />
       </ResultsSummarySection>
 
-      <div className="joint-chart-view-selector">
-        <SummaryToggle
-          ariaLabel="Joint results chart view"
-          value={view}
-          options={[
-            {
-              value: "combined",
-              label: "Combined",
-              ariaLabel: "Combined retirement income",
-            },
-            { value: "you", label: "You", ariaLabel: "Your retirement income" },
-            {
-              value: "partner",
-              label: "Partner",
-              ariaLabel: "Partner retirement income",
-            },
-          ]}
-          onChange={setView}
-        />
-      </div>
-
-      {view === "combined" ? (
-        <RetirementIncomeChartAdapter
-          retirementIncomeSeries={combinedSeries}
-          retirementIncomeChartParameters={createHouseholdChartParameters(
-            chartParameters,
-            settings,
-            projection
-          )}
-          retirementIncomeChartLimits={chartLimits}
-          alphaLabel="Household gross income"
-          chartDescription="Gross household income is shown against the shared household target. Estimated Income Tax is shown with horizontal blue-grey hatching between combined take-home and gross income, and red hatching shows when the household estimate is below its target. The target begins when the first person retires and can change when the second person retires."
-          readOnly
-          useDataTargets
-          timelineMode="calendar"
-          seriesDefinitions={combinedSeriesDefinitions}
-          periodEvents={combinedEvents}
-          staticMilestones={combinedMilestones}
-          chartDataAccessibilitySummary={combinedChartAccessibilitySummary}
-          presentation="standard"
-        />
-      ) : (
-        <RetirementIncomeChartAdapter
-          key={view}
-          retirementIncomeSeries={personBundles[view].series}
-          retirementIncomeChartParameters={personBundles[view].parameters}
-          retirementIncomeChartLimits={personBundles[view].limits}
-          validationIssues={validationIssues.filter(
-            (issue) =>
-              issue.personId === view || issue.field === "jointRetirement"
-          )}
-          chartDescription={`This is ${view === "you" ? "Your" : "Partner’s"} editable retirement-income chart. The target line is the shared household target; household shortfall is shown in Combined. Estimated Income Tax can appear before ${view === "you" ? "your" : "Partner’s"} retirement where a pension or employment income starts earlier.`}
-          showShortfallOverlay={false}
-          useDataTargets
-          presentation="standard"
-          onChangeChartParameters={
-            onChange
-              ? (patch) =>
-                  onChangeJointPersonChartParameters(
-                    settings,
-                    view,
-                    patch,
-                    onChange
-                  )
-              : undefined
-          }
-          onChangeTargetIncome={
-            onChange
-              ? (value, age) =>
-                  onChangeJointTargetFromPersonChart(
-                    settings,
-                    view,
-                    value,
-                    age,
-                    onChange
-                  )
-              : undefined
-          }
-        />
-      )}
+      <RetirementIncomeChartAdapter
+        retirementIncomeSeries={combinedSeries}
+        retirementIncomeChartParameters={createHouseholdChartParameters(
+          chartParameters,
+          settings,
+          projection
+        )}
+        retirementIncomeChartLimits={chartLimits}
+        alphaLabel="Household gross income"
+        chartTitle="Household Retirement Plan"
+        chartDescription="Gross household income is shown against the shared household target while each source remains attributed to You or Partner. Estimated Income Tax is calculated separately and shown with horizontal blue-grey hatching; red hatching shows a household shortfall. Drag controls update only their named person and source. The editing-control key hides handles, never financial data."
+        useDataTargets
+        timelineMode="calendar"
+        seriesDefinitions={combinedSeriesDefinitions}
+        periodEvents={combinedEvents}
+        staticMilestones={onChange ? [] : combinedMilestones}
+        editableMilestones={onChange ? editableMilestones : undefined}
+        chartDataAccessibilitySummary={combinedChartAccessibilitySummary}
+        presentation="standard"
+        showParameterControls={false}
+        additionalParameterControls={
+          onChange ? (
+            <HouseholdContributionControls
+              bundles={householdBundles}
+              settings={settings}
+              onChange={onChange}
+            />
+          ) : null
+        }
+        validationIssues={validationIssues}
+        onChangeTargetIncome={
+          onChange
+            ? (value, timelineValue) =>
+                onChangeHouseholdTarget(
+                  settings,
+                  projection,
+                  value,
+                  timelineValue,
+                  onChange
+                )
+            : undefined
+        }
+        onChangeEditableMilestone={
+          onChange
+            ? (key, timelineValue) =>
+                onChangeHouseholdMilestone(
+                  settings,
+                  editableMilestones,
+                  key,
+                  timelineValue,
+                  onChange
+                )
+            : undefined
+        }
+      />
 
       <section className="panel" aria-labelledby="household-projection-title">
         <div className="panel-heading">
           <h2 id="household-projection-title">
-            {view === "combined"
-              ? "Monthly household income projection table"
-              : `Monthly ${view === "you" ? "Your" : "Partner’s"} income projection table`}
+            Monthly household income projection table
           </h2>
           <p className="section-copy">
-            {view === "combined"
-              ? "Each row keeps both people's income and estimated Income Tax together against the shared household target."
-              : `Each row shows ${view === "you" ? "Your" : "Partner’s"} contribution to household income. The shared household target is not split between you.`}
+            Each row keeps both people&apos;s income and estimated Income Tax
+            together against the shared household target.
           </p>
         </div>
 
         <ProjectionTableFrame
-          columns={getJointTableColumns(view)}
+          columns={getJointTableColumns()}
           rows={visibleTableRows}
           emptyMessage="No household projection rows are available for the current settings."
           getRowKey={(row) => row.date}
@@ -347,115 +330,403 @@ export function JointRetirementResults({
               </p>
             </>
           }
-          renderCells={(row) => renderJointTableCells(row, view)}
+          renderCells={(row) => renderJointTableCells(row)}
         />
       </section>
     </>
   );
 }
 
+type HouseholdIncomePeriodItem = {
+  startDate: string;
+  endDate: string;
+  sources: string;
+  annualIncomeAfterTax: number;
+  annualTarget: number;
+  annualShortfall: number;
+  annualSurplus: number;
+};
+
+function HouseholdIncomePeriodSummary({
+  items,
+  display,
+}: {
+  items: HouseholdIncomePeriodItem[];
+  display: RetirementIncomeDisplay;
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  const divisor = display === "monthly" ? 12 : 1;
+  const period = display === "monthly" ? "a month" : "a year";
+
+  return (
+    <div className="summary-status-block">
+      <h3>Income at different periods</h3>
+      <p className="section-copy">
+        These periods provide a text version of the important household income
+        changes shown in the chart. Dates use the combined calendar timeline.
+      </p>
+      <div
+        className="summary-table-shell"
+        aria-label="Household income by period table"
+        tabIndex={0}
+      >
+        <table className="summary-age-range-table">
+          <thead>
+            <tr>
+              <th scope="col">Period</th>
+              <th scope="col">Sources</th>
+              <th scope="col">Estimated take-home income</th>
+              <th scope="col">Household target after estimated tax</th>
+              <th scope="col">Difference</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={`${item.startDate}-${item.endDate}-${item.sources}`}>
+                <th scope="row">
+                  {formatDate(item.startDate)} to {formatDate(item.endDate)}
+                </th>
+                <td>{item.sources}</td>
+                <td>
+                  {formatCurrencyDetailed(item.annualIncomeAfterTax / divisor)}{" "}
+                  {period}
+                </td>
+                <td>
+                  {formatCurrencyDetailed(item.annualTarget / divisor)} {period}
+                </td>
+                <td>
+                  {formatShortfallOrSurplus(
+                    item.annualShortfall / divisor,
+                    item.annualSurplus / divisor
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function createHouseholdIncomePeriodItems(
+  projection: JointRetirementProjection,
+  points: RetirementIncomePoint[],
+  definitions: RetirementIncomeChartSeriesDefinition[]
+): HouseholdIncomePeriodItem[] {
+  const pointsByMonth = new Map(
+    points.map((point) => [calendarMonth(point.date), point])
+  );
+  const records = projection.rows
+    .filter((row) => row.target !== null)
+    .map((row) => {
+      const point = pointsByMonth.get(calendarMonth(row.date));
+      const sources = definitions
+        .map((definition) => {
+          const amount = point?.incomeSeries?.find(
+            (series) => series.key === definition.key
+          )?.annualAmount;
+          return amount && amount > 0 ? definition.label : null;
+        })
+        .filter((source): source is string => source !== null);
+
+      return {
+        row,
+        sources:
+          sources.length > 0
+            ? sources.join(", ")
+            : "No household income modelled",
+        signature: `${sources.join("|")}|${row.target}`,
+      };
+    });
+
+  if (records.length === 0) {
+    return [];
+  }
+
+  const items: HouseholdIncomePeriodItem[] = [];
+  let current = records[0];
+
+  for (const next of records.slice(1)) {
+    if (next.signature === current.signature) {
+      continue;
+    }
+
+    items.push(createHouseholdIncomePeriodItem(current, next.row.date));
+    current = next;
+  }
+
+  items.push(
+    createHouseholdIncomePeriodItem(current, projection.householdEndMonth)
+  );
+  return items;
+}
+
+function createHouseholdIncomePeriodItem(
+  record: {
+    row: HouseholdProjectionRow;
+    sources: string;
+  },
+  endDate: string
+): HouseholdIncomePeriodItem {
+  return {
+    startDate: record.row.date,
+    endDate,
+    sources: record.sources,
+    annualIncomeAfterTax: record.row.household.netIncome * 12,
+    annualTarget: record.row.target ?? 0,
+    annualShortfall: record.row.household.shortfall * 12,
+    annualSurplus: record.row.household.surplus * 12,
+  };
+}
+
+function createHouseholdStatusItems(
+  projection: JointRetirementProjection,
+  outcome: RetirementOutcomeBanner
+) {
+  const assessedRows = projection.rows.filter((row) => row.target !== null);
+  const firstShortfall = assessedRows.find(
+    (row) => row.household.shortfall > 0
+  );
+  const largestShortfall = Math.max(
+    0,
+    ...assessedRows.map((row) => row.household.shortfall)
+  );
+
+  return [
+    {
+      label: "Overall status",
+      value: outcome.label,
+    },
+    {
+      label: "Target shortfall",
+      value: firstShortfall
+        ? `${formatCurrencyDetailed(largestShortfall * 12)} a year at its largest`
+        : "Target met throughout assessed periods",
+    },
+    {
+      label: "Main issue",
+      value: firstShortfall
+        ? `First household shortfall from ${formatDate(firstShortfall.date)}`
+        : "No household shortfall modelled",
+    },
+    {
+      label: "Income basis",
+      value:
+        "After estimated Income Tax, calculated separately for each person; PAYE timing and National Insurance are excluded",
+    },
+  ];
+}
+
+function HouseholdContributionControls({
+  bundles,
+  settings,
+  onChange,
+}: {
+  bundles: Record<PersonView, JointPersonChartBundle>;
+  settings: PensionSettings;
+  onChange: SettingsFieldOnChange;
+}) {
+  return (
+    <section
+      className="household-chart-input-controls"
+      aria-label="Household strategy inputs"
+    >
+      {(["you", "partner"] as const).map((owner) => {
+        const bundle = bundles[owner];
+        const parameters = bundle.parameters;
+        const ownerLabel = owner === "you" ? "Your" : "Partner";
+        const residualAccounts = summarizeFlexibleWithdrawalInsights(
+          bundle.rows,
+          bundle.settings
+        ).residualAccounts;
+        return (
+          <section
+            key={owner}
+            className="household-chart-person-controls"
+            aria-label={`${ownerLabel} household chart controls`}
+          >
+            <h4>{ownerLabel} inputs</h4>
+            <RetirementIncomeControlGrid
+              displayedAlphaMonthlyAddedPension={
+                parameters.alphaMonthlyAddedPension
+              }
+              flexibleAccountWarnings={createFlexibleAccountWarnings(
+                new Set(),
+                residualAccounts
+              )}
+              hasUnavoidableSurplus={false}
+              isaMonthlyContribution={parameters.isaMonthlyContribution}
+              lisaMonthlyContribution={parameters.lisaMonthlyContribution}
+              limits={bundle.limits}
+              labelPrefix={ownerLabel}
+              onChangeParameters={(patch) =>
+                onChangeJointPersonChartParameters(
+                  settings,
+                  owner,
+                  patch,
+                  onChange
+                )
+              }
+              partialRetirementEnabled={parameters.partialRetirementEnabled}
+              partialRetirementWorkPercent={
+                parameters.partialRetirementWorkPercent
+              }
+              showAlpha={parameters.showAlpha}
+              showIsa={parameters.showIsa}
+              showLisa={parameters.showLisa}
+              showSipp={parameters.showSipp}
+              sippMonthlyContribution={parameters.sippMonthlyContribution}
+            />
+          </section>
+        );
+      })}
+    </section>
+  );
+}
+
 type JointPersonChartBundle = {
   settings: PensionSettings;
+  rows: ProjectionRow[];
   series: RetirementIncomePoint[];
   parameters: RetirementIncomeChartParameters;
   limits: RetirementIncomeChartLimits;
 };
 
-function createJointPersonChartBundles(
+type PersonControlBundle = Pick<
+  JointPersonChartBundle,
+  "settings" | "parameters" | "limits"
+>;
+
+type HouseholdEditableMilestone = RetirementIncomeChartEditableMilestone & {
+  parameterKey: RetirementIncomeMilestoneKey;
+  ageLimit: RetirementIncomeChartLimits[RetirementIncomeMilestoneKey];
+};
+
+function createPersonControlBundles(
+  settings: PensionSettings
+): Record<PersonView, PersonControlBundle> {
+  const youSettings = createStandalonePersonSettings(settings);
+  const partnerSettings = createPartnerIndividualSettings(settings);
+
+  return {
+    you: createPersonControlBundle(youSettings),
+    partner: createPersonControlBundle(partnerSettings),
+  };
+}
+
+function createPersonControlBundle(settings: PensionSettings) {
+  return {
+    settings,
+    parameters: createRetirementIncomeChartParameters(settings),
+    limits: createRetirementIncomeChartLimits(settings),
+  };
+}
+
+function createHouseholdPersonChartBundles(
   projection: JointRetirementProjection,
   settings: PensionSettings
 ): Record<PersonView, JointPersonChartBundle> {
-  const partnerSettings = createPartnerCalculationSettings(settings);
+  const youSettings = createStandalonePersonSettings(settings);
+  const partnerSettings = createPartnerIndividualSettings(settings);
 
   return {
-    you: createJointPersonChartBundle(projection, settings, settings, "you"),
-    partner: createJointPersonChartBundle(
-      projection,
-      settings,
+    you: createPersonChartBundle(
+      projection.people.you.rows,
+      youSettings,
+      createHouseholdSeriesSettings(youSettings)
+    ),
+    partner: createPersonChartBundle(
+      projection.people.partner.rows,
       partnerSettings,
-      "partner"
+      createHouseholdSeriesSettings(partnerSettings)
     ),
   };
 }
 
-function createJointPersonChartBundle(
-  projection: JointRetirementProjection,
-  householdSettings: PensionSettings,
+function createPersonChartBundle(
+  rows: ProjectionRow[],
   personSettings: PensionSettings,
-  owner: PersonView
+  seriesSettings: PensionSettings = personSettings
 ): JointPersonChartBundle {
-  const personRows = projection.people[owner].rows;
-  const personSeries = createRetirementIncomeSeries(personRows, {
-    ...personSettings,
-    desiredRetirementIncome: 0,
-    spendingStrategyType: "FLAT",
-    jointRetirement: {
-      ...personSettings.jointRetirement,
-      enabled: false,
-    },
-  });
-  const targetByMonth = new Map(
-    projection.rows.map((row) => [calendarMonth(row.date), row.target ?? 0])
-  );
-  const series = personSeries.map((point) => ({
-    ...point,
-    targetIncomeAnnual: targetByMonth.get(calendarMonth(point.date)) ?? 0,
-    shortfallAnnual: 0,
-  }));
-  const laterRetiree = getLaterRetirementSettings(householdSettings);
-  const parameters = createRetirementIncomeChartParameters(personSettings);
-
   return {
     settings: personSettings,
-    series,
-    parameters: {
-      ...parameters,
-      targetIncomeAnnual:
-        householdSettings.jointRetirement.fullyRetiredDesiredRetirementIncome,
-      spendingSmileEnabled:
-        householdSettings.jointRetirement.spendingStrategyType ===
-        "SPENDING_SMILE",
-      goGoPercentage:
-        householdSettings.jointRetirement.spendingSmile.goGoPercentage,
-      slowGoStartAge: mapHouseholdAgeToPerson(
-        laterRetiree,
-        householdSettings.jointRetirement.spendingSmile.slowGoStartAge,
-        personSettings
-      ),
-      slowGoPercentage:
-        householdSettings.jointRetirement.spendingSmile.slowGoPercentage,
-      noGoStartAge: mapHouseholdAgeToPerson(
-        laterRetiree,
-        householdSettings.jointRetirement.spendingSmile.noGoStartAge,
-        personSettings
-      ),
-      noGoPercentage:
-        householdSettings.jointRetirement.spendingSmile.noGoPercentage,
-    },
+    rows,
+    series: createRetirementIncomeSeries(rows, seriesSettings),
+    parameters: createRetirementIncomeChartParameters(personSettings),
     limits: createRetirementIncomeChartLimits(personSettings),
   };
 }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
+function createStandalonePersonSettings(
+  settings: PensionSettings
+): PensionSettings {
+  return {
+    ...settings,
+    partner: undefined,
+    jointRetirement: { ...settings.jointRetirement, enabled: false },
+  };
+}
+
+function createHouseholdEditableMilestones(
+  bundles: Record<PersonView, PersonControlBundle>
+): HouseholdEditableMilestone[] {
+  return (["you", "partner"] as const).flatMap((owner) => {
+    const bundle = bundles[owner];
+    const ownerLabel = owner === "you" ? "You" : "Partner";
+
+    return createRetirementIncomeMilestones(bundle.parameters, true)
+      .filter(
+        (milestone) => milestone.editable && milestone.sourceType !== "target"
+      )
+      .map((milestone) => {
+        const ageLimit = bundle.limits[milestone.key];
+        return {
+          key: `${owner}:${milestone.key}`,
+          label: `${ownerLabel}: ${milestone.label}`,
+          // Keep the visible pill label concise while making ownership clear.
+          // The full person/source wording remains in the accessible label.
+          shortLabel: `${owner === "you" ? "P1" : "P2"} ${milestone.shortLabel}`,
+          timelineValue: ageToCalendarTimeline(bundle.settings, milestone.age),
+          colour: milestone.colour,
+          owner,
+          sourceType: milestone.sourceType,
+          parameterKey: milestone.key,
+          ageLimit,
+          limit: {
+            min: ageToCalendarTimeline(bundle.settings, ageLimit.min),
+            max: ageToCalendarTimeline(bundle.settings, ageLimit.max),
+            step: ageLimit.step,
+          },
+        };
+      });
+  });
+}
+
+function ageToCalendarTimeline(settings: PensionSettings, age: number) {
+  return calendarTimelineValue(addYearsToIsoDate(settings.dateOfBirth, age));
+}
+
+function createHouseholdSeriesSettings(
+  settings: PensionSettings
+): PensionSettings {
+  return {
+    ...settings,
+    desiredRetirementIncome: 0,
+    spendingStrategyType: "FLAT",
+    flexibleWithdrawalPriority: [],
+  };
+}
+
 function createHouseholdSeriesDefinitions(
   bundles: Record<PersonView, JointPersonChartBundle>
 ): RetirementIncomeChartSeriesDefinition[] {
   const definitions: RetirementIncomeChartSeriesDefinition[] = [];
-  const sources = [
-    ["isaIncomeAnnual", "ISA"],
-    ["lisaIncomeAnnual", "LISA"],
-    ["sippIncomeAnnual", "SIPP"],
-    ["csAvcIncomeAnnual", "Civil Service AVC"],
-    ["partialRetirementIncomeAnnual", "employment income"],
-    ["alphaIncomeAnnual", "Alpha pension"],
-    ["classicIncomeAnnual", "classic pension"],
-    ["classicPlusIncomeAnnual", "classic plus pension"],
-    ["nuvosIncomeAnnual", "Nuvos pension"],
-    ["premiumIncomeAnnual", "Premium pension"],
-    ["statePensionIncomeAnnual", "State Pension"],
-  ] as const;
 
-  for (const [sourceKey, label] of sources) {
+  for (const sourceKey of incomeKeys) {
     for (const owner of ["you", "partner"] as const) {
       const person = bundles[owner].settings;
       const enabled =
@@ -463,28 +734,26 @@ function createHouseholdSeriesDefinitions(
           ? bundles[owner].series.some(
               (point) => point.partialRetirementIncomeAnnual > 0
             )
-          : sourceKey === "isaIncomeAnnual"
-            ? person.showIsa
-            : sourceKey === "lisaIncomeAnnual"
-              ? person.showLisa
-              : sourceKey === "sippIncomeAnnual"
-                ? person.showSipp
-                : sourceKey === "csAvcIncomeAnnual"
-                  ? person.showCsAvc
-                  : sourceKey === "alphaIncomeAnnual"
-                    ? person.showAlpha
-                    : sourceKey === "classicIncomeAnnual"
-                      ? person.showClassic
-                      : sourceKey === "classicPlusIncomeAnnual"
-                        ? person.showClassicPlus
-                        : sourceKey === "nuvosIncomeAnnual"
-                          ? person.showNuvos
-                          : sourceKey === "premiumIncomeAnnual"
-                            ? person.showPremium
-                            : person.showStatePension;
+          : isRetirementIncomeSourceEnabled(sourceKey, {
+              showAlpha: person.showAlpha,
+              showClassic: person.showClassic,
+              showClassicPlus: person.showClassicPlus,
+              showCsAvc: person.showCsAvc,
+              partialRetirementEnabled: person.partialRetirementEnabled,
+              showIsa: person.showIsa,
+              showLisa: person.showLisa,
+              showNuvos: person.showNuvos,
+              showPremium: person.showPremium,
+              showSipp: person.showSipp,
+              showStatePension: person.showStatePension,
+            });
       if (!enabled) {
         continue;
       }
+      const label =
+        sourceKey === "partialRetirementIncomeAnnual"
+          ? "employment income"
+          : sourceMeta[sourceKey].label;
       definitions.push({
         key: `${owner}-${sourceKey}`,
         label: `${owner === "you" ? "Your" : "Partner"} ${label}`,
@@ -521,19 +790,6 @@ function createJointRetirementIncomeSeries(
   projection: JointRetirementProjection,
   bundles: Record<PersonView, JointPersonChartBundle>
 ): RetirementIncomePoint[] {
-  const sourceKeys = [
-    "isaIncomeAnnual",
-    "lisaIncomeAnnual",
-    "sippIncomeAnnual",
-    "csAvcIncomeAnnual",
-    "partialRetirementIncomeAnnual",
-    "alphaIncomeAnnual",
-    "classicIncomeAnnual",
-    "classicPlusIncomeAnnual",
-    "nuvosIncomeAnnual",
-    "premiumIncomeAnnual",
-    "statePensionIncomeAnnual",
-  ] as const;
   const personPoints = {
     you: new Map(
       bundles.you.series.map((point) => [calendarMonth(point.date), point])
@@ -546,7 +802,7 @@ function createJointRetirementIncomeSeries(
   return projection.rows.map((row) => {
     const grossIncomeAnnual = row.household.grossIncome * 12;
     const netIncomeAnnual = row.household.netIncome * 12;
-    const incomeSeries = sourceKeys.flatMap((sourceKey) =>
+    const incomeSeries = incomeKeys.flatMap((sourceKey) =>
       (["you", "partner"] as const).flatMap((owner) => {
         const point = personPoints[owner].get(calendarMonth(row.date));
         const amount = point?.[sourceKey] ?? 0;
@@ -688,71 +944,77 @@ function onChangeJointPersonChartParameters(
   onChange: SettingsFieldOnChange
 ) {
   const currentPerson =
-    owner === "you" ? settings : createPartnerCalculationSettings(settings);
-  const personPatch = selectPersonChartPatch(patch);
-  if (Object.keys(personPatch).length > 0) {
-    const nextPerson = applyRetirementIncomeChartParameterPatch(
-      currentPerson,
-      personPatch
-    );
-    const changedPersonSettings = selectChangedPersonSettings(
-      currentPerson,
-      nextPerson
-    );
-    if (owner === "you") {
-      (
-        Object.keys(changedPersonSettings) as Array<keyof PensionSettings>
-      ).forEach((key) => onChange(key, nextPerson[key]));
-    } else if (settings.partner) {
-      onChange("partner", {
-        ...settings.partner,
-        ...changedPersonSettings,
-      });
-    }
-  }
-
-  const later = getLaterRetirementSettings(settings);
-  const nextSmile = { ...settings.jointRetirement.spendingSmile };
-  const selected = currentPerson;
-  (["goGoPercentage", "slowGoPercentage", "noGoPercentage"] as const).forEach(
-    (key) => {
-      if (patch[key] !== undefined) {
-        Object.assign(
-          nextSmile,
-          updateSpendingSmilePercentage(nextSmile, key, patch[key])
-        );
-      }
-    }
+    owner === "you"
+      ? createStandalonePersonSettings(settings)
+      : createPartnerIndividualSettings(settings);
+  const nextPerson = applyRetirementIncomeChartParameterPatch(
+    currentPerson,
+    patch
   );
-  (["slowGoStartAge", "noGoStartAge"] as const).forEach((key) => {
-    if (patch[key] === undefined) {
-      return;
-    }
-    const selectedDate = addYearsToIsoDate(selected.dateOfBirth, patch[key]);
-    const householdAge = calculateDateAge(later.dateOfBirth, selectedDate);
-    Object.assign(
-      nextSmile,
-      updateSpendingSmileStartAge(
-        nextSmile,
-        key,
-        householdAge,
-        later.requirementAge,
-        later.lifeExpectancy
-      )
-    );
-  });
-  if (
-    JSON.stringify(nextSmile) !==
-    JSON.stringify(settings.jointRetirement.spendingSmile)
-  ) {
-    onChange("jointRetirement", {
-      ...settings.jointRetirement,
-      spendingSmile: nextSmile,
+  const changedPersonSettings = selectChangedPersonSettings(
+    currentPerson,
+    nextPerson
+  );
+  if (owner === "you") {
+    (
+      Object.keys(changedPersonSettings) as Array<keyof PensionSettings>
+    ).forEach((key) => onChange(key, nextPerson[key]));
+  } else if (settings.partner) {
+    onChange("partner", {
+      ...settings.partner,
+      ...changedPersonSettings,
     });
   }
 }
 
+function onChangeHouseholdMilestone(
+  settings: PensionSettings,
+  milestones: HouseholdEditableMilestone[],
+  key: string,
+  timelineValue: number,
+  onChange: SettingsFieldOnChange
+) {
+  const milestone = milestones.find((candidate) => candidate.key === key);
+  if (!milestone) {
+    return;
+  }
+
+  const age = snapToLimit(
+    milestone.ageLimit.min + timelineValue - milestone.limit.min,
+    milestone.ageLimit
+  );
+  onChangeJointPersonChartParameters(
+    settings,
+    milestone.owner,
+    { [milestone.parameterKey]: age },
+    onChange
+  );
+}
+
+function onChangeHouseholdTarget(
+  settings: PensionSettings,
+  projection: JointRetirementProjection,
+  value: number,
+  timelineValue: number | undefined,
+  onChange: SettingsFieldOnChange
+) {
+  const bothRetiredTimeline = calendarTimelineValue(
+    projection.bothRetiredMonth
+  );
+  const targetKey =
+    timelineValue !== undefined && timelineValue < bothRetiredTimeline
+      ? "transitionDesiredRetirementIncome"
+      : "fullyRetiredDesiredRetirementIncome";
+
+  onChange("jointRetirement", {
+    ...settings.jointRetirement,
+    [targetKey]: value,
+  });
+}
+
 const chartPersonSettingKeys = [
+  "desiredRetirementIncome",
+  "spendingSmile",
   "requirementAge",
   "alphaPensionLeaveAge",
   "alphaPensionDrawAge",
@@ -800,70 +1062,6 @@ function selectChangedPersonSettings(
   return changed;
 }
 
-function selectPersonChartPatch(
-  patch: Partial<RetirementIncomeChartParameters>
-) {
-  const result = { ...patch };
-  for (const key of [
-    "targetIncomeAnnual",
-    "goGoPercentage",
-    "slowGoStartAge",
-    "slowGoPercentage",
-    "noGoStartAge",
-    "noGoPercentage",
-  ] as const) {
-    delete result[key];
-  }
-  return result;
-}
-
-function onChangeJointTargetFromPersonChart(
-  settings: PensionSettings,
-  owner: PersonView,
-  value: number,
-  age: number | undefined,
-  onChange: SettingsFieldOnChange
-) {
-  const person =
-    owner === "you"
-      ? settings
-      : (createPartnerCalculationSettings(settings) as PensionSettings);
-  const targetDate =
-    age === undefined
-      ? "9999-12-01"
-      : addYearsToIsoDate(person.dateOfBirth, age);
-  const later = getLaterRetirementSettings(settings);
-  const key =
-    calendarMonth(targetDate) <
-    calendarMonth(addYearsToIsoDate(later.dateOfBirth, later.requirementAge))
-      ? "transitionDesiredRetirementIncome"
-      : "fullyRetiredDesiredRetirementIncome";
-  onChange("jointRetirement", {
-    ...settings.jointRetirement,
-    [key]: value,
-  });
-}
-
-function getLaterRetirementSettings(settings: PensionSettings) {
-  const partner = createPartnerCalculationSettings(settings);
-  const youDate = calendarMonth(
-    addYearsToIsoDate(settings.dateOfBirth, settings.requirementAge)
-  );
-  const partnerDate = calendarMonth(
-    addYearsToIsoDate(partner.dateOfBirth, partner.requirementAge)
-  );
-  return partnerDate >= youDate ? partner : settings;
-}
-
-function mapHouseholdAgeToPerson(
-  laterRetiree: PensionSettings,
-  age: number,
-  person: PensionSettings
-) {
-  const date = addYearsToIsoDate(laterRetiree.dateOfBirth, age);
-  return calculateDateAge(person.dateOfBirth, date);
-}
-
 function calendarMonth(date: string) {
   return date.slice(0, 7);
 }
@@ -875,70 +1073,26 @@ function calendarTimelineValue(date: string) {
   return year + (month - 1) / 12 + (day - 1) / 365;
 }
 
-function getJointTableColumns(view: View): TableColumn[] {
-  return view === "combined"
-    ? [
-        { key: "date", label: "Date", width: "7rem" },
-        {
-          key: "target",
-          label: "Monthly household target",
-          width: "10rem",
-        },
-        { key: "gross", label: "Monthly gross income", width: "10rem" },
-        {
-          key: "tax",
-          label: "Estimated monthly Income Tax",
-          width: "10rem",
-        },
-        { key: "net", label: "Monthly net income", width: "10rem" },
-        { key: "shortfall", label: "Monthly shortfall", width: "9rem" },
-      ]
-    : [
-        { key: "date", label: "Date", width: "7rem" },
-        { key: "gross", label: "Monthly gross income", width: "10rem" },
-        {
-          key: "tax",
-          label: "Estimated monthly Income Tax",
-          width: "10rem",
-        },
-        { key: "net", label: "Monthly net income", width: "10rem" },
-        {
-          key: "flexible",
-          label: "Monthly flexible withdrawals",
-          width: "11rem",
-        },
-      ];
+function getJointTableColumns(): TableColumn[] {
+  return [
+    { key: "date", label: "Date", width: "7rem" },
+    {
+      key: "target",
+      label: "Monthly household target",
+      width: "10rem",
+    },
+    { key: "gross", label: "Monthly gross income", width: "10rem" },
+    {
+      key: "tax",
+      label: "Estimated monthly Income Tax",
+      width: "10rem",
+    },
+    { key: "net", label: "Monthly net income", width: "10rem" },
+    { key: "shortfall", label: "Monthly shortfall", width: "9rem" },
+  ];
 }
 
-function renderJointTableCells(row: JointTableRow, view: View) {
-  if (view === "combined") {
-    return [
-      <ProjectionDateCell
-        key={`${row.date}-date`}
-        date={row.date}
-        milestones={row.milestones}
-        milestoneDates={row.milestoneDates}
-      />,
-      row.target === null
-        ? "Not assessed"
-        : formatCurrencyDetailed(row.target / 12),
-      formatCurrencyDetailed(row.household.grossIncome),
-      formatCurrencyDetailed(row.household.estimatedIncomeTax),
-      formatCurrencyDetailed(row.household.netIncome),
-      formatCurrencyDetailed(row.household.shortfall),
-    ];
-  }
-
-  const person = view === "you" ? row.people.you : row.people.partner;
-  const gross = person?.totalMonthlyIncomeBeforeTax ?? 0;
-  const tax = person?.monthlyIncomeTax ?? 0;
-  const flexible = person
-    ? person.monthlySippPension +
-      person.monthlyCsAvcPension +
-      person.monthlyIsaPension +
-      person.monthlyLisaPension
-    : 0;
-
+function renderJointTableCells(row: JointTableRow) {
   return [
     <ProjectionDateCell
       key={`${row.date}-date`}
@@ -946,24 +1100,20 @@ function renderJointTableCells(row: JointTableRow, view: View) {
       milestones={row.milestones}
       milestoneDates={row.milestoneDates}
     />,
-    formatCurrencyDetailed(gross),
-    formatCurrencyDetailed(tax),
-    formatCurrencyDetailed(gross - tax),
-    formatCurrencyDetailed(flexible),
+    row.target === null
+      ? "Not assessed"
+      : formatCurrencyDetailed(row.target / 12),
+    formatCurrencyDetailed(row.household.grossIncome),
+    formatCurrencyDetailed(row.household.estimatedIncomeTax),
+    formatCurrencyDetailed(row.household.netIncome),
+    formatCurrencyDetailed(row.household.shortfall),
   ];
 }
 
-function createJointTableRows(
-  rows: HouseholdProjectionRow[],
-  view: View
-): JointTableRow[] {
-  const rowsForView = rows.filter(
-    (row) => view === "combined" || row.people[view] !== null
-  );
-
-  return rowsForView.map((row, index) => {
-    const previous = rowsForView[index - 1];
-    const milestones = getJointRowMilestones(row, previous, view);
+function createJointTableRows(rows: HouseholdProjectionRow[]): JointTableRow[] {
+  return rows.map((row, index) => {
+    const previous = rows[index - 1];
+    const milestones = getJointRowMilestones(row, previous);
     const milestoneDates = [
       ...(row.people.you?.milestoneDates ?? []),
       ...(row.people.partner?.milestoneDates ?? []),
@@ -979,20 +1129,15 @@ function createJointTableRows(
 
 function getJointRowMilestones(
   row: HouseholdProjectionRow,
-  previous: HouseholdProjectionRow | undefined,
-  view: View
+  previous: HouseholdProjectionRow | undefined
 ) {
-  const personMilestones =
-    view === "combined"
-      ? [
-          ...(row.people.you?.milestones.map(
-            (milestone) => `You: ${milestone}`
-          ) ?? []),
-          ...(row.people.partner?.milestones.map(
-            (milestone) => `Partner: ${milestone}`
-          ) ?? []),
-        ]
-      : (row.people[view]?.milestones ?? []);
+  const personMilestones = [
+    ...(row.people.you?.milestones.map((milestone) => `You: ${milestone}`) ??
+      []),
+    ...(row.people.partner?.milestones.map(
+      (milestone) => `Partner: ${milestone}`
+    ) ?? []),
+  ];
   const previousTarget = previous?.target;
   const targetBegins = row.target !== null && previousTarget == null;
   const targetChanges =
@@ -1000,14 +1145,11 @@ function getJointRowMilestones(
     previousTarget !== null &&
     previousTarget !== undefined &&
     Math.abs(row.target - previousTarget) > 0.005;
-  const householdMilestones =
-    view !== "combined"
-      ? []
-      : targetBegins
-        ? ["Household target begins"]
-        : targetChanges
-          ? ["Household target changes"]
-          : [];
+  const householdMilestones = targetBegins
+    ? ["Household target begins"]
+    : targetChanges
+      ? ["Household target changes"]
+      : [];
 
   return [...new Set([...householdMilestones, ...personMilestones])];
 }

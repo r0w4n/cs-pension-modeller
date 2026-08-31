@@ -68,7 +68,7 @@ export function createHouseholdChartMilestones(
 }
 
 // The branches mirror the independently enabled person-owned sources so event
-// ownership remains explicit in the read-only household inspection details.
+// ownership remains explicit in household period inspection details.
 function addPersonEvents(
   events: RetirementIncomeChartEvent[],
   person: PersonEventContext

@@ -1,7 +1,9 @@
 import { RetirementIncomeChart } from "../RetirementIncomeChart";
+import type { ReactNode } from "react";
 import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
+  RetirementIncomeChartEditableMilestone,
   RetirementIncomeChartEvent,
   RetirementIncomeChartStaticMilestone,
   RetirementIncomeChartSeriesDefinition,
@@ -23,6 +25,7 @@ export function RetirementIncomeChartAdapter({
   alphaLabel = "Alpha pension",
   statePensionEditable = true,
   chartDescription,
+  chartTitle,
   chartDataAccessibilitySummary,
   readOnly = false,
   useDataTargets = false,
@@ -31,11 +34,15 @@ export function RetirementIncomeChartAdapter({
   seriesDefinitions,
   periodEvents,
   staticMilestones,
+  editableMilestones,
   showShortfallOverlay = true,
+  showParameterControls = true,
+  additionalParameterControls,
   onChangeTargetIncome,
   presentation = "standard",
   validationIssues,
   onChangeChartParameters,
+  onChangeEditableMilestone,
 }: {
   retirementIncomeSeries?: RetirementIncomePoint[];
   retirementIncomeChartParameters?: RetirementIncomeChartParameters;
@@ -46,6 +53,7 @@ export function RetirementIncomeChartAdapter({
   alphaLabel?: string;
   statePensionEditable?: boolean;
   chartDescription?: string;
+  chartTitle?: string;
   chartDataAccessibilitySummary?: string;
   readOnly?: boolean;
   useDataTargets?: boolean;
@@ -54,19 +62,23 @@ export function RetirementIncomeChartAdapter({
   seriesDefinitions?: RetirementIncomeChartSeriesDefinition[];
   periodEvents?: RetirementIncomeChartEvent[];
   staticMilestones?: RetirementIncomeChartStaticMilestone[];
+  editableMilestones?: RetirementIncomeChartEditableMilestone[];
   showShortfallOverlay?: boolean;
+  showParameterControls?: boolean;
+  additionalParameterControls?: ReactNode;
   onChangeTargetIncome?: (value: number, age?: number) => void;
   presentation?: RetirementIncomeChartPresentation;
   validationIssues?: PensionValidationIssue[];
   onChangeChartParameters?: (
     patch: Partial<RetirementIncomeChartParameters>
   ) => void;
+  onChangeEditableMilestone?: (key: string, timelineValue: number) => void;
 }) {
   if (
     !retirementIncomeSeries ||
     !retirementIncomeChartParameters ||
     !retirementIncomeChartLimits ||
-    (!onChangeChartParameters && !readOnly)
+    (!onChangeChartParameters && !onChangeEditableMilestone && !readOnly)
   ) {
     return null;
   }
@@ -75,6 +87,7 @@ export function RetirementIncomeChartAdapter({
     data: retirementIncomeSeries,
     alphaLabel,
     chartDescription,
+    chartTitle,
     chartDataAccessibilitySummary,
     hideInactiveLegendItems:
       presentation === "simple" || hideInactiveLegendItems,
@@ -91,7 +104,10 @@ export function RetirementIncomeChartAdapter({
     seriesDefinitions,
     periodEvents,
     staticMilestones,
+    editableMilestones,
     showShortfallOverlay,
+    showParameterControls,
+    additionalParameterControls,
     onChangeTargetIncome,
     validationIssues,
     ...retirementIncomeChartParameters,
@@ -107,8 +123,11 @@ export function RetirementIncomeChartAdapter({
     <RetirementIncomeChart
       {...commonProps}
       readOnly={false}
-      interactionMode="editable-person"
-      onChangeParameters={onChangeChartParameters!}
+      interactionMode={
+        editableMilestones ? "editable-household" : "editable-person"
+      }
+      onChangeParameters={onChangeChartParameters ?? (() => undefined)}
+      onChangeEditableMilestone={onChangeEditableMilestone}
     />
   );
 }

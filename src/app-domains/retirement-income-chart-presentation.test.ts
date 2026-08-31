@@ -1,7 +1,7 @@
 import { getRetirementIncomeChartPresentation } from "./retirement-income-chart-presentation";
 
 describe("retirement income chart presentation", () => {
-  it("hides inline milestones and enables inspection only for a read-only household", () => {
+  it("keeps read-only and editable household presentation modes distinct", () => {
     expect(getRetirementIncomeChartPresentation("readonly-household")).toEqual({
       readOnly: true,
       showInlineMilestones: false,
@@ -11,6 +11,11 @@ describe("retirement income chart presentation", () => {
       readOnly: false,
       showInlineMilestones: true,
       showPeriodInspection: false,
+    });
+    expect(getRetirementIncomeChartPresentation("editable-household")).toEqual({
+      readOnly: false,
+      showInlineMilestones: false,
+      showPeriodInspection: true,
     });
   });
 });

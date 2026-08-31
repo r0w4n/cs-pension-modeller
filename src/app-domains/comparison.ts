@@ -20,6 +20,7 @@ import {
   formatDecimalAge,
   formatPercent,
 } from "../result-projection/formatting";
+import { addYearsToIsoDate } from "../model-date";
 
 export type ComparisonCellValue =
   | string
@@ -56,9 +57,7 @@ export function calculateComparisonInsights(
 ): ComparisonInsights {
   const earliestRetirementResult = results.reduce<ComparisonResult | null>(
     (best, result) =>
-      !best ||
-      result.scenario.settings.requirementAge <
-        best.scenario.settings.requirementAge
+      !best || getRetirementSortValue(result) < getRetirementSortValue(best)
         ? result
         : best,
     null
@@ -66,7 +65,8 @@ export function calculateComparisonInsights(
   const bestTargetResult = results.reduce<ComparisonResult | null>(
     (best, result) =>
       !best ||
-      result.assessment.targetMissMonths < best.assessment.targetMissMonths
+      getComparisonAssessment(result).targetMissMonths <
+        getComparisonAssessment(best).targetMissMonths
         ? result
         : best,
     null
@@ -77,8 +77,10 @@ export function calculateComparisonInsights(
         return result;
       }
 
-      const bestShortfall = best.assessment.largestAnnualShortfall;
-      const resultShortfall = result.assessment.largestAnnualShortfall;
+      const bestShortfall =
+        getComparisonAssessment(best).largestAnnualShortfall;
+      const resultShortfall =
+        getComparisonAssessment(result).largestAnnualShortfall;
 
       return resultShortfall < bestShortfall ? result : best;
     },
@@ -99,8 +101,7 @@ export function calculateComparisonInsights(
   );
   const highestLaterIncomeResult = results.reduce<ComparisonResult | null>(
     (best, result) =>
-      !best ||
-      result.lifeExpectancyAnnualIncome > best.lifeExpectancyAnnualIncome
+      !best || getComparisonLaterIncome(result) > getComparisonLaterIncome(best)
         ? result
         : best,
     null
@@ -115,6 +116,200 @@ export function calculateComparisonInsights(
   };
 }
 
+export function getComparisonAssessment(result: ComparisonResult) {
+  return result.household?.assessment ?? result.assessment;
+}
+
+function getRetirementSortValue(result: ComparisonResult) {
+  return result.household
+    ? Date.parse(result.household.firstRetirementDate)
+    : Date.parse(
+        addYearsToIsoDate(
+          result.scenario.settings.dateOfBirth,
+          result.scenario.settings.requirementAge
+        )
+      );
+}
+
+export function getComparisonLaterIncome(result: ComparisonResult) {
+  return result.household
+    ? result.household.assessment.fullyRetiredAnnualIncome
+    : result.lifeExpectancyAnnualIncome;
+}
+
+function buildHouseholdComparisonTableRows(
+  results: ComparisonResult[],
+  retirementIncomeDisplay: RetirementIncomeDisplay,
+  hideFlexibleAssetsSection: boolean
+): ComparisonTableRow[] {
+  return [
+    createComparisonSection("Household headline outcome", results, [
+      ["Status", (result) => renderComparisonStatusCell(result)],
+      [
+        "Target income",
+        (result) => {
+          const household = result.household;
+          if (!household) return "n/a";
+          const assessment = household.assessment;
+          const transition = formatRecurringAnnualCurrency(
+            assessment.firstRetirementAnnualTarget,
+            retirementIncomeDisplay
+          );
+          const fullyRetired = formatRecurringAnnualCurrency(
+            assessment.fullyRetiredAnnualTarget,
+            retirementIncomeDisplay
+          );
+          return transition === fullyRetired
+            ? fullyRetired
+            : `${transition} until ${formatDate(household.bothRetiredDate)}; ${fullyRetired} afterwards`;
+        },
+      ],
+      [
+        "Lowest household income",
+        (result) =>
+          formatRecurringAnnualCurrency(
+            getComparisonAssessment(result).lowestAnnualIncome,
+            retirementIncomeDisplay
+          ),
+      ],
+      [
+        "Months below target",
+        (result) =>
+          renderComparisonToneCell(
+            formatTargetMissDuration(
+              getComparisonAssessment(result).targetMissMonths
+            ),
+            getComparisonAssessment(result).targetMissMonths > 0
+              ? "caution"
+              : "good"
+          ),
+      ],
+      [
+        "Largest household shortfall",
+        (result) =>
+          renderComparisonToneCell(
+            formatRecurringAnnualCurrency(
+              getComparisonAssessment(result).largestAnnualShortfall,
+              retirementIncomeDisplay
+            ),
+            getComparisonAssessment(result).largestAnnualShortfall > 0
+              ? "caution"
+              : "good"
+          ),
+      ],
+      [
+        "Lifetime household shortfall",
+        (result) =>
+          renderComparisonToneCell(
+            formatCurrencyDetailed(
+              getComparisonAssessment(result).totalLifetimeShortfall
+            ),
+            getComparisonAssessment(result).totalLifetimeShortfall > 0
+              ? "caution"
+              : "good"
+          ),
+      ],
+    ]),
+    createComparisonSection("Household timing", results, [
+      [
+        "First retirement",
+        (result) =>
+          result.household?.firstRetirementDate
+            ? formatDate(result.household.firstRetirementDate)
+            : "n/a",
+      ],
+      [
+        "Both retired",
+        (result) =>
+          result.household?.bothRetiredDate
+            ? formatDate(result.household.bothRetiredDate)
+            : "n/a",
+      ],
+      [
+        "Household projection ends",
+        (result) =>
+          result.household?.householdEndDate
+            ? formatDate(result.household.householdEndDate)
+            : "n/a",
+      ],
+    ]),
+    createComparisonSection("Household income", results, [
+      [
+        "Income at first retirement",
+        (result) =>
+          formatRecurringAnnualCurrency(
+            result.household?.assessment.firstRetirementAnnualIncome ?? 0,
+            retirementIncomeDisplay
+          ),
+      ],
+      [
+        "Income once both are retired",
+        (result) =>
+          formatRecurringAnnualCurrency(
+            result.household?.assessment.fullyRetiredAnnualIncome ?? 0,
+            retirementIncomeDisplay
+          ),
+      ],
+    ]),
+    ...(hideFlexibleAssetsSection
+      ? []
+      : [
+          createComparisonSection("Household flexible assets", results, [
+            [
+              "Final household flexible assets",
+              (result) =>
+                formatCurrencyDetailed(
+                  result.household?.finalFlexibleAssets ?? 0
+                ),
+            ],
+            [
+              "First configured flexible fund exhausted",
+              (result) => {
+                const assessment = result.household?.assessment;
+                return assessment?.firstFlexibleFundExhaustionAccount &&
+                  assessment.firstFlexibleFundExhaustionDate
+                  ? `${assessment.firstFlexibleFundExhaustionAccount} (${formatDate(assessment.firstFlexibleFundExhaustionDate)})`
+                  : "None";
+              },
+            ],
+          ]),
+        ]),
+    createComparisonSection("Household assumptions", results, [
+      [
+        "Projection basis",
+        (result) =>
+          result.scenario.settings.projectionBasis === "real"
+            ? "Real terms"
+            : "Nominal",
+      ],
+      [
+        "Tax basis",
+        () =>
+          "Household target after estimated tax; tax calculated separately for each person",
+      ],
+    ]),
+  ]
+    .flat()
+    .filter((row) => !areAllValuesNa(row.values));
+}
+
+function buildComparisonModeMismatchRows(results: ComparisonResult[]) {
+  return createComparisonSection("Comparison unavailable", results, [
+    [
+      "Model type",
+      (result) =>
+        result.modelType === "household"
+          ? "Two-person household"
+          : "Single person",
+    ],
+    [
+      "Availability",
+      () =>
+        "Compare scenarios with the same model type; load a scenario to switch modes",
+    ],
+  ]);
+}
+
 export function buildComparisonTableRows(
   results: ComparisonResult[],
   options: {
@@ -126,6 +321,18 @@ export function buildComparisonTableRows(
     retirementIncomeDisplay = "annual",
     hideFlexibleAssetsSection = false,
   } = options;
+  const householdCount = results.filter(
+    (result) => result.modelType === "household"
+  ).length;
+  if (householdCount > 0) {
+    return householdCount === results.length
+      ? buildHouseholdComparisonTableRows(
+          results,
+          retirementIncomeDisplay,
+          hideFlexibleAssetsSection
+        )
+      : buildComparisonModeMismatchRows(results);
+  }
   const anyScenarioUsesNuvos = results.some(
     (result) => result.scenario.settings.showNuvos
   );
@@ -486,6 +693,12 @@ function formatSmilePhaseStartAge(
 export function buildComparisonDetailedRows(
   results: ComparisonResult[]
 ): ComparisonTableRow[] {
+  if (results.some((result) => result.modelType === "household")) {
+    return buildComparisonTableRows(results, {
+      retirementIncomeDisplay: "annual",
+    });
+  }
+
   const anyScenarioUsesIsa = results.some(
     (result) => result.scenario.settings.showIsa
   );
@@ -1151,6 +1364,39 @@ function buildWithdrawalTaxStatusItems(
 export function buildComparisonStatusItems(
   result: ComparisonResult
 ): SummaryItemLike[] {
+  if (result.modelType === "household" && result.household) {
+    const assessment = result.household.assessment;
+    return [
+      {
+        label: "Overall status",
+        value: assessment.meetsTargetThroughout
+          ? "Looks workable"
+          : "Needs attention",
+      },
+      {
+        label: "Target shortfall",
+        value: assessment.meetsTargetThroughout
+          ? "No shortfall against the household target"
+          : `Below the household target for ${formatTargetMissDuration(
+              assessment.targetMissMonths
+            )}`,
+      },
+      {
+        label: "Main issue",
+        value: assessment.firstShortfallDate
+          ? `Household income first falls short on ${formatDate(
+              assessment.firstShortfallDate
+            )}`
+          : "No household shortfall identified from the current assumptions.",
+      },
+      {
+        label: "Income basis",
+        value:
+          "Household target after estimated Income Tax liability, calculated separately for each person",
+      },
+    ];
+  }
+
   const usesUnconfirmedStatePensionAssumption = usesUnconfirmedStatePension(
     result.scenario.settings
   );
@@ -1212,6 +1458,25 @@ export type RetirementOutcomeBanner = {
 export function buildRetirementOutcomeBanner(
   result: ComparisonResult
 ): RetirementOutcomeBanner {
+  if (result.household) {
+    const assessment = result.household.assessment;
+    if (!assessment.meetsTargetThroughout) {
+      return {
+        status: "shortfall",
+        label: "Shortfall",
+        message: buildHouseholdShortfallOutcomeMessage(result),
+        warning: buildUnconfirmedStatePensionWarning(result),
+      };
+    }
+
+    return {
+      status: "onTrack",
+      label: "Looks workable",
+      message: buildHouseholdOnTrackOutcomeMessage(result),
+      warning: buildUnconfirmedStatePensionWarning(result),
+    };
+  }
+
   if (!result.assessment.meetsTargetThroughout) {
     return {
       status: "shortfall",
@@ -1257,7 +1522,8 @@ function buildUnconfirmedStatePensionWarning(
   const assumedAmount = `${formatCurrencyWhole(
     settings.currentStatePension
   )} a year`;
-  const hasExistingShortfall = !result.assessment.meetsTargetThroughout;
+  const hasExistingShortfall =
+    !getComparisonAssessment(result).meetsTargetThroughout;
   const materialitySentence = hasExistingShortfall
     ? `This projection includes an assumed State Pension of ${assumedAmount}. Your actual shortfall may differ once you enter your personalised forecast.`
     : result.statePensionAssumptionAffectsTarget
@@ -1268,6 +1534,31 @@ function buildUnconfirmedStatePensionWarning(
     heading: "State Pension amount not confirmed",
     message: `${materialitySentence} Review the State Pension section and enter your personalised forecast when available.`,
   };
+}
+
+function buildHouseholdOnTrackOutcomeMessage(result: ComparisonResult) {
+  const household = result.household;
+  if (!household) {
+    return "";
+  }
+
+  const target = formatCurrencyWholePerYear(
+    household.assessment.fullyRetiredAnnualTarget
+  );
+  return `Based on the information entered, this household scenario appears to provide the household target of ${target} once both people are retired through to ${formatDate(household.householdEndDate)}.`;
+}
+
+function buildHouseholdShortfallOutcomeMessage(result: ComparisonResult) {
+  const household = result.household;
+  if (!household) {
+    return "";
+  }
+
+  const assessment = household.assessment;
+  const firstShortfallDate = assessment.firstShortfallDate
+    ? formatDate(assessment.firstShortfallDate)
+    : "the start of the assessed period";
+  return `Household shortfall from ${firstShortfallDate}. Based on the information entered, this household scenario does not provide the household target through to ${formatDate(household.householdEndDate)}.`;
 }
 
 function buildOnTrackOutcomeMessage(result: ComparisonResult) {
@@ -1502,7 +1793,7 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 }
 
 function getComparisonStatusLabel(result: ComparisonResult) {
-  if (!result.assessment.meetsTargetThroughout) {
+  if (!getComparisonAssessment(result).meetsTargetThroughout) {
     return "Needs attention";
   }
 
@@ -1726,6 +2017,12 @@ function renderComparisonToneCell(
 }
 
 function getCapitalPreservationScore(result: ComparisonResult) {
+  if (result.household) {
+    return result.household.assessment.firstFlexibleFundExhaustionDate
+      ? Date.parse(result.household.assessment.firstFlexibleFundExhaustionDate)
+      : Number.POSITIVE_INFINITY;
+  }
+
   const isaAge =
     result.isaDepletedAge ?? result.scenario.settings.lifeExpectancy + 1;
   const sippAge =
@@ -1735,6 +2032,14 @@ function getCapitalPreservationScore(result: ComparisonResult) {
 }
 
 export function formatCapitalPreservation(result: ComparisonResult) {
+  if (result.household) {
+    return result.household.assessment.firstFlexibleFundExhaustionDate
+      ? `First depletion on ${formatDate(
+          result.household.assessment.firstFlexibleFundExhaustionDate
+        )}`
+      : "Pots last through model";
+  }
+
   const score = getCapitalPreservationScore(result);
 
   return score > result.scenario.settings.lifeExpectancy

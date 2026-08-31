@@ -54,3 +54,11 @@ Feature: Scenario comparison results
     And the "Slow-go target" comparison value for "Flat plan" should be "n/a"
     And the "Slow-go target" comparison value for "Phased plan" should include "80%"
     And the "No-go starts" comparison value for "Phased plan" should be "84"
+
+  @household
+  Scenario: Use household metrics for a two-person scenario
+    Given a default two-person retirement scenario named "Household plan"
+    When comparison table rows are built
+    Then the comparison should include the "Household headline outcome" section
+    And the comparison should include the "Both retired" metric
+    And the "Target income" comparison value should include "/year"

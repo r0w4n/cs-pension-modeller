@@ -8,6 +8,8 @@ import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import { buildIncomeAgeRangeItems } from "../result-projection/income-age-ranges";
 import {
   createDefaultSettings,
+  createDefaultPartnerSettings,
+  normalizeSettings,
   type PensionSettings,
   type PensionValidationIssue,
 } from "../settings";
@@ -207,5 +209,48 @@ describe("comparison state scenario actions", () => {
       calculatedSettings
     );
     expect(result.current.currentResult?.currentMatchesSaved).toBe(false);
+  });
+
+  it("does not compare single-person and household scenarios together", () => {
+    const singleSettings = createDefaultSettings();
+    const householdSettings = normalizeSettings({
+      ...createDefaultSettings(),
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        showStatePension: false,
+      },
+      jointRetirement: {
+        ...createDefaultSettings().jointRetirement,
+        enabled: true,
+      },
+    });
+    const singleScenario = createScenario("single", "Single", singleSettings);
+    const householdScenario = createScenario(
+      "household",
+      "Household",
+      householdSettings
+    );
+    const panel = buildComparisonPanelData({
+      currentResult: createComparisonResult(
+        householdScenario,
+        "current",
+        calculateRetirementPlan(householdSettings)
+      ),
+      currentSettingsSignature: "current",
+      retirementIncomeDisplay: "annual",
+      savedBaseResults: [
+        createComparisonResult(
+          singleScenario,
+          "",
+          calculateRetirementPlan(singleSettings)
+        ),
+      ],
+    });
+
+    expect(panel.results.map((result) => result.modelType)).toEqual([
+      "household",
+    ]);
+    expect(panel.savedResults).toHaveLength(1);
   });
 });

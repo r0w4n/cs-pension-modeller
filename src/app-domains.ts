@@ -30,6 +30,8 @@ export {
   calculateComparisonInsights,
   formatCapitalPreservation,
   formatTargetMissDuration,
+  getComparisonAssessment,
+  getComparisonLaterIncome,
   type ComparisonInsights,
   type ComparisonCellValue,
   type ComparisonTableRow,

@@ -67,6 +67,7 @@ import {
   parseStoredSettingsByJourney,
   saveLocalStoragePreference,
   validateSettings,
+  normalizeSettings,
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
@@ -76,6 +77,7 @@ import {
 } from "../../src/result-projection/joint-retirement-chart";
 import { getRetirementIncomeEventsForDate } from "../../src/result-projection/retirement-income-chart-layout";
 import type { RetirementIncomeChartEvent } from "../../src/result-projection/retirement-income-chart-model";
+import { summarizeFlexibleWithdrawalInsights } from "../../src/result-projection/flexible-withdrawals";
 
 function createComparisonResult(
   scenario: ComparisonScenario,
@@ -1219,6 +1221,37 @@ Given(
 );
 
 Given(
+  "a default two-person retirement scenario named {string}",
+  function (this: ProductAcceptanceWorld, name: string) {
+    const defaults = createDefaultSettings();
+    const settings = normalizeSettings({
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        showStatePension: false,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+      },
+    });
+    const result = createComparisonResult(
+      {
+        id: name.toLowerCase().replaceAll(" ", "-"),
+        name,
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    this.comparisonResults = [...(this.comparisonResults ?? []), result];
+  }
+);
+
+Given(
   "a retirement scenario named {string} includes nuvos pension",
   function (this: ProductAcceptanceWorld, name: string) {
     const currentSettings = createDefaultSettings();
@@ -1800,6 +1833,75 @@ Given(
   }
 );
 
+Given(
+  "Your SIPP and ISA fund Your personal target",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.settings = {
+      ...settings,
+      desiredRetirementIncome: 31_350,
+      retirementIncomeTargetBasis: "after_tax",
+      showSipp: true,
+      sippCurrentPot: 45_000,
+      sippMonthlyContribution: 1_100,
+      sippDrawAge: settings.requirementAge + 2,
+      sippWithdrawalStrategy: "meet_income_target",
+      showIsa: true,
+      isaCurrentPot: 45_000,
+      isaMonthlyContribution: 150,
+      isaDrawAge: settings.requirementAge,
+      isaWithdrawalStrategy: "meet_income_target",
+      flexibleWithdrawalPriority: ["sipp", "isa"],
+    };
+  }
+);
+
+Given(
+  "a two-person household with more SIPP contributions than the shared target uses",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.settings = {
+      ...settings,
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 75,
+      desiredRetirementIncome: 12_000,
+      taxationEnabled: false,
+      showAlpha: false,
+      showStatePension: false,
+      showIsa: false,
+      showSipp: true,
+      sippCurrentPot: 500_000,
+      sippMonthlyContribution: 1_000,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target",
+      flexibleWithdrawalPriority: ["sipp"],
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 75,
+        taxationEnabled: false,
+        showStatePension: false,
+        showIsa: false,
+        showSipp: true,
+        sippCurrentPot: 20_000,
+        sippMonthlyContribution: 200,
+        sippDrawAge: 60,
+        sippWithdrawalStrategy: "meet_income_target",
+        flexibleWithdrawalPriority: ["sipp"],
+      },
+      jointRetirement: {
+        ...settings.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 12_000,
+        fullyRetiredDesiredRetirementIncome: 12_000,
+        flexibleWithdrawalPriority: ["you:sipp", "partner:sipp"],
+      },
+    };
+  }
+);
+
 When(
   "the joint household projection is calculated",
   function (this: ProductAcceptanceWorld) {
@@ -1848,6 +1950,86 @@ Then(
 );
 
 Then(
+  "the joint result should contain one row per calendar month",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    const months = this.jointProjection.rows.map((row) => row.date.slice(0, 7));
+    assertEqual(new Set(months).size, months.length);
+  }
+);
+
+Then(
+  "the stand-alone Your projection should contain ISA and SIPP withdrawals",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    const rows = this.jointProjection.individuals.you.rows;
+    assertCondition(
+      rows.some((row) => row.monthlyIsaPension > 0),
+      "Expected stand-alone ISA withdrawals"
+    );
+    assertCondition(
+      rows.some((row) => row.monthlySippPension > 0),
+      "Expected stand-alone SIPP withdrawals"
+    );
+  }
+);
+
+Then(
+  "the coordinated household projection may allocate Your withdrawals differently",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    const individualIsaMonths =
+      this.jointProjection.individuals.you.rows.filter(
+        (row) => row.monthlyIsaPension > 0
+      ).length;
+    const coordinatedIsaMonths = this.jointProjection.people.you.rows.filter(
+      (row) => row.monthlyIsaPension > 0
+    ).length;
+    assertCondition(
+      individualIsaMonths !== coordinatedIsaMonths,
+      "Expected household coordination to remain separate from the stand-alone view"
+    );
+  }
+);
+
+Then(
+  /^the joint result should report potential over-saving for (Your|Partner's) coordinated SIPP$/,
+  function (this: ProductAcceptanceWorld, personLabel: "Your" | "Partner's") {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    const owner = personLabel === "Your" ? "you" : "partner";
+    const settings = getSettings(this);
+    const personSettings =
+      owner === "you"
+        ? {
+            ...settings,
+            partner: undefined,
+            jointRetirement: {
+              ...settings.jointRetirement,
+              enabled: false,
+            },
+          }
+        : {
+            ...settings,
+            ...settings.partner!,
+            partner: undefined,
+            jointRetirement: {
+              ...settings.jointRetirement,
+              enabled: false,
+            },
+          };
+    const summary = summarizeFlexibleWithdrawalInsights(
+      this.jointProjection.people[owner].rows,
+      personSettings
+    );
+
+    assertCondition(
+      summary.residualAccounts.some((account) => account.accountId === "sipp"),
+      `Expected ${personLabel} coordinated SIPP residual insight`
+    );
+  }
+);
+
+Then(
   "the joint result should have one household retirement month",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.jointProjection, "Expected a joint projection");
@@ -1859,10 +2041,10 @@ Then(
 );
 
 When(
-  "the read-only household chart presentation is prepared",
+  "the editable household chart presentation is prepared",
   function (this: ProductAcceptanceWorld) {
     this.jointChartPresentation =
-      getRetirementIncomeChartPresentation("readonly-household");
+      getRetirementIncomeChartPresentation("editable-household");
   }
 );
 
@@ -1870,7 +2052,7 @@ Then(
   "inline household milestone annotations should be disabled",
   function (this: ProductAcceptanceWorld) {
     assertEqual(this.jointChartPresentation?.showInlineMilestones, false);
-    assertEqual(this.jointChartPresentation?.readOnly, true);
+    assertEqual(this.jointChartPresentation?.readOnly, false);
   }
 );
 

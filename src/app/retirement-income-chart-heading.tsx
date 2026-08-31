@@ -1,15 +1,18 @@
 export function RetirementIncomeChartHeading({
   chartTitleId,
+  chartTitle,
   displayMode,
   isSimplePresentation,
   onChangeDisplayMode,
 }: {
   chartTitleId: string;
+  chartTitle?: string;
   displayMode: "annual" | "monthly";
   isSimplePresentation: boolean;
   onChangeDisplayMode: (displayMode: "annual" | "monthly") => void;
 }) {
-  const title = getRetirementIncomeChartTitle(isSimplePresentation);
+  const title =
+    chartTitle ?? getRetirementIncomeChartTitle(isSimplePresentation);
 
   return (
     <div className="retirement-income-chart-heading">

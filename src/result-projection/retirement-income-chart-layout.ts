@@ -131,6 +131,41 @@ export const sourceMeta: Record<
   },
 };
 
+export function isRetirementIncomeSourceEnabled(
+  key: IncomeKey,
+  state: Pick<
+    RetirementIncomeChartParameters,
+    | "showAlpha"
+    | "showClassic"
+    | "showClassicPlus"
+    | "showCsAvc"
+    | "partialRetirementEnabled"
+    | "showIsa"
+    | "showLisa"
+    | "showNuvos"
+    | "showPremium"
+    | "showSipp"
+    | "showStatePension"
+  >
+) {
+  const enabledBySource: Record<IncomeKey, boolean> = {
+    alphaIncomeAnnual: state.showAlpha,
+    classicIncomeAnnual: state.showClassic,
+    classicPlusIncomeAnnual: state.showClassicPlus,
+    csAvcIncomeAnnual: state.showCsAvc,
+    isaIncomeAnnual: state.showIsa,
+    lisaIncomeAnnual: state.showLisa,
+    nuvosIncomeAnnual: state.showNuvos,
+    premiumIncomeAnnual: state.showPremium,
+    sippIncomeAnnual: state.showSipp,
+    partialRetirementIncomeAnnual: state.partialRetirementEnabled,
+    statePensionIncomeAnnual: state.showStatePension,
+    additionalGuaranteedIncomeAnnual: true,
+  };
+
+  return enabledBySource[key];
+}
+
 const DEFAULT_BUILD_UP_WINDOW_YEARS = 2.5;
 export const HANDLE_LABEL_WIDTH = 24;
 export const HANDLE_LABEL_HEIGHT = 84;

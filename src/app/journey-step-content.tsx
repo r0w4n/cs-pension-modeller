@@ -308,7 +308,18 @@ function JourneyResultsStep({
         validationIssues={validationIssues}
         chartParameters={retirementIncomeChartParameters}
         chartLimits={retirementIncomeChartLimits}
+        retirementIncomeDisplay={retirementIncomeDisplay}
+        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
         onChange={onChange}
+        comparisonRetirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+        onComparisonRetirementIncomeDisplayChange={
+          onComparisonRetirementIncomeDisplayChange
+        }
+        comparisonScenarios={comparisonScenarios}
+        comparisonResultCache={comparisonResultCache}
+        onScenariosChange={onScenariosChange}
+        onLoadScenario={onLoadScenario}
+        showComparison={hasResultsSection(step, "comparison")}
         inflationPresentation={inflationPresentation}
         derivedInflationAssumptions={derivedInflationAssumptions}
       />
@@ -440,7 +451,16 @@ function JointJourneyResultsStep({
   validationIssues,
   chartParameters,
   chartLimits,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
   onChange,
+  comparisonRetirementIncomeDisplay,
+  onComparisonRetirementIncomeDisplayChange,
+  comparisonScenarios,
+  comparisonResultCache,
+  onScenariosChange,
+  onLoadScenario,
+  showComparison,
   inflationPresentation,
   derivedInflationAssumptions,
 }: {
@@ -450,7 +470,18 @@ function JointJourneyResultsStep({
   validationIssues: PensionValidationIssue[];
   chartParameters: RetirementIncomeChartParameters;
   chartLimits: RetirementIncomeChartLimits;
+  retirementIncomeDisplay: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
   onChange: SettingsFieldOnChange;
+  comparisonRetirementIncomeDisplay: RetirementIncomeDisplay;
+  onComparisonRetirementIncomeDisplayChange: (
+    display: RetirementIncomeDisplay
+  ) => void;
+  comparisonScenarios: ComparisonScenario[];
+  comparisonResultCache: ComparisonResultCache;
+  onScenariosChange: (scenarios: ComparisonScenario[]) => void;
+  onLoadScenario: (settings: PensionSettings) => void;
+  showComparison: boolean;
   inflationPresentation:
     | Extract<JourneyResultsSection, { id: "inflation-basis" }>["presentation"]
     | undefined;
@@ -474,6 +505,8 @@ function JointJourneyResultsStep({
           settings={settings}
           chartParameters={chartParameters}
           chartLimits={chartLimits}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
           validationIssues={validationIssues}
           onChange={onChange}
         />
@@ -508,6 +541,26 @@ function JointJourneyResultsStep({
           settings={settings}
           assumptions={derivedInflationAssumptions}
         />
+      ) : null}
+
+      {showComparison ? (
+        <ComparisonSection>
+          <ComparisonPanelFeature
+            settings={settings}
+            validationIssues={validationIssues}
+            scenarios={comparisonScenarios}
+            comparisonResultCache={comparisonResultCache}
+            retirementPlanResult={retirementPlanResult}
+            isProjectionPending={isProjectionPending}
+            onScenariosChange={onScenariosChange}
+            onLoadScenario={onLoadScenario}
+            retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+            onRetirementIncomeDisplayChange={
+              onComparisonRetirementIncomeDisplayChange
+            }
+            showPensionSummary={false}
+          />
+        </ComparisonSection>
       ) : null}
     </>
   );

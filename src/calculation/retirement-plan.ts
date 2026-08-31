@@ -22,6 +22,10 @@ import {
   calculateJointRetirementProjection,
   type JointRetirementProjection,
 } from "./joint-retirement-plan";
+import {
+  assessHouseholdRetirementPlan,
+  type HouseholdRetirementAssessment,
+} from "./household-retirement-assessment";
 
 export type RetirementPlanResult = {
   settings: PensionSettings;
@@ -34,6 +38,8 @@ export type RetirementPlanResult = {
   inflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
   /** Present only for active two-person Expert plans. */
   jointProjection?: JointRetirementProjection;
+  /** Present only when the active plan has a valid two-person projection. */
+  householdAssessment?: HouseholdRetirementAssessment;
 };
 
 export function calculateRetirementPlan(
@@ -46,8 +52,11 @@ export function calculateRetirementPlan(
     settings.jointRetirement.enabled &&
     settings.partner &&
     validationIssues.length === 0
-      ? calculateJointRetirementProjection(settings)
+      ? calculateJointRetirementProjection(settings, rows)
       : undefined;
+  const householdAssessment = jointProjection
+    ? assessHouseholdRetirementPlan(jointProjection, settings)
+    : undefined;
 
   return {
     settings,
@@ -63,6 +72,7 @@ export function calculateRetirementPlan(
       calculateStatePensionAssumptionAffectsTarget(settings, assessment),
     inflationAssumptions: deriveInflationAssumptions(settings),
     jointProjection,
+    householdAssessment,
   };
 }
 

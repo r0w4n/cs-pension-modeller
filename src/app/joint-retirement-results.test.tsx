@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { calculateJointRetirementProjection } from "../calculation/joint-retirement-plan";
 import {
   createDefaultPartnerSettings,
@@ -11,12 +11,163 @@ import {
 import { JointRetirementResults } from "./joint-retirement-results";
 
 describe("JointRetirementResults", () => {
-  it("adapts the established results summary and table panels for a household", () => {
+  it("passes coordinated flexible withdrawals into the household chart series", () => {
+    const defaults = createDefaultSettings();
+    const settings = {
+      ...defaults,
+      dateOfBirth: "1977-04-01",
+      requirementAge: 54.5,
+      lifeExpectancy: 85,
+      showAlpha: true,
+      alphaPensionLeaveAge: 55,
+      alphaPensionDrawAge: 57,
+      accruedPensionAtLastAbs: 16_000,
+      pensionableEarnings: 70_000,
+      showIsa: true,
+      isaCurrentPot: 45_000,
+      isaMonthlyContribution: 2_000,
+      isaDrawAge: 54,
+      isaWithdrawalStrategy: "meet_income_target" as const,
+      showSipp: true,
+      sippCurrentPot: 45_000,
+      sippMonthlyContribution: 1_725,
+      sippDrawAge: 57,
+      sippWithdrawalStrategy: "meet_income_target" as const,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1986-10-01",
+        requirementAge: 65,
+        lifeExpectancy: 85,
+        showIsa: true,
+        isaCurrentPot: 1_000,
+        isaMonthlyContribution: 2_000,
+        isaDrawAge: 54.25,
+        isaWithdrawalStrategy: "meet_income_target" as const,
+        showSipp: true,
+        sippCurrentPot: 15_000,
+        sippMonthlyContribution: 1_875,
+        sippDrawAge: 65,
+        sippWithdrawalStrategy: "meet_income_target" as const,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 45_400,
+        fullyRetiredDesiredRetirementIncome: 45_400,
+        flexibleWithdrawalPriority: [
+          "you:isa" as const,
+          "you:sipp" as const,
+          "partner:isa" as const,
+          "partner:sipp" as const,
+        ],
+      },
+    };
+    const projection = calculateJointRetirementProjection(settings);
+    const onChange = vi.fn();
+
+    render(
+      <JointRetirementResults
+        projection={projection}
+        settings={settings}
+        chartParameters={createRetirementIncomeChartParameters(settings)}
+        chartLimits={createRetirementIncomeChartLimits(settings)}
+        onChange={onChange}
+      />
+    );
+
+    expect(
+      screen.getByTestId("retirement-income-chart-data-equivalent")
+    ).toHaveTextContent("You — ISA");
+    const chart = screen.getByRole("region", {
+      name: "Household Retirement Plan",
+    });
+    expect(chart.querySelectorAll('path[stroke="#1f8ee6"]')).toHaveLength(2);
+  });
+
+  it("shows the shared over-saving diagnostic for each person's coordinated pots", () => {
+    const defaults = createDefaultSettings();
+    const settings = {
+      ...defaults,
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 75,
+      desiredRetirementIncome: 12_000,
+      taxationEnabled: false,
+      showAlpha: false,
+      showStatePension: false,
+      showIsa: false,
+      showSipp: true,
+      sippCurrentPot: 500_000,
+      sippMonthlyContribution: 1_000,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target" as const,
+      flexibleWithdrawalPriority: ["sipp" as const],
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 75,
+        taxationEnabled: false,
+        showStatePension: false,
+        showIsa: false,
+        showSipp: true,
+        sippCurrentPot: 20_000,
+        sippMonthlyContribution: 200,
+        sippDrawAge: 60,
+        sippWithdrawalStrategy: "meet_income_target" as const,
+        flexibleWithdrawalPriority: ["sipp" as const],
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 12_000,
+        fullyRetiredDesiredRetirementIncome: 12_000,
+        flexibleWithdrawalPriority: [
+          "you:sipp" as const,
+          "partner:sipp" as const,
+        ],
+      },
+    };
+    const projection = calculateJointRetirementProjection(settings);
+
+    render(
+      <JointRetirementResults
+        projection={projection}
+        settings={settings}
+        chartParameters={createRetirementIncomeChartParameters(settings)}
+        chartLimits={createRetirementIncomeChartLimits(settings)}
+        onChange={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("slider", { name: "Your SIPP contribution" })
+    ).toHaveAccessibleDescription(
+      /Potential over-saving: the model leaves £[\d,]+ in the SIPP at age 75\./
+    );
+    expect(
+      screen.getByRole("slider", { name: "Partner SIPP contribution" })
+    ).toHaveAccessibleDescription(
+      /Potential over-saving: the SIPP is not used for modelled income and retains £[\d,]+ at age 75\./
+    );
+  });
+
+  it("uses one editable household chart with inline person inputs", () => {
+    const onChange = vi.fn();
     const settings = createDefaultSettings();
     const jointSettings = {
       ...settings,
-      jointRetirement: { ...settings.jointRetirement, enabled: true },
-      partner: createDefaultPartnerSettings(),
+      desiredRetirementIncome: 30_000,
+      jointRetirement: {
+        ...settings.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 45_400,
+        fullyRetiredDesiredRetirementIncome: 45_400,
+      },
+      partner: {
+        ...createDefaultPartnerSettings(),
+        desiredRetirementIncome: 24_000,
+      },
     };
     const projection = calculateJointRetirementProjection(jointSettings);
 
@@ -26,7 +177,7 @@ describe("JointRetirementResults", () => {
         settings={jointSettings}
         chartParameters={createRetirementIncomeChartParameters(jointSettings)}
         chartLimits={createRetirementIncomeChartLimits(jointSettings)}
-        onChange={() => undefined}
+        onChange={onChange}
       />
     );
 
@@ -47,8 +198,8 @@ describe("JointRetirementResults", () => {
       screen.getByRole("region", { name: "Retirement outcome" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("region", { name: "Retirement income over time" })
-    ).toBeInTheDocument();
+      screen.getAllByRole("region", { name: "Household Retirement Plan" })
+    ).toHaveLength(1);
     expect(screen.getByText("Your State Pension")).toBeInTheDocument();
     expect(screen.getByText("Partner State Pension")).toBeInTheDocument();
     expect(screen.getByText("Your SIPP")).toBeInTheDocument();
@@ -66,23 +217,34 @@ describe("JointRetirementResults", () => {
     expect(
       screen.getByTestId("retirement-income-chart-data-equivalent")
     ).toHaveTextContent("Household events available through period inspection");
+    const yourRetirementControl = screen.getByRole("slider", {
+      name: "You: Retire",
+    });
+    const partnerRetirementControl = screen.getByRole("slider", {
+      name: "Partner: Retire",
+    });
+    expect(screen.getByText("P1 Retire")).toBeInTheDocument();
+    expect(screen.getByText("P2 Retire")).toBeInTheDocument();
+    expect(screen.queryByText("Editing controls")).not.toBeInTheDocument();
     expect(
-      screen.getByTestId("retirement-income-static-milestone-you-retirement")
+      screen.queryByRole("group", {
+        name: "Household chart control visibility",
+      })
+    ).not.toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("region", { name: "Your household chart controls" })
+        .closest(".retirement-income-chart-panel")
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("slider", { name: "Target income line" })
     ).toBeInTheDocument();
     expect(
-      screen.getByTestId(
-        "retirement-income-static-milestone-partner-retirement"
-      )
+      screen.getByRole("slider", { name: "Your Added Alpha pension" })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("slider", { name: "Target income line" })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("slider", { name: "Added Alpha pension" })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("slider", { name: "Target income line" })
-    ).not.toBeInTheDocument();
+      screen.getByRole("slider", { name: "Partner ISA contribution" })
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Show all rows" })
     ).toHaveAttribute("aria-pressed", "true");
@@ -92,8 +254,8 @@ describe("JointRetirementResults", () => {
     fireEvent.click(monthlyChartButton);
     expect(monthlyChartButton).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByRole("group", { name: "Joint results chart view" })
-    ).toBeInTheDocument();
+      screen.queryByRole("group", { name: "Joint results chart view" })
+    ).not.toBeInTheDocument();
     const periodInspector = screen.getByTestId(
       "retirement-income-period-inspector"
     );
@@ -105,25 +267,91 @@ describe("JointRetirementResults", () => {
       screen.getByTestId("retirement-income-period-details")
     ).toHaveTextContent(/You retire|Partner retires/);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Partner retirement income" })
+    fireEvent.keyDown(yourRetirementControl, { key: "ArrowLeft" });
+    expect(onChange).toHaveBeenCalledWith("requirementAge", 67.75);
+    expect(onChange).not.toHaveBeenCalledWith(
+      "partner",
+      expect.objectContaining({ requirementAge: 67.75 })
+    );
+
+    onChange.mockClear();
+    fireEvent.keyDown(partnerRetirementControl, { key: "ArrowLeft" });
+    expect(onChange).toHaveBeenCalledWith(
+      "partner",
+      expect.objectContaining({ requirementAge: 67.75 })
+    );
+    expect(onChange).not.toHaveBeenCalledWith("requirementAge", 67.75);
+
+    expect(
+      screen.getByRole("region", { name: "Partner household chart controls" })
+    ).toBeInTheDocument();
+
+    onChange.mockClear();
+    fireEvent.keyDown(
+      screen.getByRole("slider", { name: "Target income line" }),
+      {
+        key: "ArrowUp",
+      }
+    );
+    expect(onChange).toHaveBeenCalledWith(
+      "jointRetirement",
+      expect.objectContaining({
+        fullyRetiredDesiredRetirementIncome: 46_200,
+      })
+    );
+  });
+
+  it("matches the detailed single-person summary pattern", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      jointRetirement: {
+        ...createDefaultSettings().jointRetirement,
+        enabled: true,
+      },
+      partner: createDefaultPartnerSettings(),
+    };
+    const projection = calculateJointRetirementProjection(settings);
+    const onDisplayChange = vi.fn();
+
+    render(
+      <JointRetirementResults
+        projection={projection}
+        settings={settings}
+        chartParameters={createRetirementIncomeChartParameters(settings)}
+        chartLimits={createRetirementIncomeChartLimits(settings)}
+        retirementIncomeDisplay="annual"
+        onRetirementIncomeDisplayChange={onDisplayChange}
+      />
     );
 
     expect(
-      screen.getByRole("heading", {
-        name: "Monthly Partner’s income projection table",
+      screen.getByRole("group", {
+        name: "Retirement income summary display",
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("slider", { name: /Retire, age/ })
+      screen.getByRole("heading", { name: "Income at different periods" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Chart key")).not.toHaveTextContent(
-      "Shortfall"
-    );
     expect(
-      screen.getByText(
-        /Estimated Income Tax can appear before Partner’s retirement/
-      )
+      screen.getByRole("heading", { name: "Plan status" })
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Household target starts")
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Both people retired")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Fully-retired household target")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Largest modelled household shortfall")
+    ).not.toBeInTheDocument();
+
+    const summaryToggle = screen.getByRole("group", {
+      name: "Retirement income summary display",
+    });
+    fireEvent.click(
+      within(summaryToggle).getByRole("button", { name: "Monthly" })
+    );
+    expect(onDisplayChange).toHaveBeenCalledWith("monthly");
   });
 });

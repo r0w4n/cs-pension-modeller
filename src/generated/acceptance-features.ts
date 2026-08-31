@@ -6691,6 +6691,43 @@ export const acceptanceFeatures = [
         ],
         examples: [],
       },
+      {
+        id: "line-59",
+        keyword: "Scenario",
+        name: "Use household metrics for a two-person scenario",
+        description: "",
+        tags: ["@household"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-60",
+            keyword: "Given",
+            text: 'a default two-person retirement scenario named "Household plan"',
+          },
+          {
+            id: "line-61",
+            keyword: "When",
+            text: "comparison table rows are built",
+          },
+          {
+            id: "line-62",
+            keyword: "Then",
+            text: 'the comparison should include the "Household headline outcome" section',
+          },
+          {
+            id: "line-63",
+            keyword: "And",
+            text: 'the comparison should include the "Both retired" metric',
+          },
+          {
+            id: "line-64",
+            keyword: "And",
+            text: 'the "Target income" comparison value should include "/year"',
+          },
+        ],
+        examples: [],
+      },
     ],
   },
   {
@@ -9914,7 +9951,7 @@ export const acceptanceFeatures = [
     path: "features/joint-retirement-chart.feature",
     name: "Joint retirement results chart",
     description:
-      "The joint results chart keeps the established person chart for each member\n  while presenting a read-only, owner-attributed household timeline.",
+      "The joint results chart presents one editable Household Retirement Plan while\n  preserving separate person, source and tax calculations underneath.",
     tags: ["@expert-journey", "@two-person", "@results-chart"],
     status: "covered",
     scenarios: [
@@ -9947,11 +9984,85 @@ export const acceptanceFeatures = [
             keyword: "And",
             text: "the joint result should use one canonical household target",
           },
+          {
+            id: "line-12",
+            keyword: "And",
+            text: "the joint result should contain one row per calendar month",
+          },
         ],
         examples: [],
       },
       {
-        id: "line-13",
+        id: "line-14",
+        keyword: "Scenario",
+        name: "Keep personal result views independent from household funding",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-15",
+            keyword: "Given",
+            text: "a staggered two-person household",
+          },
+          {
+            id: "line-16",
+            keyword: "And",
+            text: "Your SIPP and ISA fund Your personal target",
+          },
+          {
+            id: "line-17",
+            keyword: "When",
+            text: "the joint household projection is calculated",
+          },
+          {
+            id: "line-18",
+            keyword: "Then",
+            text: "the stand-alone Your projection should contain ISA and SIPP withdrawals",
+          },
+          {
+            id: "line-19",
+            keyword: "And",
+            text: "the coordinated household projection may allocate Your withdrawals differently",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-21",
+        keyword: "Scenario",
+        name: "Flag person-specific target pots that retain contributed savings",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-22",
+            keyword: "Given",
+            text: "a two-person household with more SIPP contributions than the shared target uses",
+          },
+          {
+            id: "line-23",
+            keyword: "When",
+            text: "the joint household projection is calculated",
+          },
+          {
+            id: "line-24",
+            keyword: "Then",
+            text: "the joint result should report potential over-saving for Your coordinated SIPP",
+          },
+          {
+            id: "line-25",
+            keyword: "And",
+            text: "the joint result should report potential over-saving for Partner's coordinated SIPP",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-27",
         keyword: "Scenario",
         name: "Keep a same-month household on the combined timeline",
         description: "",
@@ -9960,22 +10071,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-14",
+            id: "line-28",
             keyword: "Given",
             text: "default modeller settings",
           },
           {
-            id: "line-15",
+            id: "line-29",
             keyword: "And",
             text: "two people retire in the same calendar month",
           },
           {
-            id: "line-16",
+            id: "line-30",
             keyword: "When",
             text: "the joint household projection is calculated",
           },
           {
-            id: "line-17",
+            id: "line-31",
             keyword: "Then",
             text: "the joint result should have one household retirement month",
           },
@@ -9983,36 +10094,36 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-19",
+        id: "line-33",
         keyword: "Scenario",
-        name: "Show key retirement markers while retaining Combined period inspection",
+        name: "Show key retirement markers while retaining household period inspection",
         description: "",
         tags: [],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-20",
+            id: "line-34",
             keyword: "Given",
             text: "a staggered two-person household",
           },
           {
-            id: "line-21",
+            id: "line-35",
             keyword: "When",
-            text: "the read-only household chart presentation is prepared",
+            text: "the editable household chart presentation is prepared",
           },
           {
-            id: "line-22",
+            id: "line-36",
             keyword: "Then",
             text: "inline household milestone annotations should be disabled",
           },
           {
-            id: "line-23",
+            id: "line-37",
             keyword: "And",
             text: "key household retirement markers should use the shared chart marker style",
           },
           {
-            id: "line-24",
+            id: "line-38",
             keyword: "And",
             text: "household period inspection should remain enabled",
           },
@@ -10020,7 +10131,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-26",
+        id: "line-40",
         keyword: "Scenario",
         name: "Group owner-attributed household events for inspection",
         description: "",
@@ -10029,22 +10140,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-27",
+            id: "line-41",
             keyword: "Given",
             text: "a staggered two-person household",
           },
           {
-            id: "line-28",
+            id: "line-42",
             keyword: "When",
             text: "household chart events are projected",
           },
           {
-            id: "line-29",
+            id: "line-43",
             keyword: "Then",
             text: "household chart events should retain You and Partner ownership",
           },
           {
-            id: "line-30",
+            id: "line-44",
             keyword: "And",
             text: "simultaneous household events should be grouped by calendar month",
           },

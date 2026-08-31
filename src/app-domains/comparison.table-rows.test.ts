@@ -9,7 +9,11 @@ import {
   createComparisonResult as projectComparisonResult,
   type ComparisonScenario,
 } from "../result-projection/comparison-result";
-import { createDefaultSettings } from "../settings";
+import {
+  createDefaultPartnerSettings,
+  createDefaultSettings,
+  normalizeSettings,
+} from "../settings";
 import { createRetirementIncomeSeries } from "../result-projection/retirement-income";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
 
@@ -50,6 +54,67 @@ describe("comparison table rows", () => {
         (row) => row.isSectionDivider && row.section === "Spending target"
       )
     ).toBe(false);
+  });
+
+  it("uses household targets and metrics for a two-person scenario", () => {
+    const defaults = createDefaultSettings();
+    const settings = normalizeSettings({
+      ...defaults,
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 80,
+      showAlpha: false,
+      showStatePension: false,
+      showIsa: false,
+      showSipp: false,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1980-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 80,
+        showAlpha: false,
+        showStatePension: false,
+        showIsa: false,
+        showSipp: false,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 30_000,
+        fullyRetiredDesiredRetirementIncome: 40_000,
+      },
+    });
+    const result = createComparisonResult(
+      {
+        id: "household",
+        name: "Household",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    expect(result.modelType).toBe("household");
+    expect(result.household?.assessment.fullyRetiredAnnualTarget).toBe(40_000);
+    const rows = buildComparisonTableRows([result]);
+
+    expect(
+      rows.some(
+        (row) =>
+          row.isSectionDivider && row.section === "Household headline outcome"
+      )
+    ).toBe(true);
+    expect(rows.some((row) => row.metric === "Both retired")).toBe(true);
+    expect(rows.some((row) => row.metric === "Target retirement age")).toBe(
+      false
+    );
+    expect(getComparisonRow(rows, "Target income").values).toEqual([
+      "£30,000.00/year until 1 Jun 2040; £40,000.00/year afterwards",
+    ]);
+    expect(buildRetirementOutcomeBanner(result).message).toContain(
+      "household target"
+    );
   });
 
   it("shows SMILE phase assumptions when a compared scenario uses them", () => {

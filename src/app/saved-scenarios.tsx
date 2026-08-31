@@ -4,6 +4,7 @@ import type {
   ComparisonScenario,
 } from "../result-projection/comparison-result";
 import { formatCurrencyDetailed } from "../result-projection/formatting";
+import { getComparisonAssessment } from "../app-domains";
 
 export function SavedScenariosSection({
   scenarios,
@@ -54,10 +55,15 @@ export function SavedScenariosSection({
               </label>
               <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
               <span>
-                {result.assessment.meetsTargetThroughout
+                {getComparisonAssessment(result).meetsTargetThroughout
                   ? "Looks workable"
                   : "Needs attention"}
               </span>
+              <small>
+                {result.modelType === "household"
+                  ? "Two-person household"
+                  : "Single-person model"}
+              </small>
               <small>
                 {result.currentMatchesSaved
                   ? "Matches current model inputs"

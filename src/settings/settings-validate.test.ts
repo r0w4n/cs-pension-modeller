@@ -2,7 +2,12 @@ import {
   createDefaultPartnerSettings,
   createDefaultSettings,
 } from "./settings-defaults";
-import { validateSettings } from "./settings-validate";
+import type { PensionSettings } from "./settings-types";
+import {
+  createPartnerCalculationSettings,
+  createPartnerIndividualSettings,
+  validateSettings,
+} from "./settings-validate";
 
 describe("settings-validate", () => {
   beforeEach(() => {
@@ -29,6 +34,39 @@ describe("settings-validate", () => {
 
   it("returns no issues for defaults", () => {
     expect(validateSettings(createDefaultSettings())).toEqual([]);
+  });
+
+  it("preserves Partner's own target settings only for stand-alone results", () => {
+    const defaults = createDefaultSettings();
+    const settings = {
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        desiredRetirementIncome: 24_000,
+        retirementIncomeTargetBasis: "gross" as const,
+        spendingStrategyType: "SPENDING_SMILE" as const,
+        flexibleWithdrawalPriority: [
+          "isa",
+          "sipp",
+        ] as PensionSettings["flexibleWithdrawalPriority"],
+      },
+    };
+
+    const individual = createPartnerIndividualSettings(settings);
+    const household = createPartnerCalculationSettings(settings);
+
+    expect(individual).toMatchObject({
+      desiredRetirementIncome: 24_000,
+      retirementIncomeTargetBasis: "gross",
+      spendingStrategyType: "SPENDING_SMILE",
+      flexibleWithdrawalPriority: ["isa", "sipp"],
+    });
+    expect(household).toMatchObject({
+      desiredRetirementIncome: 0,
+      retirementIncomeTargetBasis: "after_tax",
+      spendingStrategyType: "FLAT",
+      flexibleWithdrawalPriority: [],
+    });
   });
 
   it("does not allow prior lump-sum allowance use to exceed the selected allowance", () => {

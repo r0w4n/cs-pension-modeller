@@ -61,6 +61,7 @@ export function RetirementIncomeControlGrid({
   isaMonthlyContribution,
   lisaMonthlyContribution,
   limits,
+  labelPrefix,
   onChangeParameters,
   partialRetirementEnabled,
   partialRetirementWorkPercent,
@@ -84,14 +85,18 @@ export function RetirementIncomeControlGrid({
   displayedAlphaMonthlyAddedPension: number;
   flexibleAccountWarnings: Map<string, string>;
   hasUnavoidableSurplus: boolean;
+  labelPrefix?: string;
   limits: RetirementIncomeChartLimits;
   onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
 }) {
+  const withPrefix = (label: string) =>
+    labelPrefix ? `${labelPrefix} ${label}` : label;
+
   return (
     <div className="retirement-income-control-grid">
       {showAlpha ? (
         <RetirementIncomeMetricControl
-          label="Added Alpha pension"
+          label={withPrefix("Added Alpha pension")}
           value={displayedAlphaMonthlyAddedPension}
           suffix="/ month"
           limit={limits.alphaMonthlyAddedPension}
@@ -110,7 +115,7 @@ export function RetirementIncomeControlGrid({
       ) : null}
       {showIsa ? (
         <RetirementIncomeMetricControl
-          label="ISA contribution"
+          label={withPrefix("ISA contribution")}
           value={isaMonthlyContribution}
           suffix="/ month"
           limit={limits.isaMonthlyContribution}
@@ -123,7 +128,7 @@ export function RetirementIncomeControlGrid({
       ) : null}
       {showLisa ? (
         <RetirementIncomeMetricControl
-          label="LISA contribution"
+          label={withPrefix("LISA contribution")}
           value={lisaMonthlyContribution}
           suffix="/ month"
           limit={limits.lisaMonthlyContribution}
@@ -136,7 +141,7 @@ export function RetirementIncomeControlGrid({
       ) : null}
       {showSipp ? (
         <RetirementIncomeMetricControl
-          label="SIPP contribution"
+          label={withPrefix("SIPP contribution")}
           value={sippMonthlyContribution}
           suffix="/ month"
           limit={limits.sippMonthlyContribution}
@@ -149,7 +154,7 @@ export function RetirementIncomeControlGrid({
       ) : null}
       {partialRetirementEnabled ? (
         <RetirementIncomeMetricControl
-          label="Partial work"
+          label={withPrefix("Partial work")}
           value={partialRetirementWorkPercent}
           suffix="%"
           limit={limits.partialRetirementWorkPercent}

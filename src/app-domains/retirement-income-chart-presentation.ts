@@ -1,5 +1,5 @@
 export type RetirementIncomeChartInteractionMode =
-  "editable-person" | "readonly-household";
+  "editable-person" | "editable-household" | "readonly-household";
 
 export type RetirementIncomeChartPresentation = {
   readOnly: boolean;
@@ -10,6 +10,14 @@ export type RetirementIncomeChartPresentation = {
 export function getRetirementIncomeChartPresentation(
   mode: RetirementIncomeChartInteractionMode
 ): RetirementIncomeChartPresentation {
+  if (mode === "editable-household") {
+    return {
+      readOnly: false,
+      showInlineMilestones: false,
+      showPeriodInspection: true,
+    };
+  }
+
   return mode === "readonly-household"
     ? {
         readOnly: true,

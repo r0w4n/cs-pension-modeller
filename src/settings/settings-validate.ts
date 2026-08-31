@@ -203,7 +203,7 @@ export function validateSettings(
     ];
   }
 
-  const partnerSettings = createPartnerCalculationSettings(settings);
+  const partnerSettings = createPartnerIndividualSettings(settings);
   const partnerIssues = validateSettings(partnerSettings).map((issue) => ({
     ...issue,
     personId: "partner" as const,
@@ -217,7 +217,7 @@ export function validateSettings(
 }
 
 /** Shared assumptions stay at household level; every other value is owned. */
-export function createPartnerCalculationSettings(settings: PensionSettings) {
+export function createPartnerIndividualSettings(settings: PensionSettings) {
   if (!settings.partner) {
     throw new Error("Partner settings are required for a joint calculation.");
   }
@@ -237,12 +237,19 @@ export function createPartnerCalculationSettings(settings: PensionSettings) {
     taxBasicRatePercent: settings.taxBasicRatePercent,
     taxHigherRatePercent: settings.taxHigherRatePercent,
     taxAdditionalRatePercent: settings.taxAdditionalRatePercent,
+    partner: undefined,
+    jointRetirement: { ...settings.jointRetirement, enabled: false },
+  };
+}
+
+/** Removes personal targets before the coordinated household funding pass. */
+export function createPartnerCalculationSettings(settings: PensionSettings) {
+  return {
+    ...createPartnerIndividualSettings(settings),
     retirementIncomeTargetBasis: "after_tax" as const,
     desiredRetirementIncome: 0,
     spendingStrategyType: "FLAT" as const,
     flexibleWithdrawalPriority: [],
-    partner: undefined,
-    jointRetirement: { ...settings.jointRetirement, enabled: false },
   };
 }
 

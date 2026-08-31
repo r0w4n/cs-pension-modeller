@@ -10,15 +10,21 @@ import {
 } from "../projection-domains/tax";
 import {
   applyTaxYearIncomeTax,
+  calculateProjectionRowTaxableIncome,
   deriveTaxYearEffectiveRates,
   getProjectionTaxYearKey,
 } from "../projection-domains/tax-year";
 import {
   createPartnerCalculationSettings,
+  createPartnerIndividualSettings,
+  FLEXIBLE_FUND_ACCOUNT_CONFIG,
+  FLEXIBLE_FUND_ACCOUNT_IDS,
+  type FlexibleFundAccountId,
   type HouseholdFlexibleFundAccountId,
   type PensionSettings,
   type PersonId,
 } from "../settings";
+import { getModelledMonthlyGrowthRate } from "../projection-domains/inflation";
 
 export type JointPersonProjectionSlice = {
   owner: PersonId;
@@ -50,6 +56,11 @@ export type JointRetirementProjection = {
     you: JointPersonProjectionSlice;
     partner: JointPersonProjectionSlice;
   };
+  /** Stand-alone projections used by the You and Partner result views. */
+  individuals: {
+    you: JointPersonProjectionSlice;
+    partner: JointPersonProjectionSlice;
+  };
 };
 
 /**
@@ -58,9 +69,12 @@ export type JointRetirementProjection = {
  * before a household result is projected for presentation.
  */
 export function calculateJointRetirementProjection(
-  settings: PensionSettings
+  settings: PensionSettings,
+  individualYouRows?: ProjectionRow[]
 ): JointRetirementProjection {
   const partnerSettings = createPartnerCalculationSettings(settings);
+  const individualYouSettings = createIndividualSettings(settings);
+  const individualPartnerSettings = createPartnerIndividualSettings(settings);
   const youSettings = createPersonBaseSettings(settings);
   const partnerBaseSettings = createPersonBaseSettings(partnerSettings);
   const dates = deriveHouseholdDates(settings, partnerSettings);
@@ -95,6 +109,16 @@ export function calculateJointRetirementProjection(
     people: {
       you: { owner: "you", rows: coordinated.youRows },
       partner: { owner: "partner", rows: coordinated.partnerRows },
+    },
+    individuals: {
+      you: {
+        owner: "you",
+        rows: individualYouRows ?? createProjectionTable(individualYouSettings),
+      },
+      partner: {
+        owner: "partner",
+        rows: createProjectionTable(individualPartnerSettings),
+      },
     },
   };
 }
@@ -132,10 +156,16 @@ export function deriveHouseholdDates(
 
 function createPersonBaseSettings(settings: PensionSettings): PensionSettings {
   return {
-    ...settings,
+    ...createIndividualSettings(settings),
     desiredRetirementIncome: 0,
     spendingStrategyType: "FLAT",
     flexibleWithdrawalPriority: [],
+  };
+}
+
+function createIndividualSettings(settings: PensionSettings): PensionSettings {
+  return {
+    ...settings,
     partner: undefined,
     jointRetirement: { ...settings.jointRetirement, enabled: false },
   };
@@ -239,10 +269,6 @@ function applyHouseholdWithdrawals(input: {
     youRows: input.baseYouRows.map((row) => ({ ...row })),
     partnerRows: input.basePartnerRows.map((row) => ({ ...row })),
   };
-  const currentYouByDate = new Map(input.youRows.map((row) => [row.date, row]));
-  const currentPartnerByDate = new Map(
-    input.partnerRows.map((row) => [row.date, row])
-  );
   const youEffectiveRates = deriveTaxYearEffectiveRates(
     input.youRows,
     input.settings
@@ -251,17 +277,15 @@ function applyHouseholdWithdrawals(input: {
     input.partnerRows,
     input.partnerSettings
   );
-  const youWithdrawn = createZeroBalances();
-  const partnerWithdrawn = createZeroBalances();
+  const youBalances = createFlexibleBalanceStates();
+  const partnerBalances = createFlexibleBalanceStates();
   const priority = resolveHouseholdPriority(
     input.settings,
     input.partnerSettings
   );
 
-  const youResultByDate = new Map(result.youRows.map((row) => [row.date, row]));
-  const partnerResultByDate = new Map(
-    result.partnerRows.map((row) => [row.date, row])
-  );
+  const youResultByDate = createRowsByCalendarMonth(result.youRows);
+  const partnerResultByDate = createRowsByCalendarMonth(result.partnerRows);
   const allDates = [
     ...new Set([...youResultByDate.keys(), ...partnerResultByDate.keys()]),
   ].sort();
@@ -272,6 +296,12 @@ function applyHouseholdWithdrawals(input: {
     if (date < input.dates.firstRetirementMonth) {
       continue;
     }
+    updateTargetAccountBalances(input.settings, youRow, youBalances);
+    updateTargetAccountBalances(
+      input.partnerSettings,
+      partnerRow,
+      partnerBalances
+    );
     const target = resolveHouseholdTarget(
       input.settings,
       input.partnerSettings,
@@ -281,13 +311,21 @@ function applyHouseholdWithdrawals(input: {
     if (target === 0) {
       continue;
     }
-    const currentYou = currentYouByDate.get(date) ?? youRow;
-    const currentPartner = currentPartnerByDate.get(date) ?? partnerRow;
+    const youBaseNetIncome = calculateEffectiveNetIncome(
+      youRow,
+      input.settings,
+      youEffectiveRates.get(getProjectionTaxYearKey(youRow?.date ?? date)) ?? 0
+    );
+    const partnerBaseNetIncome = calculateEffectiveNetIncome(
+      partnerRow,
+      input.partnerSettings,
+      partnerEffectiveRates.get(
+        getProjectionTaxYearKey(partnerRow?.date ?? date)
+      ) ?? 0
+    );
     let remaining = Math.max(
       0,
-      target / 12 -
-        ((currentYou?.totalMonthlyNetIncome ?? 0) +
-          (currentPartner?.totalMonthlyNetIncome ?? 0))
+      target / 12 - (youBaseNetIncome + partnerBaseNetIncome)
     );
 
     for (const entry of priority) {
@@ -300,15 +338,13 @@ function applyHouseholdWithdrawals(input: {
       if (!row) {
         continue;
       }
-      const withdrawn = owner === "you" ? youWithdrawn : partnerWithdrawn;
+      const balances = owner === "you" ? youBalances : partnerBalances;
+      const balance = balances[account];
       const effectiveRate =
         (owner === "you" ? youEffectiveRates : partnerEffectiveRates).get(
           getProjectionTaxYearKey(row.date)
         ) ?? 0;
-      const available = Math.max(
-        0,
-        getAccountBalance(row, account) - withdrawn[account]
-      );
+      const available = balance.amount;
 
       if (!isAccountEligible(person, row.date, account) || available <= 0) {
         continue;
@@ -330,7 +366,7 @@ function applyHouseholdWithdrawals(input: {
         continue;
       }
       applyAccountWithdrawal(row, account, gross, person, allowanceState);
-      withdrawn[account] += gross;
+      balance.amount = Math.max(0, available - gross);
       remaining = Math.max(
         0,
         remaining -
@@ -348,11 +384,57 @@ function applyHouseholdWithdrawals(input: {
   return result;
 }
 
-type FlexibleAccount = "sipp" | "csAvc" | "isa" | "lisa";
-type FlexibleBalances = Record<FlexibleAccount, number>;
+type FlexibleAccount = FlexibleFundAccountId;
+type FlexibleBalanceState = {
+  amount: number;
+  initialized: boolean;
+};
+type FlexibleBalanceStates = Record<FlexibleAccount, FlexibleBalanceState>;
 
-function createZeroBalances(): FlexibleBalances {
-  return { sipp: 0, csAvc: 0, isa: 0, lisa: 0 };
+function createFlexibleBalanceStates(): FlexibleBalanceStates {
+  return Object.fromEntries(
+    FLEXIBLE_FUND_ACCOUNT_IDS.map((account) => [
+      account,
+      { amount: 0, initialized: false },
+    ])
+  ) as FlexibleBalanceStates;
+}
+
+function updateTargetAccountBalances(
+  person: PensionSettings,
+  row: ProjectionRow | undefined,
+  balances: FlexibleBalanceStates
+) {
+  if (!row) {
+    return;
+  }
+
+  for (const account of FLEXIBLE_FUND_ACCOUNT_IDS) {
+    if (!isTargetAccount(person, account)) {
+      continue;
+    }
+
+    const balance = balances[account];
+    if (!balance.initialized) {
+      if (!isAccountEligible(person, row.date, account)) {
+        continue;
+      }
+      // The base row contains contributions made while the other person may
+      // already be retired. Once accessible, carry the actual remaining pot
+      // forward so prior household withdrawals also lose their future growth.
+      balance.amount = getAccountBalance(row, account);
+      balance.initialized = true;
+    } else {
+      balance.amount *=
+        1 +
+        getModelledMonthlyGrowthRate(
+          person,
+          person[FLEXIBLE_FUND_ACCOUNT_CONFIG[account].realInterestField] / 100
+        );
+    }
+
+    setAccountBalance(row, account, balance.amount);
+  }
 }
 
 function resolveHouseholdPriority(
@@ -394,9 +476,15 @@ function isAccountEligible(
 }
 
 function getAccountBalance(row: ProjectionRow, account: FlexibleAccount) {
-  return row[
-    `${account === "csAvc" ? "csAvc" : account}Pot` as keyof ProjectionRow
-  ] as number;
+  return row[FLEXIBLE_FUND_ACCOUNT_CONFIG[account].balanceField];
+}
+
+function setAccountBalance(
+  row: ProjectionRow,
+  account: FlexibleAccount,
+  balance: number
+) {
+  row[FLEXIBLE_FUND_ACCOUNT_CONFIG[account].balanceField] = balance;
 }
 
 function applyAccountWithdrawal(
@@ -428,11 +516,8 @@ function applyAccountWithdrawal(
   } else {
     row.monthlyLisaPension = gross;
   }
-  const balanceField = `${account}Pot` as keyof ProjectionRow;
-  (row[balanceField] as number) = Math.max(
-    0,
-    (row[balanceField] as number) - gross
-  );
+  const balanceField = FLEXIBLE_FUND_ACCOUNT_CONFIG[account].balanceField;
+  row[balanceField] = Math.max(0, row[balanceField] - gross);
   row.pensionLumpSumAllowanceRemaining = breakdown.allowanceRemaining;
   row.totalMonthlyIncomeBeforeTax = calculateRowGrossIncome(row);
 }
@@ -505,6 +590,23 @@ function calculateRowGrossIncome(row: ProjectionRow) {
   );
 }
 
+function calculateEffectiveNetIncome(
+  row: ProjectionRow | null | undefined,
+  settings: PensionSettings,
+  effectiveRate: number
+) {
+  if (!row) {
+    return 0;
+  }
+  if (!settings.taxationEnabled) {
+    return row.totalMonthlyIncomeBeforeTax;
+  }
+  return (
+    row.totalMonthlyIncomeBeforeTax -
+    calculateProjectionRowTaxableIncome(row, settings) * effectiveRate
+  );
+}
+
 function resolveHouseholdTarget(
   settings: PensionSettings,
   partner: PensionSettings,
@@ -569,8 +671,8 @@ function assembleHouseholdRows(
     "firstRetirementMonth" | "bothRetiredMonth"
   >
 ) {
-  const youByDate = new Map(youRows.map((row) => [row.date, row]));
-  const partnerByDate = new Map(partnerRows.map((row) => [row.date, row]));
+  const youByDate = createRowsByCalendarMonth(youRows);
+  const partnerByDate = createRowsByCalendarMonth(partnerRows);
   const allDates = [
     ...new Set([...youByDate.keys(), ...partnerByDate.keys()]),
   ].sort();
@@ -602,6 +704,17 @@ function assembleHouseholdRows(
       },
     };
   });
+}
+
+function createRowsByCalendarMonth(rows: ProjectionRow[]) {
+  const rowsByMonth = new Map<string, ProjectionRow>();
+  for (const row of rows) {
+    // Projection milestones can use different days within the same month for
+    // each person. The household timeline is monthly, so retain the latest
+    // row in that month and join both people on one canonical month key.
+    rowsByMonth.set(toCalendarMonth(row.date), row);
+  }
+  return rowsByMonth;
 }
 
 function withdrawalsEqual(before: ProjectionRow[], after: ProjectionRow[]) {

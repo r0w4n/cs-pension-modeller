@@ -6,6 +6,7 @@ import {
   useState,
   type KeyboardEvent,
   type PointerEvent,
+  type ReactNode,
   type TouchEvent,
 } from "react";
 import * as d3 from "d3";
@@ -27,6 +28,7 @@ import { clampNumber, snapToLimit } from "./app/chart-drag-constraints";
 import type { ResidualFlexibleFundInsight } from "./result-projection/flexible-withdrawals";
 import { RETIREMENT_CHART_OVERLAY_META } from "./app-domains/retirement-chart-overlays";
 import { selectRetirementChartLegendKeys } from "./app-domains/retirement-chart-legend";
+import { createRetirementIncomeMilestones } from "./result-projection/retirement-income-chart-controls";
 import {
   RetirementIncomeChartDescription,
   RetirementIncomeChartHeading,
@@ -51,6 +53,7 @@ export { getRetirementIncomeChartTitle } from "./app/retirement-income-chart-hea
 import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
+  RetirementIncomeChartEditableMilestone,
   RetirementIncomeChartEvent,
   RetirementIncomeChartStaticMilestone,
   RetirementIncomeChartSeriesDefinition,
@@ -81,8 +84,7 @@ import {
   HANDLE_LABEL_WIDTH,
   hasActiveIncome,
   incomeKeys,
-  sourceMeta,
-  type IncomeKey,
+  isRetirementIncomeSourceEnabled,
 } from "./result-projection/retirement-income-chart-layout";
 
 export type {
@@ -96,6 +98,8 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   alphaLabel?: string;
   /** Gives a reused chart an accurate accessible explanation of its data. */
   chartDescription?: string;
+  /** Optional visible title for a reused chart presentation. */
+  chartTitle?: string;
   /** Optional text equivalent for representative semantic chart values. */
   chartDataAccessibilitySummary?: string;
   hideInactiveLegendItems?: boolean;
@@ -112,8 +116,14 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   periodEvents?: RetirementIncomeChartEvent[];
   /** Read-only milestones shown using the shared chart marker styling. */
   staticMilestones?: RetirementIncomeChartStaticMilestone[];
+  /** Owner-aware editable milestones projected onto a household timeline. */
+  editableMilestones?: RetirementIncomeChartEditableMilestone[];
   /** Suppress the personal shortfall overlay when the target is shared. */
   showShortfallOverlay?: boolean;
+  /** Controls the standard single-person contribution controls below the plot. */
+  showParameterControls?: boolean;
+  /** Reuses the chart's control area for a household-specific control grid. */
+  additionalParameterControls?: ReactNode;
   /** Called when a target segment is edited, with the displayed age/timeline. */
   onChangeTargetIncome?: (value: number, age?: number) => void;
   presentation?: "standard" | "simple";
@@ -126,10 +136,11 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
 export type RetirementIncomeChartProps = RetirementIncomeChartCommonProps & {
   interactionMode?: Extract<
     RetirementIncomeChartInteractionMode,
-    "editable-person"
+    "editable-person" | "editable-household"
   >;
   readOnly?: false;
   onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
+  onChangeEditableMilestone?: (key: string, timelineValue: number) => void;
 };
 
 export type RetirementIncomeChartReadOnlyProps =
@@ -140,6 +151,7 @@ export type RetirementIncomeChartReadOnlyProps =
     >;
     readOnly: true;
     onChangeParameters?: never;
+    onChangeEditableMilestone?: (key: string, timelineValue: number) => void;
   };
 
 type RetirementIncomeChartComponentProps =
@@ -221,34 +233,6 @@ type PendingSpendingSmile = {
   sourceStrategy: SpendingSmileStrategy;
 };
 
-function createSpendingSmileMilestoneMarkers(
-  enabled: boolean,
-  strategy: SpendingSmileStrategy
-): MilestoneMarker[] {
-  if (!enabled) {
-    return [];
-  }
-
-  return [
-    {
-      key: "slowGoStartAge",
-      label: "Start Slow-go",
-      shortLabel: "Slow-go",
-      age: strategy.slowGoStartAge,
-      colour: "#2563a8",
-      editable: true,
-    },
-    {
-      key: "noGoStartAge",
-      label: "Start No-go",
-      shortLabel: "No-go",
-      age: strategy.noGoStartAge,
-      colour: "#0b4dc2",
-      editable: true,
-    },
-  ];
-}
-
 // eslint-disable-next-line sonarjs/cyclomatic-complexity, sonarjs/cognitive-complexity
 export function RetirementIncomeChart({
   data,
@@ -293,6 +277,7 @@ export function RetirementIncomeChart({
   showStatePension,
   alphaLabel = "Alpha pension",
   chartDescription,
+  chartTitle,
   chartDataAccessibilitySummary,
   hideInactiveLegendItems = false,
   showFlexibleWithdrawalInsights = false,
@@ -303,7 +288,10 @@ export function RetirementIncomeChart({
   seriesDefinitions,
   periodEvents = [],
   staticMilestones = [],
+  editableMilestones = [],
   showShortfallOverlay = true,
+  showParameterControls = true,
+  additionalParameterControls,
   onChangeTargetIncome,
   presentation = "standard",
   residualFlexibleFundInsights = [],
@@ -311,6 +299,7 @@ export function RetirementIncomeChart({
   statePensionEditable = false,
   validationIssues = [],
   onChangeParameters,
+  onChangeEditableMilestone,
 }: RetirementIncomeChartComponentProps) {
   const commitParameters = useCallback(
     (patch: Partial<RetirementIncomeChartParameters>) => {
@@ -330,6 +319,7 @@ export function RetirementIncomeChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const targetLineHitboxRef = useRef<SVGPathElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
+  const activeEditableMilestonePointerIdRef = useRef<number | null>(null);
   const activeMarkerDragScaleRef = useRef<d3.ScaleLinear<
     number,
     number
@@ -360,6 +350,12 @@ export function RetirementIncomeChart({
   >({});
   const [activeMarkerDragKey, setActiveMarkerDragKey] =
     useState<MilestoneKey | null>(null);
+  const [activeEditableMilestoneKey, setActiveEditableMilestoneKey] = useState<
+    string | null
+  >(null);
+  const [editableMilestoneDrafts, setEditableMilestoneDrafts] = useState<
+    Record<string, number>
+  >({});
   const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
     useState<MilestoneKey>("retirementAge");
   const [isMobileNavigationVisible, setIsMobileNavigationVisible] =
@@ -456,7 +452,7 @@ export function RetirementIncomeChart({
   const enabledIncomeKeys = useMemo(
     () =>
       incomeKeys.filter((key) =>
-        isIncomeSourceEnabled(key, {
+        isRetirementIncomeSourceEnabled(key, {
           showAlpha,
           showClassic,
           showClassicPlus,
@@ -794,201 +790,41 @@ export function RetirementIncomeChart({
   );
   const hasValidationIssues = validationIssues.length > 0;
   const projectionReady = data.length > 0;
-  const milestoneMarkers: MilestoneMarker[] = useMemo(
-    () =>
-      [
-        {
-          key: "retirementAge",
-          label: "Retire",
-          shortLabel: "Retire",
-          age: retirementAge,
-          colour: "#0f6f72",
-          editable: true,
-        },
-        ...createSpendingSmileMilestoneMarkers(
-          spendingSmileEnabled,
-          resolvedSpendingSmile
-        ),
-        ...(showAlpha
-          ? [
-              {
-                key: "alphaLeaveAge" as const,
-                label: "Leave Alpha",
-                shortLabel: "Leave alpha",
-                age: alphaLeaveAge,
-                colour: "#b45309",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showSipp
-          ? [
-              {
-                key: "sippAccessAge" as const,
-                label: "SIPP start",
-                shortLabel: "SIPP start",
-                age: sippAccessAge,
-                colour: sourceMeta.sippIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showSipp && sippUseByAgeEnabled
-          ? [
-              {
-                key: "sippUseByAge" as const,
-                label: "SIPP stop",
-                shortLabel: "SIPP stop",
-                age: sippUseByAge,
-                colour: sourceMeta.sippIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showIsa
-          ? [
-              {
-                key: "isaAccessAge" as const,
-                label: "ISA start",
-                shortLabel: "ISA start",
-                age: isaAccessAge,
-                colour: sourceMeta.isaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showLisa
-          ? [
-              {
-                key: "lisaAccessAge" as const,
-                label: "LISA start",
-                shortLabel: "LISA start",
-                age: lisaAccessAge,
-                colour: sourceMeta.lisaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(partialRetirementEnabled
-          ? [
-              {
-                key: "partialRetirementStartAge" as const,
-                label: "Start partial",
-                shortLabel: "Start partial",
-                age: partialRetirementStartAge,
-                colour: "#c2410c",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showAlpha
-          ? [
-              {
-                key: "alphaStartAge" as const,
-                label: "Start Alpha",
-                shortLabel: "Start Alpha",
-                age: alphaStartAge,
-                colour: "#7353bf",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showNuvos
-          ? [
-              {
-                key: "nuvosStartAge" as const,
-                label: "Start Nuvos",
-                shortLabel: "Start Nuvos",
-                age: nuvosStartAge,
-                colour: "#b45309",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showPremium
-          ? [
-              {
-                key: "premiumStartAge" as const,
-                label: "Start Premium",
-                shortLabel: "Start Premium",
-                age: premiumStartAge,
-                colour: "#0f766e",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showIsa && isaUseByAgeEnabled
-          ? [
-              {
-                key: "isaUseByAge" as const,
-                label: "ISA stop",
-                shortLabel: "ISA stop",
-                age: isaUseByAge,
-                colour: sourceMeta.isaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showLisa && lisaUseByAgeEnabled
-          ? [
-              {
-                key: "lisaUseByAge" as const,
-                label: "LISA stop",
-                shortLabel: "LISA stop",
-                age: lisaUseByAge,
-                colour: sourceMeta.lisaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showStatePension
-          ? [
-              {
-                key: "statePensionAge" as const,
-                label: "Start State",
-                shortLabel: "Start State",
-                age: statePensionAge,
-                colour: "#1d62d1",
-                editable: statePensionEditable,
-              },
-            ]
-          : []),
-      ].map((marker) => ({
-        ...marker,
-        key: marker.key as MilestoneKey,
-        editable: marker.editable && !isStaticPresentation,
-      })),
-    [
-      alphaStartAge,
-      alphaLeaveAge,
-      isaAccessAge,
-      isaUseByAge,
-      isaUseByAgeEnabled,
-      isStaticPresentation,
-      lisaAccessAge,
-      lisaUseByAge,
-      lisaUseByAgeEnabled,
-      partialRetirementEnabled,
-      partialRetirementStartAge,
+  const milestoneMarkers: MilestoneMarker[] = createRetirementIncomeMilestones(
+    {
       retirementAge,
-      resolvedSpendingSmile,
+      slowGoStartAge: resolvedSpendingSmile.slowGoStartAge,
+      noGoStartAge: resolvedSpendingSmile.noGoStartAge,
+      alphaLeaveAge,
+      sippAccessAge,
+      sippUseByAge,
+      isaAccessAge,
+      lisaAccessAge,
+      alphaStartAge,
+      nuvosStartAge,
+      premiumStartAge,
+      isaUseByAge,
+      lisaUseByAge,
+      partialRetirementStartAge,
+      statePensionAge,
+      spendingSmileEnabled,
+      partialRetirementEnabled,
       showAlpha,
+      showIsa,
+      showLisa,
       showNuvos,
       showPremium,
       showSipp,
-      showIsa,
-      showLisa,
-      nuvosStartAge,
-      premiumStartAge,
-      sippUseByAge,
-      sippUseByAgeEnabled,
       showStatePension,
-      spendingSmileEnabled,
-      sippAccessAge,
-      statePensionAge,
-      statePensionEditable,
-    ]
-  );
+      sippUseByAgeEnabled,
+      isaUseByAgeEnabled,
+      lisaUseByAgeEnabled,
+    },
+    statePensionEditable
+  ).map((marker) => ({
+    ...marker,
+    editable: marker.editable && !isStaticPresentation,
+  }));
   const displayedMilestoneMarkerDefinitions = getDisplayedMilestoneMarkers(
     milestoneMarkers,
     showMilestoneMarkers && interactionPresentation.showInlineMilestones
@@ -1030,18 +866,27 @@ export function RetirementIncomeChart({
     xScale,
     plotHeight
   );
-  const staticMarkerLayouts = createMarkerLayouts(
-    staticMilestones.map((marker) => ({
-      ...marker,
-      age: marker.timelineValue,
-      layoutAge: marker.timelineValue,
-      editable: false as const,
-    })),
+  const derivedMarkerLayouts = createMarkerLayouts(
+    [
+      ...staticMilestones.map((marker) => ({
+        ...marker,
+        age: marker.timelineValue,
+        layoutAge: marker.timelineValue,
+        editable: false as const,
+      })),
+      ...editableMilestones.map((marker) => ({
+        ...marker,
+        age: editableMilestoneDrafts[marker.key] ?? marker.timelineValue,
+        layoutAge: marker.timelineValue,
+        editable: true as const,
+      })),
+    ],
     xScale,
     plotHeight
   );
-  const displayedStaticMarkerLayouts =
-    isStaticPresentation && showMilestoneMarkers ? staticMarkerLayouts : [];
+  const displayedDerivedMarkerLayouts = showMilestoneMarkers
+    ? derivedMarkerLayouts
+    : [];
   const renderedMarkerLayouts = useMemo(
     () => bringActiveMarkerToFront(markerLayouts, activeMarkerDragKey),
     [activeMarkerDragKey, markerLayouts]
@@ -2233,6 +2078,105 @@ export function RetirementIncomeChart({
     updateDraftTargetIncomeFromClient,
   ]);
 
+  const editableMilestoneLookup = new Map(
+    editableMilestones.map((milestone) => [milestone.key, milestone])
+  );
+
+  const getEditableMilestoneValue = (
+    event: PointerEvent<SVGGElement>,
+    key: string
+  ) => {
+    const milestone = editableMilestoneLookup.get(key);
+    const pointerPosition = getPlotPointerPosition(event);
+
+    if (!milestone || !pointerPosition) {
+      return milestone?.timelineValue ?? 0;
+    }
+
+    return snapToLimit(
+      xScale.invert(getMarkerDragPlotX(pointerPosition.x)),
+      milestone.limit
+    );
+  };
+
+  const updateEditableMilestoneDraft = (
+    event: PointerEvent<SVGGElement>,
+    key: string
+  ) => {
+    const timelineValue = getEditableMilestoneValue(event, key);
+    setEditableMilestoneDrafts((current) => ({
+      ...current,
+      [key]: timelineValue,
+    }));
+  };
+
+  const handleEditableMilestonePointerDown = (
+    event: PointerEvent<SVGGElement>,
+    key: string
+  ) => {
+    if (!isPrimaryPointerDragStart(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    activeEditableMilestonePointerIdRef.current = event.pointerId;
+    setActiveEditableMilestoneKey(key);
+    updateEditableMilestoneDraft(event, key);
+  };
+
+  const finishEditableMilestonePointerDrag = (
+    event: PointerEvent<SVGGElement>,
+    key: string,
+    commit: boolean
+  ) => {
+    if (
+      activeEditableMilestoneKey !== key ||
+      activeEditableMilestonePointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+
+    const timelineValue = getEditableMilestoneValue(event, key);
+    activeEditableMilestonePointerIdRef.current = null;
+    setActiveEditableMilestoneKey(null);
+    setEditableMilestoneDrafts((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+    if (commit) {
+      onChangeEditableMilestone?.(key, timelineValue);
+    }
+  };
+
+  const handleEditableMilestoneKeyDown = (
+    event: KeyboardEvent<SVGGElement>,
+    milestone: RetirementIncomeChartEditableMilestone
+  ) => {
+    if (
+      !["ArrowLeft", "ArrowDown", "ArrowRight", "ArrowUp"].includes(event.key)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const direction =
+      event.key === "ArrowLeft" || event.key === "ArrowDown" ? -1 : 1;
+    onChangeEditableMilestone?.(
+      milestone.key,
+      snapToLimit(
+        milestone.timelineValue + direction * milestone.limit.step,
+        milestone.limit
+      )
+    );
+  };
+
   return (
     <section
       className={`retirement-income-chart-panel${hasValidationIssues ? " retirement-income-chart-panel--invalid" : ""}`}
@@ -2242,6 +2186,7 @@ export function RetirementIncomeChart({
     >
       <RetirementIncomeChartHeading
         chartTitleId={chartTitleId}
+        chartTitle={chartTitle}
         displayMode={displayMode}
         isSimplePresentation={isSimplePresentation}
         onChangeDisplayMode={changeDisplayMode}
@@ -2611,16 +2556,79 @@ export function RetirementIncomeChart({
               );
             })}
 
-            {displayedStaticMarkerLayouts.map((marker) => {
+            {/* Household controls reuse the same marker renderer, but are
+                intentionally kept separate from the established marker path. */}
+            {/* eslint-disable-next-line sonarjs/cognitive-complexity */}
+            {displayedDerivedMarkerLayouts.map((marker) => {
               const x = xScale(marker.age);
+              const editableMilestone = editableMilestoneLookup.get(marker.key);
+              const isEditable = Boolean(
+                editableMilestone && onChangeEditableMilestone
+              );
 
               return (
                 <g
                   key={marker.key}
-                  className="retirement-income-milestone retirement-income-static-milestone retirement-income-milestone--static"
-                  role="img"
+                  className={`retirement-income-milestone retirement-income-static-milestone${isEditable ? "" : " retirement-income-milestone--static"}`}
+                  role={isEditable ? "slider" : "img"}
+                  tabIndex={isEditable ? 0 : undefined}
                   aria-label={marker.label}
-                  data-testid={`retirement-income-static-milestone-${marker.key}`}
+                  aria-valuemin={editableMilestone?.limit.min}
+                  aria-valuemax={editableMilestone?.limit.max}
+                  aria-valuenow={isEditable ? marker.age : undefined}
+                  data-testid={
+                    isEditable
+                      ? `retirement-income-household-control-${marker.key}`
+                      : `retirement-income-static-milestone-${marker.key}`
+                  }
+                  onKeyDown={
+                    editableMilestone
+                      ? (event) =>
+                          handleEditableMilestoneKeyDown(
+                            event,
+                            editableMilestone
+                          )
+                      : undefined
+                  }
+                  onPointerDown={
+                    isEditable
+                      ? (event) =>
+                          handleEditableMilestonePointerDown(event, marker.key)
+                      : undefined
+                  }
+                  onPointerMove={
+                    isEditable
+                      ? (event) => {
+                          if (
+                            activeEditableMilestoneKey === marker.key &&
+                            activeEditableMilestonePointerIdRef.current ===
+                              event.pointerId
+                          ) {
+                            updateEditableMilestoneDraft(event, marker.key);
+                          }
+                        }
+                      : undefined
+                  }
+                  onPointerUp={
+                    isEditable
+                      ? (event) =>
+                          finishEditableMilestonePointerDrag(
+                            event,
+                            marker.key,
+                            true
+                          )
+                      : undefined
+                  }
+                  onPointerCancel={
+                    isEditable
+                      ? (event) =>
+                          finishEditableMilestonePointerDrag(
+                            event,
+                            marker.key,
+                            false
+                          )
+                      : undefined
+                  }
                 >
                   <line
                     x1={x}
@@ -2630,7 +2638,9 @@ export function RetirementIncomeChart({
                     stroke={marker.colour}
                     aria-hidden="true"
                   />
-                  <g className="retirement-income-milestone-drag-label">
+                  <g
+                    className={`retirement-income-milestone-drag-label${isEditable ? " retirement-income-milestone-drag-label--editable" : ""}`}
+                  >
                     <rect
                       x={x - 22}
                       y={marker.handleY - HANDLE_LABEL_HEIGHT / 2 - 10}
@@ -2755,6 +2765,9 @@ export function RetirementIncomeChart({
                 width={plotWidth}
                 height={plotHeight}
                 fill="transparent"
+                pointerEvents={
+                  interactionMode === "editable-household" ? "none" : undefined
+                }
                 tabIndex={0}
                 aria-label="Inspect Combined retirement income by period. Use Left and Right Arrow keys to move between months."
                 aria-describedby={
@@ -2864,7 +2877,7 @@ export function RetirementIncomeChart({
         />
       ) : null}
 
-      {!isStaticPresentation ? (
+      {!isStaticPresentation && showParameterControls ? (
         <RetirementIncomeControlGrid
           displayedAlphaMonthlyAddedPension={alphaMonthlyAddedPension}
           flexibleAccountWarnings={flexibleAccountWarnings}
@@ -2882,6 +2895,7 @@ export function RetirementIncomeChart({
           sippMonthlyContribution={sippMonthlyContribution}
         />
       ) : null}
+      {!isStaticPresentation ? additionalParameterControls : null}
     </section>
   );
 }
@@ -2986,70 +3000,6 @@ function getFlexibleSurplusData(
 
 function toSvgPath(path: string | null) {
   return path ?? undefined;
-}
-
-function isIncomeSourceEnabled(
-  key: IncomeKey,
-  state: Pick<
-    RetirementIncomeChartParameters,
-    | "showAlpha"
-    | "showClassic"
-    | "showClassicPlus"
-    | "showCsAvc"
-    | "partialRetirementEnabled"
-    | "showIsa"
-    | "showLisa"
-    | "showNuvos"
-    | "showPremium"
-    | "showSipp"
-    | "showStatePension"
-  >
-) {
-  if (key === "alphaIncomeAnnual") {
-    return state.showAlpha;
-  }
-
-  if (key === "classicIncomeAnnual") {
-    return state.showClassic;
-  }
-
-  if (key === "classicPlusIncomeAnnual") {
-    return state.showClassicPlus;
-  }
-
-  if (key === "csAvcIncomeAnnual") {
-    return state.showCsAvc;
-  }
-
-  if (key === "isaIncomeAnnual") {
-    return state.showIsa;
-  }
-
-  if (key === "lisaIncomeAnnual") {
-    return state.showLisa;
-  }
-
-  if (key === "sippIncomeAnnual") {
-    return state.showSipp;
-  }
-
-  if (key === "nuvosIncomeAnnual") {
-    return state.showNuvos;
-  }
-
-  if (key === "premiumIncomeAnnual") {
-    return state.showPremium;
-  }
-
-  if (key === "partialRetirementIncomeAnnual") {
-    return state.partialRetirementEnabled;
-  }
-
-  if (key === "statePensionIncomeAnnual") {
-    return state.showStatePension;
-  }
-
-  return true;
 }
 
 function formatCurrency(value: number) {

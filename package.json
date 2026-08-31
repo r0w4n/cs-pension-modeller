@@ -41,7 +41,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@cucumber/cucumber": "^13.2.1",
     "@cucumber/gherkin": "^42.0.1",
     "@cucumber/messages": "^34.2.1",

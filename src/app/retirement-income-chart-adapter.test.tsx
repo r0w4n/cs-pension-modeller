@@ -12,7 +12,10 @@ const chartAdapterMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../RetirementIncomeChart", () => ({
-  RetirementIncomeChart: (props: { alphaLabel: string }) => {
+  RetirementIncomeChart: (props: {
+    alphaLabel: string;
+    timelineMode: string;
+  }) => {
     chartAdapterMocks.retirementIncomeChart(props);
     return <div>Chart {props.alphaLabel}</div>;
   },
@@ -78,6 +81,9 @@ describe("retirement income chart adapters", () => {
     );
 
     expect(screen.getByText("Chart Alpha pension")).toBeInTheDocument();
+    expect(chartAdapterMocks.retirementIncomeChart).toHaveBeenCalledWith(
+      expect.objectContaining({ timelineMode: "calendar-age" })
+    );
   });
 
   it("maps the detailed journey presentation onto the shared chart", () => {

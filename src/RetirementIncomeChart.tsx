@@ -109,8 +109,8 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   useDataTargets?: boolean;
   /** Controls whether the chart's milestone markers are shown. */
   showMilestoneMarkers?: boolean;
-  /** Selects the x-axis semantics for a shared household timeline. */
-  timelineMode?: "age" | "calendar";
+  /** Selects the x-axis semantics for a personal or shared household timeline. */
+  timelineMode?: "age" | "calendar" | "calendar-age";
   /** Optional owner-attributed series for a derived household chart. */
   seriesDefinitions?: RetirementIncomeChartSeriesDefinition[];
   /** Semantic household events exposed through period inspection. */
@@ -208,6 +208,10 @@ const CALENDAR_AXIS_HEIGHT = 530;
 const CALENDAR_AXIS_HEIGHT_COMPACT = 510;
 const CALENDAR_AXIS_MARGIN_BOTTOM = 122;
 const CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT = 116;
+const SINGLE_PERSON_CALENDAR_AXIS_HEIGHT = 495;
+const SINGLE_PERSON_CALENDAR_AXIS_HEIGHT_COMPACT = 470;
+const SINGLE_PERSON_CALENDAR_AXIS_MARGIN_BOTTOM = 84;
+const SINGLE_PERSON_CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT = 76;
 const spendingSmilePhaseMeta = [
   {
     key: "goGo",
@@ -320,6 +324,9 @@ export function RetirementIncomeChart({
     interactionPresentation.readOnly
   );
   const isCalendarTimeline = timelineMode === "calendar";
+  const isSinglePersonCalendarTimeline = timelineMode === "calendar-age";
+  const usesCalendarDateAxis =
+    isCalendarTimeline || isSinglePersonCalendarTimeline;
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const targetLineHitboxRef = useRef<SVGPathElement | null>(null);
@@ -507,15 +514,20 @@ export function RetirementIncomeChart({
         point.personAges?.you !== undefined ||
         point.personAges?.partner !== undefined
     );
+  const hasSinglePersonAgeAxis = isSinglePersonCalendarTimeline;
 
   const dimensions = useMemo<ChartDimensions>(() => {
     const height = hasPersonAgeAxes
       ? isCompact
         ? CALENDAR_AXIS_HEIGHT_COMPACT
         : CALENDAR_AXIS_HEIGHT
-      : isCompact
-        ? 420
-        : 460;
+      : hasSinglePersonAgeAxis
+        ? isCompact
+          ? SINGLE_PERSON_CALENDAR_AXIS_HEIGHT_COMPACT
+          : SINGLE_PERSON_CALENDAR_AXIS_HEIGHT
+        : isCompact
+          ? 420
+          : 460;
 
     return {
       width,
@@ -526,12 +538,16 @@ export function RetirementIncomeChart({
         ? isCompact
           ? CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT
           : CALENDAR_AXIS_MARGIN_BOTTOM
-        : isCompact
-          ? 34
-          : 38,
+        : hasSinglePersonAgeAxis
+          ? isCompact
+            ? SINGLE_PERSON_CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT
+            : SINGLE_PERSON_CALENDAR_AXIS_MARGIN_BOTTOM
+          : isCompact
+            ? 34
+            : 38,
       marginLeft: isCompact ? 48 : 78,
     };
-  }, [hasPersonAgeAxes, isCompact, width]);
+  }, [hasPersonAgeAxes, hasSinglePersonAgeAxis, isCompact, width]);
   const plotWidth = Math.max(
     1,
     dimensions.width - dimensions.marginLeft - dimensions.marginRight
@@ -806,7 +822,7 @@ export function RetirementIncomeChart({
   });
   const yTicks = yScale.ticks(5);
   const xTicks = xScale.ticks(
-    isCalendarTimeline ? (width < 640 ? 4 : 7) : width < 640 ? 5 : 8
+    usesCalendarDateAxis ? (width < 640 ? 4 : 7) : width < 640 ? 5 : 8
   );
   const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
   const personAgeAxisTicks = {
@@ -2764,11 +2780,13 @@ export function RetirementIncomeChart({
                 <text x={xScale(tick)} y={plotHeight + 18} textAnchor="middle">
                   {isCalendarTimeline
                     ? formatCalendarTimelineTick(tick)
-                    : Math.round(tick)}
+                    : isSinglePersonCalendarTimeline
+                      ? formatCalendarDateForAge(displayedData, tick)
+                      : Math.round(tick)}
                 </text>
               </g>
             ))}
-            {!isCalendarTimeline ? (
+            {!usesCalendarDateAxis ? (
               <text
                 className="retirement-income-axis-title"
                 x={0}
@@ -2796,6 +2814,14 @@ export function RetirementIncomeChart({
                   xScale={xScale}
                 />
               </>
+            ) : null}
+            {hasSinglePersonAgeAxis ? (
+              <AgeAxis
+                ticks={xTicks}
+                plotHeight={plotHeight}
+                plotWidth={plotWidth}
+                xScale={xScale}
+              />
             ) : null}
             {draggingMobileMarker ? (
               <g
@@ -3089,6 +3115,82 @@ function formatCalendarTimelineTick(value: number) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(Date.UTC(year, month, 1)));
+}
+
+function formatCalendarDateForAge(data: RetirementIncomePoint[], age: number) {
+  const datedAges = data
+    .flatMap((point) => {
+      const date = calendarTimelineValue(point.date);
+      return Number.isFinite(point.age) && Number.isFinite(date)
+        ? [{ age: point.age, date }]
+        : [];
+    })
+    .sort((left, right) => left.age - right.age);
+  const first = datedAges[0];
+  const last = datedAges.at(-1);
+
+  if (!first || !last || first.age === last.age) {
+    return Math.round(age).toString();
+  }
+
+  return formatCalendarTimelineTick(
+    d3
+      .scaleLinear()
+      .domain([first.age, last.age])
+      .range([first.date, last.date])(age)
+  );
+}
+
+function calendarTimelineValue(date: string) {
+  const year = Number(date.slice(0, 4));
+  const month = Number(date.slice(5, 7));
+  const day = Number(date.slice(8, 10));
+  return year + (month - 1) / 12 + (day - 1) / 365;
+}
+
+function AgeAxis({
+  ticks,
+  plotHeight,
+  plotWidth,
+  xScale,
+}: {
+  ticks: number[];
+  plotHeight: number;
+  plotWidth: number;
+  xScale: d3.ScaleLinear<number, number>;
+}) {
+  const axisY = plotHeight + 44;
+
+  return (
+    <g
+      className="retirement-income-age-axis"
+      data-testid="retirement-income-age-axis"
+      role="group"
+      aria-label="Age axis"
+    >
+      <line
+        className="retirement-income-axis"
+        x1={0}
+        x2={plotWidth}
+        y1={axisY}
+        y2={axisY}
+      />
+      {ticks.map((tick) => {
+        const x = xScale(tick);
+        return (
+          <g key={tick} className="retirement-income-age-tick" data-age={tick}>
+            <line x1={x} x2={x} y1={axisY} y2={axisY + 6} />
+            <text x={x} y={axisY + 18} textAnchor="middle">
+              {Math.round(tick)}
+            </text>
+          </g>
+        );
+      })}
+      <text className="retirement-income-axis-title" x={0} y={axisY + 34}>
+        Age
+      </text>
+    </g>
+  );
 }
 
 function PersonAgeAxis({

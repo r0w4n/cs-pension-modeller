@@ -30,7 +30,7 @@ export function RetirementIncomeChartAdapter({
   readOnly = false,
   useDataTargets = false,
   showMilestoneMarkers = true,
-  timelineMode = "age",
+  timelineMode = "calendar-age",
   seriesDefinitions,
   periodEvents,
   staticMilestones,
@@ -58,7 +58,7 @@ export function RetirementIncomeChartAdapter({
   readOnly?: boolean;
   useDataTargets?: boolean;
   showMilestoneMarkers?: boolean;
-  timelineMode?: "age" | "calendar";
+  timelineMode?: "age" | "calendar" | "calendar-age";
   seriesDefinitions?: RetirementIncomeChartSeriesDefinition[];
   periodEvents?: RetirementIncomeChartEvent[];
   staticMilestones?: RetirementIncomeChartStaticMilestone[];

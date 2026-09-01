@@ -609,6 +609,30 @@ describe("RetirementIncomeChart", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("renders calendar dates above a single Age axis for a personal timeline", () => {
+    renderChart({
+      timelineMode: "calendar-age",
+      showMilestoneMarkers: false,
+    });
+
+    expect(
+      getXAxisLabels().some((label) =>
+        /^[A-Z][a-z]{2} 20\d{2}$/.test(label ?? "")
+      )
+    ).toBe(true);
+    expect(screen.getByTestId("retirement-income-age-axis")).toHaveTextContent(
+      "Age"
+    );
+    expect(
+      screen
+        .getByTestId("retirement-income-age-axis")
+        .querySelectorAll(".retirement-income-age-tick").length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.queryByTestId("retirement-income-you-age-axis")
+    ).not.toBeInTheDocument();
+  });
+
   it("starts the target income line at the y axis", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 

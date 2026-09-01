@@ -76,6 +76,12 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("heading", { name: "Retirement income over time" })
     ).toBeVisible();
+    await expect(page.getByTestId("retirement-income-age-axis")).toContainText(
+      "Age"
+    );
+    await expect(
+      page.getByTestId("retirement-income-you-age-axis")
+    ).toHaveCount(0);
     await renderDeferredComparisonContent(page);
     await expectProjectionBasisBelowResultsChart(page);
 

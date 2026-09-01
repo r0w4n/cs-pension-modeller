@@ -10352,6 +10352,816 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/lifetime-isa.feature",
+    name: "Lifetime ISA retirement modelling",
+    description:
+      "The modeller should project an existing Lifetime ISA (LISA) as a tax-free\n  retirement savings pot using the current statutory contribution, government\n  bonus and later-life access rules, while keeping modeller assumptions and\n  out-of-scope LISA uses explicit.",
+    tags: ["@lisa", "@lifetime-isa"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-27",
+        keyword: "Scenario",
+        name: "Do not confuse the LISA opening age with the contribution stop age",
+        description: "",
+        tags: ["@eligibility", "@age"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-28",
+            keyword: "Given",
+            text: "the member opened a valid LISA before age 40",
+          },
+          {
+            id: "line-29",
+            keyword: "And",
+            text: "the member is now age 42",
+          },
+          {
+            id: "line-30",
+            keyword: "When",
+            text: "an otherwise eligible LISA contribution is evaluated",
+          },
+          {
+            id: "line-31",
+            keyword: "Then",
+            text: "the contribution should not be rejected because the member is age 40 or over",
+          },
+          {
+            id: "line-32",
+            keyword: "And",
+            text: "LISA contributions should remain eligible before age 50 subject to the applicable contribution limits",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-35",
+        keyword: "Scenario",
+        name: "Stop new LISA contributions on the 50th birthday",
+        description: "",
+        tags: ["@contributions", "@age-50", "@boundary"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-36",
+            keyword: "Given",
+            text: 'the member reaches age 50 on "2027-03-15"',
+          },
+          {
+            id: "line-37",
+            keyword: "When",
+            text: 'a LISA contribution of 100.00 is evaluated on "2027-03-14"',
+          },
+          {
+            id: "line-38",
+            keyword: "Then",
+            text: "the contribution should be eligible by age",
+          },
+          {
+            id: "line-39",
+            keyword: "When",
+            text: 'a LISA contribution of 100.00 is evaluated on "2027-03-15"',
+          },
+          {
+            id: "line-40",
+            keyword: "Then",
+            text: "the contribution should not be eligible by age",
+          },
+          {
+            id: "line-41",
+            keyword: "And",
+            text: "no government bonus should be added for that ineligible contribution",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-44",
+        keyword: "Scenario",
+        name: "Keep the LISA invested after contributions stop at age 50",
+        description: "",
+        tags: ["@contributions", "@age-50"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-45",
+            keyword: "Given",
+            text: "the member is age 50",
+          },
+          {
+            id: "line-46",
+            keyword: "And",
+            text: "the member has a LISA balance of 50000.00",
+          },
+          {
+            id: "line-47",
+            keyword: "And",
+            text: "the member plans regular LISA contributions of 300.00 per month",
+          },
+          {
+            id: "line-48",
+            keyword: "And",
+            text: "the annual LISA net investment return assumption is 0.00%",
+          },
+          {
+            id: "line-49",
+            keyword: "When",
+            text: "the LISA is projected for 12 months",
+          },
+          {
+            id: "line-50",
+            keyword: "Then",
+            text: "accepted LISA contributions should be 0.00",
+          },
+          {
+            id: "line-51",
+            keyword: "And",
+            text: "the LISA government bonus should be 0.00",
+          },
+          {
+            id: "line-52",
+            keyword: "And",
+            text: "the projected LISA balance should be 50000.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-55",
+        keyword: "Scenario",
+        name: "Continue investment growth after age 50",
+        description: "",
+        tags: ["@investment-growth", "@age-50"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-56",
+            keyword: "Given",
+            text: "the member is age 50",
+          },
+          {
+            id: "line-57",
+            keyword: "And",
+            text: "the member has a LISA balance of 50000.00",
+          },
+          {
+            id: "line-58",
+            keyword: "And",
+            text: "the member makes no further eligible LISA contributions",
+          },
+          {
+            id: "line-59",
+            keyword: "And",
+            text: "the annual LISA net investment return assumption is greater than 0.00%",
+          },
+          {
+            id: "line-60",
+            keyword: "When",
+            text: "the LISA is projected beyond age 50",
+          },
+          {
+            id: "line-61",
+            keyword: "Then",
+            text: "the existing LISA balance should continue to receive modelled investment growth",
+          },
+          {
+            id: "line-62",
+            keyword: "And",
+            text: "investment growth should not receive a LISA government bonus",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-67",
+        keyword: "Scenario",
+        name: "Cap combined regular and lump-sum additions within a tax year",
+        description: "",
+        tags: ["@contributions", "@annual-limit", "@government-bonus"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-68",
+            keyword: "Given",
+            text: 'the member is under age 50 throughout tax year "2026/27"',
+          },
+          {
+            id: "line-69",
+            keyword: "And",
+            text: 'planned regular LISA contributions total 3600.00 in tax year "2026/27"',
+          },
+          {
+            id: "line-70",
+            keyword: "And",
+            text: 'planned lump-sum LISA contributions total 1000.00 in tax year "2026/27"',
+          },
+          {
+            id: "line-71",
+            keyword: "When",
+            text: 'eligible LISA additions are calculated for tax year "2026/27"',
+          },
+          {
+            id: "line-72",
+            keyword: "Then",
+            text: "accepted LISA additions should be 4000.00",
+          },
+          {
+            id: "line-73",
+            keyword: "And",
+            text: "additions above the LISA annual limit should be 600.00",
+          },
+          {
+            id: "line-74",
+            keyword: "And",
+            text: "the LISA government bonus should be 1000.00",
+          },
+          {
+            id: "line-75",
+            keyword: "And",
+            text: "total accepted additions including government bonus should be 5000.00",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-78",
+        keyword: "Scenario Outline",
+        name: "Apply a 25 percent government bonus only to eligible additions",
+        description: "",
+        tags: ["@contributions", "@government-bonus"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-79",
+            keyword: "Given",
+            text: "the member is under age 50",
+          },
+          {
+            id: "line-80",
+            keyword: "And",
+            text: "eligible LISA additions in the tax year are <eligibleAdditions>",
+          },
+          {
+            id: "line-81",
+            keyword: "When",
+            text: "the LISA government bonus is calculated",
+          },
+          {
+            id: "line-82",
+            keyword: "Then",
+            text: "the LISA government bonus should be <expectedBonus>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-84",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-85",
+                cells: [
+                  {
+                    id: "line-85-column-9",
+                    value: "eligibleAdditions",
+                  },
+                  {
+                    id: "line-85-column-29",
+                    value: "expectedBonus",
+                  },
+                ],
+              },
+              {
+                id: "line-86",
+                cells: [
+                  {
+                    id: "line-86-column-9",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-86-column-29",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-87",
+                cells: [
+                  {
+                    id: "line-87-column-9",
+                    value: "1000.00",
+                  },
+                  {
+                    id: "line-87-column-29",
+                    value: "250.00",
+                  },
+                ],
+              },
+              {
+                id: "line-88",
+                cells: [
+                  {
+                    id: "line-88-column-9",
+                    value: "2500.00",
+                  },
+                  {
+                    id: "line-88-column-29",
+                    value: "625.00",
+                  },
+                ],
+              },
+              {
+                id: "line-89",
+                cells: [
+                  {
+                    id: "line-89-column-9",
+                    value: "4000.00",
+                  },
+                  {
+                    id: "line-89-column-29",
+                    value: "1000.00",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-92",
+        keyword: "Scenario",
+        name: "Reset the LISA contribution limit on 6 April",
+        description: "",
+        tags: ["@contributions", "@tax-year", "@annual-limit"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-93",
+            keyword: "Given",
+            text: 'the member is under age 50 on "2027-04-05" and "2027-04-06"',
+          },
+          {
+            id: "line-94",
+            keyword: "And",
+            text: 'the member has already made 4000.00 of eligible LISA additions in tax year "2026/27"',
+          },
+          {
+            id: "line-95",
+            keyword: "When",
+            text: 'a further LISA addition of 4000.00 is scheduled on "2027-04-06"',
+          },
+          {
+            id: "line-96",
+            keyword: "Then",
+            text: 'the further addition should be assessed against tax year "2027/28"',
+          },
+          {
+            id: "line-97",
+            keyword: "And",
+            text: 'up to 4000.00 of that addition should be eligible in tax year "2027/28"',
+          },
+          {
+            id: "line-98",
+            keyword: "And",
+            text: 'the government bonus for 4000.00 of eligible additions in tax year "2027/28" should be 1000.00',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-101",
+        keyword: "Scenario",
+        name: "Do not apply the government bonus to an existing balance or investment return",
+        description: "",
+        tags: ["@government-bonus", "@investment-growth"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-102",
+            keyword: "Given",
+            text: "the member is under age 50",
+          },
+          {
+            id: "line-103",
+            keyword: "And",
+            text: "the member has a LISA balance of 10000.00",
+          },
+          {
+            id: "line-104",
+            keyword: "And",
+            text: "the member makes no eligible LISA additions in the tax year",
+          },
+          {
+            id: "line-105",
+            keyword: "And",
+            text: "the annual LISA net investment return assumption is 5.00%",
+          },
+          {
+            id: "line-106",
+            keyword: "When",
+            text: "the LISA is projected for the tax year",
+          },
+          {
+            id: "line-107",
+            keyword: "Then",
+            text: "the LISA government bonus should be 0.00",
+          },
+          {
+            id: "line-108",
+            keyword: "And",
+            text: "the existing balance should still receive modelled investment growth",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-111",
+        keyword: "Scenario",
+        name: "Do not present one twelfth of the annual allowance as a statutory monthly limit",
+        description: "",
+        tags: ["@contributions", "@monthly-control", "@copy"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-112",
+            keyword: "When",
+            text: "the regular LISA contribution control and guidance are inspected",
+          },
+          {
+            id: "line-113",
+            keyword: "Then",
+            text: "the guidance should explain that the statutory LISA payment limit is 4000.00 per tax year",
+          },
+          {
+            id: "line-114",
+            keyword: "And",
+            text: "the guidance should not describe 333.33 per month as a statutory LISA contribution limit",
+          },
+          {
+            id: "line-115",
+            keyword: "And",
+            text: "any regular monthly planning maximum should be described as a modeller convention for regular saving",
+          },
+          {
+            id: "line-116",
+            keyword: "And",
+            text: "regular and lump-sum additions should share the same annual LISA limit",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-119",
+        keyword: "Scenario",
+        name: "Explain that LISA payments form part of the overall ISA allowance",
+        description: "",
+        tags: ["@isa-allowance", "@copy", "@limitation"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-120",
+            keyword: "Given",
+            text: "the model includes both ISA and LISA contributions",
+          },
+          {
+            id: "line-121",
+            keyword: "When",
+            text: "the LISA allowance guidance is inspected",
+          },
+          {
+            id: "line-122",
+            keyword: "Then",
+            text: "it should explain that LISA payments count towards the overall annual ISA subscription limit",
+          },
+          {
+            id: "line-123",
+            keyword: "And",
+            text: "it should not describe the LISA allowance as an additional allowance on top of the overall ISA allowance",
+          },
+          {
+            id: "line-124",
+            keyword: "And",
+            text: "if cross-account ISA allowance validation is not implemented the methodology should say so explicitly",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-129",
+        keyword: "Scenario",
+        name: "Require age 60 for the modeller's retirement LISA draw start age",
+        description: "",
+        tags: ["@access-age", "@validation"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-130",
+            keyword: "Given",
+            text: "the modeller is using LISA for later-life retirement spending",
+          },
+          {
+            id: "line-131",
+            keyword: "When",
+            text: "the LISA draw start age is 59",
+          },
+          {
+            id: "line-132",
+            keyword: "Then",
+            text: 'the LISA draw start age validation message should be "LISA retirement draw start age must be at least 60. The modeller does not model first-home, terminal-illness or charged early withdrawals."',
+          },
+          {
+            id: "line-133",
+            keyword: "When",
+            text: "the LISA draw start age is 60",
+          },
+          {
+            id: "line-134",
+            keyword: "Then",
+            text: "LISA draw start age validation should pass",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-137",
+        keyword: "Scenario",
+        name: "Do not make retirement LISA funds available before the configured qualifying draw age",
+        description: "",
+        tags: ["@access-age", "@withdrawals"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-138",
+            keyword: "Given",
+            text: "the member retires at age 57",
+          },
+          {
+            id: "line-139",
+            keyword: "And",
+            text: "the member has a LISA balance of 40000.00",
+          },
+          {
+            id: "line-140",
+            keyword: "And",
+            text: "the LISA draw start age is 60",
+          },
+          {
+            id: "line-141",
+            keyword: "And",
+            text: "the LISA uses the target-based withdrawal strategy",
+          },
+          {
+            id: "line-142",
+            keyword: "When",
+            text: "the retirement income projection is calculated",
+          },
+          {
+            id: "line-143",
+            keyword: "Then",
+            text: "LISA retirement withdrawals at ages 57 through 59 should be 0.00",
+          },
+          {
+            id: "line-144",
+            keyword: "And",
+            text: "the LISA may be used for retirement withdrawals from age 60",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-147",
+        keyword: "Scenario Outline",
+        name: "Apply each supported LISA withdrawal strategy only after LISA retirement access",
+        description: "",
+        tags: ["@withdrawals", "@strategy"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-148",
+            keyword: "Given",
+            text: "the member has a LISA balance of 50000.00",
+          },
+          {
+            id: "line-149",
+            keyword: "And",
+            text: "the LISA draw start age is 60",
+          },
+          {
+            id: "line-150",
+            keyword: "And",
+            text: "the LISA withdrawal strategy is <strategy>",
+          },
+          {
+            id: "line-151",
+            keyword: "When",
+            text: "the retirement income projection is calculated",
+          },
+          {
+            id: "line-152",
+            keyword: "Then",
+            text: "the strategy should not produce LISA retirement withdrawals before age 60",
+          },
+          {
+            id: "line-153",
+            keyword: "And",
+            text: "the strategy may produce LISA retirement withdrawals from age 60 subject to its configured rules",
+          },
+        ],
+        examples: [
+          {
+            id: "line-155",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-156",
+                cells: [
+                  {
+                    id: "line-156-column-9",
+                    value: "strategy",
+                  },
+                ],
+              },
+              {
+                id: "line-157",
+                cells: [
+                  {
+                    id: "line-157-column-9",
+                    value: '"Annual percentage"',
+                  },
+                ],
+              },
+              {
+                id: "line-158",
+                cells: [
+                  {
+                    id: "line-158-column-9",
+                    value: '"Use by age"',
+                  },
+                ],
+              },
+              {
+                id: "line-159",
+                cells: [
+                  {
+                    id: "line-159-column-9",
+                    value: '"Zero at death"',
+                  },
+                ],
+              },
+              {
+                id: "line-160",
+                cells: [
+                  {
+                    id: "line-160-column-9",
+                    value: '"Use to meet income target"',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-163",
+        keyword: "Scenario",
+        name: "Exclude qualifying LISA withdrawals from taxable retirement income",
+        description: "",
+        tags: ["@tax", "@withdrawals"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-164",
+            keyword: "Given",
+            text: "Income Tax modelling is on",
+          },
+          {
+            id: "line-165",
+            keyword: "And",
+            text: "the member is age 60",
+          },
+          {
+            id: "line-166",
+            keyword: "And",
+            text: "monthly qualifying LISA withdrawal income is 1000.00",
+          },
+          {
+            id: "line-167",
+            keyword: "When",
+            text: "monthly Income Tax is calculated for the retirement projection",
+          },
+          {
+            id: "line-168",
+            keyword: "Then",
+            text: "taxable income from the qualifying LISA withdrawal should be 0.00",
+          },
+          {
+            id: "line-169",
+            keyword: "And",
+            text: "the full 1000.00 LISA withdrawal should be available toward after-tax spending",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-174",
+        keyword: "Scenario",
+        name: "Explain the LISA behaviours that the retirement model does not determine",
+        description: "",
+        tags: ["@scope", "@limitations", "@copy"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-175",
+            keyword: "When",
+            text: "the LISA methodology and important information are inspected",
+          },
+          {
+            id: "line-176",
+            keyword: "Then",
+            text: "they should explain that the retirement LISA projection does not model first-home withdrawals",
+          },
+          {
+            id: "line-177",
+            keyword: "And",
+            text: "they should explain that the retirement LISA projection does not model the 25 percent withdrawal charge for other pre-60 withdrawals",
+          },
+          {
+            id: "line-178",
+            keyword: "And",
+            text: "they should explain that the retirement LISA projection does not model terminal-illness withdrawals",
+          },
+          {
+            id: "line-179",
+            keyword: "And",
+            text: "they should explain that the modeller does not determine legal contribution eligibility from UK residence or Crown-service status",
+          },
+          {
+            id: "line-180",
+            keyword: "And",
+            text: "they should explain that provider-specific payment, bonus-claim and transfer mechanics are outside the projection",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-183",
+        keyword: "Scenario",
+        name: "Treat an entered balance as an existing LISA rather than deciding whether a new LISA can be opened",
+        description: "",
+        tags: ["@scope", "@opening-age"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-184",
+            keyword: "Given",
+            text: "a user is age 40 or over",
+          },
+          {
+            id: "line-185",
+            keyword: "And",
+            text: "the user enters a current LISA balance greater than 0.00",
+          },
+          {
+            id: "line-186",
+            keyword: "When",
+            text: "the LISA retirement projection is calculated",
+          },
+          {
+            id: "line-187",
+            keyword: "Then",
+            text: "the existing LISA balance should be accepted for modelling",
+          },
+          {
+            id: "line-188",
+            keyword: "And",
+            text: "the modeller should not claim that the user is currently eligible to open a new LISA",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
     path: "features/local-privacy.feature",
     name: "Local-only preferences and data controls",
     description:

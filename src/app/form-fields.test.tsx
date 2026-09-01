@@ -173,6 +173,44 @@ describe("form-fields module", () => {
     expect(onChange).toHaveBeenCalledWith("requirementAge", 67.25);
   });
 
+  it("lets the LISA slider select its £333.33 regular-saving maximum", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      showLisa: true,
+      lisaMonthlyContribution: 325,
+    };
+    const onChange = vi.fn();
+    const lisaContributionField = fieldGroups
+      .flatMap((group) => group.fields)
+      .filter((field) => field.id === "lisaMonthlyContribution");
+
+    render(
+      <SettingsFields
+        fields={lisaContributionField}
+        settings={settings}
+        validationIssues={[]}
+        onChange={onChange}
+        showGuidanceNotes
+        useDropdownDates={false}
+      />
+    );
+
+    const slider = screen.getByLabelText(
+      "Regular LISA contribution (£ per month)"
+    );
+    const exactValue = screen.getByLabelText(
+      "Regular LISA contribution (£ per month) exact value"
+    );
+
+    expect(slider).toHaveAttribute("step", "0.01");
+    expect(exactValue).toHaveAttribute("step", "0.01");
+
+    fireEvent.change(slider, { target: { value: "333.33" } });
+    fireEvent.blur(slider);
+
+    expect(onChange).toHaveBeenCalledWith("lisaMonthlyContribution", 333.33);
+  });
+
   it("resets NPA-linked expert ages to the current Normal Pension Age", () => {
     const dateOfBirth = "1977-06-01";
     const normalPensionAge = calculateNormalPensionAge(dateOfBirth);

@@ -161,6 +161,33 @@ export function SettingsGroupSupplementaryEditor({
     );
   }
 
+  if (groupId === "lisa") {
+    return (
+      <AddedPensionLumpSumsEditorFeature
+        lumpSums={settings.lisaLumpSums}
+        defaultStartDate={settings.startDate}
+        useDropdownDates={useDropdownDates}
+        title="LISA lump sums"
+        description={
+          showDescriptions
+            ? "Add one-off or yearly LISA contributions. Regular and lump-sum LISA additions share the £4,000 tax-year limit; this modeller does not validate the combined overall ISA allowance."
+            : ""
+        }
+        emptyText="No LISA lump sum contributions set up yet."
+        itemLabel="LISA lump sum"
+        addButtonLabel="Add LISA lump sum"
+        removeButtonLabel="Remove LISA lump sum"
+        domIdPrefix={domIdPrefix}
+        ownerLabel={ownerLabel}
+        validationIssues={getValidationIssuesForField(
+          validationIssues,
+          "lisaLumpSums"
+        )}
+        onChange={(nextLumpSums) => onChange("lisaLumpSums", nextLumpSums)}
+      />
+    );
+  }
+
   if (groupId === "additional-income") {
     return (
       <AdditionalGuaranteedIncomeEditor

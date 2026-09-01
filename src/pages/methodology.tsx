@@ -1,6 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { knowledgeLinks } from "../knowledgeLinks";
+import {
+  LISA_ALLOWANCE_GUIDANCE,
+  LISA_LIMITATIONS_GUIDANCE,
+} from "../app-domains/lisa";
 import { PENSION_WITHDRAWAL_TAX_RULES } from "../data/income-tax-rules";
 import { StaticPageLayout } from "./static-page-layout";
 import "../index.css";
@@ -1009,19 +1013,8 @@ export function MethodologyPage() {
         <p className="section-copy">
           LISA withdrawals are not treated as taxable income.
         </p>
-        <p className="section-copy">
-          Regular LISA saving and scheduled lump sums are included until the
-          earliest of the LISA draw date, target retirement age, or age 50.
-          Eligible additions are capped at £4,000 per UK tax year and receive a
-          25% government bonus in the model. The regular monthly contribution
-          control is capped at one twelfth of the annual LISA allowance.
-        </p>
-        <p className="section-copy">
-          Known simplification: the model does not cover first-home withdrawals,
-          early-withdrawal charges, provider-specific mechanics, or interactions
-          with the wider ISA subscription allowance. It treats the LISA as a
-          separate tax-free retirement balance.
-        </p>
+        <p className="section-copy">{LISA_ALLOWANCE_GUIDANCE}</p>
+        <p className="section-copy">{LISA_LIMITATIONS_GUIDANCE}</p>
       </section>
 
       <section>

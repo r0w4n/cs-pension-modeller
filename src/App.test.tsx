@@ -2015,6 +2015,9 @@ describe("App settings form", () => {
     expect(screen.getByLabelText("LISA access age")).toHaveValue(
       defaultSettings.lisaDrawAge.toString()
     );
+    expect(
+      screen.getByRole("button", { name: "Add LISA lump sum" })
+    ).toBeInTheDocument();
   });
 
   it("keeps EPA inside the early retirement Alpha step", () => {

@@ -7,7 +7,10 @@ import {
 import { validateAdditionalGuaranteedIncomeRules } from "./settings-domains/additional-guaranteed-income";
 import { validateClassicRules } from "./settings-domains/classic";
 import { validateIsaRules } from "./settings-domains/isa";
-import { validateLisaRules } from "./settings-domains/lisa";
+import {
+  LISA_CONTRIBUTION_STOP_AGE,
+  validateLisaRules,
+} from "./settings-domains/lisa";
 import { validateNuvosRules } from "./settings-domains/nuvos";
 import { validatePremiumRules } from "./settings-domains/premium";
 import { validateStatePensionRules } from "./settings-domains/state-pension";
@@ -135,8 +138,11 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
       csAvcDrawDate <= retirementDate ? csAvcDrawDate : retirementDate,
     isaContributionStopDate:
       isaDrawDate <= retirementDate ? isaDrawDate : retirementDate,
-    lisaContributionStopDate:
-      lisaDrawDate <= retirementDate ? lisaDrawDate : retirementDate,
+    lisaContributionStopDate: earliestDate(
+      lisaDrawDate,
+      retirementDate,
+      addYearsToIsoDate(settings.dateOfBirth, LISA_CONTRIBUTION_STOP_AGE)
+    ),
     sippWithdrawalTargetDate: addYearsToIsoDate(
       settings.dateOfBirth,
       settings.sippWithdrawalTargetAge
@@ -158,6 +164,10 @@ function createValidationContext(settings: PensionSettings): ValidationContext {
       settings.dateOfBirth
     ),
   };
+}
+
+function earliestDate(...dates: string[]) {
+  return dates.reduce((earliest, date) => (date < earliest ? date : earliest));
 }
 
 export function validateSettings(

@@ -267,7 +267,18 @@ describe("MethodologyPage", () => {
     expect(
       screen.getByText(/Regular LISA saving and scheduled lump sums/)
     ).toHaveTextContent(
-      "The regular monthly contribution control is capped at one twelfth of the annual LISA allowance."
+      "LISA payments count towards the overall annual ISA subscription allowance."
+    );
+    expect(
+      screen.getByText(/Regular LISA saving and scheduled lump sums/)
+    ).toHaveTextContent("modeller convention for regular saving");
+    expect(
+      screen.getByText(/Known simplification: the retirement LISA projection/)
+    ).toHaveTextContent("terminal-illness withdrawals");
+    expect(
+      screen.getByText(/Known simplification: the retirement LISA projection/)
+    ).toHaveTextContent(
+      "does not validate combined ISA and LISA subscriptions"
     );
   });
 });

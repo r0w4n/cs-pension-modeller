@@ -156,4 +156,7 @@ export {
   TAX_REGIME_OPTIONS,
 } from "./settings/settings-domains/tax";
 
-export { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings/settings-domains/lisa";
+export {
+  LISA_MONTHLY_CONTRIBUTION_MAX,
+  LISA_MONTHLY_CONTRIBUTION_STEP,
+} from "./settings/settings-domains/lisa";

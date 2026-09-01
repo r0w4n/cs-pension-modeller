@@ -734,6 +734,19 @@ test.describe("app end-to-end journeys", () => {
     await fillCurrency(page, "Current ISA balance (£)", "35000");
     await clickNextAndExpectStep(page, "Your Lifetime ISA");
     await fillCurrency(page, "Current LISA balance (£)", "12000");
+    await expect(
+      page.getByRole("button", { name: "Add LISA lump sum" })
+    ).toBeVisible();
+    const lisaContributionSlider = page.getByRole("slider", {
+      name: "Planned monthly LISA contribution before age 50",
+    });
+    await lisaContributionSlider.press("End");
+    await expect(lisaContributionSlider).toHaveValue("333.33");
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "Planned monthly LISA contribution before age 50 exact value",
+      })
+    ).toHaveValue("333.33");
     await fillExactNumber(page, "LISA access age exact value", "60");
     await clickNextAndExpectStep(page, "Your SIPP or personal pension");
     await fillCurrency(page, "Current SIPP balance (£)", "95000");

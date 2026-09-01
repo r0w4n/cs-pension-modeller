@@ -10,6 +10,7 @@ export const LISA_ACCESS_AGE = 60;
 export const LISA_CONTRIBUTION_STOP_AGE = 50;
 export const LISA_ANNUAL_ALLOWANCE = 4_000;
 export const LISA_MONTHLY_CONTRIBUTION_MAX = LISA_ANNUAL_ALLOWANCE / 12;
+export const LISA_MONTHLY_CONTRIBUTION_STEP = 0.01;
 export const LISA_GOVERNMENT_BONUS_RATE = 0.25;
 
 export function normalizeLisaWithdrawalStrategy(
@@ -50,7 +51,8 @@ export function validateLisaRules({
   ) {
     issues.push({
       field: "lisaDrawAge",
-      message: "LISA draw start age must be at least 60.",
+      message:
+        "LISA retirement draw start age must be at least 60. The modeller does not model first-home, terminal-illness or charged early withdrawals.",
     });
   }
 

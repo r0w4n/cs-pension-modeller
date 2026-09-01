@@ -12,6 +12,7 @@ import {
   calculateStatePensionDrawAge,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   LISA_MONTHLY_CONTRIBUTION_MAX,
+  LISA_MONTHLY_CONTRIBUTION_STEP,
   MODEL_AGE_STEP,
   type PensionSettings,
 } from "../settings";
@@ -403,7 +404,7 @@ export function createRetirementIncomeChartLimits(
     lisaMonthlyContribution: {
       min: 0,
       max: LISA_MONTHLY_CONTRIBUTION_MAX,
-      step: 25,
+      step: LISA_MONTHLY_CONTRIBUTION_STEP,
     },
     sippMonthlyContribution: {
       min: 0,

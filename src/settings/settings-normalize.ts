@@ -35,6 +35,7 @@ import {
 import {
   LISA_ACCESS_AGE,
   LISA_MONTHLY_CONTRIBUTION_MAX,
+  LISA_MONTHLY_CONTRIBUTION_STEP,
   normalizeLisaBooleanSetting,
   normalizeLisaWithdrawalStrategy,
 } from "./settings-domains/lisa";
@@ -131,7 +132,7 @@ const numericSettingRules = {
   lisaMonthlyContribution: {
     min: 0,
     max: LISA_MONTHLY_CONTRIBUTION_MAX,
-    step: 25,
+    step: LISA_MONTHLY_CONTRIBUTION_STEP,
   },
   lisaDrawAge: { min: LISA_ACCESS_AGE, max: 100, step: 1 },
   lisaRealInterestPercent: { min: -10, max: 10, step: 0.1 },

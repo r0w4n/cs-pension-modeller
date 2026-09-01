@@ -11,7 +11,10 @@ import {
   type RetirementIncomeChartReadOnlyProps,
   type RetirementIncomePoint,
 } from "./RetirementIncomeChart";
-import { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings";
+import {
+  LISA_MONTHLY_CONTRIBUTION_MAX,
+  LISA_MONTHLY_CONTRIBUTION_STEP,
+} from "./settings";
 
 const basePoint: RetirementIncomePoint = {
   date: "2026-01-01",
@@ -107,7 +110,7 @@ const baseProps: RetirementIncomeChartProps = {
     lisaMonthlyContribution: {
       min: 0,
       max: LISA_MONTHLY_CONTRIBUTION_MAX,
-      step: 25,
+      step: LISA_MONTHLY_CONTRIBUTION_STEP,
     },
     sippMonthlyContribution: { min: 0, max: 2000, step: 25 },
     retirementAge: { min: 40, max: 67, step: 0.25 },

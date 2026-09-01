@@ -1,6 +1,7 @@
 import {
   createDefaultSettings,
   LISA_MONTHLY_CONTRIBUTION_MAX,
+  LISA_MONTHLY_CONTRIBUTION_STEP,
 } from "../settings";
 import {
   createProjectionTable,
@@ -492,6 +493,9 @@ describe("retirement-income chart limits", () => {
     expect(limits.isaMonthlyContribution.max).toBe(2000);
     expect(limits.lisaMonthlyContribution.max).toBe(
       LISA_MONTHLY_CONTRIBUTION_MAX
+    );
+    expect(limits.lisaMonthlyContribution.step).toBe(
+      LISA_MONTHLY_CONTRIBUTION_STEP
     );
     expect(limits.sippMonthlyContribution.max).toBe(2000);
     expect(limits.sippAccessAge.min).toBe(60);

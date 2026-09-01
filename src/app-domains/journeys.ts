@@ -564,6 +564,7 @@ export const JOURNEY_DEFINITIONS = [
         description:
           "Add the Lifetime ISA balance and contributions that could help fund retirement from age 60.",
         kind: "fields",
+        groupId: "lisa",
         fieldIds: [
           "lisaCurrentPot",
           "lisaMonthlyContribution",

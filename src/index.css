@@ -1183,6 +1183,17 @@ h3 {
   stroke-width: 2;
 }
 
+.retirement-income-person-age-axis line {
+  stroke: rgba(18, 32, 51, 0.32);
+  stroke-width: 1.25;
+}
+
+.retirement-income-person-age-axis text {
+  fill: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .retirement-income-shortfall-fill {
   fill: rgba(191, 44, 44, 0.16);
   stroke: rgba(191, 44, 44, 0.68);
@@ -1288,25 +1299,6 @@ h3 {
   pointer-events: none;
 }
 
-.household-chart-input-controls {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.household-chart-person-controls h4 {
-  margin: 0;
-}
-
-.household-chart-person-controls {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.household-chart-person-controls + .household-chart-person-controls {
-  border-top: 1px solid var(--border);
-  padding-top: 0.9rem;
-}
-
 .retirement-income-period-inspector {
   cursor: crosshair;
   outline: none;
@@ -1386,6 +1378,11 @@ h3 {
   fill: #122033;
   font-size: 0.66rem;
   font-weight: 900;
+}
+
+.household-chart-input-controls {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .retirement-income-control-grid {
@@ -2889,6 +2886,12 @@ h3 {
 @media (min-width: 960px) {
   .journey-step-button {
     min-width: 14rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .household-chart-input-controls .retirement-income-control-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

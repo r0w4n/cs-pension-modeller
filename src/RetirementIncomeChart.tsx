@@ -71,6 +71,7 @@ import {
   createChartIncomeSeriesDefinitions,
   createChartMaxAge,
   createMarkerLayouts,
+  createPersonAgeAxisTicks,
   createStackedIncomeSeries,
   createVisibleChartData,
   createWholeYearTicks,
@@ -122,7 +123,7 @@ type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   showShortfallOverlay?: boolean;
   /** Controls the standard single-person contribution controls below the plot. */
   showParameterControls?: boolean;
-  /** Reuses the chart's control area for a household-specific control grid. */
+  /** Reuses the chart's control area for household-specific shared controls. */
   additionalParameterControls?: ReactNode;
   /** Called when a target segment is edited, with the displayed age/timeline. */
   onChangeTargetIncome?: (value: number, age?: number) => void;
@@ -203,6 +204,10 @@ const DRAG_AGE_LABEL_HEIGHT = 19;
 const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
 const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
 const MARKER_DRAG_LEFT_OVERSCAN_RATIO = 0.4;
+const CALENDAR_AXIS_HEIGHT = 530;
+const CALENDAR_AXIS_HEIGHT_COMPACT = 510;
+const CALENDAR_AXIS_MARGIN_BOTTOM = 122;
+const CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT = 116;
 const spendingSmilePhaseMeta = [
   {
     key: "goGo",
@@ -410,8 +415,7 @@ export function RetirementIncomeChart({
   const axisTitle = createRetirementIncomeAxisTitle(
     valueLabel,
     axisTargetLabel,
-    isSimplePresentation,
-    isCalendarTimeline
+    isSimplePresentation
   );
   const chartTitleId = "retirement-income-chart-title";
   const chartDescriptionId = "retirement-income-chart-description";
@@ -496,19 +500,38 @@ export function RetirementIncomeChart({
     return () => observer.disconnect();
   }, []);
   const isCompact = width < 640;
+  const hasPersonAgeAxes =
+    isCalendarTimeline &&
+    data.some(
+      (point) =>
+        point.personAges?.you !== undefined ||
+        point.personAges?.partner !== undefined
+    );
 
   const dimensions = useMemo<ChartDimensions>(() => {
-    const height = isCompact ? 420 : 460;
+    const height = hasPersonAgeAxes
+      ? isCompact
+        ? CALENDAR_AXIS_HEIGHT_COMPACT
+        : CALENDAR_AXIS_HEIGHT
+      : isCompact
+        ? 420
+        : 460;
 
     return {
       width,
       height,
       marginTop: isCompact ? 38 : 46,
       marginRight: isCompact ? 8 : 28,
-      marginBottom: isCompact ? 34 : 38,
+      marginBottom: hasPersonAgeAxes
+        ? isCompact
+          ? CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT
+          : CALENDAR_AXIS_MARGIN_BOTTOM
+        : isCompact
+          ? 34
+          : 38,
       marginLeft: isCompact ? 48 : 78,
     };
-  }, [isCompact, width]);
+  }, [hasPersonAgeAxes, isCompact, width]);
   const plotWidth = Math.max(
     1,
     dimensions.width - dimensions.marginLeft - dimensions.marginRight
@@ -782,8 +805,30 @@ export function RetirementIncomeChart({
     visibleData,
   });
   const yTicks = yScale.ticks(5);
-  const xTicks = xScale.ticks(width < 640 ? 5 : 8);
+  const xTicks = xScale.ticks(
+    isCalendarTimeline ? (width < 640 ? 4 : 7) : width < 640 ? 5 : 8
+  );
   const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
+  const personAgeAxisTicks = {
+    you: hasPersonAgeAxes
+      ? createPersonAgeAxisTicks(
+          visibleData,
+          "you",
+          xDomainMin,
+          xDomainMax,
+          width < 640 ? 4 : 7
+        )
+      : [],
+    partner: hasPersonAgeAxes
+      ? createPersonAgeAxisTicks(
+          visibleData,
+          "partner",
+          xDomainMin,
+          xDomainMax,
+          width < 640 ? 4 : 7
+        )
+      : [],
+  };
   const invalidMarkerKeys = useMemo(
     () => getInvalidMarkerKeys(validationIssues),
     [validationIssues]
@@ -2717,17 +2762,41 @@ export function RetirementIncomeChart({
                   y2={plotHeight + 6}
                 />
                 <text x={xScale(tick)} y={plotHeight + 18} textAnchor="middle">
-                  {Math.round(tick)}
+                  {isCalendarTimeline
+                    ? formatCalendarTimelineTick(tick)
+                    : Math.round(tick)}
                 </text>
               </g>
             ))}
-            <text
-              className="retirement-income-axis-title"
-              x={0}
-              y={plotHeight + 30}
-            >
-              {isCalendarTimeline ? "Calendar year" : "Age"}
-            </text>
+            {!isCalendarTimeline ? (
+              <text
+                className="retirement-income-axis-title"
+                x={0}
+                y={plotHeight + 30}
+              >
+                Age
+              </text>
+            ) : null}
+            {hasPersonAgeAxes ? (
+              <>
+                <PersonAgeAxis
+                  axisKey="you"
+                  label="You"
+                  ticks={personAgeAxisTicks.you}
+                  plotHeight={plotHeight}
+                  plotWidth={plotWidth}
+                  xScale={xScale}
+                />
+                <PersonAgeAxis
+                  axisKey="partner"
+                  label="Partner"
+                  ticks={personAgeAxisTicks.partner}
+                  plotHeight={plotHeight}
+                  plotWidth={plotWidth}
+                  xScale={xScale}
+                />
+              </>
+            ) : null}
             {draggingMobileMarker ? (
               <g
                 className="retirement-income-drag-age"
@@ -2917,12 +2986,10 @@ function getDisplayedMilestoneMarkers(
 function createRetirementIncomeAxisTitle(
   valueLabel: string,
   targetLabel: string,
-  isSimplePresentation: boolean,
-  isCalendarTimeline: boolean
+  isSimplePresentation: boolean
 ) {
   const comparisonLabel = isSimplePresentation ? "Amount you want" : "Target";
-  const baseTitle = `${valueLabel} (£) · ${comparisonLabel} ${targetLabel}`;
-  return isCalendarTimeline ? `${baseTitle} · Calendar year` : baseTitle;
+  return `${valueLabel} (£) · ${comparisonLabel} ${targetLabel}`;
 }
 
 function createMobileRetirementIncomeSummary({
@@ -2956,7 +3023,7 @@ function createMobileRetirementIncomeSummary({
         ? "No ages with less than you want"
         : "No modelled shortfall";
 
-  return [
+  const summary = [
     {
       label: isSimplePresentation ? "Amount you want" : "Target",
       value: `${formatCurrency(displayedTargetIncomeAnnual)} / year`,
@@ -2965,20 +3032,19 @@ function createMobileRetirementIncomeSummary({
       label: getRetirementIncomeShortfallLabel(isSimplePresentation),
       value: shortfallValue,
     },
-    {
-      label: isCalendarTimeline
-        ? "Timeline"
-        : showStatePension
-          ? "State Pension"
-          : "Alpha pension",
-      value: isCalendarTimeline
-        ? "Calendar years"
-        : `Age ${formatTimelineValue(
-            showStatePension ? statePensionAge : alphaStartAge,
-            false
-          )}`,
-    },
   ];
+
+  if (!isCalendarTimeline) {
+    summary.push({
+      label: showStatePension ? "State Pension" : "Alpha pension",
+      value: `Age ${formatTimelineValue(
+        showStatePension ? statePensionAge : alphaStartAge,
+        false
+      )}`,
+    });
+  }
+
+  return summary;
 }
 
 function getRetirementIncomeShortfallLabel(isSimplePresentation: boolean) {
@@ -3012,6 +3078,72 @@ function formatCompactCurrency(value: number) {
 
 function formatAgeValue(value: number) {
   return formatModelAgeCompact(value);
+}
+
+function formatCalendarTimelineTick(value: number) {
+  const totalMonths = Math.round(value * 12);
+  const year = Math.floor(totalMonths / 12);
+  const month = totalMonths % 12;
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month, 1)));
+}
+
+function PersonAgeAxis({
+  axisKey,
+  label,
+  ticks,
+  plotHeight,
+  plotWidth,
+  xScale,
+}: {
+  axisKey: "you" | "partner";
+  label: string;
+  ticks: Array<{ age: number; timelineValue: number }>;
+  plotHeight: number;
+  plotWidth: number;
+  xScale: d3.ScaleLinear<number, number>;
+}) {
+  const axisY = plotHeight + (axisKey === "you" ? 44 : 82);
+  const tickLabelY = axisY + 18;
+  const titleY = axisY + 34;
+
+  return (
+    <g
+      className={`retirement-income-person-age-axis retirement-income-${axisKey}-age-axis`}
+      data-testid={`retirement-income-${axisKey}-age-axis`}
+      role="group"
+      aria-label={`${label} age axis`}
+    >
+      <line
+        className="retirement-income-axis"
+        x1={0}
+        x2={plotWidth}
+        y1={axisY}
+        y2={axisY}
+      />
+      {ticks.map((tick) => {
+        const x = xScale(tick.timelineValue);
+        return (
+          <g
+            key={`${axisKey}-${tick.age}`}
+            className="retirement-income-person-age-tick"
+            data-age={tick.age}
+          >
+            <line x1={x} x2={x} y1={axisY} y2={axisY + 6} />
+            <text x={x} y={tickLabelY} textAnchor="middle">
+              {Math.round(tick.age)}
+            </text>
+          </g>
+        );
+      })}
+      <text className="retirement-income-axis-title" x={0} y={titleY}>
+        {label}
+      </text>
+    </g>
+  );
 }
 
 function getTimelineValue(point: RetirementIncomePoint) {

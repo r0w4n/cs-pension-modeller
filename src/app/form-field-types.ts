@@ -61,6 +61,8 @@ export type AddedPensionLumpSumsEditorProps = {
   addButtonLabel?: string;
   removeButtonLabel?: string;
   showFactorType?: boolean;
+  domIdPrefix?: string;
+  ownerLabel?: string;
   validationIssues?: PensionValidationIssue[];
   onChange: (nextLumpSums: AddedPensionLumpSum[]) => void;
 };

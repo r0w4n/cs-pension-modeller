@@ -96,6 +96,11 @@ Feature: Target-based flexible-fund withdrawals
     When Partner ISA changes to the target-based strategy
     Then the household target-based priority should include only Partner ISA
 
+  Scenario: Carry each person's pension lump-sum allowance across household withdrawals
+    Given a two-person household with a limited SIPP lump-sum allowance
+    When the joint household projection is calculated
+    Then Your coordinated SIPP withdrawals should not consume more than the available allowance
+
   Scenario: Expose flexible withdrawal controls only where the journey explains the decision
     Then the simplified journey should not expose flexible withdrawal strategy controls
     And the bridge withdrawal-plan step should expose flexible withdrawal strategy controls

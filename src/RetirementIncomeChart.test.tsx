@@ -560,6 +560,52 @@ describe("RetirementIncomeChart", () => {
     );
   });
 
+  it("renders calendar and person-age axes for a household timeline", () => {
+    renderReadonlyHouseholdChart({
+      timelineMode: "calendar",
+      showMilestoneMarkers: false,
+      data: [
+        {
+          ...basePoint,
+          date: "2030-01-01",
+          age: 2030,
+          timelineValue: 2030,
+          personAges: { you: 50, partner: 48 },
+        },
+        {
+          ...basePoint,
+          date: "2040-01-01",
+          age: 2040,
+          timelineValue: 2040,
+          personAges: { you: 60, partner: 58 },
+        },
+      ],
+    });
+
+    expect(screen.queryByText("Calendar month/year")).not.toBeInTheDocument();
+    expect(
+      getXAxisLabels().some((label) =>
+        /^[A-Z][a-z]{2} 20\d{2}$/.test(label ?? "")
+      )
+    ).toBe(true);
+    expect(
+      screen.getByTestId("retirement-income-you-age-axis")
+    ).toHaveTextContent("You");
+    expect(
+      screen.getByTestId("retirement-income-partner-age-axis")
+    ).toHaveTextContent("Partner");
+    expect(
+      screen
+        .getByTestId("retirement-income-you-age-axis")
+        .querySelectorAll(".retirement-income-person-age-tick").length
+    ).toBeGreaterThan(0);
+    expect(
+      screen
+        .getByTestId("retirement-income-partner-age-axis")
+        .querySelectorAll(".retirement-income-person-age-tick").length
+    ).toBeGreaterThan(0);
+  });
+
   it("starts the target income line at the y axis", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 

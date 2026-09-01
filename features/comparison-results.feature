@@ -62,3 +62,19 @@ Feature: Scenario comparison results
     Then the comparison should include the "Household headline outcome" section
     And the comparison should include the "Both retired" metric
     And the "Target income" comparison value should include "/year"
+
+  @household @settings-storage
+  Scenario: Reload a household scenario without changing its assessment
+    Given a default two-person retirement scenario named "Reloaded household"
+    When the two-person scenario settings are exported, parsed and recalculated
+    Then the reloaded scenario should retain Partner settings
+    And the reloaded scenario should retain its household assessment status
+
+  @household
+  Scenario: Do not silently compare single-person and household targets
+    Given a default retirement scenario named "Single plan"
+    And a default two-person retirement scenario named "Household plan"
+    When comparison table rows are built
+    Then the comparison should include the "Comparison unavailable" section
+    And the "Model type" comparison value for "Single plan" should be "Single person"
+    And the "Model type" comparison value for "Household plan" should be "Two-person household"

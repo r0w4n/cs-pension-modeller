@@ -290,7 +290,20 @@ function coercePartnerSettings(value: unknown): PartnerSettings | undefined {
 
   // The normalizer fills safe defaults while preserving the Partner's own date
   // of birth, including an explicitly blank value from an imported plan.
-  return coerceSettings(value) as PartnerSettings;
+  const coerced = coerceSettings({
+    ...value,
+    // PartnerSettings cannot contain another household or partner. Strip
+    // malformed nested values before coercion so imported JSON cannot recurse
+    // indefinitely through arbitrarily nested partner records.
+    partner: undefined,
+    jointRetirement: undefined,
+  });
+  const {
+    partner: _partner,
+    jointRetirement: _jointRetirement,
+    ...person
+  } = coerced;
+  return person as PartnerSettings;
 }
 
 function coerceJointRetirementSettings(

@@ -6,6 +6,8 @@ import {
 } from "../projection";
 import {
   calculatePensionWithdrawalTaxBreakdown,
+  consumePensionLumpSumAllowance,
+  createPensionLumpSumAllowanceState,
   type PensionLumpSumAllowanceState,
 } from "../projection-domains/tax";
 import {
@@ -16,7 +18,6 @@ import {
 } from "../projection-domains/tax-year";
 import {
   createPartnerCalculationSettings,
-  createPartnerIndividualSettings,
   FLEXIBLE_FUND_ACCOUNT_CONFIG,
   FLEXIBLE_FUND_ACCOUNT_IDS,
   type FlexibleFundAccountId,
@@ -56,11 +57,6 @@ export type JointRetirementProjection = {
     you: JointPersonProjectionSlice;
     partner: JointPersonProjectionSlice;
   };
-  /** Stand-alone projections used by the You and Partner result views. */
-  individuals: {
-    you: JointPersonProjectionSlice;
-    partner: JointPersonProjectionSlice;
-  };
 };
 
 /**
@@ -69,12 +65,9 @@ export type JointRetirementProjection = {
  * before a household result is projected for presentation.
  */
 export function calculateJointRetirementProjection(
-  settings: PensionSettings,
-  individualYouRows?: ProjectionRow[]
+  settings: PensionSettings
 ): JointRetirementProjection {
   const partnerSettings = createPartnerCalculationSettings(settings);
-  const individualYouSettings = createIndividualSettings(settings);
-  const individualPartnerSettings = createPartnerIndividualSettings(settings);
   const youSettings = createPersonBaseSettings(settings);
   const partnerBaseSettings = createPersonBaseSettings(partnerSettings);
   const dates = deriveHouseholdDates(settings, partnerSettings);
@@ -109,16 +102,6 @@ export function calculateJointRetirementProjection(
     people: {
       you: { owner: "you", rows: coordinated.youRows },
       partner: { owner: "partner", rows: coordinated.partnerRows },
-    },
-    individuals: {
-      you: {
-        owner: "you",
-        rows: individualYouRows ?? createProjectionTable(individualYouSettings),
-      },
-      partner: {
-        owner: "partner",
-        rows: createProjectionTable(individualPartnerSettings),
-      },
     },
   };
 }
@@ -182,17 +165,24 @@ function addTransitionEmploymentIncome(
   const ownRetirementMonth = toCalendarMonth(
     addYears(person.dateOfBirth, person.requirementAge)
   );
+  const partialRetirementStartMonth = toCalendarMonth(
+    addYears(person.dateOfBirth, person.partialRetirementStartAge)
+  );
   const isLaterRetiree = ownRetirementMonth === dates.bothRetiredMonth;
 
   return rows.map((row) => {
-    const employmentIncome =
+    const isHouseholdTransitionMonth =
       isLaterRetiree &&
       dates.firstRetirementMonth <= row.date &&
-      row.date < ownRetirementMonth
-        ? person.partialRetirementEnabled && row.monthlyEmploymentIncome
-          ? row.monthlyEmploymentIncome
-          : person.fullSalary / 12
-        : (row.monthlyEmploymentIncome ?? 0);
+      row.date < ownRetirementMonth;
+    const isPartiallyRetired =
+      person.partialRetirementEnabled &&
+      row.date >= partialRetirementStartMonth;
+    const employmentIncome = isHouseholdTransitionMonth
+      ? isPartiallyRetired
+        ? (row.monthlyEmploymentIncome ?? 0)
+        : person.fullSalary / 12
+      : (row.monthlyEmploymentIncome ?? 0);
     const next = { ...row, monthlyEmploymentIncome: employmentIncome };
 
     return {
@@ -252,7 +242,7 @@ function coordinateHouseholdTargetWithdrawals(input: {
 // This is the coordinated monthly household funding loop. Its branches are
 // deliberately explicit because eligibility, ownership and tax treatment must
 // remain independently auditable.
-// eslint-disable-next-line sonarjs/cognitive-complexity
+// eslint-disable-next-line sonarjs/cognitive-complexity, sonarjs/cyclomatic-complexity
 function applyHouseholdWithdrawals(input: {
   settings: PensionSettings;
   partnerSettings: PensionSettings;
@@ -279,9 +269,23 @@ function applyHouseholdWithdrawals(input: {
   );
   const youBalances = createFlexibleBalanceStates();
   const partnerBalances = createFlexibleBalanceStates();
+  const youAllowanceLedger = createPensionAllowanceLedger(input.settings);
+  const partnerAllowanceLedger = createPensionAllowanceLedger(
+    input.partnerSettings
+  );
   const priority = resolveHouseholdPriority(
     input.settings,
     input.partnerSettings
+  );
+  const youPensionAccountOrder = resolvePensionAccountOrder(
+    "you",
+    input.settings.flexibleWithdrawalPriority,
+    priority
+  );
+  const partnerPensionAccountOrder = resolvePensionAccountOrder(
+    "partner",
+    input.settings.partner?.flexibleWithdrawalPriority ?? [],
+    priority
   );
 
   const youResultByDate = createRowsByCalendarMonth(result.youRows);
@@ -293,7 +297,31 @@ function applyHouseholdWithdrawals(input: {
   for (const date of allDates) {
     const youRow = youResultByDate.get(date);
     const partnerRow = partnerResultByDate.get(date);
+    const youMonthStartAllowance = preparePensionAllowanceForMonth(
+      youAllowanceLedger,
+      youRow,
+      input.settings
+    );
+    const partnerMonthStartAllowance = preparePensionAllowanceForMonth(
+      partnerAllowanceLedger,
+      partnerRow,
+      input.partnerSettings
+    );
+    updateRowPensionWithdrawalTax(
+      youRow,
+      input.settings,
+      youMonthStartAllowance,
+      youPensionAccountOrder
+    );
+    updateRowPensionWithdrawalTax(
+      partnerRow,
+      input.partnerSettings,
+      partnerMonthStartAllowance,
+      partnerPensionAccountOrder
+    );
     if (date < input.dates.firstRetirementMonth) {
+      finishPensionAllowanceMonth(youAllowanceLedger, youRow);
+      finishPensionAllowanceMonth(partnerAllowanceLedger, partnerRow);
       continue;
     }
     updateTargetAccountBalances(input.settings, youRow, youBalances);
@@ -309,6 +337,8 @@ function applyHouseholdWithdrawals(input: {
       input.dates
     );
     if (target === 0) {
+      finishPensionAllowanceMonth(youAllowanceLedger, youRow);
+      finishPensionAllowanceMonth(partnerAllowanceLedger, partnerRow);
       continue;
     }
     const youBaseNetIncome = calculateEffectiveNetIncome(
@@ -345,40 +375,49 @@ function applyHouseholdWithdrawals(input: {
           getProjectionTaxYearKey(row.date)
         ) ?? 0;
       const available = balance.amount;
+      const monthStartAllowance =
+        owner === "you" ? youMonthStartAllowance : partnerMonthStartAllowance;
+      const pensionAccountOrder =
+        owner === "you" ? youPensionAccountOrder : partnerPensionAccountOrder;
 
       if (!isAccountEligible(person, row.date, account) || available <= 0) {
         continue;
       }
-      const allowanceState: PensionLumpSumAllowanceState = {
-        trackingEnabled: person.taxTrackLumpSumAllowance,
-        remaining:
-          row.pensionLumpSumAllowanceRemaining ?? Number.POSITIVE_INFINITY,
-      };
       const gross = solveGrossAmount({
         account,
         available,
         requiredNet: remaining,
         person,
+        row,
         effectiveRate,
-        allowanceState,
+        allowanceState: monthStartAllowance,
+        pensionAccountOrder,
       });
       if (gross <= 0) {
         continue;
       }
-      applyAccountWithdrawal(row, account, gross, person, allowanceState);
-      balance.amount = Math.max(0, available - gross);
-      remaining = Math.max(
-        0,
-        remaining -
-          calculateNetWithdrawal(
-            account,
-            gross,
-            person,
-            effectiveRate,
-            allowanceState
-          )
+      const netWithdrawal = calculateNetWithdrawal(
+        account,
+        gross,
+        row,
+        person,
+        effectiveRate,
+        monthStartAllowance,
+        pensionAccountOrder
       );
+      applyAccountWithdrawal(
+        row,
+        account,
+        gross,
+        person,
+        monthStartAllowance,
+        pensionAccountOrder
+      );
+      balance.amount = Math.max(0, available - gross);
+      remaining = Math.max(0, remaining - netWithdrawal);
     }
+    finishPensionAllowanceMonth(youAllowanceLedger, youRow);
+    finishPensionAllowanceMonth(partnerAllowanceLedger, partnerRow);
   }
 
   return result;
@@ -391,6 +430,14 @@ type FlexibleBalanceState = {
 };
 type FlexibleBalanceStates = Record<FlexibleAccount, FlexibleBalanceState>;
 
+type PensionAllowanceLedger = {
+  state: PensionLumpSumAllowanceState;
+  classicLumpSumConsumed: boolean;
+  classicPlusLumpSumConsumed: boolean;
+  classicDrawDate: string;
+  classicPlusDrawDate: string;
+};
+
 function createFlexibleBalanceStates(): FlexibleBalanceStates {
   return Object.fromEntries(
     FLEXIBLE_FUND_ACCOUNT_IDS.map((account) => [
@@ -398,6 +445,73 @@ function createFlexibleBalanceStates(): FlexibleBalanceStates {
       { amount: 0, initialized: false },
     ])
   ) as FlexibleBalanceStates;
+}
+
+function createPensionAllowanceLedger(
+  settings: PensionSettings
+): PensionAllowanceLedger {
+  return {
+    state: createPensionLumpSumAllowanceState(settings),
+    classicLumpSumConsumed: false,
+    classicPlusLumpSumConsumed: false,
+    classicDrawDate: addYears(
+      settings.dateOfBirth,
+      settings.classicPensionDrawAge
+    ),
+    classicPlusDrawDate: addYears(
+      settings.dateOfBirth,
+      settings.classicPlusPensionDrawAge
+    ),
+  };
+}
+
+function preparePensionAllowanceForMonth(
+  ledger: PensionAllowanceLedger,
+  row: ProjectionRow | undefined,
+  settings: PensionSettings
+) {
+  if (!row) {
+    return ledger.state;
+  }
+
+  if (
+    settings.showClassic &&
+    !ledger.classicLumpSumConsumed &&
+    row.date >= ledger.classicDrawDate
+  ) {
+    ledger.state = consumePensionLumpSumAllowance(
+      ledger.state,
+      row.classicAutomaticLumpSumIncludingReduction
+    ).nextState;
+    ledger.classicLumpSumConsumed = true;
+  }
+  if (
+    settings.showClassicPlus &&
+    !ledger.classicPlusLumpSumConsumed &&
+    row.date >= ledger.classicPlusDrawDate
+  ) {
+    ledger.state = consumePensionLumpSumAllowance(
+      ledger.state,
+      row.classicPlusAutomaticLumpSumIncludingReduction
+    ).nextState;
+    ledger.classicPlusLumpSumConsumed = true;
+  }
+
+  return ledger.state;
+}
+
+function finishPensionAllowanceMonth(
+  ledger: PensionAllowanceLedger,
+  row: ProjectionRow | undefined
+) {
+  if (row?.pensionLumpSumAllowanceRemaining === undefined) {
+    return;
+  }
+
+  ledger.state = {
+    ...ledger.state,
+    remaining: row.pensionLumpSumAllowanceRemaining,
+  };
 }
 
 function updateTargetAccountBalances(
@@ -425,12 +539,11 @@ function updateTargetAccountBalances(
       balance.amount = getAccountBalance(row, account);
       balance.initialized = true;
     } else {
-      balance.amount *=
-        1 +
-        getModelledMonthlyGrowthRate(
-          person,
-          person[FLEXIBLE_FUND_ACCOUNT_CONFIG[account].realInterestField] / 100
-        );
+      const monthlyGrowthRate = getModelledMonthlyGrowthRate(
+        person,
+        person[FLEXIBLE_FUND_ACCOUNT_CONFIG[account].realInterestField] / 100
+      );
+      balance.amount *= 1 + monthlyGrowthRate;
     }
 
     setAccountBalance(row, account, balance.amount);
@@ -453,6 +566,31 @@ function resolveHouseholdPriority(
     (entry) => active.includes(entry)
   );
   return [...saved, ...active.filter((entry) => !saved.includes(entry))];
+}
+
+function resolvePensionAccountOrder(
+  owner: PersonId,
+  personalPriority: readonly FlexibleFundAccountId[],
+  householdPriority: readonly HouseholdFlexibleFundAccountId[]
+) {
+  const householdAccounts = householdPriority
+    .filter((entry) => entry.startsWith(`${owner}:`))
+    .map((entry) => entry.slice(entry.indexOf(":") + 1))
+    .filter((account): account is FlexibleFundAccountId =>
+      FLEXIBLE_FUND_ACCOUNT_IDS.includes(account as FlexibleFundAccountId)
+    );
+
+  return [
+    ...householdAccounts,
+    ...personalPriority.filter(
+      (account) => !householdAccounts.includes(account)
+    ),
+    ...FLEXIBLE_FUND_ACCOUNT_IDS.filter(
+      (account) =>
+        !householdAccounts.includes(account) &&
+        !personalPriority.includes(account)
+    ),
+  ];
 }
 
 function isTargetAccount(person: PensionSettings, account: FlexibleAccount) {
@@ -492,25 +630,13 @@ function applyAccountWithdrawal(
   account: FlexibleAccount,
   gross: number,
   person: PensionSettings,
-  allowanceState: PensionLumpSumAllowanceState
+  allowanceState: PensionLumpSumAllowanceState,
+  pensionAccountOrder: readonly FlexibleFundAccountId[]
 ) {
-  const breakdown = calculatePensionWithdrawalTaxBreakdown({
-    settings: person,
-    sippWithdrawal: account === "sipp" ? gross : 0,
-    csAvcWithdrawal: account === "csAvc" ? gross : 0,
-    allowanceState,
-    accountOrder: account === "csAvc" ? ["csAvc"] : ["sipp"],
-  });
   if (account === "sipp") {
     row.monthlySippPension = gross;
-    row.monthlySippTaxableIncome = breakdown.sippTaxable;
-    row.monthlyTaxFreePensionCash =
-      (row.monthlyTaxFreePensionCash ?? 0) + breakdown.sippTaxFree;
   } else if (account === "csAvc") {
     row.monthlyCsAvcPension = gross;
-    row.monthlyCsAvcTaxableIncome = breakdown.csAvcTaxable;
-    row.monthlyTaxFreePensionCash =
-      (row.monthlyTaxFreePensionCash ?? 0) + breakdown.csAvcTaxFree;
   } else if (account === "isa") {
     row.monthlyIsaPension = gross;
   } else {
@@ -518,8 +644,37 @@ function applyAccountWithdrawal(
   }
   const balanceField = FLEXIBLE_FUND_ACCOUNT_CONFIG[account].balanceField;
   row[balanceField] = Math.max(0, row[balanceField] - gross);
-  row.pensionLumpSumAllowanceRemaining = breakdown.allowanceRemaining;
+  updateRowPensionWithdrawalTax(
+    row,
+    person,
+    allowanceState,
+    pensionAccountOrder
+  );
   row.totalMonthlyIncomeBeforeTax = calculateRowGrossIncome(row);
+}
+
+function updateRowPensionWithdrawalTax(
+  row: ProjectionRow | undefined,
+  person: PensionSettings,
+  allowanceState: PensionLumpSumAllowanceState,
+  pensionAccountOrder: readonly FlexibleFundAccountId[]
+) {
+  if (!row) {
+    return;
+  }
+
+  const breakdown = calculatePensionWithdrawalTaxBreakdown({
+    settings: person,
+    sippWithdrawal: row.monthlySippPension,
+    csAvcWithdrawal: row.monthlyCsAvcPension,
+    allowanceState,
+    accountOrder: pensionAccountOrder,
+  });
+  row.monthlySippTaxableIncome = breakdown.sippTaxable;
+  row.monthlyCsAvcTaxableIncome = breakdown.csAvcTaxable;
+  row.monthlyTaxFreePensionCash =
+    breakdown.sippTaxFree + breakdown.csAvcTaxFree;
+  row.pensionLumpSumAllowanceRemaining = breakdown.allowanceRemaining;
 }
 
 function solveGrossAmount(input: {
@@ -527,8 +682,10 @@ function solveGrossAmount(input: {
   available: number;
   requiredNet: number;
   person: PensionSettings;
+  row: ProjectionRow;
   effectiveRate: number;
   allowanceState: PensionLumpSumAllowanceState;
+  pensionAccountOrder: readonly FlexibleFundAccountId[];
 }) {
   let lower = 0;
   let upper = input.available;
@@ -538,9 +695,11 @@ function solveGrossAmount(input: {
       calculateNetWithdrawal(
         input.account,
         middle,
+        input.row,
         input.person,
         input.effectiveRate,
-        input.allowanceState
+        input.allowanceState,
+        input.pensionAccountOrder
       ) >= input.requiredNet
     ) {
       upper = middle;
@@ -554,23 +713,39 @@ function solveGrossAmount(input: {
 function calculateNetWithdrawal(
   account: FlexibleAccount,
   gross: number,
+  row: ProjectionRow,
   person: PensionSettings,
   effectiveRate: number,
-  allowanceState: PensionLumpSumAllowanceState
+  allowanceState: PensionLumpSumAllowanceState,
+  pensionAccountOrder: readonly FlexibleFundAccountId[]
 ) {
   if (account === "isa" || account === "lisa") {
     return gross;
   }
-  const breakdown = calculatePensionWithdrawalTaxBreakdown({
+
+  const currentBreakdown = calculatePensionWithdrawalTaxBreakdown({
     settings: person,
-    sippWithdrawal: account === "sipp" ? gross : 0,
-    csAvcWithdrawal: account === "csAvc" ? gross : 0,
+    sippWithdrawal: row.monthlySippPension,
+    csAvcWithdrawal: row.monthlyCsAvcPension,
     allowanceState,
-    accountOrder: account === "csAvc" ? ["csAvc"] : ["sipp"],
+    accountOrder: pensionAccountOrder,
   });
-  const taxable =
-    account === "sipp" ? breakdown.sippTaxable : breakdown.csAvcTaxable;
-  return gross - taxable * effectiveRate;
+  const candidateBreakdown = calculatePensionWithdrawalTaxBreakdown({
+    settings: person,
+    sippWithdrawal: account === "sipp" ? gross : row.monthlySippPension,
+    csAvcWithdrawal: account === "csAvc" ? gross : row.monthlyCsAvcPension,
+    allowanceState,
+    accountOrder: pensionAccountOrder,
+  });
+  const currentTaxable =
+    currentBreakdown.sippTaxable + currentBreakdown.csAvcTaxable;
+  const candidateTaxable =
+    candidateBreakdown.sippTaxable + candidateBreakdown.csAvcTaxable;
+
+  return Math.max(
+    0,
+    gross - (candidateTaxable - currentTaxable) * effectiveRate
+  );
 }
 
 function calculateRowGrossIncome(row: ProjectionRow) {

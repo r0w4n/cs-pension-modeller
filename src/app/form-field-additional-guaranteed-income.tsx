@@ -13,6 +13,9 @@ type AdditionalGuaranteedIncomeEditorProps = {
   defaultStartAge: number;
   validationIssues: PensionValidationIssue[];
   onChange: (incomes: AdditionalGuaranteedIncome[]) => void;
+  domIdPrefix?: string;
+  ownerLabel?: string;
+  showDescription?: boolean;
 };
 
 export function AdditionalGuaranteedIncomeEditor({
@@ -20,7 +23,11 @@ export function AdditionalGuaranteedIncomeEditor({
   defaultStartAge,
   validationIssues,
   onChange,
+  domIdPrefix,
+  ownerLabel,
+  showDescription = true,
 }: AdditionalGuaranteedIncomeEditorProps) {
+  const idPrefix = domIdPrefix ? `${domIdPrefix}-` : "";
   function updateIncome(
     id: string,
     patch: Partial<AdditionalGuaranteedIncome>
@@ -47,16 +54,20 @@ export function AdditionalGuaranteedIncomeEditor({
     <div className="settings-subsection additional-income-editor">
       <div className="settings-subsection-heading">
         <h4>Additional guaranteed income</h4>
-        <p className="section-copy">
-          Add income from other sources that are not modelled elsewhere, such as
-          another defined benefit pension, an annuity, or a known guaranteed
-          annual income.
-        </p>
-        <p className="section-copy">
-          This is treated as gross annual income and included in your retirement
-          income projection. It does not apply scheme-specific rules or early
-          retirement factors.
-        </p>
+        {showDescription ? (
+          <>
+            <p className="section-copy">
+              Add income from other sources that are not modelled elsewhere,
+              such as another defined benefit pension, an annuity, or a known
+              guaranteed annual income.
+            </p>
+            <p className="section-copy">
+              This is treated as gross annual income and included in your
+              retirement income projection. It does not apply scheme-specific
+              rules or early retirement factors.
+            </p>
+          </>
+        ) : null}
       </div>
 
       {incomes.length === 0 ? (
@@ -70,7 +81,7 @@ export function AdditionalGuaranteedIncomeEditor({
           );
           const validationId =
             incomeValidationIssues.length > 0
-              ? `additional-income-validation-${income.id}`
+              ? `${idPrefix}additional-income-validation-${income.id}`
               : undefined;
           const hasValidationIssue = incomeValidationIssues.length > 0;
           const displayName = getAdditionalGuaranteedIncomeDisplayName(income);
@@ -231,7 +242,7 @@ export function AdditionalGuaranteedIncomeEditor({
               <button
                 type="button"
                 className="secondary-button"
-                aria-label={`Remove ${displayName}`}
+                aria-label={`Remove ${ownerLabel ? `${ownerLabel} ` : ""}${displayName}`}
                 onClick={() => removeIncome(income.id)}
               >
                 Remove income

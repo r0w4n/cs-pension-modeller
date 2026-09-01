@@ -10,12 +10,20 @@ export function AlphaEpaPeriodsEditor({
   defaultStartDate,
   validationIssues,
   onChange,
+  domIdPrefix,
+  ownerLabel,
+  showDescription = true,
 }: {
   periods: AlphaEpaPeriod[];
   defaultStartDate: string;
   validationIssues: PensionValidationIssue[];
   onChange: (periods: AlphaEpaPeriod[]) => void;
+  domIdPrefix?: string;
+  ownerLabel?: string;
+  showDescription?: boolean;
 }) {
+  const idPrefix = domIdPrefix ? `${domIdPrefix}-` : "";
+  const accessibleOwnerPrefix = ownerLabel ? `${ownerLabel} ` : "";
   function updatePeriod(id: string, patch: Partial<AlphaEpaPeriod>) {
     onChange(
       periods.map((period) =>
@@ -28,11 +36,13 @@ export function AlphaEpaPeriodsEditor({
     <div className="settings-subsection epa-periods-editor">
       <div className="settings-subsection-heading">
         <h4>EPA purchase periods</h4>
-        <p className="section-copy">
-          Add each period shown on your pension record. A gap builds standard
-          alpha pension; a later period can restart EPA or use a different −1,
-          −2 or −3 option. Only one EPA option can apply at a time.
-        </p>
+        {showDescription ? (
+          <p className="section-copy">
+            Add each period shown on your pension record. A gap builds standard
+            alpha pension; a later period can restart EPA or use a different −1,
+            −2 or −3 option. Only one EPA option can apply at a time.
+          </p>
+        ) : null}
       </div>
 
       {periods.length === 0 ? (
@@ -46,7 +56,7 @@ export function AlphaEpaPeriodsEditor({
           );
           const validationId =
             issues.length > 0
-              ? `epa-period-validation-${period.id}`
+              ? `${idPrefix}epa-period-validation-${period.id}`
               : undefined;
 
           return (
@@ -58,7 +68,7 @@ export function AlphaEpaPeriodsEditor({
                 <span className="field-label">Option</span>
                 <select
                   className="select-input"
-                  aria-label={`EPA option ${index + 1}`}
+                  aria-label={`${accessibleOwnerPrefix}EPA option ${index + 1}`}
                   aria-invalid={issues.length > 0 || undefined}
                   aria-describedby={validationId}
                   value={period.yearsBeforeNpa}
@@ -79,7 +89,7 @@ export function AlphaEpaPeriodsEditor({
                   <input
                     className="date-input"
                     type="date"
-                    aria-label={`EPA start date ${index + 1}`}
+                    aria-label={`${accessibleOwnerPrefix}EPA start date ${index + 1}`}
                     aria-invalid={issues.length > 0 || undefined}
                     aria-describedby={validationId}
                     value={period.startDate}
@@ -93,7 +103,7 @@ export function AlphaEpaPeriodsEditor({
                   <input
                     className="date-input"
                     type="date"
-                    aria-label={`EPA end date ${index + 1}`}
+                    aria-label={`${accessibleOwnerPrefix}EPA end date ${index + 1}`}
                     aria-invalid={issues.length > 0 || undefined}
                     aria-describedby={validationId}
                     value={period.endDate}

@@ -1,6 +1,8 @@
 import { useId, useState } from "react";
-import type { ResidualFlexibleFundInsight } from "../result-projection/flexible-withdrawals";
-import { formatModelAgeCompact } from "../settings";
+import {
+  formatResidualFlexibleFundWarning,
+  type ResidualFlexibleFundInsight,
+} from "../result-projection/flexible-withdrawals";
 import type {
   ChartNumberLimit,
   RetirementIncomeChartLimits,
@@ -42,13 +44,7 @@ export function createFlexibleAccountWarnings(
       return;
     }
 
-    const explanation = residualAccount.wasUsed
-      ? `the model leaves ${formatCurrency(residualAccount.endingBalance)} in the ${residualAccount.label}`
-      : `the ${residualAccount.label} is not used for modelled income and retains ${formatCurrency(residualAccount.endingBalance)}`;
-    warnings.set(
-      accountId,
-      `Potential over-saving: ${explanation} at age ${formatModelAgeCompact(residualAccount.planningHorizonAge)}. You may want to compare a lower contribution.`
-    );
+    warnings.set(accountId, formatResidualFlexibleFundWarning(residualAccount));
   });
 
   return warnings;

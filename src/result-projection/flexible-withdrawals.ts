@@ -2,12 +2,19 @@ import type { ProjectionRow } from "../projection";
 import {
   FLEXIBLE_FUND_ACCOUNT_CONFIG,
   FLEXIBLE_FUND_ACCOUNT_IDS,
+  formatModelAgeCompact,
   type FlexibleFundAccountId,
   type FlexibleWithdrawalStrategy,
   type HouseholdFlexibleFundAccountId,
   type PartnerSettings,
   type PensionSettings,
 } from "../settings";
+
+const wholePoundsFormatter = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+  maximumFractionDigits: 0,
+});
 
 export type FlexibleWithdrawalAccountInsight = {
   accountId: FlexibleFundAccountId;
@@ -33,6 +40,16 @@ export type ResidualFlexibleFundInsight = {
   planningHorizonAge: number;
   wasUsed: boolean;
 };
+
+export function formatResidualFlexibleFundWarning(
+  insight: ResidualFlexibleFundInsight
+) {
+  const explanation = insight.wasUsed
+    ? `the model leaves ${wholePoundsFormatter.format(insight.endingBalance)} in the ${insight.label}`
+    : `the ${insight.label} is not used for modelled income and retains ${wholePoundsFormatter.format(insight.endingBalance)}`;
+
+  return `Potential over-saving: ${explanation} at age ${formatModelAgeCompact(insight.planningHorizonAge)}. You may want to compare a lower contribution.`;
+}
 
 const MINIMUM_DISPLAYED_RESIDUAL_BALANCE = 1;
 

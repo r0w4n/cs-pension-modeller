@@ -36,7 +36,7 @@ describe("settings-validate", () => {
     expect(validateSettings(createDefaultSettings())).toEqual([]);
   });
 
-  it("preserves Partner's own target settings only for stand-alone results", () => {
+  it("preserves Partner's own person-level target settings outside coordinated funding", () => {
     const defaults = createDefaultSettings();
     const settings = {
       ...defaults,
@@ -130,6 +130,12 @@ describe("settings-validate", () => {
         }),
       ])
     );
+    expect(issues.filter((issue) => issue.personId === "partner")).toEqual([
+      expect.objectContaining({
+        field: "dateOfBirth",
+        personId: "partner",
+      }),
+    ]);
   });
 
   it("validates household SMILE phases against the later retiree", () => {

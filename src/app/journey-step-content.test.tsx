@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { deriveInflationAssumptions } from "../projection";
 import {
@@ -274,6 +280,105 @@ describe("JourneyStepContent", () => {
       (element) => element.id
     );
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("reuses the SIPP lump-sum editor for Partner-owned contributions", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      showSipp: true,
+      jointRetirement: {
+        ...viewModel.settings.jointRetirement,
+        enabled: true,
+      },
+      partner: {
+        ...createDefaultPartnerSettings(),
+        showSipp: true,
+      },
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "expert-sipp",
+          eyebrow: "SIPP details",
+          title: "SIPP details",
+          description: "Set SIPP assumptions.",
+          kind: "fields",
+          groupId: "sipp",
+          fieldIds: ["sippCurrentPot"],
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    const partnerSection = screen
+      .getByRole("heading", { name: "Partner" })
+      .closest("section");
+    expect(partnerSection).not.toBeNull();
+
+    fireEvent.click(
+      within(partnerSection as HTMLElement).getByRole("button", {
+        name: "Add SIPP lump sum",
+      })
+    );
+
+    expect(viewModel.onChange).toHaveBeenCalledWith(
+      "partner",
+      expect.objectContaining({
+        sippLumpSums: [
+          expect.objectContaining({
+            amount: 5_000,
+            cadence: "once",
+          }),
+        ],
+      })
+    );
+  });
+
+  it("keeps Partner's NPA-linked defaults aligned when their birth date changes", () => {
+    mockMatchMedia(false);
+    const viewModel = createViewModel();
+    viewModel.settings = {
+      ...viewModel.settings,
+      jointRetirement: {
+        ...viewModel.settings.jointRetirement,
+        enabled: true,
+      },
+      partner: createDefaultPartnerSettings(),
+    };
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "expert-personal",
+          eyebrow: "Personal details",
+          title: "Personal details",
+          description: "Set the household's personal details.",
+          kind: "fields",
+          groupId: "personal",
+          fieldIds: ["dateOfBirth", "lifeExpectancy"],
+          useNpaLinkedDefaults: true,
+        }}
+        viewModel={viewModel}
+      />
+    );
+
+    fireEvent.change(
+      screen.getByLabelText("Partner's Birth Month and Year year"),
+      { target: { value: "1977" } }
+    );
+
+    expect(viewModel.onChange).toHaveBeenCalledWith(
+      "partner",
+      expect.objectContaining({
+        dateOfBirth: "1977-06-01",
+        normalPensionAge: 67.25,
+        requirementAge: 67.25,
+        alphaPensionDrawAge: 67.25,
+      })
+    );
   });
 
   it("does not substitute a one-person result while household details are invalid", () => {
@@ -945,6 +1050,33 @@ describe("JourneyStepContent", () => {
 
     expect(summaryProps.flexibleWithdrawalSummary).toBeUndefined();
     expect(chartProps?.showFlexibleWithdrawalInsights).not.toBe(true);
+  });
+
+  it("places comparison after the projection table in the results flow", () => {
+    mockMatchMedia(false);
+
+    render(
+      <JourneyStepContent
+        step={{
+          id: "answer",
+          eyebrow: "Result",
+          title: "Your results",
+          description: "Review results",
+          kind: "results",
+          sections: STANDARD_RESULTS_SECTIONS,
+        }}
+        viewModel={createViewModel()}
+      />
+    );
+
+    const projectionTable = screen.getByText("Projection table section");
+    const comparison = screen.getByText("Comparison panel");
+    expect(
+      Boolean(
+        projectionTable.compareDocumentPosition(comparison) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+      )
+    ).toBe(true);
   });
 
   it("renders a pre-calculation bridge plan review from the selected settings", () => {

@@ -18,7 +18,7 @@ import {
 import { validatePersonalDetailsRules } from "./settings-domains/personal-details";
 import { validateSippRules } from "./settings-domains/sipp";
 import { validateCsAvcRules } from "./settings-domains/cs-avc";
-import { addYearsToIsoDate } from "./settings-shared/date";
+import { addYearsToIsoDate, isValidIsoDate } from "./settings-shared/date";
 import { calculateStatePensionDrawDate } from "./settings-shared/state";
 import {
   type AddedPensionLumpSum,
@@ -164,28 +164,38 @@ export function validateSettings(
   settings: PensionSettings
 ): PensionValidationIssue[] {
   const context = createValidationContext(settings);
+  const personalIssues = validatePersonalDetailsRules(
+    settings,
+    context.lifeExpectancyDate
+  );
+  const hasValidPersonalDates =
+    isValidIsoDate(settings.dateOfBirth) && isValidIsoDate(settings.startDate);
 
   const ownIssues = [
-    ...validatePersonalDetailsRules(settings, context.lifeExpectancyDate),
-    ...validateStatePensionRules(context),
-    ...validateAlphaPensionRules(context),
-    ...validateClassicRules(context),
-    ...validateNuvosRules(context),
-    ...validatePremiumRules(context),
-    ...validateSippRules(context),
-    ...validateCsAvcRules(context),
-    ...validateIsaRules(context),
-    ...validateLisaRules(context),
-    ...validatePartialRetirementRules(context),
+    ...personalIssues,
+    ...(hasValidPersonalDates
+      ? [
+          ...validateStatePensionRules(context),
+          ...validateAlphaPensionRules(context),
+          ...validateClassicRules(context),
+          ...validateNuvosRules(context),
+          ...validatePremiumRules(context),
+          ...validateSippRules(context),
+          ...validateCsAvcRules(context),
+          ...validateIsaRules(context),
+          ...validateLisaRules(context),
+          ...validatePartialRetirementRules(context),
+        ]
+      : []),
     ...validateAdditionalGuaranteedIncomeRules(settings),
     ...validateTaxRules(settings),
     // Joint mode owns its spending strategy under jointRetirement. A saved
     // single-person profile is deliberately inactive there, so it must not
     // prevent an otherwise valid household projection.
-    ...(settings.jointRetirement.enabled
+    ...(settings.jointRetirement.enabled || !hasValidPersonalDates
       ? []
       : validateSpendingSmileRules(settings)),
-    ...validateLumpSumRules(context),
+    ...(hasValidPersonalDates ? validateLumpSumRules(context) : []),
   ];
 
   if (!settings.jointRetirement.enabled) {
@@ -212,7 +222,9 @@ export function validateSettings(
   return [
     ...ownIssues.map((issue) => ({ ...issue, personId: "you" as const })),
     ...partnerIssues,
-    ...validateJointHouseholdRules(settings, partnerSettings),
+    ...(hasValidPersonalDates && isValidIsoDate(partnerSettings.dateOfBirth)
+      ? validateJointHouseholdRules(settings, partnerSettings)
+      : []),
   ];
 }
 

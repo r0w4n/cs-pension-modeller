@@ -1,9 +1,11 @@
 import {
+  applyPartnerSettingsFieldChange,
   applyRetirementIncomeChartParameterPatch,
   updateSetting,
 } from "./chart-state";
 import {
   calculateStatePensionDrawAge,
+  createDefaultPartnerSettings,
   createDefaultSettings,
 } from "../settings";
 
@@ -144,6 +146,33 @@ describe("chart-state", () => {
 
     expect(next.normalPensionAge).toBe(67.25);
     expect(next.requirementAge).toBe(60);
+  });
+
+  it("preserves Partner's manually overridden draw ages when their date of birth changes", () => {
+    const defaults = createDefaultSettings();
+    const settings = {
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        sippDrawAge: 62,
+        isaDrawAge: 59,
+      },
+      jointRetirement: { ...defaults.jointRetirement, enabled: true },
+    };
+
+    const partner = applyPartnerSettingsFieldChange(
+      settings,
+      "dateOfBirth",
+      "1977-06-01",
+      {
+        alignAlphaLeaveAgeToRetirement: false,
+        dateOfBirthUpdate: "relink-npa-defaults",
+      }
+    );
+
+    expect(partner.normalPensionAge).toBe(67.25);
+    expect(partner.sippDrawAge).toBe(62);
+    expect(partner.isaDrawAge).toBe(59);
   });
 
   it("preserves a custom Alpha scheme leave age when date of birth changes", () => {

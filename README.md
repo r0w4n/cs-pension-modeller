@@ -169,7 +169,9 @@ Some important assumptions and simplifications are:
   fallback. An on-track result is marked as needing a check when the target
   depends on that assumption. If the target remains met without it, the result
   stays on track with a caution until the user confirms an amount from their
-  personalised GOV.UK forecast.
+  personalised GOV.UK forecast. In two-person mode this check is applied to
+  each person&apos;s unconfirmed amount, and the result identifies whether the
+  assumption belongs to You, Partner, or both.
 - New State Pension deferral uses the post-2016 rule modelled by the app.
 - ISA, LISA and SIPP projections depend directly on entered balances,
   contributions, lump sums, growth assumptions, draw ages, and withdrawal
@@ -199,8 +201,12 @@ Some important assumptions and simplifications are:
   with their own Personal Allowance and pension lump-sum allowance ledger.
   Household income is assessed against one shared after-tax spending target;
   the still-working person’s modelled employment income is included after the
-  other person fully retires. National Insurance is not modelled, so this is
-  not a payroll take-home forecast. The projection continues to the later
+  other person retires first and until their own retirement date. Full salary
+  is used until that person&apos;s partial-retirement start, then their reduced
+  salary is used; income already shown in household cash flow is not added a
+  second time as tax-rate context. National Insurance is not modelled, so this
+  is not a payroll take-home forecast. The
+  projection continues to the later
   planning horizon, but does not model survivor pensions, inheritance, asset
   transfers, or an automatic spending reduction after the first horizon.
   Two-person target quick-selects use Pensions UK&apos;s 3 June 2026 annual
@@ -282,11 +288,14 @@ The concrete layer responsibilities are:
   and the adjacent heading, controls, mobile-navigation, and accessibility
   components adapt it to each journey's selected presentation.
 - Joint Expert results use one editable Household Retirement Plan chart. It
-  projects the canonical coordinated joint result onto a calendar timeline
-  with owner-attributed series, household target/tax/shortfall values, period
-  event inspection, and an accessible text equivalent. Existing retirement
-  marker and input controls are reused for each person and source. The
-  underlying person projections remain separate for calculation and tax
+  projects the canonical coordinated joint result onto a calendar timeline,
+  with aligned calendar dates, You and Partner age axes, owner-attributed
+  series, household target/tax/shortfall values, period event inspection, and
+  an accessible text equivalent. The established target and milestone
+  interactions are reused for each person and source. The chart also reuses the
+  established contribution controls for You and Partner, with owner-specific
+  labels; these update the same settings as the corresponding journey fields.
+  The underlying person projections remain separate for calculation and tax
   purposes.
 - Comparison scenarios are kept within the same model type: single-person
   scenarios compare with single-person metrics, and two-person scenarios use

@@ -52,7 +52,7 @@ export function calculateRetirementPlan(
     settings.jointRetirement.enabled &&
     settings.partner &&
     validationIssues.length === 0
-      ? calculateJointRetirementProjection(settings, rows)
+      ? calculateJointRetirementProjection(settings)
       : undefined;
   const householdAssessment = jointProjection
     ? assessHouseholdRetirementPlan(jointProjection, settings)
@@ -69,7 +69,11 @@ export function calculateRetirementPlan(
       settings
     ),
     statePensionAssumptionAffectsTarget:
-      calculateStatePensionAssumptionAffectsTarget(settings, assessment),
+      calculateStatePensionAssumptionAffectsTarget(
+        settings,
+        assessment,
+        householdAssessment
+      ),
     inflationAssumptions: deriveInflationAssumptions(settings),
     jointProjection,
     householdAssessment,
@@ -78,10 +82,17 @@ export function calculateRetirementPlan(
 
 function calculateStatePensionAssumptionAffectsTarget(
   settings: PensionSettings,
-  assessment: RetirementPlanAssessment
+  assessment: RetirementPlanAssessment,
+  householdAssessment: HouseholdRetirementAssessment | undefined
 ) {
+  if (settings.jointRetirement.enabled) {
+    return calculateHouseholdStatePensionAssumptionAffectsTarget(
+      settings,
+      householdAssessment
+    );
+  }
+
   if (
-    settings.jointRetirement.enabled ||
     !settings.showStatePension ||
     settings.statePensionForecastConfirmed ||
     !assessment.meetsTargetThroughout
@@ -100,5 +111,45 @@ function calculateStatePensionAssumptionAffectsTarget(
   return !assessRetirementPlan(
     rowsWithoutStatePension,
     settingsWithoutStatePension
+  ).meetsTargetThroughout;
+}
+
+function calculateHouseholdStatePensionAssumptionAffectsTarget(
+  settings: PensionSettings,
+  householdAssessment: HouseholdRetirementAssessment | undefined
+) {
+  const partner = settings.partner;
+  const removeYourStatePension =
+    settings.showStatePension && !settings.statePensionForecastConfirmed;
+  const removePartnerStatePension = Boolean(
+    partner?.showStatePension && !partner.statePensionForecastConfirmed
+  );
+
+  if (
+    !partner ||
+    !householdAssessment?.meetsTargetThroughout ||
+    (!removeYourStatePension && !removePartnerStatePension)
+  ) {
+    return false;
+  }
+
+  const settingsWithoutUnconfirmedStatePension: PensionSettings = {
+    ...settings,
+    showStatePension: removeYourStatePension
+      ? false
+      : settings.showStatePension,
+    partner: {
+      ...partner,
+      showStatePension: removePartnerStatePension
+        ? false
+        : partner.showStatePension,
+    },
+  };
+  const projectionWithoutUnconfirmedStatePension =
+    calculateJointRetirementProjection(settingsWithoutUnconfirmedStatePension);
+
+  return !assessHouseholdRetirementPlan(
+    projectionWithoutUnconfirmedStatePension,
+    settingsWithoutUnconfirmedStatePension
   ).meetsTargetThroughout;
 }

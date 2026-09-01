@@ -248,21 +248,22 @@ export function MethodologyPage() {
         </p>
         <p className="section-copy">
           Joint Expert results use one editable Household Retirement Plan chart
-          on a calendar timeline. It keeps each income source attributed to You
-          or Partner and uses the canonical household target, estimated Income
-          Tax, take-home income and shortfall. The underlying person projections
-          remain separate for their own accounts, withdrawal strategies and tax
-          treatment. The chart keeps the established controls inline with the
-          chart while leaving all household financial data visible.
+          on a calendar timeline. Its x-axis shows calendar dates with aligned
+          You and Partner age scales. It keeps each income source attributed to
+          You or Partner and uses the canonical household target, estimated
+          Income Tax, take-home income and shortfall. The underlying person
+          projections remain separate for their own accounts, withdrawal
+          strategies and tax treatment. The chart keeps the established target
+          and milestone interactions inline; contribution settings remain in
+          their existing journey fields instead of being repeated below the
+          chart.
         </p>
         <p className="section-copy">
-          To keep the household projection readable, Combined uses the familiar
-          chart markers for the two key retirement milestones rather than
-          printing every retirement, pension and account event across the plot.
-          The complete event set remains available when a calendar period is
-          inspected and in the chart&apos;s accessible description. This
-          presentation change does not alter the underlying household
-          calculation.
+          To keep the household projection readable, owner-specific editable
+          milestones use short P1 (You) and P2 (Partner) labels in the familiar
+          chart-marker style. Calendar-period inspection and the chart&apos;s
+          accessible description retain the complete event names. This
+          presentation does not alter the underlying household calculation.
         </p>
       </section>
 
@@ -818,6 +819,13 @@ export function MethodologyPage() {
           out.
         </p>
         <p className="section-copy">
+          In a two-person plan, this check is applied to each person&apos;s
+          unconfirmed State Pension separately. The household result removes all
+          unconfirmed amounts together to test whether the shared target still
+          appears to be met, while the caution identifies whether the assumption
+          belongs to You, Partner, or both.
+        </p>
+        <p className="section-copy">
           State Pension income starts from the selected State Pension draw date.
           If the draw date is later than the default State Pension age, the
           model applies deferral uplift.
@@ -1213,7 +1221,10 @@ export function MethodologyPage() {
           In a two-person Expert plan, partial retirement is configured per
           person. When one person has fully retired, the other person&apos;s
           modelled employment income contributes to household income and their
-          own Income Tax estimate. National Insurance is not modelled.
+          own Income Tax estimate. Full salary applies before that person&apos;s
+          partial-retirement start and reduced salary applies afterwards. Salary
+          already shown as household cash income is not added again as tax-rate
+          context. National Insurance is not modelled.
         </p>
         <p className="section-copy">
           Under the Alpha scheme rules, partial retirement also requires

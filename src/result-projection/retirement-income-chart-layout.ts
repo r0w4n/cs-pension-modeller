@@ -767,6 +767,64 @@ export function createWholeYearTicks(minAge: number, maxAge: number) {
   );
 }
 
+export type RetirementIncomePerson = "you" | "partner";
+
+export type RetirementIncomePersonAgeAxisTick = {
+  age: number;
+  timelineValue: number;
+};
+
+/**
+ * Creates age ticks aligned to a shared calendar timeline. Household points
+ * carry each person's age so the axis remains correct when their birthdays
+ * and retirement dates differ.
+ */
+export function createPersonAgeAxisTicks(
+  data: RetirementIncomePoint[],
+  person: RetirementIncomePerson,
+  minTimeline: number,
+  maxTimeline: number,
+  tickCount: number
+): RetirementIncomePersonAgeAxisTick[] {
+  const samples = data
+    .flatMap((point) => {
+      const age = point.personAges?.[person];
+      const timelineValue = point.timelineValue;
+
+      return Number.isFinite(age) && Number.isFinite(timelineValue)
+        ? [{ age: age as number, timelineValue: timelineValue as number }]
+        : [];
+    })
+    .sort((left, right) => left.timelineValue - right.timelineValue);
+
+  const first = samples[0];
+  const last = samples.at(-1);
+
+  if (
+    !first ||
+    !last ||
+    first.timelineValue === last.timelineValue ||
+    first.age === last.age
+  ) {
+    return [];
+  }
+
+  const ageToTimeline = d3
+    .scaleLinear()
+    .domain([first.age, last.age])
+    .range([first.timelineValue, last.timelineValue]);
+  const firstAge = ageToTimeline.invert(minTimeline);
+  const lastAge = ageToTimeline.invert(maxTimeline);
+
+  return ageToTimeline
+    .ticks(tickCount)
+    .filter((age) => age >= firstAge && age <= lastAge)
+    .map((age) => ({
+      age,
+      timelineValue: ageToTimeline(age),
+    }));
+}
+
 const validationFieldMarkerKeys: Partial<
   Record<PensionValidationIssue["field"], MilestoneKey>
 > = {

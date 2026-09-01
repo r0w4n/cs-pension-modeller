@@ -11,6 +11,7 @@ import {
   calculateNormalPensionAge,
   calculateStatePensionDrawAge,
   calculateStatePensionDrawDateFromAge,
+  createPartnerIndividualSettings,
   normalizeAlphaPensionDrawAge,
   normalizeSetting,
   normalizeSippDrawAge,
@@ -18,6 +19,7 @@ import {
   normalizeStatePensionDrawDate,
   resolveSippMinimumAccessAge,
   type PensionSettings,
+  type PartnerSettings,
 } from "../settings";
 import {
   isOptionalSectionToggleKey,
@@ -589,114 +591,135 @@ export function updateSetting({
 }) {
   showSavedLabel();
   setChartUndoStack([]);
+  setSettings((current) =>
+    applySettingsFieldChange(current, key, value, settingsPresentation)
+  );
+}
 
+export function applySettingsFieldChange(
+  current: PensionSettings,
+  key: SettingsKey,
+  value: PensionSettings[SettingsKey],
+  settingsPresentation: JourneySettingsPresentation = DEFAULT_JOURNEY_SETTINGS_PRESENTATION
+) {
   if (isOptionalSectionToggleKey(key)) {
-    const nextValue = value as boolean;
-
-    setSettings((current) => ({
+    return {
       ...current,
-      [key]: nextValue,
-    }));
-
-    return;
+      [key]: value as boolean,
+    };
   }
 
   if (key === "requirementAge") {
-    setSettings((current) => {
-      const next = applyRetirementIncomeChartParameterPatch(current, {
-        retirementAge: value as number,
-      });
-
-      return applyRetirementAgePresentation(next, settingsPresentation, true);
+    const next = applyRetirementIncomeChartParameterPatch(current, {
+      retirementAge: value as number,
     });
-    return;
+
+    return applyRetirementAgePresentation(next, settingsPresentation, true);
   }
 
-  setSettings((current) => {
-    const normalizedValue =
-      key === "statePensionDrawDate"
-        ? normalizeStatePensionDrawDate(value as string, current.dateOfBirth)
-        : key === "alphaPensionDrawAge"
-          ? normalizeAlphaPensionDrawAge(value as number, current.dateOfBirth)
-          : key === "sippDrawAge"
-            ? normalizeSippDrawAge(value as number, current.dateOfBirth)
-            : normalizeSetting(key, value);
-    const updatedNormalPensionAge =
-      key === "dateOfBirth"
-        ? calculateNormalPensionAge(normalizedValue as string)
-        : current.normalPensionAge;
-    const dateOfBirthUpdate = settingsPresentation.dateOfBirthUpdate;
+  const normalizedValue =
+    key === "statePensionDrawDate"
+      ? normalizeStatePensionDrawDate(value as string, current.dateOfBirth)
+      : key === "alphaPensionDrawAge"
+        ? normalizeAlphaPensionDrawAge(value as number, current.dateOfBirth)
+        : key === "sippDrawAge"
+          ? normalizeSippDrawAge(value as number, current.dateOfBirth)
+          : normalizeSetting(key, value);
+  const updatedNormalPensionAge =
+    key === "dateOfBirth"
+      ? calculateNormalPensionAge(normalizedValue as string)
+      : current.normalPensionAge;
+  const dateOfBirthUpdate = settingsPresentation.dateOfBirthUpdate;
 
-    const next = {
-      ...current,
-      [key]: normalizedValue,
-      ...(key === "retirementIncomeTargetBasis" &&
-      normalizedValue === "after_tax"
-        ? { taxationEnabled: true }
-        : {}),
-      ...(key === "dateOfBirth"
-        ? {
-            normalPensionAge: updatedNormalPensionAge,
-            requirementAge: shouldUpdateNpaLinkedValue(
-              current.requirementAge,
-              current.normalPensionAge,
-              dateOfBirthUpdate
-            )
-              ? updatedNormalPensionAge
-              : current.requirementAge,
-            alphaPensionLeaveAge: shouldUpdateNpaLinkedValue(
-              current.alphaPensionLeaveAge,
-              current.normalPensionAge,
-              dateOfBirthUpdate
-            )
-              ? updatedNormalPensionAge
-              : current.alphaPensionLeaveAge,
-            alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
-              shouldUpdateNpaLinkedValue(
-                current.alphaPensionDrawAge,
-                current.normalPensionAge,
-                dateOfBirthUpdate
-              )
-                ? updatedNormalPensionAge
-                : current.alphaPensionDrawAge,
-              normalizedValue as string
-            ),
-            sippDrawAge: normalizeSippDrawAge(
-              current.sippDrawAge === current.normalPensionAge ||
-                current.sippDrawAge ===
-                  calculateDefaultSippDrawAge(current.normalPensionAge)
-                ? calculateDefaultSippDrawAge(updatedNormalPensionAge)
-                : current.sippDrawAge,
-              normalizedValue as string
-            ),
-            isaDrawAge:
-              current.isaDrawAge ===
-                calculateDefaultIsaDrawAge(current.normalPensionAge) ||
-              current.isaDrawAge === current.normalPensionAge - 10
-                ? calculateDefaultIsaDrawAge(updatedNormalPensionAge)
-                : current.isaDrawAge,
-            statePensionDrawDate: calculateStatePensionDrawDateFromAge(
-              normalizedValue as string,
-              resolveStatePensionDrawAgeAfterDateOfBirthChange(
-                current,
-                normalizedValue as string
-              )
-            ),
-          }
-        : {}),
-    };
-
-    return key === "lifeExpectancy"
+  const next = {
+    ...current,
+    [key]: normalizedValue,
+    ...(key === "retirementIncomeTargetBasis" && normalizedValue === "after_tax"
+      ? { taxationEnabled: true }
+      : {}),
+    ...(key === "dateOfBirth"
       ? {
-          ...next,
-          spendingSmile: reconcileSpendingSmilePhaseAges(
-            next.spendingSmile,
-            next.requirementAge,
-            normalizedValue as number
+          normalPensionAge: updatedNormalPensionAge,
+          requirementAge: shouldUpdateNpaLinkedValue(
+            current.requirementAge,
+            current.normalPensionAge,
+            dateOfBirthUpdate
+          )
+            ? updatedNormalPensionAge
+            : current.requirementAge,
+          alphaPensionLeaveAge: shouldUpdateNpaLinkedValue(
+            current.alphaPensionLeaveAge,
+            current.normalPensionAge,
+            dateOfBirthUpdate
+          )
+            ? updatedNormalPensionAge
+            : current.alphaPensionLeaveAge,
+          alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
+            shouldUpdateNpaLinkedValue(
+              current.alphaPensionDrawAge,
+              current.normalPensionAge,
+              dateOfBirthUpdate
+            )
+              ? updatedNormalPensionAge
+              : current.alphaPensionDrawAge,
+            normalizedValue as string
+          ),
+          sippDrawAge: normalizeSippDrawAge(
+            current.sippDrawAge === current.normalPensionAge ||
+              current.sippDrawAge ===
+                calculateDefaultSippDrawAge(current.normalPensionAge)
+              ? calculateDefaultSippDrawAge(updatedNormalPensionAge)
+              : current.sippDrawAge,
+            normalizedValue as string
+          ),
+          isaDrawAge:
+            current.isaDrawAge ===
+              calculateDefaultIsaDrawAge(current.normalPensionAge) ||
+            current.isaDrawAge === current.normalPensionAge - 10
+              ? calculateDefaultIsaDrawAge(updatedNormalPensionAge)
+              : current.isaDrawAge,
+          statePensionDrawDate: calculateStatePensionDrawDateFromAge(
+            normalizedValue as string,
+            resolveStatePensionDrawAgeAfterDateOfBirthChange(
+              current,
+              normalizedValue as string
+            )
           ),
         }
-      : next;
-  });
+      : {}),
+  };
+
+  return key === "lifeExpectancy"
+    ? {
+        ...next,
+        spendingSmile: reconcileSpendingSmilePhaseAges(
+          next.spendingSmile,
+          next.requirementAge,
+          normalizedValue as number
+        ),
+      }
+    : next;
+}
+
+export function applyPartnerSettingsFieldChange<K extends SettingsKey>(
+  householdSettings: PensionSettings,
+  key: K,
+  value: PensionSettings[K],
+  settingsPresentation: JourneySettingsPresentation = DEFAULT_JOURNEY_SETTINGS_PRESENTATION
+): PartnerSettings {
+  const updated = applySettingsFieldChange(
+    createPartnerIndividualSettings(householdSettings),
+    key,
+    value,
+    settingsPresentation
+  );
+  const {
+    partner: _nestedPartner,
+    jointRetirement: _individualJointRetirement,
+    ...nextPartner
+  } = updated;
+
+  return nextPartner;
 }
 
 function resolveStatePensionDrawAgeAfterDateOfBirthChange(

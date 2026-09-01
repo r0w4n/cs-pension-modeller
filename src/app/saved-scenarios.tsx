@@ -56,7 +56,9 @@ export function SavedScenariosSection({
               <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
               <span>
                 {getComparisonAssessment(result).meetsTargetThroughout
-                  ? "Looks workable"
+                  ? result.statePensionAssumptionAffectsTarget
+                    ? "Needs checking"
+                    : "Looks workable"
                   : "Needs attention"}
               </span>
               <small>

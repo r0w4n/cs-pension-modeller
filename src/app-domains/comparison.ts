@@ -1365,36 +1365,7 @@ export function buildComparisonStatusItems(
   result: ComparisonResult
 ): SummaryItemLike[] {
   if (result.modelType === "household" && result.household) {
-    const assessment = result.household.assessment;
-    return [
-      {
-        label: "Overall status",
-        value: assessment.meetsTargetThroughout
-          ? "Looks workable"
-          : "Needs attention",
-      },
-      {
-        label: "Target shortfall",
-        value: assessment.meetsTargetThroughout
-          ? "No shortfall against the household target"
-          : `Below the household target for ${formatTargetMissDuration(
-              assessment.targetMissMonths
-            )}`,
-      },
-      {
-        label: "Main issue",
-        value: assessment.firstShortfallDate
-          ? `Household income first falls short on ${formatDate(
-              assessment.firstShortfallDate
-            )}`
-          : "No household shortfall identified from the current assumptions.",
-      },
-      {
-        label: "Income basis",
-        value:
-          "Household target after estimated Income Tax liability, calculated separately for each person",
-      },
-    ];
+    return buildHouseholdComparisonStatusItems(result);
   }
 
   const usesUnconfirmedStatePensionAssumption = usesUnconfirmedStatePension(
@@ -1443,6 +1414,99 @@ export function buildComparisonStatusItems(
   ];
 }
 
+function buildHouseholdComparisonStatusItems(
+  result: ComparisonResult
+): SummaryItemLike[] {
+  const assessment = result.household!.assessment;
+  const unconfirmedStatePensions = getUnconfirmedStatePensions(
+    result.scenario.settings
+  );
+  const statePensionNeedsChecking =
+    unconfirmedStatePensions.length > 0 &&
+    result.statePensionAssumptionAffectsTarget;
+
+  return [
+    {
+      label: "Overall status",
+      value: getHouseholdOverallStatus(
+        assessment.meetsTargetThroughout,
+        statePensionNeedsChecking
+      ),
+    },
+    {
+      label: "Target shortfall",
+      value: getHouseholdTargetShortfallStatus(
+        assessment.meetsTargetThroughout,
+        assessment.targetMissMonths,
+        statePensionNeedsChecking
+      ),
+    },
+    {
+      label: "Main issue",
+      value: getHouseholdMainIssue(
+        assessment.firstShortfallDate,
+        unconfirmedStatePensions,
+        statePensionNeedsChecking
+      ),
+    },
+    {
+      label: "Income basis",
+      value:
+        "Household target after estimated Income Tax liability, calculated separately for each person",
+    },
+  ];
+}
+
+function getHouseholdOverallStatus(
+  meetsTargetThroughout: boolean,
+  statePensionNeedsChecking: boolean
+) {
+  if (!meetsTargetThroughout) {
+    return "Needs attention";
+  }
+
+  return statePensionNeedsChecking ? "Needs checking" : "Looks workable";
+}
+
+function getHouseholdTargetShortfallStatus(
+  meetsTargetThroughout: boolean,
+  targetMissMonths: number,
+  statePensionNeedsChecking: boolean
+) {
+  if (!meetsTargetThroughout) {
+    return `Below the household target for ${formatTargetMissDuration(
+      targetMissMonths
+    )}`;
+  }
+
+  return statePensionNeedsChecking
+    ? "No calculated shortfall using the unconfirmed State Pension amount"
+    : "No shortfall against the household target";
+}
+
+function getHouseholdMainIssue(
+  firstShortfallDate: string | null,
+  unconfirmedStatePensions: UnconfirmedStatePension[],
+  statePensionNeedsChecking: boolean
+) {
+  if (firstShortfallDate) {
+    return `Household income first falls short on ${formatDate(
+      firstShortfallDate
+    )}`;
+  }
+
+  if (unconfirmedStatePensions.length === 0) {
+    return "No household shortfall identified from the current assumptions.";
+  }
+
+  return statePensionNeedsChecking
+    ? `The household target depends on ${formatStatePensionAssumptionList(
+        unconfirmedStatePensions,
+        "per-year"
+      )}`
+    : "State Pension is an unconfirmed household assumption, but the target remains met without it";
+}
+
 export type RetirementOutcomeStatus = "onTrack" | "shortfall" | "atRisk";
 
 export type RetirementOutcomeBanner = {
@@ -1465,6 +1529,18 @@ export function buildRetirementOutcomeBanner(
         status: "shortfall",
         label: "Shortfall",
         message: buildHouseholdShortfallOutcomeMessage(result),
+        warning: buildUnconfirmedStatePensionWarning(result),
+      };
+    }
+
+    if (
+      usesUnconfirmedStatePension(result.scenario.settings) &&
+      result.statePensionAssumptionAffectsTarget
+    ) {
+      return {
+        status: "atRisk",
+        label: "Needs checking",
+        message: buildHouseholdOnTrackOutcomeMessage(result),
         warning: buildUnconfirmedStatePensionWarning(result),
       };
     }
@@ -1507,33 +1583,158 @@ export function buildRetirementOutcomeBanner(
 }
 
 function usesUnconfirmedStatePension(settings: PensionSettings) {
-  return settings.showStatePension && !settings.statePensionForecastConfirmed;
+  return getUnconfirmedStatePensions(settings).length > 0;
+}
+
+type UnconfirmedStatePension = {
+  owner: "Your" | "Partner's";
+  annualAmount: number;
+};
+
+function getUnconfirmedStatePensions(
+  settings: PensionSettings
+): UnconfirmedStatePension[] {
+  return [
+    ...(settings.showStatePension && !settings.statePensionForecastConfirmed
+      ? [
+          {
+            owner: "Your" as const,
+            annualAmount: settings.currentStatePension,
+          },
+        ]
+      : []),
+    ...(settings.jointRetirement.enabled &&
+    settings.partner?.showStatePension &&
+    !settings.partner.statePensionForecastConfirmed
+      ? [
+          {
+            owner: "Partner's" as const,
+            annualAmount: settings.partner.currentStatePension,
+          },
+        ]
+      : []),
+  ];
+}
+
+function formatStatePensionAssumptionList(
+  assumptions: UnconfirmedStatePension[],
+  style: "per-year" | "a-year"
+) {
+  const formatted = assumptions.map(
+    ({ owner, annualAmount }) =>
+      `${owner} assumed State Pension of ${
+        style === "per-year"
+          ? formatCurrencyWholePerYear(annualAmount)
+          : `${formatCurrencyWhole(annualAmount)} a year`
+      }`
+  );
+
+  return formatted.length === 2
+    ? `${formatted[0]} and ${formatted[1]}`
+    : (formatted[0] ?? "an unconfirmed State Pension amount");
 }
 
 function buildUnconfirmedStatePensionWarning(
   result: ComparisonResult
 ): RetirementOutcomeBanner["warning"] {
-  const settings = result.scenario.settings;
+  const assumptions = getUnconfirmedStatePensions(result.scenario.settings);
 
-  if (!usesUnconfirmedStatePension(settings)) {
+  if (assumptions.length === 0) {
     return undefined;
   }
 
-  const assumedAmount = `${formatCurrencyWhole(
-    settings.currentStatePension
-  )} a year`;
   const hasExistingShortfall =
     !getComparisonAssessment(result).meetsTargetThroughout;
-  const materialitySentence = hasExistingShortfall
-    ? `This projection includes an assumed State Pension of ${assumedAmount}. Your actual shortfall may differ once you enter your personalised forecast.`
-    : result.statePensionAssumptionAffectsTarget
-      ? `This projection meets your target only when the assumed State Pension of ${assumedAmount} is included.`
-      : `This projection includes an assumed State Pension of ${assumedAmount}. Your target is still met if this income is excluded, but figures that include it should be treated with caution until you check your personalised forecast.`;
+  const household = Boolean(result.household);
+  const assumptionList = formatStatePensionAssumptionList(
+    assumptions,
+    "a-year"
+  );
+  if (!household && assumptions.length === 1) {
+    return buildSinglePersonStatePensionWarning(
+      assumptions[0],
+      hasExistingShortfall,
+      result.statePensionAssumptionAffectsTarget
+    );
+  }
+
+  return {
+    heading:
+      assumptions.length === 1
+        ? "State Pension amount not confirmed"
+        : "State Pension amounts not confirmed",
+    message: `${buildAttributedStatePensionMaterialitySentence({
+      assumptionList,
+      assumptionCount: assumptions.length,
+      hasExistingShortfall,
+      household,
+      affectsTarget: result.statePensionAssumptionAffectsTarget,
+    })} Review the relevant State Pension section and enter the personalised forecast when available.`,
+  };
+}
+
+function buildSinglePersonStatePensionWarning(
+  assumption: UnconfirmedStatePension,
+  hasExistingShortfall: boolean,
+  affectsTarget: boolean
+): NonNullable<RetirementOutcomeBanner["warning"]> {
+  const assumedAmount = `${formatCurrencyWhole(
+    assumption.annualAmount
+  )} a year`;
+  let materialitySentence: string;
+
+  if (hasExistingShortfall) {
+    materialitySentence = `This projection includes an assumed State Pension of ${assumedAmount}. Your actual shortfall may differ once you enter your personalised forecast.`;
+  } else if (affectsTarget) {
+    materialitySentence = `This projection meets your target only when the assumed State Pension of ${assumedAmount} is included.`;
+  } else {
+    materialitySentence = `This projection includes an assumed State Pension of ${assumedAmount}. Your target is still met if this income is excluded, but figures that include it should be treated with caution until you check your personalised forecast.`;
+  }
 
   return {
     heading: "State Pension amount not confirmed",
     message: `${materialitySentence} Review the State Pension section and enter your personalised forecast when available.`,
   };
+}
+
+function buildAttributedStatePensionMaterialitySentence({
+  assumptionList,
+  assumptionCount,
+  hasExistingShortfall,
+  household,
+  affectsTarget,
+}: {
+  assumptionList: string;
+  assumptionCount: number;
+  hasExistingShortfall: boolean;
+  household: boolean;
+  affectsTarget: boolean;
+}) {
+  const hasOneAssumption = assumptionCount === 1;
+
+  if (hasExistingShortfall) {
+    return `This projection includes ${assumptionList}. ${
+      household ? "The household's" : "Your"
+    } actual shortfall may differ once the personalised forecast${
+      hasOneAssumption ? " is" : "s are"
+    } entered.`;
+  }
+
+  if (affectsTarget) {
+    return `This projection meets ${
+      household ? "the household target" : "your target"
+    } only when ${assumptionList} ${hasOneAssumption ? "is" : "are"} included.`;
+  }
+
+  return `This projection includes ${assumptionList}. ${
+    household ? "The household target" : "Your target"
+  } is still met if ${
+    hasOneAssumption ? "this income is" : "these incomes are"
+  } excluded, but figures that include ${
+    hasOneAssumption ? "it" : "them"
+  } should be treated with caution until the personalised forecast${
+    hasOneAssumption ? " is" : "s are"
+  } checked.`;
 }
 
 function buildHouseholdOnTrackOutcomeMessage(result: ComparisonResult) {

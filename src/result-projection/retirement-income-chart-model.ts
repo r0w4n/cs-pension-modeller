@@ -3,6 +3,11 @@ export type RetirementIncomePoint = {
   age: number;
   /** Optional presentation coordinate for non-age timelines such as households. */
   timelineValue?: number;
+  /** Person ages at this calendar point for a household timeline. */
+  personAges?: {
+    you?: number;
+    partner?: number;
+  };
   targetIncomeAnnual: number;
   isaIncomeAnnual: number;
   lisaIncomeAnnual: number;

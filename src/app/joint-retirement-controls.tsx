@@ -27,6 +27,7 @@ import {
   splitHouseholdFlexibleFundAccountId,
 } from "../result-projection/flexible-withdrawals";
 import { FundingPriorityEditor } from "./flexible-withdrawal-priority-editor";
+import { applyPartnerSettingsFieldChange } from "./chart-state";
 
 const RETIREMENT_AGE_FIELD = getSharedRangeField("requirementAge");
 const FULL_SALARY_FIELD = getSharedRangeField("fullSalary");
@@ -187,7 +188,18 @@ export function JointHouseholdTargetFields({
           value={partner.requirementAge}
           settings={partner as PensionSettings}
           onChange={(_, value) =>
-            onChange("partner", { ...partner, requirementAge: value as number })
+            onChange(
+              "partner",
+              applyPartnerSettingsFieldChange(
+                settings,
+                "requirementAge",
+                value as number,
+                {
+                  alignAlphaLeaveAgeToRetirement: false,
+                  dateOfBirthUpdate: "relink-npa-defaults",
+                }
+              )
+            )
           }
           showGuidanceNotes={showGuidanceNotes}
           useNpaLinkedDefaults

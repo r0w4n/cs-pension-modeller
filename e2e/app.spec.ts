@@ -299,6 +299,8 @@ test.describe("app end-to-end journeys", () => {
     await page
       .getByRole("checkbox", { name: "Model retirement for two people" })
       .check();
+    await page.getByRole("checkbox", { name: "LISA", exact: true }).check();
+    await page.getByRole("checkbox", { name: "Partner LISA" }).check();
     await navigateToJourneyResult(page);
 
     await expect(
@@ -313,9 +315,19 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("heading", { name: "Plan status" })
     ).toBeVisible();
+    const householdChart = page.getByRole("region", {
+      name: "Household Retirement Plan",
+    });
+    await expect(householdChart).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Household Retirement Plan" })
-    ).toBeVisible();
+      householdChart.getByText("Calendar month/year", { exact: true })
+    ).toHaveCount(0);
+    await expect(
+      householdChart.getByTestId("retirement-income-you-age-axis")
+    ).toContainText("You");
+    await expect(
+      householdChart.getByTestId("retirement-income-partner-age-axis")
+    ).toContainText("Partner");
     await expect(
       page.getByText("Your State Pension", { exact: true })
     ).toBeVisible();
@@ -331,6 +343,85 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("slider", { name: "Partner: Retire" })
     ).toBeVisible();
+    await expect(
+      householdChart.getByRole("group", {
+        name: "Household chart contribution controls",
+      })
+    ).toBeVisible();
+    await expect(
+      householdChart.getByRole("slider", { name: "Your ISA contribution" })
+    ).toBeVisible();
+    await expect(
+      householdChart.getByRole("slider", { name: "Your SIPP contribution" })
+    ).toBeVisible();
+    await expect(
+      householdChart.getByRole("slider", { name: "Your LISA contribution" })
+    ).toBeVisible();
+    await expect(
+      householdChart.getByRole("slider", { name: "Partner ISA contribution" })
+    ).toBeVisible();
+    await expect(
+      householdChart.getByRole("slider", {
+        name: "Partner SIPP contribution",
+      })
+    ).toBeVisible();
+    await expect(
+      householdChart.getByRole("slider", {
+        name: "Partner LISA contribution",
+      })
+    ).toBeVisible();
+    const householdControlLayout = await householdChart.evaluate((chart) => {
+      const getCardTop = (label: string) =>
+        chart
+          .querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)
+          ?.closest(".retirement-income-control-card")
+          ?.getBoundingClientRect().top;
+      return {
+        viewportWidth: window.innerWidth,
+        yourControlTops: [
+          getCardTop("Your Added Alpha pension"),
+          getCardTop("Your ISA contribution"),
+          getCardTop("Your LISA contribution"),
+          getCardTop("Your SIPP contribution"),
+        ],
+        partnerControlTop: getCardTop("Partner ISA contribution"),
+      };
+    });
+    if (householdControlLayout.viewportWidth >= 1100) {
+      const yourControlTops = householdControlLayout.yourControlTops.filter(
+        (value): value is number => value !== undefined
+      );
+      expect(
+        Math.max(...yourControlTops) - Math.min(...yourControlTops)
+      ).toBeLessThan(2);
+      expect(householdControlLayout.partnerControlTop).toBeGreaterThan(
+        Math.max(...yourControlTops)
+      );
+    }
+    const milestoneLabelFits = await householdChart
+      .locator(".retirement-income-milestone-handle-label")
+      .evaluateAll((labels) =>
+        labels.every((label) => {
+          const textWidth = (label as SVGTextElement).getBBox().width;
+          const handle = label.parentElement?.querySelector(
+            ".retirement-income-milestone-handle"
+          );
+          const handleHeight = Number(handle?.getAttribute("height") ?? 0);
+          return textWidth <= handleHeight - 4;
+        })
+      );
+    expect(milestoneLabelFits).toBe(true);
+    const partnerRetirementMarker = page.getByRole("slider", {
+      name: "Partner: Retire",
+    });
+    await partnerRetirementMarker.focus();
+    await expect
+      .poll(() =>
+        partnerRetirementMarker.evaluate(
+          (marker) => getComputedStyle(marker).outlineStyle
+        )
+      )
+      .toBe("none");
     await expect(
       page.getByRole("group", { name: "Joint results chart view" })
     ).toHaveCount(0);
@@ -366,6 +457,34 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       comparisonResults.getByText("Both retired", { exact: true })
     ).toBeVisible();
+
+    const horizontalOverflow = await page.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(horizontalOverflow).toBeLessThanOrEqual(1);
+
+    await page.getByLabel("Scenario name").fill("Household plan");
+    await page.getByRole("button", { name: "Add to comparison" }).click();
+    const savedHousehold = page.locator(".comparison-card").filter({
+      has: page.locator('input[value="Household plan"]'),
+    });
+    await expect(
+      savedHousehold.getByText("Two-person household")
+    ).toBeVisible();
+    await savedHousehold
+      .getByRole("button", { name: "Load this scenario" })
+      .click();
+    await expect(
+      page.getByRole("checkbox", { name: "Model retirement for two people" })
+    ).toBeChecked();
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("region", { name: "Household Retirement Plan" })
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("retirement-income-partner-age-axis")
+    ).toContainText("Partner");
   });
 
   test("expert retirement age defaults follow Normal Pension Age", async ({

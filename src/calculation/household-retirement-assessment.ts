@@ -51,7 +51,6 @@ const householdPotKeys: Record<
 // The assessment deliberately mirrors the established single-person
 // assessment while retaining the household's calendar-month target and
 // separate pots.
-// eslint-disable-next-line sonarjs/cyclomatic-complexity
 export function assessHouseholdRetirementPlan(
   projection: JointRetirementProjection,
   settings: PensionSettings
@@ -70,16 +69,9 @@ export function assessHouseholdRetirementPlan(
     0,
     ...shortfallRows.map((row) => row.household.shortfall)
   );
-  const finalRow = projection.rows.at(-1);
   const finalFlexibleAssets =
-    (finalRow?.people.you?.isaPot ?? 0) +
-    (finalRow?.people.you?.lisaPot ?? 0) +
-    (finalRow?.people.you?.sippPot ?? 0) +
-    (finalRow?.people.you?.csAvcPot ?? 0) +
-    (finalRow?.people.partner?.isaPot ?? 0) +
-    (finalRow?.people.partner?.lisaPot ?? 0) +
-    (finalRow?.people.partner?.sippPot ?? 0) +
-    (finalRow?.people.partner?.csAvcPot ?? 0);
+    getFlexibleAssets(projection.people.you.rows.at(-1)) +
+    getFlexibleAssets(projection.people.partner.rows.at(-1));
 
   const firstFlexibleFundExhaustion = findFirstFlexibleFundExhaustion(
     projection,
@@ -145,15 +137,19 @@ function findFirstFlexibleFundExhaustion(
       definition.useByAge
     );
     const potKey = householdPotKeys[definition.account];
-    const depletion = rows.find(
-      (row) =>
+    let hasHeldFunds = false;
+    const depletion = rows.find((row) => {
+      hasHeldFunds ||= row[potKey] > 0;
+      return (
+        hasHeldFunds &&
         row.date >= drawDate &&
         row.date <=
           (definition.useByStrategy === "use_by_age"
             ? useByDate
             : "9999-12-31") &&
         row[potKey] <= 0
-    );
+      );
+    });
     return depletion
       ? [
           {
@@ -167,6 +163,12 @@ function findFirstFlexibleFundExhaustion(
   return candidates.sort((first, second) =>
     first.date.localeCompare(second.date)
   )[0];
+}
+
+function getFlexibleAssets(
+  row: JointRetirementProjection["people"]["you"]["rows"][number] | undefined
+) {
+  return row ? row.isaPot + row.lisaPot + row.sippPot + row.csAvcPot : 0;
 }
 
 function createAccountDefinitions(

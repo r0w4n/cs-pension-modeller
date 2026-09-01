@@ -32,7 +32,10 @@ import {
   saveStoredJourneyRetirementIncomeDisplay,
   type RetirementIncomeDisplay,
 } from "../../src/app/app-persistence";
-import { applyRetirementIncomeChartParameterPatch } from "../../src/app/chart-state";
+import {
+  applyPartnerSettingsFieldChange,
+  applyRetirementIncomeChartParameterPatch,
+} from "../../src/app/chart-state";
 import { getRetirementIncomeChartTitle } from "../../src/RetirementIncomeChart";
 import { calculateRetirementPlan } from "../../src/calculation/retirement-plan";
 import { calculateJointRetirementProjection } from "../../src/calculation/joint-retirement-plan";
@@ -40,10 +43,6 @@ import {
   calculateRetirementChartOverlays,
   RETIREMENT_CHART_OVERLAY_META,
 } from "../../src/app-domains/retirement-chart-overlays";
-import {
-  getRetirementIncomeChartPresentation,
-  type RetirementIncomeChartPresentation,
-} from "../../src/app-domains/retirement-income-chart-presentation";
 import {
   selectRetirementChartLegendKeys,
   type RetirementChartLegendSource,
@@ -63,6 +62,7 @@ import {
   calculateNormalPensionAge,
   createDefaultPartnerSettings,
   createDefaultSettings,
+  createPartnerIndividualSettings,
   getStoredSettingsEnvelope,
   parseStoredSettingsByJourney,
   saveLocalStoragePreference,
@@ -71,13 +71,12 @@ import {
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
-import {
-  createHouseholdChartEvents,
-  createHouseholdChartMilestones,
-} from "../../src/result-projection/joint-retirement-chart";
+import { createHouseholdChartEvents } from "../../src/result-projection/joint-retirement-chart";
 import { getRetirementIncomeEventsForDate } from "../../src/result-projection/retirement-income-chart-layout";
 import type { RetirementIncomeChartEvent } from "../../src/result-projection/retirement-income-chart-model";
 import { summarizeFlexibleWithdrawalInsights } from "../../src/result-projection/flexible-withdrawals";
+import { projectJointRetirementResults } from "../../src/result-projection/joint-retirement-results";
+import { createRetirementIncomeChartParameters } from "../../src/result-projection/retirement-income";
 
 function createComparisonResult(
   scenario: ComparisonScenario,
@@ -142,9 +141,8 @@ type ProductAcceptanceWorld = {
   guidanceNotesLoaded?: boolean;
   journeySettings?: PensionSettingsByJourney;
   jointProjection?: ReturnType<typeof calculateJointRetirementProjection>;
-  jointChartPresentation?: RetirementIncomeChartPresentation;
   jointChartEvents?: RetirementIncomeChartEvent[];
-  jointChartMilestones?: ReturnType<typeof createHouseholdChartMilestones>;
+  jointResultsProjection?: ReturnType<typeof projectJointRetirementResults>;
 };
 
 type MemoryStorage = Storage & {
@@ -1251,6 +1249,64 @@ Given(
   }
 );
 
+When(
+  "the two-person scenario settings are exported, parsed and recalculated",
+  function (this: ProductAcceptanceWorld) {
+    const original = this.comparisonResults?.[0];
+    assertCondition(original, "Expected an original household scenario");
+    const parsed = parseStoredSettingsByJourney(
+      getStoredSettingsEnvelope({
+        simple: createDefaultSettings(),
+        bridge: createDefaultSettings(),
+        expert: original.scenario.settings,
+      })
+    );
+    assertCondition(parsed, "Expected the household scenario to reload");
+    const settings = parsed.settings.expert;
+    const reloaded = createComparisonResult(
+      {
+        ...original.scenario,
+        id: `${original.scenario.id}-reloaded`,
+        name: `${original.scenario.name} reloaded`,
+        settings,
+      },
+      JSON.stringify(settings)
+    );
+    this.comparisonResults = [original, reloaded];
+  }
+);
+
+Then(
+  "the reloaded scenario should retain Partner settings",
+  function (this: ProductAcceptanceWorld) {
+    const [original, reloaded] = this.comparisonResults ?? [];
+    assertCondition(original?.scenario.settings.partner, "Expected Partner");
+    assertCondition(reloaded?.scenario.settings.partner, "Expected Partner");
+    assertEqual(
+      JSON.stringify(reloaded.scenario.settings.partner),
+      JSON.stringify(original.scenario.settings.partner)
+    );
+    assertEqual(reloaded.modelType, "household");
+  }
+);
+
+Then(
+  "the reloaded scenario should retain its household assessment status",
+  function (this: ProductAcceptanceWorld) {
+    const [original, reloaded] = this.comparisonResults ?? [];
+    assertCondition(original?.household, "Expected original assessment");
+    assertCondition(reloaded?.household, "Expected reloaded assessment");
+    assertEqual(
+      buildRetirementOutcomeBanner(reloaded).label,
+      buildRetirementOutcomeBanner(original).label
+    );
+    assertEqual(
+      reloaded.household.assessment.meetsTargetThroughout,
+      original.household.assessment.meetsTargetThroughout
+    );
+  }
+);
+
 Given(
   "a retirement scenario named {string} includes nuvos pension",
   function (this: ProductAcceptanceWorld, name: string) {
@@ -1807,6 +1863,206 @@ Given(
 );
 
 Given(
+  "a two-person household with Partner supplementary schedules",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = normalizeSettings({
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        showAlpha: true,
+        alphaEpaEnabled: true,
+        alphaEpaPeriods: [
+          {
+            id: "partner-epa",
+            yearsBeforeNpa: 1,
+            startDate: "2027-04-01",
+            endDate: "2028-03-31",
+          },
+        ],
+        alphaAddedPensionLumpSums: [
+          {
+            id: "partner-alpha-lump",
+            amount: 1_000,
+            startDate: "2027-06-01",
+            cadence: "once",
+            endDate: "2027-06-01",
+          },
+        ],
+        showSipp: true,
+        sippLumpSums: [
+          {
+            id: "partner-sipp-lump",
+            amount: 2_000,
+            startDate: "2027-06-01",
+            cadence: "once",
+            endDate: "2027-06-01",
+          },
+        ],
+        showCsAvc: true,
+        csAvcLumpSums: [
+          {
+            id: "partner-cs-avc-lump",
+            amount: 3_000,
+            startDate: "2027-06-01",
+            cadence: "once",
+            endDate: "2027-06-01",
+          },
+        ],
+        showIsa: true,
+        isaLumpSums: [
+          {
+            id: "partner-isa-lump",
+            amount: 4_000,
+            startDate: "2027-06-01",
+            cadence: "once",
+            endDate: "2027-06-01",
+          },
+        ],
+        showAdditionalGuaranteedIncome: true,
+        additionalGuaranteedIncomes: [
+          {
+            id: "partner-guaranteed-income",
+            name: "Partner pension",
+            annualAmount: 1_200,
+            startAge: defaults.requirementAge,
+            endAge: null,
+            indexation: "none",
+            taxable: false,
+          },
+        ],
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 0,
+        fullyRetiredDesiredRetirementIncome: 0,
+      },
+    });
+  }
+);
+
+When(
+  "Partner household settings are exported and parsed",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    const parsed = parseStoredSettingsByJourney(
+      getStoredSettingsEnvelope({
+        simple: createDefaultSettings(),
+        bridge: createDefaultSettings(),
+        expert: settings,
+      })
+    );
+    assertCondition(parsed, "Expected exported household settings to parse");
+    this.settings = parsed.settings.expert;
+    this.jointProjection = calculateJointRetirementProjection(this.settings);
+  }
+);
+
+Then(
+  "Partner supplementary schedules should be retained",
+  function (this: ProductAcceptanceWorld) {
+    const partner = getSettings(this).partner;
+    assertCondition(partner, "Expected Partner settings");
+    assertEqual(partner.alphaEpaPeriods.length, 1);
+    assertEqual(partner.alphaAddedPensionLumpSums.length, 1);
+    assertEqual(partner.sippLumpSums.length, 1);
+    assertEqual(partner.csAvcLumpSums.length, 1);
+    assertEqual(partner.isaLumpSums.length, 1);
+    assertEqual(partner.additionalGuaranteedIncomes.length, 1);
+  }
+);
+
+Then(
+  "Partner additional guaranteed income should appear in the joint projection",
+  function (this: ProductAcceptanceWorld) {
+    const row = this.jointProjection?.people.partner.rows.find(
+      (candidate) => candidate.monthlyAdditionalGuaranteedIncomeGross > 0
+    );
+    expectMoney(row?.monthlyAdditionalGuaranteedIncomeGross, 100, 6);
+  }
+);
+
+Given(
+  "Partner has manually overridden SIPP and ISA draw ages",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = {
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        sippDrawAge: 62,
+        isaDrawAge: 59,
+      },
+      jointRetirement: { ...defaults.jointRetirement, enabled: true },
+    };
+  }
+);
+
+When(
+  "Partner's birth date is changed using the shared field update",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.settings = {
+      ...settings,
+      partner: applyPartnerSettingsFieldChange(
+        settings,
+        "dateOfBirth",
+        "1977-06-01",
+        {
+          alignAlphaLeaveAgeToRetirement: false,
+          dateOfBirthUpdate: "relink-npa-defaults",
+        }
+      ),
+    };
+  }
+);
+
+Then(
+  "Partner's linked retirement defaults should update",
+  function (this: ProductAcceptanceWorld) {
+    const partner = getSettings(this).partner;
+    assertCondition(partner, "Expected Partner settings");
+    assertEqual(partner.normalPensionAge, 67.25);
+    assertEqual(partner.requirementAge, 67.25);
+    assertEqual(partner.alphaPensionDrawAge, 67.25);
+  }
+);
+
+Then(
+  "Partner's manually overridden draw ages should be retained",
+  function (this: ProductAcceptanceWorld) {
+    const partner = getSettings(this).partner;
+    assertCondition(partner, "Expected Partner settings");
+    assertEqual(partner.sippDrawAge, 62);
+    assertEqual(partner.isaDrawAge, 59);
+  }
+);
+
+Given(
+  "a two-person household without a Partner birth date",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = {
+      ...defaults,
+      partner: { ...createDefaultPartnerSettings(), dateOfBirth: "" },
+      jointRetirement: { ...defaults.jointRetirement, enabled: true },
+    };
+  }
+);
+
+Then(
+  "Partner validation should report only the primary birth-date issue",
+  function (this: ProductAcceptanceWorld) {
+    const partnerIssues = validateSettings(getSettings(this)).filter(
+      (issue) => issue.personId === "partner"
+    );
+    assertEqual(partnerIssues.length, 1);
+    assertEqual(partnerIssues[0]?.field, "dateOfBirth");
+  }
+);
+
+Given(
   "a staggered two-person household",
   function (this: ProductAcceptanceWorld) {
     const settings = getSettings(this);
@@ -1829,29 +2085,6 @@ Given(
         transitionDesiredRetirementIncome: 30_000,
         fullyRetiredDesiredRetirementIncome: 45_400,
       },
-    };
-  }
-);
-
-Given(
-  "Your SIPP and ISA fund Your personal target",
-  function (this: ProductAcceptanceWorld) {
-    const settings = getSettings(this);
-    this.settings = {
-      ...settings,
-      desiredRetirementIncome: 31_350,
-      retirementIncomeTargetBasis: "after_tax",
-      showSipp: true,
-      sippCurrentPot: 45_000,
-      sippMonthlyContribution: 1_100,
-      sippDrawAge: settings.requirementAge + 2,
-      sippWithdrawalStrategy: "meet_income_target",
-      showIsa: true,
-      isaCurrentPot: 45_000,
-      isaMonthlyContribution: 150,
-      isaDrawAge: settings.requirementAge,
-      isaWithdrawalStrategy: "meet_income_target",
-      flexibleWithdrawalPriority: ["sipp", "isa"],
     };
   }
 );
@@ -1902,12 +2135,252 @@ Given(
   }
 );
 
+Given(
+  "a two-person household with a limited SIPP lump-sum allowance",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 75,
+      taxationEnabled: false,
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: 300,
+      taxLumpSumAllowanceUsed: 0,
+      taxSippWithdrawalTreatment: "ufpls",
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: true,
+      sippCurrentPot: 100_000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target",
+      showIsa: false,
+      flexibleWithdrawalPriority: ["sipp"],
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 75,
+        taxationEnabled: false,
+        showStatePension: false,
+        showSipp: false,
+        showIsa: false,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 12_000,
+        fullyRetiredDesiredRetirementIncome: 12_000,
+        flexibleWithdrawalPriority: ["you:sipp"],
+      },
+    });
+  }
+);
+
+Given(
+  "a staggered household where Partner partially retires after You retire",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 90,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1980-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 90,
+        fullSalary: 48_000,
+        partialRetirementEnabled: true,
+        partialRetirementStartAge: 55,
+        partialRetirementWorkPercent: 50,
+        showAlpha: false,
+        showStatePension: false,
+        showSipp: false,
+        showIsa: false,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 0,
+        fullyRetiredDesiredRetirementIncome: 0,
+      },
+    });
+  }
+);
+
+Given(
+  "Partner's partial-retirement work percentage is {int}",
+  function (this: ProductAcceptanceWorld, workPercentage: number) {
+    const settings = getSettings(this);
+    assertCondition(settings.partner, "Expected Partner settings");
+    this.settings = {
+      ...settings,
+      partner: {
+        ...settings.partner,
+        partialRetirementWorkPercent: workPercentage,
+      },
+    };
+  }
+);
+
+Given(
+  "a two-person household with an enabled but never-funded ISA",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 70,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: true,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 60,
+      isaWithdrawalStrategy: "meet_income_target",
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 70,
+        showStatePension: false,
+        showSipp: false,
+        showIsa: false,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 12_000,
+        fullyRetiredDesiredRetirementIncome: 12_000,
+        flexibleWithdrawalPriority: ["you:isa"],
+      },
+    });
+  }
+);
+
+Given(
+  "a household chart with owner-attributed flexible withdrawals",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 65,
+      taxationEnabled: false,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: true,
+      sippCurrentPot: 12_000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target",
+      showIsa: true,
+      isaCurrentPot: 12_000,
+      isaMonthlyContribution: 0,
+      isaDrawAge: 60,
+      isaWithdrawalStrategy: "meet_income_target",
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1971-06-01",
+        requirementAge: 59,
+        lifeExpectancy: 64,
+        taxationEnabled: false,
+        showStatePension: false,
+        showSipp: true,
+        sippCurrentPot: 12_000,
+        sippMonthlyContribution: 0,
+        sippDrawAge: 59,
+        sippWithdrawalStrategy: "meet_income_target",
+        showIsa: true,
+        isaCurrentPot: 12_000,
+        isaMonthlyContribution: 0,
+        isaDrawAge: 59,
+        isaWithdrawalStrategy: "meet_income_target",
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 12_000,
+        fullyRetiredDesiredRetirementIncome: 12_000,
+        flexibleWithdrawalPriority: [
+          "you:isa",
+          "you:sipp",
+          "partner:isa",
+          "partner:sipp",
+        ],
+      },
+    });
+  }
+);
+
 When(
   "the joint household projection is calculated",
   function (this: ProductAcceptanceWorld) {
     this.jointProjection = calculateJointRetirementProjection(
       getSettings(this)
     );
+  }
+);
+
+Then(
+  "Partner employment income should be full salary before partial retirement",
+  function (this: ProductAcceptanceWorld) {
+    const row = this.jointProjection?.rows.find((candidate) =>
+      candidate.date.startsWith("2032-06")
+    );
+    expectMoney(row?.people.partner?.monthlyEmploymentIncome, 4_000, 6);
+  }
+);
+
+Then(
+  "Partner employment income should be reduced after partial retirement",
+  function (this: ProductAcceptanceWorld) {
+    const row = this.jointProjection?.rows.find((candidate) =>
+      candidate.date.startsWith("2035-06")
+    );
+    expectMoney(row?.people.partner?.monthlyEmploymentIncome, 2_000, 6);
+  }
+);
+
+Then(
+  "Partner employment income should be zero after partial retirement",
+  function (this: ProductAcceptanceWorld) {
+    const row = this.jointProjection?.rows.find((candidate) =>
+      candidate.date.startsWith("2035-06")
+    );
+    expectMoney(row?.people.partner?.monthlyEmploymentIncome, 0, 6);
+  }
+);
+
+Then(
+  "Partner transition salary should be included once in the Income Tax estimate",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    const row = this.jointProjection?.rows.find((candidate) =>
+      candidate.date.startsWith("2031-05")
+    );
+    const expectedMonthlyTax =
+      calculateAnnualIncomeTax(
+        createPartnerIndividualSettings(settings),
+        48_000
+      ) / 12;
+
+    expectMoney(row?.people.partner?.monthlyIncomeTax, expectedMonthlyTax, 6);
   }
 );
 
@@ -1959,35 +2432,28 @@ Then(
 );
 
 Then(
-  "the stand-alone Your projection should contain ISA and SIPP withdrawals",
+  "the joint result should retain aligned You and Partner age timelines",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.jointProjection, "Expected a joint projection");
-    const rows = this.jointProjection.individuals.you.rows;
+    const rows = this.jointProjection.rows.filter(
+      (row) => row.people.you !== null && row.people.partner !== null
+    );
+    assertCondition(rows.length > 1, "Expected paired person timeline rows");
+    const first = rows[0];
+    const last = rows.at(-1);
     assertCondition(
-      rows.some((row) => row.monthlyIsaPension > 0),
-      "Expected stand-alone ISA withdrawals"
+      first !== undefined && last !== undefined,
+      "Expected age endpoints"
     );
     assertCondition(
-      rows.some((row) => row.monthlySippPension > 0),
-      "Expected stand-alone SIPP withdrawals"
+      last.people.you!.age > first.people.you!.age &&
+        last.people.partner!.age > first.people.partner!.age,
+      "Expected both person age timelines to advance"
     );
-  }
-);
-
-Then(
-  "the coordinated household projection may allocate Your withdrawals differently",
-  function (this: ProductAcceptanceWorld) {
-    assertCondition(this.jointProjection, "Expected a joint projection");
-    const individualIsaMonths =
-      this.jointProjection.individuals.you.rows.filter(
-        (row) => row.monthlyIsaPension > 0
-      ).length;
-    const coordinatedIsaMonths = this.jointProjection.people.you.rows.filter(
-      (row) => row.monthlyIsaPension > 0
-    ).length;
     assertCondition(
-      individualIsaMonths !== coordinatedIsaMonths,
-      "Expected household coordination to remain separate from the stand-alone view"
+      first.people.you!.age !== first.people.partner!.age ||
+        last.people.you!.age !== last.people.partner!.age,
+      "Expected separate You and Partner ages on the shared timeline"
     );
   }
 );
@@ -2030,6 +2496,151 @@ Then(
 );
 
 Then(
+  "Your coordinated SIPP withdrawals should not consume more than the available allowance",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    const withdrawalRows = this.jointProjection.people.you.rows.filter(
+      (row) => row.monthlySippPension > 0
+    );
+    assertCondition(
+      withdrawalRows.length >= 3,
+      "Expected at least three coordinated SIPP withdrawals"
+    );
+    expectMoney(withdrawalRows[0]?.monthlyTaxFreePensionCash, 250, 6);
+    expectMoney(withdrawalRows[1]?.monthlyTaxFreePensionCash, 50, 6);
+    expectMoney(withdrawalRows[2]?.monthlyTaxFreePensionCash, 0, 6);
+    expectMoney(withdrawalRows.at(-1)?.pensionLumpSumAllowanceRemaining, 0, 6);
+  }
+);
+
+Then(
+  "the household assessment should not report the ISA as depleted",
+  function (this: ProductAcceptanceWorld) {
+    const plan = calculateRetirementPlan(getSettings(this));
+    assertCondition(plan.householdAssessment, "Expected household assessment");
+    assertEqual(
+      plan.householdAssessment.firstFlexibleFundExhaustionAccount,
+      null
+    );
+    assertEqual(plan.householdAssessment.firstFlexibleFundExhaustionDate, null);
+  }
+);
+
+When(
+  "the joint household results are projected",
+  function (this: ProductAcceptanceWorld) {
+    const settings = getSettings(this);
+    this.jointProjection = calculateJointRetirementProjection(settings);
+    this.jointResultsProjection = projectJointRetirementResults(
+      this.jointProjection,
+      settings,
+      createRetirementIncomeChartParameters(settings)
+    );
+  }
+);
+
+Then(
+  "the chart should match the canonical You and Partner flexible withdrawals",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(this.jointProjection, "Expected a joint projection");
+    assertCondition(
+      this.jointResultsProjection,
+      "Expected projected household results"
+    );
+    const chartPoints = new Map(
+      this.jointResultsProjection.incomeSeries.map((point) => [
+        point.date.slice(0, 7),
+        point,
+      ])
+    );
+    const sources = [
+      {
+        owner: "you",
+        rowKey: "monthlyIsaPension",
+        seriesKey: "you-isaIncomeAnnual",
+      },
+      {
+        owner: "you",
+        rowKey: "monthlySippPension",
+        seriesKey: "you-sippIncomeAnnual",
+      },
+      {
+        owner: "partner",
+        rowKey: "monthlyIsaPension",
+        seriesKey: "partner-isaIncomeAnnual",
+      },
+      {
+        owner: "partner",
+        rowKey: "monthlySippPension",
+        seriesKey: "partner-sippIncomeAnnual",
+      },
+    ] as const;
+
+    for (const source of sources) {
+      const row = this.jointProjection.people[source.owner].rows.find(
+        (candidate) => candidate[source.rowKey] > 0
+      );
+      assertCondition(
+        row,
+        `Expected a canonical withdrawal for ${source.seriesKey}`
+      );
+      const point = chartPoints.get(row.date.slice(0, 7));
+      const annualAmount = point?.incomeSeries?.find(
+        (series) => series.key === source.seriesKey
+      )?.annualAmount;
+      assertCondition(
+        annualAmount !== undefined &&
+          Math.abs(annualAmount - row[source.rowKey] * 12) < 0.001,
+        `Expected ${source.seriesKey} to match its canonical withdrawal`
+      );
+    }
+  }
+);
+
+Then(
+  "the chart timeline should retain You and Partner ages",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.jointResultsProjection,
+      "Expected projected household results"
+    );
+    assertCondition(
+      this.jointResultsProjection.incomeSeries.every(
+        (point) =>
+          Number.isFinite(point.personAges?.you) &&
+          Number.isFinite(point.personAges?.partner)
+      ),
+      "Expected both person ages on every household chart point"
+    );
+  }
+);
+
+Then(
+  "the household chart should expose You and Partner contribution controls",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.jointResultsProjection,
+      "Expected projected household results"
+    );
+    const controls = new Map(
+      this.jointResultsProjection.personChartControls.map((control) => [
+        control.owner,
+        control,
+      ])
+    );
+
+    for (const owner of ["you", "partner"] as const) {
+      const control = controls.get(owner);
+      assertCondition(control, `Expected ${owner} chart controls`);
+      assertEqual(control.parameters.showIsa, true);
+      assertEqual(control.parameters.showSipp, true);
+      assertEqual(control.limits.isaMonthlyContribution.max, 2_000);
+      assertEqual(control.limits.sippMonthlyContribution.max, 2_000);
+    }
+  }
+);
+
+Then(
   "the joint result should have one household retirement month",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.jointProjection, "Expected a joint projection");
@@ -2037,43 +2648,6 @@ Then(
       this.jointProjection.firstRetirementMonth,
       this.jointProjection.bothRetiredMonth
     );
-  }
-);
-
-When(
-  "the editable household chart presentation is prepared",
-  function (this: ProductAcceptanceWorld) {
-    this.jointChartPresentation =
-      getRetirementIncomeChartPresentation("editable-household");
-  }
-);
-
-Then(
-  "inline household milestone annotations should be disabled",
-  function (this: ProductAcceptanceWorld) {
-    assertEqual(this.jointChartPresentation?.showInlineMilestones, false);
-    assertEqual(this.jointChartPresentation?.readOnly, false);
-  }
-);
-
-Then(
-  "key household retirement markers should use the shared chart marker style",
-  function (this: ProductAcceptanceWorld) {
-    this.jointChartMilestones = createHouseholdChartMilestones(
-      getSettings(this)
-    );
-    assertEqual(this.jointChartMilestones.length, 2);
-    assertCondition(
-      this.jointChartMilestones.every((marker) => marker.timelineValue > 0),
-      "Expected both retirement markers to have a timeline position"
-    );
-  }
-);
-
-Then(
-  "household period inspection should remain enabled",
-  function (this: ProductAcceptanceWorld) {
-    assertEqual(this.jointChartPresentation?.showPeriodInspection, true);
   }
 );
 
@@ -2572,6 +3146,45 @@ Given(
 );
 
 Given(
+  "a household target that depends on Partner's unconfirmed State Pension",
+  function (this: ProductAcceptanceWorld) {
+    const defaults = createDefaultSettings();
+    this.settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 67,
+      lifeExpectancy: 70,
+      taxationEnabled: false,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 67,
+        lifeExpectancy: 70,
+        showAlpha: false,
+        showStatePension: true,
+        currentStatePension: 12_000,
+        statePensionForecastConfirmed: false,
+        statePensionDrawDate: "2037-06-01",
+        statePensionApplyFutureGrowth: false,
+        showSipp: false,
+        showIsa: false,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 10_000,
+        fullyRetiredDesiredRetirementIncome: 10_000,
+      },
+    });
+  }
+);
+
+Given(
   "the assumed State Pension is enough to meet the retirement target",
   function (this: ProductAcceptanceWorld) {
     const settings = getSettings(this);
@@ -2728,6 +3341,21 @@ Then(
     assertCondition(
       warning?.heading === "State Pension amount not confirmed" &&
         warning.message.includes("assumed State Pension")
+    );
+  }
+);
+
+Then(
+  "the retirement outcome should identify Partner's unconfirmed State Pension",
+  function (this: ProductAcceptanceWorld) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    const warning = buildRetirementOutcomeBanner(result).warning;
+    assertCondition(
+      warning?.message.includes(
+        "Partner's assumed State Pension of £12,000 a year"
+      ),
+      "Expected the warning to identify Partner's State Pension assumption"
     );
   }
 );

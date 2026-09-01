@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { fieldGroups, type FieldDefinition } from "../fieldDefinitions";
+import {
+  fieldGroups,
+  type FieldDefinition,
+  type SettingsKey,
+} from "../fieldDefinitions";
 import {
   deriveInflationAssumptions,
   type PensionSummary,
@@ -20,6 +24,7 @@ import {
 import {
   buildBridgePlanReview,
   buildComparisonStatusItems,
+  buildRetirementOutcomeBanner,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyCurrencyFieldPresentation,
@@ -81,6 +86,7 @@ import {
   PartnerOptionalSections,
 } from "./joint-retirement-controls";
 import { JointRetirementResults } from "./joint-retirement-results";
+import { applyPartnerSettingsFieldChange } from "./chart-state";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -304,6 +310,7 @@ function JourneyResultsStep({
       <JointJourneyResultsStep
         settings={settings}
         retirementPlanResult={retirementPlanResult}
+        currentComparisonResult={currentComparisonResult}
         isProjectionPending={isProjectionPending}
         validationIssues={validationIssues}
         chartParameters={retirementIncomeChartParameters}
@@ -411,6 +418,16 @@ function JourneyResultsStep({
         />
       ) : null}
 
+      {hasResultsSection(step, "projection-table") &&
+      shouldRenderProjectionTable ? (
+        <ProjectionTableSectionContainer>
+          <ProjectionTableSectionFeature
+            rows={projectionRows}
+            settings={settings}
+          />
+        </ProjectionTableSectionContainer>
+      ) : null}
+
       {hasResultsSection(step, "comparison") ? (
         <ComparisonSection>
           <ComparisonPanelFeature
@@ -430,16 +447,6 @@ function JourneyResultsStep({
           />
         </ComparisonSection>
       ) : null}
-
-      {hasResultsSection(step, "projection-table") &&
-      shouldRenderProjectionTable ? (
-        <ProjectionTableSectionContainer>
-          <ProjectionTableSectionFeature
-            rows={projectionRows}
-            settings={settings}
-          />
-        </ProjectionTableSectionContainer>
-      ) : null}
     </>
   );
 }
@@ -447,6 +454,7 @@ function JourneyResultsStep({
 function JointJourneyResultsStep({
   settings,
   retirementPlanResult,
+  currentComparisonResult,
   isProjectionPending,
   validationIssues,
   chartParameters,
@@ -466,6 +474,7 @@ function JointJourneyResultsStep({
 }: {
   settings: PensionSettings;
   retirementPlanResult: RetirementPlanResult;
+  currentComparisonResult: ComparisonResult;
   isProjectionPending: boolean;
   validationIssues: PensionValidationIssue[];
   chartParameters: RetirementIncomeChartParameters;
@@ -503,6 +512,8 @@ function JointJourneyResultsStep({
         <JointRetirementResults
           projection={retirementPlanResult.jointProjection}
           settings={settings}
+          outcome={buildRetirementOutcomeBanner(currentComparisonResult)}
+          statusItems={buildComparisonStatusItems(currentComparisonResult)}
           chartParameters={chartParameters}
           chartLimits={chartLimits}
           retirementIncomeDisplay={retirementIncomeDisplay}
@@ -670,6 +681,8 @@ function renderFieldsStep(
     </SettingsFieldsFeature>
   );
   const partner = settings.partner;
+  const onPartnerChange: SettingsFieldOnChange = (key, value) =>
+    updatePartnerSetting(settings, key, value, onChange);
 
   return (
     <>
@@ -710,6 +723,18 @@ function renderFieldsStep(
         />
       ) : null}
 
+      {step.groupId && isSettingsGroupVisible(step.groupId, settings) ? (
+        <SettingsGroupSupplementaryEditor
+          groupId={step.groupId}
+          settings={settings}
+          validationIssues={validationIssues.filter(
+            (issue) => issue.personId !== "partner"
+          )}
+          onChange={onChange}
+          useDropdownDates={useDropdownDates}
+        />
+      ) : null}
+
       {shouldShowPartnerFields(step.groupId, settings) && partner ? (
         <section
           className="settings-section"
@@ -728,35 +753,50 @@ function renderFieldsStep(
             ).map((field) => ({
               ...field,
               label: getPartnerFieldLabel(field.label),
+              description: "",
             }))}
             settings={partner as PensionSettings}
             validationIssues={validationIssues.filter(
               (issue) => issue.personId === "partner"
             )}
-            onChange={(key, value) =>
-              onChange("partner", {
-                ...partner,
-                [key]: value,
-              })
-            }
+            onChange={onPartnerChange}
             showGuidanceNotes={showGuidanceNotes}
             useDropdownDates={useDropdownDates}
             useNpaLinkedDefaults={Boolean(step.useNpaLinkedDefaults)}
             domIdPrefix="partner"
           />
+          {step.groupId ? (
+            <SettingsGroupSupplementaryEditor
+              groupId={step.groupId}
+              settings={partner as PensionSettings}
+              validationIssues={validationIssues.filter(
+                (issue) => issue.personId === "partner"
+              )}
+              onChange={onPartnerChange}
+              useDropdownDates={useDropdownDates}
+              domIdPrefix="partner"
+              ownerLabel="Partner"
+              showDescriptions={false}
+            />
+          ) : null}
         </section>
       ) : null}
-
-      {step.groupId ? (
-        <SettingsGroupSupplementaryEditor
-          groupId={step.groupId}
-          settings={settings}
-          validationIssues={validationIssues}
-          onChange={onChange}
-          useDropdownDates={useDropdownDates}
-        />
-      ) : null}
     </>
+  );
+}
+
+function updatePartnerSetting<K extends SettingsKey>(
+  settings: PensionSettings,
+  key: K,
+  value: PensionSettings[K],
+  onChange: SettingsFieldOnChange
+) {
+  onChange(
+    "partner",
+    applyPartnerSettingsFieldChange(settings, key, value, {
+      alignAlphaLeaveAgeToRetirement: false,
+      dateOfBirthUpdate: "relink-npa-defaults",
+    })
   );
 }
 

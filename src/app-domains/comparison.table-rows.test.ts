@@ -117,6 +117,87 @@ describe("comparison table rows", () => {
     );
   });
 
+  it("rejects a mixed single-person and household comparison with explicit model labels", () => {
+    const singleSettings = createDefaultSettings();
+    const householdSettings = createHouseholdPartnerStatePensionSettings();
+    const results = [
+      createComparisonResult(
+        {
+          id: "single",
+          name: "Single plan",
+          settings: singleSettings,
+          createdAt: "",
+          updatedAt: "",
+        },
+        JSON.stringify(singleSettings)
+      ),
+      createComparisonResult(
+        {
+          id: "household",
+          name: "Household plan",
+          settings: householdSettings,
+          createdAt: "",
+          updatedAt: "",
+        },
+        JSON.stringify(singleSettings)
+      ),
+    ];
+
+    const rows = buildComparisonTableRows(results);
+
+    expect(
+      rows.some(
+        (row) =>
+          row.isSectionDivider && row.section === "Comparison unavailable"
+      )
+    ).toBe(true);
+    expect(getComparisonRow(rows, "Model type").values).toEqual([
+      "Single person",
+      "Two-person household",
+    ]);
+    expect(getComparisonRow(rows, "Availability").values).toEqual([
+      "Compare scenarios with the same model type; load a scenario to switch modes",
+      "Compare scenarios with the same model type; load a scenario to switch modes",
+    ]);
+  });
+
+  it("attributes an unconfirmed Partner State Pension and marks a dependent household result for checking", () => {
+    const settings = createHouseholdPartnerStatePensionSettings();
+    const result = createComparisonResult(
+      {
+        id: "household-state-pension",
+        name: "Household State Pension",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings)
+    );
+
+    const banner = buildRetirementOutcomeBanner(result);
+
+    expect(result.statePensionAssumptionAffectsTarget).toBe(true);
+    expect(banner).toEqual(
+      expect.objectContaining({
+        status: "atRisk",
+        label: "Needs checking",
+      })
+    );
+    expect(banner.warning?.message).toContain(
+      "Partner's assumed State Pension of £12,000 a year"
+    );
+    expect(buildComparisonStatusItems(result)).toEqual(
+      expect.arrayContaining([
+        { label: "Overall status", value: "Needs checking" },
+        {
+          label: "Main issue",
+          value:
+            "The household target depends on Partner's assumed State Pension of £12,000/year",
+        },
+      ])
+    );
+  });
+
   it("shows SMILE phase assumptions when a compared scenario uses them", () => {
     const flatSettings = {
       ...createDefaultSettings(),
@@ -790,6 +871,43 @@ describe("comparison table rows", () => {
     );
   });
 });
+
+function createHouseholdPartnerStatePensionSettings() {
+  const defaults = createDefaultSettings();
+
+  return normalizeSettings({
+    ...defaults,
+    startDate: "2026-06-01",
+    dateOfBirth: "1970-06-01",
+    requirementAge: 67,
+    lifeExpectancy: 70,
+    taxationEnabled: false,
+    showAlpha: false,
+    showStatePension: false,
+    showSipp: false,
+    showIsa: false,
+    partner: {
+      ...createDefaultPartnerSettings(),
+      dateOfBirth: "1970-06-01",
+      requirementAge: 67,
+      lifeExpectancy: 70,
+      showAlpha: false,
+      showStatePension: true,
+      currentStatePension: 12_000,
+      statePensionForecastConfirmed: false,
+      statePensionDrawDate: "2037-06-01",
+      statePensionApplyFutureGrowth: false,
+      showSipp: false,
+      showIsa: false,
+    },
+    jointRetirement: {
+      ...defaults.jointRetirement,
+      enabled: true,
+      transitionDesiredRetirementIncome: 10_000,
+      fullyRetiredDesiredRetirementIncome: 10_000,
+    },
+  });
+}
 
 function createExactTargetScenarioSettings() {
   return {

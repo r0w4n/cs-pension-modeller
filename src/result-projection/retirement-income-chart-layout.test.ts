@@ -4,10 +4,12 @@ import {
   createBuildUpWindow,
   createChartIncomeSeriesDefinitions,
   createChartMaxAge,
+  createPersonAgeAxisTicks,
   createStackedIncomeSeries,
   createVisibleChartData,
   createWholeYearTicks,
   getChartIncomeValue,
+  getRetirementIncomeEventsForDate,
   hasActiveIncome,
 } from "./retirement-income-chart-layout";
 
@@ -55,6 +57,33 @@ describe("retirement income chart layout", () => {
       })
     ).toEqual({ xDomainMin: 57, xDomainMax: 81 });
     expect(createWholeYearTicks(59.5, 62.25)).toEqual([60, 61, 62]);
+  });
+
+  it("aligns person age ticks to a calendar timeline", () => {
+    const data = [
+      {
+        ...basePoint,
+        date: "2030-01-01",
+        age: 2030,
+        timelineValue: 2030,
+        personAges: { you: 50, partner: 48 },
+      },
+      {
+        ...basePoint,
+        date: "2040-01-01",
+        age: 2040,
+        timelineValue: 2040,
+        personAges: { you: 60, partner: 58 },
+      },
+    ];
+
+    const ticks = createPersonAgeAxisTicks(data, "you", 2030, 2040, 5);
+
+    expect(ticks.length).toBeGreaterThan(1);
+    expect(ticks[0]?.age).toBe(50);
+    expect(ticks.at(-1)?.age).toBe(60);
+    expect(ticks[0]?.timelineValue).toBe(2030);
+    expect(ticks.at(-1)?.timelineValue).toBe(2040);
   });
 
   it("uses the post-milestone value at an inserted income boundary", () => {
@@ -136,5 +165,30 @@ describe("retirement income chart layout", () => {
     expect(
       bringActiveMarkerToFront(markers, "retirementAge").map(({ key }) => key)
     ).toEqual(["statePensionAge", "retirementAge"]);
+  });
+
+  it("groups inspection events by calendar month", () => {
+    const events = [
+      {
+        key: "retirement",
+        label: "You retire",
+        date: "2045-06-20",
+        timelineValue: 2045.47,
+        owner: "you" as const,
+      },
+      {
+        key: "state",
+        label: "Partner's State Pension starts",
+        date: "2045-07-01",
+        timelineValue: 2045.5,
+        owner: "partner" as const,
+      },
+    ];
+
+    expect(
+      getRetirementIncomeEventsForDate(events, "2045-06-01").map(
+        ({ key }) => key
+      )
+    ).toEqual(["retirement"]);
   });
 });

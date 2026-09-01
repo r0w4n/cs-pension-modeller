@@ -209,6 +209,13 @@ properly sanitised content.
 For interface changes:
 
 - reuse established components, tokens, language, and interaction patterns
+- when adding a setting or question with an equivalent existing form field,
+  reuse that field component and its established card, grid, label, help,
+  validation, reset and responsive behaviour; do not create a bespoke control
+  or approximate its styling
+- a materially different form control, field layout, or interaction requires a
+  concrete user benefit and explicit user agreement before implementation;
+  document the reason and cover the variant with relevant tests
 - prefer semantic HTML and native controls
 - preserve accessible names, visible focus, logical keyboard order, and
   appropriate focus movement

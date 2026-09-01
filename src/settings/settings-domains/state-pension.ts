@@ -4,7 +4,7 @@ import {
   type PensionValidationIssue,
   type StoredPensionSettings,
 } from "../settings-types";
-import { normalizeIsoDate } from "../settings-shared/date";
+import { isValidIsoDate, normalizeIsoDate } from "../settings-shared/date";
 import {
   calculateStatePensionDrawAge,
   calculateStatePensionDrawDate,
@@ -60,6 +60,7 @@ export function validateStatePensionRules({
 
   if (
     settings.showStatePension &&
+    isValidIsoDate(lifeExpectancyDate) &&
     settings.statePensionDrawDate > lifeExpectancyDate
   ) {
     issues.push({

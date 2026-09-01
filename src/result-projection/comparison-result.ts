@@ -9,6 +9,8 @@ import {
 } from "../settings";
 import type { RetirementPlanAssessment } from "../calculation/retirement-plan-assessment";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
+import type { HouseholdRetirementAssessment } from "../calculation/household-retirement-assessment";
+import type { JointRetirementProjection } from "../calculation/joint-retirement-plan";
 import { addYearsToIsoDate } from "../model-date";
 import { normalizeMoney } from "../money";
 
@@ -21,6 +23,7 @@ export type ComparisonScenario = {
 };
 
 export type ComparisonResult = {
+  modelType: "single" | "household";
   scenario: ComparisonScenario;
   rows: ProjectionRow[];
   summary: PensionSummary;
@@ -35,6 +38,15 @@ export type ComparisonResult = {
   lifeExpectancyAnnualIncome: number;
   statePensionAssumptionAffectsTarget: boolean;
   currentMatchesSaved: boolean;
+  household?: HouseholdComparisonData;
+};
+
+export type HouseholdComparisonData = {
+  assessment: HouseholdRetirementAssessment;
+  firstRetirementDate: string;
+  bothRetiredDate: string;
+  householdEndDate: string;
+  finalFlexibleAssets: number;
 };
 
 export type CachedComparisonResult = Omit<
@@ -66,6 +78,13 @@ export function createComparisonResult(
   }
 
   const { assessment, rows, summary } = plan;
+  const household =
+    plan.jointProjection && plan.householdAssessment
+      ? createHouseholdComparisonData(
+          plan.jointProjection,
+          plan.householdAssessment
+        )
+      : undefined;
   const retirementDate = addYearsToIsoDate(
     scenario.settings.dateOfBirth,
     scenario.settings.requirementAge
@@ -79,12 +98,19 @@ export function createComparisonResult(
     scenario.settings.retirementIncomeTargetBasis
   );
   return {
+    modelType: household ? "household" : "single",
     rows,
     summary,
     assessment,
-    annualIncome,
-    annualTarget,
-    annualGap: normalizeMoney(annualIncome - annualTarget),
+    annualIncome: household
+      ? household.assessment.fullyRetiredAnnualIncome
+      : annualIncome,
+    annualTarget: household
+      ? household.assessment.fullyRetiredAnnualTarget
+      : annualTarget,
+    annualGap: household
+      ? household.assessment.fullyRetiredAnnualGap
+      : normalizeMoney(annualIncome - annualTarget),
     isaDepletedAge: findPotDepletedAge(
       rows,
       "isaPot",
@@ -130,6 +156,20 @@ export function createComparisonResult(
       plan.statePensionAssumptionAffectsTarget,
     scenario,
     currentMatchesSaved: settingsSignature === currentSettingsSignature,
+    household,
+  };
+}
+
+function createHouseholdComparisonData(
+  projection: JointRetirementProjection,
+  assessment: HouseholdRetirementAssessment
+): HouseholdComparisonData {
+  return {
+    assessment,
+    firstRetirementDate: projection.firstRetirementMonth,
+    bothRetiredDate: projection.bothRetiredMonth,
+    householdEndDate: projection.householdEndMonth,
+    finalFlexibleAssets: assessment.finalFlexibleAssets,
   };
 }
 

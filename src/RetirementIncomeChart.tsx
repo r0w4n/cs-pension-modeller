@@ -6,6 +6,7 @@ import {
   useState,
   type KeyboardEvent,
   type PointerEvent,
+  type ReactNode,
   type TouchEvent,
 } from "react";
 import * as d3 from "d3";
@@ -25,11 +26,9 @@ import {
 } from "./spending-smile";
 import { clampNumber, snapToLimit } from "./app/chart-drag-constraints";
 import type { ResidualFlexibleFundInsight } from "./result-projection/flexible-withdrawals";
-import {
-  calculateRetirementChartOverlays,
-  RETIREMENT_CHART_OVERLAY_META,
-} from "./app-domains/retirement-chart-overlays";
+import { RETIREMENT_CHART_OVERLAY_META } from "./app-domains/retirement-chart-overlays";
 import { selectRetirementChartLegendKeys } from "./app-domains/retirement-chart-legend";
+import { createRetirementIncomeMilestones } from "./result-projection/retirement-income-chart-controls";
 import {
   RetirementIncomeChartDescription,
   RetirementIncomeChartHeading,
@@ -44,11 +43,20 @@ import {
   RetirementIncomeControlGrid,
 } from "./app/retirement-income-chart-controls";
 import { RetirementIncomeMobileNavigation } from "./app/retirement-income-chart-mobile-navigation";
+import { RetirementIncomeChartPeriodDetails } from "./app/retirement-income-chart-period-details";
+import {
+  getRetirementIncomeChartPresentation,
+  type RetirementIncomeChartInteractionMode,
+} from "./app-domains/retirement-income-chart-presentation";
 
 export { getRetirementIncomeChartTitle } from "./app/retirement-income-chart-heading";
 import type {
   RetirementIncomeChartLimits,
   RetirementIncomeChartParameters,
+  RetirementIncomeChartEditableMilestone,
+  RetirementIncomeChartEvent,
+  RetirementIncomeChartStaticMilestone,
+  RetirementIncomeChartSeriesDefinition,
   RetirementIncomeMilestone,
   RetirementIncomeMilestoneKey,
   RetirementIncomePoint,
@@ -63,6 +71,7 @@ import {
   createChartIncomeSeriesDefinitions,
   createChartMaxAge,
   createMarkerLayouts,
+  createPersonAgeAxisTicks,
   createStackedIncomeSeries,
   createVisibleChartData,
   createWholeYearTicks,
@@ -70,13 +79,13 @@ import {
   getChartIncomeGradientId,
   getChartIncomeValue,
   getInvalidMarkerKeys,
+  getRetirementIncomeEventsForDate,
   getMarkerHandleLabel,
   HANDLE_LABEL_HEIGHT,
   HANDLE_LABEL_WIDTH,
   hasActiveIncome,
   incomeKeys,
-  sourceMeta,
-  type IncomeKey,
+  isRetirementIncomeSourceEnabled,
 } from "./result-projection/retirement-income-chart-layout";
 
 export type {
@@ -85,18 +94,69 @@ export type {
   RetirementIncomePoint,
 } from "./result-projection/retirement-income-chart-model";
 
-export type RetirementIncomeChartProps = RetirementIncomeChartParameters & {
+type RetirementIncomeChartCommonProps = RetirementIncomeChartParameters & {
   data: RetirementIncomePoint[];
   alphaLabel?: string;
+  /** Gives a reused chart an accurate accessible explanation of its data. */
+  chartDescription?: string;
+  /** Optional visible title for a reused chart presentation. */
+  chartTitle?: string;
+  /** Optional text equivalent for representative semantic chart values. */
+  chartDataAccessibilitySummary?: string;
   hideInactiveLegendItems?: boolean;
   showFlexibleWithdrawalInsights?: boolean;
+  /** Uses each projected row's target without applying the single-target editor. */
+  useDataTargets?: boolean;
+  /** Controls whether the chart's milestone markers are shown. */
+  showMilestoneMarkers?: boolean;
+  /** Selects the x-axis semantics for a shared household timeline. */
+  timelineMode?: "age" | "calendar";
+  /** Optional owner-attributed series for a derived household chart. */
+  seriesDefinitions?: RetirementIncomeChartSeriesDefinition[];
+  /** Semantic household events exposed through period inspection. */
+  periodEvents?: RetirementIncomeChartEvent[];
+  /** Read-only milestones shown using the shared chart marker styling. */
+  staticMilestones?: RetirementIncomeChartStaticMilestone[];
+  /** Owner-aware editable milestones projected onto a household timeline. */
+  editableMilestones?: RetirementIncomeChartEditableMilestone[];
+  /** Suppress the personal shortfall overlay when the target is shared. */
+  showShortfallOverlay?: boolean;
+  /** Controls the standard single-person contribution controls below the plot. */
+  showParameterControls?: boolean;
+  /** Reuses the chart's control area for household-specific shared controls. */
+  additionalParameterControls?: ReactNode;
+  /** Called when a target segment is edited, with the displayed age/timeline. */
+  onChangeTargetIncome?: (value: number, age?: number) => void;
   presentation?: "standard" | "simple";
   residualFlexibleFundInsights?: ResidualFlexibleFundInsight[];
   limits: RetirementIncomeChartLimits;
   statePensionEditable?: boolean;
   validationIssues?: PensionValidationIssue[];
-  onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
 };
+
+export type RetirementIncomeChartProps = RetirementIncomeChartCommonProps & {
+  interactionMode?: Extract<
+    RetirementIncomeChartInteractionMode,
+    "editable-person" | "editable-household"
+  >;
+  readOnly?: false;
+  onChangeParameters: (patch: Partial<RetirementIncomeChartParameters>) => void;
+  onChangeEditableMilestone?: (key: string, timelineValue: number) => void;
+};
+
+export type RetirementIncomeChartReadOnlyProps =
+  RetirementIncomeChartCommonProps & {
+    interactionMode: Extract<
+      RetirementIncomeChartInteractionMode,
+      "readonly-household"
+    >;
+    readOnly: true;
+    onChangeParameters?: never;
+    onChangeEditableMilestone?: (key: string, timelineValue: number) => void;
+  };
+
+type RetirementIncomeChartComponentProps =
+  RetirementIncomeChartProps | RetirementIncomeChartReadOnlyProps;
 
 type MilestoneKey = RetirementIncomeMilestoneKey;
 type MilestoneMarker = RetirementIncomeMilestone;
@@ -144,6 +204,10 @@ const DRAG_AGE_LABEL_HEIGHT = 19;
 const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
 const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
 const MARKER_DRAG_LEFT_OVERSCAN_RATIO = 0.4;
+const CALENDAR_AXIS_HEIGHT = 530;
+const CALENDAR_AXIS_HEIGHT_COMPACT = 510;
+const CALENDAR_AXIS_MARGIN_BOTTOM = 122;
+const CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT = 116;
 const spendingSmilePhaseMeta = [
   {
     key: "goGo",
@@ -174,34 +238,7 @@ type PendingSpendingSmile = {
   sourceStrategy: SpendingSmileStrategy;
 };
 
-function createSpendingSmileMilestoneMarkers(
-  enabled: boolean,
-  strategy: SpendingSmileStrategy
-): MilestoneMarker[] {
-  if (!enabled) {
-    return [];
-  }
-
-  return [
-    {
-      key: "slowGoStartAge",
-      label: "Start Slow-go",
-      shortLabel: "Slow-go",
-      age: strategy.slowGoStartAge,
-      colour: "#2563a8",
-      editable: true,
-    },
-    {
-      key: "noGoStartAge",
-      label: "Start No-go",
-      shortLabel: "No-go",
-      age: strategy.noGoStartAge,
-      colour: "#0b4dc2",
-      editable: true,
-    },
-  ];
-}
-
+// eslint-disable-next-line sonarjs/cyclomatic-complexity, sonarjs/cognitive-complexity
 export function RetirementIncomeChart({
   data,
   targetIncomeAnnual,
@@ -244,20 +281,50 @@ export function RetirementIncomeChart({
   lisaUseByAgeEnabled,
   showStatePension,
   alphaLabel = "Alpha pension",
+  chartDescription,
+  chartTitle,
+  chartDataAccessibilitySummary,
   hideInactiveLegendItems = false,
   showFlexibleWithdrawalInsights = false,
+  interactionMode = "editable-person",
+  useDataTargets = false,
+  showMilestoneMarkers = true,
+  timelineMode = "age",
+  seriesDefinitions,
+  periodEvents = [],
+  staticMilestones = [],
+  editableMilestones = [],
+  showShortfallOverlay = true,
+  showParameterControls = true,
+  additionalParameterControls,
+  onChangeTargetIncome,
   presentation = "standard",
   residualFlexibleFundInsights = [],
   limits,
   statePensionEditable = false,
   validationIssues = [],
   onChangeParameters,
-}: RetirementIncomeChartProps) {
+  onChangeEditableMilestone,
+}: RetirementIncomeChartComponentProps) {
+  const commitParameters = useCallback(
+    (patch: Partial<RetirementIncomeChartParameters>) => {
+      onChangeParameters?.(patch);
+    },
+    [onChangeParameters]
+  );
   const isSimplePresentation = presentation === "simple";
+  const interactionPresentation =
+    getRetirementIncomeChartPresentation(interactionMode);
+  const isStaticPresentation = isStaticChartPresentation(
+    isSimplePresentation,
+    interactionPresentation.readOnly
+  );
+  const isCalendarTimeline = timelineMode === "calendar";
   const shellRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const targetLineHitboxRef = useRef<SVGPathElement | null>(null);
   const activeMarkerDragPointerIdRef = useRef<number | null>(null);
+  const activeEditableMilestonePointerIdRef = useRef<number | null>(null);
   const activeMarkerDragScaleRef = useRef<d3.ScaleLinear<
     number,
     number
@@ -288,12 +355,22 @@ export function RetirementIncomeChart({
   >({});
   const [activeMarkerDragKey, setActiveMarkerDragKey] =
     useState<MilestoneKey | null>(null);
+  const [activeEditableMilestoneKey, setActiveEditableMilestoneKey] = useState<
+    string | null
+  >(null);
+  const [editableMilestoneDrafts, setEditableMilestoneDrafts] = useState<
+    Record<string, number>
+  >({});
   const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
     useState<MilestoneKey>("retirementAge");
   const [isMobileNavigationVisible, setIsMobileNavigationVisible] =
     useState(false);
+  const [inspectedPointDate, setInspectedPointDate] = useState<string | null>(
+    null
+  );
   const dataSourceTargetIncomeAnnual =
-    data[0]?.targetIncomeAnnual ?? targetIncomeAnnual;
+    data.find((point) => point.targetIncomeAnnual > 0)?.targetIncomeAnnual ??
+    targetIncomeAnnual;
   const displayedTargetIncomeAnnual =
     draftTargetIncomeAnnual ??
     (pendingTargetIncomeAnnual !== null &&
@@ -342,17 +419,20 @@ export function RetirementIncomeChart({
   );
   const chartTitleId = "retirement-income-chart-title";
   const chartDescriptionId = "retirement-income-chart-description";
+  const chartDataDescriptionId = "retirement-income-chart-data-description";
   const displayedData = useMemo(
     () =>
-      createDisplayedTargetData({
-        data,
-        dataSourceTargetIncomeAnnual,
-        displayedSpendingSmile,
-        displayedTargetIncomeAnnual,
-        retirementAge,
-        dataSourceSpendingSmile,
-        spendingSmileEnabled,
-      }),
+      useDataTargets
+        ? data
+        : createDisplayedTargetData({
+            data,
+            dataSourceTargetIncomeAnnual,
+            displayedSpendingSmile,
+            displayedTargetIncomeAnnual,
+            retirementAge,
+            dataSourceSpendingSmile,
+            spendingSmileEnabled,
+          }),
     [
       data,
       dataSourceSpendingSmile,
@@ -361,12 +441,22 @@ export function RetirementIncomeChart({
       displayedTargetIncomeAnnual,
       retirementAge,
       spendingSmileEnabled,
+      useDataTargets,
     ]
   );
+  const periodDetailsId = "retirement-income-period-details";
+  const isPeriodInspectionEnabled =
+    interactionPresentation.showPeriodInspection && displayedData.length > 0;
+  const inspectedPoint = inspectedPointDate
+    ? displayedData.find((point) => point.date === inspectedPointDate)
+    : undefined;
+  const inspectedEvents = inspectedPoint
+    ? getRetirementIncomeEventsForDate(periodEvents, inspectedPoint.date)
+    : [];
   const enabledIncomeKeys = useMemo(
     () =>
       incomeKeys.filter((key) =>
-        isIncomeSourceEnabled(key, {
+        isRetirementIncomeSourceEnabled(key, {
           showAlpha,
           showClassic,
           showClassicPlus,
@@ -410,19 +500,38 @@ export function RetirementIncomeChart({
     return () => observer.disconnect();
   }, []);
   const isCompact = width < 640;
+  const hasPersonAgeAxes =
+    isCalendarTimeline &&
+    data.some(
+      (point) =>
+        point.personAges?.you !== undefined ||
+        point.personAges?.partner !== undefined
+    );
 
   const dimensions = useMemo<ChartDimensions>(() => {
-    const height = isCompact ? 420 : 460;
+    const height = hasPersonAgeAxes
+      ? isCompact
+        ? CALENDAR_AXIS_HEIGHT_COMPACT
+        : CALENDAR_AXIS_HEIGHT
+      : isCompact
+        ? 420
+        : 460;
 
     return {
       width,
       height,
       marginTop: isCompact ? 38 : 46,
       marginRight: isCompact ? 8 : 28,
-      marginBottom: isCompact ? 34 : 38,
+      marginBottom: hasPersonAgeAxes
+        ? isCompact
+          ? CALENDAR_AXIS_MARGIN_BOTTOM_COMPACT
+          : CALENDAR_AXIS_MARGIN_BOTTOM
+        : isCompact
+          ? 34
+          : 38,
       marginLeft: isCompact ? 48 : 78,
     };
-  }, [isCompact, width]);
+  }, [hasPersonAgeAxes, isCompact, width]);
   const plotWidth = Math.max(
     1,
     dimensions.width - dimensions.marginLeft - dimensions.marginRight
@@ -431,7 +540,7 @@ export function RetirementIncomeChart({
     1,
     dimensions.height - dimensions.marginTop - dimensions.marginBottom
   );
-  const ageExtent = d3.extent(displayedData, (point) => point.age);
+  const ageExtent = d3.extent(displayedData, getTimelineValue);
   const activeMilestoneAges = createActiveMilestoneAges({
     alphaLeaveAge,
     alphaStartAge,
@@ -529,12 +638,22 @@ export function RetirementIncomeChart({
     ]
   );
   const enabledIncomeSeries = useMemo(
-    () => createChartIncomeSeriesDefinitions(enabledIncomeKeys, visibleData),
-    [enabledIncomeKeys, visibleData]
+    () =>
+      createChartIncomeSeriesDefinitions(
+        seriesDefinitions ? [] : enabledIncomeKeys,
+        visibleData,
+        seriesDefinitions
+      ),
+    [enabledIncomeKeys, seriesDefinitions, visibleData]
   );
   const allLegendIncomeSeries = useMemo(
-    () => createChartIncomeSeriesDefinitions(incomeKeys, visibleData),
-    [visibleData]
+    () =>
+      createChartIncomeSeriesDefinitions(
+        seriesDefinitions ? [] : incomeKeys,
+        visibleData,
+        seriesDefinitions
+      ),
+    [seriesDefinitions, visibleData]
   );
   const legendIncomeKeys = useMemo(() => {
     const enabledKeys = new Set(
@@ -605,14 +724,17 @@ export function RetirementIncomeChart({
   const stackedSeries = stack(visibleData);
   const area = d3
     .area<d3.SeriesPoint<RetirementIncomePoint>>()
-    .x((point) => xScale(point.data.age))
+    .x((point) => xScale(getTimelineValue(point.data)))
     .y0((point) => yScale(point[0]))
     .y1((point) => yScale(point[1]))
     .curve(d3.curveStepAfter);
   const shortfallArea = d3
     .area<RetirementIncomePoint>()
-    .defined((point) => point.age >= retirementAge)
-    .x((point) => xScale(point.age))
+    .defined(
+      (point) =>
+        showShortfallOverlay && getTimelineValue(point) >= retirementAge
+    )
+    .x((point) => xScale(getTimelineValue(point)))
     .y0((point) =>
       yScale(
         Math.min(point.assessedIncomeAnnual, point.targetIncomeAnnual) / divisor
@@ -622,17 +744,8 @@ export function RetirementIncomeChart({
     .curve(d3.curveStepAfter);
   const estimatedIncomeTaxArea = d3
     .area<RetirementIncomePoint>()
-    .defined(
-      (point) =>
-        calculateRetirementChartOverlays({
-          grossIncomeAnnual: point.totalIncomeAnnual,
-          takeHomeIncomeAnnual:
-            point.takeHomeIncomeAnnual ?? point.assessedIncomeAnnual,
-          assessedIncomeAnnual: point.assessedIncomeAnnual,
-          targetIncomeAnnual: point.targetIncomeAnnual,
-        }).estimatedIncomeTaxAnnual > 0
-    )
-    .x((point) => xScale(point.age))
+    .defined((point) => getEstimatedIncomeTaxAnnual(point) > 0)
+    .x((point) => xScale(getTimelineValue(point)))
     .y0((point) =>
       yScale(
         (point.takeHomeIncomeAnnual ?? point.assessedIncomeAnnual) / divisor
@@ -641,22 +754,17 @@ export function RetirementIncomeChart({
     .y1((point) => yScale(point.totalIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
   const hasEstimatedIncomeTax = visibleData.some(
-    (point) =>
-      calculateRetirementChartOverlays({
-        grossIncomeAnnual: point.totalIncomeAnnual,
-        takeHomeIncomeAnnual:
-          point.takeHomeIncomeAnnual ?? point.assessedIncomeAnnual,
-        assessedIncomeAnnual: point.assessedIncomeAnnual,
-        targetIncomeAnnual: point.targetIncomeAnnual,
-      }).estimatedIncomeTaxAnnual > 0
+    (point) => getEstimatedIncomeTaxAnnual(point) > 0
   );
   const avoidableSurplusArea = d3
     .area<RetirementIncomePoint>()
     .defined(
       (point) =>
-        point.age >= retirementAge && point.avoidableFlexibleSurplusAnnual > 0
+        !isStaticPresentation &&
+        getTimelineValue(point) >= retirementAge &&
+        point.avoidableFlexibleSurplusAnnual > 0
     )
-    .x((point) => xScale(point.age))
+    .x((point) => xScale(getTimelineValue(point)))
     .y0((point) => yScale(point.targetIncomeAnnual / divisor))
     .y1((point) =>
       yScale(
@@ -687,7 +795,7 @@ export function RetirementIncomeChart({
   const targetLine = d3
     .line<RetirementIncomePoint>()
     .defined((point) => point.targetIncomeAnnual > 0)
-    .x((point) => xScale(point.age))
+    .x((point) => xScale(getTimelineValue(point)))
     .y((point) => yScale(point.targetIncomeAnnual / divisor))
     .curve(d3.curveStepAfter);
   const spendingSmilePhasePaths = createSpendingSmilePhasePaths({
@@ -697,221 +805,93 @@ export function RetirementIncomeChart({
     visibleData,
   });
   const yTicks = yScale.ticks(5);
-  const xTicks = xScale.ticks(width < 640 ? 5 : 8);
+  const xTicks = xScale.ticks(
+    isCalendarTimeline ? (width < 640 ? 4 : 7) : width < 640 ? 5 : 8
+  );
   const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
+  const personAgeAxisTicks = {
+    you: hasPersonAgeAxes
+      ? createPersonAgeAxisTicks(
+          visibleData,
+          "you",
+          xDomainMin,
+          xDomainMax,
+          width < 640 ? 4 : 7
+        )
+      : [],
+    partner: hasPersonAgeAxes
+      ? createPersonAgeAxisTicks(
+          visibleData,
+          "partner",
+          xDomainMin,
+          xDomainMax,
+          width < 640 ? 4 : 7
+        )
+      : [],
+  };
   const invalidMarkerKeys = useMemo(
     () => getInvalidMarkerKeys(validationIssues),
     [validationIssues]
   );
   const hasValidationIssues = validationIssues.length > 0;
   const projectionReady = data.length > 0;
-  const milestoneMarkers: MilestoneMarker[] = useMemo(
-    () =>
-      [
-        {
-          key: "retirementAge",
-          label: "Retire",
-          shortLabel: "Retire",
-          age: retirementAge,
-          colour: "#0f6f72",
-          editable: true,
-        },
-        ...createSpendingSmileMilestoneMarkers(
-          spendingSmileEnabled,
-          resolvedSpendingSmile
-        ),
-        ...(showAlpha
-          ? [
-              {
-                key: "alphaLeaveAge" as const,
-                label: "Leave Alpha",
-                shortLabel: "Leave alpha",
-                age: alphaLeaveAge,
-                colour: "#b45309",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showSipp
-          ? [
-              {
-                key: "sippAccessAge" as const,
-                label: "SIPP start",
-                shortLabel: "SIPP start",
-                age: sippAccessAge,
-                colour: sourceMeta.sippIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showSipp && sippUseByAgeEnabled
-          ? [
-              {
-                key: "sippUseByAge" as const,
-                label: "SIPP stop",
-                shortLabel: "SIPP stop",
-                age: sippUseByAge,
-                colour: sourceMeta.sippIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showIsa
-          ? [
-              {
-                key: "isaAccessAge" as const,
-                label: "ISA start",
-                shortLabel: "ISA start",
-                age: isaAccessAge,
-                colour: sourceMeta.isaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showLisa
-          ? [
-              {
-                key: "lisaAccessAge" as const,
-                label: "LISA start",
-                shortLabel: "LISA start",
-                age: lisaAccessAge,
-                colour: sourceMeta.lisaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(partialRetirementEnabled
-          ? [
-              {
-                key: "partialRetirementStartAge" as const,
-                label: "Start partial",
-                shortLabel: "Start partial",
-                age: partialRetirementStartAge,
-                colour: "#c2410c",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showAlpha
-          ? [
-              {
-                key: "alphaStartAge" as const,
-                label: "Start Alpha",
-                shortLabel: "Start Alpha",
-                age: alphaStartAge,
-                colour: "#7353bf",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showNuvos
-          ? [
-              {
-                key: "nuvosStartAge" as const,
-                label: "Start Nuvos",
-                shortLabel: "Start Nuvos",
-                age: nuvosStartAge,
-                colour: "#b45309",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showPremium
-          ? [
-              {
-                key: "premiumStartAge" as const,
-                label: "Start Premium",
-                shortLabel: "Start Premium",
-                age: premiumStartAge,
-                colour: "#0f766e",
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showIsa && isaUseByAgeEnabled
-          ? [
-              {
-                key: "isaUseByAge" as const,
-                label: "ISA stop",
-                shortLabel: "ISA stop",
-                age: isaUseByAge,
-                colour: sourceMeta.isaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showLisa && lisaUseByAgeEnabled
-          ? [
-              {
-                key: "lisaUseByAge" as const,
-                label: "LISA stop",
-                shortLabel: "LISA stop",
-                age: lisaUseByAge,
-                colour: sourceMeta.lisaIncomeAnnual.colour,
-                editable: true,
-              },
-            ]
-          : []),
-        ...(showStatePension
-          ? [
-              {
-                key: "statePensionAge" as const,
-                label: "Start State",
-                shortLabel: "Start State",
-                age: statePensionAge,
-                colour: "#1d62d1",
-                editable: statePensionEditable,
-              },
-            ]
-          : []),
-      ].map((marker) => ({
-        ...marker,
-        key: marker.key as MilestoneKey,
-        editable: marker.editable && !isSimplePresentation,
-      })),
-    [
-      alphaStartAge,
-      alphaLeaveAge,
-      isaAccessAge,
-      isaUseByAge,
-      isaUseByAgeEnabled,
-      isSimplePresentation,
-      lisaAccessAge,
-      lisaUseByAge,
-      lisaUseByAgeEnabled,
-      partialRetirementEnabled,
-      partialRetirementStartAge,
+  const milestoneMarkers: MilestoneMarker[] = createRetirementIncomeMilestones(
+    {
       retirementAge,
-      resolvedSpendingSmile,
+      slowGoStartAge: resolvedSpendingSmile.slowGoStartAge,
+      noGoStartAge: resolvedSpendingSmile.noGoStartAge,
+      alphaLeaveAge,
+      sippAccessAge,
+      sippUseByAge,
+      isaAccessAge,
+      lisaAccessAge,
+      alphaStartAge,
+      nuvosStartAge,
+      premiumStartAge,
+      isaUseByAge,
+      lisaUseByAge,
+      partialRetirementStartAge,
+      statePensionAge,
+      spendingSmileEnabled,
+      partialRetirementEnabled,
       showAlpha,
+      showIsa,
+      showLisa,
       showNuvos,
       showPremium,
       showSipp,
-      showIsa,
-      showLisa,
-      nuvosStartAge,
-      premiumStartAge,
-      sippUseByAge,
-      sippUseByAgeEnabled,
       showStatePension,
-      spendingSmileEnabled,
-      sippAccessAge,
-      statePensionAge,
-      statePensionEditable,
-    ]
+      sippUseByAgeEnabled,
+      isaUseByAgeEnabled,
+      lisaUseByAgeEnabled,
+    },
+    statePensionEditable
+  ).map((marker) => ({
+    ...marker,
+    editable: marker.editable && !isStaticPresentation,
+  }));
+  const displayedMilestoneMarkerDefinitions = getDisplayedMilestoneMarkers(
+    milestoneMarkers,
+    showMilestoneMarkers && interactionPresentation.showInlineMilestones
   );
   const milestoneMarkerLookup = useMemo(
-    () => new Map(milestoneMarkers.map((marker) => [marker.key, marker])),
-    [milestoneMarkers]
+    () =>
+      new Map(
+        displayedMilestoneMarkerDefinitions.map((marker) => [
+          marker.key,
+          marker,
+        ])
+      ),
+    [displayedMilestoneMarkerDefinitions]
   );
   const displayedMilestoneMarkers = useMemo(
     () =>
-      milestoneMarkers.map((marker) => ({
+      displayedMilestoneMarkerDefinitions.map((marker) => ({
         ...marker,
         age: getDisplayMarkerAge(marker.age, draftMarkerAges[marker.key]),
         layoutAge: draftMarkerAges[marker.key]?.baseAge ?? marker.age,
       })),
-    [draftMarkerAges, milestoneMarkers]
+    [displayedMilestoneMarkerDefinitions, draftMarkerAges]
   );
   const visibleMilestoneMarkers = useMemo<VisibleMilestoneMarker[]>(
     () =>
@@ -931,6 +911,27 @@ export function RetirementIncomeChart({
     xScale,
     plotHeight
   );
+  const derivedMarkerLayouts = createMarkerLayouts(
+    [
+      ...staticMilestones.map((marker) => ({
+        ...marker,
+        age: marker.timelineValue,
+        layoutAge: marker.timelineValue,
+        editable: false as const,
+      })),
+      ...editableMilestones.map((marker) => ({
+        ...marker,
+        age: editableMilestoneDrafts[marker.key] ?? marker.timelineValue,
+        layoutAge: marker.timelineValue,
+        editable: true as const,
+      })),
+    ],
+    xScale,
+    plotHeight
+  );
+  const displayedDerivedMarkerLayouts = showMilestoneMarkers
+    ? derivedMarkerLayouts
+    : [];
   const renderedMarkerLayouts = useMemo(
     () => bringActiveMarkerToFront(markerLayouts, activeMarkerDragKey),
     [activeMarkerDragKey, markerLayouts]
@@ -956,6 +957,7 @@ export function RetirementIncomeChart({
         displayedData,
         displayedTargetIncomeAnnual,
         isSimplePresentation,
+        isCalendarTimeline,
         retirementAge,
         showStatePension,
         statePensionAge,
@@ -965,6 +967,7 @@ export function RetirementIncomeChart({
       alphaStartAge,
       displayedData,
       displayedTargetIncomeAnnual,
+      isCalendarTimeline,
       isSimplePresentation,
       retirementAge,
       showStatePension,
@@ -975,6 +978,18 @@ export function RetirementIncomeChart({
     0,
     xScale(clampNumber(retirementAge, xDomainMin, xDomainMax)) -
       xScale(xDomainMin)
+  );
+
+  const commitTargetIncome = useCallback(
+    (value: number, age?: number) => {
+      if (onChangeTargetIncome) {
+        onChangeTargetIncome(value, age);
+        return;
+      }
+
+      commitParameters({ targetIncomeAnnual: value });
+    },
+    [commitParameters, onChangeTargetIncome]
   );
 
   const commitMarkerAge = (markerKey: MilestoneKey, age: number) => {
@@ -988,7 +1003,7 @@ export function RetirementIncomeChart({
         age,
       })
     );
-    onChangeParameters({ [markerKey]: age });
+    commitParameters({ [markerKey]: age });
   };
 
   const handleMarkerKeyDown = (
@@ -1029,9 +1044,7 @@ export function RetirementIncomeChart({
       limits.targetIncomeAnnual
     );
 
-    onChangeParameters({
-      targetIncomeAnnual: nextTargetIncomeAnnual,
-    });
+    commitTargetIncome(nextTargetIncomeAnnual);
     setPendingTargetIncomeAnnual(nextTargetIncomeAnnual);
   };
 
@@ -1065,7 +1078,7 @@ export function RetirementIncomeChart({
         hitbox.removeEventListener("touchmove", preventPageScroll);
       });
     };
-  }, [spendingSmileEnabled]);
+  }, [isStaticPresentation, spendingSmileEnabled]);
 
   const changeDisplayMode = (nextDisplayMode: "annual" | "monthly") => {
     if (nextDisplayMode === displayMode) {
@@ -1117,6 +1130,83 @@ export function RetirementIncomeChart({
       getPlotPointerPositionFromClient(event.clientX, event.clientY),
     [getPlotPointerPositionFromClient]
   );
+
+  const inspectNearestPeriod = useCallback(
+    (timelineValue: number) => {
+      const point = d3.least(displayedData, (candidate) =>
+        Math.abs(getTimelineValue(candidate) - timelineValue)
+      );
+      if (point) {
+        setInspectedPointDate(point.date);
+      }
+    },
+    [displayedData]
+  );
+
+  const inspectPeriodFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      const pointerPosition = getPlotPointerPositionFromClient(
+        clientX,
+        clientY
+      );
+      if (!pointerPosition) {
+        return;
+      }
+      inspectNearestPeriod(
+        xScale.invert(clampNumber(pointerPosition.x, 0, plotWidth))
+      );
+    },
+    [getPlotPointerPositionFromClient, inspectNearestPeriod, plotWidth, xScale]
+  );
+
+  const inspectInitialPeriod = () => {
+    const point =
+      displayedData.find((candidate) => candidate.targetIncomeAnnual > 0) ??
+      displayedData[0];
+    if (point) {
+      setInspectedPointDate(point.date);
+    }
+  };
+
+  const handlePeriodInspectionKeyDown = (
+    event: KeyboardEvent<SVGRectElement>
+  ) => {
+    if (event.key === "Escape") {
+      setInspectedPointDate(null);
+      return;
+    }
+    if (
+      ![
+        "ArrowLeft",
+        "ArrowDown",
+        "ArrowRight",
+        "ArrowUp",
+        "Home",
+        "End",
+      ].includes(event.key)
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const currentIndex = inspectedPointDate
+      ? displayedData.findIndex((point) => point.date === inspectedPointDate)
+      : -1;
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? displayedData.length - 1
+          : event.key === "ArrowLeft" || event.key === "ArrowDown"
+            ? Math.max(0, currentIndex <= 0 ? 0 : currentIndex - 1)
+            : Math.min(
+                displayedData.length - 1,
+                currentIndex < 0 ? 0 : currentIndex + 1
+              );
+    const point = displayedData[nextIndex];
+    if (point) {
+      setInspectedPointDate(point.date);
+    }
+  };
 
   const isPrimaryPointerDragStart = (
     event: PointerEvent<SVGElement>
@@ -1425,6 +1515,16 @@ export function RetirementIncomeChart({
     );
   };
 
+  const getTargetTimelineValueFromPointer = (
+    event: PointerEvent<SVGPathElement>
+  ) => {
+    const pointerPosition = getPlotPointerPosition(event);
+
+    return pointerPosition
+      ? getMarkerDragScale().invert(getMarkerDragPlotX(pointerPosition.x))
+      : undefined;
+  };
+
   const getSpendingSmilePercentageFromPointer = (
     event: PointerEvent<SVGPathElement>,
     phase: SpendingSmilePhaseKey
@@ -1532,7 +1632,7 @@ export function RetirementIncomeChart({
         sourceData: data,
         sourceStrategy: spendingSmile,
       });
-      onChangeParameters({
+      commitParameters({
         [percentageField]: committedStrategy[percentageField],
       });
     }
@@ -1563,7 +1663,7 @@ export function RetirementIncomeChart({
       sourceData: data,
       sourceStrategy: spendingSmile,
     });
-    onChangeParameters({
+    commitParameters({
       [percentageField]: nextStrategy[percentageField],
     });
   };
@@ -1596,6 +1696,20 @@ export function RetirementIncomeChart({
       plotHeight,
       yScale,
     ]
+  );
+
+  const getTargetTimelineValueFromClient = useCallback(
+    (clientX: number, clientY: number) => {
+      const pointerPosition = getPlotPointerPositionFromClient(
+        clientX,
+        clientY
+      );
+
+      return pointerPosition
+        ? getMarkerDragScale().invert(getMarkerDragPlotX(pointerPosition.x))
+        : undefined;
+    },
+    [getMarkerDragPlotX, getMarkerDragScale, getPlotPointerPositionFromClient]
   );
 
   const updateDraftTargetIncomeFromClient = useCallback(
@@ -1687,7 +1801,10 @@ export function RetirementIncomeChart({
     );
 
     setPendingTargetIncomeAnnual(committedValue);
-    onChangeParameters({ targetIncomeAnnual: committedValue });
+    commitTargetIncome(
+      committedValue,
+      getTargetTimelineValueFromClient(touch.clientX, touch.clientY)
+    );
   };
 
   const finishTargetPointerDrag = (
@@ -1714,7 +1831,10 @@ export function RetirementIncomeChart({
 
     if (commit) {
       setPendingTargetIncomeAnnual(committedValue);
-      onChangeParameters({ targetIncomeAnnual: committedValue });
+      commitTargetIncome(
+        committedValue,
+        getTargetTimelineValueFromPointer(event)
+      );
     }
   };
 
@@ -1755,7 +1875,7 @@ export function RetirementIncomeChart({
       setActiveMarkerDragKey(null);
 
       if (commit) {
-        onChangeParameters({ [activeMarkerDragKey]: committedAge });
+        commitParameters({ [activeMarkerDragKey]: committedAge });
       }
     };
 
@@ -1776,7 +1896,7 @@ export function RetirementIncomeChart({
   }, [
     activeMarkerDragKey,
     getMarkerAgeFromClient,
-    onChangeParameters,
+    commitParameters,
     updateDraftMarkerAgeFromClient,
   ]);
 
@@ -1839,7 +1959,7 @@ export function RetirementIncomeChart({
       setActiveMarkerDragKey(null);
 
       if (commit) {
-        onChangeParameters({ [activeMarkerDragKey]: committedAge });
+        commitParameters({ [activeMarkerDragKey]: committedAge });
       }
     };
 
@@ -1860,7 +1980,7 @@ export function RetirementIncomeChart({
   }, [
     activeMarkerDragKey,
     getMarkerAgeFromClient,
-    onChangeParameters,
+    commitParameters,
     updateDraftMarkerAgeFromClient,
   ]);
 
@@ -1893,7 +2013,10 @@ export function RetirementIncomeChart({
 
       if (commit) {
         setPendingTargetIncomeAnnual(committedValue);
-        onChangeParameters({ targetIncomeAnnual: committedValue });
+        commitTargetIncome(
+          committedValue,
+          getTargetTimelineValueFromClient(event.clientX, event.clientY)
+        );
       }
     };
 
@@ -1914,7 +2037,9 @@ export function RetirementIncomeChart({
   }, [
     getTargetIncomeFromClient,
     isTargetDragging,
-    onChangeParameters,
+    commitParameters,
+    commitTargetIncome,
+    getTargetTimelineValueFromClient,
     updateDraftTargetIncomeFromClient,
   ]);
 
@@ -1968,7 +2093,10 @@ export function RetirementIncomeChart({
 
       if (commit) {
         setPendingTargetIncomeAnnual(committedValue);
-        onChangeParameters({ targetIncomeAnnual: committedValue });
+        commitTargetIncome(
+          committedValue,
+          getTargetTimelineValueFromClient(touch.clientX, touch.clientY)
+        );
       }
     };
 
@@ -1989,19 +2117,121 @@ export function RetirementIncomeChart({
   }, [
     getTargetIncomeFromClient,
     isTargetDragging,
-    onChangeParameters,
+    commitParameters,
+    commitTargetIncome,
+    getTargetTimelineValueFromClient,
     updateDraftTargetIncomeFromClient,
   ]);
+
+  const editableMilestoneLookup = new Map(
+    editableMilestones.map((milestone) => [milestone.key, milestone])
+  );
+
+  const getEditableMilestoneValue = (
+    event: PointerEvent<SVGGElement>,
+    key: string
+  ) => {
+    const milestone = editableMilestoneLookup.get(key);
+    const pointerPosition = getPlotPointerPosition(event);
+
+    if (!milestone || !pointerPosition) {
+      return milestone?.timelineValue ?? 0;
+    }
+
+    return snapToLimit(
+      xScale.invert(getMarkerDragPlotX(pointerPosition.x)),
+      milestone.limit
+    );
+  };
+
+  const updateEditableMilestoneDraft = (
+    event: PointerEvent<SVGGElement>,
+    key: string
+  ) => {
+    const timelineValue = getEditableMilestoneValue(event, key);
+    setEditableMilestoneDrafts((current) => ({
+      ...current,
+      [key]: timelineValue,
+    }));
+  };
+
+  const handleEditableMilestonePointerDown = (
+    event: PointerEvent<SVGGElement>,
+    key: string
+  ) => {
+    if (!isPrimaryPointerDragStart(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    activeEditableMilestonePointerIdRef.current = event.pointerId;
+    setActiveEditableMilestoneKey(key);
+    updateEditableMilestoneDraft(event, key);
+  };
+
+  const finishEditableMilestonePointerDrag = (
+    event: PointerEvent<SVGGElement>,
+    key: string,
+    commit: boolean
+  ) => {
+    if (
+      activeEditableMilestoneKey !== key ||
+      activeEditableMilestonePointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+
+    const timelineValue = getEditableMilestoneValue(event, key);
+    activeEditableMilestonePointerIdRef.current = null;
+    setActiveEditableMilestoneKey(null);
+    setEditableMilestoneDrafts((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+    if (commit) {
+      onChangeEditableMilestone?.(key, timelineValue);
+    }
+  };
+
+  const handleEditableMilestoneKeyDown = (
+    event: KeyboardEvent<SVGGElement>,
+    milestone: RetirementIncomeChartEditableMilestone
+  ) => {
+    if (
+      !["ArrowLeft", "ArrowDown", "ArrowRight", "ArrowUp"].includes(event.key)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const direction =
+      event.key === "ArrowLeft" || event.key === "ArrowDown" ? -1 : 1;
+    onChangeEditableMilestone?.(
+      milestone.key,
+      snapToLimit(
+        milestone.timelineValue + direction * milestone.limit.step,
+        milestone.limit
+      )
+    );
+  };
 
   return (
     <section
       className={`retirement-income-chart-panel${hasValidationIssues ? " retirement-income-chart-panel--invalid" : ""}`}
       aria-labelledby={chartTitleId}
-      aria-describedby={chartDescriptionId}
+      aria-describedby={`${chartDescriptionId}${chartDataAccessibilitySummary ? ` ${chartDataDescriptionId}` : ""}`}
       aria-live="polite"
     >
       <RetirementIncomeChartHeading
         chartTitleId={chartTitleId}
+        chartTitle={chartTitle}
         displayMode={displayMode}
         isSimplePresentation={isSimplePresentation}
         onChangeDisplayMode={changeDisplayMode}
@@ -2039,7 +2269,17 @@ export function RetirementIncomeChart({
       <RetirementIncomeChartDescription
         chartDescriptionId={chartDescriptionId}
         isSimplePresentation={isSimplePresentation}
+        descriptionOverride={chartDescription}
       />
+      {chartDataAccessibilitySummary ? (
+        <p
+          id={chartDataDescriptionId}
+          className="visually-hidden"
+          data-testid="retirement-income-chart-data-equivalent"
+        >
+          {chartDataAccessibilitySummary}
+        </p>
+      ) : null}
 
       <div className="retirement-income-chart-shell" ref={shellRef}>
         <svg
@@ -2193,7 +2433,7 @@ export function RetirementIncomeChart({
               className="retirement-income-target-line"
               d={targetLine(visibleData) ?? undefined}
             />
-            {isSimplePresentation ? null : spendingSmileEnabled ? (
+            {isStaticPresentation ? null : spendingSmileEnabled ? (
               spendingSmilePhasePaths.map((phase) =>
                 phase.path ? (
                   <path
@@ -2361,6 +2601,125 @@ export function RetirementIncomeChart({
               );
             })}
 
+            {/* Household controls reuse the same marker renderer, but are
+                intentionally kept separate from the established marker path. */}
+            {/* eslint-disable-next-line sonarjs/cognitive-complexity */}
+            {displayedDerivedMarkerLayouts.map((marker) => {
+              const x = xScale(marker.age);
+              const editableMilestone = editableMilestoneLookup.get(marker.key);
+              const isEditable = Boolean(
+                editableMilestone && onChangeEditableMilestone
+              );
+
+              return (
+                <g
+                  key={marker.key}
+                  className={`retirement-income-milestone retirement-income-static-milestone${isEditable ? "" : " retirement-income-milestone--static"}`}
+                  role={isEditable ? "slider" : "img"}
+                  tabIndex={isEditable ? 0 : undefined}
+                  aria-label={marker.label}
+                  aria-valuemin={editableMilestone?.limit.min}
+                  aria-valuemax={editableMilestone?.limit.max}
+                  aria-valuenow={isEditable ? marker.age : undefined}
+                  data-testid={
+                    isEditable
+                      ? `retirement-income-household-control-${marker.key}`
+                      : `retirement-income-static-milestone-${marker.key}`
+                  }
+                  onKeyDown={
+                    editableMilestone
+                      ? (event) =>
+                          handleEditableMilestoneKeyDown(
+                            event,
+                            editableMilestone
+                          )
+                      : undefined
+                  }
+                  onPointerDown={
+                    isEditable
+                      ? (event) =>
+                          handleEditableMilestonePointerDown(event, marker.key)
+                      : undefined
+                  }
+                  onPointerMove={
+                    isEditable
+                      ? (event) => {
+                          if (
+                            activeEditableMilestoneKey === marker.key &&
+                            activeEditableMilestonePointerIdRef.current ===
+                              event.pointerId
+                          ) {
+                            updateEditableMilestoneDraft(event, marker.key);
+                          }
+                        }
+                      : undefined
+                  }
+                  onPointerUp={
+                    isEditable
+                      ? (event) =>
+                          finishEditableMilestonePointerDrag(
+                            event,
+                            marker.key,
+                            true
+                          )
+                      : undefined
+                  }
+                  onPointerCancel={
+                    isEditable
+                      ? (event) =>
+                          finishEditableMilestonePointerDrag(
+                            event,
+                            marker.key,
+                            false
+                          )
+                      : undefined
+                  }
+                >
+                  <line
+                    x1={x}
+                    x2={x}
+                    y1={marker.handleY + HANDLE_LABEL_HEIGHT / 2}
+                    y2={plotHeight}
+                    stroke={marker.colour}
+                    aria-hidden="true"
+                  />
+                  <g
+                    className={`retirement-income-milestone-drag-label${isEditable ? " retirement-income-milestone-drag-label--editable" : ""}`}
+                  >
+                    <rect
+                      x={x - 22}
+                      y={marker.handleY - HANDLE_LABEL_HEIGHT / 2 - 10}
+                      width={44}
+                      height={HANDLE_LABEL_HEIGHT + 20}
+                      fill="transparent"
+                      aria-hidden="true"
+                    />
+                    <rect
+                      x={x - HANDLE_LABEL_WIDTH / 2}
+                      y={marker.handleY - HANDLE_LABEL_HEIGHT / 2}
+                      width={HANDLE_LABEL_WIDTH}
+                      height={HANDLE_LABEL_HEIGHT}
+                      rx={HANDLE_LABEL_WIDTH / 2}
+                      className="retirement-income-milestone-handle"
+                      fill={marker.colour}
+                      aria-hidden="true"
+                    />
+                    <text
+                      x={x}
+                      y={marker.handleY}
+                      className="retirement-income-milestone-handle-label"
+                      dominantBaseline="middle"
+                      textAnchor="middle"
+                      transform={`rotate(90 ${x} ${marker.handleY})`}
+                      aria-hidden="true"
+                    >
+                      {marker.shortLabel}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+
             <line
               className="retirement-income-axis"
               x1={0}
@@ -2403,17 +2762,41 @@ export function RetirementIncomeChart({
                   y2={plotHeight + 6}
                 />
                 <text x={xScale(tick)} y={plotHeight + 18} textAnchor="middle">
-                  {Math.round(tick)}
+                  {isCalendarTimeline
+                    ? formatCalendarTimelineTick(tick)
+                    : Math.round(tick)}
                 </text>
               </g>
             ))}
-            <text
-              className="retirement-income-axis-title"
-              x={0}
-              y={plotHeight + 30}
-            >
-              Age
-            </text>
+            {!isCalendarTimeline ? (
+              <text
+                className="retirement-income-axis-title"
+                x={0}
+                y={plotHeight + 30}
+              >
+                Age
+              </text>
+            ) : null}
+            {hasPersonAgeAxes ? (
+              <>
+                <PersonAgeAxis
+                  axisKey="you"
+                  label="You"
+                  ticks={personAgeAxisTicks.you}
+                  plotHeight={plotHeight}
+                  plotWidth={plotWidth}
+                  xScale={xScale}
+                />
+                <PersonAgeAxis
+                  axisKey="partner"
+                  label="Partner"
+                  ticks={personAgeAxisTicks.partner}
+                  plotHeight={plotHeight}
+                  plotWidth={plotWidth}
+                  xScale={xScale}
+                />
+              </>
+            ) : null}
             {draggingMobileMarker ? (
               <g
                 className="retirement-income-drag-age"
@@ -2442,8 +2825,60 @@ export function RetirementIncomeChart({
             >
               {axisTitle}
             </text>
+            {isPeriodInspectionEnabled ? (
+              <rect
+                className="retirement-income-period-inspector"
+                data-testid="retirement-income-period-inspector"
+                x={0}
+                y={0}
+                width={plotWidth}
+                height={plotHeight}
+                fill="transparent"
+                pointerEvents={
+                  interactionMode === "editable-household" ? "none" : undefined
+                }
+                tabIndex={0}
+                aria-label="Inspect Combined retirement income by period. Use Left and Right Arrow keys to move between months."
+                aria-describedby={
+                  inspectedPoint ? periodDetailsId : chartDescriptionId
+                }
+                onFocus={() => {
+                  if (!inspectedPoint) {
+                    inspectInitialPeriod();
+                  }
+                }}
+                onBlur={() => setInspectedPointDate(null)}
+                onKeyDown={handlePeriodInspectionKeyDown}
+                onPointerDown={(event) => {
+                  event.currentTarget.focus();
+                  inspectPeriodFromClient(event.clientX, event.clientY);
+                }}
+                onPointerMove={(event) => {
+                  if (event.pointerType !== "touch") {
+                    inspectPeriodFromClient(event.clientX, event.clientY);
+                  }
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType !== "touch") {
+                    setInspectedPointDate(null);
+                  }
+                }}
+              >
+                <title>Inspect household income, sources and events</title>
+              </rect>
+            ) : null}
           </g>
         </svg>
+
+        {inspectedPoint ? (
+          <RetirementIncomeChartPeriodDetails
+            id={periodDetailsId}
+            displayMode={displayMode}
+            point={inspectedPoint}
+            seriesDefinitions={enabledIncomeSeries}
+            events={inspectedEvents}
+          />
+        ) : null}
 
         <div
           className="retirement-income-legend retirement-income-legend--overlay"
@@ -2471,24 +2906,26 @@ export function RetirementIncomeChart({
               {RETIREMENT_CHART_OVERLAY_META.estimatedIncomeTax.label}
             </span>
           ) : null}
-          <span>
-            <span className="retirement-income-shortfall-key" />
-            {getRetirementIncomeShortfallLabel(isSimplePresentation)}
-          </span>
+          {showShortfallOverlay ? (
+            <span>
+              <span className="retirement-income-shortfall-key" />
+              {getRetirementIncomeShortfallLabel(isSimplePresentation)}
+            </span>
+          ) : null}
           <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
         </div>
       </div>
 
       <SurplusTextEquivalent points={surplusSummaryPoints} />
 
-      {!isSimplePresentation ? (
+      {!isStaticPresentation && showMilestoneMarkers ? (
         <RetirementIncomeMobileNavigation
           isCompact={isCompact}
           isVisible={isMobileNavigationVisible}
           limits={limits}
           selectedMobileMarker={selectedMobileMarker}
           visibleMilestoneMarkers={visibleMilestoneMarkers}
-          onChangeParameters={onChangeParameters}
+          onChangeParameters={commitParameters}
           onSelectMobileMarker={(key) => {
             setSelectedMobileMarkerKey(key);
             trackAnalyticsEvent("chart_mobile_marker_selected", {
@@ -2509,7 +2946,7 @@ export function RetirementIncomeChart({
         />
       ) : null}
 
-      {!isSimplePresentation ? (
+      {!isStaticPresentation && showParameterControls ? (
         <RetirementIncomeControlGrid
           displayedAlphaMonthlyAddedPension={alphaMonthlyAddedPension}
           flexibleAccountWarnings={flexibleAccountWarnings}
@@ -2517,7 +2954,7 @@ export function RetirementIncomeChart({
           isaMonthlyContribution={isaMonthlyContribution}
           lisaMonthlyContribution={lisaMonthlyContribution}
           limits={limits}
-          onChangeParameters={onChangeParameters}
+          onChangeParameters={commitParameters}
           partialRetirementEnabled={partialRetirementEnabled}
           partialRetirementWorkPercent={partialRetirementWorkPercent}
           showAlpha={showAlpha}
@@ -2527,8 +2964,23 @@ export function RetirementIncomeChart({
           sippMonthlyContribution={sippMonthlyContribution}
         />
       ) : null}
+      {!isStaticPresentation ? additionalParameterControls : null}
     </section>
   );
+}
+
+function isStaticChartPresentation(
+  isSimplePresentation: boolean,
+  readOnly: boolean
+) {
+  return isSimplePresentation || readOnly;
+}
+
+function getDisplayedMilestoneMarkers(
+  markers: MilestoneMarker[],
+  showMilestoneMarkers: boolean
+) {
+  return showMilestoneMarkers ? markers : [];
 }
 
 function createRetirementIncomeAxisTitle(
@@ -2544,6 +2996,7 @@ function createMobileRetirementIncomeSummary({
   displayedData,
   displayedTargetIncomeAnnual,
   isSimplePresentation,
+  isCalendarTimeline,
   retirementAge,
   showStatePension,
   statePensionAge,
@@ -2552,6 +3005,7 @@ function createMobileRetirementIncomeSummary({
   displayedData: RetirementIncomePoint[];
   displayedTargetIncomeAnnual: number;
   isSimplePresentation: boolean;
+  isCalendarTimeline: boolean;
   retirementAge: number;
   showStatePension: boolean;
   statePensionAge: number;
@@ -2564,12 +3018,12 @@ function createMobileRetirementIncomeSummary({
   const lastShortfallPoint = shortfallPoints.at(-1);
   const shortfallValue =
     firstShortfallPoint && lastShortfallPoint
-      ? `Ages ${formatAgeValue(firstShortfallPoint.age)}-${formatAgeValue(lastShortfallPoint.age)}`
+      ? `${isCalendarTimeline ? "Years" : "Ages"} ${formatTimelineValue(firstShortfallPoint.age, isCalendarTimeline)}-${formatTimelineValue(lastShortfallPoint.age, isCalendarTimeline)}`
       : isSimplePresentation
         ? "No ages with less than you want"
         : "No modelled shortfall";
 
-  return [
+  const summary = [
     {
       label: isSimplePresentation ? "Amount you want" : "Target",
       value: `${formatCurrency(displayedTargetIncomeAnnual)} / year`,
@@ -2578,19 +3032,29 @@ function createMobileRetirementIncomeSummary({
       label: getRetirementIncomeShortfallLabel(isSimplePresentation),
       value: shortfallValue,
     },
-    {
-      label: showStatePension ? "State Pension" : "Alpha pension",
-      value: `Age ${formatAgeValue(
-        showStatePension ? statePensionAge : alphaStartAge
-      )}`,
-    },
   ];
+
+  if (!isCalendarTimeline) {
+    summary.push({
+      label: showStatePension ? "State Pension" : "Alpha pension",
+      value: `Age ${formatTimelineValue(
+        showStatePension ? statePensionAge : alphaStartAge,
+        false
+      )}`,
+    });
+  }
+
+  return summary;
 }
 
 function getRetirementIncomeShortfallLabel(isSimplePresentation: boolean) {
   return isSimplePresentation
     ? "Less than you want"
     : RETIREMENT_CHART_OVERLAY_META.shortfall.label;
+}
+
+function formatTimelineValue(value: number, isCalendarTimeline: boolean) {
+  return isCalendarTimeline ? String(Math.round(value)) : formatAgeValue(value);
 }
 
 function getFlexibleSurplusData(
@@ -2604,70 +3068,6 @@ function toSvgPath(path: string | null) {
   return path ?? undefined;
 }
 
-function isIncomeSourceEnabled(
-  key: IncomeKey,
-  state: Pick<
-    RetirementIncomeChartParameters,
-    | "showAlpha"
-    | "showClassic"
-    | "showClassicPlus"
-    | "showCsAvc"
-    | "partialRetirementEnabled"
-    | "showIsa"
-    | "showLisa"
-    | "showNuvos"
-    | "showPremium"
-    | "showSipp"
-    | "showStatePension"
-  >
-) {
-  if (key === "alphaIncomeAnnual") {
-    return state.showAlpha;
-  }
-
-  if (key === "classicIncomeAnnual") {
-    return state.showClassic;
-  }
-
-  if (key === "classicPlusIncomeAnnual") {
-    return state.showClassicPlus;
-  }
-
-  if (key === "csAvcIncomeAnnual") {
-    return state.showCsAvc;
-  }
-
-  if (key === "isaIncomeAnnual") {
-    return state.showIsa;
-  }
-
-  if (key === "lisaIncomeAnnual") {
-    return state.showLisa;
-  }
-
-  if (key === "sippIncomeAnnual") {
-    return state.showSipp;
-  }
-
-  if (key === "nuvosIncomeAnnual") {
-    return state.showNuvos;
-  }
-
-  if (key === "premiumIncomeAnnual") {
-    return state.showPremium;
-  }
-
-  if (key === "partialRetirementIncomeAnnual") {
-    return state.partialRetirementEnabled;
-  }
-
-  if (key === "statePensionIncomeAnnual") {
-    return state.showStatePension;
-  }
-
-  return true;
-}
-
 function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
@@ -2678,6 +3078,87 @@ function formatCompactCurrency(value: number) {
 
 function formatAgeValue(value: number) {
   return formatModelAgeCompact(value);
+}
+
+function formatCalendarTimelineTick(value: number) {
+  const totalMonths = Math.round(value * 12);
+  const year = Math.floor(totalMonths / 12);
+  const month = totalMonths % 12;
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month, 1)));
+}
+
+function PersonAgeAxis({
+  axisKey,
+  label,
+  ticks,
+  plotHeight,
+  plotWidth,
+  xScale,
+}: {
+  axisKey: "you" | "partner";
+  label: string;
+  ticks: Array<{ age: number; timelineValue: number }>;
+  plotHeight: number;
+  plotWidth: number;
+  xScale: d3.ScaleLinear<number, number>;
+}) {
+  const axisY = plotHeight + (axisKey === "you" ? 44 : 82);
+  const tickLabelY = axisY + 18;
+  const titleY = axisY + 34;
+
+  return (
+    <g
+      className={`retirement-income-person-age-axis retirement-income-${axisKey}-age-axis`}
+      data-testid={`retirement-income-${axisKey}-age-axis`}
+      role="group"
+      aria-label={`${label} age axis`}
+    >
+      <line
+        className="retirement-income-axis"
+        x1={0}
+        x2={plotWidth}
+        y1={axisY}
+        y2={axisY}
+      />
+      {ticks.map((tick) => {
+        const x = xScale(tick.timelineValue);
+        return (
+          <g
+            key={`${axisKey}-${tick.age}`}
+            className="retirement-income-person-age-tick"
+            data-age={tick.age}
+          >
+            <line x1={x} x2={x} y1={axisY} y2={axisY + 6} />
+            <text x={x} y={tickLabelY} textAnchor="middle">
+              {Math.round(tick.age)}
+            </text>
+          </g>
+        );
+      })}
+      <text className="retirement-income-axis-title" x={0} y={titleY}>
+        {label}
+      </text>
+    </g>
+  );
+}
+
+function getTimelineValue(point: RetirementIncomePoint) {
+  return point.timelineValue ?? point.age;
+}
+
+function getEstimatedIncomeTaxAnnual(point: RetirementIncomePoint) {
+  return (
+    point.estimatedIncomeTaxAnnual ??
+    Math.max(
+      0,
+      point.totalIncomeAnnual -
+        (point.takeHomeIncomeAnnual ?? point.assessedIncomeAnnual)
+    )
+  );
 }
 
 function resolveDisplayedSpendingSmile({

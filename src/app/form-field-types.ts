@@ -22,6 +22,8 @@ export type FieldProps = {
   validationIssue?: PensionValidationIssue;
   warning?: { id: string; message: string };
   useNpaLinkedDefaults?: boolean;
+  /** Prefixes DOM ids when the same setting is shown for a second person. */
+  domIdPrefix?: string;
 };
 
 export type DateParts = {
@@ -59,6 +61,8 @@ export type AddedPensionLumpSumsEditorProps = {
   addButtonLabel?: string;
   removeButtonLabel?: string;
   showFactorType?: boolean;
+  domIdPrefix?: string;
+  ownerLabel?: string;
   validationIssues?: PensionValidationIssue[];
   onChange: (nextLumpSums: AddedPensionLumpSum[]) => void;
 };

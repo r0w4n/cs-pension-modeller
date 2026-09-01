@@ -36,6 +36,8 @@ import {
   type SettingsJourney,
   type StoredPensionSettingsByJourney,
   type PensionSettings,
+  type JointRetirementSettings,
+  type PartnerSettings,
 } from "./settings-types";
 import {
   LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION,
@@ -276,6 +278,72 @@ function coerceSettings(
     ...coerceNuvosSettings(input),
     ...coercePremiumSettings(input),
     ...coerceTaxSettings(input),
+    partner: coercePartnerSettings(input.partner),
+    jointRetirement: coerceJointRetirementSettings(input.jointRetirement),
+  };
+}
+
+function coercePartnerSettings(value: unknown): PartnerSettings | undefined {
+  if (!isSettingsObject(value)) {
+    return undefined;
+  }
+
+  // The normalizer fills safe defaults while preserving the Partner's own date
+  // of birth, including an explicitly blank value from an imported plan.
+  const coerced = coerceSettings({
+    ...value,
+    // PartnerSettings cannot contain another household or partner. Strip
+    // malformed nested values before coercion so imported JSON cannot recurse
+    // indefinitely through arbitrarily nested partner records.
+    partner: undefined,
+    jointRetirement: undefined,
+  });
+  const {
+    partner: _partner,
+    jointRetirement: _jointRetirement,
+    ...person
+  } = coerced;
+  return person as PartnerSettings;
+}
+
+function coerceJointRetirementSettings(
+  value: unknown
+): JointRetirementSettings | undefined {
+  if (!isSettingsObject(value)) {
+    return undefined;
+  }
+
+  const priority = Array.isArray(value.flexibleWithdrawalPriority)
+    ? value.flexibleWithdrawalPriority.filter(
+        (entry): entry is `${"you" | "partner"}:${FlexibleFundAccountId}` =>
+          typeof entry === "string" &&
+          /^(you|partner):(sipp|csAvc|lisa|isa)$/.test(entry)
+      )
+    : [];
+
+  return {
+    enabled: coerceBoolean(value.enabled) ?? false,
+    transitionDesiredRetirementIncome:
+      coerceNumber(value.transitionDesiredRetirementIncome) ?? 0,
+    fullyRetiredDesiredRetirementIncome:
+      coerceNumber(value.fullyRetiredDesiredRetirementIncome) ?? 0,
+    spendingStrategyType:
+      value.spendingStrategyType === "SPENDING_SMILE"
+        ? "SPENDING_SMILE"
+        : "FLAT",
+    spendingSmile:
+      value.spendingSmile &&
+      typeof value.spendingSmile === "object" &&
+      !Array.isArray(value.spendingSmile)
+        ? (value.spendingSmile as JointRetirementSettings["spendingSmile"])
+        : {
+            goGoPercentage: 100,
+            slowGoStartAge: 75,
+            slowGoPercentage: 85,
+            noGoStartAge: 85,
+            noGoPercentage: 70,
+          },
+    flexibleWithdrawalPriority: priority,
   };
 }
 

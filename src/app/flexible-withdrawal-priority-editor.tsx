@@ -4,6 +4,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
   type PointerEvent,
+  type ReactNode,
 } from "react";
 import {
   getFlexibleFundAccountLabel,
@@ -15,7 +16,6 @@ import {
 } from "../result-projection/flexible-withdrawals";
 import {
   FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS,
-  type FlexibleFundAccountId,
   type FlexibleWithdrawalStrategy,
   type PensionSettings,
 } from "../settings";
@@ -31,14 +31,76 @@ export function FlexibleWithdrawalPriorityEditor({
   const priorityAccounts = getFlexibleWithdrawalPriorityAccounts(settings);
   const nonPriorityAccounts =
     getFlexibleWithdrawalNonPriorityAccounts(settings);
+
+  if (!shouldShowFlexibleWithdrawalPriority(settings)) {
+    return null;
+  }
+
+  return (
+    <FundingPriorityEditor
+      priorityAccounts={priorityAccounts}
+      nonPriorityAccounts={nonPriorityAccounts}
+      getAccountLabel={getFlexibleFundAccountLabel}
+      getStrategy={(accountId) =>
+        settings[getWithdrawalStrategyFieldId(accountId)]
+      }
+      onStrategyChange={(accountId, strategy) =>
+        onChange(getWithdrawalStrategyFieldId(accountId), strategy)
+      }
+      onPriorityOrderChange={(reorderedAccounts) => {
+        const remainingAccounts = settings.flexibleWithdrawalPriority.filter(
+          (candidate) => !reorderedAccounts.includes(candidate)
+        );
+        onChange("flexibleWithdrawalPriority", [
+          ...reorderedAccounts,
+          ...remainingAccounts,
+        ]);
+      }}
+      helpText={
+        <>
+          Priority applies to accounts using “Use to meet income target”. Other
+          withdrawal strategies keep their own instructions until you change
+          them.
+        </>
+      }
+      emptyMessage="Include a SIPP, Civil Service AVC, LISA or ISA to set its withdrawal strategy and funding priority here."
+    />
+  );
+}
+
+export function FundingPriorityEditor<AccountId extends string>({
+  priorityAccounts,
+  nonPriorityAccounts,
+  getAccountLabel,
+  getStrategy,
+  onStrategyChange,
+  onPriorityOrderChange,
+  helpText,
+  emptyMessage,
+  idPrefix = "flexible-withdrawal",
+}: {
+  priorityAccounts: AccountId[];
+  nonPriorityAccounts: AccountId[];
+  getAccountLabel: (accountId: AccountId) => string;
+  getStrategy: (accountId: AccountId) => FlexibleWithdrawalStrategy;
+  onStrategyChange: (
+    accountId: AccountId,
+    strategy: FlexibleWithdrawalStrategy
+  ) => void;
+  onPriorityOrderChange: (accounts: AccountId[]) => void;
+  helpText: ReactNode;
+  emptyMessage: string;
+  idPrefix?: string;
+}) {
   const listRef = useRef<HTMLOListElement | null>(null);
-  const activeDragRef = useRef<FlexibleFundAccountId | null>(null);
+  const activeDragRef = useRef<AccountId | null>(null);
   const dragOrderRef = useRef(priorityAccounts);
-  const [draggingAccount, setDraggingAccount] =
-    useState<FlexibleFundAccountId | null>(null);
-  const [dragPreviewOrder, setDragPreviewOrder] = useState<
-    FlexibleFundAccountId[] | null
-  >(null);
+  const [draggingAccount, setDraggingAccount] = useState<AccountId | null>(
+    null
+  );
+  const [dragPreviewOrder, setDragPreviewOrder] = useState<AccountId[] | null>(
+    null
+  );
   const [announcement, setAnnouncement] = useState("");
   const displayedPriorityAccounts = dragPreviewOrder ?? priorityAccounts;
 
@@ -46,38 +108,24 @@ export function FlexibleWithdrawalPriorityEditor({
     dragOrderRef.current = priorityAccounts;
   }
 
-  if (!shouldShowFlexibleWithdrawalPriority(settings)) {
-    return null;
+  function savePriorityOrder(reorderedAccounts: AccountId[]) {
+    onPriorityOrderChange(reorderedAccounts);
   }
 
-  function savePriorityOrder(reorderedAccounts: FlexibleFundAccountId[]) {
-    const remainingAccounts = settings.flexibleWithdrawalPriority.filter(
-      (candidate) => !reorderedAccounts.includes(candidate)
-    );
-
-    onChange("flexibleWithdrawalPriority", [
-      ...reorderedAccounts,
-      ...remainingAccounts,
-    ]);
-  }
-
-  function announcePosition(
-    accountId: FlexibleFundAccountId,
-    order: FlexibleFundAccountId[]
-  ) {
+  function announcePosition(accountId: AccountId, order: AccountId[]) {
     const position = order.indexOf(accountId) + 1;
     setAnnouncement(
-      `${getFlexibleFundAccountLabel(accountId)} moved to priority ${position} of ${order.length}.`
+      `${getAccountLabel(accountId)} moved to priority ${position} of ${order.length}.`
     );
   }
 
-  function beginDrag(accountId: FlexibleFundAccountId) {
+  function beginDrag(accountId: AccountId) {
     activeDragRef.current = accountId;
     dragOrderRef.current = priorityAccounts;
     setDragPreviewOrder(priorityAccounts);
     setDraggingAccount(accountId);
     setAnnouncement(
-      `${getFlexibleFundAccountLabel(accountId)} picked up at priority ${priorityAccounts.indexOf(accountId) + 1} of ${priorityAccounts.length}.`
+      `${getAccountLabel(accountId)} picked up at priority ${priorityAccounts.indexOf(accountId) + 1} of ${priorityAccounts.length}.`
     );
   }
 
@@ -100,12 +148,10 @@ export function FlexibleWithdrawalPriorityEditor({
       return;
     }
 
-    setAnnouncement(
-      `${getFlexibleFundAccountLabel(accountId)} reorder cancelled.`
-    );
+    setAnnouncement(`${getAccountLabel(accountId)} reorder cancelled.`);
   }
 
-  function previewOrder(nextOrder: FlexibleFundAccountId[]) {
+  function previewOrder(nextOrder: AccountId[]) {
     const previousOrder = dragOrderRef.current;
 
     if (nextOrder !== previousOrder) {
@@ -120,7 +166,7 @@ export function FlexibleWithdrawalPriorityEditor({
 
   function handleNativeDragStart(
     event: DragEvent<HTMLButtonElement>,
-    accountId: FlexibleFundAccountId
+    accountId: AccountId
   ) {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", accountId);
@@ -133,7 +179,7 @@ export function FlexibleWithdrawalPriorityEditor({
 
   function handleNativeDragOver(
     event: DragEvent<HTMLLIElement>,
-    targetAccountId: FlexibleFundAccountId
+    targetAccountId: AccountId
   ) {
     const accountId = activeDragRef.current;
 
@@ -173,7 +219,7 @@ export function FlexibleWithdrawalPriorityEditor({
 
   function handlePointerDown(
     event: PointerEvent<HTMLButtonElement>,
-    accountId: FlexibleFundAccountId
+    accountId: AccountId
   ) {
     if (event.pointerType === "mouse") {
       return;
@@ -240,7 +286,7 @@ export function FlexibleWithdrawalPriorityEditor({
 
   function handleReorderKeyDown(
     event: KeyboardEvent<HTMLButtonElement>,
-    accountId: FlexibleFundAccountId
+    accountId: AccountId
   ) {
     const currentIndex = priorityAccounts.indexOf(accountId);
     const nextPosition =
@@ -273,30 +319,24 @@ export function FlexibleWithdrawalPriorityEditor({
   return (
     <section
       className="field-card flexible-withdrawal-priority"
-      aria-labelledby="flexible-withdrawal-priority-title"
+      aria-labelledby={`${idPrefix}-priority-title`}
     >
       <div className="field-header">
-        <h4 id="flexible-withdrawal-priority-title">
+        <h4 id={`${idPrefix}-priority-title`}>
           Income-target funding priority
         </h4>
       </div>
-      <p className="field-help">
-        Priority applies to accounts using “Use to meet income target”. Other
-        withdrawal strategies keep their own instructions until you change them.
-      </p>
+      <p className="field-help">{helpText}</p>
       {priorityAccounts.length > 0 ? (
         <>
           <h5>Use to meet income target</h5>
-          <p
-            id="flexible-withdrawal-priority-instructions"
-            className="field-help"
-          >
+          <p id={`${idPrefix}-priority-instructions`} className="field-help">
             Drag accounts into order. With a keyboard, focus a drag handle and
             use the arrow keys, Home or End.
           </p>
           <ol ref={listRef} className="flexible-withdrawal-priority-list">
             {displayedPriorityAccounts.map((accountId, index) => {
-              const accountLabel = getFlexibleFundAccountLabel(accountId);
+              const accountLabel = getAccountLabel(accountId);
 
               return (
                 <li
@@ -316,15 +356,17 @@ export function FlexibleWithdrawalPriorityEditor({
                   </span>
                   <span className="flexible-withdrawal-priority-controls">
                     <WithdrawalStrategyControl
-                      accountId={accountId}
-                      settings={settings}
-                      onChange={onChange}
+                      accountLabel={accountLabel}
+                      strategy={getStrategy(accountId)}
+                      onChange={(strategy) =>
+                        onStrategyChange(accountId, strategy)
+                      }
                     />
                     <button
                       type="button"
                       className="flexible-withdrawal-drag-handle"
                       aria-label={`Reorder ${accountLabel}. Priority ${index + 1} of ${displayedPriorityAccounts.length}.`}
-                      aria-describedby="flexible-withdrawal-priority-instructions"
+                      aria-describedby={`${idPrefix}-priority-instructions`}
                       disabled={displayedPriorityAccounts.length < 2}
                       draggable={displayedPriorityAccounts.length >= 2}
                       onDragStart={(event) =>
@@ -359,9 +401,9 @@ export function FlexibleWithdrawalPriorityEditor({
       {nonPriorityAccounts.length > 0 ? (
         <section
           className="flexible-withdrawal-other-strategies"
-          aria-labelledby="flexible-withdrawal-other-strategies-title"
+          aria-labelledby={`${idPrefix}-other-strategies-title`}
         >
-          <h5 id="flexible-withdrawal-other-strategies-title">
+          <h5 id={`${idPrefix}-other-strategies-title`}>
             Other withdrawal strategies
           </h5>
           <p className="field-help">
@@ -372,13 +414,15 @@ export function FlexibleWithdrawalPriorityEditor({
             {nonPriorityAccounts.map((accountId) => (
               <li key={accountId} data-other-account={accountId}>
                 <span className="flexible-withdrawal-priority-account">
-                  {getFlexibleFundAccountLabel(accountId)}
+                  {getAccountLabel(accountId)}
                 </span>
                 <span className="flexible-withdrawal-priority-controls">
                   <WithdrawalStrategyControl
-                    accountId={accountId}
-                    settings={settings}
-                    onChange={onChange}
+                    accountLabel={getAccountLabel(accountId)}
+                    strategy={getStrategy(accountId)}
+                    onChange={(strategy) =>
+                      onStrategyChange(accountId, strategy)
+                    }
                   />
                 </span>
               </li>
@@ -387,10 +431,7 @@ export function FlexibleWithdrawalPriorityEditor({
         </section>
       ) : null}
       {priorityAccounts.length === 0 && nonPriorityAccounts.length === 0 ? (
-        <p className="field-help">
-          Include a SIPP, Civil Service AVC, LISA or ISA to set its withdrawal
-          strategy and funding priority here.
-        </p>
+        <p className="field-help">{emptyMessage}</p>
       ) : null}
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">
         {announcement}
@@ -400,29 +441,23 @@ export function FlexibleWithdrawalPriorityEditor({
 }
 
 function WithdrawalStrategyControl({
-  accountId,
-  settings,
+  accountLabel,
+  strategy,
   onChange,
 }: {
-  accountId: FlexibleFundAccountId;
-  settings: PensionSettings;
-  onChange: SettingsFieldOnChange;
+  accountLabel: string;
+  strategy: FlexibleWithdrawalStrategy;
+  onChange: (strategy: FlexibleWithdrawalStrategy) => void;
 }) {
-  const accountLabel = getFlexibleFundAccountLabel(accountId);
-  const strategyFieldId = getWithdrawalStrategyFieldId(accountId);
-
   return (
     <label className="flexible-withdrawal-strategy-control">
       <span>Withdrawal strategy</span>
       <select
         className="select-input"
         aria-label={`${accountLabel} withdrawal strategy`}
-        value={settings[strategyFieldId]}
+        value={strategy}
         onChange={(event) =>
-          onChange(
-            strategyFieldId,
-            event.target.value as FlexibleWithdrawalStrategy
-          )
+          onChange(event.target.value as FlexibleWithdrawalStrategy)
         }
       >
         {FLEXIBLE_WITHDRAWAL_STRATEGY_OPTIONS.map((option) => (
@@ -435,9 +470,9 @@ function WithdrawalStrategyControl({
   );
 }
 
-function haveSameOrder(
-  first: FlexibleFundAccountId[],
-  second: FlexibleFundAccountId[]
+function haveSameOrder<AccountId extends string>(
+  first: AccountId[],
+  second: AccountId[]
 ) {
   return (
     first.length === second.length &&

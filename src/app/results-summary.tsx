@@ -91,6 +91,41 @@ type RetirementIncomeDisplayToggleProps = {
   annualAriaLabel?: string;
 };
 
+type SummaryToggleProps<T extends string> = {
+  ariaLabel: string;
+  value: T;
+  options: readonly { value: T; label: string; ariaLabel?: string }[];
+  onChange: (value: T) => void;
+};
+
+export function SummaryToggle<T extends string>({
+  ariaLabel,
+  value,
+  options,
+  onChange,
+}: SummaryToggleProps<T>) {
+  return (
+    <div className="summary-toggle" role="group" aria-label={ariaLabel}>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          className={
+            value === option.value
+              ? "summary-toggle-button summary-toggle-button--active"
+              : "summary-toggle-button"
+          }
+          aria-pressed={value === option.value}
+          aria-label={option.ariaLabel}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function RetirementIncomeDisplayToggle({
   value,
   onChange,
@@ -99,34 +134,15 @@ export function RetirementIncomeDisplayToggle({
   annualAriaLabel,
 }: RetirementIncomeDisplayToggleProps) {
   return (
-    <div className="summary-toggle" role="group" aria-label={ariaLabel}>
-      <button
-        type="button"
-        className={
-          value === "monthly"
-            ? "summary-toggle-button summary-toggle-button--active"
-            : "summary-toggle-button"
-        }
-        aria-pressed={value === "monthly"}
-        aria-label={monthlyAriaLabel}
-        onClick={() => onChange("monthly")}
-      >
-        Monthly
-      </button>
-      <button
-        type="button"
-        className={
-          value === "annual"
-            ? "summary-toggle-button summary-toggle-button--active"
-            : "summary-toggle-button"
-        }
-        aria-pressed={value === "annual"}
-        aria-label={annualAriaLabel}
-        onClick={() => onChange("annual")}
-      >
-        Annual
-      </button>
-    </div>
+    <SummaryToggle
+      ariaLabel={ariaLabel}
+      value={value}
+      options={[
+        { value: "monthly", label: "Monthly", ariaLabel: monthlyAriaLabel },
+        { value: "annual", label: "Annual", ariaLabel: annualAriaLabel },
+      ]}
+      onChange={onChange}
+    />
   );
 }
 

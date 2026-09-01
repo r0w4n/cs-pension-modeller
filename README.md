@@ -54,6 +54,8 @@ It supports:
 - real-terms and nominal-terms projection bases
 - saved scenarios for side-by-side comparison
 - projection charts, summaries, and detailed projection tables
+- optional two-person household modelling in the Expert journey, with separate
+  person-level pension, asset, tax and planning-horizon assumptions
 
 The app presents results as planning estimates. It should not present modelled
 figures as guaranteed outcomes.
@@ -81,6 +83,9 @@ For each projection month, the model can calculate values such as:
 The current app is driven by inputs grouped around:
 
 - personal details: birth month/year and planning horizon
+- Expert journey only: optional You + Partner household modelling, including
+  separate retirement ages and targets while one person is retired and after
+  both are retired
 - retirement income target: an annual after-tax spending amount, with a
   selected Retirement Living Standards baseline and either flat spending or
   expert Go-Go, Slow-Go, No-Go phase percentages
@@ -164,7 +169,9 @@ Some important assumptions and simplifications are:
   fallback. An on-track result is marked as needing a check when the target
   depends on that assumption. If the target remains met without it, the result
   stays on track with a caution until the user confirms an amount from their
-  personalised GOV.UK forecast.
+  personalised GOV.UK forecast. In two-person mode this check is applied to
+  each person&apos;s unconfirmed amount, and the result identifies whether the
+  assumption belongs to You, Partner, or both.
 - New State Pension deferral uses the post-2016 rule modelled by the app.
 - ISA, LISA and SIPP projections depend directly on entered balances,
   contributions, lump sums, growth assumptions, draw ages, and withdrawal
@@ -190,6 +197,22 @@ Some important assumptions and simplifications are:
   personal tax circumstance, employment income that differs from the entered
   salary assumption, future tax-year changes, tax-code adjustments, savings or
   dividend income, annual-allowance charges, or benefit interactions.
+- In Expert two-person mode, each person is modelled as a separate taxpayer
+  with their own Personal Allowance and pension lump-sum allowance ledger.
+  Household income is assessed against one shared after-tax spending target;
+  the still-working person’s modelled employment income is included after the
+  other person retires first and until their own retirement date. Full salary
+  is used until that person&apos;s partial-retirement start, then their reduced
+  salary is used; income already shown in household cash flow is not added a
+  second time as tax-rate context. National Insurance is not modelled, so this
+  is not a payroll take-home forecast. The
+  projection continues to the later
+  planning horizon, but does not model survivor pensions, inheritance, asset
+  transfers, or an automatic spending reduction after the first horizon.
+  Two-person target quick-selects use Pensions UK&apos;s 3 June 2026 annual
+  Retirement Living Standards expenditure references (£22,500 Minimum,
+  £45,400 Moderate and £62,700 Comfortable); they exclude housing costs and
+  are not personal income recommendations.
 - Results are deterministic scenario outputs, not probabilistic forecasts.
 
 For more detail, see the in-app Methodology page.
@@ -264,6 +287,21 @@ The concrete layer responsibilities are:
   while [`src/app/retirement-income-chart-adapter.tsx`](src/app/retirement-income-chart-adapter.tsx)
   and the adjacent heading, controls, mobile-navigation, and accessibility
   components adapt it to each journey's selected presentation.
+- Joint Expert results use one editable Household Retirement Plan chart. It
+  projects the canonical coordinated joint result onto a calendar timeline,
+  with aligned calendar dates, You and Partner age axes, owner-attributed
+  series, household target/tax/shortfall values, period event inspection, and
+  an accessible text equivalent. The established target and milestone
+  interactions are reused for each person and source. The chart also reuses the
+  established contribution controls for You and Partner, with owner-specific
+  labels; these update the same settings as the corresponding journey fields.
+  The underlying person projections remain separate for calculation and tax
+  purposes.
+- Comparison scenarios are kept within the same model type: single-person
+  scenarios compare with single-person metrics, and two-person scenarios use
+  the coordinated household target, assessment, timing, and flexible-fund
+  metrics. Mixed-mode saved scenarios remain available to load but are not
+  combined into one comparison table.
 - [`src/app-domains/journeys.ts`](src/app-domains/journeys.ts) is presentation
   configuration for the simplified, early-retirement, and expert journeys. It
   selects shared fields, labels, help text, update behaviour, and result

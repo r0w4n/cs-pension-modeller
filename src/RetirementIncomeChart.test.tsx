@@ -8,6 +8,7 @@ import {
 import {
   RetirementIncomeChart,
   type RetirementIncomeChartProps,
+  type RetirementIncomeChartReadOnlyProps,
   type RetirementIncomePoint,
 } from "./RetirementIncomeChart";
 import { LISA_MONTHLY_CONTRIBUTION_MAX } from "./settings";
@@ -131,6 +132,21 @@ const baseProps: RetirementIncomeChartProps = {
 
 function renderChart(props: Partial<RetirementIncomeChartProps> = {}) {
   return render(<RetirementIncomeChart {...baseProps} {...props} />);
+}
+
+function renderReadonlyHouseholdChart(
+  props: Partial<RetirementIncomeChartReadOnlyProps> = {}
+) {
+  const { onChangeParameters: _onChangeParameters, ...readonlyBaseProps } =
+    baseProps;
+  return render(
+    <RetirementIncomeChart
+      {...readonlyBaseProps}
+      {...props}
+      readOnly
+      interactionMode="readonly-household"
+    />
+  );
 }
 
 function mockChartResize(width: number, height = 420) {
@@ -544,10 +560,126 @@ describe("RetirementIncomeChart", () => {
     );
   });
 
+  it("renders calendar and person-age axes for a household timeline", () => {
+    renderReadonlyHouseholdChart({
+      timelineMode: "calendar",
+      showMilestoneMarkers: false,
+      data: [
+        {
+          ...basePoint,
+          date: "2030-01-01",
+          age: 2030,
+          timelineValue: 2030,
+          personAges: { you: 50, partner: 48 },
+        },
+        {
+          ...basePoint,
+          date: "2040-01-01",
+          age: 2040,
+          timelineValue: 2040,
+          personAges: { you: 60, partner: 58 },
+        },
+      ],
+    });
+
+    expect(screen.queryByText("Calendar month/year")).not.toBeInTheDocument();
+    expect(
+      getXAxisLabels().some((label) =>
+        /^[A-Z][a-z]{2} 20\d{2}$/.test(label ?? "")
+      )
+    ).toBe(true);
+    expect(
+      screen.getByTestId("retirement-income-you-age-axis")
+    ).toHaveTextContent("You");
+    expect(
+      screen.getByTestId("retirement-income-partner-age-axis")
+    ).toHaveTextContent("Partner");
+    expect(
+      screen
+        .getByTestId("retirement-income-you-age-axis")
+        .querySelectorAll(".retirement-income-person-age-tick").length
+    ).toBeGreaterThan(0);
+    expect(
+      screen
+        .getByTestId("retirement-income-partner-age-axis")
+        .querySelectorAll(".retirement-income-person-age-tick").length
+    ).toBeGreaterThan(0);
+  });
+
   it("starts the target income line at the y axis", () => {
     renderChart({ retirementAge: 44, alphaStartAge: 44 });
 
     expect(getTargetLinePath()).toMatch(/^M0,/);
+  });
+
+  it("supports a static household display without single-person controls", () => {
+    renderReadonlyHouseholdChart({
+      alphaLabel: "Household gross income",
+      chartDescription:
+        "Gross household income is shown against the shared household target.",
+      useDataTargets: true,
+      periodEvents: [
+        {
+          key: "you-retirement",
+          label: "You retire",
+          date: "2045-07-01",
+          timelineValue: 2045.5,
+          owner: "you",
+        },
+        {
+          key: "you-alpha-start",
+          label: "Your Alpha pension starts",
+          date: "2045-07-01",
+          timelineValue: 2045.5,
+          owner: "you",
+        },
+      ],
+      staticMilestones: [
+        {
+          key: "you-retirement",
+          label: "You retire",
+          shortLabel: "You retire",
+          timelineValue: 2045.5,
+          colour: "#0f6f72",
+        },
+      ],
+      data: [
+        { ...basePoint, targetIncomeAnnual: 0 },
+        {
+          ...basePoint,
+          age: 60,
+          date: "2045-07-01",
+          alphaIncomeAnnual: 45_000,
+          assessedIncomeAnnual: 38_000,
+          targetIncomeAnnual: 40_000,
+          takeHomeIncomeAnnual: 38_000,
+          totalIncomeAnnual: 45_000,
+        },
+      ],
+    });
+
+    expect(
+      screen.getByText(
+        "Gross household income is shown against the shared household target."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText("Household gross income")).toBeInTheDocument();
+    expect(screen.queryAllByRole("slider")).toHaveLength(0);
+    expect(
+      screen.getByTestId("retirement-income-static-milestone-you-retirement")
+    ).toBeInTheDocument();
+    fireEvent.focus(screen.getByTestId("retirement-income-period-inspector"));
+    expect(
+      screen.getByTestId("retirement-income-period-details")
+    ).toHaveTextContent("You retire");
+    expect(
+      screen.getByTestId("retirement-income-period-details")
+    ).toHaveTextContent("Your Alpha pension starts");
+    expect(
+      document
+        .querySelector(".retirement-income-target-line")
+        ?.getAttribute("d")
+    ).not.toBeNull();
   });
 
   it("keeps upward target income drags from repeatedly inflating the y scale", () => {

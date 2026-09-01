@@ -138,9 +138,10 @@ export function applyTaxYearIncomeTax(
       .map((row) => ({
         date: row.date,
         taxableIncome: calculateProjectionRowTaxableIncome(row, settings),
-        taxableIncomeContext: getPreRetirementMonthlyEmploymentTaxContext(
-          settings,
-          row.date
+        taxableIncomeContext: Math.max(
+          0,
+          getPreRetirementMonthlyEmploymentTaxContext(settings, row.date) -
+            (row.monthlyEmploymentIncome ?? 0)
         ),
       })),
     settings

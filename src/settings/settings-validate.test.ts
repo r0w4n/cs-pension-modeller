@@ -1,5 +1,13 @@
-import { createDefaultSettings } from "./settings-defaults";
-import { validateSettings } from "./settings-validate";
+import {
+  createDefaultPartnerSettings,
+  createDefaultSettings,
+} from "./settings-defaults";
+import type { PensionSettings } from "./settings-types";
+import {
+  createPartnerCalculationSettings,
+  createPartnerIndividualSettings,
+  validateSettings,
+} from "./settings-validate";
 
 describe("settings-validate", () => {
   beforeEach(() => {
@@ -26,6 +34,39 @@ describe("settings-validate", () => {
 
   it("returns no issues for defaults", () => {
     expect(validateSettings(createDefaultSettings())).toEqual([]);
+  });
+
+  it("preserves Partner's own person-level target settings outside coordinated funding", () => {
+    const defaults = createDefaultSettings();
+    const settings = {
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        desiredRetirementIncome: 24_000,
+        retirementIncomeTargetBasis: "gross" as const,
+        spendingStrategyType: "SPENDING_SMILE" as const,
+        flexibleWithdrawalPriority: [
+          "isa",
+          "sipp",
+        ] as PensionSettings["flexibleWithdrawalPriority"],
+      },
+    };
+
+    const individual = createPartnerIndividualSettings(settings);
+    const household = createPartnerCalculationSettings(settings);
+
+    expect(individual).toMatchObject({
+      desiredRetirementIncome: 24_000,
+      retirementIncomeTargetBasis: "gross",
+      spendingStrategyType: "SPENDING_SMILE",
+      flexibleWithdrawalPriority: ["isa", "sipp"],
+    });
+    expect(household).toMatchObject({
+      desiredRetirementIncome: 0,
+      retirementIncomeTargetBasis: "after_tax",
+      spendingStrategyType: "FLAT",
+      flexibleWithdrawalPriority: [],
+    });
   });
 
   it("does not allow prior lump-sum allowance use to exceed the selected allowance", () => {
@@ -55,6 +96,106 @@ describe("settings-validate", () => {
       expect.arrayContaining([
         expect.objectContaining({ field: "dateOfBirth" }),
         expect.objectContaining({ field: "startDate" }),
+      ])
+    );
+  });
+
+  it("does not report a Partner life-expectancy error until a Partner DOB is entered", () => {
+    const issues = validateSettings({
+      ...createDefaultSettings(),
+      jointRetirement: {
+        ...createDefaultSettings().jointRetirement,
+        enabled: true,
+      },
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "",
+        showStatePension: true,
+      },
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "dateOfBirth",
+          personId: "partner",
+        }),
+      ])
+    );
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "lifeExpectancy",
+          personId: "partner",
+        }),
+      ])
+    );
+    expect(issues.filter((issue) => issue.personId === "partner")).toEqual([
+      expect.objectContaining({
+        field: "dateOfBirth",
+        personId: "partner",
+      }),
+    ]);
+  });
+
+  it("validates household SMILE phases against the later retiree", () => {
+    const partner = {
+      ...createDefaultPartnerSettings(),
+      dateOfBirth: "1990-06-01",
+      requirementAge: 78,
+      lifeExpectancy: 95,
+    };
+    const defaults = createDefaultSettings();
+
+    const issues = validateSettings({
+      ...defaults,
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        spendingStrategyType: "SPENDING_SMILE",
+        spendingSmile: {
+          ...defaults.jointRetirement.spendingSmile,
+          slowGoStartAge: 75,
+        },
+      },
+      partner,
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "jointRetirement",
+          itemId: "slowGoStartAge",
+          message: "Slow-go years must start after Partner's retirement age.",
+        }),
+      ])
+    );
+  });
+
+  it("does not validate an inactive single-person SMILE in joint mode", () => {
+    const defaults = createDefaultSettings();
+
+    const issues = validateSettings({
+      ...defaults,
+      spendingStrategyType: "SPENDING_SMILE",
+      spendingSmile: {
+        ...defaults.spendingSmile,
+        slowGoStartAge: defaults.requirementAge,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        spendingStrategyType: "FLAT",
+      },
+      partner: createDefaultPartnerSettings(),
+    });
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "spendingSmile",
+          itemId: "slowGoStartAge",
+        }),
       ])
     );
   });

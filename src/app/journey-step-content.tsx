@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { fieldGroups, type FieldDefinition } from "../fieldDefinitions";
+import {
+  fieldGroups,
+  type FieldDefinition,
+  type SettingsKey,
+} from "../fieldDefinitions";
 import {
   deriveInflationAssumptions,
   type PensionSummary,
@@ -20,6 +24,7 @@ import {
 import {
   buildBridgePlanReview,
   buildComparisonStatusItems,
+  buildRetirementOutcomeBanner,
   type JourneyFieldDescriptions,
   type JourneyFieldLabels,
   type JourneyCurrencyFieldPresentation,
@@ -73,6 +78,15 @@ import {
 import { SettingsGroupSupplementaryEditor } from "./settings-group-supplementary-editor";
 import { SpendingSmileEditor } from "./spending-smile-editor";
 import { FlexibleWithdrawalPriorityEditor } from "./flexible-withdrawal-priority-editor";
+import { isSettingsGroupVisible } from "../app-domains/settings-group-visibility";
+import {
+  JointHouseholdTargetFields,
+  JointPartnerTaxFields,
+  JointRetirementToggle,
+  PartnerOptionalSections,
+} from "./joint-retirement-controls";
+import { JointRetirementResults } from "./joint-retirement-results";
+import { applyPartnerSettingsFieldChange } from "./chart-state";
 
 export type JourneyStepViewModel = {
   settings: PensionSettings;
@@ -222,6 +236,12 @@ function renderOptionalSectionsStep(
         toggleKeys={toggleKeys}
         toggleCopy={step.toggleCopy}
       />
+      {step.id === "optional-sections" ? (
+        <>
+          <JointRetirementToggle settings={settings} onChange={onChange} />
+          <PartnerOptionalSections settings={settings} onChange={onChange} />
+        </>
+      ) : null}
     </>
   );
 }
@@ -282,6 +302,34 @@ function JourneyResultsStep({
           Calculating your results…
         </p>
       </>
+    );
+  }
+
+  if (settings.jointRetirement.enabled) {
+    return (
+      <JointJourneyResultsStep
+        settings={settings}
+        retirementPlanResult={retirementPlanResult}
+        currentComparisonResult={currentComparisonResult}
+        isProjectionPending={isProjectionPending}
+        validationIssues={validationIssues}
+        chartParameters={retirementIncomeChartParameters}
+        chartLimits={retirementIncomeChartLimits}
+        retirementIncomeDisplay={retirementIncomeDisplay}
+        onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+        onChange={onChange}
+        comparisonRetirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+        onComparisonRetirementIncomeDisplayChange={
+          onComparisonRetirementIncomeDisplayChange
+        }
+        comparisonScenarios={comparisonScenarios}
+        comparisonResultCache={comparisonResultCache}
+        onScenariosChange={onScenariosChange}
+        onLoadScenario={onLoadScenario}
+        showComparison={hasResultsSection(step, "comparison")}
+        inflationPresentation={inflationPresentation}
+        derivedInflationAssumptions={derivedInflationAssumptions}
+      />
     );
   }
 
@@ -370,6 +418,16 @@ function JourneyResultsStep({
         />
       ) : null}
 
+      {hasResultsSection(step, "projection-table") &&
+      shouldRenderProjectionTable ? (
+        <ProjectionTableSectionContainer>
+          <ProjectionTableSectionFeature
+            rows={projectionRows}
+            settings={settings}
+          />
+        </ProjectionTableSectionContainer>
+      ) : null}
+
       {hasResultsSection(step, "comparison") ? (
         <ComparisonSection>
           <ComparisonPanelFeature
@@ -389,15 +447,131 @@ function JourneyResultsStep({
           />
         </ComparisonSection>
       ) : null}
+    </>
+  );
+}
 
-      {hasResultsSection(step, "projection-table") &&
-      shouldRenderProjectionTable ? (
-        <ProjectionTableSectionContainer>
-          <ProjectionTableSectionFeature
-            rows={projectionRows}
+function JointJourneyResultsStep({
+  settings,
+  retirementPlanResult,
+  currentComparisonResult,
+  isProjectionPending,
+  validationIssues,
+  chartParameters,
+  chartLimits,
+  retirementIncomeDisplay,
+  onRetirementIncomeDisplayChange,
+  onChange,
+  comparisonRetirementIncomeDisplay,
+  onComparisonRetirementIncomeDisplayChange,
+  comparisonScenarios,
+  comparisonResultCache,
+  onScenariosChange,
+  onLoadScenario,
+  showComparison,
+  inflationPresentation,
+  derivedInflationAssumptions,
+}: {
+  settings: PensionSettings;
+  retirementPlanResult: RetirementPlanResult;
+  currentComparisonResult: ComparisonResult;
+  isProjectionPending: boolean;
+  validationIssues: PensionValidationIssue[];
+  chartParameters: RetirementIncomeChartParameters;
+  chartLimits: RetirementIncomeChartLimits;
+  retirementIncomeDisplay: RetirementIncomeDisplay;
+  onRetirementIncomeDisplayChange: (display: RetirementIncomeDisplay) => void;
+  onChange: SettingsFieldOnChange;
+  comparisonRetirementIncomeDisplay: RetirementIncomeDisplay;
+  onComparisonRetirementIncomeDisplayChange: (
+    display: RetirementIncomeDisplay
+  ) => void;
+  comparisonScenarios: ComparisonScenario[];
+  comparisonResultCache: ComparisonResultCache;
+  onScenariosChange: (scenarios: ComparisonScenario[]) => void;
+  onLoadScenario: (settings: PensionSettings) => void;
+  showComparison: boolean;
+  inflationPresentation:
+    | Extract<JourneyResultsSection, { id: "inflation-basis" }>["presentation"]
+    | undefined;
+  derivedInflationAssumptions: NonNullable<
+    JourneyStepViewModel["derivedInflationAssumptions"]
+  >;
+}) {
+  return (
+    <>
+      <ValidationSummary validationIssues={validationIssues} />
+
+      {isProjectionPending ? (
+        <p className="section-copy" role="status">
+          Updating calculated results…
+        </p>
+      ) : null}
+
+      {retirementPlanResult.jointProjection ? (
+        <JointRetirementResults
+          projection={retirementPlanResult.jointProjection}
+          settings={settings}
+          outcome={buildRetirementOutcomeBanner(currentComparisonResult)}
+          statusItems={buildComparisonStatusItems(currentComparisonResult)}
+          chartParameters={chartParameters}
+          chartLimits={chartLimits}
+          retirementIncomeDisplay={retirementIncomeDisplay}
+          onRetirementIncomeDisplayChange={onRetirementIncomeDisplayChange}
+          validationIssues={validationIssues}
+          onChange={onChange}
+        />
+      ) : (
+        <section
+          className="panel"
+          aria-labelledby="household-results-unavailable-title"
+        >
+          <div className="panel-heading">
+            <h2 id="household-results-unavailable-title">
+              Household results need more details
+            </h2>
+            <p className="section-copy">
+              Complete the highlighted settings before the combined household
+              projection can be shown. While two-person modelling is enabled,
+              this page does not show a single-person result in its place.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {inflationPresentation === "disclosure" ? (
+        <details className="simple-results-disclosure simple-results-methodology">
+          <summary>How this estimate was worked out</summary>
+          <InflationBasisPanelFeature
             settings={settings}
+            assumptions={derivedInflationAssumptions}
           />
-        </ProjectionTableSectionContainer>
+        </details>
+      ) : inflationPresentation === "expanded" ? (
+        <InflationBasisPanelFeature
+          settings={settings}
+          assumptions={derivedInflationAssumptions}
+        />
+      ) : null}
+
+      {showComparison ? (
+        <ComparisonSection>
+          <ComparisonPanelFeature
+            settings={settings}
+            validationIssues={validationIssues}
+            scenarios={comparisonScenarios}
+            comparisonResultCache={comparisonResultCache}
+            retirementPlanResult={retirementPlanResult}
+            isProjectionPending={isProjectionPending}
+            onScenariosChange={onScenariosChange}
+            onLoadScenario={onLoadScenario}
+            retirementIncomeDisplay={comparisonRetirementIncomeDisplay}
+            onRetirementIncomeDisplayChange={
+              onComparisonRetirementIncomeDisplayChange
+            }
+            showPensionSummary={false}
+          />
+        </ComparisonSection>
       ) : null}
     </>
   );
@@ -470,7 +644,9 @@ function renderFieldsStep(
         step.hideFieldInfoLinks
       )}
       settings={settings}
-      validationIssues={validationIssues}
+      validationIssues={validationIssues.filter(
+        (issue) => issue.personId !== "partner"
+      )}
       onChange={onChange}
       showGuidanceNotes={showGuidanceNotes}
       useDropdownDates={useDropdownDates}
@@ -504,6 +680,9 @@ function renderFieldsStep(
       ) : null}
     </SettingsFieldsFeature>
   );
+  const partner = settings.partner;
+  const onPartnerChange: SettingsFieldOnChange = (key, value) =>
+    updatePartnerSetting(settings, key, value, onChange);
 
   return (
     <>
@@ -523,21 +702,126 @@ function renderFieldsStep(
         >
           {settingsFields}
         </OptionalFieldsQuestion>
+      ) : step.groupId === "retirement-target" &&
+        settings.jointRetirement.enabled ? (
+        <JointHouseholdTargetFields
+          settings={settings}
+          onChange={onChange}
+          showGuidanceNotes={showGuidanceNotes}
+          showSpendingSmileEditor={Boolean(step.showSpendingSmileEditor)}
+          validationIssues={validationIssues}
+        />
       ) : (
         settingsFields
       )}
 
-      {step.groupId ? (
+      {step.groupId === "tax" && settings.jointRetirement.enabled ? (
+        <JointPartnerTaxFields
+          settings={settings}
+          onChange={onChange}
+          showGuidanceNotes={showGuidanceNotes}
+        />
+      ) : null}
+
+      {step.groupId && isSettingsGroupVisible(step.groupId, settings) ? (
         <SettingsGroupSupplementaryEditor
           groupId={step.groupId}
           settings={settings}
-          validationIssues={validationIssues}
+          validationIssues={validationIssues.filter(
+            (issue) => issue.personId !== "partner"
+          )}
           onChange={onChange}
           useDropdownDates={useDropdownDates}
         />
       ) : null}
+
+      {shouldShowPartnerFields(step.groupId, settings) && partner ? (
+        <section
+          className="settings-section"
+          aria-labelledby={`partner-${step.id}`}
+        >
+          <div className="section-heading">
+            <h3 id={`partner-${step.id}`}>Partner</h3>
+          </div>
+          <SettingsFieldsFeature
+            fields={getFieldsByIds(
+              step.fieldIds,
+              undefined,
+              undefined,
+              step.currencyFieldPresentation,
+              step.hideFieldInfoLinks
+            ).map((field) => ({
+              ...field,
+              label: getPartnerFieldLabel(field.label),
+              description: "",
+            }))}
+            settings={partner as PensionSettings}
+            validationIssues={validationIssues.filter(
+              (issue) => issue.personId === "partner"
+            )}
+            onChange={onPartnerChange}
+            showGuidanceNotes={showGuidanceNotes}
+            useDropdownDates={useDropdownDates}
+            useNpaLinkedDefaults={Boolean(step.useNpaLinkedDefaults)}
+            domIdPrefix="partner"
+          />
+          {step.groupId ? (
+            <SettingsGroupSupplementaryEditor
+              groupId={step.groupId}
+              settings={partner as PensionSettings}
+              validationIssues={validationIssues.filter(
+                (issue) => issue.personId === "partner"
+              )}
+              onChange={onPartnerChange}
+              useDropdownDates={useDropdownDates}
+              domIdPrefix="partner"
+              ownerLabel="Partner"
+              showDescriptions={false}
+            />
+          ) : null}
+        </section>
+      ) : null}
     </>
   );
+}
+
+function updatePartnerSetting<K extends SettingsKey>(
+  settings: PensionSettings,
+  key: K,
+  value: PensionSettings[K],
+  onChange: SettingsFieldOnChange
+) {
+  onChange(
+    "partner",
+    applyPartnerSettingsFieldChange(settings, key, value, {
+      alignAlphaLeaveAgeToRetirement: false,
+      dateOfBirthUpdate: "relink-npa-defaults",
+    })
+  );
+}
+
+function shouldShowPartnerFields(
+  groupId: string | undefined,
+  settings: PensionSettings
+) {
+  if (
+    !groupId ||
+    !settings.jointRetirement.enabled ||
+    !settings.partner ||
+    groupId === "retirement-target" ||
+    groupId === "inflation" ||
+    groupId === "tax"
+  ) {
+    return false;
+  }
+
+  return isSettingsGroupVisible(groupId, settings.partner as PensionSettings);
+}
+
+function getPartnerFieldLabel(label: string) {
+  return label.startsWith("Your ")
+    ? `Partner's ${label.slice("Your ".length)}`
+    : `Partner ${label}`;
 }
 
 function JourneySupportPanel({
@@ -913,7 +1197,13 @@ function ValidationSummary({
   validationIssues: PensionValidationIssue[];
 }) {
   return validationIssues.length > 0 ? (
-    <ValidationIssuesSectionFeature validationIssues={validationIssues} />
+    <ValidationIssuesSectionFeature
+      validationIssues={validationIssues.map((issue) =>
+        issue.personId === "partner"
+          ? { ...issue, message: `Partner: ${issue.message}` }
+          : issue
+      )}
+    />
   ) : null;
 }
 

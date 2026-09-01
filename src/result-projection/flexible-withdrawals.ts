@@ -2,9 +2,19 @@ import type { ProjectionRow } from "../projection";
 import {
   FLEXIBLE_FUND_ACCOUNT_CONFIG,
   FLEXIBLE_FUND_ACCOUNT_IDS,
+  formatModelAgeCompact,
   type FlexibleFundAccountId,
+  type FlexibleWithdrawalStrategy,
+  type HouseholdFlexibleFundAccountId,
+  type PartnerSettings,
   type PensionSettings,
 } from "../settings";
+
+const wholePoundsFormatter = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+  maximumFractionDigits: 0,
+});
 
 export type FlexibleWithdrawalAccountInsight = {
   accountId: FlexibleFundAccountId;
@@ -30,6 +40,16 @@ export type ResidualFlexibleFundInsight = {
   planningHorizonAge: number;
   wasUsed: boolean;
 };
+
+export function formatResidualFlexibleFundWarning(
+  insight: ResidualFlexibleFundInsight
+) {
+  const explanation = insight.wasUsed
+    ? `the model leaves ${wholePoundsFormatter.format(insight.endingBalance)} in the ${insight.label}`
+    : `the ${insight.label} is not used for modelled income and retains ${wholePoundsFormatter.format(insight.endingBalance)}`;
+
+  return `Potential over-saving: ${explanation} at age ${formatModelAgeCompact(insight.planningHorizonAge)}. You may want to compare a lower contribution.`;
+}
 
 const MINIMUM_DISPLAYED_RESIDUAL_BALANCE = 1;
 
@@ -60,10 +80,100 @@ export function shouldShowFlexibleWithdrawalPriority(
   );
 }
 
+export function getHouseholdFlexibleWithdrawalPriorityAccounts(
+  settings: PensionSettings
+) {
+  const targetAccounts = getIncludedHouseholdFlexibleWithdrawalAccounts(
+    settings
+  ).filter(
+    (accountId) =>
+      getHouseholdWithdrawalStrategy(settings, accountId) ===
+      "meet_income_target"
+  );
+  const savedAccounts =
+    settings.jointRetirement.flexibleWithdrawalPriority.filter((accountId) =>
+      targetAccounts.includes(accountId)
+    );
+
+  return [
+    ...savedAccounts,
+    ...targetAccounts.filter((accountId) => !savedAccounts.includes(accountId)),
+  ];
+}
+
+export function getHouseholdFlexibleWithdrawalNonPriorityAccounts(
+  settings: PensionSettings
+) {
+  return getIncludedHouseholdFlexibleWithdrawalAccounts(settings).filter(
+    (accountId) =>
+      getHouseholdWithdrawalStrategy(settings, accountId) !==
+      "meet_income_target"
+  );
+}
+
+export function shouldShowHouseholdFlexibleWithdrawalPriority(
+  settings: PensionSettings
+) {
+  return (
+    settings.jointRetirement.spendingStrategyType === "SPENDING_SMILE" ||
+    getIncludedHouseholdFlexibleWithdrawalAccounts(settings).length > 0
+  );
+}
+
+export function getHouseholdFlexibleFundAccountLabel(
+  accountId: HouseholdFlexibleFundAccountId
+) {
+  const [owner, flexibleAccountId] =
+    splitHouseholdFlexibleFundAccountId(accountId);
+  return `${owner === "you" ? "Your" : "Partner"} ${getFlexibleFundAccountLabel(flexibleAccountId)}`;
+}
+
+export function getHouseholdWithdrawalStrategy(
+  settings: PensionSettings,
+  accountId: HouseholdFlexibleFundAccountId
+): FlexibleWithdrawalStrategy {
+  const [owner, flexibleAccountId] =
+    splitHouseholdFlexibleFundAccountId(accountId);
+  const person = owner === "you" ? settings : settings.partner;
+
+  return (
+    person?.[FLEXIBLE_FUND_ACCOUNT_CONFIG[flexibleAccountId].strategyField] ??
+    "use_by_age"
+  );
+}
+
+export function splitHouseholdFlexibleFundAccountId(
+  accountId: HouseholdFlexibleFundAccountId
+) {
+  const [owner, flexibleAccountId] = accountId.split(":") as [
+    "you" | "partner",
+    FlexibleFundAccountId,
+  ];
+  return [owner, flexibleAccountId] as const;
+}
+
 function getIncludedFlexibleWithdrawalAccounts(settings: PensionSettings) {
   return settings.flexibleWithdrawalPriority.filter((accountId) =>
     isFlexibleFundAccountIncluded(settings, accountId)
   );
+}
+
+function getIncludedHouseholdFlexibleWithdrawalAccounts(
+  settings: PensionSettings
+) {
+  if (!settings.partner) {
+    return [];
+  }
+
+  return (["you", "partner"] as const).flatMap((owner) => {
+    const person: PensionSettings | PartnerSettings =
+      owner === "you" ? settings : settings.partner!;
+    return FLEXIBLE_FUND_ACCOUNT_IDS.filter(
+      (accountId) => person[FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].showField]
+    ).map(
+      (accountId): HouseholdFlexibleFundAccountId => `${owner}:${accountId}`
+    );
+  });
 }
 
 export function summarizeFlexibleWithdrawalInsights(
@@ -129,9 +239,9 @@ export function getFlexibleFundAccountLabel(accountId: FlexibleFundAccountId) {
   return FLEXIBLE_FUND_ACCOUNT_CONFIG[accountId].label;
 }
 
-export function reorderFlexibleWithdrawalAccounts(
-  accounts: FlexibleFundAccountId[],
-  accountId: FlexibleFundAccountId,
+export function reorderFlexibleWithdrawalAccounts<AccountId extends string>(
+  accounts: AccountId[],
+  accountId: AccountId,
   nextPosition: number
 ) {
   const currentIndex = accounts.indexOf(accountId);

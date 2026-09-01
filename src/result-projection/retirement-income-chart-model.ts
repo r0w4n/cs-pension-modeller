@@ -1,6 +1,13 @@
 export type RetirementIncomePoint = {
   date: string;
   age: number;
+  /** Optional presentation coordinate for non-age timelines such as households. */
+  timelineValue?: number;
+  /** Person ages at this calendar point for a household timeline. */
+  personAges?: {
+    you?: number;
+    partner?: number;
+  };
   targetIncomeAnnual: number;
   isaIncomeAnnual: number;
   lisaIncomeAnnual: number;
@@ -17,6 +24,8 @@ export type RetirementIncomePoint = {
   statePensionIncomeAnnual: number;
   totalIncomeAnnual: number;
   takeHomeIncomeAnnual?: number;
+  /** Canonical estimated Income Tax for derived household points. */
+  estimatedIncomeTaxAnnual?: number;
   assessedIncomeAnnual: number;
   shortfallAnnual: number;
   guaranteedNetIncomeAnnual: number;
@@ -27,7 +36,51 @@ export type RetirementIncomePoint = {
   lisaBalance?: number;
   sippBalance?: number;
   csAvcBalance?: number;
+  /** Owner-attributed sources used by the household chart projection. */
+  incomeSeries?: RetirementIncomeChartSeriesValue[];
 };
+
+export type RetirementIncomeChartSeriesValue = {
+  key: string;
+  annualAmount: number;
+};
+
+export type RetirementIncomeChartSeriesDefinition = {
+  key: string;
+  label: string;
+  colour: string;
+  owner?: "you" | "partner";
+  sourceType?: string;
+};
+
+export type RetirementIncomeChartEvent = {
+  key: string;
+  label: string;
+  date: string;
+  timelineValue: number;
+  owner?: "you" | "partner";
+};
+
+/** Read-only milestone marker supplied by a derived chart such as Combined. */
+export type RetirementIncomeChartStaticMilestone = {
+  key: string;
+  label: string;
+  shortLabel: string;
+  timelineValue: number;
+  colour: string;
+};
+
+/**
+ * An owner-aware strategy control projected onto a derived chart timeline.
+ * The limit is expressed in the same timeline units as `timelineValue` so the
+ * shared chart can reuse its existing marker drag behaviour.
+ */
+export type RetirementIncomeChartEditableMilestone =
+  RetirementIncomeChartStaticMilestone & {
+    limit: ChartNumberLimit;
+    owner: "you" | "partner";
+    sourceType: string;
+  };
 
 export type RetirementIncomeFlexibleWithdrawalInsight = {
   accountId: string;

@@ -1,12 +1,15 @@
 import {
   formatCapitalPreservation,
   formatTargetMissDuration,
+  getComparisonAssessment,
+  getComparisonLaterIncome,
   type ComparisonInsights,
 } from "../app-domains";
 import type { ComparisonResult } from "../result-projection/comparison-result";
 import {
   formatCurrencyDetailed,
   formatDecimalAge,
+  formatDate,
 } from "../result-projection/formatting";
 import type { RetirementIncomeDisplay } from "../projection";
 import { ComparisonSummaryTable } from "./comparison-summary-table";
@@ -71,10 +74,15 @@ function ComparisonInsightsGrid({
               insights.earliestRetirementResult?.scenario.name ??
               "Not available",
             value: insights.earliestRetirementResult
-              ? formatDecimalAge(
-                  insights.earliestRetirementResult.scenario.settings
-                    .requirementAge
-                )
+              ? insights.earliestRetirementResult.household
+                ? formatDate(
+                    insights.earliestRetirementResult.household
+                      .firstRetirementDate
+                  )
+                : formatDecimalAge(
+                    insights.earliestRetirementResult.scenario.settings
+                      .requirementAge
+                  )
               : "Not available",
           },
         ]}
@@ -86,7 +94,8 @@ function ComparisonInsightsGrid({
             label: insights.bestTargetResult?.scenario.name ?? "Not available",
             value: insights.bestTargetResult
               ? formatTargetMissDuration(
-                  insights.bestTargetResult.assessment.targetMissMonths
+                  getComparisonAssessment(insights.bestTargetResult)
+                    .targetMissMonths
                 )
               : "Not available",
           },
@@ -101,7 +110,7 @@ function ComparisonInsightsGrid({
               "Not available",
             value: insights.lowestShortfallRiskResult
               ? formatRecurringShortfallOrSurplus(
-                  insights.lowestShortfallRiskResult.assessment
+                  getComparisonAssessment(insights.lowestShortfallRiskResult)
                     .largestAnnualShortfall,
                   0,
                   retirementIncomeDisplay
@@ -131,7 +140,7 @@ function ComparisonInsightsGrid({
               "Not available",
             value: insights.highestLaterIncomeResult
               ? formatRecurringCurrency(
-                  insights.highestLaterIncomeResult.lifeExpectancyAnnualIncome,
+                  getComparisonLaterIncome(insights.highestLaterIncomeResult),
                   retirementIncomeDisplay
                 )
               : "Not available",

@@ -18,9 +18,13 @@ export function AddedPensionLumpSumsEditor({
   addButtonLabel = "Add lump sum purchase",
   removeButtonLabel = "Remove lump sum",
   showFactorType = false,
+  domIdPrefix,
+  ownerLabel,
   validationIssues = [],
   onChange,
 }: AddedPensionLumpSumsEditorProps) {
+  const idPrefix = domIdPrefix ? `${domIdPrefix}-` : "";
+  const accessibleOwnerPrefix = ownerLabel ? `${ownerLabel} ` : "";
   function updateLumpSum(id: string, patch: Partial<AddedPensionLumpSum>) {
     onChange(
       lumpSums.map((lumpSum) =>
@@ -41,7 +45,7 @@ export function AddedPensionLumpSumsEditor({
     <div className="settings-subsection lump-sum-editor">
       <div className="settings-subsection-heading lump-sum-editor-heading">
         <h4>{title}</h4>
-        <p className="section-copy">{description}</p>
+        {description ? <p className="section-copy">{description}</p> : null}
       </div>
 
       {lumpSums.length === 0 ? (
@@ -55,7 +59,7 @@ export function AddedPensionLumpSumsEditor({
           );
           const validationId =
             lumpSumValidationIssues.length > 0
-              ? `lump-sum-validation-${lumpSum.id}`
+              ? `${idPrefix}lump-sum-validation-${lumpSum.id}`
               : undefined;
           const hasValidationIssue = lumpSumValidationIssues.length > 0;
 
@@ -71,7 +75,7 @@ export function AddedPensionLumpSumsEditor({
 
               <span className="field-label">Amount</span>
               <input
-                aria-label={`${itemLabel} amount ${index + 1}`}
+                aria-label={`${accessibleOwnerPrefix}${itemLabel} amount ${index + 1}`}
                 className="number-input"
                 type="number"
                 min={0}
@@ -89,9 +93,9 @@ export function AddedPensionLumpSumsEditor({
               <span className="field-label">When</span>
               {useDropdownDates ? (
                 <DateSelectField
-                  label={`${itemLabel} start date ${index + 1}`}
+                  label={`${accessibleOwnerPrefix}${itemLabel} start date ${index + 1}`}
                   value={lumpSum.startDate}
-                  idPrefix={`lump-sum-start-${lumpSum.id}`}
+                  idPrefix={`${idPrefix}lump-sum-start-${lumpSum.id}`}
                   yearRange={getLumpSumDateYearRange(
                     "start",
                     new Date().getUTCFullYear()
@@ -104,8 +108,8 @@ export function AddedPensionLumpSumsEditor({
                 />
               ) : (
                 <input
-                  id={`lump-sum-start-${lumpSum.id}`}
-                  aria-label={`${itemLabel} start date ${index + 1}`}
+                  id={`${idPrefix}lump-sum-start-${lumpSum.id}`}
+                  aria-label={`${accessibleOwnerPrefix}${itemLabel} start date ${index + 1}`}
                   className="date-input"
                   type="date"
                   value={lumpSum.startDate}
@@ -119,7 +123,7 @@ export function AddedPensionLumpSumsEditor({
 
               <span className="field-label">Cadence</span>
               <select
-                aria-label={`${itemLabel} cadence ${index + 1}`}
+                aria-label={`${accessibleOwnerPrefix}${itemLabel} cadence ${index + 1}`}
                 className="select-input"
                 value={lumpSum.cadence}
                 aria-invalid={hasValidationIssue || undefined}
@@ -139,7 +143,7 @@ export function AddedPensionLumpSumsEditor({
                 <>
                   <span className="field-label">Purchase type</span>
                   <select
-                    aria-label={`${itemLabel} cover ${index + 1}`}
+                    aria-label={`${accessibleOwnerPrefix}${itemLabel} cover ${index + 1}`}
                     className="select-input"
                     value={lumpSum.factorType}
                     aria-invalid={hasValidationIssue || undefined}
@@ -164,9 +168,9 @@ export function AddedPensionLumpSumsEditor({
                   <span className="field-label">Repeat until</span>
                   {useDropdownDates ? (
                     <DateSelectField
-                      label={`${itemLabel} end date ${index + 1}`}
+                      label={`${accessibleOwnerPrefix}${itemLabel} end date ${index + 1}`}
                       value={lumpSum.endDate}
-                      idPrefix={`lump-sum-end-${lumpSum.id}`}
+                      idPrefix={`${idPrefix}lump-sum-end-${lumpSum.id}`}
                       yearRange={getLumpSumDateYearRange(
                         "end",
                         new Date().getUTCFullYear()
@@ -179,8 +183,8 @@ export function AddedPensionLumpSumsEditor({
                     />
                   ) : (
                     <input
-                      id={`lump-sum-end-${lumpSum.id}`}
-                      aria-label={`${itemLabel} end date ${index + 1}`}
+                      id={`${idPrefix}lump-sum-end-${lumpSum.id}`}
+                      aria-label={`${accessibleOwnerPrefix}${itemLabel} end date ${index + 1}`}
                       className="date-input"
                       type="date"
                       value={lumpSum.endDate}

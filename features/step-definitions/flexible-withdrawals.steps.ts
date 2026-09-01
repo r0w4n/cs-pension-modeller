@@ -16,7 +16,10 @@ import {
 import {
   getFlexibleWithdrawalNonPriorityAccounts,
   getFlexibleWithdrawalPriorityAccounts,
+  getHouseholdFlexibleWithdrawalNonPriorityAccounts,
+  getHouseholdFlexibleWithdrawalPriorityAccounts,
   reorderFlexibleWithdrawalAccounts,
+  shouldShowHouseholdFlexibleWithdrawalPriority,
   shouldShowFlexibleWithdrawalPriority,
   summarizeFlexibleWithdrawalInsights,
 } from "../../src/result-projection/flexible-withdrawals";
@@ -26,6 +29,7 @@ import {
 } from "../../src/projection";
 import {
   createDefaultAdditionalGuaranteedIncome,
+  createDefaultPartnerSettings,
   createDefaultSettings,
   getStoredSettingsSnapshot,
   parseStoredSettings,
@@ -183,6 +187,74 @@ Then(
   "the funding priority should remain available",
   function (this: FlexibleWithdrawalWorld) {
     assertCondition(shouldShowFlexibleWithdrawalPriority(getSettings(this)));
+  }
+);
+
+Given(
+  "joint retirement with Your SIPP and Partner ISA using other strategies",
+  function (this: FlexibleWithdrawalWorld) {
+    const settings = getSettings(this);
+    Object.assign(settings, {
+      showSipp: true,
+      showCsAvc: false,
+      showIsa: false,
+      showLisa: false,
+      sippWithdrawalStrategy: "use_by_age",
+      partner: {
+        ...createDefaultPartnerSettings(),
+        showSipp: false,
+        showCsAvc: false,
+        showIsa: true,
+        showLisa: false,
+        isaWithdrawalStrategy: "percentage",
+      },
+      jointRetirement: {
+        ...settings.jointRetirement,
+        enabled: true,
+        flexibleWithdrawalPriority: [],
+      },
+    });
+  }
+);
+
+Then(
+  "the household funding priority should remain available",
+  function (this: FlexibleWithdrawalWorld) {
+    assertCondition(
+      shouldShowHouseholdFlexibleWithdrawalPriority(getSettings(this))
+    );
+  }
+);
+
+Then(
+  "the household other-strategy accounts should include Your SIPP and Partner ISA",
+  function (this: FlexibleWithdrawalWorld) {
+    const accounts = getHouseholdFlexibleWithdrawalNonPriorityAccounts(
+      getSettings(this)
+    );
+    assertEqual(accounts.length, 2);
+    assertCondition(accounts.includes("you:sipp"));
+    assertCondition(accounts.includes("partner:isa"));
+  }
+);
+
+When(
+  "Partner ISA changes to the target-based strategy",
+  function (this: FlexibleWithdrawalWorld) {
+    const settings = getSettings(this);
+    assertCondition(settings.partner);
+    settings.partner.isaWithdrawalStrategy = "meet_income_target";
+  }
+);
+
+Then(
+  "the household target-based priority should include only Partner ISA",
+  function (this: FlexibleWithdrawalWorld) {
+    const accounts = getHouseholdFlexibleWithdrawalPriorityAccounts(
+      getSettings(this)
+    );
+    assertEqual(accounts.length, 1);
+    assertEqual(accounts[0], "partner:isa");
   }
 );
 

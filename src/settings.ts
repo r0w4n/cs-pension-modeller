@@ -17,6 +17,10 @@ export type {
   AlphaEpaYearsBeforeNpa,
   AdditionalGuaranteedIncome,
   AdditionalGuaranteedIncomeIndexation,
+  PersonId,
+  HouseholdFlexibleFundAccountId,
+  JointRetirementSettings,
+  PartnerSettings,
   FlexibleFundAccountId,
   FlexibleWithdrawalStrategy,
   SippWithdrawalStrategy,
@@ -49,6 +53,7 @@ export {
 export {
   defaultSettings,
   createDefaultSettings,
+  createDefaultPartnerSettings,
   getTodayIsoDate,
   formatLocalIsoDate,
   formatCurrency,
@@ -57,13 +62,18 @@ export {
 
 export {
   normalizeSetting,
+  normalizeSettings,
   normalizeStatePensionDrawDate,
   normalizeAlphaPensionDrawAge,
   normalizeSippDrawAge,
   normalizeStatePensionDrawAge,
 } from "./settings/settings-normalize";
 
-export { validateSettings } from "./settings/settings-validate";
+export {
+  validateSettings,
+  createPartnerCalculationSettings,
+  createPartnerIndividualSettings,
+} from "./settings/settings-validate";
 
 export {
   clearAllLocalStorageData,

@@ -1,6 +1,7 @@
 import {
   DEFAULT_ALPHA_ABS_YEAR,
   FLEXIBLE_FUND_ACCOUNT_IDS,
+  type PartnerSettings,
   type PensionSettings,
 } from "./settings-types";
 import {
@@ -27,6 +28,17 @@ import {
   calculateStatePensionDrawDateFromAge,
   normalizeSippDrawAge,
 } from "./settings-shared/state";
+
+const defaultJointRetirementSettings = {
+  enabled: false,
+  transitionDesiredRetirementIncome:
+    personalDetailsDefaults.desiredRetirementIncome,
+  fullyRetiredDesiredRetirementIncome:
+    personalDetailsDefaults.desiredRetirementIncome,
+  spendingStrategyType: "FLAT" as const,
+  spendingSmile: createDefaultSpendingSmile(),
+  flexibleWithdrawalPriority: [],
+};
 
 const DEFAULT_NORMAL_PENSION_AGE = 68;
 
@@ -182,6 +194,7 @@ export const defaultSettings: PensionSettings = {
   taxTrackLumpSumAllowance: taxDefaults.taxTrackLumpSumAllowance,
   taxLumpSumAllowance: taxDefaults.taxLumpSumAllowance,
   taxLumpSumAllowanceUsed: taxDefaults.taxLumpSumAllowanceUsed,
+  jointRetirement: defaultJointRetirementSettings,
 };
 
 export function createDefaultSettings(): PensionSettings {
@@ -195,6 +208,13 @@ export function createDefaultSettings(): PensionSettings {
   return {
     ...defaultSettings,
     spendingSmile: { ...defaultSettings.spendingSmile },
+    jointRetirement: {
+      ...defaultSettings.jointRetirement,
+      spendingSmile: { ...defaultSettings.jointRetirement.spendingSmile },
+      flexibleWithdrawalPriority: [
+        ...defaultSettings.jointRetirement.flexibleWithdrawalPriority,
+      ],
+    },
     normalPensionAge,
     requirementAge: normalPensionAge,
     alphaPensionLeaveAge: normalPensionAge,
@@ -216,6 +236,47 @@ export function createDefaultSettings(): PensionSettings {
       defaultSettings.dateOfBirth,
       statePensionDrawAge
     ),
+  };
+}
+
+/**
+ * Creates a second person without copying any of Your financial data.
+ *
+ * The common State Pension, SIPP and ISA sections start selected so their
+ * details are visible immediately. Their values, including the generic date
+ * default, remain the Partner's own defaults and need checking before relying
+ * on an illustration.
+ */
+export function createDefaultPartnerSettings(): PartnerSettings {
+  const defaults = createDefaultSettings();
+  const {
+    partner: _partner,
+    jointRetirement: _jointRetirement,
+    ...person
+  } = defaults;
+
+  return {
+    ...person,
+    fullSalary: defaultSettings.fullSalary,
+    showAlpha: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: true,
+    showSipp: true,
+    showCsAvc: false,
+    showIsa: true,
+    showLisa: false,
+    showAdditionalGuaranteedIncome: false,
+    partialRetirementEnabled: false,
+    additionalGuaranteedIncomes: [],
+    alphaEpaPeriods: [],
+    alphaAddedPensionLumpSums: [],
+    sippLumpSums: [],
+    csAvcLumpSums: [],
+    isaLumpSums: [],
+    lisaLumpSums: [],
   };
 }
 

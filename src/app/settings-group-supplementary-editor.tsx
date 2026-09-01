@@ -13,12 +13,18 @@ export function SettingsGroupSupplementaryEditor({
   validationIssues,
   onChange,
   useDropdownDates,
+  domIdPrefix,
+  ownerLabel,
+  showDescriptions = true,
 }: {
   groupId: string;
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   onChange: SettingsFieldOnChange;
   useDropdownDates: boolean;
+  domIdPrefix?: string;
+  ownerLabel?: string;
+  showDescriptions?: boolean;
 }) {
   if (groupId === "alpha") {
     return (
@@ -28,6 +34,9 @@ export function SettingsGroupSupplementaryEditor({
           defaultStartDate={settings.startDate}
           useDropdownDates={useDropdownDates}
           showFactorType
+          description={showDescriptions ? undefined : ""}
+          domIdPrefix={domIdPrefix}
+          ownerLabel={ownerLabel}
           validationIssues={getValidationIssuesForField(
             validationIssues,
             "alphaAddedPensionLumpSums"
@@ -44,6 +53,9 @@ export function SettingsGroupSupplementaryEditor({
               validationIssues,
               "alphaEpaPeriods"
             )}
+            domIdPrefix={domIdPrefix}
+            ownerLabel={ownerLabel}
+            showDescription={showDescriptions}
             onChange={(periods) => onChange("alphaEpaPeriods", periods)}
           />
         ) : null}
@@ -60,6 +72,9 @@ export function SettingsGroupSupplementaryEditor({
           validationIssues,
           "alphaEpaPeriods"
         )}
+        domIdPrefix={domIdPrefix}
+        ownerLabel={ownerLabel}
+        showDescription={showDescriptions}
         onChange={(periods) => onChange("alphaEpaPeriods", periods)}
       />
     );
@@ -72,11 +87,17 @@ export function SettingsGroupSupplementaryEditor({
         defaultStartDate={settings.startDate}
         useDropdownDates={useDropdownDates}
         title="SIPP lump sums"
-        description="Add one-off or yearly lump sum contributions. A yearly entry repeats on the same calendar date until its end date."
+        description={
+          showDescriptions
+            ? "Add one-off or yearly lump sum contributions. A yearly entry repeats on the same calendar date until its end date."
+            : ""
+        }
         emptyText="No SIPP lump sum contributions set up yet."
         itemLabel="SIPP lump sum"
         addButtonLabel="Add SIPP lump sum"
         removeButtonLabel="Remove SIPP lump sum"
+        domIdPrefix={domIdPrefix}
+        ownerLabel={ownerLabel}
         validationIssues={getValidationIssuesForField(
           validationIssues,
           "sippLumpSums"
@@ -93,11 +114,17 @@ export function SettingsGroupSupplementaryEditor({
         defaultStartDate={settings.startDate}
         useDropdownDates={useDropdownDates}
         title="CS AVC lump sums"
-        description="Add one-off or yearly lump sum CS AVC contributions. A yearly entry repeats on the same calendar date until its end date."
+        description={
+          showDescriptions
+            ? "Add one-off or yearly lump sum CS AVC contributions. A yearly entry repeats on the same calendar date until its end date."
+            : ""
+        }
         emptyText="No CS AVC lump sum contributions set up yet."
         itemLabel="CS AVC lump sum"
         addButtonLabel="Add CS AVC lump sum"
         removeButtonLabel="Remove CS AVC lump sum"
+        domIdPrefix={domIdPrefix}
+        ownerLabel={ownerLabel}
         validationIssues={getValidationIssuesForField(
           validationIssues,
           "csAvcLumpSums"
@@ -114,11 +141,17 @@ export function SettingsGroupSupplementaryEditor({
         defaultStartDate={settings.startDate}
         useDropdownDates={useDropdownDates}
         title="ISA lump sums"
-        description="Add one-off or yearly lump sum ISA contributions. A yearly entry repeats on the same calendar date until its end date."
+        description={
+          showDescriptions
+            ? "Add one-off or yearly lump sum ISA contributions. A yearly entry repeats on the same calendar date until its end date."
+            : ""
+        }
         emptyText="No ISA lump sum contributions set up yet."
         itemLabel="ISA lump sum"
         addButtonLabel="Add ISA lump sum"
         removeButtonLabel="Remove ISA lump sum"
+        domIdPrefix={domIdPrefix}
+        ownerLabel={ownerLabel}
         validationIssues={getValidationIssuesForField(
           validationIssues,
           "isaLumpSums"
@@ -137,6 +170,8 @@ export function SettingsGroupSupplementaryEditor({
           validationIssues,
           "additionalGuaranteedIncomes"
         )}
+        domIdPrefix={domIdPrefix}
+        ownerLabel={ownerLabel}
         onChange={(nextIncomes) => {
           if (!settings.showAdditionalGuaranteedIncome) {
             onChange("showAdditionalGuaranteedIncome", true);

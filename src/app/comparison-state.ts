@@ -231,15 +231,24 @@ export function buildComparisonPanelData({
   }));
   const matchingSavedResult =
     savedResults.find((result) => result.currentMatchesSaved) ?? null;
+  const comparisonModelType =
+    matchingSavedResult?.modelType ??
+    currentResult?.modelType ??
+    savedResults[0]?.modelType;
+  const compatibleSavedResults = comparisonModelType
+    ? savedResults.filter((result) => result.modelType === comparisonModelType)
+    : savedResults;
   const results = matchingSavedResult
-    ? savedResults
+    ? compatibleSavedResults
     : currentResult
-      ? [currentResult, ...savedResults]
-      : savedResults;
+      ? [currentResult, ...compatibleSavedResults]
+      : compatibleSavedResults;
   const activeResult =
     matchingSavedResult ?? currentResult ?? savedResults[0] ?? null;
-  const hasVisibleShortfall =
-    retirementIncomeSeries?.some((point) => point.shortfallAnnual > 0) ?? false;
+  const hasVisibleShortfall = currentResult?.household
+    ? !currentResult.household.assessment.meetsTargetThroughout
+    : (retirementIncomeSeries?.some((point) => point.shortfallAnnual > 0) ??
+      false);
 
   return {
     activeResult,
@@ -250,11 +259,15 @@ export function buildComparisonPanelData({
       : [],
     results,
     savedResults,
-    incomeAgeRangeItems: buildIncomeAgeRangeSummary(
-      activeResult,
-      retirementIncomeDisplay,
-      activeResult?.scenario.settings.retirementIncomeTargetBasis ?? "gross"
-    ),
+    incomeAgeRangeItems:
+      activeResult?.modelType === "household"
+        ? []
+        : buildIncomeAgeRangeSummary(
+            activeResult,
+            retirementIncomeDisplay,
+            activeResult?.scenario.settings.retirementIncomeTargetBasis ??
+              "gross"
+          ),
   };
 }
 

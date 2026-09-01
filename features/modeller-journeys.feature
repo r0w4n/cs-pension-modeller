@@ -130,6 +130,13 @@ Feature: Modeller journeys
     And the retirement outcome should explain that the target remains met without State Pension
     But the retirement outcome should not mention unused bridge withdrawals
 
+  @expert-journey @two-person @state-pension
+  Scenario: Attribute a material unconfirmed State Pension to the Partner
+    Given a household target that depends on Partner's unconfirmed State Pension
+    When the retirement outcome is assessed
+    Then the retirement outcome should be labelled "Needs checking"
+    And the retirement outcome should identify Partner's unconfirmed State Pension
+
   @simple-journey @optional-sections
   Scenario: Keep Added Pension out of the simplified journey
     When the "Simplified retirement journey" journey is loaded
@@ -233,6 +240,40 @@ Feature: Modeller journeys
     Then the expert optional sections should allow Alpha pension to be disabled
     When Alpha pension is disabled
     Then the "Alpha pension details" journey step should not be visible
+
+  @expert-journey @two-person @retirement-living-standards
+  Scenario: Keep two-person household spending quick-selects distinct from one-person amounts
+    Then the two-person Retirement Living Standards quick-selects should be:
+      | amount |
+      | 22500  |
+      | 45400  |
+      | 62700  |
+
+  @expert-journey @two-person @household-timing
+  Scenario: Treat retirement in the same calendar month as simultaneous
+    Given default modeller settings
+    And two people retire in the same calendar month
+    Then the household should not require a transition target
+    And the household target should start when both people retire
+
+  @expert-journey @two-person @settings-storage
+  Scenario: Preserve Partner supplementary schedules through storage and calculation
+    Given a two-person household with Partner supplementary schedules
+    When Partner household settings are exported and parsed
+    Then Partner supplementary schedules should be retained
+    And Partner additional guaranteed income should appear in the joint projection
+
+  @expert-journey @two-person @linked-defaults
+  Scenario: Preserve Partner draw-age overrides when their birth date changes
+    Given Partner has manually overridden SIPP and ISA draw ages
+    When Partner's birth date is changed using the shared field update
+    Then Partner's linked retirement defaults should update
+    But Partner's manually overridden draw ages should be retained
+
+  @expert-journey @two-person @validation
+  Scenario: Report the missing Partner birth date without derivative date noise
+    Given a two-person household without a Partner birth date
+    Then Partner validation should report only the primary birth-date issue
 
   @defaults
   Scenario: Bridge journey enables bridge pots and Income Tax by default

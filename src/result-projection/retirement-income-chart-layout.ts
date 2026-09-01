@@ -2,10 +2,20 @@ import * as d3 from "d3";
 import type { PensionValidationIssue } from "../settings";
 import type {
   RetirementIncomeChartParameters,
+  RetirementIncomeChartEvent,
   RetirementIncomeMilestone,
   RetirementIncomeMilestoneKey,
   RetirementIncomePoint,
+  RetirementIncomeChartSeriesDefinition,
 } from "./retirement-income-chart-model";
+
+export function getRetirementIncomeEventsForDate(
+  events: RetirementIncomeChartEvent[],
+  date: string
+) {
+  const month = date.slice(0, 7);
+  return events.filter((event) => event.date.slice(0, 7) === month);
+}
 
 export type IncomeKey =
   | "isaIncomeAnnual"
@@ -38,13 +48,13 @@ export const incomeKeys: IncomeKey[] = [
   "statePensionIncomeAnnual",
 ];
 
-type ChartIncomeSeriesDefinition = {
-  key: string;
-  label: string;
-  colour: string;
-  incomeKey?: IncomeKey;
-  additionalIncomeId?: string;
-};
+export type ChartIncomeSeriesDefinition =
+  RetirementIncomeChartSeriesDefinition & {
+    key: string;
+    incomeKey?: IncomeKey;
+    additionalIncomeId?: string;
+    customIncomeKey?: string;
+  };
 
 const additionalIncomeColours = [
   "#6d7d10",
@@ -120,6 +130,41 @@ export const sourceMeta: Record<
     colour: "#1d62d1",
   },
 };
+
+export function isRetirementIncomeSourceEnabled(
+  key: IncomeKey,
+  state: Pick<
+    RetirementIncomeChartParameters,
+    | "showAlpha"
+    | "showClassic"
+    | "showClassicPlus"
+    | "showCsAvc"
+    | "partialRetirementEnabled"
+    | "showIsa"
+    | "showLisa"
+    | "showNuvos"
+    | "showPremium"
+    | "showSipp"
+    | "showStatePension"
+  >
+) {
+  const enabledBySource: Record<IncomeKey, boolean> = {
+    alphaIncomeAnnual: state.showAlpha,
+    classicIncomeAnnual: state.showClassic,
+    classicPlusIncomeAnnual: state.showClassicPlus,
+    csAvcIncomeAnnual: state.showCsAvc,
+    isaIncomeAnnual: state.showIsa,
+    lisaIncomeAnnual: state.showLisa,
+    nuvosIncomeAnnual: state.showNuvos,
+    premiumIncomeAnnual: state.showPremium,
+    sippIncomeAnnual: state.showSipp,
+    partialRetirementIncomeAnnual: state.partialRetirementEnabled,
+    statePensionIncomeAnnual: state.showStatePension,
+    additionalGuaranteedIncomeAnnual: true,
+  };
+
+  return enabledBySource[key];
+}
 
 const DEFAULT_BUILD_UP_WINDOW_YEARS = 2.5;
 export const HANDLE_LABEL_WIDTH = 24;
@@ -517,14 +562,19 @@ function findPreviousChartPoint(data: RetirementIncomePoint[], age: number) {
 
 export function createChartIncomeSeriesDefinitions(
   keys: IncomeKey[],
-  data: RetirementIncomePoint[]
-) {
+  data: RetirementIncomePoint[],
+  customDefinitions: RetirementIncomeChartSeriesDefinition[] = []
+): ChartIncomeSeriesDefinition[] {
   return [
     ...keys.map((key) => ({
       key,
       label: sourceMeta[key].label,
       colour: sourceMeta[key].colour,
       incomeKey: key,
+    })),
+    ...customDefinitions.map((definition) => ({
+      ...definition,
+      customIncomeKey: definition.key,
     })),
     ...createAdditionalIncomeSeriesDefinitions(data),
   ];
@@ -590,6 +640,14 @@ export function getChartIncomeValue(
     );
   }
 
+  if (series.customIncomeKey) {
+    return (
+      point.incomeSeries?.find(
+        (candidate) => candidate.key === series.customIncomeKey
+      )?.annualAmount ?? 0
+    );
+  }
+
   return series.incomeKey ? point[series.incomeKey] : 0;
 }
 
@@ -634,9 +692,9 @@ export function hasActiveIncome(
 }
 
 export function createMarkerLayouts<
-  T extends MilestoneMarker & { layoutAge?: number },
+  T extends { key: string; age: number; layoutAge?: number },
 >(markers: T[], xScale: d3.ScaleLinear<number, number>, plotHeight: number) {
-  const rowByKey = new Map<MilestoneKey, number>();
+  const rowByKey = new Map<string, number>();
   const minimumGap = HANDLE_LABEL_WIDTH + 6;
   const rowRightEdges: number[] = [];
 
@@ -707,6 +765,64 @@ export function createWholeYearTicks(minAge: number, maxAge: number) {
     { length: lastTick - firstTick + 1 },
     (_, index) => firstTick + index
   );
+}
+
+export type RetirementIncomePerson = "you" | "partner";
+
+export type RetirementIncomePersonAgeAxisTick = {
+  age: number;
+  timelineValue: number;
+};
+
+/**
+ * Creates age ticks aligned to a shared calendar timeline. Household points
+ * carry each person's age so the axis remains correct when their birthdays
+ * and retirement dates differ.
+ */
+export function createPersonAgeAxisTicks(
+  data: RetirementIncomePoint[],
+  person: RetirementIncomePerson,
+  minTimeline: number,
+  maxTimeline: number,
+  tickCount: number
+): RetirementIncomePersonAgeAxisTick[] {
+  const samples = data
+    .flatMap((point) => {
+      const age = point.personAges?.[person];
+      const timelineValue = point.timelineValue;
+
+      return Number.isFinite(age) && Number.isFinite(timelineValue)
+        ? [{ age: age as number, timelineValue: timelineValue as number }]
+        : [];
+    })
+    .sort((left, right) => left.timelineValue - right.timelineValue);
+
+  const first = samples[0];
+  const last = samples.at(-1);
+
+  if (
+    !first ||
+    !last ||
+    first.timelineValue === last.timelineValue ||
+    first.age === last.age
+  ) {
+    return [];
+  }
+
+  const ageToTimeline = d3
+    .scaleLinear()
+    .domain([first.age, last.age])
+    .range([first.timelineValue, last.timelineValue]);
+  const firstAge = ageToTimeline.invert(minTimeline);
+  const lastAge = ageToTimeline.invert(maxTimeline);
+
+  return ageToTimeline
+    .ticks(tickCount)
+    .filter((age) => age >= firstAge && age <= lastAge)
+    .map((age) => ({
+      age,
+      timelineValue: ageToTimeline(age),
+    }));
 }
 
 const validationFieldMarkerKeys: Partial<

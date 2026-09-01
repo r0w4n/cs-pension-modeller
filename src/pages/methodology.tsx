@@ -232,6 +232,39 @@ export function MethodologyPage() {
           housing costs and personal circumstances can materially change the
           amount needed.
         </p>
+        <p className="section-copy">
+          In the Expert journey, optional two-person modelling uses household
+          after-estimated-Income-Tax targets rather than assigning a target to
+          either person. When retirement months differ, the household can use a
+          flat target from the first retirement until both people are retired,
+          followed by its fully-retired target.
+        </p>
+        <p className="section-copy">
+          The two-person target quick-selects use Pensions UK&apos;s Retirement
+          Living Standards published on 3 June 2026: £22,500 (Minimum), £45,400
+          (Moderate) and £62,700 (Comfortable). They are annual household
+          expenditure references, not income guarantees, and exclude housing
+          costs.
+        </p>
+        <p className="section-copy">
+          Joint Expert results use one editable Household Retirement Plan chart
+          on a calendar timeline. Its x-axis shows calendar dates with aligned
+          You and Partner age scales. It keeps each income source attributed to
+          You or Partner and uses the canonical household target, estimated
+          Income Tax, take-home income and shortfall. The underlying person
+          projections remain separate for their own accounts, withdrawal
+          strategies and tax treatment. The chart keeps the established target
+          and milestone interactions inline; contribution settings remain in
+          their existing journey fields instead of being repeated below the
+          chart.
+        </p>
+        <p className="section-copy">
+          To keep the household projection readable, owner-specific editable
+          milestones use short P1 (You) and P2 (Partner) labels in the familiar
+          chart-marker style. Calendar-period inspection and the chart&apos;s
+          accessible description retain the complete event names. This
+          presentation does not alter the underlying household calculation.
+        </p>
       </section>
 
       <section>
@@ -786,6 +819,13 @@ export function MethodologyPage() {
           out.
         </p>
         <p className="section-copy">
+          In a two-person plan, this check is applied to each person&apos;s
+          unconfirmed State Pension separately. The household result removes all
+          unconfirmed amounts together to test whether the shared target still
+          appears to be met, while the caution identifies whether the assumption
+          belongs to You, Partner, or both.
+        </p>
+        <p className="section-copy">
           State Pension income starts from the selected State Pension draw date.
           If the draw date is later than the default State Pension age, the
           model applies deferral uplift.
@@ -1031,6 +1071,11 @@ export function MethodologyPage() {
           assumptions, not a conclusion that the remaining balance is unwanted
           or that contributions should be reduced.
         </p>
+        <p className="section-copy">
+          In two-person modelling, this check is applied separately to each
+          person&apos;s target-based accounts using that person&apos;s remaining
+          pot at their selected planning horizon.
+        </p>
       </section>
 
       <section>
@@ -1057,6 +1102,11 @@ export function MethodologyPage() {
           create separate standards or monetary targets for individual phases.
           These values are annual expenditure benchmarks rather than gross
           income figures and exclude rent and mortgage costs.
+        </p>
+        <p className="section-copy">
+          In a two-person plan, the transition target remains flat. Go-Go starts
+          when both people are retired, while Slow-Go and No-Go use the later
+          retiree&apos;s configured ages and resolve them to calendar months.
         </p>
       </section>
 
@@ -1166,6 +1216,15 @@ export function MethodologyPage() {
           State Pension, or the current ISA and SIPP balances already entered.
           It changes future accrual and regular saving assumptions from the
           selected start age.
+        </p>
+        <p className="section-copy">
+          In a two-person Expert plan, partial retirement is configured per
+          person. When one person has fully retired, the other person&apos;s
+          modelled employment income contributes to household income and their
+          own Income Tax estimate. Full salary applies before that person&apos;s
+          partial-retirement start and reduced salary applies afterwards. Salary
+          already shown as household cash income is not added again as tax-rate
+          context. National Insurance is not modelled.
         </p>
         <p className="section-copy">
           Under the Alpha scheme rules, partial retirement also requires
@@ -1372,6 +1431,19 @@ export function MethodologyPage() {
           These metrics are intended to make scenarios easier to compare. They
           are not a ranking, recommendation, or statement that one option is the
           best choice.
+        </p>
+        <p className="section-copy">
+          A two-person saved scenario is a complete household snapshot,
+          including dormant Partner data. The model does not calculate survivor
+          pensions, inheritance or asset transfers when one planning horizon is
+          reached, and it does not automatically reduce the household target at
+          that point.
+        </p>
+        <p className="section-copy">
+          Comparisons are kept within the same model type. Two-person scenarios
+          use their coordinated household target, assessment, timing and
+          flexible-fund metrics; a saved scenario from the other model type is
+          not silently combined into that table and remains available to load.
         </p>
       </section>
     </StaticPageLayout>

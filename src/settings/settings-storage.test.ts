@@ -16,7 +16,10 @@ import {
   LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
 } from "./settings-types";
-import { createDefaultSettings } from "./settings-defaults";
+import {
+  createDefaultPartnerSettings,
+  createDefaultSettings,
+} from "./settings-defaults";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
 
 describe("settings-storage", () => {
@@ -101,6 +104,61 @@ describe("settings-storage", () => {
       "csAvc",
       "lisa",
     ]);
+  });
+
+  it("persists Partner settings and household targets without accepting nested partners", () => {
+    const defaults = createDefaultSettings();
+    const settings = {
+      ...defaults,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1980-06-15",
+        sippCurrentPot: 42_000,
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 35_000,
+        fullyRetiredDesiredRetirementIncome: 45_000,
+        flexibleWithdrawalPriority: ["partner:sipp" as const],
+      },
+    };
+
+    saveSettings(settings);
+
+    const loaded = loadStoredSettings();
+    expect(loaded.partner?.dateOfBirth).toBe("1980-06-15");
+    expect(loaded.partner?.sippCurrentPot).toBe(42_000);
+    expect(loaded.jointRetirement.enabled).toBe(true);
+    expect(loaded.jointRetirement.fullyRetiredDesiredRetirementIncome).toBe(
+      45_000
+    );
+    expect(loaded.jointRetirement.flexibleWithdrawalPriority).toEqual([
+      "partner:sipp",
+    ]);
+
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: SETTINGS_SCHEMA_VERSION,
+        data: {
+          journeys: {
+            expert: {
+              partner: {
+                dateOfBirth: "1980-06-15",
+                partner: {
+                  partner: { partner: {} },
+                },
+              },
+            },
+          },
+        },
+      })
+    );
+    expect(() => loadStoredSettings()).not.toThrow();
+    const loadedMalformedPartner =
+      loadStoredSettingsByJourney().settings.expert.partner;
+    expect(loadedMalformedPartner).toBeUndefined();
   });
 
   it("saves independent settings for all three journeys in one envelope", () => {

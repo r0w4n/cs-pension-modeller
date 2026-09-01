@@ -599,7 +599,7 @@ function renderProjectionTableCell(
   }
 }
 
-function ProjectionDateCell({
+export function ProjectionDateCell({
   date,
   milestones,
   milestoneDates,

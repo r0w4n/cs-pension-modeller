@@ -52,6 +52,7 @@ Feature: Joint retirement results chart
     Given a household chart with owner-attributed flexible withdrawals
     When the joint household results are projected
     Then the household chart should expose You and Partner contribution controls
+    And household editable milestones should retain the named person's age
 
   Scenario: Group owner-attributed household events for inspection
     Given a staggered two-person household

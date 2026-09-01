@@ -10314,11 +10314,16 @@ export const acceptanceFeatures = [
             keyword: "Then",
             text: "the household chart should expose You and Partner contribution controls",
           },
+          {
+            id: "line-55",
+            keyword: "And",
+            text: "household editable milestones should retain the named person's age",
+          },
         ],
         examples: [],
       },
       {
-        id: "line-56",
+        id: "line-57",
         keyword: "Scenario",
         name: "Group owner-attributed household events for inspection",
         description: "",
@@ -10327,22 +10332,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-57",
+            id: "line-58",
             keyword: "Given",
             text: "a staggered two-person household",
           },
           {
-            id: "line-58",
+            id: "line-59",
             keyword: "When",
             text: "household chart events are projected",
           },
           {
-            id: "line-59",
+            id: "line-60",
             keyword: "Then",
             text: "household chart events should retain You and Partner ownership",
           },
           {
-            id: "line-60",
+            id: "line-61",
             keyword: "And",
             text: "simultaneous household events should be grouped by calendar month",
           },

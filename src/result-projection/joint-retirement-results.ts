@@ -237,6 +237,7 @@ function createHouseholdEditableMilestones(
           label: `${ownerLabel}: ${milestone.label}`,
           shortLabel: `${owner === "you" ? "P1" : "P2"} ${milestone.shortLabel}`,
           timelineValue: ageToCalendarTimeline(bundle.settings, milestone.age),
+          age: milestone.age,
           colour: milestone.colour,
           owner,
           sourceType: milestone.sourceType,

@@ -609,6 +609,111 @@ describe("RetirementIncomeChart", () => {
     ).toBeGreaterThan(0);
   });
 
+  it.each([
+    { owner: "you" as const, label: "You", age: 60 },
+    { owner: "partner" as const, label: "Partner", age: 58 },
+  ])(
+    "shows the named person's age beside the $label axis while dragging a household marker",
+    ({ owner, label, age }) => {
+      mockChartResize(960, 530);
+      renderChart({
+        interactionMode: "editable-household",
+        timelineMode: "calendar",
+        retirementAge: 2040,
+        showAlpha: false,
+        showStatePension: false,
+        data: [
+          {
+            ...basePoint,
+            date: "2030-01-01",
+            age: 2030,
+            timelineValue: 2030,
+            personAges: { you: 50, partner: 48 },
+          },
+          {
+            ...basePoint,
+            date: "2050-01-01",
+            age: 2050,
+            timelineValue: 2050,
+            personAges: { you: 70, partner: 68 },
+          },
+        ],
+        editableMilestones: [
+          {
+            key: `${owner}:retirementAge`,
+            label: `${label}: Retire`,
+            shortLabel: `${owner === "you" ? "P1" : "P2"} Retire`,
+            timelineValue: 2040,
+            age,
+            colour: "#0f6f72",
+            owner,
+            sourceType: "retirement",
+            limit: { min: 2038, max: 2042, step: 0.25 },
+          },
+        ],
+        onChangeEditableMilestone: vi.fn(),
+      });
+      const svg = document.querySelector(".retirement-income-chart-svg");
+
+      if (!(svg instanceof SVGSVGElement)) {
+        throw new Error("Expected retirement income chart SVG to be rendered");
+      }
+
+      Object.defineProperty(svg, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({
+          bottom: 530,
+          height: 530,
+          left: 0,
+          right: 960,
+          top: 0,
+          width: 960,
+          x: 0,
+          y: 0,
+          toJSON: () => "",
+        }),
+      });
+
+      const marker = screen.getByRole("slider", { name: `${label}: Retire` });
+      const markerX = Number(marker.querySelector("line")?.getAttribute("x1"));
+      fireEvent.pointerDown(marker, {
+        button: 0,
+        clientX: markerX + 78,
+        clientY: 150,
+        isPrimary: true,
+        pointerId: 1,
+        pointerType: "mouse",
+      });
+      fireEvent.pointerMove(marker, {
+        clientX: markerX + 78 + ((960 - 78 - 28) / 20) * 0.25,
+        clientY: 150,
+        pointerId: 1,
+      });
+
+      const dragAgeLabel = document.querySelector(
+        `.retirement-income-drag-age[data-owner="${owner}"]`
+      );
+      const ownerAxisY = Number(
+        screen
+          .getByTestId(`retirement-income-${owner}-age-axis`)
+          .querySelector(".retirement-income-axis")
+          ?.getAttribute("y1")
+      );
+      const dragLabelY = Number(
+        dragAgeLabel?.getAttribute("transform")?.match(/,([^)]*)\)$/)?.[1]
+      );
+
+      expect(dragAgeLabel).toHaveTextContent(`${age}y 3m`);
+      expect(dragLabelY).toBe(ownerAxisY + 18);
+
+      fireEvent.pointerUp(marker, {
+        clientX: markerX + 78,
+        clientY: 150,
+        pointerId: 1,
+      });
+    }
+  );
+
   it("renders calendar dates above a single Age axis for a personal timeline", () => {
     renderChart({
       timelineMode: "calendar-age",

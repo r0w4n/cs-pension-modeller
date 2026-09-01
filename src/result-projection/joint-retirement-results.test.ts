@@ -101,6 +101,16 @@ describe("projectJointRetirementResults", () => {
 
     expect(point?.personAges?.you).toBeCloseTo(60, 6);
     expect(point?.personAges?.partner).toBeCloseTo(50, 6);
+    expect(
+      result.editableMilestones.find(
+        (milestone) => milestone.key === "you:retirementAge"
+      )?.age
+    ).toBe(60);
+    expect(
+      result.editableMilestones.find(
+        (milestone) => milestone.key === "partner:retirementAge"
+      )?.age
+    ).toBe(60);
   });
 
   it("groups nominal targets by real household phase rather than monthly inflation", () => {

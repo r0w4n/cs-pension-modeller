@@ -958,6 +958,33 @@ export function RetirementIncomeChart({
       : visibleMilestoneMarkers.find(
           (marker) => marker.key === activeMarkerDragKey
         );
+  const draggingEditableMilestone =
+    activeEditableMilestoneKey === null
+      ? undefined
+      : editableMilestones.find(
+          (marker) => marker.key === activeEditableMilestoneKey
+        );
+  const draggingEditableTimelineValue = draggingEditableMilestone
+    ? (editableMilestoneDrafts[draggingEditableMilestone.key] ??
+      draggingEditableMilestone.timelineValue)
+    : undefined;
+  const dragAgeIndicator = draggingMobileMarker
+    ? {
+        age: draggingMobileMarker.age,
+        plotValue: draggingMobileMarker.plotAge,
+        y: plotHeight + 18,
+      }
+    : draggingEditableMilestone && draggingEditableTimelineValue !== undefined
+      ? {
+          age:
+            draggingEditableMilestone.age +
+            draggingEditableTimelineValue -
+            draggingEditableMilestone.timelineValue,
+          plotValue: draggingEditableTimelineValue,
+          y:
+            plotHeight + (draggingEditableMilestone.owner === "you" ? 62 : 100),
+        }
+      : undefined;
   const effectiveSelectedMobileMarkerKey = visibleMilestoneMarkers.some(
     (marker) => marker.key === selectedMobileMarkerKey
   )
@@ -2823,14 +2850,15 @@ export function RetirementIncomeChart({
                 xScale={xScale}
               />
             ) : null}
-            {draggingMobileMarker ? (
+            {dragAgeIndicator ? (
               <g
                 className="retirement-income-drag-age"
+                data-owner={draggingEditableMilestone?.owner}
                 transform={`translate(${clampNumber(
-                  xScale(draggingMobileMarker.plotAge),
+                  xScale(dragAgeIndicator.plotValue),
                   DRAG_AGE_LABEL_WIDTH / 2,
                   plotWidth - DRAG_AGE_LABEL_WIDTH / 2
-                )},${plotHeight + 18})`}
+                )},${dragAgeIndicator.y})`}
               >
                 <rect
                   x={-DRAG_AGE_LABEL_WIDTH / 2}
@@ -2840,7 +2868,7 @@ export function RetirementIncomeChart({
                   rx={6}
                 />
                 <text y="0.12em" textAnchor="middle">
-                  {formatAgeValue(draggingMobileMarker.age)}
+                  {formatAgeValue(dragAgeIndicator.age)}
                 </text>
               </g>
             ) : null}

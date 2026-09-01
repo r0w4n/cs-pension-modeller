@@ -2641,6 +2641,26 @@ Then(
 );
 
 Then(
+  "household editable milestones should retain the named person's age",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.jointResultsProjection,
+      "Expected projected household results"
+    );
+    assertCondition(
+      this.jointResultsProjection.editableMilestones.length > 0,
+      "Expected household editable milestones"
+    );
+    assertCondition(
+      this.jointResultsProjection.editableMilestones.every((milestone) =>
+        Number.isFinite(milestone.age)
+      ),
+      "Expected every household editable milestone to retain its person's age"
+    );
+  }
+);
+
+Then(
   "the joint result should have one household retirement month",
   function (this: ProductAcceptanceWorld) {
     assertCondition(this.jointProjection, "Expected a joint projection");

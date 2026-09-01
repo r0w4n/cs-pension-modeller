@@ -77,6 +77,8 @@ export type RetirementIncomeChartStaticMilestone = {
  */
 export type RetirementIncomeChartEditableMilestone =
   RetirementIncomeChartStaticMilestone & {
+    /** The named person's age at the marker's projected timeline position. */
+    age: number;
     limit: ChartNumberLimit;
     owner: "you" | "partner";
     sourceType: string;

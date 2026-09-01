@@ -349,6 +349,34 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       page.getByRole("slider", { name: "Partner: Retire" })
     ).toBeVisible();
+    const yourRetirementMarker = householdChart.getByRole("slider", {
+      name: "You: Retire",
+    });
+    const yourRetirementMarkerBox = await yourRetirementMarker
+      .locator(".retirement-income-milestone-handle")
+      .boundingBox();
+    expect(yourRetirementMarkerBox).not.toBeNull();
+    const yourRetirementPointer = {
+      button: 0,
+      clientX: yourRetirementMarkerBox!.x + yourRetirementMarkerBox!.width / 2,
+      clientY: yourRetirementMarkerBox!.y + yourRetirementMarkerBox!.height / 2,
+      isPrimary: true,
+      pointerId: 1,
+      pointerType: "mouse",
+    };
+    await yourRetirementMarker.dispatchEvent(
+      "pointerdown",
+      yourRetirementPointer
+    );
+    const yourDragAge = householdChart.locator(
+      '.retirement-income-drag-age[data-owner="you"]'
+    );
+    await expect(yourDragAge).toBeVisible();
+    await expect(yourDragAge).toContainText(/\d/);
+    await yourRetirementMarker.dispatchEvent("pointerup", {
+      ...yourRetirementPointer,
+      buttons: 0,
+    });
     await expect(
       householdChart.getByRole("group", {
         name: "Household chart contribution controls",

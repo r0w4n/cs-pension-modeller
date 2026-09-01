@@ -8,6 +8,7 @@ import {
   type PensionSettings,
 } from "./settings";
 import { knowledgeLinks } from "./knowledgeLinks";
+import { ONE_PERSON_RETIREMENT_LIVING_STANDARDS } from "./data/retirement-living-standards";
 
 const FLEXIBLE_WITHDRAWAL_STRATEGY_DESCRIPTION =
   "Choose a fixed drawdown instruction, or withdraw only what is needed to help meet your annual retirement income target after higher-priority accounts.";
@@ -265,14 +266,7 @@ export const fieldGroups: FieldGroup[] = [
         max: 200000,
         step: 1,
         format: "currency",
-        presets: [
-          { value: 11250, label: "£11,250" },
-          { value: 13900, label: "£13,900" },
-          { value: 22700, label: "£22,700" },
-          { value: 31350, label: "£31,350" },
-          { value: 32700, label: "£32,700" },
-          { value: 45400, label: "£45,400" },
-        ],
+        presets: [...ONE_PERSON_RETIREMENT_LIVING_STANDARDS.annualExpenditure],
         description:
           "How much would you like to have available to spend each year in retirement, after tax?",
         infoUrl: knowledgeLinks.retirementLivingStandards,

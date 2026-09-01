@@ -1819,6 +1819,10 @@ Then(
       JSON.stringify(targetField.presets?.map((preset) => preset.value)),
       JSON.stringify(table.hashes().map((row) => Number(row.amount)))
     );
+    assertEqual(
+      JSON.stringify(targetField.presets?.map((preset) => preset.label)),
+      JSON.stringify(table.hashes().map((row) => row.label))
+    );
   }
 );
 

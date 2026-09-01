@@ -209,6 +209,10 @@ Some important assumptions and simplifications are:
   projection continues to the later
   planning horizon, but does not model survivor pensions, inheritance, asset
   transfers, or an automatic spending reduction after the first horizon.
+  One-person target quick-selects use Pensions UK&apos;s 3 June 2026 annual
+  Retirement Living Standards expenditure references (£13,900 Minimum,
+  £32,700 Moderate and £45,400 Comfortable); they exclude housing costs and
+  are not personal income recommendations.
   Two-person target quick-selects use Pensions UK&apos;s 3 June 2026 annual
   Retirement Living Standards expenditure references (£22,500 Minimum,
   £45,400 Moderate and £62,700 Comfortable); they exclude housing costs and

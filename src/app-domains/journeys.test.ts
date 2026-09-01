@@ -100,12 +100,11 @@ describe("journey definitions", () => {
     );
     expect(
       targetField?.type === "currency-input" ? targetField.presets : []
-    ).toEqual(
-      [11250, 13900, 22700, 31350, 32700, 45400].map((value) => ({
-        value,
-        label: `£${value.toLocaleString("en-GB")}`,
-      }))
-    );
+    ).toEqual([
+      { value: 13900, label: "Minimum £13,900" },
+      { value: 32700, label: "Moderate £32,700" },
+      { value: 45400, label: "Comfortable £45,400" },
+    ]);
     expect(OPTIONAL_SECTION_TOGGLES.map((toggle) => toggle.key)).not.toContain(
       "taxationEnabled"
     );

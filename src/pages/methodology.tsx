@@ -244,6 +244,12 @@ export function MethodologyPage() {
           followed by its fully-retired target.
         </p>
         <p className="section-copy">
+          The one-person target quick-selects use Pensions UK&apos;s Retirement
+          Living Standards published on 3 June 2026: £13,900 (Minimum), £32,700
+          (Moderate) and £45,400 (Comfortable). They are annual expenditure
+          references, not income guarantees, and exclude housing costs.
+        </p>
+        <p className="section-copy">
           The two-person target quick-selects use Pensions UK&apos;s Retirement
           Living Standards published on 3 June 2026: £22,500 (Minimum), £45,400
           (Moderate) and £62,700 (Comfortable). They are annual household

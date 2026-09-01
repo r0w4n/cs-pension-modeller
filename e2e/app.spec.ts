@@ -938,16 +938,13 @@ test.describe("app end-to-end journeys", () => {
       })
     ).toHaveCount(0);
     for (const amount of [
-      "£11,250",
-      "£13,900",
-      "£22,700",
-      "£31,350",
-      "£32,700",
-      "£45,400",
+      "Minimum £13,900",
+      "Moderate £32,700",
+      "Comfortable £45,400",
     ]) {
       await expect(page.getByRole("button", { name: amount })).toBeVisible();
     }
-    await page.getByRole("button", { name: "£45,400" }).click();
+    await page.getByRole("button", { name: "Comfortable £45,400" }).click();
 
     await fillCurrency(page, "After-tax income target", "45400");
 

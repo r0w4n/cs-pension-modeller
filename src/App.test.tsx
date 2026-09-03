@@ -2414,8 +2414,10 @@ describe("App settings form", () => {
     const alphaAbsSelect = screen.getByLabelText(
       "Last Annual Benefits Statement"
     );
-    expect(alphaAbsSelect).toHaveValue("2025");
-    expect(alphaAbsSelect).toHaveDisplayValue("2024/2025");
+    expect(alphaAbsSelect).toHaveValue(defaultSettings.alphaPensionAbsDate);
+    expect(alphaAbsSelect).toHaveDisplayValue(
+      `${Number(defaultSettings.alphaPensionAbsDate) - 1}/${defaultSettings.alphaPensionAbsDate}`
+    );
     expect(
       screen.queryByLabelText("Apply Alpha pension increases")
     ).not.toBeInTheDocument();

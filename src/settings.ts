@@ -53,6 +53,7 @@ export {
 export {
   defaultSettings,
   createDefaultSettings,
+  getDefaultStatementYear,
   createDefaultPartnerSettings,
   getTodayIsoDate,
   formatLocalIsoDate,

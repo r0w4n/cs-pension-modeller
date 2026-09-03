@@ -13,6 +13,7 @@ import {
   createDefaultSettings,
   defaultSettings,
   formatLocalIsoDate,
+  getDefaultStatementYear,
   getTodayIsoDate,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   LISA_MONTHLY_CONTRIBUTION_MAX,
@@ -213,6 +214,14 @@ function readStoredSettingsPayload() {
 }
 
 describe("settings unit tests", () => {
+  it("uses the current scheme year from August and the previous one before then", () => {
+    expect(
+      getDefaultStatementYear({ getFullYear: () => 2026, getMonth: () => 6 })
+    ).toBe("2025");
+    expect(
+      getDefaultStatementYear({ getFullYear: () => 2026, getMonth: () => 7 })
+    ).toBe("2026");
+  });
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-25T12:00:00Z"));
@@ -286,6 +295,8 @@ describe("settings unit tests", () => {
     expect(normalizeSetting("lisaMonthlyContribution", 5000)).toBe(
       LISA_MONTHLY_CONTRIBUTION_MAX
     );
+    expect(normalizeSetting("sippMonthlyContribution", 5000)).toBe(3000);
+    expect(normalizeSetting("isaMonthlyContribution", 5000)).toBe(3000);
     expect(normalizeSetting("pensionableEarnings", 56321)).toBe(56321);
     expect(normalizeSetting("accruedPensionAtLastAbs", 12444.4)).toBe(12444);
     expect(normalizeSetting("alphaPensionLeaveAge", 20)).toBe(20);

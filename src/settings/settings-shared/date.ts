@@ -2,6 +2,13 @@ export function getTodayIsoDate() {
   return formatLocalIsoDate(new Date());
 }
 
+export function getDefaultStatementYear(
+  date: Pick<Date, "getFullYear" | "getMonth"> = new Date()
+) {
+  const year = date.getFullYear();
+  return String(date.getMonth() >= 7 ? year : year - 1);
+}
+
 export function formatLocalIsoDate(
   date: Pick<Date, "getFullYear" | "getMonth" | "getDate">
 ) {

@@ -1,5 +1,4 @@
 import {
-  DEFAULT_ALPHA_ABS_YEAR,
   FLEXIBLE_FUND_ACCOUNT_IDS,
   type PartnerSettings,
   type PensionSettings,
@@ -19,6 +18,7 @@ import { statePensionDefaults } from "./settings-domains/state-pension";
 import { taxDefaults } from "./settings-domains/tax";
 import {
   formatLocalIsoDate,
+  getDefaultStatementYear,
   getTodayIsoDate,
   isValidIsoDate,
 } from "./settings-shared/date";
@@ -88,7 +88,7 @@ export const defaultSettings: PensionSettings = {
     statePensionDefaults.statePensionWageGrowthPercent,
   applyPensionIncreases: true,
   assumedCpiPercent: 0,
-  alphaPensionAbsDate: DEFAULT_ALPHA_ABS_YEAR,
+  alphaPensionAbsDate: getDefaultStatementYear(),
   alphaAddedPensionMonthly: 0,
   alphaAddedPensionFactorType: "self",
   alphaPensionLeaveAge: personalDetailsDefaults.requirementAge,
@@ -128,7 +128,7 @@ export const defaultSettings: PensionSettings = {
   classicPlusPensionDrawAge: classicDefaults.classicPlusPensionDrawAge,
   classicPlusApplyPensionIncreases:
     classicDefaults.classicPlusApplyPensionIncreases,
-  nuvosPensionAbsDate: nuvosDefaults.nuvosPensionAbsDate,
+  nuvosPensionAbsDate: getDefaultStatementYear(),
   nuvosAccruedPensionAtLastAbs: nuvosDefaults.nuvosAccruedPensionAtLastAbs,
   nuvosPensionableEarnings: nuvosDefaults.nuvosPensionableEarnings,
   nuvosPensionLeaveAge: nuvosDefaults.nuvosPensionLeaveAge,
@@ -289,4 +289,9 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
-export { getTodayIsoDate, formatLocalIsoDate, isValidIsoDate };
+export {
+  getDefaultStatementYear,
+  getTodayIsoDate,
+  formatLocalIsoDate,
+  isValidIsoDate,
+};

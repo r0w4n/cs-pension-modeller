@@ -5,6 +5,7 @@ type AnalyticsEventParameters = Record<
 
 type GtagCommand =
   | ["consent", "default", AnalyticsEventParameters]
+  | ["consent", "update", AnalyticsEventParameters]
   | ["js", Date]
   | ["config", string, AnalyticsEventParameters]
   | ["event", string, AnalyticsEventParameters];
@@ -76,6 +77,31 @@ export function initialiseAnalytics() {
     )}`;
     document.head.appendChild(script);
   }
+}
+
+export function disableAnalytics() {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return;
+  }
+
+  const script = document.getElementById(GA_SCRIPT_ID);
+
+  if (!window.gtag && !script) {
+    return;
+  }
+
+  if (window.gtag) {
+    window.gtag("consent", "update", {
+      ad_personalization: "denied",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      analytics_storage: "denied",
+    });
+  }
+
+  delete window.gtag;
+  delete window.dataLayer;
+  script?.remove();
 }
 
 export function trackPageView(path?: string) {

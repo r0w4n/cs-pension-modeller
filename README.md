@@ -351,12 +351,14 @@ the retirement-income chart built from that canonical projection.
 
 By default, the modeller persists inputs and a few UI preferences using
 `window.localStorage` on the same device/browser. The Settings page lets users
-turn local saving off, export parameters to JSON, load a parameter JSON file, or
-reset parameters to defaults.
+turn local saving off, manage analytics consent, export parameters to JSON,
+load a parameter JSON file, or reset parameters to defaults.
 
 When local saving is turned off, saved modeller data is removed from browser
 storage and future automatic saves are skipped. The app keeps only the local
-saving preference so the browser can remember that saving is off.
+saving preference so the browser can remember that saving is off. Analytics are
+not initialised unless the user accepts them in the start dialog or turns them
+on later in Settings, and the choice can be changed afterwards.
 
 Keys currently used:
 

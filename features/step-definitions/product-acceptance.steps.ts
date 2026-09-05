@@ -23,10 +23,12 @@ import {
 } from "../../src/result-projection/comparison-result";
 import {
   loadAcknowledgementState,
+  loadAnalyticsConsentState,
   loadStoredAppMode,
   loadStoredComparisonRetirementIncomeDisplay,
   loadStoredGuidanceNotes,
   loadStoredJourneyRetirementIncomeDisplay,
+  saveAnalyticsConsentState,
   saveAcknowledgementState,
   saveStoredComparisonRetirementIncomeDisplay,
   saveStoredJourneyRetirementIncomeDisplay,
@@ -137,6 +139,7 @@ type ProductAcceptanceWorld = {
   comparisonRows?: ComparisonTableRow[];
   selectedJourney?: JourneyDefinition;
   acknowledgementLoaded?: boolean;
+  analyticsConsentLoaded?: boolean;
   appModeLoaded?: ReturnType<typeof loadStoredAppMode>;
   guidanceNotesLoaded?: boolean;
   journeySettings?: PensionSettingsByJourney;
@@ -3573,6 +3576,10 @@ When("the important information notice is acknowledged", function () {
   saveAcknowledgementState();
 });
 
+When("analytics consent is saved as {string}", function (consent: string) {
+  saveAnalyticsConsentState(consent === "accepted");
+});
+
 When(
   "the journey retirement income display is saved as {string}",
   function (display: RetirementIncomeDisplay) {
@@ -3591,6 +3598,7 @@ When(
   "the stored modeller preferences are loaded",
   function (this: ProductAcceptanceWorld) {
     this.acknowledgementLoaded = loadAcknowledgementState();
+    this.analyticsConsentLoaded = loadAnalyticsConsentState();
     this.appModeLoaded = loadStoredAppMode();
     this.guidanceNotesLoaded = loadStoredGuidanceNotes();
   }
@@ -3598,6 +3606,10 @@ When(
 
 Then("the acknowledgement should be remembered locally", function () {
   assertEqual(loadAcknowledgementState(), true);
+});
+
+Then("analytics consent should load as {string}", function (consent: string) {
+  assertEqual(loadAnalyticsConsentState(), consent === "accepted");
 });
 
 Then(
@@ -3618,6 +3630,13 @@ Then(
   "no previous acknowledgement should be loaded",
   function (this: ProductAcceptanceWorld) {
     assertEqual(this.acknowledgementLoaded, false);
+  }
+);
+
+Then(
+  "no previous analytics consent should be loaded",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(this.analyticsConsentLoaded, false);
   }
 );
 

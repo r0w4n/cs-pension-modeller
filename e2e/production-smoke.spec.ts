@@ -9,7 +9,9 @@ test.describe("production build smoke checks", () => {
     await expect(
       page.getByRole("dialog", { name: "Important information" })
     ).toBeVisible();
-    await page.getByRole("button", { name: "I understand" }).click();
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Choose the level of detail" })
     ).toBeVisible();

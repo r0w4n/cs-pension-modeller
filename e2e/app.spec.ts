@@ -10,7 +10,9 @@ test.describe("app end-to-end journeys", () => {
       name: "Important information",
     });
     await expect(acknowledgement).toBeVisible();
-    await page.getByRole("button", { name: "I understand" }).click();
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
     await expect(acknowledgement).toBeHidden();
 
     await expect(
@@ -875,7 +877,9 @@ test.describe("app end-to-end journeys", () => {
 
   test("opens the footer information pages", async ({ page }) => {
     await startFirstRun(page);
-    await page.getByRole("button", { name: "I understand" }).click();
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Choose the level of detail" })
     ).toBeVisible();
@@ -1557,7 +1561,9 @@ async function acknowledgeAndOpenMode(
   mode: "simple" | "bridge" | "expert"
 ) {
   await startFirstRun(page);
-  await page.getByRole("button", { name: "I understand" }).click();
+  await page
+    .getByRole("button", { name: "Accept analytics and continue" })
+    .click();
 
   if (mode === "simple") {
     await page

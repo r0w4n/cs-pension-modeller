@@ -2,11 +2,13 @@ import { saveLocalStoragePreference } from "../settings";
 import {
   APP_MODE_STORAGE_KEY,
   clearStoredAppPreferences,
+  loadAnalyticsConsentState,
   loadAcknowledgementState,
   loadStoredComparisonRetirementIncomeDisplay,
   loadStoredAppMode,
   loadStoredGuidanceNotes,
   loadStoredJourneyRetirementIncomeDisplay,
+  saveAnalyticsConsentState,
   saveAcknowledgementState,
   saveStoredComparisonRetirementIncomeDisplay,
   saveStoredAppMode,
@@ -15,6 +17,7 @@ import {
 } from "./app-persistence";
 
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
+const ANALYTICS_CONSENT_STORAGE_KEY = "cs-pension-modeller.analyticsConsent";
 const GUIDANCE_NOTES_STORAGE_KEY = "cs-pension-modeller.guidanceNotes";
 const LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.retirementIncomeDisplay";
@@ -36,6 +39,24 @@ describe("app persistence", () => {
 
     expect(window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY)).toBe("v1");
     expect(loadAcknowledgementState()).toBe(true);
+  });
+
+  it("round-trips the analytics consent state when local storage is enabled", () => {
+    expect(loadAnalyticsConsentState()).toBe(false);
+
+    saveAnalyticsConsentState(true);
+
+    expect(window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)).toBe(
+      "true"
+    );
+    expect(loadAnalyticsConsentState()).toBe(true);
+
+    saveAnalyticsConsentState(false);
+
+    expect(window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)).toBe(
+      "false"
+    );
+    expect(loadAnalyticsConsentState()).toBe(false);
   });
 
   it("round-trips a saved app mode and ignores invalid stored values", () => {
@@ -99,17 +120,22 @@ describe("app persistence", () => {
     saveLocalStoragePreference(false);
 
     saveAcknowledgementState();
+    saveAnalyticsConsentState(true);
     saveStoredAppMode("simple");
     saveStoredGuidanceNotes(false);
     saveStoredJourneyRetirementIncomeDisplay("annual");
     saveStoredComparisonRetirementIncomeDisplay("annual");
 
     expect(loadAcknowledgementState()).toBe(false);
+    expect(loadAnalyticsConsentState()).toBe(false);
     expect(loadStoredAppMode()).toBeNull();
     expect(loadStoredGuidanceNotes()).toBe(true);
     expect(loadStoredJourneyRetirementIncomeDisplay()).toBe("monthly");
     expect(loadStoredComparisonRetirementIncomeDisplay()).toBe("monthly");
     expect(window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY)).toBeNull();
+    expect(
+      window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)
+    ).toBeNull();
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(GUIDANCE_NOTES_STORAGE_KEY)).toBeNull();
     expect(
@@ -124,6 +150,7 @@ describe("app persistence", () => {
 
   it("clears app preferences without removing the local storage preference", () => {
     window.localStorage.setItem(ACKNOWLEDGEMENT_STORAGE_KEY, "v1");
+    window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, "true");
     window.localStorage.setItem(APP_MODE_STORAGE_KEY, "bridge");
     window.localStorage.setItem(GUIDANCE_NOTES_STORAGE_KEY, "false");
     window.localStorage.setItem(
@@ -143,6 +170,9 @@ describe("app persistence", () => {
     clearStoredAppPreferences();
 
     expect(window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY)).toBeNull();
+    expect(
+      window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)
+    ).toBeNull();
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(GUIDANCE_NOTES_STORAGE_KEY)).toBeNull();
     expect(

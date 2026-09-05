@@ -314,7 +314,9 @@ async function startFirstRun(page: Page) {
 
 async function acknowledgeFirstRun(page: Page) {
   await startFirstRun(page);
-  await page.getByRole("button", { name: "I understand" }).click();
+  await page
+    .getByRole("button", { name: "Accept analytics and continue" })
+    .click();
 }
 
 async function acknowledgeAndOpenMode(

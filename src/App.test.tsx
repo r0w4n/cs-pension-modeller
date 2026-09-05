@@ -535,6 +535,7 @@ vi.mock("./projection", async () => {
 });
 
 vi.mock("./analytics", () => ({
+  disableAnalytics: vi.fn(),
   initialiseAnalytics: vi.fn(),
   trackAnalyticsEvent: vi.fn(),
   trackPageView: vi.fn(),
@@ -758,7 +759,9 @@ function renderAcknowledgedApp(
   }
 
   render(<App />);
-  fireEvent.click(screen.getByRole("button", { name: "I understand" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Accept analytics and continue" })
+  );
 
   if (mode === "expert") {
     fireEvent.click(
@@ -950,7 +953,9 @@ describe("App settings form", () => {
 
     expect(() => render(<App />)).not.toThrow();
 
-    fireEvent.click(screen.getByRole("button", { name: "I understand" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Accept analytics and continue" })
+    );
     fireEvent.click(
       screen.getByRole("button", {
         name: /Work through every setting with full control/i,

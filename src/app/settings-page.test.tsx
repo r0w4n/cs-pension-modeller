@@ -7,10 +7,12 @@ describe("settings-page", () => {
 
     render(
       <SettingsPage
+        analyticsConsentGranted={false}
         localStorageEnabled
         onClearAllData={vi.fn()}
         onExportParameters={vi.fn()}
         onLoadParameters={vi.fn(() => true)}
+        onAnalyticsConsentChange={vi.fn()}
         onLocalStorageEnabledChange={vi.fn()}
         showGuidanceNotes
         onShowGuidanceNotesChange={onShowGuidanceNotesChange}
@@ -28,5 +30,29 @@ describe("settings-page", () => {
     );
     expect(onShowGuidanceNotesChange).toHaveBeenCalledWith(false);
     expect(screen.getByRole("status")).toHaveTextContent("Settings saved");
+  });
+
+  it("renders the analytics toggle and emits changes", () => {
+    const onAnalyticsConsentChange = vi.fn();
+
+    render(
+      <SettingsPage
+        analyticsConsentGranted={false}
+        localStorageEnabled
+        onClearAllData={vi.fn()}
+        onExportParameters={vi.fn()}
+        onLoadParameters={vi.fn(() => true)}
+        onAnalyticsConsentChange={onAnalyticsConsentChange}
+        onLocalStorageEnabledChange={vi.fn()}
+        showGuidanceNotes
+        onShowGuidanceNotesChange={vi.fn()}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Allow anonymous analytics" })
+    );
+    expect(onAnalyticsConsentChange).toHaveBeenCalledWith(true);
+    expect(screen.getByRole("status")).toHaveTextContent("Analytics turned on");
   });
 });

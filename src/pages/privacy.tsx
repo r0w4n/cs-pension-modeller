@@ -41,14 +41,18 @@ function PrivacyPage() {
       <section>
         <h2>Cookies and analytics</h2>
         <p className="section-copy">
-          This site uses Google Analytics. Analytics events are limited to
-          coarse interactions, such as selected journey, journey step, changed
-          field identifier, comparison actions, and chart control names.
+          Google Analytics is only loaded if you accept analytics in the start
+          dialog or turn it on later in Settings. Analytics events are limited
+          to coarse interactions, such as selected journey, journey step,
+          changed field identifier, comparison actions, and chart control names.
         </p>
         <p className="section-copy">
           The app does not send entered amounts, dates, ages, scenario names,
           pension identifiers, or calculated retirement income figures in
           analytics events.
+        </p>
+        <p className="section-copy">
+          You can turn analytics off at any time from the Settings page.
         </p>
       </section>
     </StaticPageLayout>

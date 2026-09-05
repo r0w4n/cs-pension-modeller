@@ -30,7 +30,7 @@ it("does not load Google Analytics without a measurement ID", async () => {
   expect(document.getElementById("google-analytics-script")).toBeNull();
 });
 
-it("loads Google Analytics with reporting enabled and advertising storage denied when configured", async () => {
+it("loads Google Analytics with reporting enabled when configured", async () => {
   vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
 
   const { initialiseAnalytics, trackAnalyticsEvent } =
@@ -91,4 +91,20 @@ it("loads Google Analytics with reporting enabled and advertising storage denied
       ],
     ])
   );
+});
+
+it("disables Google Analytics after consent is withdrawn", async () => {
+  vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
+
+  const { disableAnalytics, initialiseAnalytics } = await import("./analytics");
+
+  initialiseAnalytics();
+  expect(window.gtag).toBeTypeOf("function");
+  expect(document.getElementById("google-analytics-script")).not.toBeNull();
+
+  disableAnalytics();
+
+  expect(window.gtag).toBeUndefined();
+  expect(window.dataLayer).toBeUndefined();
+  expect(document.getElementById("google-analytics-script")).toBeNull();
 });

@@ -1,5 +1,9 @@
-import { useEffect } from "react";
-import { trackPageView } from "./analytics";
+import { useEffect, useRef } from "react";
+import {
+  disableAnalytics,
+  initialiseAnalytics,
+  trackPageView,
+} from "./analytics";
 import { createRetirementIncomeSeries } from "./result-projection/retirement-income";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
 import { ModeSelection } from "./app/mode-selection";
@@ -21,6 +25,7 @@ function App() {
     activeModeRef,
     acknowledgeNotice,
     appMode,
+    analyticsConsentGranted,
     exportParameters,
     hasAcknowledgedNotice,
     journeyStepViewModel,
@@ -29,6 +34,7 @@ function App() {
     onResultsStepActiveChange,
     clearAllData,
     selectAppMode,
+    setAnalyticsConsent,
     setLocalStorageEnabled,
     setShowGuidanceNotes,
     settingsFormVersion,
@@ -36,17 +42,34 @@ function App() {
     showSavedFeedback,
     visibleSettings,
   } = useAppController();
+  const hasTrackedPageViewRef = useRef(false);
 
   useEffect(() => {
-    trackPageView();
-  }, []);
+    if (!hasAcknowledgedNotice) {
+      return;
+    }
+
+    if (analyticsConsentGranted) {
+      initialiseAnalytics();
+
+      if (!hasTrackedPageViewRef.current) {
+        trackPageView();
+        hasTrackedPageViewRef.current = true;
+      }
+      return;
+    }
+
+    disableAnalytics();
+  }, [analyticsConsentGranted, hasAcknowledgedNotice]);
 
   if (isSettingsRoute()) {
     return (
       <SettingsPage
+        analyticsConsentGranted={analyticsConsentGranted}
         localStorageEnabled={localStorageEnabled}
         onExportParameters={exportParameters}
         onLoadParameters={loadParameters}
+        onAnalyticsConsentChange={setAnalyticsConsent}
         onLocalStorageEnabledChange={setLocalStorageEnabled}
         onClearAllData={clearAllData}
         showGuidanceNotes={showGuidanceNotes}
@@ -88,17 +111,27 @@ function App() {
             </p>
             <p className="section-copy">
               Your inputs are saved locally in your browser so you can come back
-              to the same assumptions later. This site uses analytics to record
-              coarse interaction events only; no financial or personal inputs
-              are sent.
+              to the same assumptions later. This site can use analytics to
+              record coarse interaction events only, and no financial or
+              personal inputs are sent. You can accept or decline analytics now
+              and change that choice later in Settings.
             </p>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={acknowledgeNotice}
-            >
-              I understand
-            </button>
+            <div className="acknowledgement-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => acknowledgeNotice(true)}
+              >
+                Accept analytics and continue
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => acknowledgeNotice(false)}
+              >
+                Continue without analytics
+              </button>
+            </div>
           </section>
         </div>
       ) : null}

@@ -6,20 +6,24 @@ import { SiteFooter } from "./site-footer";
 import { Helmet } from "../helmet";
 
 type SettingsPageProps = {
+  analyticsConsentGranted: boolean;
   localStorageEnabled: boolean;
   onClearAllData: () => void;
   onExportParameters: () => void;
   onLoadParameters: (input: unknown) => boolean;
+  onAnalyticsConsentChange: (consentGranted: boolean) => void;
   onLocalStorageEnabledChange: (enabled: boolean) => void;
   showGuidanceNotes: boolean;
   onShowGuidanceNotesChange: (checked: boolean) => void;
 };
 
 export function SettingsPage({
+  analyticsConsentGranted,
   localStorageEnabled,
   onClearAllData,
   onExportParameters,
   onLoadParameters,
+  onAnalyticsConsentChange,
   onLocalStorageEnabledChange,
   showGuidanceNotes,
   onShowGuidanceNotesChange,
@@ -96,6 +100,15 @@ export function SettingsPage({
     onLocalStorageEnabledChange(enabled);
     showActionFeedback(
       enabled ? "Local saving turned on" : "Local saving turned off"
+    );
+  }
+
+  function updateAnalyticsConsent(event: ChangeEvent<HTMLInputElement>) {
+    const consentGranted = event.currentTarget.checked;
+
+    onAnalyticsConsentChange(consentGranted);
+    showActionFeedback(
+      consentGranted ? "Analytics turned on" : "Analytics turned off"
     );
   }
 
@@ -227,6 +240,23 @@ export function SettingsPage({
               checked={showGuidanceNotes}
               onChange={updateGuidanceNotesPreference}
             />
+          </section>
+
+          <section className="field-card checkbox-field-card">
+            <span className="field-label">Analytics</span>
+            <p className="field-help">
+              Allow the app to initialise Google Analytics and record coarse
+              interaction events only. You can change this choice at any time.
+            </p>
+
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={analyticsConsentGranted}
+                onChange={updateAnalyticsConsent}
+              />
+              <span>Allow analytics</span>
+            </label>
           </section>
         </div>
       </section>

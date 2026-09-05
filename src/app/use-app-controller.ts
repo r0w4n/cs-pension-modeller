@@ -17,10 +17,12 @@ import {
 } from "../result-projection/comparison-result";
 import {
   loadAcknowledgementState,
+  loadAnalyticsConsentState as loadStoredAnalyticsConsentState,
   loadStoredGuidanceNotes,
   loadStoredComparisonRetirementIncomeDisplay,
   loadStoredJourneyRetirementIncomeDisplay,
   saveAcknowledgementState,
+  saveAnalyticsConsentState,
   clearStoredAppPreferences,
   saveStoredAppMode,
   saveStoredGuidanceNotes,
@@ -105,6 +107,9 @@ export function useAppController() {
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
+  const [analyticsConsentGranted, setAnalyticsConsentGrantedState] = useState(
+    loadStoredAnalyticsConsentState
+  );
   const [localStorageEnabled, setLocalStorageEnabledState] = useState(
     loadLocalStorageEnabled
   );
@@ -176,6 +181,10 @@ export function useAppController() {
     );
   }, [comparisonRetirementIncomeDisplay]);
 
+  useEffect(() => {
+    saveAnalyticsConsentState(analyticsConsentGranted);
+  }, [analyticsConsentGranted]);
+
   function updateSetting<K extends SettingsKey>(
     key: K,
     value: PensionSettings[K]
@@ -238,6 +247,10 @@ export function useAppController() {
     clearAllLocalStorageData();
   }
 
+  function setAnalyticsConsent(granted: boolean) {
+    setAnalyticsConsentGrantedState(granted);
+  }
+
   function setLocalStorageEnabled(enabled: boolean) {
     trackAnalyticsEvent("local_storage_preference_changed", {
       enabled,
@@ -263,6 +276,7 @@ export function useAppController() {
     saveStoredComparisonRetirementIncomeDisplay(
       comparisonRetirementIncomeDisplay
     );
+    saveAnalyticsConsentState(analyticsConsentGranted);
 
     if (hasAcknowledgedNotice) {
       saveAcknowledgementState();
@@ -299,10 +313,10 @@ export function useAppController() {
       setComparisonRetirementIncomeDisplay,
   };
 
-  function acknowledgeNotice() {
-    trackAnalyticsEvent("notice_acknowledged");
+  function acknowledgeNotice(consentGranted: boolean) {
     setHasAcknowledgedNotice(true);
     saveAcknowledgementState();
+    setAnalyticsConsent(consentGranted);
   }
 
   function selectAppMode(mode: AppMode) {
@@ -328,6 +342,8 @@ export function useAppController() {
     activeModeRef,
     acknowledgeNotice,
     appMode,
+    analyticsConsentGranted,
+    setAnalyticsConsent,
     retirementIncomeChartLimits,
     retirementIncomeChartParameters,
     comparisonResultCache,

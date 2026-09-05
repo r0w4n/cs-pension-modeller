@@ -10,6 +10,17 @@ Feature: Local-only preferences and data controls
     When the important information notice is acknowledged
     Then the acknowledgement should be remembered locally
 
+  @analytics-consent
+  Scenario Outline: Remember the user's analytics consent choice
+    Given browser local storage is available
+    When analytics consent is saved as "<consent>"
+    Then analytics consent should load as "<consent>"
+
+    Examples:
+      | consent  |
+      | accepted |
+      | rejected |
+
   @preferences
   Scenario Outline: Store journey and comparison display preferences independently
     Given browser local storage is available
@@ -28,5 +39,6 @@ Feature: Local-only preferences and data controls
     Given browser local storage is disabled
     When the stored modeller preferences are loaded
     Then no previous acknowledgement should be loaded
+    And no previous analytics consent should be loaded
     And no previous modeller mode should be loaded
     And guidance notes should be shown

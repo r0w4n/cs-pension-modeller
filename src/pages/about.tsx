@@ -55,10 +55,11 @@ function AboutPage() {
           Settings page.
         </p>
         <p className="section-copy">
-          Analytics are only sent when configured for the site build, and are
-          limited to coarse interaction events. Entered amounts, dates, ages,
-          scenario names, pension identifiers, saved settings and calculated
-          retirement income figures are not included in analytics events.
+          Analytics are only sent if you accept them in the start dialog or
+          enable them later in Settings, and they are limited to coarse
+          interaction events. Entered amounts, dates, ages, scenario names,
+          pension identifiers, saved settings and calculated retirement income
+          figures are not included in analytics events.
         </p>
       </section>
     </StaticPageLayout>

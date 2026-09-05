@@ -6,7 +6,7 @@ import {
   type PensionSettings,
 } from "../settings";
 import type { JointRetirementProjection } from "./joint-retirement-plan";
-import { normalizeMoney } from "../money";
+import { isReportableLifetimeShortfall, normalizeMoney } from "../money";
 
 export type HouseholdRetirementAssessment = {
   meetsTargetThroughout: boolean;
@@ -57,9 +57,18 @@ export function assessHouseholdRetirementPlan(
 ): HouseholdRetirementAssessment {
   const partnerSettings = createPartnerCalculationSettings(settings);
   const assessedRows = projection.rows.filter((row) => row.target !== null);
-  const shortfallRows = assessedRows.filter(
+  const calculatedShortfallRows = assessedRows.filter(
     (row) => row.household.shortfall > 0
   );
+  const calculatedLifetimeShortfall = calculatedShortfallRows.reduce(
+    (total, row) => total + row.household.shortfall,
+    0
+  );
+  const shortfallRows = isReportableLifetimeShortfall(
+    calculatedLifetimeShortfall
+  )
+    ? calculatedShortfallRows
+    : [];
   const firstShortfall = shortfallRows[0];
   const firstRetirement = assessedRows[0];
   const fullyRetired =
@@ -90,7 +99,7 @@ export function assessHouseholdRetirementPlan(
     ),
     largestAnnualShortfall: normalizeMoney(largestMonthlyShortfall * 12),
     totalLifetimeShortfall: normalizeMoney(
-      shortfallRows.reduce((total, row) => total + row.household.shortfall, 0)
+      shortfallRows.length > 0 ? calculatedLifetimeShortfall : 0
     ),
     lowestAnnualIncome: normalizeMoney(
       assessedRows.length

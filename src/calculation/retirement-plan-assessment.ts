@@ -4,7 +4,7 @@ import {
   type ProjectionRow,
 } from "../projection";
 import type { PensionSettings } from "../settings";
-import { normalizeMoney } from "../money";
+import { isReportableLifetimeShortfall, normalizeMoney } from "../money";
 import { createRetirementIncomeAssessmentSeries } from "./retirement-income-assessment";
 import { addYearsToIsoDate } from "../model-date";
 
@@ -67,9 +67,18 @@ export function assessRetirementPlan(
 }
 
 function assessShortfalls(assessmentPoints: AssessmentPoint[]) {
-  const shortfallPoints = assessmentPoints.filter(
+  const calculatedShortfallPoints = assessmentPoints.filter(
     (point) => point.shortfallAnnual > 0
   );
+  const calculatedLifetimeShortfall = calculatedShortfallPoints.reduce(
+    (total, point) => total + point.shortfallAnnual / 12,
+    0
+  );
+  const shortfallPoints = isReportableLifetimeShortfall(
+    calculatedLifetimeShortfall
+  )
+    ? calculatedShortfallPoints
+    : [];
   const firstShortfallPoint = shortfallPoints[0];
   return {
     meetsTargetThroughout:
@@ -86,10 +95,7 @@ function assessShortfalls(assessmentPoints: AssessmentPoint[]) {
       Math.max(0, ...shortfallPoints.map((point) => point.shortfallAnnual))
     ),
     totalLifetimeShortfall: normalizeMoney(
-      shortfallPoints.reduce(
-        (total, point) => total + point.shortfallAnnual / 12,
-        0
-      )
+      shortfallPoints.length > 0 ? calculatedLifetimeShortfall : 0
     ),
     lowestAnnualIncome: normalizeMoney(
       assessmentPoints.length

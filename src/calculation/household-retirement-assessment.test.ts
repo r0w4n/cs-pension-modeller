@@ -95,4 +95,59 @@ describe("assessHouseholdRetirementPlan", () => {
     expect(assessment.firstFlexibleFundExhaustionDate).toBeNull();
     expect(assessment.firstFlexibleFundExhaustionAccount).toBeNull();
   });
+
+  it.each([
+    { lifetimeShortfall: 0.99, reportable: false },
+    { lifetimeShortfall: 1, reportable: true },
+  ])(
+    "treats a household lifetime shortfall of $lifetimeShortfall according to the £1 materiality threshold",
+    ({ lifetimeShortfall, reportable }) => {
+      const defaults = createDefaultSettings();
+      const settings = normalizeSettings({
+        ...defaults,
+        startDate: "2026-06-01",
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 70,
+        showAlpha: false,
+        showStatePension: false,
+        partner: {
+          ...createDefaultPartnerSettings(),
+          dateOfBirth: "1970-06-01",
+          requirementAge: 60,
+          lifeExpectancy: 70,
+          showStatePension: false,
+        },
+        jointRetirement: {
+          ...defaults.jointRetirement,
+          enabled: true,
+          transitionDesiredRetirementIncome: 0,
+          fullyRetiredDesiredRetirementIncome: 0,
+        },
+      });
+      const calculatedProjection = calculateJointRetirementProjection(settings);
+      const projection = {
+        ...calculatedProjection,
+        rows: calculatedProjection.rows.map((row, index) => ({
+          ...row,
+          target: index === 0 ? lifetimeShortfall * 12 : null,
+          household: {
+            ...row.household,
+            shortfall: index === 0 ? lifetimeShortfall : 0,
+          },
+        })),
+      };
+
+      const assessment = assessHouseholdRetirementPlan(projection, settings);
+
+      expect(assessment.meetsTargetThroughout).toBe(!reportable);
+      expect(assessment.targetMissMonths).toBe(reportable ? 1 : 0);
+      expect(assessment.totalLifetimeShortfall).toBe(
+        reportable ? lifetimeShortfall : 0
+      );
+      expect(assessment.firstShortfallDate).toBe(
+        reportable ? projection.rows[0]?.date : null
+      );
+    }
+  );
 });

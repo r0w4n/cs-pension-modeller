@@ -42,6 +42,39 @@ describe("retirement plan assessment", () => {
     expect(assessment.retirementAnnualGap).toBe(0);
   });
 
+  it.each([
+    { lifetimeShortfall: 0, reportable: false },
+    { lifetimeShortfall: 0.99, reportable: false },
+    { lifetimeShortfall: 1, reportable: true },
+    { lifetimeShortfall: 1.01, reportable: true },
+  ])(
+    "treats a $lifetimeShortfall lifetime shortfall according to the £1 materiality threshold",
+    ({ lifetimeShortfall, reportable }) => {
+      const settings = {
+        ...createIsaOnlySettings({ isaCurrentPot: 0 }),
+        requirementAge: 57,
+        lifeExpectancy: 57,
+        desiredRetirementIncome: lifetimeShortfall * 12,
+        showIsa: false,
+      };
+
+      const assessment = assessRetirementPlan(
+        createProjectionTable(settings),
+        settings
+      );
+
+      expect(assessment.meetsTargetThroughout).toBe(!reportable);
+      expect(assessment.targetMissMonths).toBe(reportable ? 1 : 0);
+      expect(assessment.totalLifetimeShortfall).toBe(
+        reportable ? lifetimeShortfall : 0
+      );
+      expect(assessment.firstShortfallAge).toBe(reportable ? 57 : null);
+      expect(assessment.firstShortfallAnnualAmount).toBe(
+        reportable ? lifetimeShortfall * 12 : 0
+      );
+    }
+  );
+
   it("assesses secure income from the canonical classic projection", () => {
     const settings = {
       ...createIsaOnlySettings({ isaCurrentPot: 0 }),

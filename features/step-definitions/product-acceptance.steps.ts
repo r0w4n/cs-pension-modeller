@@ -3294,6 +3294,34 @@ Given(
   }
 );
 
+Given(
+  "a retirement plan with a total projected shortfall of {float}",
+  function (this: ProductAcceptanceWorld, totalShortfall: number) {
+    this.settings = {
+      ...createDefaultSettings(),
+      startDate: "2026-01-01",
+      dateOfBirth: "1970-01-01",
+      requirementAge: 57,
+      lifeExpectancy: 57,
+      desiredRetirementIncome: totalShortfall * 12,
+      retirementIncomeTargetBasis: "gross",
+      projectionBasis: "real",
+      taxationEnabled: false,
+      assumedCpiPercent: 0,
+      showAlpha: false,
+      showClassic: false,
+      showClassicPlus: false,
+      showNuvos: false,
+      showPremium: false,
+      showStatePension: false,
+      showSipp: false,
+      showCsAvc: false,
+      showLisa: false,
+      showIsa: false,
+    };
+  }
+);
+
 Then(
   "the gross pension income should exceed the spending target",
   function (this: ProductAcceptanceWorld) {
@@ -3320,6 +3348,16 @@ Then(
     const result = this.comparisonResults?.[0];
     assertCondition(result, "Expected a comparison result");
     assertCondition(result.assessment.targetMissMonths > 0);
+  }
+);
+
+Then(
+  "the scenario should report no material shortfall",
+  function (this: ProductAcceptanceWorld) {
+    const result = this.comparisonResults?.[0];
+    assertCondition(result, "Expected a comparison result");
+    assertEqual(result.assessment.targetMissMonths, 0);
+    assertEqual(result.assessment.totalLifetimeShortfall, 0);
   }
 );
 

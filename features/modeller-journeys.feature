@@ -120,6 +120,14 @@ Feature: Modeller journeys
     And the plan status should be "Needs attention"
     And the first projected annual shortfall should be 6000.00
 
+  @expert-journey @results @withdrawal-strategy
+  Scenario: Treat a cumulative shortfall below one pound as rounding tolerance
+    Given a retirement plan with a total projected shortfall of 0.99
+    When the retirement outcome is assessed
+    Then the retirement outcome should be labelled "Looks workable"
+    And the plan status should be "Looks workable"
+    And the scenario should report no material shortfall
+
   @simple-journey @state-pension
   Scenario: Keep an otherwise resilient result on track when State Pension is unconfirmed
     Given an unconfirmed full State Pension assumption

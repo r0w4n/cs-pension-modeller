@@ -1153,12 +1153,14 @@ export function MethodologyPage() {
           chart, assessment and comparison results.
         </p>
         <p className="section-copy">
-          A scenario is labelled as meeting its target only when the main
-          projection has no modelled shortfall from the selected retirement age
-          to the planning horizon. The assessment also derives the first and
-          largest shortfall, lifetime shortfall, secure income once all selected
-          pensions are active, the secure-income position at the planning
-          horizon and the first flexible fund exhausted from those same rows.
+          A scenario is labelled as meeting its target when the main projection
+          has no material modelled shortfall from the selected retirement age to
+          the planning horizon. A cumulative shortfall below £1 is treated as
+          rounding tolerance and is not reported as a shortfall. The assessment
+          also derives the first and largest shortfall, lifetime shortfall,
+          secure income once all selected pensions are active, the secure-income
+          position at the planning horizon and the first flexible fund exhausted
+          from those same rows.
         </p>
         <p className="section-copy">
           A typical early-retirement scenario might be:

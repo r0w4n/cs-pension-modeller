@@ -49,9 +49,7 @@ describe("settings-page", () => {
       />
     );
 
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "Allow anonymous analytics" })
-    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "Allow analytics" }));
     expect(onAnalyticsConsentChange).toHaveBeenCalledWith(true);
     expect(screen.getByRole("status")).toHaveTextContent("Analytics turned on");
   });

@@ -288,6 +288,7 @@ function coercePartnerSettings(value: unknown): PartnerSettings | undefined {
     return undefined;
   }
 
+  const startDate = coerceString(value.startDate);
   // The normalizer fills safe defaults while preserving the Partner's own date
   // of birth, including an explicitly blank value from an imported plan.
   const coerced = coerceSettings({
@@ -303,7 +304,7 @@ function coercePartnerSettings(value: unknown): PartnerSettings | undefined {
     jointRetirement: _jointRetirement,
     ...person
   } = coerced;
-  return person as PartnerSettings;
+  return { ...person, ...(startDate ? { startDate } : {}) } as PartnerSettings;
 }
 
 function coerceJointRetirementSettings(

@@ -112,6 +112,7 @@ describe("settings-storage", () => {
       ...defaults,
       partner: {
         ...createDefaultPartnerSettings(),
+        startDate: "2026-05-01",
         dateOfBirth: "1980-06-15",
         sippCurrentPot: 42_000,
       },
@@ -126,7 +127,17 @@ describe("settings-storage", () => {
 
     saveSettings(settings);
 
+    const stored = JSON.parse(
+      window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "{}"
+    ) as {
+      data?: { journeys?: { expert?: { partner?: Record<string, unknown> } } };
+    };
+    expect(stored.data?.journeys?.expert?.partner?.startDate).toBe(
+      "2026-05-01"
+    );
+
     const loaded = loadStoredSettings();
+    expect(loaded.partner?.startDate).toBe("2026-05-01");
     expect(loaded.partner?.dateOfBirth).toBe("1980-06-15");
     expect(loaded.partner?.sippCurrentPot).toBe(42_000);
     expect(loaded.jointRetirement.enabled).toBe(true);

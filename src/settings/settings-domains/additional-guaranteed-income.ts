@@ -11,10 +11,11 @@ export const ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MIN = -10;
 export const ADDITIONAL_GUARANTEED_INCOME_FIXED_INCREASE_MAX = 20;
 
 export function createDefaultAdditionalGuaranteedIncome(
+  id: string,
   startAge: number
 ): AdditionalGuaranteedIncome {
   return {
-    id: createAdditionalGuaranteedIncomeId(),
+    id,
     name: "",
     annualAmount: null,
     startAge,
@@ -272,14 +273,4 @@ function normalizeOptionalAge(value: unknown) {
   const parsed = normalizeOptionalNumber(value);
 
   return parsed === null ? null : roundModelAge(parsed);
-}
-
-function createAdditionalGuaranteedIncomeId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `additional-income-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}`;
 }

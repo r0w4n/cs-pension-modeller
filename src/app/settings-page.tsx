@@ -197,7 +197,8 @@ export function SettingsPage({
             <p className="field-help">
               This will delete all data from this device for this site,
               including pension, savings, tax, inflation, and preference
-              settings.
+              settings. It also turns off local saving until you enable it
+              again.
             </p>
 
             <div className="settings-panel-actions">

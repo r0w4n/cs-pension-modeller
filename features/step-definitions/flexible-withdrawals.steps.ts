@@ -586,7 +586,10 @@ Given(
 Given(
   "guaranteed annual net income is {float}",
   function (this: FlexibleWithdrawalWorld, amount: number) {
-    const income = createDefaultAdditionalGuaranteedIncome(61);
+    const income = createDefaultAdditionalGuaranteedIncome(
+      "guaranteed-income",
+      61
+    );
     Object.assign(income, {
       id: "guaranteed-income",
       annualAmount: amount,

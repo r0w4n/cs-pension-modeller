@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ComparisonScenario } from "../result-projection/comparison-result";
 import type { ComparisonResultCache } from "./comparison-result-cache";
 import type { RetirementPlanResultCache } from "./retirement-plan-result-cache";
@@ -8,6 +8,7 @@ import {
 } from "./comparison-storage";
 
 export function useComparisonState() {
+  const skipNextComparisonSaveRef = useRef(false);
   const [comparisonScenarios, setComparisonScenarios] = useState<
     ComparisonScenario[]
   >(loadStoredComparisonScenarios);
@@ -19,13 +20,24 @@ export function useComparisonState() {
   );
 
   useEffect(() => {
+    if (skipNextComparisonSaveRef.current) {
+      skipNextComparisonSaveRef.current = false;
+      return;
+    }
+
     saveStoredComparisonScenarios(comparisonScenarios);
   }, [comparisonScenarios]);
+
+  function resetComparisonScenarios() {
+    skipNextComparisonSaveRef.current = true;
+    setComparisonScenarios([]);
+  }
 
   return {
     comparisonResultCache,
     retirementPlanResultCache,
     comparisonScenarios,
+    resetComparisonScenarios,
     setComparisonScenarios,
   };
 }

@@ -13,10 +13,21 @@ import {
   addMonthsToIsoDate,
   addDaysToIsoDate,
   addYearsToIsoDate,
-  getTodayIsoDate,
   isValidIsoDate,
 } from "../settings-shared/date";
 import { calculateNormalPensionAge } from "../settings-shared/state";
+
+const DEFAULT_REPAIRED_LUMP_SUM_START_DATE = "2026-04-01";
+const DEFAULT_REPAIRED_EPA_START_DATE = "2026-04-01";
+
+type AddedPensionNormalizationOptions = {
+  includeFactorType?: boolean;
+  fallbackStartDate?: string;
+};
+
+type AlphaEpaNormalizationOptions = {
+  fallbackStartDate?: string;
+};
 
 export function normalizeAddedPensionFactorType(
   value: unknown
@@ -79,15 +90,8 @@ export function getLatestAlphaAddedPensionPurchaseDate(dateOfBirth: string) {
   return addDaysToIsoDate(firstUnsupportedPurchaseDate, -1);
 }
 
-function createAddedPensionLumpSumId() {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
-  }
-
-  return `lump-sum-${Math.random().toString(36).slice(2, 10)}`;
+function createRepairedAddedPensionLumpSumId(index: number) {
+  return `lump-sum-${index + 1}`;
 }
 
 function normalizeWholeCurrency(value: number) {
@@ -103,11 +107,12 @@ function normalizeWholeCurrency(value: number) {
 
 export function normalizeAddedPensionLumpSum(
   value: AddedPensionLumpSum,
-  options: { includeFactorType?: boolean } = {}
+  options: AddedPensionNormalizationOptions = {},
+  index = 0
 ) {
   const startDate = isValidIsoDate(value.startDate)
     ? value.startDate
-    : getTodayIsoDate();
+    : (options.fallbackStartDate ?? DEFAULT_REPAIRED_LUMP_SUM_START_DATE);
   const amount = normalizeWholeCurrency(value.amount);
   const cadence = value.cadence === "yearly" ? "yearly" : "once";
   const normalizedEndDate = isValidIsoDate(value.endDate)
@@ -116,7 +121,7 @@ export function normalizeAddedPensionLumpSum(
   const endDate = cadence === "once" ? startDate : normalizedEndDate;
 
   return {
-    id: value.id || createAddedPensionLumpSumId(),
+    id: value.id || createRepairedAddedPensionLumpSumId(index),
     amount,
     startDate,
     cadence,
@@ -129,9 +134,11 @@ export function normalizeAddedPensionLumpSum(
 
 export function normalizeAddedPensionLumpSums(
   value: AddedPensionLumpSum[],
-  options: { includeFactorType?: boolean } = {}
+  options: AddedPensionNormalizationOptions = {}
 ) {
-  return value.map((entry) => normalizeAddedPensionLumpSum(entry, options));
+  return value.map((entry, index) =>
+    normalizeAddedPensionLumpSum(entry, options, index)
+  );
 }
 
 function coerceNumber(value: unknown) {
@@ -145,7 +152,8 @@ function coerceString(value: unknown) {
 
 function coerceAddedPensionLumpSum(
   value: unknown,
-  options: { includeFactorType?: boolean } = {}
+  options: AddedPensionNormalizationOptions = {},
+  index = 0
 ) {
   if (!value || typeof value !== "object") {
     return undefined;
@@ -154,14 +162,18 @@ function coerceAddedPensionLumpSum(
   const input = value as Partial<AddedPensionLumpSum>;
 
   return {
-    id: coerceString(input.id) ?? createAddedPensionLumpSumId(),
+    id: coerceString(input.id) ?? createRepairedAddedPensionLumpSumId(index),
     amount: coerceNumber(input.amount) ?? 0,
-    startDate: coerceString(input.startDate) ?? getTodayIsoDate(),
+    startDate:
+      coerceString(input.startDate) ??
+      options.fallbackStartDate ??
+      DEFAULT_REPAIRED_LUMP_SUM_START_DATE,
     cadence: input.cadence === "yearly" ? "yearly" : "once",
     endDate:
       coerceString(input.endDate) ??
       coerceString(input.startDate) ??
-      getTodayIsoDate(),
+      options.fallbackStartDate ??
+      DEFAULT_REPAIRED_LUMP_SUM_START_DATE,
     ...(options.includeFactorType
       ? { factorType: normalizeAddedPensionFactorType(input.factorType) }
       : {}),
@@ -170,14 +182,14 @@ function coerceAddedPensionLumpSum(
 
 export function coerceAddedPensionLumpSums(
   value: unknown,
-  options: { includeFactorType?: boolean } = {}
+  options: AddedPensionNormalizationOptions = {}
 ) {
   if (!Array.isArray(value)) {
     return undefined;
   }
 
   const coerced = value
-    .map((entry) => coerceAddedPensionLumpSum(entry, options))
+    .map((entry, index) => coerceAddedPensionLumpSum(entry, options, index))
     .filter((entry): entry is AddedPensionLumpSum => entry !== undefined);
 
   return coerced;
@@ -190,21 +202,22 @@ export function coerceLegacySippLumpSum(value: number | undefined) {
 
   return [
     {
-      id: createAddedPensionLumpSumId(),
+      id: "legacy-sipp-lump-sum-1",
       amount: value,
-      startDate: getTodayIsoDate(),
+      startDate: DEFAULT_REPAIRED_LUMP_SUM_START_DATE,
       cadence: "once",
-      endDate: getTodayIsoDate(),
+      endDate: DEFAULT_REPAIRED_LUMP_SUM_START_DATE,
     },
   ] satisfies AddedPensionLumpSum[];
 }
 
 export function createDefaultAddedPensionLumpSum(
-  startDate = getTodayIsoDate(),
+  id: string,
+  startDate: string,
   factorType?: AddedPensionFactorType
 ): AddedPensionLumpSum {
   return {
-    id: createAddedPensionLumpSumId(),
+    id,
     amount: 5000,
     startDate,
     cadence: "once",
@@ -213,15 +226,8 @@ export function createDefaultAddedPensionLumpSum(
   };
 }
 
-function createAlphaEpaPeriodId() {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
-  }
-
-  return `epa-period-${Math.random().toString(36).slice(2, 10)}`;
+function createRepairedAlphaEpaPeriodId(index: number) {
+  return `epa-period-${index + 1}`;
 }
 
 export function normalizeAlphaEpaYearsBeforeNpa(
@@ -231,26 +237,31 @@ export function normalizeAlphaEpaYearsBeforeNpa(
 }
 
 export function createDefaultAlphaEpaPeriod(
-  startDate = getTodayIsoDate()
+  id: string,
+  startDate: string
 ): AlphaEpaPeriod {
   return {
-    id: createAlphaEpaPeriodId(),
+    id,
     yearsBeforeNpa: 1,
     startDate,
     endDate: startDate,
   };
 }
 
-function coerceAlphaEpaPeriod(value: unknown): AlphaEpaPeriod | undefined {
+function coerceAlphaEpaPeriod(
+  value: unknown,
+  index: number
+): AlphaEpaPeriod | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return undefined;
   }
 
   const input = value as Partial<AlphaEpaPeriod>;
-  const startDate = coerceString(input.startDate) ?? getTodayIsoDate();
+  const startDate =
+    coerceString(input.startDate) ?? DEFAULT_REPAIRED_EPA_START_DATE;
 
   return {
-    id: coerceString(input.id) ?? createAlphaEpaPeriodId(),
+    id: coerceString(input.id) ?? createRepairedAlphaEpaPeriodId(index),
     yearsBeforeNpa: normalizeAlphaEpaYearsBeforeNpa(input.yearsBeforeNpa),
     startDate,
     endDate: coerceString(input.endDate) ?? startDate,
@@ -267,14 +278,17 @@ export function coerceAlphaEpaPeriods(value: unknown) {
     .filter((period): period is AlphaEpaPeriod => period !== undefined);
 }
 
-export function normalizeAlphaEpaPeriods(value: AlphaEpaPeriod[]) {
-  return value.map((period) => {
+export function normalizeAlphaEpaPeriods(
+  value: AlphaEpaPeriod[],
+  options: AlphaEpaNormalizationOptions = {}
+) {
+  return value.map((period, index) => {
     const startDate = isValidIsoDate(period.startDate)
       ? period.startDate
-      : getTodayIsoDate();
+      : (options.fallbackStartDate ?? DEFAULT_REPAIRED_EPA_START_DATE);
 
     return {
-      id: period.id || createAlphaEpaPeriodId(),
+      id: period.id || createRepairedAlphaEpaPeriodId(index),
       yearsBeforeNpa: normalizeAlphaEpaYearsBeforeNpa(period.yearsBeforeNpa),
       startDate,
       endDate: isValidIsoDate(period.endDate) ? period.endDate : startDate,

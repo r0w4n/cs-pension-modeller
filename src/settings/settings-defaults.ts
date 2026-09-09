@@ -16,12 +16,7 @@ import { premiumDefaults } from "./settings-domains/premium";
 import { calculateDefaultSippDrawAge } from "./settings-domains/sipp";
 import { statePensionDefaults } from "./settings-domains/state-pension";
 import { taxDefaults } from "./settings-domains/tax";
-import {
-  formatLocalIsoDate,
-  getDefaultStatementYear,
-  getTodayIsoDate,
-  isValidIsoDate,
-} from "./settings-shared/date";
+import { getDefaultStatementYear, getTodayIsoDate } from "./settings-runtime";
 import {
   calculateDefaultStatePensionDrawAge,
   calculateNormalPensionAge,
@@ -289,9 +284,5 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
-export {
-  getDefaultStatementYear,
-  getTodayIsoDate,
-  formatLocalIsoDate,
-  isValidIsoDate,
-};
+export { formatLocalIsoDate, isValidIsoDate } from "./settings-shared/date";
+export { getDefaultStatementYear, getTodayIsoDate } from "./settings-runtime";

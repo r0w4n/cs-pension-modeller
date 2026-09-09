@@ -2,7 +2,9 @@ import {
   createProjectionTable,
   deriveInflationAssumptions,
   generatePensionSummary,
+  getProjectionTableDiagnostics,
   type PensionSummary,
+  type ProjectionDiagnostics,
   type ProjectionRow,
 } from "../projection";
 import {
@@ -36,6 +38,7 @@ export type RetirementPlanResult = {
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
   statePensionAssumptionAffectsTarget: boolean;
   inflationAssumptions: ReturnType<typeof deriveInflationAssumptions>;
+  diagnostics: ProjectionDiagnostics;
   /** Present only for active two-person Expert plans. */
   jointProjection?: JointRetirementProjection;
   /** Present only when the active plan has a valid two-person projection. */
@@ -75,6 +78,7 @@ export function calculateRetirementPlan(
         householdAssessment
       ),
     inflationAssumptions: deriveInflationAssumptions(settings),
+    diagnostics: getProjectionTableDiagnostics(rows),
     jointProjection,
     householdAssessment,
   };

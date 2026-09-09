@@ -1,11 +1,13 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import {
+  createDefaultSettings,
   getStoredSettingsEnvelope,
   loadStoredSettingsByJourney,
   parseStoredSettingsByJourney,
@@ -45,6 +47,7 @@ export function useJourneySettings({
   setChartUndoStack: SetChartUndoStack;
   showSavedLabel: () => void;
 }) {
+  const skipNextSettingsSaveRef = useRef(false);
   const [settingsByJourney, setSettingsByJourney] =
     useState<PensionSettingsByJourney>(() => {
       const loaded = loadStoredSettingsByJourney();
@@ -72,6 +75,11 @@ export function useJourneySettings({
   const [settingsFormVersion, setSettingsFormVersion] = useState(0);
 
   useEffect(() => {
+    if (skipNextSettingsSaveRef.current) {
+      skipNextSettingsSaveRef.current = false;
+      return;
+    }
+
     saveSettingsByJourney(settingsByJourney);
   }, [settingsByJourney]);
 
@@ -114,9 +122,17 @@ export function useJourneySettings({
     showSavedLabel();
   }
 
+  function resetSettingsToDefaults() {
+    skipNextSettingsSaveRef.current = true;
+    setChartUndoStack([]);
+    setSettingsFormVersion((current) => current + 1);
+    setSettingsByJourney(createDefaultSettingsByJourney());
+  }
+
   return {
     exportParameters,
     loadParameters,
+    resetSettingsToDefaults,
     setActiveJourneySettings,
     setSettings,
     setSettingsFormVersion,
@@ -134,4 +150,12 @@ function applyLegacyJourneyDefaults(
     bridge: applyBridgeJourneyDefaults(settings.bridge),
     expert: applyExpertJourneyDefaults(settings.expert),
   };
+}
+
+function createDefaultSettingsByJourney(): PensionSettingsByJourney {
+  return applyLegacyJourneyDefaults({
+    simple: createDefaultSettings(),
+    bridge: createDefaultSettings(),
+    expert: createDefaultSettings(),
+  });
 }

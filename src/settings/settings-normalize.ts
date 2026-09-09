@@ -274,10 +274,15 @@ function normalizeNumericSetting(key: NumericSettingKey, value: unknown) {
   return Math.min(max, Math.max(min, snapped));
 }
 
+type SettingsNormalizationOptions = {
+  fallbackStartDate?: string;
+};
+
 // eslint-disable-next-line sonarjs/cyclomatic-complexity
 export function normalizeSetting<K extends keyof PensionSettings>(
   key: K,
-  value: PensionSettings[K]
+  value: PensionSettings[K],
+  options: SettingsNormalizationOptions = {}
 ): PensionSettings[K] {
   switch (key) {
     // Nested settings are normalised as a complete household record during
@@ -291,7 +296,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
       return normalizePersonalDateSetting(
         key,
         value as string,
-        normalizeIsoDate
+        normalizeIsoDate,
+        options.fallbackStartDate
       ) as PensionSettings[K];
     case "statePensionDrawDate":
       return normalizeIsoDate(
@@ -406,18 +412,19 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "alphaAddedPensionLumpSums":
       return normalizeAddedPensionLumpSums(value as AddedPensionLumpSum[], {
         includeFactorType: true,
+        fallbackStartDate: options.fallbackStartDate,
       }) as PensionSettings[K];
     case "alphaEpaPeriods":
-      return normalizeAlphaEpaPeriods(
-        value as AlphaEpaPeriod[]
-      ) as PensionSettings[K];
+      return normalizeAlphaEpaPeriods(value as AlphaEpaPeriod[], {
+        fallbackStartDate: options.fallbackStartDate,
+      }) as PensionSettings[K];
     case "isaLumpSums":
     case "sippLumpSums":
     case "csAvcLumpSums":
     case "lisaLumpSums":
-      return normalizeAddedPensionLumpSums(
-        value as AddedPensionLumpSum[]
-      ) as PensionSettings[K];
+      return normalizeAddedPensionLumpSums(value as AddedPensionLumpSum[], {
+        fallbackStartDate: options.fallbackStartDate,
+      }) as PensionSettings[K];
     case "additionalGuaranteedIncomes":
       return normalizeAdditionalGuaranteedIncomes(value) as PensionSettings[K];
     default:
@@ -428,8 +435,15 @@ export function normalizeSetting<K extends keyof PensionSettings>(
   }
 }
 
-export function normalizeSettings(settings: PensionSettings): PensionSettings {
-  const dateOfBirth = normalizeSetting("dateOfBirth", settings.dateOfBirth);
+export function normalizeSettings(
+  settings: PensionSettings,
+  options: SettingsNormalizationOptions = {}
+): PensionSettings {
+  const dateOfBirth = normalizeSetting(
+    "dateOfBirth",
+    settings.dateOfBirth,
+    options
+  );
   const lifeExpectancy = normalizeSetting(
     "lifeExpectancy",
     settings.lifeExpectancy
@@ -450,7 +464,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
   const partner = normalizePartnerSettings(settings.partner);
 
   return {
-    startDate: normalizeSetting("startDate", settings.startDate),
+    startDate: normalizeSetting("startDate", settings.startDate, options),
     dateOfBirth,
     lifeExpectancy,
     requirementAge,
@@ -572,7 +586,8 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     alphaEpaEnabled: Boolean(settings.alphaEpaEnabled),
     alphaEpaPeriods: normalizeSetting(
       "alphaEpaPeriods",
-      settings.alphaEpaPeriods
+      settings.alphaEpaPeriods,
+      options
     ),
     alphaEpaYearsBeforeNpa: normalizeSetting(
       "alphaEpaYearsBeforeNpa",
@@ -588,7 +603,8 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
     ),
     alphaAddedPensionLumpSums: normalizeSetting(
       "alphaAddedPensionLumpSums",
-      settings.alphaAddedPensionLumpSums
+      settings.alphaAddedPensionLumpSums,
+      options
     ),
     classicCalculationMode: normalizeSetting(
       "classicCalculationMode",
@@ -721,7 +737,11 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.sippProtectedPensionAge
     ),
     sippDrawAge: normalizeSippDrawAge(settings.sippDrawAge, dateOfBirth),
-    sippLumpSums: normalizeSetting("sippLumpSums", settings.sippLumpSums),
+    sippLumpSums: normalizeSetting(
+      "sippLumpSums",
+      settings.sippLumpSums,
+      options
+    ),
     sippRealInterestPercent: normalizeSetting(
       "sippRealInterestPercent",
       settings.sippRealInterestPercent
@@ -758,7 +778,11 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.csAvcProtectedPensionAge
     ),
     csAvcDrawAge: normalizeSippDrawAge(settings.csAvcDrawAge, dateOfBirth),
-    csAvcLumpSums: normalizeSetting("csAvcLumpSums", settings.csAvcLumpSums),
+    csAvcLumpSums: normalizeSetting(
+      "csAvcLumpSums",
+      settings.csAvcLumpSums,
+      options
+    ),
     csAvcRealInterestPercent: normalizeSetting(
       "csAvcRealInterestPercent",
       settings.csAvcRealInterestPercent
@@ -781,7 +805,7 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.isaMonthlyContribution
     ),
     isaDrawAge: normalizeSetting("isaDrawAge", settings.isaDrawAge),
-    isaLumpSums: normalizeSetting("isaLumpSums", settings.isaLumpSums),
+    isaLumpSums: normalizeSetting("isaLumpSums", settings.isaLumpSums, options),
     isaRealInterestPercent: normalizeSetting(
       "isaRealInterestPercent",
       settings.isaRealInterestPercent
@@ -804,7 +828,11 @@ export function normalizeSettings(settings: PensionSettings): PensionSettings {
       settings.lisaMonthlyContribution
     ),
     lisaDrawAge: normalizeSetting("lisaDrawAge", settings.lisaDrawAge),
-    lisaLumpSums: normalizeSetting("lisaLumpSums", settings.lisaLumpSums),
+    lisaLumpSums: normalizeSetting(
+      "lisaLumpSums",
+      settings.lisaLumpSums,
+      options
+    ),
     lisaRealInterestPercent: normalizeSetting(
       "lisaRealInterestPercent",
       settings.lisaRealInterestPercent

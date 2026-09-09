@@ -75,6 +75,7 @@ export function useAppController() {
   const {
     exportParameters,
     loadParameters,
+    resetSettingsToDefaults,
     setActiveJourneySettings,
     setSettings,
     setSettingsFormVersion,
@@ -101,6 +102,7 @@ export function useAppController() {
   const {
     comparisonResultCache,
     comparisonScenarios,
+    resetComparisonScenarios,
     retirementPlanResultCache,
     setComparisonScenarios,
   } = useComparisonState();
@@ -245,6 +247,17 @@ export function useAppController() {
   function clearAllData() {
     trackAnalyticsEvent("local_data_cleared");
     clearAllLocalStorageData();
+    saveLocalStoragePreference(false);
+    setLocalStorageEnabledState(false);
+    resetSettingsToDefaults();
+    resetComparisonScenarios();
+    setIsResultsStepActive(false);
+    setAppMode(null);
+    setHasAcknowledgedNotice(false);
+    setAnalyticsConsentGrantedState(false);
+    setShowGuidanceNotes(true);
+    setJourneyRetirementIncomeDisplay("monthly");
+    setComparisonRetirementIncomeDisplay("monthly");
   }
 
   function setAnalyticsConsent(granted: boolean) {

@@ -22,6 +22,14 @@ describe("personal-details settings module", () => {
   it("normalizes personal date fields", () => {
     expect(
       normalizePersonalDateSetting("startDate", "bad", normalizeIsoDate)
+    ).toBe("2026-04-01");
+    expect(
+      normalizePersonalDateSetting(
+        "startDate",
+        "bad",
+        normalizeIsoDate,
+        "2026-04-25"
+      )
     ).toBe("2026-04-25");
     expect(
       normalizePersonalDateSetting("dateOfBirth", "bad", normalizeIsoDate)

@@ -356,7 +356,7 @@ function createSettings(overrides: Partial<PensionSettings>): PensionSettings {
 
 function createGuaranteedIncome(amount: number, id: string) {
   return {
-    ...createDefaultAdditionalGuaranteedIncome(61),
+    ...createDefaultAdditionalGuaranteedIncome("additional-income-1", 61),
     id,
     annualAmount: amount,
     startAge: 61,

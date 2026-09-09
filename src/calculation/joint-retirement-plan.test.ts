@@ -51,11 +51,56 @@ describe("calculateJointRetirementProjection", () => {
     });
     const projection = calculateJointRetirementProjection(settings);
 
+    expect(projection.diagnostics.targetWithdrawalConvergence.converged).toBe(
+      true
+    );
+    expect(
+      projection.diagnostics.targetWithdrawalConvergence.iterations
+    ).toBeGreaterThan(0);
+    expect(
+      projection.diagnostics.targetWithdrawalConvergence.maxIterations
+    ).toBe(8);
     expect(projection.firstRetirementMonth).toBe("2030-06-01");
     expect(projection.bothRetiredMonth).toBe("2040-06-01");
     expect(findMonth(projection, "2030-05")?.target).toBeNull();
     expect(findMonth(projection, "2030-06")?.target).toBe(30_000);
     expect(findMonth(projection, "2040-06")?.target).toBe(40_000);
+  });
+
+  it("reports non-convergence when household target-withdrawal iterations are exhausted", () => {
+    const partner = createDefaultPartnerSettings();
+    partner.dateOfBirth = "1970-06-01";
+    partner.requirementAge = 60;
+    partner.lifeExpectancy = 90;
+
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 90,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      partner,
+      jointRetirement: {
+        ...createDefaultSettings().jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 0,
+        fullyRetiredDesiredRetirementIncome: 0,
+      },
+    });
+
+    const projection = calculateJointRetirementProjection(settings, {
+      targetWithdrawalMaxIterations: 0,
+    });
+
+    expect(projection.rows.length).toBeGreaterThan(0);
+    expect(projection.diagnostics.targetWithdrawalConvergence).toEqual({
+      converged: false,
+      iterations: 0,
+      maxIterations: 0,
+    });
   });
 
   it("does not create a transition period when retirement days differ within one month", () => {

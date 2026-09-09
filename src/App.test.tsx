@@ -545,6 +545,7 @@ import { trackAnalyticsEvent, trackPageView } from "./analytics";
 import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
+  LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
   calculateDefaultIsaDrawAge,
   calculateDefaultSippDrawAge,
@@ -558,6 +559,8 @@ const JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.journeyRetirementIncomeDisplay";
 const COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.comparisonRetirementIncomeDisplay";
+const COMPARISON_SCENARIOS_STORAGE_KEY =
+  "cs-pension-modeller.comparisonScenarios";
 
 function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   return {
@@ -812,7 +815,7 @@ function openJourneyStep(name: string | RegExp) {
   fireEvent.click(screen.getByRole("button", { name }));
 }
 
-describe("App settings form", () => {
+describe.sequential("App settings form", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.history.replaceState({}, "", "/");
@@ -822,6 +825,7 @@ describe("App settings form", () => {
   });
 
   afterEach(() => {
+    window.localStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
@@ -984,6 +988,54 @@ describe("App settings form", () => {
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem("custom-key")).toBeNull();
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
+      "false"
+    );
+  });
+
+  it("does not save cleared settings or scenarios again after local saving is restored", () => {
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(expectedStoredSettings({ desiredRetirementIncome: 99000 }))
+    );
+    window.localStorage.setItem(
+      COMPARISON_SCENARIOS_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "old-scenario",
+          name: "Cleared scenario",
+          settings: expectedStoredSettings({ desiredRetirementIncome: 88000 }),
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ])
+    );
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+
+    const localSavingToggle = screen.getByRole("checkbox", {
+      name: "Save inputs on this device",
+    });
+
+    expect(localSavingToggle).not.toBeChecked();
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+    expect(
+      window.localStorage.getItem(COMPARISON_SCENARIOS_STORAGE_KEY)
+    ).toBeNull();
+
+    fireEvent.click(localSavingToggle);
+
+    expect(localSavingToggle).toBeChecked();
+    expect(readStoredSettingsPayload("expert").desiredRetirementIncome).toBe(
+      defaultSettings.desiredRetirementIncome
+    );
+    expect(window.localStorage.getItem(COMPARISON_SCENARIOS_STORAGE_KEY)).toBe(
+      "[]"
+    );
   });
 
   it("persists guidance note changes from the settings page", () => {

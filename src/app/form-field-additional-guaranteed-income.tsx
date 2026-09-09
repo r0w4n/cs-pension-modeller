@@ -6,6 +6,7 @@ import {
   type AdditionalGuaranteedIncome,
   type PensionValidationIssue,
 } from "../settings";
+import { createFormRowId } from "./form-field-ids";
 import { FieldValidationMessages } from "./form-fields-shared";
 
 type AdditionalGuaranteedIncomeEditorProps = {
@@ -42,7 +43,10 @@ export function AdditionalGuaranteedIncomeEditor({
   function addIncome() {
     onChange([
       ...incomes,
-      createDefaultAdditionalGuaranteedIncome(defaultStartAge),
+      createDefaultAdditionalGuaranteedIncome(
+        createFormRowId("additional-income"),
+        defaultStartAge
+      ),
     ]);
   }
 

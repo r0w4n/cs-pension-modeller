@@ -18,6 +18,7 @@ import {
   calculateTotalGrossMonthlyIncome,
   calculateAnnualIncomeTax,
   createProjectionTable,
+  createProjectionTableResult,
   deriveProjectionInputs,
   generatePensionSummary,
   generateMonthlyDateRange,
@@ -220,6 +221,32 @@ function expectBridgeToRemainActiveUntilTarget(input: {
 }
 
 describe("projection calculations", () => {
+  it("reports target-withdrawal convergence diagnostics", () => {
+    const result = createProjectionTableResult(defaultSettings);
+
+    expect(result.rows.length).toBeGreaterThan(0);
+    expect(result.diagnostics.targetWithdrawalConvergence.converged).toBe(true);
+    expect(
+      result.diagnostics.targetWithdrawalConvergence.iterations
+    ).toBeGreaterThan(0);
+    expect(result.diagnostics.targetWithdrawalConvergence.maxIterations).toBe(
+      12
+    );
+  });
+
+  it("reports non-convergence when the target-withdrawal iteration bound is exhausted", () => {
+    const result = createProjectionTableResult(defaultSettings, {
+      targetWithdrawalMaxIterations: 0,
+    });
+
+    expect(result.rows.length).toBeGreaterThan(0);
+    expect(result.diagnostics.targetWithdrawalConvergence).toEqual({
+      converged: false,
+      iterations: 0,
+      maxIterations: 0,
+    });
+  });
+
   it("ends the table on the birthday at the selected life expectancy age", () => {
     expect(getLifeExpectancyDate("1987-06-15", 88)).toBe("2075-06-15");
   });

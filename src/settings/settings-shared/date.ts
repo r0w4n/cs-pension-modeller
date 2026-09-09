@@ -1,9 +1,5 @@
-export function getTodayIsoDate() {
-  return formatLocalIsoDate(new Date());
-}
-
-export function getDefaultStatementYear(
-  date: Pick<Date, "getFullYear" | "getMonth"> = new Date()
+export function calculateDefaultStatementYear(
+  date: Pick<Date, "getFullYear" | "getMonth">
 ) {
   const year = date.getFullYear();
   return String(date.getMonth() >= 7 ? year : year - 1);

@@ -309,7 +309,7 @@ describe("settings unit tests", () => {
   });
 
   it("normalizes invalid dates back to defaults", () => {
-    expect(normalizeSetting("startDate", "not-a-date")).toBe("2026-04-25");
+    expect(normalizeSetting("startDate", "not-a-date")).toBe("2026-04-01");
     expect(normalizeSetting("dateOfBirth", "2026-02")).toBe("2026-02-01");
     expect(normalizeSetting("dateOfBirth", "2026-99-99")).toBe(
       defaultSettings.dateOfBirth
@@ -1214,9 +1214,9 @@ describe("settings unit tests", () => {
       {
         id: "one-off",
         amount: 1235,
-        startDate: getTodayIsoDate(),
+        startDate: "2026-04-01",
         cadence: "once",
-        endDate: getTodayIsoDate(),
+        endDate: "2026-04-01",
         factorType: "self_plus_beneficiaries",
       },
     ]);

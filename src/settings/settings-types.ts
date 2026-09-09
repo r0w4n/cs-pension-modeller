@@ -27,6 +27,7 @@ export const SETTINGS_JOURNEYS = ["simple", "bridge", "expert"] as const;
 export type SettingsJourney = (typeof SETTINGS_JOURNEYS)[number];
 
 export const DEFAULT_DATE_OF_BIRTH = "1987-06-01";
+export const DEFAULT_START_DATE = "2026-04-01";
 export const DEFAULT_STATE_PENSION_DRAW_DATE = "2055-06-01";
 export const DEFAULT_ALPHA_ABS_YEAR = "2025";
 export const DEFAULT_NUVOS_ABS_YEAR = "2025";

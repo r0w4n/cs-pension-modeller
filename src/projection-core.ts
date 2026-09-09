@@ -13,6 +13,32 @@ import {
 } from "./projection-domains/tax-year";
 import { generatePensionSummary as generatePensionSummaryFromSummary } from "./summary";
 
+const TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS = 12;
+
+export type ProjectionConvergenceDiagnostic = {
+  converged: boolean;
+  iterations: number;
+  maxIterations: number;
+};
+
+export type ProjectionDiagnostics = {
+  targetWithdrawalConvergence: ProjectionConvergenceDiagnostic;
+};
+
+export type ProjectionTableResult = {
+  rows: ProjectionRow[];
+  diagnostics: ProjectionDiagnostics;
+};
+
+type ProjectionTableOptions = {
+  targetWithdrawalMaxIterations?: number;
+};
+
+const projectionTableDiagnostics = new WeakMap<
+  ProjectionRow[],
+  ProjectionDiagnostics
+>();
+
 export type ProjectionRow = {
   date: string;
   age: number;
@@ -229,10 +255,43 @@ export const generatePensionSummary = generatePensionSummaryFromSummary;
 export function createProjectionTable(
   settings: PensionSettings
 ): ProjectionRow[] {
+  return createProjectionTableResult(settings).rows;
+}
+
+export function getProjectionTableDiagnostics(
+  rows: ProjectionRow[]
+): ProjectionDiagnostics {
+  return (
+    projectionTableDiagnostics.get(rows) ?? {
+      targetWithdrawalConvergence: {
+        converged: true,
+        iterations: 0,
+        maxIterations: TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS,
+      },
+    }
+  );
+}
+
+export function createProjectionTableResult(
+  settings: PensionSettings,
+  options: ProjectionTableOptions = {}
+): ProjectionTableResult {
   const derivedInputs = deriveProjectionInputs(settings);
+  const maxIterations =
+    options.targetWithdrawalMaxIterations ??
+    TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS;
 
   if (!derivedInputs) {
-    return [];
+    return rememberProjectionTableResult({
+      rows: [],
+      diagnostics: {
+        targetWithdrawalConvergence: {
+          converged: true,
+          iterations: 0,
+          maxIterations,
+        },
+      },
+    });
   }
 
   const runtimeDates = createProjectionRuntimeDates(settings);
@@ -252,14 +311,29 @@ export function createProjectionTable(
     effectiveRates
   );
   let taxedRows = applyTaxYearIncomeTax(coordinatedRows, settings);
+  let convergence: ProjectionConvergenceDiagnostic = {
+    converged: false,
+    iterations: 0,
+    maxIterations,
+  };
 
-  for (let iteration = 0; iteration < 12; iteration += 1) {
+  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
     const nextEffectiveRates = deriveTaxYearEffectiveRates(taxedRows, settings);
+    convergence = {
+      converged: false,
+      iterations: iteration + 1,
+      maxIterations,
+    };
 
     if (
       iteration > 0 &&
       taxYearEffectiveRatesEqual(effectiveRates, nextEffectiveRates)
     ) {
+      convergence = {
+        converged: true,
+        iterations: iteration + 1,
+        maxIterations,
+      };
       break;
     }
 
@@ -272,5 +346,17 @@ export function createProjectionTable(
     taxedRows = applyTaxYearIncomeTax(coordinatedRows, settings);
   }
 
-  return taxedRows;
+  return rememberProjectionTableResult({
+    rows: taxedRows,
+    diagnostics: {
+      targetWithdrawalConvergence: convergence,
+    },
+  });
+}
+
+function rememberProjectionTableResult(
+  result: ProjectionTableResult
+): ProjectionTableResult {
+  projectionTableDiagnostics.set(result.rows, result.diagnostics);
+  return result;
 }

@@ -451,12 +451,15 @@ export function parseStoredSettings(input: unknown): PensionSettings | null {
     roundedDefault: calculateDefaultIsaDrawAge(normalPensionAge),
   });
 
-  return normalizeSettings({
-    ...defaults,
-    ...coercedSettings,
-    sippDrawAge,
-    isaDrawAge,
-  });
+  return normalizeSettings(
+    {
+      ...defaults,
+      ...coercedSettings,
+      sippDrawAge,
+      isaDrawAge,
+    },
+    { fallbackStartDate: defaults.startDate }
+  );
 }
 
 function reconcileImportedDefaultDrawAge({

@@ -27,6 +27,14 @@ import {
 } from "../settings";
 import { getModelledMonthlyGrowthRate } from "../projection-domains/inflation";
 
+const HOUSEHOLD_TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS = 8;
+
+export type ConvergenceDiagnostic = {
+  converged: boolean;
+  iterations: number;
+  maxIterations: number;
+};
+
 export type JointPersonProjectionSlice = {
   owner: PersonId;
   rows: ProjectionRow[];
@@ -57,6 +65,13 @@ export type JointRetirementProjection = {
     you: JointPersonProjectionSlice;
     partner: JointPersonProjectionSlice;
   };
+  diagnostics: {
+    targetWithdrawalConvergence: ConvergenceDiagnostic;
+  };
+};
+
+type JointRetirementProjectionOptions = {
+  targetWithdrawalMaxIterations?: number;
 };
 
 /**
@@ -65,7 +80,8 @@ export type JointRetirementProjection = {
  * before a household result is projected for presentation.
  */
 export function calculateJointRetirementProjection(
-  settings: PensionSettings
+  settings: PensionSettings,
+  options: JointRetirementProjectionOptions = {}
 ): JointRetirementProjection {
   const partnerSettings = createPartnerCalculationSettings(settings);
   const youSettings = createPersonBaseSettings(settings);
@@ -88,6 +104,9 @@ export function calculateJointRetirementProjection(
     baseYouRows,
     basePartnerRows,
     dates,
+    maxIterations:
+      options.targetWithdrawalMaxIterations ??
+      HOUSEHOLD_TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS,
   });
 
   return {
@@ -102,6 +121,9 @@ export function calculateJointRetirementProjection(
     people: {
       you: { owner: "you", rows: coordinated.youRows },
       partner: { owner: "partner", rows: coordinated.partnerRows },
+    },
+    diagnostics: {
+      targetWithdrawalConvergence: coordinated.convergence,
     },
   };
 }
@@ -201,17 +223,23 @@ function coordinateHouseholdTargetWithdrawals(input: {
     JointRetirementProjection,
     "firstRetirementMonth" | "bothRetiredMonth" | "householdEndMonth"
   >;
+  maxIterations: number;
 }) {
   let youRows = applyTaxYearIncomeTax(input.baseYouRows, input.settings);
   let partnerRows = applyTaxYearIncomeTax(
     input.basePartnerRows,
     input.partnerSettings
   );
+  let convergence: ConvergenceDiagnostic = {
+    converged: false,
+    iterations: 0,
+    maxIterations: input.maxIterations,
+  };
 
   // Tax rates and taxable withdrawals influence each other. A small bounded
   // iteration mirrors the existing target-withdrawal engine's deterministic
   // convergence approach without combining the two people into one taxpayer.
-  for (let iteration = 0; iteration < 8; iteration += 1) {
+  for (let iteration = 0; iteration < input.maxIterations; iteration += 1) {
     const next = applyHouseholdWithdrawals({
       ...input,
       baseYouRows: input.baseYouRows,
@@ -224,19 +252,29 @@ function coordinateHouseholdTargetWithdrawals(input: {
       next.partnerRows,
       input.partnerSettings
     );
+    convergence = {
+      converged: false,
+      iterations: iteration + 1,
+      maxIterations: input.maxIterations,
+    };
     if (
       withdrawalsEqual(youRows, nextYouRows) &&
       withdrawalsEqual(partnerRows, nextPartnerRows)
     ) {
       youRows = nextYouRows;
       partnerRows = nextPartnerRows;
+      convergence = {
+        converged: true,
+        iterations: iteration + 1,
+        maxIterations: input.maxIterations,
+      };
       break;
     }
     youRows = nextYouRows;
     partnerRows = nextPartnerRows;
   }
 
-  return { youRows, partnerRows };
+  return { youRows, partnerRows, convergence };
 }
 
 // This is the coordinated monthly household funding loop. Its branches are

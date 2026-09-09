@@ -352,7 +352,8 @@ the retirement-income chart built from that canonical projection.
 By default, the modeller persists inputs and a few UI preferences using
 `window.localStorage` on the same device/browser. The Settings page lets users
 turn local saving off, manage analytics consent, export parameters to JSON,
-load a parameter JSON file, or reset parameters to defaults.
+load a parameter JSON file, or clear all locally saved data. Clearing all data
+also turns local saving off until the user enables it again.
 
 When local saving is turned off, saved modeller data is removed from browser
 storage and future automatic saves are skipped. The app keeps only the local
@@ -407,7 +408,7 @@ figures.
 
 Requirements:
 
-- Node `20.19.0` or newer
+- Node `22`, `24`, or `26` and newer
 - npm, using the committed `package-lock.json`
 
 Install dependencies:

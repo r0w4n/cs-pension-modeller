@@ -24,6 +24,9 @@ describe("calculateRetirementPlan", () => {
     expect(typeof firstResult.statePensionAssumptionAffectsTarget).toBe(
       "boolean"
     );
+    expect(firstResult.diagnostics.targetWithdrawalConvergence.converged).toBe(
+      true
+    );
   });
 
   it("detects when a household target depends on Partner's unconfirmed State Pension", () => {

@@ -2,14 +2,14 @@ import type {
   PensionSettings,
   PensionValidationIssue,
 } from "../settings-types";
+import { DEFAULT_START_DATE } from "../settings-types";
 import {
-  getTodayIsoDate,
   isValidIsoDate,
   normalizeIsoMonthAsFirstOfMonth,
 } from "../settings-shared/date";
 
 export const personalDetailsDefaults = {
-  startDate: getTodayIsoDate(),
+  startDate: DEFAULT_START_DATE,
   dateOfBirth: "1987-06-01",
   lifeExpectancy: 80,
   requirementAge: 68,
@@ -25,10 +25,11 @@ export const personalDetailsNumericSettingRules = {
 export function normalizePersonalDateSetting(
   key: "startDate" | "dateOfBirth",
   value: string,
-  normalizeDate: (value: string, fallback: string) => string
+  normalizeDate: (value: string, fallback: string) => string,
+  fallbackStartDate: string = personalDetailsDefaults.startDate
 ) {
   if (key === "startDate") {
-    return normalizeDate(value, getTodayIsoDate());
+    return normalizeDate(value, fallbackStartDate);
   }
 
   return normalizeIsoMonthAsFirstOfMonth(

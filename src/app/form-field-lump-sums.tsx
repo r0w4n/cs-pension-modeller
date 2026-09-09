@@ -5,6 +5,7 @@ import {
 import { getLumpSumDateYearRange } from "../app-domains";
 import type { AddedPensionLumpSumsEditorProps } from "./form-field-types";
 import { DateSelectField } from "./form-field-dates";
+import { createFormRowId } from "./form-field-ids";
 import { FieldValidationMessages } from "./form-fields-shared";
 
 export function AddedPensionLumpSumsEditor({
@@ -34,7 +35,13 @@ export function AddedPensionLumpSumsEditor({
   }
 
   function addLumpSum() {
-    onChange([...lumpSums, createDefaultAddedPensionLumpSum(defaultStartDate)]);
+    onChange([
+      ...lumpSums,
+      createDefaultAddedPensionLumpSum(
+        createFormRowId("lump-sum"),
+        defaultStartDate
+      ),
+    ]);
   }
 
   function removeLumpSum(id: string) {

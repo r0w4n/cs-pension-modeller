@@ -15,7 +15,12 @@ describe("alpha-pension settings module", () => {
   });
 
   it("creates default lump sum", () => {
-    const lump = createDefaultAddedPensionLumpSum("2026-01-01", "self");
+    const lump = createDefaultAddedPensionLumpSum(
+      "lump-sum-1",
+      "2026-01-01",
+      "self"
+    );
+    expect(lump.id).toBe("lump-sum-1");
     expect(lump.startDate).toBe("2026-01-01");
     expect(lump.factorType).toBe("self");
   });

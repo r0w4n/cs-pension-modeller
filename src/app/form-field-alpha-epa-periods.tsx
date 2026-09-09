@@ -3,6 +3,7 @@ import {
   type AlphaEpaPeriod,
   type PensionValidationIssue,
 } from "../settings";
+import { createFormRowId } from "./form-field-ids";
 import { FieldValidationMessages } from "./form-fields-shared";
 
 export function AlphaEpaPeriodsEditor({
@@ -133,7 +134,13 @@ export function AlphaEpaPeriodsEditor({
         type="button"
         className="secondary-button"
         onClick={() =>
-          onChange([...periods, createDefaultAlphaEpaPeriod(defaultStartDate)])
+          onChange([
+            ...periods,
+            createDefaultAlphaEpaPeriod(
+              createFormRowId("epa-period"),
+              defaultStartDate
+            ),
+          ])
         }
       >
         Add EPA period

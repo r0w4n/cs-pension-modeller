@@ -132,12 +132,34 @@ export default tseslint.config(
   },
   {
     files: [
+      "src/settings.ts",
+      "src/settings/settings-domains/**/*.ts",
+      "src/settings/settings-normalize.ts",
+      "src/settings/settings-shared/**/*.ts",
+      "src/settings/settings-types.ts",
+      "src/settings/settings-validate.ts",
+      "src/flexible-funds.ts",
+      "src/milestones.ts",
+      "src/model-date.ts",
+      "src/money.ts",
+      "src/projection.ts",
+      "src/projection-core.ts",
+      "src/projection-date.ts",
+      "src/row-*.ts",
+      "src/spending-smile.ts",
+      "src/summary.ts",
       "src/calculation/**/*.ts",
       "src/projection-domains/**/*.ts",
       "src/result-projection/**/*.ts",
       "src/app-domains/**/*.ts",
     ],
-    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    ignores: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "src/settings/settings-defaults.ts",
+      "src/settings/settings-runtime.ts",
+      "src/settings/settings-storage.ts",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -160,6 +182,10 @@ export default tseslint.config(
           name: "window",
           message: "Pass browser state through the FCIS imperative shell.",
         },
+        {
+          name: "crypto",
+          message: "Generate identifiers in the FCIS imperative shell.",
+        },
       ],
       "no-restricted-syntax": [
         "error",
@@ -171,6 +197,11 @@ export default tseslint.config(
           selector:
             "CallExpression[callee.object.name='Date'][callee.property.name='now']",
           message: "Pass the current time into the FCIS functional core.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='crypto'][callee.property.name='randomUUID']",
+          message: "Generate identifiers in the FCIS imperative shell.",
         },
         {
           selector:

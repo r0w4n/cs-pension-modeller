@@ -39,6 +39,11 @@ export type ComparisonTableRow = {
   isSectionDivider?: boolean;
 };
 
+type ComparisonMetricRow = [
+  metric: string,
+  getValue: (result: ComparisonResult) => ComparisonCellValue,
+];
+
 export type ComparisonInsights = {
   earliestRetirementResult: ComparisonResult | null;
   bestTargetResult: ComparisonResult | null;
@@ -137,157 +142,199 @@ export function getComparisonLaterIncome(result: ComparisonResult) {
     : result.lifeExpectancyAnnualIncome;
 }
 
+function createHouseholdHeadlineRows(
+  retirementIncomeDisplay: RetirementIncomeDisplay
+): ComparisonMetricRow[] {
+  return [
+    ["Status", (result) => renderComparisonStatusCell(result)],
+    [
+      "Target income",
+      (result) => {
+        const household = result.household;
+        if (!household) return "n/a";
+        const assessment = household.assessment;
+        const transition = formatRecurringAnnualCurrency(
+          assessment.firstRetirementAnnualTarget,
+          retirementIncomeDisplay
+        );
+        const fullyRetired = formatRecurringAnnualCurrency(
+          assessment.fullyRetiredAnnualTarget,
+          retirementIncomeDisplay
+        );
+        return transition === fullyRetired
+          ? fullyRetired
+          : `${transition} until ${formatDate(household.bothRetiredDate)}; ${fullyRetired} afterwards`;
+      },
+    ],
+    [
+      "Lowest household income",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          getComparisonAssessment(result).lowestAnnualIncome,
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "Months below target",
+      (result) =>
+        renderComparisonToneCell(
+          formatTargetMissDuration(
+            getComparisonAssessment(result).targetMissMonths
+          ),
+          getComparisonAssessment(result).targetMissMonths > 0
+            ? "caution"
+            : "good"
+        ),
+    ],
+    [
+      "Largest household shortfall",
+      (result) =>
+        renderComparisonToneCell(
+          formatRecurringAnnualCurrency(
+            getComparisonAssessment(result).largestAnnualShortfall,
+            retirementIncomeDisplay
+          ),
+          getComparisonAssessment(result).largestAnnualShortfall > 0
+            ? "caution"
+            : "good"
+        ),
+    ],
+    [
+      "Lifetime household shortfall",
+      (result) =>
+        renderComparisonToneCell(
+          formatCurrencyDetailed(
+            getComparisonAssessment(result).totalLifetimeShortfall
+          ),
+          getComparisonAssessment(result).totalLifetimeShortfall > 0
+            ? "caution"
+            : "good"
+        ),
+    ],
+  ];
+}
+
+function createHouseholdTimingRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "First retirement",
+      (result) =>
+        result.household?.firstRetirementDate
+          ? formatDate(result.household.firstRetirementDate)
+          : "n/a",
+    ],
+    [
+      "Both retired",
+      (result) =>
+        result.household?.bothRetiredDate
+          ? formatDate(result.household.bothRetiredDate)
+          : "n/a",
+    ],
+    [
+      "Household projection ends",
+      (result) =>
+        result.household?.householdEndDate
+          ? formatDate(result.household.householdEndDate)
+          : "n/a",
+    ],
+  ];
+}
+
+function createHouseholdIncomeRows(
+  retirementIncomeDisplay: RetirementIncomeDisplay
+): ComparisonMetricRow[] {
+  return [
+    [
+      "Income at first retirement",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          result.household?.assessment.firstRetirementAnnualIncome ?? 0,
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "Income once both are retired",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          result.household?.assessment.fullyRetiredAnnualIncome ?? 0,
+          retirementIncomeDisplay
+        ),
+    ],
+  ];
+}
+
+function createHouseholdFlexibleAssetRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Final household flexible assets",
+      (result) =>
+        formatCurrencyDetailed(result.household?.finalFlexibleAssets ?? 0),
+    ],
+    [
+      "First configured flexible fund exhausted",
+      (result) => {
+        const assessment = result.household?.assessment;
+        return assessment?.firstFlexibleFundExhaustionAccount &&
+          assessment.firstFlexibleFundExhaustionDate
+          ? `${assessment.firstFlexibleFundExhaustionAccount} (${formatDate(assessment.firstFlexibleFundExhaustionDate)})`
+          : "None";
+      },
+    ],
+  ];
+}
+
+function createHouseholdAssumptionRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Projection basis",
+      (result) =>
+        result.scenario.settings.projectionBasis === "real"
+          ? "Real terms"
+          : "Nominal",
+    ],
+    [
+      "Tax basis",
+      () =>
+        "Household target after estimated tax; tax calculated separately for each person",
+    ],
+  ];
+}
+
 function buildHouseholdComparisonTableRows(
   results: ComparisonResult[],
   retirementIncomeDisplay: RetirementIncomeDisplay,
   hideFlexibleAssetsSection: boolean
 ): ComparisonTableRow[] {
   return [
-    createComparisonSection("Household headline outcome", results, [
-      ["Status", (result) => renderComparisonStatusCell(result)],
-      [
-        "Target income",
-        (result) => {
-          const household = result.household;
-          if (!household) return "n/a";
-          const assessment = household.assessment;
-          const transition = formatRecurringAnnualCurrency(
-            assessment.firstRetirementAnnualTarget,
-            retirementIncomeDisplay
-          );
-          const fullyRetired = formatRecurringAnnualCurrency(
-            assessment.fullyRetiredAnnualTarget,
-            retirementIncomeDisplay
-          );
-          return transition === fullyRetired
-            ? fullyRetired
-            : `${transition} until ${formatDate(household.bothRetiredDate)}; ${fullyRetired} afterwards`;
-        },
-      ],
-      [
-        "Lowest household income",
-        (result) =>
-          formatRecurringAnnualCurrency(
-            getComparisonAssessment(result).lowestAnnualIncome,
-            retirementIncomeDisplay
-          ),
-      ],
-      [
-        "Months below target",
-        (result) =>
-          renderComparisonToneCell(
-            formatTargetMissDuration(
-              getComparisonAssessment(result).targetMissMonths
-            ),
-            getComparisonAssessment(result).targetMissMonths > 0
-              ? "caution"
-              : "good"
-          ),
-      ],
-      [
-        "Largest household shortfall",
-        (result) =>
-          renderComparisonToneCell(
-            formatRecurringAnnualCurrency(
-              getComparisonAssessment(result).largestAnnualShortfall,
-              retirementIncomeDisplay
-            ),
-            getComparisonAssessment(result).largestAnnualShortfall > 0
-              ? "caution"
-              : "good"
-          ),
-      ],
-      [
-        "Lifetime household shortfall",
-        (result) =>
-          renderComparisonToneCell(
-            formatCurrencyDetailed(
-              getComparisonAssessment(result).totalLifetimeShortfall
-            ),
-            getComparisonAssessment(result).totalLifetimeShortfall > 0
-              ? "caution"
-              : "good"
-          ),
-      ],
-    ]),
-    createComparisonSection("Household timing", results, [
-      [
-        "First retirement",
-        (result) =>
-          result.household?.firstRetirementDate
-            ? formatDate(result.household.firstRetirementDate)
-            : "n/a",
-      ],
-      [
-        "Both retired",
-        (result) =>
-          result.household?.bothRetiredDate
-            ? formatDate(result.household.bothRetiredDate)
-            : "n/a",
-      ],
-      [
-        "Household projection ends",
-        (result) =>
-          result.household?.householdEndDate
-            ? formatDate(result.household.householdEndDate)
-            : "n/a",
-      ],
-    ]),
-    createComparisonSection("Household income", results, [
-      [
-        "Income at first retirement",
-        (result) =>
-          formatRecurringAnnualCurrency(
-            result.household?.assessment.firstRetirementAnnualIncome ?? 0,
-            retirementIncomeDisplay
-          ),
-      ],
-      [
-        "Income once both are retired",
-        (result) =>
-          formatRecurringAnnualCurrency(
-            result.household?.assessment.fullyRetiredAnnualIncome ?? 0,
-            retirementIncomeDisplay
-          ),
-      ],
-    ]),
+    createComparisonSection(
+      "Household headline outcome",
+      results,
+      createHouseholdHeadlineRows(retirementIncomeDisplay)
+    ),
+    createComparisonSection(
+      "Household timing",
+      results,
+      createHouseholdTimingRows()
+    ),
+    createComparisonSection(
+      "Household income",
+      results,
+      createHouseholdIncomeRows(retirementIncomeDisplay)
+    ),
     ...(hideFlexibleAssetsSection
       ? []
       : [
-          createComparisonSection("Household flexible assets", results, [
-            [
-              "Final household flexible assets",
-              (result) =>
-                formatCurrencyDetailed(
-                  result.household?.finalFlexibleAssets ?? 0
-                ),
-            ],
-            [
-              "First configured flexible fund exhausted",
-              (result) => {
-                const assessment = result.household?.assessment;
-                return assessment?.firstFlexibleFundExhaustionAccount &&
-                  assessment.firstFlexibleFundExhaustionDate
-                  ? `${assessment.firstFlexibleFundExhaustionAccount} (${formatDate(assessment.firstFlexibleFundExhaustionDate)})`
-                  : "None";
-              },
-            ],
-          ]),
+          createComparisonSection(
+            "Household flexible assets",
+            results,
+            createHouseholdFlexibleAssetRows()
+          ),
         ]),
-    createComparisonSection("Household assumptions", results, [
-      [
-        "Projection basis",
-        (result) =>
-          result.scenario.settings.projectionBasis === "real"
-            ? "Real terms"
-            : "Nominal",
-      ],
-      [
-        "Tax basis",
-        () =>
-          "Household target after estimated tax; tax calculated separately for each person",
-      ],
-    ]),
+    createComparisonSection(
+      "Household assumptions",
+      results,
+      createHouseholdAssumptionRows()
+    ),
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
@@ -308,6 +355,264 @@ function buildComparisonModeMismatchRows(results: ComparisonResult[]) {
         "Compare scenarios with the same model type; load a scenario to switch modes",
     ],
   ]);
+}
+
+function createOptionalLegacyPensionRows(
+  results: ComparisonResult[],
+  retirementIncomeDisplay: RetirementIncomeDisplay
+) {
+  const anyScenarioUsesNuvos = results.some(
+    (result) => result.scenario.settings.showNuvos
+  );
+  const anyScenarioUsesPremium = results.some(
+    (result) => result.scenario.settings.showPremium
+  );
+
+  return {
+    timingRows: [
+      ...(anyScenarioUsesNuvos
+        ? ([
+            [
+              "nuvos start",
+              (result) =>
+                result.scenario.settings.showNuvos
+                  ? formatDecimalAge(
+                      result.scenario.settings.nuvosPensionDrawAge
+                    )
+                  : "n/a",
+            ],
+          ] satisfies ComparisonMetricRow[])
+        : []),
+      ...(anyScenarioUsesPremium
+        ? ([
+            [
+              "Premium start",
+              (result) =>
+                result.scenario.settings.showPremium
+                  ? formatDecimalAge(result.scenario.settings.premiumDrawAge)
+                  : "n/a",
+            ],
+          ] satisfies ComparisonMetricRow[])
+        : []),
+    ],
+    incomeRows: [
+      ...(anyScenarioUsesNuvos
+        ? ([
+            [
+              "nuvos income",
+              (result) =>
+                result.scenario.settings.showNuvos
+                  ? formatRecurringAnnualCurrency(
+                      result.summary.nuvosPension.annualAtDraw,
+                      retirementIncomeDisplay
+                    )
+                  : "n/a",
+            ],
+          ] satisfies ComparisonMetricRow[])
+        : []),
+      ...(anyScenarioUsesPremium
+        ? ([
+            [
+              "Premium income",
+              (result) =>
+                result.scenario.settings.showPremium
+                  ? formatRecurringAnnualCurrency(
+                      result.summary.premiumPension.annualAtDraw,
+                      retirementIncomeDisplay
+                    )
+                  : "n/a",
+            ],
+          ] satisfies ComparisonMetricRow[])
+        : []),
+    ],
+  };
+}
+
+function createSinglePersonHeadlineRows(
+  retirementIncomeDisplay: RetirementIncomeDisplay
+): ComparisonMetricRow[] {
+  return [
+    ["Status", (result) => renderComparisonStatusCell(result)],
+    [
+      "Pathway",
+      (result) =>
+        result.scenario.settings.partialRetirementEnabled
+          ? "Partial retirement"
+          : "Full retirement",
+    ],
+    [
+      "Target income",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          result.annualTarget,
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "Lowest income",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          result.assessment.lowestAnnualIncome,
+          retirementIncomeDisplay
+        ),
+    ],
+    [
+      "Years below target",
+      (result) =>
+        renderComparisonToneCell(
+          formatYearsBelowTarget(result.assessment.targetMissMonths),
+          result.assessment.targetMissMonths > 0 ? "caution" : "good"
+        ),
+    ],
+    [
+      "Largest shortfall",
+      (result) =>
+        renderComparisonToneCell(
+          formatRecurringAnnualCurrency(
+            result.assessment.largestAnnualShortfall,
+            retirementIncomeDisplay
+          ),
+          result.assessment.largestAnnualShortfall > 0 ? "caution" : "good"
+        ),
+    ],
+    [
+      "Lifetime shortfall",
+      (result) =>
+        renderComparisonToneCell(
+          formatCurrencyDetailed(result.assessment.totalLifetimeShortfall),
+          result.assessment.totalLifetimeShortfall > 0 ? "caution" : "good"
+        ),
+    ],
+  ];
+}
+
+function createSinglePersonTimingRows(
+  legacyPensionRows: ComparisonMetricRow[]
+): ComparisonMetricRow[] {
+  return [
+    [
+      "Target retirement age",
+      (result) => formatDecimalAge(result.scenario.settings.requirementAge),
+    ],
+    [
+      "Alpha age",
+      (result) =>
+        formatDecimalAge(result.scenario.settings.alphaPensionDrawAge),
+    ],
+    ...legacyPensionRows,
+    [
+      "ISA start",
+      (result) =>
+        result.scenario.settings.showIsa
+          ? formatDecimalAge(result.scenario.settings.isaDrawAge)
+          : "n/a",
+    ],
+    [
+      "LISA start",
+      (result) =>
+        result.scenario.settings.showLisa
+          ? formatDecimalAge(result.scenario.settings.lisaDrawAge)
+          : "n/a",
+    ],
+    [
+      "SIPP start",
+      (result) =>
+        result.scenario.settings.showSipp
+          ? formatDecimalAge(result.scenario.settings.sippDrawAge)
+          : "n/a",
+    ],
+    [
+      "State Pension age",
+      (result) =>
+        result.scenario.settings.showStatePension
+          ? formatDecimalAge(result.summary.calculated.statePensionAge)
+          : "n/a",
+    ],
+  ];
+}
+
+function createSinglePersonSecureIncomeRows(
+  legacyPensionRows: ComparisonMetricRow[],
+  retirementIncomeDisplay: RetirementIncomeDisplay
+): ComparisonMetricRow[] {
+  return [
+    [
+      "Alpha income",
+      (result) =>
+        formatRecurringAnnualCurrency(
+          result.summary.alphaPension.annualAtDraw,
+          retirementIncomeDisplay
+        ),
+    ],
+    ...legacyPensionRows,
+    [
+      "State Pension income",
+      (result) =>
+        result.scenario.settings.showStatePension
+          ? formatRecurringAnnualCurrency(
+              result.summary.incomeOverTime.monthlyStatePension * 12,
+              retirementIncomeDisplay
+            )
+          : "n/a",
+    ],
+    [
+      "Total secure income",
+      (result) =>
+        result.scenario.settings.showStatePension
+          ? formatRecurringAnnualCurrency(
+              getCombinedSecurePensionAtStateAge(result),
+              retirementIncomeDisplay
+            )
+          : formatRecurringAnnualCurrency(
+              result.summary.alphaPension.annualAtDraw +
+                (result.scenario.settings.showNuvos
+                  ? result.summary.nuvosPension.annualAtDraw
+                  : 0) +
+                (result.scenario.settings.showPremium
+                  ? result.summary.premiumPension.annualAtDraw
+                  : 0),
+              retirementIncomeDisplay
+            ),
+    ],
+    [
+      "Secure income coverage",
+      (result) =>
+        result.scenario.settings.showStatePension
+          ? formatWholePercent(
+              getCombinedSecurePensionAtStateAge(result) /
+                calculateRetirementIncomeTargetAtDate(
+                  result.scenario.settings,
+                  result.scenario.settings.statePensionDrawDate
+                )
+            )
+          : "n/a",
+    ],
+  ];
+}
+
+function createSinglePersonFlexibleAssetsRows(): ComparisonMetricRow[] {
+  return [
+    ["Assets exhausted", (result) => renderFlexibleAssetsExhaustedCell(result)],
+  ];
+}
+
+function createSinglePersonAssumptionRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Projection basis",
+      (result) =>
+        result.scenario.settings.projectionBasis === "real"
+          ? "Real terms"
+          : "Nominal",
+    ],
+    [
+      "Tax basis",
+      (result) =>
+        result.scenario.settings.retirementIncomeTargetBasis === "after_tax"
+          ? "Target spending after estimated tax"
+          : "Target income before tax",
+    ],
+  ];
 }
 
 export function buildComparisonTableRows(
@@ -333,259 +638,45 @@ export function buildComparisonTableRows(
         )
       : buildComparisonModeMismatchRows(results);
   }
-  const anyScenarioUsesNuvos = results.some(
-    (result) => result.scenario.settings.showNuvos
+  const legacyPensionRows = createOptionalLegacyPensionRows(
+    results,
+    retirementIncomeDisplay
   );
-  const anyScenarioUsesPremium = results.some(
-    (result) => result.scenario.settings.showPremium
-  );
-  const nuvosTimingRows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  > = anyScenarioUsesNuvos
-    ? [
-        [
-          "nuvos start",
-          (result) =>
-            result.scenario.settings.showNuvos
-              ? formatDecimalAge(result.scenario.settings.nuvosPensionDrawAge)
-              : "n/a",
-        ],
-      ]
-    : [];
-  const nuvosIncomeRows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  > = anyScenarioUsesNuvos
-    ? [
-        [
-          "nuvos income",
-          (result) =>
-            result.scenario.settings.showNuvos
-              ? formatRecurringAnnualCurrency(
-                  result.summary.nuvosPension.annualAtDraw,
-                  retirementIncomeDisplay
-                )
-              : "n/a",
-        ],
-      ]
-    : [];
-  const premiumTimingRows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  > = anyScenarioUsesPremium
-    ? [
-        [
-          "Premium start",
-          (result) =>
-            result.scenario.settings.showPremium
-              ? formatDecimalAge(result.scenario.settings.premiumDrawAge)
-              : "n/a",
-        ],
-      ]
-    : [];
-  const premiumIncomeRows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  > = anyScenarioUsesPremium
-    ? [
-        [
-          "Premium income",
-          (result) =>
-            result.scenario.settings.showPremium
-              ? formatRecurringAnnualCurrency(
-                  result.summary.premiumPension.annualAtDraw,
-                  retirementIncomeDisplay
-                )
-              : "n/a",
-        ],
-      ]
-    : [];
 
   return [
-    createComparisonSection("Headline outcome", results, [
-      ["Status", (result) => renderComparisonStatusCell(result)],
-      [
-        "Pathway",
-        (result) =>
-          result.scenario.settings.partialRetirementEnabled
-            ? "Partial retirement"
-            : "Full retirement",
-      ],
-      [
-        "Target income",
-        (result) =>
-          formatRecurringAnnualCurrency(
-            result.annualTarget,
-            retirementIncomeDisplay
-          ),
-      ],
-      [
-        "Lowest income",
-        (result) =>
-          formatRecurringAnnualCurrency(
-            result.assessment.lowestAnnualIncome,
-            retirementIncomeDisplay
-          ),
-      ],
-      [
-        "Years below target",
-        (result) =>
-          renderComparisonToneCell(
-            formatYearsBelowTarget(result.assessment.targetMissMonths),
-            result.assessment.targetMissMonths > 0 ? "caution" : "good"
-          ),
-      ],
-      [
-        "Largest shortfall",
-        (result) =>
-          renderComparisonToneCell(
-            formatRecurringAnnualCurrency(
-              result.assessment.largestAnnualShortfall,
-              retirementIncomeDisplay
-            ),
-            result.assessment.largestAnnualShortfall > 0 ? "caution" : "good"
-          ),
-      ],
-      [
-        "Lifetime shortfall",
-        (result) =>
-          renderComparisonToneCell(
-            formatCurrencyDetailed(result.assessment.totalLifetimeShortfall),
-            result.assessment.totalLifetimeShortfall > 0 ? "caution" : "good"
-          ),
-      ],
-    ]),
+    createComparisonSection(
+      "Headline outcome",
+      results,
+      createSinglePersonHeadlineRows(retirementIncomeDisplay)
+    ),
     ...createSpendingTargetComparisonRows(results, retirementIncomeDisplay),
-    createComparisonSection("Retirement timing", results, [
-      [
-        "Target retirement age",
-        (result) => formatDecimalAge(result.scenario.settings.requirementAge),
-      ],
-      [
-        "Alpha age",
-        (result) =>
-          formatDecimalAge(result.scenario.settings.alphaPensionDrawAge),
-      ],
-      ...nuvosTimingRows,
-      ...premiumTimingRows,
-      [
-        "ISA start",
-        (result) =>
-          result.scenario.settings.showIsa
-            ? formatDecimalAge(result.scenario.settings.isaDrawAge)
-            : "n/a",
-      ],
-      [
-        "LISA start",
-        (result) =>
-          result.scenario.settings.showLisa
-            ? formatDecimalAge(result.scenario.settings.lisaDrawAge)
-            : "n/a",
-      ],
-      [
-        "SIPP start",
-        (result) =>
-          result.scenario.settings.showSipp
-            ? formatDecimalAge(result.scenario.settings.sippDrawAge)
-            : "n/a",
-      ],
-      [
-        "State Pension age",
-        (result) =>
-          result.scenario.settings.showStatePension
-            ? formatDecimalAge(result.summary.calculated.statePensionAge)
-            : "n/a",
-      ],
-    ]),
-    createComparisonSection("Secure pension income", results, [
-      [
-        "Alpha income",
-        (result) =>
-          formatRecurringAnnualCurrency(
-            result.summary.alphaPension.annualAtDraw,
-            retirementIncomeDisplay
+    createComparisonSection(
+      "Retirement timing",
+      results,
+      createSinglePersonTimingRows(legacyPensionRows.timingRows)
+    ),
+    createComparisonSection(
+      "Secure pension income",
+      results,
+      createSinglePersonSecureIncomeRows(
+        legacyPensionRows.incomeRows,
+        retirementIncomeDisplay
+      )
+    ),
+    ...(hideFlexibleAssetsSection
+      ? []
+      : [
+          createComparisonSection(
+            "Flexible assets",
+            results,
+            createSinglePersonFlexibleAssetsRows()
           ),
-      ],
-      ...nuvosIncomeRows,
-      ...premiumIncomeRows,
-      [
-        "State Pension income",
-        (result) =>
-          result.scenario.settings.showStatePension
-            ? formatRecurringAnnualCurrency(
-                result.summary.incomeOverTime.monthlyStatePension * 12,
-                retirementIncomeDisplay
-              )
-            : "n/a",
-      ],
-      [
-        "Total secure income",
-        (result) =>
-          result.scenario.settings.showStatePension
-            ? formatRecurringAnnualCurrency(
-                getCombinedSecurePensionAtStateAge(result),
-                retirementIncomeDisplay
-              )
-            : formatRecurringAnnualCurrency(
-                result.summary.alphaPension.annualAtDraw +
-                  (result.scenario.settings.showNuvos
-                    ? result.summary.nuvosPension.annualAtDraw
-                    : 0) +
-                  (result.scenario.settings.showPremium
-                    ? result.summary.premiumPension.annualAtDraw
-                    : 0),
-                retirementIncomeDisplay
-              ),
-      ],
-      [
-        "Secure income coverage",
-        (result) =>
-          result.scenario.settings.showStatePension
-            ? formatWholePercent(
-                getCombinedSecurePensionAtStateAge(result) /
-                  calculateRetirementIncomeTargetAtDate(
-                    result.scenario.settings,
-                    result.scenario.settings.statePensionDrawDate
-                  )
-              )
-            : "n/a",
-      ],
-    ]),
-    ...(!hideFlexibleAssetsSection
-      ? [
-          createComparisonSection("Flexible assets", results, [
-            [
-              "Assets exhausted",
-              (result) => renderFlexibleAssetsExhaustedCell(result),
-            ],
-          ]),
-        ]
-      : []),
-    createComparisonSection("Assumptions", results, [
-      [
-        "Projection basis",
-        (result) =>
-          result.scenario.settings.projectionBasis === "real"
-            ? "Real terms"
-            : "Nominal",
-      ],
-      [
-        "Tax basis",
-        (result) =>
-          result.scenario.settings.retirementIncomeTargetBasis === "after_tax"
-            ? "Target spending after estimated tax"
-            : "Target income before tax",
-      ],
-    ]),
+        ]),
+    createComparisonSection(
+      "Assumptions",
+      results,
+      createSinglePersonAssumptionRows()
+    ),
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
@@ -690,6 +781,566 @@ function formatSmilePhaseStartAge(
     : "n/a";
 }
 
+type DetailedComparisonFeatureFlags = {
+  anyScenarioUsesIsa: boolean;
+  anyScenarioUsesLisa: boolean;
+  anyScenarioUsesSipp: boolean;
+  anyScenarioUsesCsAvc: boolean;
+  anyScenarioUsesNuvos: boolean;
+  anyScenarioUsesPremium: boolean;
+};
+
+function getDetailedComparisonFeatureFlags(
+  results: ComparisonResult[]
+): DetailedComparisonFeatureFlags {
+  return {
+    anyScenarioUsesIsa: results.some(
+      (result) => result.scenario.settings.showIsa
+    ),
+    anyScenarioUsesLisa: results.some(
+      (result) => result.scenario.settings.showLisa
+    ),
+    anyScenarioUsesSipp: results.some(
+      (result) => result.scenario.settings.showSipp
+    ),
+    anyScenarioUsesCsAvc: results.some(
+      (result) => result.scenario.settings.showCsAvc
+    ),
+    anyScenarioUsesNuvos: results.some(
+      (result) => result.scenario.settings.showNuvos
+    ),
+    anyScenarioUsesPremium: results.some(
+      (result) => result.scenario.settings.showPremium
+    ),
+  };
+}
+
+function createDetailedRetirementTimingRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Partial retirement start age",
+      (result) =>
+        result.scenario.settings.partialRetirementEnabled
+          ? formatDecimalAge(result.scenario.settings.partialRetirementStartAge)
+          : "n/a",
+    ],
+    [
+      "Pro-rata work level",
+      (result) =>
+        result.scenario.settings.partialRetirementEnabled
+          ? formatWholePercent(
+              result.scenario.settings.partialRetirementWorkPercent / 100
+            )
+          : "n/a",
+    ],
+    [
+      "Age leaving Alpha scheme",
+      (result) =>
+        formatDecimalAge(result.scenario.settings.alphaPensionLeaveAge),
+    ],
+  ];
+}
+
+function createDetailedLegacyPensionRows({
+  anyScenarioUsesNuvos,
+  anyScenarioUsesPremium,
+}: DetailedComparisonFeatureFlags): ComparisonMetricRow[] {
+  return [
+    ...(anyScenarioUsesNuvos
+      ? ([
+          [
+            "nuvos income at draw age",
+            (result) =>
+              result.scenario.settings.showNuvos
+                ? formatAnnualCurrency(result.summary.nuvosPension.annualAtDraw)
+                : "n/a",
+          ],
+        ] satisfies ComparisonMetricRow[])
+      : []),
+    ...(anyScenarioUsesPremium
+      ? ([
+          [
+            "Premium income at draw age",
+            (result) =>
+              result.scenario.settings.showPremium
+                ? formatAnnualCurrency(
+                    result.summary.premiumPension.annualAtDraw
+                  )
+                : "n/a",
+          ],
+        ] satisfies ComparisonMetricRow[])
+      : []),
+  ];
+}
+
+function createDetailedSecurePensionRows(
+  legacyPensionRows: ComparisonMetricRow[]
+): ComparisonMetricRow[] {
+  return [
+    [
+      "Alpha Normal Pension Age",
+      (result) => formatDecimalAge(result.summary.calculated.normalPensionAge),
+    ],
+    [
+      "Alpha early reduction applied",
+      (result) =>
+        formatYesNo(
+          result.summary.calculated.earlyRetirementReductionPercent > 0
+        ),
+    ],
+    ...legacyPensionRows,
+    [
+      "Combined secure pension at State Pension age",
+      (result) =>
+        result.scenario.settings.showStatePension
+          ? formatAnnualCurrency(getCombinedSecurePensionAtStateAge(result))
+          : "n/a",
+    ],
+  ];
+}
+
+function createDetailedLaterIncomeRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "All secure pensions active from",
+      (result) =>
+        result.assessment.allSecureIncomeStartDate === null ||
+        result.assessment.allSecureIncomeStartAge === null ||
+        result.assessment.allSecureIncomeStartAgeMonths === null
+          ? "Not reached within this model"
+          : `${formatDate(result.assessment.allSecureIncomeStartDate)} (${formatAge(
+              result.assessment.allSecureIncomeStartAge,
+              result.assessment.allSecureIncomeStartAgeMonths
+            )})`,
+    ],
+    [
+      "Position by modelling end",
+      (result) =>
+        renderComparisonToneCell(
+          formatAnnualPosition(
+            result.assessment.planningHorizonSecureAnnualSurplus
+          ),
+          result.assessment.planningHorizonSecureAnnualSurplus >= 0
+            ? "good"
+            : "caution"
+        ),
+    ],
+    [
+      "First configured flexible fund exhausted",
+      (result) =>
+        result.assessment.firstFlexibleFundExhaustionAccount &&
+        result.assessment.firstFlexibleFundExhaustionDate
+          ? `${result.assessment.firstFlexibleFundExhaustionAccount} (${formatDate(
+              result.assessment.firstFlexibleFundExhaustionDate
+            )})`
+          : "None",
+    ],
+  ];
+}
+
+function createIsaBridgeDetailRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Current ISA balance",
+      (result) =>
+        result.scenario.settings.showIsa
+          ? formatCurrencyDetailed(result.scenario.settings.isaCurrentPot)
+          : "n/a",
+    ],
+    [
+      "ISA use-by age",
+      (result) => formatUseByAge(result.scenario.settings, "isa"),
+    ],
+    [
+      "Total ISA withdrawals",
+      (result) =>
+        result.scenario.settings.showIsa
+          ? formatCurrencyDetailed(
+              getTotalWithdrawals(result.rows, "monthlyIsaPension")
+            )
+          : "n/a",
+    ],
+    [
+      "ISA depleted age",
+      (result) =>
+        result.scenario.settings.showIsa
+          ? renderComparisonToneCell(
+              formatDepletionAgeOrNa(result.isaDepletedAge),
+              getPotDepletionTone(
+                result.isaDepletedAge,
+                result.scenario.settings
+              )
+            )
+          : "n/a",
+    ],
+    [
+      "Final ISA balance",
+      (result) =>
+        result.scenario.settings.showIsa
+          ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "isaPot"))
+          : "n/a",
+    ],
+  ];
+}
+
+function createSippBridgeDetailRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Current SIPP balance",
+      (result) =>
+        result.scenario.settings.showSipp
+          ? formatCurrencyDetailed(result.scenario.settings.sippCurrentPot)
+          : "n/a",
+    ],
+    [
+      "SIPP use-by age",
+      (result) => formatUseByAge(result.scenario.settings, "sipp"),
+    ],
+    [
+      "SIPP protected pension age",
+      (result) =>
+        result.scenario.settings.showSipp
+          ? formatSippProtectedPensionAge(result.scenario.settings)
+          : "n/a",
+    ],
+    [
+      "SIPP withdrawal strategy",
+      (result) => formatSippWithdrawalStrategy(result.scenario.settings),
+    ],
+    [
+      "Total SIPP withdrawals",
+      (result) =>
+        result.scenario.settings.showSipp
+          ? formatCurrencyDetailed(
+              getTotalWithdrawals(result.rows, "monthlySippPension")
+            )
+          : "n/a",
+    ],
+    [
+      "SIPP depleted age",
+      (result) =>
+        result.scenario.settings.showSipp
+          ? renderComparisonToneCell(
+              formatDepletionAgeOrNa(result.sippDepletedAge),
+              getPotDepletionTone(
+                result.sippDepletedAge,
+                result.scenario.settings
+              )
+            )
+          : "n/a",
+    ],
+    [
+      "Final SIPP balance",
+      (result) =>
+        result.scenario.settings.showSipp
+          ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "sippPot"))
+          : "n/a",
+    ],
+  ];
+}
+
+function createLisaBridgeDetailRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Current LISA balance",
+      (result) =>
+        result.scenario.settings.showLisa
+          ? formatCurrencyDetailed(result.scenario.settings.lisaCurrentPot)
+          : "n/a",
+    ],
+    [
+      "LISA use-by age",
+      (result) => formatUseByAge(result.scenario.settings, "lisa"),
+    ],
+    [
+      "Total LISA withdrawals",
+      (result) =>
+        result.scenario.settings.showLisa
+          ? formatCurrencyDetailed(
+              getTotalWithdrawals(result.rows, "monthlyLisaPension")
+            )
+          : "n/a",
+    ],
+    [
+      "LISA depleted age",
+      (result) =>
+        result.scenario.settings.showLisa
+          ? renderComparisonToneCell(
+              formatDepletionAgeOrNa(result.lisaDepletedAge),
+              getPotDepletionTone(
+                result.lisaDepletedAge,
+                result.scenario.settings
+              )
+            )
+          : "n/a",
+    ],
+    [
+      "Final LISA balance",
+      (result) =>
+        result.scenario.settings.showLisa
+          ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "lisaPot"))
+          : "n/a",
+    ],
+  ];
+}
+
+function createCsAvcBridgeDetailRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Current CS AVC balance",
+      (result) =>
+        result.scenario.settings.showCsAvc
+          ? formatCurrencyDetailed(result.scenario.settings.csAvcCurrentPot)
+          : "n/a",
+    ],
+    [
+      "CS AVC use-by age",
+      (result) => formatUseByAge(result.scenario.settings, "csAvc"),
+    ],
+    [
+      "CS AVC protected pension age",
+      (result) =>
+        result.scenario.settings.showCsAvc
+          ? formatCsAvcProtectedPensionAge(result.scenario.settings)
+          : "n/a",
+    ],
+    [
+      "Total CS AVC withdrawals",
+      (result) =>
+        result.scenario.settings.showCsAvc
+          ? formatCurrencyDetailed(
+              getTotalWithdrawals(result.rows, "monthlyCsAvcPension")
+            )
+          : "n/a",
+    ],
+    [
+      "CS AVC depleted age",
+      (result) =>
+        result.scenario.settings.showCsAvc
+          ? renderComparisonToneCell(
+              formatDepletionAgeOrNa(result.csAvcDepletedAge),
+              getPotDepletionTone(
+                result.csAvcDepletedAge,
+                result.scenario.settings
+              )
+            )
+          : "n/a",
+    ],
+    [
+      "Final CS AVC balance",
+      (result) =>
+        result.scenario.settings.showCsAvc
+          ? formatCurrencyDetailed(getFinalPotBalance(result.rows, "csAvcPot"))
+          : "n/a",
+    ],
+  ];
+}
+
+function createDetailedFlexibleAssetsRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Total ISA + LISA + SIPP + CS AVC withdrawals",
+      (result) =>
+        formatCurrencyDetailed(
+          getTotalWithdrawals(result.rows, "monthlyIsaPension") +
+            getTotalWithdrawals(result.rows, "monthlyLisaPension") +
+            getTotalWithdrawals(result.rows, "monthlySippPension") +
+            getTotalWithdrawals(result.rows, "monthlyCsAvcPension")
+        ),
+    ],
+    [
+      "Final ISA + LISA + SIPP + CS AVC balance",
+      (result) =>
+        formatCurrencyDetailed(
+          getFinalPotBalance(result.rows, "isaPot") +
+            getFinalPotBalance(result.rows, "lisaPot") +
+            getFinalPotBalance(result.rows, "sippPot") +
+            getFinalPotBalance(result.rows, "csAvcPot")
+        ),
+    ],
+  ];
+}
+
+function createDetailedAssumptionRows(): ComparisonMetricRow[] {
+  return [
+    [
+      "Inflation assumption",
+      (result) =>
+        formatPercent(result.scenario.settings.inflationRateAnnual / 100),
+    ],
+    [
+      "ISA nominal return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .isaNominalReturnAnnual
+        ),
+    ],
+    [
+      "LISA nominal return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .lisaNominalReturnAnnual
+        ),
+    ],
+    [
+      "LISA modelled real return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .lisaModelledReturnAnnual
+        ),
+    ],
+    [
+      "ISA modelled real return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .isaModelledReturnAnnual
+        ),
+    ],
+    [
+      "SIPP nominal return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .sippNominalReturnAnnual
+        ),
+    ],
+    [
+      "SIPP modelled real return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .sippModelledReturnAnnual
+        ),
+    ],
+    [
+      "CS AVC nominal return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .csAvcNominalReturnAnnual
+        ),
+    ],
+    [
+      "CS AVC modelled real return",
+      (result) =>
+        formatPercent(
+          deriveInflationAssumptions(result.scenario.settings)
+            .csAvcModelledReturnAnnual
+        ),
+    ],
+    [
+      "State Pension growth projected",
+      (result) =>
+        formatYesNo(result.scenario.settings.statePensionApplyFutureGrowth),
+    ],
+    [
+      "Taxation enabled",
+      (result) => formatYesNo(result.scenario.settings.taxationEnabled),
+    ],
+    [
+      "Income Tax regime",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? result.scenario.settings.taxRegime === "scotland"
+            ? "Scotland (2026/27)"
+            : "England, Wales or Northern Ireland (2026/27)"
+          : "N/A",
+    ],
+    [
+      "Tax calculation basis",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? "Modelled tax-year liability"
+          : "N/A",
+    ],
+    [
+      "Pre-retirement employment tax context",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? `${formatCurrencyDetailed(
+              result.scenario.settings.fullSalary
+            )} annual entered full salary`
+          : "N/A",
+    ],
+    [
+      "Projection-end tax context",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? "Final taxable monthly income continued to the following 5 April"
+          : "N/A",
+    ],
+    [
+      "Personal Allowance",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? formatCurrencyDetailed(
+              result.scenario.settings.taxPersonalAllowance
+            )
+          : "N/A",
+    ],
+    [
+      "Personal Allowance taper threshold",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? formatCurrencyDetailed(
+              result.scenario.settings.taxPersonalAllowanceTaperThreshold
+            )
+          : "N/A",
+    ],
+    [
+      "SIPP withdrawal tax treatment",
+      (result) =>
+        result.scenario.settings.taxationEnabled &&
+        result.scenario.settings.showSipp
+          ? formatWithdrawalTaxTreatment(
+              result.scenario.settings.taxSippWithdrawalTreatment,
+              result.scenario.settings.taxSippTaxFreeWithdrawalPercent
+            )
+          : "N/A",
+    ],
+    [
+      "CS AVC withdrawal tax treatment",
+      (result) =>
+        result.scenario.settings.taxationEnabled &&
+        result.scenario.settings.showCsAvc
+          ? formatWithdrawalTaxTreatment(
+              result.scenario.settings.taxCsAvcWithdrawalTreatment,
+              result.scenario.settings.taxCsAvcTaxFreeWithdrawalPercent
+            )
+          : "N/A",
+    ],
+    [
+      "Shared lump-sum allowance tracking",
+      (result) =>
+        result.scenario.settings.taxationEnabled
+          ? formatYesNo(result.scenario.settings.taxTrackLumpSumAllowance)
+          : "N/A",
+    ],
+    [
+      "Pension lump-sum allowance",
+      (result) =>
+        result.scenario.settings.taxationEnabled &&
+        result.scenario.settings.taxTrackLumpSumAllowance
+          ? formatCurrencyDetailed(result.scenario.settings.taxLumpSumAllowance)
+          : "N/A",
+    ],
+    [
+      "Pension lump-sum allowance already used",
+      (result) =>
+        result.scenario.settings.taxationEnabled &&
+        result.scenario.settings.taxTrackLumpSumAllowance
+          ? formatCurrencyDetailed(
+              result.scenario.settings.taxLumpSumAllowanceUsed
+            )
+          : "N/A",
+    ],
+  ];
+}
+
 export function buildComparisonDetailedRows(
   results: ComparisonResult[]
 ): ComparisonTableRow[] {
@@ -699,562 +1350,78 @@ export function buildComparisonDetailedRows(
     });
   }
 
-  const anyScenarioUsesIsa = results.some(
-    (result) => result.scenario.settings.showIsa
-  );
-  const anyScenarioUsesLisa = results.some(
-    (result) => result.scenario.settings.showLisa
-  );
-  const anyScenarioUsesSipp = results.some(
-    (result) => result.scenario.settings.showSipp
-  );
-  const anyScenarioUsesCsAvc = results.some(
-    (result) => result.scenario.settings.showCsAvc
-  );
-  const anyScenarioUsesNuvos = results.some(
-    (result) => result.scenario.settings.showNuvos
-  );
-  const anyScenarioUsesPremium = results.some(
-    (result) => result.scenario.settings.showPremium
-  );
-  const nuvosSecurePensionRows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  > = anyScenarioUsesNuvos
-    ? [
-        [
-          "nuvos income at draw age",
-          (result) =>
-            result.scenario.settings.showNuvos
-              ? formatAnnualCurrency(result.summary.nuvosPension.annualAtDraw)
-              : "n/a",
-        ],
-      ]
-    : [];
-  const premiumSecurePensionRows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  > = anyScenarioUsesPremium
-    ? [
-        [
-          "Premium income at draw age",
-          (result) =>
-            result.scenario.settings.showPremium
-              ? formatAnnualCurrency(result.summary.premiumPension.annualAtDraw)
-              : "n/a",
-        ],
-      ]
-    : [];
+  const detailedFeatureFlags = getDetailedComparisonFeatureFlags(results);
+  const {
+    anyScenarioUsesIsa,
+    anyScenarioUsesLisa,
+    anyScenarioUsesSipp,
+    anyScenarioUsesCsAvc,
+  } = detailedFeatureFlags;
 
   return [
-    createComparisonSection("Retirement timing details", results, [
-      [
-        "Partial retirement start age",
-        (result) =>
-          result.scenario.settings.partialRetirementEnabled
-            ? formatDecimalAge(
-                result.scenario.settings.partialRetirementStartAge
-              )
-            : "n/a",
-      ],
-      [
-        "Pro-rata work level",
-        (result) =>
-          result.scenario.settings.partialRetirementEnabled
-            ? formatWholePercent(
-                result.scenario.settings.partialRetirementWorkPercent / 100
-              )
-            : "n/a",
-      ],
-      [
-        "Age leaving Alpha scheme",
-        (result) =>
-          formatDecimalAge(result.scenario.settings.alphaPensionLeaveAge),
-      ],
-    ]),
-    createComparisonSection("Secure pension details", results, [
-      [
-        "Alpha Normal Pension Age",
-        (result) =>
-          formatDecimalAge(result.summary.calculated.normalPensionAge),
-      ],
-      [
-        "Alpha early reduction applied",
-        (result) =>
-          formatYesNo(
-            result.summary.calculated.earlyRetirementReductionPercent > 0
-          ),
-      ],
-      ...nuvosSecurePensionRows,
-      ...premiumSecurePensionRows,
-      [
-        "Combined secure pension at State Pension age",
-        (result) =>
-          result.scenario.settings.showStatePension
-            ? formatAnnualCurrency(getCombinedSecurePensionAtStateAge(result))
-            : "n/a",
-      ],
-    ]),
-    createComparisonSection("Later income and flexible funds", results, [
-      [
-        "All secure pensions active from",
-        (result) =>
-          result.assessment.allSecureIncomeStartDate === null ||
-          result.assessment.allSecureIncomeStartAge === null ||
-          result.assessment.allSecureIncomeStartAgeMonths === null
-            ? "Not reached within this model"
-            : `${formatDate(result.assessment.allSecureIncomeStartDate)} (${formatAge(
-                result.assessment.allSecureIncomeStartAge,
-                result.assessment.allSecureIncomeStartAgeMonths
-              )})`,
-      ],
-      [
-        "Position by modelling end",
-        (result) =>
-          renderComparisonToneCell(
-            formatAnnualPosition(
-              result.assessment.planningHorizonSecureAnnualSurplus
-            ),
-            result.assessment.planningHorizonSecureAnnualSurplus >= 0
-              ? "good"
-              : "caution"
-          ),
-      ],
-      [
-        "First configured flexible fund exhausted",
-        (result) =>
-          result.assessment.firstFlexibleFundExhaustionAccount &&
-          result.assessment.firstFlexibleFundExhaustionDate
-            ? `${result.assessment.firstFlexibleFundExhaustionAccount} (${formatDate(
-                result.assessment.firstFlexibleFundExhaustionDate
-              )})`
-            : "None",
-      ],
-    ]),
+    createComparisonSection(
+      "Retirement timing details",
+      results,
+      createDetailedRetirementTimingRows()
+    ),
+    createComparisonSection(
+      "Secure pension details",
+      results,
+      createDetailedSecurePensionRows(
+        createDetailedLegacyPensionRows(detailedFeatureFlags)
+      )
+    ),
+    createComparisonSection(
+      "Later income and flexible funds",
+      results,
+      createDetailedLaterIncomeRows()
+    ),
     ...(anyScenarioUsesIsa
       ? [
-          createComparisonSection("ISA bridge details", results, [
-            [
-              "Current ISA balance",
-              (result) =>
-                result.scenario.settings.showIsa
-                  ? formatCurrencyDetailed(
-                      result.scenario.settings.isaCurrentPot
-                    )
-                  : "n/a",
-            ],
-            [
-              "ISA use-by age",
-              (result) => formatUseByAge(result.scenario.settings, "isa"),
-            ],
-            [
-              "Total ISA withdrawals",
-              (result) =>
-                result.scenario.settings.showIsa
-                  ? formatCurrencyDetailed(
-                      getTotalWithdrawals(result.rows, "monthlyIsaPension")
-                    )
-                  : "n/a",
-            ],
-            [
-              "ISA depleted age",
-              (result) =>
-                result.scenario.settings.showIsa
-                  ? renderComparisonToneCell(
-                      formatDepletionAgeOrNa(result.isaDepletedAge),
-                      getPotDepletionTone(
-                        result.isaDepletedAge,
-                        result.scenario.settings
-                      )
-                    )
-                  : "n/a",
-            ],
-            [
-              "Final ISA balance",
-              (result) =>
-                result.scenario.settings.showIsa
-                  ? formatCurrencyDetailed(
-                      getFinalPotBalance(result.rows, "isaPot")
-                    )
-                  : "n/a",
-            ],
-          ]),
+          createComparisonSection(
+            "ISA bridge details",
+            results,
+            createIsaBridgeDetailRows()
+          ),
         ]
       : []),
     ...(anyScenarioUsesSipp
       ? [
-          createComparisonSection("SIPP bridge details", results, [
-            [
-              "Current SIPP balance",
-              (result) =>
-                result.scenario.settings.showSipp
-                  ? formatCurrencyDetailed(
-                      result.scenario.settings.sippCurrentPot
-                    )
-                  : "n/a",
-            ],
-            [
-              "SIPP use-by age",
-              (result) => formatUseByAge(result.scenario.settings, "sipp"),
-            ],
-            [
-              "SIPP protected pension age",
-              (result) =>
-                result.scenario.settings.showSipp
-                  ? formatSippProtectedPensionAge(result.scenario.settings)
-                  : "n/a",
-            ],
-            [
-              "SIPP withdrawal strategy",
-              (result) =>
-                formatSippWithdrawalStrategy(result.scenario.settings),
-            ],
-            [
-              "Total SIPP withdrawals",
-              (result) =>
-                result.scenario.settings.showSipp
-                  ? formatCurrencyDetailed(
-                      getTotalWithdrawals(result.rows, "monthlySippPension")
-                    )
-                  : "n/a",
-            ],
-            [
-              "SIPP depleted age",
-              (result) =>
-                result.scenario.settings.showSipp
-                  ? renderComparisonToneCell(
-                      formatDepletionAgeOrNa(result.sippDepletedAge),
-                      getPotDepletionTone(
-                        result.sippDepletedAge,
-                        result.scenario.settings
-                      )
-                    )
-                  : "n/a",
-            ],
-            [
-              "Final SIPP balance",
-              (result) =>
-                result.scenario.settings.showSipp
-                  ? formatCurrencyDetailed(
-                      getFinalPotBalance(result.rows, "sippPot")
-                    )
-                  : "n/a",
-            ],
-          ]),
+          createComparisonSection(
+            "SIPP bridge details",
+            results,
+            createSippBridgeDetailRows()
+          ),
         ]
       : []),
     ...(anyScenarioUsesLisa
       ? [
-          createComparisonSection("LISA bridge details", results, [
-            [
-              "Current LISA balance",
-              (result) =>
-                result.scenario.settings.showLisa
-                  ? formatCurrencyDetailed(
-                      result.scenario.settings.lisaCurrentPot
-                    )
-                  : "n/a",
-            ],
-            [
-              "LISA use-by age",
-              (result) => formatUseByAge(result.scenario.settings, "lisa"),
-            ],
-            [
-              "Total LISA withdrawals",
-              (result) =>
-                result.scenario.settings.showLisa
-                  ? formatCurrencyDetailed(
-                      getTotalWithdrawals(result.rows, "monthlyLisaPension")
-                    )
-                  : "n/a",
-            ],
-            [
-              "LISA depleted age",
-              (result) =>
-                result.scenario.settings.showLisa
-                  ? renderComparisonToneCell(
-                      formatDepletionAgeOrNa(result.lisaDepletedAge),
-                      getPotDepletionTone(
-                        result.lisaDepletedAge,
-                        result.scenario.settings
-                      )
-                    )
-                  : "n/a",
-            ],
-            [
-              "Final LISA balance",
-              (result) =>
-                result.scenario.settings.showLisa
-                  ? formatCurrencyDetailed(
-                      getFinalPotBalance(result.rows, "lisaPot")
-                    )
-                  : "n/a",
-            ],
-          ]),
+          createComparisonSection(
+            "LISA bridge details",
+            results,
+            createLisaBridgeDetailRows()
+          ),
         ]
       : []),
     ...(anyScenarioUsesCsAvc
       ? [
-          createComparisonSection("CS AVC bridge details", results, [
-            [
-              "Current CS AVC balance",
-              (result) =>
-                result.scenario.settings.showCsAvc
-                  ? formatCurrencyDetailed(
-                      result.scenario.settings.csAvcCurrentPot
-                    )
-                  : "n/a",
-            ],
-            [
-              "CS AVC use-by age",
-              (result) => formatUseByAge(result.scenario.settings, "csAvc"),
-            ],
-            [
-              "CS AVC protected pension age",
-              (result) =>
-                result.scenario.settings.showCsAvc
-                  ? formatCsAvcProtectedPensionAge(result.scenario.settings)
-                  : "n/a",
-            ],
-            [
-              "Total CS AVC withdrawals",
-              (result) =>
-                result.scenario.settings.showCsAvc
-                  ? formatCurrencyDetailed(
-                      getTotalWithdrawals(result.rows, "monthlyCsAvcPension")
-                    )
-                  : "n/a",
-            ],
-            [
-              "CS AVC depleted age",
-              (result) =>
-                result.scenario.settings.showCsAvc
-                  ? renderComparisonToneCell(
-                      formatDepletionAgeOrNa(result.csAvcDepletedAge),
-                      getPotDepletionTone(
-                        result.csAvcDepletedAge,
-                        result.scenario.settings
-                      )
-                    )
-                  : "n/a",
-            ],
-            [
-              "Final CS AVC balance",
-              (result) =>
-                result.scenario.settings.showCsAvc
-                  ? formatCurrencyDetailed(
-                      getFinalPotBalance(result.rows, "csAvcPot")
-                    )
-                  : "n/a",
-            ],
-          ]),
+          createComparisonSection(
+            "CS AVC bridge details",
+            results,
+            createCsAvcBridgeDetailRows()
+          ),
         ]
       : []),
-    createComparisonSection("Flexible assets details", results, [
-      [
-        "Total ISA + LISA + SIPP + CS AVC withdrawals",
-        (result) =>
-          formatCurrencyDetailed(
-            getTotalWithdrawals(result.rows, "monthlyIsaPension") +
-              getTotalWithdrawals(result.rows, "monthlyLisaPension") +
-              getTotalWithdrawals(result.rows, "monthlySippPension") +
-              getTotalWithdrawals(result.rows, "monthlyCsAvcPension")
-          ),
-      ],
-      [
-        "Final ISA + LISA + SIPP + CS AVC balance",
-        (result) =>
-          formatCurrencyDetailed(
-            getFinalPotBalance(result.rows, "isaPot") +
-              getFinalPotBalance(result.rows, "lisaPot") +
-              getFinalPotBalance(result.rows, "sippPot") +
-              getFinalPotBalance(result.rows, "csAvcPot")
-          ),
-      ],
-    ]),
-    createComparisonSection("Assumptions details", results, [
-      [
-        "Inflation assumption",
-        (result) =>
-          formatPercent(result.scenario.settings.inflationRateAnnual / 100),
-      ],
-      [
-        "ISA nominal return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .isaNominalReturnAnnual
-          ),
-      ],
-      [
-        "LISA nominal return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .lisaNominalReturnAnnual
-          ),
-      ],
-      [
-        "LISA modelled real return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .lisaModelledReturnAnnual
-          ),
-      ],
-      [
-        "ISA modelled real return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .isaModelledReturnAnnual
-          ),
-      ],
-      [
-        "SIPP nominal return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .sippNominalReturnAnnual
-          ),
-      ],
-      [
-        "SIPP modelled real return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .sippModelledReturnAnnual
-          ),
-      ],
-      [
-        "CS AVC nominal return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .csAvcNominalReturnAnnual
-          ),
-      ],
-      [
-        "CS AVC modelled real return",
-        (result) =>
-          formatPercent(
-            deriveInflationAssumptions(result.scenario.settings)
-              .csAvcModelledReturnAnnual
-          ),
-      ],
-      [
-        "State Pension growth projected",
-        (result) =>
-          formatYesNo(result.scenario.settings.statePensionApplyFutureGrowth),
-      ],
-      [
-        "Taxation enabled",
-        (result) => formatYesNo(result.scenario.settings.taxationEnabled),
-      ],
-      [
-        "Income Tax regime",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? result.scenario.settings.taxRegime === "scotland"
-              ? "Scotland (2026/27)"
-              : "England, Wales or Northern Ireland (2026/27)"
-            : "N/A",
-      ],
-      [
-        "Tax calculation basis",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? "Modelled tax-year liability"
-            : "N/A",
-      ],
-      [
-        "Pre-retirement employment tax context",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? `${formatCurrencyDetailed(
-                result.scenario.settings.fullSalary
-              )} annual entered full salary`
-            : "N/A",
-      ],
-      [
-        "Projection-end tax context",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? "Final taxable monthly income continued to the following 5 April"
-            : "N/A",
-      ],
-      [
-        "Personal Allowance",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? formatCurrencyDetailed(
-                result.scenario.settings.taxPersonalAllowance
-              )
-            : "N/A",
-      ],
-      [
-        "Personal Allowance taper threshold",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? formatCurrencyDetailed(
-                result.scenario.settings.taxPersonalAllowanceTaperThreshold
-              )
-            : "N/A",
-      ],
-      [
-        "SIPP withdrawal tax treatment",
-        (result) =>
-          result.scenario.settings.taxationEnabled &&
-          result.scenario.settings.showSipp
-            ? formatWithdrawalTaxTreatment(
-                result.scenario.settings.taxSippWithdrawalTreatment,
-                result.scenario.settings.taxSippTaxFreeWithdrawalPercent
-              )
-            : "N/A",
-      ],
-      [
-        "CS AVC withdrawal tax treatment",
-        (result) =>
-          result.scenario.settings.taxationEnabled &&
-          result.scenario.settings.showCsAvc
-            ? formatWithdrawalTaxTreatment(
-                result.scenario.settings.taxCsAvcWithdrawalTreatment,
-                result.scenario.settings.taxCsAvcTaxFreeWithdrawalPercent
-              )
-            : "N/A",
-      ],
-      [
-        "Shared lump-sum allowance tracking",
-        (result) =>
-          result.scenario.settings.taxationEnabled
-            ? formatYesNo(result.scenario.settings.taxTrackLumpSumAllowance)
-            : "N/A",
-      ],
-      [
-        "Pension lump-sum allowance",
-        (result) =>
-          result.scenario.settings.taxationEnabled &&
-          result.scenario.settings.taxTrackLumpSumAllowance
-            ? formatCurrencyDetailed(
-                result.scenario.settings.taxLumpSumAllowance
-              )
-            : "N/A",
-      ],
-      [
-        "Pension lump-sum allowance already used",
-        (result) =>
-          result.scenario.settings.taxationEnabled &&
-          result.scenario.settings.taxTrackLumpSumAllowance
-            ? formatCurrencyDetailed(
-                result.scenario.settings.taxLumpSumAllowanceUsed
-              )
-            : "N/A",
-      ],
-    ]),
+    createComparisonSection(
+      "Flexible assets details",
+      results,
+      createDetailedFlexibleAssetsRows()
+    ),
+    createComparisonSection(
+      "Assumptions details",
+      results,
+      createDetailedAssumptionRows()
+    ),
   ]
     .flat()
     .filter((row) => !areAllValuesNa(row.values));
@@ -1884,12 +2051,7 @@ function formatList(values: string[]) {
 function createComparisonSection(
   section: string,
   results: ComparisonResult[],
-  rows: Array<
-    [
-      metric: string,
-      getValue: (result: ComparisonResult) => ComparisonCellValue,
-    ]
-  >
+  rows: ComparisonMetricRow[]
 ) {
   const sectionDividerRow: ComparisonTableRow = {
     key: `${section}-divider`,

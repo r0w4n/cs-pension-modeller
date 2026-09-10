@@ -64,6 +64,7 @@ import type {
 } from "./result-projection/retirement-income-chart-model";
 import {
   bringActiveMarkerToFront,
+  type ChartIncomeSeriesDefinition,
   createActiveMilestoneAges,
   createActiveMilestoneBoundaries,
   createBuildUpEndAge,
@@ -368,10 +369,6 @@ export function RetirementIncomeChart({
   const [editableMilestoneDrafts, setEditableMilestoneDrafts] = useState<
     Record<string, number>
   >({});
-  const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
-    useState<MilestoneKey>("retirementAge");
-  const [isMobileNavigationVisible, setIsMobileNavigationVisible] =
-    useState(false);
   const [inspectedPointDate, setInspectedPointDate] = useState<string | null>(
     null
   );
@@ -985,15 +982,14 @@ export function RetirementIncomeChart({
             plotHeight + (draggingEditableMilestone.owner === "you" ? 62 : 100),
         }
       : undefined;
-  const effectiveSelectedMobileMarkerKey = visibleMilestoneMarkers.some(
-    (marker) => marker.key === selectedMobileMarkerKey
-  )
-    ? selectedMobileMarkerKey
-    : visibleMilestoneMarkers[0]?.key;
-  const selectedMobileMarker =
-    visibleMilestoneMarkers.find(
-      (marker) => marker.key === effectiveSelectedMobileMarkerKey
-    ) ?? visibleMilestoneMarkers[0];
+  const {
+    activateMobileMarker,
+    effectiveSelectedMobileMarkerKey,
+    isMobileNavigationVisible,
+    selectedMobileMarker,
+    selectMobileMarker,
+    toggleMobileNavigationVisibility,
+  } = useRetirementIncomeMobileNavigationState(visibleMilestoneMarkers);
   const mobileRetirementIncomeSummary = useMemo(
     () =>
       createMobileRetirementIncomeSummary({
@@ -1413,7 +1409,7 @@ export function RetirementIncomeChart({
     }
     activeMarkerDragPointerIdRef.current = event.pointerId;
     activeMarkerDragScaleRef.current = xScale.copy();
-    setSelectedMobileMarkerKey(markerKey);
+    activateMobileMarker(markerKey);
     setActiveMarkerDragKey(markerKey);
     updateDraftMarkerAge(event, markerKey);
   };
@@ -1448,7 +1444,7 @@ export function RetirementIncomeChart({
     activeMarkerTouchIdentifierRef.current = touch.identifier;
     activeMarkerDragPointerIdRef.current = null;
     activeMarkerDragScaleRef.current = xScale.copy();
-    setSelectedMobileMarkerKey(markerKey);
+    activateMobileMarker(markerKey);
     setActiveMarkerDragKey(markerKey);
     updateDraftMarkerAgeFromClient(touch.clientX, touch.clientY, markerKey);
   };
@@ -2280,34 +2276,12 @@ export function RetirementIncomeChart({
         onChangeDisplayMode={changeDisplayMode}
       />
 
-      {!projectionReady || hasValidationIssues ? (
-        <div className="retirement-income-validation-banner" role="alert">
-          <strong>
-            {projectionReady
-              ? "The chart is showing the current assumptions, but some settings need attention."
-              : "The chart is showing the current assumptions, but they do not produce a valid projection."}
-          </strong>
-          <ul>
-            {validationIssues.slice(0, 4).map((issue) => (
-              <li key={`${issue.field}-${issue.itemId ?? issue.message}`}>
-                {issue.message}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <RetirementIncomeValidationBanner
+        projectionReady={projectionReady}
+        validationIssues={validationIssues}
+      />
 
-      <div
-        className="retirement-income-mobile-summary"
-        aria-label="Chart summary"
-      >
-        {mobileRetirementIncomeSummary.map((item) => (
-          <div key={item.label}>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </div>
-        ))}
-      </div>
+      <RetirementIncomeMobileSummary items={mobileRetirementIncomeSummary} />
 
       <RetirementIncomeChartDescription
         chartDescriptionId={chartDescriptionId}
@@ -2335,71 +2309,9 @@ export function RetirementIncomeChart({
           onContextMenu={(event) => event.preventDefault()}
         >
           <defs>
-            <pattern
-              id="estimated-income-tax-hatch"
-              width="8"
-              height="8"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="8" height="8" fill="#dce6ef" fillOpacity="0.82" />
-              <line
-                x1="0"
-                y1="4"
-                x2="8"
-                y2="4"
-                stroke="#385a78"
-                strokeWidth="1.6"
-              />
-            </pattern>
-            <pattern
-              id="shortfall-hatch"
-              width="8"
-              height="8"
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(45)"
-            >
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="8"
-                stroke="#bf2c2c"
-                strokeWidth="2"
-              />
-            </pattern>
-            <pattern
-              id="avoidable-surplus-hatch"
-              width="7"
-              height="7"
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(45)"
-            >
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="7"
-                stroke="#8a5200"
-                strokeWidth="2"
-              />
-            </pattern>
-            {enabledIncomeSeries.map((series) => (
-              <linearGradient
-                key={series.key}
-                id={getChartIncomeGradientId(series.key)}
-                x1="0"
-                x2="0"
-                y1="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor={series.colour} stopOpacity="0.9" />
-                <stop
-                  offset="100%"
-                  stopColor={series.colour}
-                  stopOpacity="0.68"
-                />
-              </linearGradient>
-            ))}
+            <RetirementIncomeChartSvgDefinitions
+              enabledIncomeSeries={enabledIncomeSeries}
+            />
           </defs>
 
           <g
@@ -2934,40 +2846,14 @@ export function RetirementIncomeChart({
           />
         ) : null}
 
-        <div
-          className="retirement-income-legend retirement-income-legend--overlay"
-          aria-label="Chart key"
-        >
-          <span>
-            <span className="retirement-income-build-up-key" />
-            {BUILD_UP_META.label}
-          </span>
-          {legendIncomeKeys.map((series) => {
-            const key = series.incomeKey;
-            const label =
-              key === "alphaIncomeAnnual" ? alphaLabel : series.label;
-
-            return (
-              <span key={series.key}>
-                <span style={{ background: series.colour }} />
-                {label}
-              </span>
-            );
-          })}
-          {hasEstimatedIncomeTax ? (
-            <span>
-              <span className="retirement-income-income-tax-key" />
-              {RETIREMENT_CHART_OVERLAY_META.estimatedIncomeTax.label}
-            </span>
-          ) : null}
-          {showShortfallOverlay ? (
-            <span>
-              <span className="retirement-income-shortfall-key" />
-              {getRetirementIncomeShortfallLabel(isSimplePresentation)}
-            </span>
-          ) : null}
-          <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
-        </div>
+        <RetirementIncomeChartLegend
+          alphaLabel={alphaLabel}
+          hasEstimatedIncomeTax={hasEstimatedIncomeTax}
+          isSimplePresentation={isSimplePresentation}
+          legendIncomeSeries={legendIncomeKeys}
+          showFlexibleWithdrawalInsights={showFlexibleWithdrawalInsights}
+          showShortfallOverlay={showShortfallOverlay}
+        />
       </div>
 
       <SurplusTextEquivalent points={surplusSummaryPoints} />
@@ -2980,23 +2866,8 @@ export function RetirementIncomeChart({
           selectedMobileMarker={selectedMobileMarker}
           visibleMilestoneMarkers={visibleMilestoneMarkers}
           onChangeParameters={commitParameters}
-          onSelectMobileMarker={(key) => {
-            setSelectedMobileMarkerKey(key);
-            trackAnalyticsEvent("chart_mobile_marker_selected", {
-              chart_marker: key,
-            });
-          }}
-          onToggleVisibility={() => {
-            setIsMobileNavigationVisible((currentValue) => {
-              const nextValue = !currentValue;
-
-              trackAnalyticsEvent("chart_mobile_controls_toggled", {
-                expanded: nextValue,
-              });
-
-              return nextValue;
-            });
-          }}
+          onSelectMobileMarker={selectMobileMarker}
+          onToggleVisibility={toggleMobileNavigationVisibility}
         />
       ) : null}
 
@@ -3028,6 +2899,205 @@ function isStaticChartPresentation(
   readOnly: boolean
 ) {
   return isSimplePresentation || readOnly;
+}
+
+function useRetirementIncomeMobileNavigationState(
+  visibleMilestoneMarkers: VisibleMilestoneMarker[]
+) {
+  const [selectedMobileMarkerKey, setSelectedMobileMarkerKey] =
+    useState<MilestoneKey>("retirementAge");
+  const [isMobileNavigationVisible, setIsMobileNavigationVisible] =
+    useState(false);
+
+  const effectiveSelectedMobileMarkerKey = visibleMilestoneMarkers.some(
+    (marker) => marker.key === selectedMobileMarkerKey
+  )
+    ? selectedMobileMarkerKey
+    : visibleMilestoneMarkers[0]?.key;
+  const selectedMobileMarker =
+    visibleMilestoneMarkers.find(
+      (marker) => marker.key === effectiveSelectedMobileMarkerKey
+    ) ?? visibleMilestoneMarkers[0];
+
+  const selectMobileMarker = useCallback((key: MilestoneKey) => {
+    setSelectedMobileMarkerKey(key);
+    trackAnalyticsEvent("chart_mobile_marker_selected", {
+      chart_marker: key,
+    });
+  }, []);
+
+  const toggleMobileNavigationVisibility = useCallback(() => {
+    setIsMobileNavigationVisible((currentValue) => {
+      const nextValue = !currentValue;
+
+      trackAnalyticsEvent("chart_mobile_controls_toggled", {
+        expanded: nextValue,
+      });
+
+      return nextValue;
+    });
+  }, []);
+
+  return {
+    activateMobileMarker: setSelectedMobileMarkerKey,
+    effectiveSelectedMobileMarkerKey,
+    isMobileNavigationVisible,
+    selectedMobileMarker,
+    selectMobileMarker,
+    toggleMobileNavigationVisibility,
+  };
+}
+
+function RetirementIncomeValidationBanner({
+  projectionReady,
+  validationIssues,
+}: {
+  projectionReady: boolean;
+  validationIssues: PensionValidationIssue[];
+}) {
+  if (projectionReady && validationIssues.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="retirement-income-validation-banner" role="alert">
+      <strong>
+        {projectionReady
+          ? "The chart is showing the current assumptions, but some settings need attention."
+          : "The chart is showing the current assumptions, but they do not produce a valid projection."}
+      </strong>
+      <ul>
+        {validationIssues.slice(0, 4).map((issue) => (
+          <li key={`${issue.field}-${issue.itemId ?? issue.message}`}>
+            {issue.message}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function RetirementIncomeMobileSummary({
+  items,
+}: {
+  items: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <div
+      className="retirement-income-mobile-summary"
+      aria-label="Chart summary"
+    >
+      {items.map((item) => (
+        <div key={item.label}>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RetirementIncomeChartSvgDefinitions({
+  enabledIncomeSeries,
+}: {
+  enabledIncomeSeries: ChartIncomeSeriesDefinition[];
+}) {
+  return (
+    <>
+      <pattern
+        id="estimated-income-tax-hatch"
+        width="8"
+        height="8"
+        patternUnits="userSpaceOnUse"
+      >
+        <rect width="8" height="8" fill="#dce6ef" fillOpacity="0.82" />
+        <line x1="0" y1="4" x2="8" y2="4" stroke="#385a78" strokeWidth="1.6" />
+      </pattern>
+      <pattern
+        id="shortfall-hatch"
+        width="8"
+        height="8"
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)"
+      >
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#bf2c2c" strokeWidth="2" />
+      </pattern>
+      <pattern
+        id="avoidable-surplus-hatch"
+        width="7"
+        height="7"
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)"
+      >
+        <line x1="0" y1="0" x2="0" y2="7" stroke="#8a5200" strokeWidth="2" />
+      </pattern>
+      {enabledIncomeSeries.map((series) => (
+        <linearGradient
+          key={series.key}
+          id={getChartIncomeGradientId(series.key)}
+          x1="0"
+          x2="0"
+          y1="0"
+          y2="1"
+        >
+          <stop offset="0%" stopColor={series.colour} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={series.colour} stopOpacity="0.68" />
+        </linearGradient>
+      ))}
+    </>
+  );
+}
+
+function RetirementIncomeChartLegend({
+  alphaLabel,
+  hasEstimatedIncomeTax,
+  isSimplePresentation,
+  legendIncomeSeries,
+  showFlexibleWithdrawalInsights,
+  showShortfallOverlay,
+}: {
+  alphaLabel: string;
+  hasEstimatedIncomeTax: boolean;
+  isSimplePresentation: boolean;
+  legendIncomeSeries: ChartIncomeSeriesDefinition[];
+  showFlexibleWithdrawalInsights: boolean;
+  showShortfallOverlay: boolean;
+}) {
+  return (
+    <div
+      className="retirement-income-legend retirement-income-legend--overlay"
+      aria-label="Chart key"
+    >
+      <span>
+        <span className="retirement-income-build-up-key" />
+        {BUILD_UP_META.label}
+      </span>
+      {legendIncomeSeries.map((series) => {
+        const key = series.incomeKey;
+        const label = key === "alphaIncomeAnnual" ? alphaLabel : series.label;
+
+        return (
+          <span key={series.key}>
+            <span style={{ background: series.colour }} />
+            {label}
+          </span>
+        );
+      })}
+      {hasEstimatedIncomeTax ? (
+        <span>
+          <span className="retirement-income-income-tax-key" />
+          {RETIREMENT_CHART_OVERLAY_META.estimatedIncomeTax.label}
+        </span>
+      ) : null}
+      {showShortfallOverlay ? (
+        <span>
+          <span className="retirement-income-shortfall-key" />
+          {getRetirementIncomeShortfallLabel(isSimplePresentation)}
+        </span>
+      ) : null}
+      <FlexibleSurplusLegend visible={showFlexibleWithdrawalInsights} />
+    </div>
+  );
 }
 
 function getDisplayedMilestoneMarkers(

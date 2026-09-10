@@ -3,11 +3,8 @@ import { trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeChartParameters } from "../result-projection/retirement-income-chart-model";
 import {
-  clearAllLocalStorageData,
-  clearStoredSettings,
   isLocalStorageEnabled as loadLocalStorageEnabled,
   saveLocalStoragePreference,
-  saveSettingsByJourney,
   type PensionSettings,
 } from "../settings";
 import { DEFAULT_JOURNEY_SETTINGS_PRESENTATION } from "../app-domains";
@@ -23,16 +20,17 @@ import {
   loadStoredJourneyRetirementIncomeDisplay,
   saveAcknowledgementState,
   saveAnalyticsConsentState,
-  clearStoredAppPreferences,
-  saveStoredAppMode,
-  saveStoredGuidanceNotes,
   saveStoredComparisonRetirementIncomeDisplay,
+  saveStoredGuidanceNotes,
   saveStoredJourneyRetirementIncomeDisplay,
   type AppMode,
   type RetirementIncomeDisplay,
 } from "./app-persistence";
 import {
+  disableLocalSavingAndClearStoredData,
+  enableLocalSavingAndPersistState,
   loadComparisonScenario as loadComparisonScenarioAction,
+  resetLocalDataState,
   selectAppMode as selectAppModeAction,
 } from "./app-actions";
 import {
@@ -47,10 +45,6 @@ import { useJourneySettings } from "./use-journey-settings";
 import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
-import {
-  clearStoredComparisonScenarios,
-  saveStoredComparisonScenarios,
-} from "./comparison-storage";
 import { getCachedComparisonResult } from "./comparison-result-cache";
 
 export function useAppController() {
@@ -246,18 +240,18 @@ export function useAppController() {
 
   function clearAllData() {
     trackAnalyticsEvent("local_data_cleared");
-    clearAllLocalStorageData();
-    saveLocalStoragePreference(false);
-    setLocalStorageEnabledState(false);
-    resetSettingsToDefaults();
-    resetComparisonScenarios();
-    setIsResultsStepActive(false);
-    setAppMode(null);
-    setHasAcknowledgedNotice(false);
-    setAnalyticsConsentGrantedState(false);
-    setShowGuidanceNotes(true);
-    setJourneyRetirementIncomeDisplay("monthly");
-    setComparisonRetirementIncomeDisplay("monthly");
+    resetLocalDataState({
+      resetSettingsToDefaults,
+      resetComparisonScenarios,
+      setLocalStorageEnabled: setLocalStorageEnabledState,
+      setIsResultsStepActive,
+      setAppMode,
+      setHasAcknowledgedNotice,
+      setAnalyticsConsentGranted: setAnalyticsConsentGrantedState,
+      setShowGuidanceNotes,
+      setJourneyRetirementIncomeDisplay,
+      setComparisonRetirementIncomeDisplay,
+    });
   }
 
   function setAnalyticsConsent(granted: boolean) {
@@ -272,28 +266,20 @@ export function useAppController() {
     setLocalStorageEnabledState(enabled);
 
     if (!enabled) {
-      clearStoredSettings();
-      clearStoredAppPreferences();
-      clearStoredComparisonScenarios();
+      disableLocalSavingAndClearStoredData();
       return;
     }
 
-    if (appMode) {
-      saveStoredAppMode(appMode);
-    }
-
-    saveSettingsByJourney(settingsByJourney);
-    saveStoredComparisonScenarios(comparisonScenarios);
-    saveStoredGuidanceNotes(showGuidanceNotes);
-    saveStoredJourneyRetirementIncomeDisplay(journeyRetirementIncomeDisplay);
-    saveStoredComparisonRetirementIncomeDisplay(
-      comparisonRetirementIncomeDisplay
-    );
-    saveAnalyticsConsentState(analyticsConsentGranted);
-
-    if (hasAcknowledgedNotice) {
-      saveAcknowledgementState();
-    }
+    enableLocalSavingAndPersistState({
+      appMode,
+      settingsByJourney,
+      comparisonScenarios,
+      showGuidanceNotes,
+      journeyRetirementIncomeDisplay,
+      comparisonRetirementIncomeDisplay,
+      analyticsConsentGranted,
+      hasAcknowledgedNotice,
+    });
   }
 
   const journeyStepViewModel: JourneyStepViewModel = {

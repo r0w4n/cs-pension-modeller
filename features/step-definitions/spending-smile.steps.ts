@@ -38,7 +38,7 @@ Given(
 );
 
 Given(
-  "the Retirement Living Standards target control is displayed",
+  "the Retirement Living Standards target control is configured",
   function (this: SpendingSmileWorld) {
     const targetGroup = fieldGroups.find(
       (group) => group.id === "retirement-target"
@@ -202,7 +202,7 @@ When(
 );
 
 Then(
-  "the Retirement Living Standards target should be displayed first",
+  "the Retirement Living Standards target field should precede spending strategy configuration",
   function (this: SpendingSmileWorld) {
     assertEqual(this.targetControlDisplayed, true);
     const personalGroupIndex = fieldGroups.findIndex(
@@ -219,7 +219,7 @@ Then(
 );
 
 Then(
-  "the spending strategy dropdown should be displayed beneath it",
+  "the spending strategy editor should be configured on the target step",
   function () {
     const targetGroup = fieldGroups.find(
       (group) => group.id === "retirement-target"

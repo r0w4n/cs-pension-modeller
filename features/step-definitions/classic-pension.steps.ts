@@ -97,12 +97,25 @@ function getClassicCalculationMode(mode: string): ClassicCalculationMode {
 function calculateClassicWorldResult(world: ClassicWorld) {
   if (world.classicScheme === "classic plus") {
     if (world.classicCalculationMode === "manual") {
+      const settings = buildSettings(world);
+      const annualPension = calculateClassicPlusAnnualPensionAtDate({
+        settings,
+        rowDate: ACCEPTANCE_START_DATE,
+      });
+      const automaticLumpSum = calculateClassicPlusAutomaticLumpSumAtDate({
+        settings,
+        rowDate: ACCEPTANCE_START_DATE,
+      });
+
       world.classicPlusResult = {
-        pre2002AnnualPension: world.classicAnnualPension ?? 0,
+        pre2002AnnualPension: annualPension,
         post2002AnnualPension: 0,
-        annualPension: world.classicAnnualPension ?? 0,
-        automaticLumpSum: world.classicAutomaticLumpSum ?? 0,
-        finalPensionableEarnings: 0,
+        annualPension,
+        automaticLumpSum,
+        finalPensionableEarnings:
+          world.classicCurrentFinalPensionableEarnings ??
+          world.classicPreservedFinalPensionableEarnings ??
+          0,
         pre2002ServiceYears: world.classicPlusPre2002ServiceYears ?? 0,
         post2002ServiceYears: world.classicPlusPost2002ServiceYears ?? 0,
       };
@@ -118,10 +131,23 @@ function calculateClassicWorldResult(world: ClassicWorld) {
   }
 
   if (world.classicCalculationMode === "manual") {
+    const settings = buildSettings(world);
+    const annualPension = calculateClassicAnnualPensionAtDate({
+      settings,
+      rowDate: ACCEPTANCE_START_DATE,
+    });
+    const automaticLumpSum = calculateClassicAutomaticLumpSumAtDate({
+      settings,
+      rowDate: ACCEPTANCE_START_DATE,
+    });
+
     world.classicResult = {
-      annualPension: world.classicAnnualPension ?? 0,
-      automaticLumpSum: world.classicAutomaticLumpSum ?? 0,
-      finalPensionableEarnings: 0,
+      annualPension,
+      automaticLumpSum,
+      finalPensionableEarnings:
+        world.classicCurrentFinalPensionableEarnings ??
+        world.classicPreservedFinalPensionableEarnings ??
+        0,
       reckonableServiceYears: world.classicReckonableServiceYears ?? 0,
     };
     return;
@@ -170,6 +196,8 @@ function buildSettings(world: ClassicWorld): PensionSettings {
       world.classicPreservedFinalPensionableEarnings ?? 0,
     classicFinalSalaryLink: world.classicFinalSalaryLink ?? "maintained",
     classicReckonableServiceYears: world.classicReckonableServiceYears ?? 0,
+    classicAnnualPension: world.classicAnnualPension ?? 0,
+    classicAutomaticLumpSum: world.classicAutomaticLumpSum ?? 0,
     classicPlusCalculationMode: world.classicCalculationMode ?? "estimate",
     classicPlusCurrentFinalPensionableEarnings:
       world.classicCurrentFinalPensionableEarnings ?? 0,
@@ -178,6 +206,8 @@ function buildSettings(world: ClassicWorld): PensionSettings {
     classicPlusFinalSalaryLink: world.classicFinalSalaryLink ?? "maintained",
     classicPlusPre2002ServiceYears: world.classicPlusPre2002ServiceYears ?? 0,
     classicPlusPost2002ServiceYears: world.classicPlusPost2002ServiceYears ?? 0,
+    classicPlusAnnualPension: world.classicAnnualPension ?? 0,
+    classicPlusAutomaticLumpSum: world.classicAutomaticLumpSum ?? 0,
     alphaPayRisePercent: world.classicSalaryIncrease ?? 0,
     projectionBasis: "real",
   };
@@ -499,7 +529,15 @@ Then(
 Then(
   "the modeller should not recalculate classic pension from salary and service",
   function (this: ClassicWorld) {
-    expectMoney(getClassicResult(this).finalPensionableEarnings, 0);
+    this.classicCurrentFinalPensionableEarnings = 999_999;
+    this.classicPreservedFinalPensionableEarnings = 999_999;
+    this.classicReckonableServiceYears = 40;
+    this.classicResult = undefined;
+
+    const result = getClassicResult(this);
+
+    expectMoney(result.annualPension, this.classicAnnualPension ?? 0);
+    expectMoney(result.automaticLumpSum, this.classicAutomaticLumpSum ?? 0);
   }
 );
 
@@ -563,7 +601,16 @@ Then(
 Then(
   "the modeller should not recalculate classic plus pension from salary and service",
   function (this: ClassicWorld) {
-    expectMoney(getClassicPlusResult(this).finalPensionableEarnings, 0);
+    this.classicCurrentFinalPensionableEarnings = 999_999;
+    this.classicPreservedFinalPensionableEarnings = 999_999;
+    this.classicPlusPre2002ServiceYears = 40;
+    this.classicPlusPost2002ServiceYears = 40;
+    this.classicPlusResult = undefined;
+
+    const result = getClassicPlusResult(this);
+
+    expectMoney(result.annualPension, this.classicAnnualPension ?? 0);
+    expectMoney(result.automaticLumpSum, this.classicAutomaticLumpSum ?? 0);
   }
 );
 

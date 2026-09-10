@@ -20,7 +20,9 @@ describe("AcceptancePage", () => {
     expect(
       screen.getByText("Build alpha pension while active")
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Covered by tests").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Executable specification").length
+    ).toBeGreaterThan(0);
     expect(
       screen.getByRole("region", { name: "Acceptance summary" })
     ).toHaveTextContent("0 scenarios under review");

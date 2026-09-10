@@ -1,6 +1,7 @@
 import { DataTable, Given, Then, When } from "@cucumber/cucumber";
 import {
   applyBridgeJourneyDefaults,
+  applyExpertJourneyDefaults,
   applySimpleJourneyDefaults,
   JOURNEY_DEFINITIONS,
   OPTIONAL_SECTION_TOGGLES,
@@ -28,12 +29,19 @@ import {
   loadStoredComparisonRetirementIncomeDisplay,
   loadStoredGuidanceNotes,
   loadStoredJourneyRetirementIncomeDisplay,
+  saveStoredAppMode,
+  saveStoredGuidanceNotes,
   saveAnalyticsConsentState,
   saveAcknowledgementState,
   saveStoredComparisonRetirementIncomeDisplay,
   saveStoredJourneyRetirementIncomeDisplay,
   type RetirementIncomeDisplay,
 } from "../../src/app/app-persistence";
+import {
+  disableLocalSavingAndClearStoredData,
+  enableLocalSavingAndPersistState,
+  resetLocalDataState,
+} from "../../src/app/app-actions";
 import {
   applyPartnerSettingsFieldChange,
   applyRetirementIncomeChartParameterPatch,
@@ -68,11 +76,19 @@ import {
   getStoredSettingsEnvelope,
   parseStoredSettingsByJourney,
   saveLocalStoragePreference,
+  saveSettingsByJourney,
   validateSettings,
   normalizeSettings,
+  loadStoredSettingsByJourney,
+  LOCAL_STORAGE_ENABLED_KEY,
+  SETTINGS_STORAGE_KEY,
   type PensionSettings,
   type PensionSettingsByJourney,
 } from "../../src/settings";
+import {
+  loadStoredComparisonScenarios,
+  saveStoredComparisonScenarios,
+} from "../../src/app/comparison-storage";
 import { createHouseholdChartEvents } from "../../src/result-projection/joint-retirement-chart";
 import { getRetirementIncomeEventsForDate } from "../../src/result-projection/retirement-income-chart-layout";
 import type { RetirementIncomeChartEvent } from "../../src/result-projection/retirement-income-chart-model";
@@ -142,6 +158,19 @@ type ProductAcceptanceWorld = {
   analyticsConsentLoaded?: boolean;
   appModeLoaded?: ReturnType<typeof loadStoredAppMode>;
   guidanceNotesLoaded?: boolean;
+  localStorageEnabledLoaded?: boolean;
+  storedScenarioCount?: number;
+  activeSettingsAfterClear?: PensionSettings;
+  activeSettingsByJourneyAfterClear?: PensionSettingsByJourney;
+  activeComparisonCountAfterClear?: number;
+  activeComparisonScenariosAfterClear?: ComparisonScenario[];
+  resultStepActiveAfterClear?: boolean;
+  journeyDisplayAfterClear?: RetirementIncomeDisplay;
+  comparisonDisplayAfterClear?: RetirementIncomeDisplay;
+  editedSettingsByJourney?: PensionSettingsByJourney;
+  editedComparisonScenarios?: ComparisonScenario[];
+  reloadedSettingsByJourney?: PensionSettingsByJourney;
+  reloadedComparisonScenarios?: ComparisonScenario[];
   journeySettings?: PensionSettingsByJourney;
   jointProjection?: ReturnType<typeof calculateJointRetirementProjection>;
   jointChartEvents?: RetirementIncomeChartEvent[];
@@ -155,6 +184,23 @@ type MemoryStorage = Storage & {
 type JourneyAnswerStep = JourneyStepDefinition & {
   kind: "results";
 };
+
+const COMPARISON_SCENARIOS_STORAGE_KEY =
+  "cs-pension-modeller.comparisonScenarios";
+const APP_PREFERENCE_STORAGE_KEYS = [
+  "cs-pension-modeller.acknowledgement",
+  "cs-pension-modeller.analyticsConsent",
+  "cs-pension-modeller.appMode",
+  "cs-pension-modeller.guidanceNotes",
+  "cs-pension-modeller.journeyRetirementIncomeDisplay",
+  "cs-pension-modeller.comparisonRetirementIncomeDisplay",
+  "cs-pension-modeller.retirementIncomeDisplay",
+] as const;
+const DISABLED_SAVING_DATA_KEYS = [
+  SETTINGS_STORAGE_KEY,
+  COMPARISON_SCENARIOS_STORAGE_KEY,
+  ...APP_PREFERENCE_STORAGE_KEYS,
+] as const;
 
 function parseMoney(value: string | number) {
   return Number(value);
@@ -303,6 +349,48 @@ function installLocalStorage() {
   });
 
   return localStorage;
+}
+
+function readRawStorageItem(key: string) {
+  const testGlobal = globalThis as typeof globalThis & {
+    window?: { localStorage?: Storage };
+  };
+
+  return testGlobal.window?.localStorage?.getItem(key) ?? null;
+}
+
+function getRawStorageSnapshot() {
+  const testGlobal = globalThis as typeof globalThis & {
+    window?: { localStorage?: Storage };
+  };
+  const storage = testGlobal.window?.localStorage;
+
+  if (storage && "snapshot" in storage) {
+    return (storage as MemoryStorage).snapshot();
+  }
+
+  return {};
+}
+
+function createStoredComparisonScenario(
+  name: string,
+  settings: PensionSettings
+): ComparisonScenario {
+  return {
+    id: name.toLowerCase().replace(/\s+/g, "-"),
+    name,
+    settings,
+    createdAt: "2026-09-10T00:00:00.000Z",
+    updatedAt: "2026-09-10T00:00:00.000Z",
+  };
+}
+
+function createInitialSettingsByJourney(): PensionSettingsByJourney {
+  return {
+    simple: applySimpleJourneyDefaults(createDefaultSettings()),
+    bridge: applyBridgeJourneyDefaults(createDefaultSettings()),
+    expert: applyExpertJourneyDefaults(createDefaultSettings()),
+  };
 }
 
 Given(
@@ -3572,6 +3660,59 @@ Given("browser local storage is disabled", function () {
   saveLocalStoragePreference(false);
 });
 
+Given(
+  "browser local storage contains populated modeller data",
+  function (this: ProductAcceptanceWorld) {
+    installLocalStorage();
+    saveLocalStoragePreference(true);
+
+    const expertSensitiveSettings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1970-04-01",
+      pensionableEarnings: 64000,
+      desiredRetirementIncome: 36000,
+      showPremium: true,
+      premiumAnnualPensionAtValuationDate: 8500,
+    };
+    const bridgeSensitiveSettings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1968-02-14",
+      currentAge: 58,
+      pensionableEarnings: 59_500,
+      desiredRetirementIncome: 33_500,
+      currentCsPension: 18_250,
+      bridgeEnabled: true,
+    };
+    const simpleSensitiveSettings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1977-11-30",
+      pensionableEarnings: 52_250,
+      desiredRetirementIncome: 28_000,
+      isaCurrentPot: 44_000,
+    };
+    const journeySettings = {
+      bridge: bridgeSensitiveSettings,
+      simple: simpleSensitiveSettings,
+      expert: expertSensitiveSettings,
+    };
+
+    saveSettingsByJourney(journeySettings);
+    saveStoredComparisonScenarios([
+      createStoredComparisonScenario(
+        "Stored comparison",
+        bridgeSensitiveSettings
+      ),
+    ]);
+    saveStoredAppMode("expert");
+    saveAcknowledgementState();
+    saveAnalyticsConsentState(true);
+    saveStoredGuidanceNotes(false);
+    saveStoredJourneyRetirementIncomeDisplay("annual");
+    saveStoredComparisonRetirementIncomeDisplay("annual");
+    this.settings = expertSensitiveSettings;
+  }
+);
+
 When("the important information notice is acknowledged", function () {
   saveAcknowledgementState();
 });
@@ -3601,6 +3742,174 @@ When(
     this.analyticsConsentLoaded = loadAnalyticsConsentState();
     this.appModeLoaded = loadStoredAppMode();
     this.guidanceNotesLoaded = loadStoredGuidanceNotes();
+    this.localStorageEnabledLoaded =
+      loadStoredSettingsByJourney().settings.expert.desiredRetirementIncome !==
+      36000;
+    this.storedScenarioCount = loadStoredComparisonScenarios().length;
+  }
+);
+
+When(
+  "local data is cleared through the application action",
+  function (this: ProductAcceptanceWorld) {
+    let activeSettingsByJourney = loadStoredSettingsByJourney().settings;
+    let activeSettings =
+      this.settings ??
+      activeSettingsByJourney.expert ??
+      createDefaultSettings();
+    let comparisonScenarios = loadStoredComparisonScenarios();
+    let resultStepActive = true;
+    let appMode: ReturnType<typeof loadStoredAppMode> = "expert";
+    let acknowledged = true;
+    let analyticsConsent = true;
+    let showGuidanceNotes = false;
+    let journeyDisplay: RetirementIncomeDisplay = "annual";
+    let comparisonDisplay: RetirementIncomeDisplay = "annual";
+    let localStorageEnabled = true;
+
+    resetLocalDataState({
+      resetSettingsToDefaults: () => {
+        activeSettingsByJourney = createInitialSettingsByJourney();
+        activeSettings = activeSettingsByJourney.expert;
+      },
+      resetComparisonScenarios: () => {
+        comparisonScenarios = [];
+      },
+      setLocalStorageEnabled: (value) => {
+        localStorageEnabled =
+          typeof value === "function" ? value(localStorageEnabled) : value;
+      },
+      setIsResultsStepActive: (value) => {
+        resultStepActive =
+          typeof value === "function" ? value(resultStepActive) : value;
+      },
+      setAppMode: (value) => {
+        appMode = typeof value === "function" ? value(appMode) : value;
+      },
+      setHasAcknowledgedNotice: (value) => {
+        acknowledged =
+          typeof value === "function" ? value(acknowledged) : value;
+      },
+      setAnalyticsConsentGranted: (value) => {
+        analyticsConsent =
+          typeof value === "function" ? value(analyticsConsent) : value;
+      },
+      setShowGuidanceNotes: (value) => {
+        showGuidanceNotes =
+          typeof value === "function" ? value(showGuidanceNotes) : value;
+      },
+      setJourneyRetirementIncomeDisplay: (value) => {
+        journeyDisplay =
+          typeof value === "function" ? value(journeyDisplay) : value;
+      },
+      setComparisonRetirementIncomeDisplay: (value) => {
+        comparisonDisplay =
+          typeof value === "function" ? value(comparisonDisplay) : value;
+      },
+    });
+
+    this.settings = activeSettings;
+    this.activeSettingsAfterClear = activeSettings;
+    this.activeSettingsByJourneyAfterClear = activeSettingsByJourney;
+    this.activeComparisonCountAfterClear = comparisonScenarios.length;
+    this.activeComparisonScenariosAfterClear = comparisonScenarios;
+    this.resultStepActiveAfterClear = resultStepActive;
+    this.appModeLoaded = appMode;
+    this.acknowledgementLoaded = acknowledged;
+    this.analyticsConsentLoaded = analyticsConsent;
+    this.guidanceNotesLoaded = showGuidanceNotes;
+    this.journeyDisplayAfterClear = journeyDisplay;
+    this.comparisonDisplayAfterClear = comparisonDisplay;
+    this.localStorageEnabledLoaded = localStorageEnabled;
+  }
+);
+
+When("local saving is disabled through the application action", function () {
+  saveLocalStoragePreference(false);
+  disableLocalSavingAndClearStoredData();
+});
+
+When(
+  "the user edits settings and saves another comparison while local saving is disabled",
+  function () {
+    saveSettingsByJourney({
+      bridge: { ...createDefaultSettings(), pensionableEarnings: 99000 },
+      simple: createDefaultSettings(),
+      expert: { ...createDefaultSettings(), pensionableEarnings: 99000 },
+    });
+    saveStoredComparisonScenarios([
+      createStoredComparisonScenario("Should not persist", {
+        ...createDefaultSettings(),
+        pensionableEarnings: 99000,
+      }),
+    ]);
+    saveStoredJourneyRetirementIncomeDisplay("annual");
+  }
+);
+
+When(
+  "the user edits active settings and comparisons while local saving is disabled",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.activeSettingsByJourneyAfterClear,
+      "Expected reset journey settings before editing"
+    );
+    assertCondition(
+      this.activeComparisonScenariosAfterClear,
+      "Expected reset comparison scenarios before editing"
+    );
+
+    const editedSettings = {
+      ...this.activeSettingsByJourneyAfterClear.expert,
+      pensionableEarnings: 77_000,
+      desiredRetirementIncome: 41_000,
+    };
+    const editedSettingsByJourney = {
+      ...this.activeSettingsByJourneyAfterClear,
+      expert: editedSettings,
+    };
+    const editedComparisonScenarios = [
+      ...this.activeComparisonScenariosAfterClear,
+      createStoredComparisonScenario("New comparison", editedSettings),
+    ];
+
+    this.settings = editedSettings;
+    this.editedSettingsByJourney = editedSettingsByJourney;
+    this.editedComparisonScenarios = editedComparisonScenarios;
+  }
+);
+
+When(
+  "local saving is re-enabled through the application action",
+  function (this: ProductAcceptanceWorld) {
+    assertCondition(
+      this.editedSettingsByJourney,
+      "Expected edited settings before re-enabling local saving"
+    );
+    assertCondition(
+      this.editedComparisonScenarios,
+      "Expected edited comparison scenarios before re-enabling local saving"
+    );
+
+    saveLocalStoragePreference(true);
+    enableLocalSavingAndPersistState({
+      appMode: "expert",
+      settingsByJourney: this.editedSettingsByJourney,
+      comparisonScenarios: this.editedComparisonScenarios,
+      showGuidanceNotes: true,
+      journeyRetirementIncomeDisplay: "monthly",
+      comparisonRetirementIncomeDisplay: "monthly",
+      analyticsConsentGranted: false,
+      hasAcknowledgedNotice: false,
+    });
+  }
+);
+
+When(
+  "the modeller is reloaded from local storage",
+  function (this: ProductAcceptanceWorld) {
+    this.reloadedSettingsByJourney = loadStoredSettingsByJourney().settings;
+    this.reloadedComparisonScenarios = loadStoredComparisonScenarios();
   }
 );
 
@@ -3650,6 +3959,144 @@ Then(
 Then("guidance notes should be shown", function (this: ProductAcceptanceWorld) {
   assertEqual(this.guidanceNotesLoaded, true);
 });
+
+Then("local saving should be off", function (this: ProductAcceptanceWorld) {
+  assertEqual(this.localStorageEnabledLoaded, false);
+});
+
+Then(
+  "raw local storage should contain only the disabled saving preference",
+  function () {
+    assertEqual(
+      JSON.stringify(getRawStorageSnapshot()),
+      JSON.stringify({
+        [LOCAL_STORAGE_ENABLED_KEY]: "false",
+      })
+    );
+    assertEqual(readRawStorageItem(LOCAL_STORAGE_ENABLED_KEY), "false");
+
+    for (const key of DISABLED_SAVING_DATA_KEYS) {
+      assertEqual(readRawStorageItem(key), null);
+    }
+  }
+);
+
+Then(
+  "active modeller settings should be reset to their initial values",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(
+      this.activeSettingsAfterClear?.desiredRetirementIncome,
+      createDefaultSettings().desiredRetirementIncome
+    );
+    assertEqual(
+      this.activeSettingsAfterClear?.pensionableEarnings,
+      createDefaultSettings().pensionableEarnings
+    );
+    assertEqual(this.resultStepActiveAfterClear, false);
+  }
+);
+
+Then(
+  "saved comparison scenarios should be cleared",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(loadStoredComparisonScenarios().length, 0);
+
+    if (this.activeComparisonCountAfterClear !== undefined) {
+      assertEqual(this.activeComparisonCountAfterClear, 0);
+    }
+  }
+);
+
+Then(
+  "display preferences should be reset to monthly values",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(this.journeyDisplayAfterClear, "monthly");
+    assertEqual(this.comparisonDisplayAfterClear, "monthly");
+  }
+);
+
+Then(
+  "no settings or comparison data should be written while saving is disabled",
+  function () {
+    assertEqual(
+      loadStoredSettingsByJourney().settings.expert.pensionableEarnings,
+      0
+    );
+    assertEqual(loadStoredComparisonScenarios().length, 0);
+    assertEqual(loadStoredJourneyRetirementIncomeDisplay(), "monthly");
+  }
+);
+
+Then(
+  "the reloaded settings should contain the new edits",
+  function (this: ProductAcceptanceWorld) {
+    const expectedResetSettings = createInitialSettingsByJourney();
+
+    assertEqual(
+      this.reloadedSettingsByJourney?.expert.pensionableEarnings,
+      77_000
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.expert.desiredRetirementIncome,
+      41_000
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.expert.dateOfBirth,
+      expectedResetSettings.expert.dateOfBirth
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.expert.showPremium,
+      expectedResetSettings.expert.showPremium
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.expert
+        .premiumAnnualPensionAtValuationDate,
+      expectedResetSettings.expert.premiumAnnualPensionAtValuationDate
+    );
+  }
+);
+
+Then(
+  "the reloaded comparison scenarios should contain only the new scenario",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(this.reloadedComparisonScenarios?.length, 1);
+    assertEqual(this.reloadedComparisonScenarios?.[0]?.name, "New comparison");
+    assertEqual(
+      this.reloadedComparisonScenarios?.[0]?.settings.pensionableEarnings,
+      77_000
+    );
+  }
+);
+
+Then(
+  "old cleared data should not reload",
+  function (this: ProductAcceptanceWorld) {
+    const expectedResetSettings = createInitialSettingsByJourney();
+
+    assertEqual(
+      this.reloadedSettingsByJourney?.bridge.dateOfBirth,
+      expectedResetSettings.bridge.dateOfBirth
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.bridge.pensionableEarnings,
+      expectedResetSettings.bridge.pensionableEarnings
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.simple.dateOfBirth,
+      expectedResetSettings.simple.dateOfBirth
+    );
+    assertEqual(
+      this.reloadedSettingsByJourney?.simple.isaCurrentPot,
+      expectedResetSettings.simple.isaCurrentPot
+    );
+    assertEqual(
+      this.reloadedComparisonScenarios?.some(
+        (scenario) => scenario.name === "Stored comparison"
+      ),
+      false
+    );
+  }
+);
 
 function getJourneyAnswerStep(journey: JourneyDefinition): JourneyAnswerStep {
   const answerStep = journey.steps.find(

@@ -42,3 +42,36 @@ Feature: Local-only preferences and data controls
     And no previous analytics consent should be loaded
     And no previous modeller mode should be loaded
     And guidance notes should be shown
+
+  @clear-data
+  Scenario: Clear populated local data and reset active values
+    Given browser local storage contains populated modeller data
+    When local data is cleared through the application action
+    Then local saving should be off
+    And raw local storage should contain only the disabled saving preference
+    And active modeller settings should be reset to their initial values
+    And no previous acknowledgement should be loaded
+    And no previous analytics consent should be loaded
+    And no previous modeller mode should be loaded
+    And guidance notes should be shown
+    And display preferences should be reset to monthly values
+    And saved comparison scenarios should be cleared
+
+  @storage-disabled
+  Scenario: Disable saving with existing data and ignore later edits
+    Given browser local storage contains populated modeller data
+    When local saving is disabled through the application action
+    And the user edits settings and saves another comparison while local saving is disabled
+    Then no settings or comparison data should be written while saving is disabled
+    And raw local storage should contain only the disabled saving preference
+
+  @clear-data
+  Scenario: Re-enable saving after clearing and editing without restoring old values
+    Given browser local storage contains populated modeller data
+    When local data is cleared through the application action
+    And the user edits active settings and comparisons while local saving is disabled
+    And local saving is re-enabled through the application action
+    And the modeller is reloaded from local storage
+    Then the reloaded settings should contain the new edits
+    And the reloaded comparison scenarios should contain only the new scenario
+    And old cleared data should not reload

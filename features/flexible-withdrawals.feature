@@ -60,7 +60,7 @@ Feature: Target-based flexible-fund withdrawals
     And the funding priority should not belong to simplified sections
     And the funding priority should not belong to an expert account withdrawal section
 
-  Scenario: Reorder target-based accounts accessibly
+  Scenario: Apply target-based priority reordering in the adapter
     Given an ISA with 20000.00 uses the target-based strategy
     And a SIPP with 20000.00 uses the target-based strategy
     When ISA is moved to target-based priority 1

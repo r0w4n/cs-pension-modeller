@@ -7804,7 +7804,7 @@ export const acceptanceFeatures = [
       {
         id: "line-63",
         keyword: "Scenario",
-        name: "Reorder target-based accounts accessibly",
+        name: "Apply target-based priority reordering in the adapter",
         description: "",
         tags: [],
         status: "covered",
@@ -11391,6 +11391,162 @@ export const acceptanceFeatures = [
         ],
         examples: [],
       },
+      {
+        id: "line-47",
+        keyword: "Scenario",
+        name: "Clear populated local data and reset active values",
+        description: "",
+        tags: ["@clear-data"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-48",
+            keyword: "Given",
+            text: "browser local storage contains populated modeller data",
+          },
+          {
+            id: "line-49",
+            keyword: "When",
+            text: "local data is cleared through the application action",
+          },
+          {
+            id: "line-50",
+            keyword: "Then",
+            text: "local saving should be off",
+          },
+          {
+            id: "line-51",
+            keyword: "And",
+            text: "raw local storage should contain only the disabled saving preference",
+          },
+          {
+            id: "line-52",
+            keyword: "And",
+            text: "active modeller settings should be reset to their initial values",
+          },
+          {
+            id: "line-53",
+            keyword: "And",
+            text: "no previous acknowledgement should be loaded",
+          },
+          {
+            id: "line-54",
+            keyword: "And",
+            text: "no previous analytics consent should be loaded",
+          },
+          {
+            id: "line-55",
+            keyword: "And",
+            text: "no previous modeller mode should be loaded",
+          },
+          {
+            id: "line-56",
+            keyword: "And",
+            text: "guidance notes should be shown",
+          },
+          {
+            id: "line-57",
+            keyword: "And",
+            text: "display preferences should be reset to monthly values",
+          },
+          {
+            id: "line-58",
+            keyword: "And",
+            text: "saved comparison scenarios should be cleared",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-61",
+        keyword: "Scenario",
+        name: "Disable saving with existing data and ignore later edits",
+        description: "",
+        tags: ["@storage-disabled"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-62",
+            keyword: "Given",
+            text: "browser local storage contains populated modeller data",
+          },
+          {
+            id: "line-63",
+            keyword: "When",
+            text: "local saving is disabled through the application action",
+          },
+          {
+            id: "line-64",
+            keyword: "And",
+            text: "the user edits settings and saves another comparison while local saving is disabled",
+          },
+          {
+            id: "line-65",
+            keyword: "Then",
+            text: "no settings or comparison data should be written while saving is disabled",
+          },
+          {
+            id: "line-66",
+            keyword: "And",
+            text: "raw local storage should contain only the disabled saving preference",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-69",
+        keyword: "Scenario",
+        name: "Re-enable saving after clearing and editing without restoring old values",
+        description: "",
+        tags: ["@clear-data"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-70",
+            keyword: "Given",
+            text: "browser local storage contains populated modeller data",
+          },
+          {
+            id: "line-71",
+            keyword: "When",
+            text: "local data is cleared through the application action",
+          },
+          {
+            id: "line-72",
+            keyword: "And",
+            text: "the user edits active settings and comparisons while local saving is disabled",
+          },
+          {
+            id: "line-73",
+            keyword: "And",
+            text: "local saving is re-enabled through the application action",
+          },
+          {
+            id: "line-74",
+            keyword: "And",
+            text: "the modeller is reloaded from local storage",
+          },
+          {
+            id: "line-75",
+            keyword: "Then",
+            text: "the reloaded settings should contain the new edits",
+          },
+          {
+            id: "line-76",
+            keyword: "And",
+            text: "the reloaded comparison scenarios should contain only the new scenario",
+          },
+          {
+            id: "line-77",
+            keyword: "And",
+            text: "old cleared data should not reload",
+          },
+        ],
+        examples: [],
+      },
     ],
   },
   {
@@ -13299,173 +13455,352 @@ export const acceptanceFeatures = [
     path: "features/premium-pension.feature",
     name: "Premium Civil Service pension modelling",
     description:
-      "Premium is a legacy Civil Service pension scheme.\n\n  Members may have preserved or banked Premium benefits, but Premium can no\n  longer be directly contributed to by most members. Once a member has moved\n  into alpha, no further reckonable service is built up in Premium.\n\n  Premium pension should be modelled separately from alpha and other Civil\n  Service pension pots.",
+      "Premium is modelled as a closed legacy Civil Service pension where the user\n  enters preserved benefits from a statement or pension portal. The modeller\n  does not build new Premium accrual, salary-link benefits or optional Premium\n  commutation.",
     tags: ["@civil-service-pension", "@premium", "@legacy"],
     status: "covered",
     scenarios: [
       {
-        id: "line-24",
+        id: "line-23",
         keyword: "Scenario",
-        name: "Premium is shown as a legacy pension scheme",
+        name: "Premium is shown as a closed preserved pension",
         description: "",
         tags: ["@legacy", "@closed-scheme"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
+            id: "line-24",
+            keyword: "When",
+            text: "the Premium pension input group is inspected",
+          },
+          {
             id: "line-25",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
+            keyword: "Then",
+            text: 'the Premium optional-section label should be "Premium"',
           },
           {
             id: "line-26",
-            keyword: "When",
-            text: "the pension record is displayed",
+            keyword: "And",
+            text: 'the Premium field group title should be "Your Premium pension"',
           },
           {
             id: "line-27",
-            keyword: "Then",
-            text: 'the scheme should be labelled "Premium"',
-          },
-          {
-            id: "line-28",
             keyword: "And",
-            text: 'the scheme status should be "Legacy"',
-          },
-          {
-            id: "line-29",
-            keyword: "And",
-            text: "the scheme should explain:",
+            text: "the Premium field group should explain:",
             docString:
-              "Premium is a legacy Civil Service pension. You may have preserved or banked\nPremium benefits, but you cannot directly build up new Premium pension in\nthe modeller.",
+              "Premium is a closed legacy Civil Service defined benefit pension. You cannot build up new Premium pension. Enter the preserved annual Premium pension from your statement or pension portal; the modeller applies simplified CPI-linked increases before and after the age you choose to take it.",
           },
         ],
         examples: [],
       },
       {
-        id: "line-37",
+        id: "line-33",
         keyword: "Scenario",
-        name: "Premium does not allow direct monthly contributions",
+        name: "Premium does not expose contribution or salary-service accrual inputs",
         description: "",
         tags: ["@legacy", "@closed-scheme", "@validation"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-38",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-39",
+            id: "line-34",
             keyword: "When",
-            text: "the member attempts to add a monthly Premium contribution of 400.00",
+            text: "the Premium pension input group is inspected",
           },
           {
-            id: "line-40",
+            id: "line-35",
             keyword: "Then",
-            text: "the contribution should be rejected",
+            text: "Premium should ask for these production fields:",
+            table: [
+              {
+                id: "line-36",
+                cells: [
+                  {
+                    id: "line-36-column-9",
+                    value: "fieldId",
+                  },
+                ],
+              },
+              {
+                id: "line-37",
+                cells: [
+                  {
+                    id: "line-37-column-9",
+                    value: "premiumAnnualPensionAtValuationDate",
+                  },
+                ],
+              },
+              {
+                id: "line-38",
+                cells: [
+                  {
+                    id: "line-38-column-9",
+                    value: "premiumValuationDate",
+                  },
+                ],
+              },
+              {
+                id: "line-39",
+                cells: [
+                  {
+                    id: "line-39-column-9",
+                    value: "premiumDrawAge",
+                  },
+                ],
+              },
+              {
+                id: "line-40",
+                cells: [
+                  {
+                    id: "line-40-column-9",
+                    value: "premiumHasNpa65",
+                  },
+                ],
+              },
+              {
+                id: "line-41",
+                cells: [
+                  {
+                    id: "line-41-column-9",
+                    value: "premiumNormalPensionAge",
+                  },
+                ],
+              },
+              {
+                id: "line-42",
+                cells: [
+                  {
+                    id: "line-42-column-9",
+                    value: "premiumEarliestAccessAge",
+                  },
+                ],
+              },
+            ],
           },
           {
-            id: "line-41",
+            id: "line-43",
             keyword: "And",
-            text: "the model should show the validation message:",
-            docString:
-              "Premium is a legacy Civil Service pension and cannot receive new direct\nmonthly contributions. New Civil Service pension accrual should normally be\nmodelled under alpha.",
+            text: "Premium should not ask for unsupported fields:",
+            table: [
+              {
+                id: "line-44",
+                cells: [
+                  {
+                    id: "line-44-column-9",
+                    value: "fieldId",
+                  },
+                ],
+              },
+              {
+                id: "line-45",
+                cells: [
+                  {
+                    id: "line-45-column-9",
+                    value: "premiumMonthlyContribution",
+                  },
+                ],
+              },
+              {
+                id: "line-46",
+                cells: [
+                  {
+                    id: "line-46-column-9",
+                    value: "premiumLumpSumContribution",
+                  },
+                ],
+              },
+              {
+                id: "line-47",
+                cells: [
+                  {
+                    id: "line-47-column-9",
+                    value: "premiumFinalPensionableEarnings",
+                  },
+                ],
+              },
+              {
+                id: "line-48",
+                cells: [
+                  {
+                    id: "line-48-column-9",
+                    value: "premiumReckonableServiceYears",
+                  },
+                ],
+              },
+              {
+                id: "line-49",
+                cells: [
+                  {
+                    id: "line-49-column-9",
+                    value: "premiumFinalSalaryLink",
+                  },
+                ],
+              },
+              {
+                id: "line-50",
+                cells: [
+                  {
+                    id: "line-50-column-9",
+                    value: "premiumOptionalLumpSum",
+                  },
+                ],
+              },
+            ],
           },
         ],
         examples: [],
       },
       {
-        id: "line-49",
-        keyword: "Scenario",
-        name: "Premium does not allow direct lump sum contributions",
-        description: "",
-        tags: ["@legacy", "@closed-scheme", "@validation"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-50",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-51",
-            keyword: "When",
-            text: "the member attempts to add a Premium lump sum contribution of 5000.00",
-          },
-          {
-            id: "line-52",
-            keyword: "Then",
-            text: "the contribution should be rejected",
-          },
-          {
-            id: "line-53",
-            keyword: "And",
-            text: "the model should show the validation message:",
-            docString:
-              "Premium is a legacy Civil Service pension and cannot receive new direct\nlump sum contributions.",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-65",
+        id: "line-58",
         keyword: "Scenario Outline",
-        name: "Calculate Premium pension from final pensionable earnings and reckonable service",
+        name: "Revalue preserved Premium pension using the selected CPI basis",
         description: "",
-        tags: ["@calculation", "@final-salary"],
+        tags: ["@calculation", "@preserved", "@cpi"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
+          {
+            id: "line-59",
+            keyword: "Given",
+            text: "the member has a deferred Premium pension record",
+          },
+          {
+            id: "line-60",
+            keyword: "And",
+            text: "the member has annual Premium pension of <pensionAtValuationDate> at valuation",
+          },
+          {
+            id: "line-61",
+            keyword: "And",
+            text: "the Premium valuation date is <valuationDate>",
+          },
+          {
+            id: "line-62",
+            keyword: "And",
+            text: "the Premium member date of birth is <dateOfBirth>",
+          },
+          {
+            id: "line-63",
+            keyword: "And",
+            text: "the member has Premium normal pension age <normalPensionAge>",
+          },
+          {
+            id: "line-64",
+            keyword: "And",
+            text: "the planned Premium draw age is <drawAge>",
+          },
+          {
+            id: "line-65",
+            keyword: "And",
+            text: "the annual CPI assumption is <cpiRate>",
+          },
           {
             id: "line-66",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
+            keyword: "And",
+            text: "CPI revaluation is <cpiEnabled>",
           },
           {
             id: "line-67",
-            keyword: "And",
-            text: "the member has final pensionable earnings of <finalPensionableEarnings>",
+            keyword: "When",
+            text: "the preserved Premium pension is calculated",
           },
           {
             id: "line-68",
-            keyword: "And",
-            text: "the member has Premium reckonable service of <reckonableServiceYears> years",
+            keyword: "Then",
+            text: "the unreduced annual Premium pension at draw age should be <expectedAnnualPension>",
           },
           {
             id: "line-69",
-            keyword: "When",
-            text: "the Premium pension is calculated",
-          },
-          {
-            id: "line-70",
-            keyword: "Then",
-            text: "the unreduced annual Premium pension should be <expectedAnnualPension>",
+            keyword: "And",
+            text: "the annual Premium pension payable should be <expectedAnnualPensionPayable>",
           },
         ],
         examples: [
           {
-            id: "line-72",
+            id: "line-71",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
+                id: "line-72",
+                cells: [
+                  {
+                    id: "line-72-column-9",
+                    value: "pensionAtValuationDate",
+                  },
+                  {
+                    id: "line-72-column-34",
+                    value: "valuationDate",
+                  },
+                  {
+                    id: "line-72-column-50",
+                    value: "dateOfBirth",
+                  },
+                  {
+                    id: "line-72-column-64",
+                    value: "normalPensionAge",
+                  },
+                  {
+                    id: "line-72-column-83",
+                    value: "drawAge",
+                  },
+                  {
+                    id: "line-72-column-93",
+                    value: "cpiRate",
+                  },
+                  {
+                    id: "line-72-column-103",
+                    value: "cpiEnabled",
+                  },
+                  {
+                    id: "line-72-column-116",
+                    value: "expectedAnnualPension",
+                  },
+                  {
+                    id: "line-72-column-140",
+                    value: "expectedAnnualPensionPayable",
+                  },
+                ],
+              },
+              {
                 id: "line-73",
                 cells: [
                   {
                     id: "line-73-column-9",
-                    value: "finalPensionableEarnings",
+                    value: "10000.00",
                   },
                   {
-                    id: "line-73-column-36",
-                    value: "reckonableServiceYears",
+                    id: "line-73-column-34",
+                    value: "2026-04-01",
                   },
                   {
-                    id: "line-73-column-61",
-                    value: "expectedAnnualPension",
+                    id: "line-73-column-50",
+                    value: "1970-04-01",
+                  },
+                  {
+                    id: "line-73-column-64",
+                    value: "60",
+                  },
+                  {
+                    id: "line-73-column-83",
+                    value: "61",
+                  },
+                  {
+                    id: "line-73-column-93",
+                    value: "3.00%",
+                  },
+                  {
+                    id: "line-73-column-103",
+                    value: "on",
+                  },
+                  {
+                    id: "line-73-column-116",
+                    value: "11592.74",
+                  },
+                  {
+                    id: "line-73-column-140",
+                    value: "11592.74",
                   },
                 ],
               },
@@ -13474,14 +13809,38 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-74-column-9",
-                    value: "60000.00",
+                    value: "10000.00",
                   },
                   {
-                    id: "line-74-column-36",
-                    value: "10.0000",
+                    id: "line-74-column-34",
+                    value: "2026-04-01",
                   },
                   {
-                    id: "line-74-column-61",
+                    id: "line-74-column-50",
+                    value: "1970-04-01",
+                  },
+                  {
+                    id: "line-74-column-64",
+                    value: "60",
+                  },
+                  {
+                    id: "line-74-column-83",
+                    value: "61",
+                  },
+                  {
+                    id: "line-74-column-93",
+                    value: "3.00%",
+                  },
+                  {
+                    id: "line-74-column-103",
+                    value: "off",
+                  },
+                  {
+                    id: "line-74-column-116",
+                    value: "10000.00",
+                  },
+                  {
+                    id: "line-74-column-140",
                     value: "10000.00",
                   },
                 ],
@@ -13491,15 +13850,39 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-75-column-9",
-                    value: "72000.00",
-                  },
-                  {
-                    id: "line-75-column-36",
-                    value: "10.0000",
-                  },
-                  {
-                    id: "line-75-column-61",
                     value: "12000.00",
+                  },
+                  {
+                    id: "line-75-column-34",
+                    value: "2026-04-01",
+                  },
+                  {
+                    id: "line-75-column-50",
+                    value: "1970-04-01",
+                  },
+                  {
+                    id: "line-75-column-64",
+                    value: "60",
+                  },
+                  {
+                    id: "line-75-column-83",
+                    value: "58",
+                  },
+                  {
+                    id: "line-75-column-93",
+                    value: "0.00%",
+                  },
+                  {
+                    id: "line-75-column-103",
+                    value: "off",
+                  },
+                  {
+                    id: "line-75-column-116",
+                    value: "12000.00",
+                  },
+                  {
+                    id: "line-75-column-140",
+                    value: "10992.00",
                   },
                 ],
               },
@@ -13508,32 +13891,39 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-76-column-9",
-                    value: "60000.00",
+                    value: "12000.00",
                   },
                   {
-                    id: "line-76-column-36",
-                    value: "12.5000",
+                    id: "line-76-column-34",
+                    value: "2026-04-01",
                   },
                   {
-                    id: "line-76-column-61",
-                    value: "12500.00",
-                  },
-                ],
-              },
-              {
-                id: "line-77",
-                cells: [
-                  {
-                    id: "line-77-column-9",
-                    value: "85000.00",
+                    id: "line-76-column-50",
+                    value: "1970-04-01",
                   },
                   {
-                    id: "line-77-column-36",
-                    value: "8.2500",
+                    id: "line-76-column-64",
+                    value: "65",
                   },
                   {
-                    id: "line-77-column-61",
-                    value: "11687.50",
+                    id: "line-76-column-83",
+                    value: "60.5",
+                  },
+                  {
+                    id: "line-76-column-93",
+                    value: "0.00%",
+                  },
+                  {
+                    id: "line-76-column-103",
+                    value: "off",
+                  },
+                  {
+                    id: "line-76-column-116",
+                    value: "12000.00",
+                  },
+                  {
+                    id: "line-76-column-140",
+                    value: "9612.00",
                   },
                 ],
               },
@@ -13542,94 +13932,140 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-80",
-        keyword: "Scenario",
-        name: "Calculate reckonable service for part-time Premium service",
+        id: "line-79",
+        keyword: "Scenario Outline",
+        name: "Use published Premium early-retirement factors by completed month",
         description: "",
-        tags: ["@calculation", "@final-salary", "@part-time"],
+        tags: ["@early-retirement"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-81",
+            id: "line-80",
             keyword: "Given",
-            text: "the member has a Premium pension record",
+            text: "the member has a deferred Premium pension record",
+          },
+          {
+            id: "line-81",
+            keyword: "And",
+            text: "the member has annual Premium pension of <unreducedAnnualPension> at valuation",
           },
           {
             id: "line-82",
             keyword: "And",
-            text: "the member worked for 6 calendar years",
+            text: "the Premium valuation date is 2026-04-01",
           },
           {
             id: "line-83",
             keyword: "And",
-            text: "the member worked 24 hours per week",
+            text: "the Premium member date of birth is 1970-04-01",
           },
           {
             id: "line-84",
             keyword: "And",
-            text: "the full-time working pattern was 36 hours per week",
+            text: "the member has Premium normal pension age <normalPensionAge>",
           },
           {
             id: "line-85",
             keyword: "And",
-            text: "the member has final pensionable earnings of 27000.00",
+            text: "the annual CPI assumption is 0.00%",
           },
           {
             id: "line-86",
-            keyword: "When",
-            text: "the Premium pension is calculated",
+            keyword: "And",
+            text: "CPI revaluation is off",
           },
           {
             id: "line-87",
-            keyword: "Then",
-            text: "the Premium reckonable service should be 4.0000 years",
+            keyword: "When",
+            text: "the member draws Premium pension at age <drawAge> and <drawAgeMonths> months",
           },
           {
             id: "line-88",
+            keyword: "Then",
+            text: "the Premium early-retirement factor should be <expectedFactor>",
+          },
+          {
+            id: "line-89",
             keyword: "And",
-            text: "the unreduced annual Premium pension should be 1800.00",
+            text: "the annual Premium pension payable should be <expectedAnnualPension>",
+          },
+          {
+            id: "line-90",
+            keyword: "And",
+            text: "the annual reduction should be <expectedAnnualReduction>",
           },
         ],
-        examples: [],
-      },
-      {
-        id: "line-91",
-        keyword: "Scenario",
-        name: "Calculate Premium pension with mixed full-time and part-time service",
-        description: "",
-        tags: ["@calculation", "@final-salary", "@part-time"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
+        examples: [
           {
             id: "line-92",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-93",
-            keyword: "And",
-            text: "the member has the following Premium service history:",
+            name: "",
+            tags: [],
+            status: "covered",
             table: [
+              {
+                id: "line-93",
+                cells: [
+                  {
+                    id: "line-93-column-9",
+                    value: "normalPensionAge",
+                  },
+                  {
+                    id: "line-93-column-28",
+                    value: "unreducedAnnualPension",
+                  },
+                  {
+                    id: "line-93-column-53",
+                    value: "drawAge",
+                  },
+                  {
+                    id: "line-93-column-63",
+                    value: "drawAgeMonths",
+                  },
+                  {
+                    id: "line-93-column-79",
+                    value: "expectedFactor",
+                  },
+                  {
+                    id: "line-93-column-96",
+                    value: "expectedAnnualPension",
+                  },
+                  {
+                    id: "line-93-column-120",
+                    value: "expectedAnnualReduction",
+                  },
+                ],
+              },
               {
                 id: "line-94",
                 cells: [
                   {
                     id: "line-94-column-9",
-                    value: "period",
+                    value: "60",
                   },
                   {
-                    id: "line-94-column-27",
-                    value: "calendarYears",
+                    id: "line-94-column-28",
+                    value: "12000.00",
                   },
                   {
-                    id: "line-94-column-43",
-                    value: "actualWeeklyHours",
+                    id: "line-94-column-53",
+                    value: "60",
                   },
                   {
                     id: "line-94-column-63",
-                    value: "fullTimeWeeklyHours",
+                    value: "0",
+                  },
+                  {
+                    id: "line-94-column-79",
+                    value: "1.000",
+                  },
+                  {
+                    id: "line-94-column-96",
+                    value: "12000.00",
+                  },
+                  {
+                    id: "line-94-column-120",
+                    value: "0.00",
                   },
                 ],
               },
@@ -13638,19 +14074,31 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-95-column-9",
-                    value: "full-time",
+                    value: "60",
                   },
                   {
-                    id: "line-95-column-27",
-                    value: "8.0000",
+                    id: "line-95-column-28",
+                    value: "12000.00",
                   },
                   {
-                    id: "line-95-column-43",
-                    value: "36.00",
+                    id: "line-95-column-53",
+                    value: "58",
                   },
                   {
                     id: "line-95-column-63",
-                    value: "36.00",
+                    value: "0",
+                  },
+                  {
+                    id: "line-95-column-79",
+                    value: "0.916",
+                  },
+                  {
+                    id: "line-95-column-96",
+                    value: "10992.00",
+                  },
+                  {
+                    id: "line-95-column-120",
+                    value: "1008.00",
                   },
                 ],
               },
@@ -13659,19 +14107,31 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-96-column-9",
-                    value: "part-time",
+                    value: "60",
                   },
                   {
-                    id: "line-96-column-27",
-                    value: "6.0000",
+                    id: "line-96-column-28",
+                    value: "12000.00",
                   },
                   {
-                    id: "line-96-column-43",
-                    value: "20.00",
+                    id: "line-96-column-53",
+                    value: "58",
                   },
                   {
                     id: "line-96-column-63",
-                    value: "36.00",
+                    value: "6",
+                  },
+                  {
+                    id: "line-96-column-79",
+                    value: "0.936",
+                  },
+                  {
+                    id: "line-96-column-96",
+                    value: "11232.00",
+                  },
+                  {
+                    id: "line-96-column-120",
+                    value: "768.00",
                   },
                 ],
               },
@@ -13680,785 +14140,129 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-97-column-9",
-                    value: "compressed-full",
-                  },
-                  {
-                    id: "line-97-column-27",
-                    value: "3.0000",
-                  },
-                  {
-                    id: "line-97-column-43",
-                    value: "36.00",
-                  },
-                  {
-                    id: "line-97-column-63",
-                    value: "36.00",
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: "line-98",
-            keyword: "And",
-            text: "the member has final pensionable earnings of 54000.00",
-          },
-          {
-            id: "line-99",
-            keyword: "When",
-            text: "the Premium pension is calculated",
-          },
-          {
-            id: "line-100",
-            keyword: "Then",
-            text: "the Premium reckonable service breakdown should be:",
-            table: [
-              {
-                id: "line-101",
-                cells: [
-                  {
-                    id: "line-101-column-9",
-                    value: "period",
-                  },
-                  {
-                    id: "line-101-column-27",
-                    value: "reckonableServiceYears",
-                  },
-                ],
-              },
-              {
-                id: "line-102",
-                cells: [
-                  {
-                    id: "line-102-column-9",
-                    value: "full-time",
-                  },
-                  {
-                    id: "line-102-column-27",
-                    value: "8.0000",
-                  },
-                ],
-              },
-              {
-                id: "line-103",
-                cells: [
-                  {
-                    id: "line-103-column-9",
-                    value: "part-time",
-                  },
-                  {
-                    id: "line-103-column-27",
-                    value: "3.3333",
-                  },
-                ],
-              },
-              {
-                id: "line-104",
-                cells: [
-                  {
-                    id: "line-104-column-9",
-                    value: "compressed-full",
-                  },
-                  {
-                    id: "line-104-column-27",
-                    value: "3.0000",
-                  },
-                ],
-              },
-              {
-                id: "line-105",
-                cells: [
-                  {
-                    id: "line-105-column-9",
-                    value: "total",
-                  },
-                  {
-                    id: "line-105-column-27",
-                    value: "14.3333",
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: "line-106",
-            keyword: "And",
-            text: "the unreduced annual Premium pension should be 12900.00",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-114",
-        keyword: "Scenario",
-        name: "Premium reckonable service does not increase after moving to alpha",
-        description: "",
-        tags: ["@legacy", "@alpha-transition"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-115",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-116",
-            keyword: "And",
-            text: "the member has Premium reckonable service of 10.0000 years",
-          },
-          {
-            id: "line-117",
-            keyword: "And",
-            text: "the member moved to alpha on 2015-04-01",
-          },
-          {
-            id: "line-118",
-            keyword: "And",
-            text: "the member remains active in alpha for 5 further scheme years",
-          },
-          {
-            id: "line-119",
-            keyword: "When",
-            text: "the Civil Service pension projection is calculated",
-          },
-          {
-            id: "line-120",
-            keyword: "Then",
-            text: "the Premium reckonable service should remain 10.0000 years",
-          },
-          {
-            id: "line-121",
-            keyword: "And",
-            text: "no new Premium pension accrual should be added",
-          },
-          {
-            id: "line-122",
-            keyword: "And",
-            text: "new Civil Service pension accrual should be added only to alpha",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-125",
-        keyword: "Scenario Outline",
-        name: "Apply the Premium final salary link during future alpha service",
-        description: "",
-        tags: ["@legacy", "@alpha-transition", "@salary-link"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-126",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-127",
-            keyword: "And",
-            text: "the member has Premium reckonable service of 10.0000 years",
-          },
-          {
-            id: "line-128",
-            keyword: "And",
-            text: 'the member has final salary link status "<finalSalaryLink>"',
-          },
-          {
-            id: "line-129",
-            keyword: "And",
-            text: "the member has <salaryBasis> final pensionable earnings of 70000.00",
-          },
-          {
-            id: "line-130",
-            keyword: "And",
-            text: "the annual salary increase assumption is 3.00%",
-          },
-          {
-            id: "line-131",
-            keyword: "When",
-            text: "the member remains active in alpha for 5 further scheme years",
-          },
-          {
-            id: "line-132",
-            keyword: "Then",
-            text: "the Premium reckonable service should remain 10.0000 years",
-          },
-          {
-            id: "line-133",
-            keyword: "And",
-            text: "the final pensionable earnings used for Premium should <earningsOutcome> <expectedFinalPensionableEarnings>",
-          },
-          {
-            id: "line-134",
-            keyword: "And",
-            text: "the unreduced annual Premium pension should be <expectedAnnualPension>",
-          },
-        ],
-        examples: [
-          {
-            id: "line-136",
-            name: "",
-            tags: [],
-            status: "covered",
-            table: [
-              {
-                id: "line-137",
-                cells: [
-                  {
-                    id: "line-137-column-9",
-                    value: "finalSalaryLink",
-                  },
-                  {
-                    id: "line-137-column-27",
-                    value: "salaryBasis",
-                  },
-                  {
-                    id: "line-137-column-41",
-                    value: "earningsOutcome",
-                  },
-                  {
-                    id: "line-137-column-59",
-                    value: "expectedFinalPensionableEarnings",
-                  },
-                  {
-                    id: "line-137-column-94",
-                    value: "expectedAnnualPension",
-                  },
-                ],
-              },
-              {
-                id: "line-138",
-                cells: [
-                  {
-                    id: "line-138-column-9",
-                    value: "maintained",
-                  },
-                  {
-                    id: "line-138-column-27",
-                    value: "current",
-                  },
-                  {
-                    id: "line-138-column-41",
-                    value: "be",
-                  },
-                  {
-                    id: "line-138-column-59",
-                    value: "81149.19",
-                  },
-                  {
-                    id: "line-138-column-94",
-                    value: "13524.86",
-                  },
-                ],
-              },
-              {
-                id: "line-139",
-                cells: [
-                  {
-                    id: "line-139-column-9",
-                    value: "broken",
-                  },
-                  {
-                    id: "line-139-column-27",
-                    value: "preserved",
-                  },
-                  {
-                    id: "line-139-column-41",
-                    value: "remain",
-                  },
-                  {
-                    id: "line-139-column-59",
-                    value: "70000.00",
-                  },
-                  {
-                    id: "line-139-column-94",
-                    value: "11666.67",
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "line-147",
-        keyword: "Scenario",
-        name: "Premium has normal pension age 60",
-        description: "",
-        tags: ["@normal-pension-age"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-148",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-149",
-            keyword: "When",
-            text: "the Premium pension age rules are loaded",
-          },
-          {
-            id: "line-150",
-            keyword: "Then",
-            text: "the Premium normal pension age should be 60",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-153",
-        keyword: "Scenario",
-        name: "Premium and alpha have different normal pension ages",
-        description: "",
-        tags: ["@normal-pension-age", "@mixed-schemes"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-154",
-            keyword: "Given",
-            text: "the member has the following Civil Service pension pots:",
-            table: [
-              {
-                id: "line-155",
-                cells: [
-                  {
-                    id: "line-155-column-9",
-                    value: "scheme",
-                  },
-                  {
-                    id: "line-155-column-19",
-                    value: "unreducedAnnualPension",
-                  },
-                  {
-                    id: "line-155-column-44",
-                    value: "normalPensionAge",
-                  },
-                ],
-              },
-              {
-                id: "line-156",
-                cells: [
-                  {
-                    id: "line-156-column-9",
-                    value: "premium",
-                  },
-                  {
-                    id: "line-156-column-19",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-156-column-44",
-                    value: "60",
-                  },
-                ],
-              },
-              {
-                id: "line-157",
-                cells: [
-                  {
-                    id: "line-157-column-9",
-                    value: "alpha",
-                  },
-                  {
-                    id: "line-157-column-19",
-                    value: "15000.00",
-                  },
-                  {
-                    id: "line-157-column-44",
-                    value: "67",
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: "line-158",
-            keyword: "When",
-            text: "the member draws all Civil Service pension pots at age 60",
-          },
-          {
-            id: "line-159",
-            keyword: "Then",
-            text: "the Premium pension should be payable without early retirement reduction",
-          },
-          {
-            id: "line-160",
-            keyword: "And",
-            text: "the alpha pension should be reduced for early payment",
-          },
-          {
-            id: "line-161",
-            keyword: "And",
-            text: "the annual pension breakdown should be:",
-            table: [
-              {
-                id: "line-162",
-                cells: [
-                  {
-                    id: "line-162-column-9",
-                    value: "scheme",
-                  },
-                  {
-                    id: "line-162-column-19",
-                    value: "unreducedAnnualPension",
-                  },
-                  {
-                    id: "line-162-column-44",
-                    value: "payableAnnualPension",
-                  },
-                  {
-                    id: "line-162-column-67",
-                    value: "annualReduction",
-                  },
-                ],
-              },
-              {
-                id: "line-163",
-                cells: [
-                  {
-                    id: "line-163-column-9",
-                    value: "premium",
-                  },
-                  {
-                    id: "line-163-column-19",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-163-column-44",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-163-column-67",
-                    value: "0.00",
-                  },
-                ],
-              },
-              {
-                id: "line-164",
-                cells: [
-                  {
-                    id: "line-164-column-9",
-                    value: "alpha",
-                  },
-                  {
-                    id: "line-164-column-19",
-                    value: "15000.00",
-                  },
-                  {
-                    id: "line-164-column-44",
-                    value: "10500.00",
-                  },
-                  {
-                    id: "line-164-column-67",
-                    value: "4500.00",
-                  },
-                ],
-              },
-              {
-                id: "line-165",
-                cells: [
-                  {
-                    id: "line-165-column-9",
-                    value: "total",
-                  },
-                  {
-                    id: "line-165-column-19",
-                    value: "27000.00",
-                  },
-                  {
-                    id: "line-165-column-44",
-                    value: "22500.00",
-                  },
-                  {
-                    id: "line-165-column-67",
-                    value: "4500.00",
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-173",
-        keyword: "Scenario Outline",
-        name: "Reduce Premium pension when drawn before its normal pension age",
-        description: "",
-        tags: ["@early-retirement"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-174",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-175",
-            keyword: "And",
-            text: "the member has Premium normal pension age <normalPensionAge>",
-          },
-          {
-            id: "line-176",
-            keyword: "And",
-            text: "the member has unreduced annual Premium pension of <unreducedAnnualPension>",
-          },
-          {
-            id: "line-177",
-            keyword: "When",
-            text: "the member draws Premium pension at age <drawAge> and <drawAgeMonths> months",
-          },
-          {
-            id: "line-178",
-            keyword: "Then",
-            text: "the annual Premium pension payable should be <expectedAnnualPension>",
-          },
-          {
-            id: "line-179",
-            keyword: "And",
-            text: "the annual reduction should be <expectedAnnualReduction>",
-          },
-        ],
-        examples: [
-          {
-            id: "line-181",
-            name: "",
-            tags: [],
-            status: "covered",
-            table: [
-              {
-                id: "line-182",
-                cells: [
-                  {
-                    id: "line-182-column-9",
-                    value: "normalPensionAge",
-                  },
-                  {
-                    id: "line-182-column-28",
-                    value: "unreducedAnnualPension",
-                  },
-                  {
-                    id: "line-182-column-53",
-                    value: "drawAge",
-                  },
-                  {
-                    id: "line-182-column-63",
-                    value: "drawAgeMonths",
-                  },
-                  {
-                    id: "line-182-column-79",
-                    value: "expectedAnnualPension",
-                  },
-                  {
-                    id: "line-182-column-103",
-                    value: "expectedAnnualReduction",
-                  },
-                ],
-              },
-              {
-                id: "line-183",
-                cells: [
-                  {
-                    id: "line-183-column-9",
                     value: "60",
                   },
                   {
-                    id: "line-183-column-28",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-183-column-53",
-                    value: "60",
-                  },
-                  {
-                    id: "line-183-column-63",
-                    value: "0",
-                  },
-                  {
-                    id: "line-183-column-79",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-183-column-103",
-                    value: "0.00",
-                  },
-                ],
-              },
-              {
-                id: "line-184",
-                cells: [
-                  {
-                    id: "line-184-column-9",
-                    value: "60",
-                  },
-                  {
-                    id: "line-184-column-28",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-184-column-53",
-                    value: "58",
-                  },
-                  {
-                    id: "line-184-column-63",
-                    value: "0",
-                  },
-                  {
-                    id: "line-184-column-79",
-                    value: "10992.00",
-                  },
-                  {
-                    id: "line-184-column-103",
-                    value: "1008.00",
-                  },
-                ],
-              },
-              {
-                id: "line-185",
-                cells: [
-                  {
-                    id: "line-185-column-9",
-                    value: "60",
-                  },
-                  {
-                    id: "line-185-column-28",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-185-column-53",
-                    value: "58",
-                  },
-                  {
-                    id: "line-185-column-63",
-                    value: "6",
-                  },
-                  {
-                    id: "line-185-column-79",
-                    value: "11232.00",
-                  },
-                  {
-                    id: "line-185-column-103",
-                    value: "768.00",
-                  },
-                ],
-              },
-              {
-                id: "line-186",
-                cells: [
-                  {
-                    id: "line-186-column-9",
-                    value: "60",
-                  },
-                  {
-                    id: "line-186-column-28",
+                    id: "line-97-column-28",
                     value: "18000.00",
                   },
                   {
-                    id: "line-186-column-53",
+                    id: "line-97-column-53",
                     value: "55",
                   },
                   {
-                    id: "line-186-column-63",
+                    id: "line-97-column-63",
                     value: "0",
                   },
                   {
-                    id: "line-186-column-79",
+                    id: "line-97-column-79",
+                    value: "0.806",
+                  },
+                  {
+                    id: "line-97-column-96",
                     value: "14508.00",
                   },
                   {
-                    id: "line-186-column-103",
+                    id: "line-97-column-120",
                     value: "3492.00",
                   },
                 ],
               },
               {
-                id: "line-187",
+                id: "line-98",
                 cells: [
                   {
-                    id: "line-187-column-9",
+                    id: "line-98-column-9",
                     value: "65",
                   },
                   {
-                    id: "line-187-column-28",
+                    id: "line-98-column-28",
                     value: "12000.00",
                   },
                   {
-                    id: "line-187-column-53",
+                    id: "line-98-column-53",
                     value: "60",
                   },
                   {
-                    id: "line-187-column-63",
+                    id: "line-98-column-63",
                     value: "0",
                   },
                   {
-                    id: "line-187-column-79",
+                    id: "line-98-column-79",
+                    value: "0.783",
+                  },
+                  {
+                    id: "line-98-column-96",
                     value: "9396.00",
                   },
                   {
-                    id: "line-187-column-103",
+                    id: "line-98-column-120",
                     value: "2604.00",
                   },
                 ],
               },
               {
-                id: "line-188",
+                id: "line-99",
                 cells: [
                   {
-                    id: "line-188-column-9",
+                    id: "line-99-column-9",
                     value: "65",
                   },
                   {
-                    id: "line-188-column-28",
+                    id: "line-99-column-28",
                     value: "12000.00",
                   },
                   {
-                    id: "line-188-column-53",
+                    id: "line-99-column-53",
                     value: "60",
                   },
                   {
-                    id: "line-188-column-63",
+                    id: "line-99-column-63",
                     value: "6",
                   },
                   {
-                    id: "line-188-column-79",
+                    id: "line-99-column-79",
+                    value: "0.801",
+                  },
+                  {
+                    id: "line-99-column-96",
                     value: "9612.00",
                   },
                   {
-                    id: "line-188-column-103",
+                    id: "line-99-column-120",
                     value: "2388.00",
                   },
                 ],
               },
               {
-                id: "line-189",
+                id: "line-100",
                 cells: [
                   {
-                    id: "line-189-column-9",
+                    id: "line-100-column-9",
                     value: "65",
                   },
                   {
-                    id: "line-189-column-28",
+                    id: "line-100-column-28",
                     value: "12000.00",
                   },
                   {
-                    id: "line-189-column-53",
+                    id: "line-100-column-53",
                     value: "65",
                   },
                   {
-                    id: "line-189-column-63",
+                    id: "line-100-column-63",
                     value: "0",
                   },
                   {
-                    id: "line-189-column-79",
+                    id: "line-100-column-79",
+                    value: "1.000",
+                  },
+                  {
+                    id: "line-100-column-96",
                     value: "12000.00",
                   },
                   {
-                    id: "line-189-column-103",
+                    id: "line-100-column-120",
                     value: "0.00",
                   },
                 ],
@@ -14468,7 +14272,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-192",
+        id: "line-103",
         keyword: "Scenario",
         name: "Premium early retirement reduction is permanent",
         description: "",
@@ -14477,217 +14281,166 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-193",
+            id: "line-104",
             keyword: "Given",
-            text: "the member has a Premium pension record",
+            text: "the member has a deferred Premium pension record",
           },
           {
-            id: "line-194",
+            id: "line-105",
+            keyword: "And",
+            text: "the member has annual Premium pension of 12000.00 at valuation",
+          },
+          {
+            id: "line-106",
+            keyword: "And",
+            text: "the Premium valuation date is 2026-04-01",
+          },
+          {
+            id: "line-107",
+            keyword: "And",
+            text: "the Premium member date of birth is 1970-04-01",
+          },
+          {
+            id: "line-108",
             keyword: "And",
             text: "the member has Premium normal pension age 60",
           },
           {
-            id: "line-195",
+            id: "line-109",
             keyword: "And",
-            text: "the member has unreduced annual Premium pension of 12000.00",
+            text: "the annual CPI assumption is 0.00%",
           },
           {
-            id: "line-196",
+            id: "line-110",
+            keyword: "And",
+            text: "CPI revaluation is off",
+          },
+          {
+            id: "line-111",
             keyword: "When",
             text: "the member draws Premium pension at age 55",
           },
           {
-            id: "line-197",
+            id: "line-112",
             keyword: "Then",
             text: "the annual Premium pension payable at age 55 should be 9672.00",
           },
           {
-            id: "line-198",
+            id: "line-113",
             keyword: "And",
             text: "the annual Premium pension payable at age 60 before pension increases should still be 9672.00",
           },
           {
-            id: "line-199",
+            id: "line-114",
             keyword: "And",
-            text: "the model should not remove the early retirement reduction at normal pension age",
+            text: "calculating Premium at age 60 should use the original early-retirement reduction",
           },
         ],
         examples: [],
       },
       {
-        id: "line-207",
+        id: "line-117",
         keyword: "Scenario Outline",
-        name: "Revalue deferred Premium pension using CPI",
+        name: "Flag Premium early-retirement cases outside the published factor scope",
         description: "",
-        tags: ["@cpi", "@deferred"],
+        tags: ["@early-retirement", "@unsupported"],
         status: "covered",
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-208",
+            id: "line-118",
             keyword: "Given",
             text: "the member has a deferred Premium pension record",
           },
           {
-            id: "line-209",
+            id: "line-119",
             keyword: "And",
-            text: "the member has annual Premium pension of <pensionAtDeferral> at deferral",
+            text: "the member has annual Premium pension of 12000.00 at valuation",
           },
           {
-            id: "line-210",
+            id: "line-120",
             keyword: "And",
-            text: "the member defers pension for <deferredYears> years",
+            text: "the Premium valuation date is 2026-04-01",
           },
           {
-            id: "line-211",
+            id: "line-121",
             keyword: "And",
-            text: "the annual CPI assumption is <cpiRate>",
+            text: "the Premium member date of birth is 1970-04-01",
           },
           {
-            id: "line-212",
+            id: "line-122",
             keyword: "And",
-            text: "CPI revaluation is <cpiEnabled>",
+            text: "the member has Premium normal pension age <normalPensionAge>",
           },
           {
-            id: "line-213",
+            id: "line-123",
+            keyword: "And",
+            text: "the annual CPI assumption is 0.00%",
+          },
+          {
+            id: "line-124",
+            keyword: "And",
+            text: "CPI revaluation is off",
+          },
+          {
+            id: "line-125",
             keyword: "When",
-            text: "the deferred Premium pension is projected to draw age",
+            text: "the member draws Premium pension at age <drawAge>",
           },
           {
-            id: "line-214",
+            id: "line-126",
             keyword: "Then",
-            text: "the unreduced annual Premium pension at draw age should be <expectedAnnualPension>",
+            text: "the Premium early-retirement factor should be unavailable",
+          },
+          {
+            id: "line-127",
+            keyword: "And",
+            text: "the annual Premium pension payable should be 0.00",
           },
         ],
         examples: [
           {
-            id: "line-216",
+            id: "line-129",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-217",
+                id: "line-130",
                 cells: [
                   {
-                    id: "line-217-column-9",
-                    value: "pensionAtDeferral",
+                    id: "line-130-column-9",
+                    value: "normalPensionAge",
                   },
                   {
-                    id: "line-217-column-29",
-                    value: "deferredYears",
-                  },
-                  {
-                    id: "line-217-column-45",
-                    value: "cpiRate",
-                  },
-                  {
-                    id: "line-217-column-55",
-                    value: "cpiEnabled",
-                  },
-                  {
-                    id: "line-217-column-68",
-                    value: "expectedAnnualPension",
+                    id: "line-130-column-28",
+                    value: "drawAge",
                   },
                 ],
               },
               {
-                id: "line-218",
+                id: "line-131",
                 cells: [
                   {
-                    id: "line-218-column-9",
-                    value: "10000.00",
+                    id: "line-131-column-9",
+                    value: "60",
                   },
                   {
-                    id: "line-218-column-29",
-                    value: "5",
-                  },
-                  {
-                    id: "line-218-column-45",
-                    value: "3.00%",
-                  },
-                  {
-                    id: "line-218-column-55",
-                    value: "on",
-                  },
-                  {
-                    id: "line-218-column-68",
-                    value: "11592.74",
+                    id: "line-131-column-28",
+                    value: "54",
                   },
                 ],
               },
               {
-                id: "line-219",
+                id: "line-132",
                 cells: [
                   {
-                    id: "line-219-column-9",
-                    value: "10000.00",
+                    id: "line-132-column-9",
+                    value: "63",
                   },
                   {
-                    id: "line-219-column-29",
-                    value: "5",
-                  },
-                  {
-                    id: "line-219-column-45",
-                    value: "3.00%",
-                  },
-                  {
-                    id: "line-219-column-55",
-                    value: "off",
-                  },
-                  {
-                    id: "line-219-column-68",
-                    value: "10000.00",
-                  },
-                ],
-              },
-              {
-                id: "line-220",
-                cells: [
-                  {
-                    id: "line-220-column-9",
-                    value: "12500.00",
-                  },
-                  {
-                    id: "line-220-column-29",
-                    value: "3",
-                  },
-                  {
-                    id: "line-220-column-45",
-                    value: "2.00%",
-                  },
-                  {
-                    id: "line-220-column-55",
-                    value: "on",
-                  },
-                  {
-                    id: "line-220-column-68",
-                    value: "13265.10",
-                  },
-                ],
-              },
-              {
-                id: "line-221",
-                cells: [
-                  {
-                    id: "line-221-column-9",
-                    value: "12500.00",
-                  },
-                  {
-                    id: "line-221-column-29",
-                    value: "3",
-                  },
-                  {
-                    id: "line-221-column-45",
-                    value: "2.00%",
-                  },
-                  {
-                    id: "line-221-column-55",
-                    value: "off",
-                  },
-                  {
-                    id: "line-221-column-68",
-                    value: "12500.00",
+                    id: "line-132-column-28",
+                    value: "58",
                   },
                 ],
               },
@@ -14696,7 +14449,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-224",
+        id: "line-140",
         keyword: "Scenario Outline",
         name: "Apply the CPI setting to Premium pension increases in payment",
         description: "",
@@ -14705,95 +14458,95 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-225",
+            id: "line-141",
             keyword: "Given",
             text: "the member has a Premium pension in payment",
           },
           {
-            id: "line-226",
+            id: "line-142",
             keyword: "And",
             text: "the annual Premium pension payable is 12000.00",
           },
           {
-            id: "line-227",
+            id: "line-143",
             keyword: "And",
             text: "the annual CPI assumption is 3.00%",
           },
           {
-            id: "line-228",
+            id: "line-144",
             keyword: "And",
             text: "CPI revaluation is <cpiEnabled>",
           },
           {
-            id: "line-229",
+            id: "line-145",
             keyword: "When",
             text: "the pension is increased for 1 year in payment",
           },
           {
-            id: "line-230",
+            id: "line-146",
             keyword: "Then",
             text: "the annual Premium pension after increase should be <expectedAnnualPension>",
           },
           {
-            id: "line-231",
+            id: "line-147",
             keyword: "And",
             text: "the monthly gross Premium pension should be <expectedMonthlyPension>",
           },
         ],
         examples: [
           {
-            id: "line-233",
+            id: "line-149",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-234",
+                id: "line-150",
                 cells: [
                   {
-                    id: "line-234-column-9",
+                    id: "line-150-column-9",
                     value: "cpiEnabled",
                   },
                   {
-                    id: "line-234-column-22",
+                    id: "line-150-column-22",
                     value: "expectedAnnualPension",
                   },
                   {
-                    id: "line-234-column-46",
+                    id: "line-150-column-46",
                     value: "expectedMonthlyPension",
                   },
                 ],
               },
               {
-                id: "line-235",
+                id: "line-151",
                 cells: [
                   {
-                    id: "line-235-column-9",
+                    id: "line-151-column-9",
                     value: "on",
                   },
                   {
-                    id: "line-235-column-22",
+                    id: "line-151-column-22",
                     value: "12360.00",
                   },
                   {
-                    id: "line-235-column-46",
+                    id: "line-151-column-46",
                     value: "1030.00",
                   },
                 ],
               },
               {
-                id: "line-236",
+                id: "line-152",
                 cells: [
                   {
-                    id: "line-236-column-9",
+                    id: "line-152-column-9",
                     value: "off",
                   },
                   {
-                    id: "line-236-column-22",
+                    id: "line-152-column-22",
                     value: "12000.00",
                   },
                   {
-                    id: "line-236-column-46",
+                    id: "line-152-column-46",
                     value: "1000.00",
                   },
                 ],
@@ -14803,7 +14556,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-239",
+        id: "line-155",
         keyword: "Scenario",
         name: "Increase an early-reduced Premium pension in payment without removing the reduction",
         description: "",
@@ -14812,454 +14565,64 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-240",
+            id: "line-156",
             keyword: "Given",
-            text: "the member has a Premium pension record",
+            text: "the member has a deferred Premium pension record",
           },
           {
-            id: "line-241",
+            id: "line-157",
+            keyword: "And",
+            text: "the member has annual Premium pension of 12000.00 at valuation",
+          },
+          {
+            id: "line-158",
+            keyword: "And",
+            text: "the Premium valuation date is 2026-04-01",
+          },
+          {
+            id: "line-159",
+            keyword: "And",
+            text: "the Premium member date of birth is 1970-04-01",
+          },
+          {
+            id: "line-160",
             keyword: "And",
             text: "the member has Premium normal pension age 60",
           },
           {
-            id: "line-242",
-            keyword: "And",
-            text: "the member has unreduced annual Premium pension of 12000.00",
-          },
-          {
-            id: "line-243",
+            id: "line-161",
             keyword: "And",
             text: "the annual CPI assumption is 3.00%",
           },
           {
-            id: "line-244",
+            id: "line-162",
             keyword: "And",
             text: "CPI revaluation is on",
           },
           {
-            id: "line-245",
+            id: "line-163",
             keyword: "When",
             text: "the member draws Premium pension at age 55",
           },
           {
-            id: "line-246",
+            id: "line-164",
             keyword: "Then",
             text: "the annual Premium pension payable should be 9672.00",
           },
           {
-            id: "line-247",
+            id: "line-165",
             keyword: "When",
             text: "the pension is increased for 1 year in payment",
           },
           {
-            id: "line-248",
+            id: "line-166",
             keyword: "Then",
             text: "the annual Premium pension after increase should be 9962.16",
           },
           {
-            id: "line-249",
+            id: "line-167",
             keyword: "And",
             text: "the monthly gross Premium pension should be 830.18",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-257",
-        keyword: "Scenario Outline",
-        name: "Member gives up Premium pension for an optional lump sum",
-        description: "",
-        tags: ["@lump-sum", "@commutation"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-258",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-259",
-            keyword: "And",
-            text: "the member has annual Premium pension before commutation of <annualPensionBeforeCommutation>",
-          },
-          {
-            id: "line-260",
-            keyword: "And",
-            text: "the member chooses an optional lump sum of <chosenLumpSum>",
-          },
-          {
-            id: "line-261",
-            keyword: "When",
-            text: "the Premium commutation calculation is performed",
-          },
-          {
-            id: "line-262",
-            keyword: "Then",
-            text: "the annual Premium pension after commutation should be <annualPensionAfterCommutation>",
-          },
-          {
-            id: "line-263",
-            keyword: "And",
-            text: "the optional lump sum payable should be <optionalLumpSum>",
-          },
-        ],
-        examples: [
-          {
-            id: "line-265",
-            name: "",
-            tags: [],
-            status: "covered",
-            table: [
-              {
-                id: "line-266",
-                cells: [
-                  {
-                    id: "line-266-column-9",
-                    value: "annualPensionBeforeCommutation",
-                  },
-                  {
-                    id: "line-266-column-42",
-                    value: "chosenLumpSum",
-                  },
-                  {
-                    id: "line-266-column-58",
-                    value: "annualPensionAfterCommutation",
-                  },
-                  {
-                    id: "line-266-column-90",
-                    value: "optionalLumpSum",
-                  },
-                ],
-              },
-              {
-                id: "line-267",
-                cells: [
-                  {
-                    id: "line-267-column-9",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-267-column-42",
-                    value: "0.00",
-                  },
-                  {
-                    id: "line-267-column-58",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-267-column-90",
-                    value: "0.00",
-                  },
-                ],
-              },
-              {
-                id: "line-268",
-                cells: [
-                  {
-                    id: "line-268-column-9",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-268-column-42",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-268-column-58",
-                    value: "11000.00",
-                  },
-                  {
-                    id: "line-268-column-90",
-                    value: "12000.00",
-                  },
-                ],
-              },
-              {
-                id: "line-269",
-                cells: [
-                  {
-                    id: "line-269-column-9",
-                    value: "12000.00",
-                  },
-                  {
-                    id: "line-269-column-42",
-                    value: "24000.00",
-                  },
-                  {
-                    id: "line-269-column-58",
-                    value: "10000.00",
-                  },
-                  {
-                    id: "line-269-column-90",
-                    value: "24000.00",
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "line-272",
-        keyword: "Scenario",
-        name: "Reject optional lump sum above the permitted maximum",
-        description: "",
-        tags: ["@lump-sum", "@commutation", "@validation"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-273",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-274",
-            keyword: "And",
-            text: "the member has annual Premium pension before commutation of 12000.00",
-          },
-          {
-            id: "line-275",
-            keyword: "And",
-            text: "the maximum permitted optional lump sum is 60000.00",
-          },
-          {
-            id: "line-276",
-            keyword: "When",
-            text: "the member chooses an optional lump sum of 75000.00",
-          },
-          {
-            id: "line-277",
-            keyword: "Then",
-            text: "the optional lump sum should be rejected",
-          },
-          {
-            id: "line-278",
-            keyword: "And",
-            text: "the model should show the validation message:",
-            docString:
-              "The selected lump sum is above the permitted maximum for this Premium pension.",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-289",
-        keyword: "Scenario",
-        name: "Warn that Premium may be subject to abatement on Civil Service re-employment",
-        description: "",
-        tags: ["@abatement", "@warning"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-290",
-            keyword: "Given",
-            text: "the member has a Premium pension in payment",
-          },
-          {
-            id: "line-291",
-            keyword: "And",
-            text: "the member indicates they may return to Civil Service employment",
-          },
-          {
-            id: "line-292",
-            keyword: "When",
-            text: "the pension result is displayed",
-          },
-          {
-            id: "line-293",
-            keyword: "Then",
-            text: "the model should show the warning:",
-            docString:
-              "Premium is a legacy Civil Service pension and may be subject to abatement if\nyou take the pension and later return to Civil Service employment.",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-300",
-        keyword: "Scenario",
-        name: "Do not show alpha-only abatement wording for Premium",
-        description: "",
-        tags: ["@abatement", "@warning"],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-301",
-            keyword: "Given",
-            text: "the member has a Premium pension in payment",
-          },
-          {
-            id: "line-302",
-            keyword: "When",
-            text: "the pension result is displayed",
-          },
-          {
-            id: "line-303",
-            keyword: "Then",
-            text: 'the model should not say "alpha pensions are subject to abatement"',
-          },
-          {
-            id: "line-304",
-            keyword: "And",
-            text: "the model should explain abatement only for applicable legacy pension schemes",
-          },
-        ],
-        examples: [],
-      },
-      {
-        id: "line-312",
-        keyword: "Scenario",
-        name: "Project preserved Premium pension and draw it early with optional lump sum",
-        description: "",
-        tags: [
-          "@end-to-end",
-          "@premium",
-          "@legacy",
-          "@early-retirement",
-          "@lump-sum",
-        ],
-        status: "covered",
-        hasUnderReviewExamples: false,
-        steps: [
-          {
-            id: "line-313",
-            keyword: "Given",
-            text: "the member has a Premium pension record",
-          },
-          {
-            id: "line-314",
-            keyword: "And",
-            text: "the member has Premium reckonable service of 10.0000 years",
-          },
-          {
-            id: "line-315",
-            keyword: "And",
-            text: 'the member has final salary link status "broken"',
-          },
-          {
-            id: "line-316",
-            keyword: "And",
-            text: "the member has preserved final pensionable earnings of 72000.00",
-          },
-          {
-            id: "line-317",
-            keyword: "And",
-            text: "the member has Premium normal pension age 60",
-          },
-          {
-            id: "line-318",
-            keyword: "And",
-            text: "the annual CPI assumption is 0.00%",
-          },
-          {
-            id: "line-319",
-            keyword: "And",
-            text: "CPI revaluation is off",
-          },
-          {
-            id: "line-320",
-            keyword: "When",
-            text: "the member draws Premium pension at age 55",
-          },
-          {
-            id: "line-321",
-            keyword: "And",
-            text: "the member chooses an optional lump sum of 9000.00",
-          },
-          {
-            id: "line-322",
-            keyword: "Then",
-            text: "the unreduced annual Premium pension before early retirement should be 12000.00",
-          },
-          {
-            id: "line-323",
-            keyword: "And",
-            text: "the annual Premium pension after early retirement reduction should be 9672.00",
-          },
-          {
-            id: "line-324",
-            keyword: "And",
-            text: "the annual Premium pension after commutation should be 8922.00",
-          },
-          {
-            id: "line-325",
-            keyword: "And",
-            text: "the optional lump sum payable should be 9000.00",
-          },
-          {
-            id: "line-326",
-            keyword: "And",
-            text: "the result should show:",
-            table: [
-              {
-                id: "line-327",
-                cells: [
-                  {
-                    id: "line-327-column-9",
-                    value: "component",
-                  },
-                  {
-                    id: "line-327-column-43",
-                    value: "annualAmount",
-                  },
-                ],
-              },
-              {
-                id: "line-328",
-                cells: [
-                  {
-                    id: "line-328-column-9",
-                    value: "premiumBeforeEarlyRetirement",
-                  },
-                  {
-                    id: "line-328-column-43",
-                    value: "12000.00",
-                  },
-                ],
-              },
-              {
-                id: "line-329",
-                cells: [
-                  {
-                    id: "line-329-column-9",
-                    value: "premiumAfterEarlyRetirement",
-                  },
-                  {
-                    id: "line-329-column-43",
-                    value: "9672.00",
-                  },
-                ],
-              },
-              {
-                id: "line-330",
-                cells: [
-                  {
-                    id: "line-330-column-9",
-                    value: "pensionGivenUpForOptionalLumpSum",
-                  },
-                  {
-                    id: "line-330-column-44",
-                    value: "750.00",
-                  },
-                ],
-              },
-              {
-                id: "line-331",
-                cells: [
-                  {
-                    id: "line-331-column-9",
-                    value: "premiumAfterCommutation",
-                  },
-                  {
-                    id: "line-331-column-43",
-                    value: "8922.00",
-                  },
-                ],
-              },
-            ],
           },
         ],
         examples: [],
@@ -16477,7 +15840,7 @@ export const acceptanceFeatures = [
       {
         id: "line-7",
         keyword: "Scenario",
-        name: "Retirement Living Standards target is shown before spending strategy",
+        name: "Retirement Living Standards target is configured before spending strategy",
         description: "",
         tags: [],
         status: "covered",
@@ -16486,12 +15849,12 @@ export const acceptanceFeatures = [
           {
             id: "line-8",
             keyword: "Then",
-            text: "the Retirement Living Standards target should be displayed first",
+            text: "the Retirement Living Standards target field should precede spending strategy configuration",
           },
           {
             id: "line-9",
             keyword: "And",
-            text: "the spending strategy dropdown should be displayed beneath it",
+            text: "the spending strategy editor should be configured on the target step",
           },
         ],
         examples: [],

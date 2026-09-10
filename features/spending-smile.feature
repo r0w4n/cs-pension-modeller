@@ -2,11 +2,11 @@ Feature: Configure a retirement spending strategy
 
   Background:
     Given the user is configuring their retirement income target
-    And the Retirement Living Standards target control is displayed
+    And the Retirement Living Standards target control is configured
 
-  Scenario: Retirement Living Standards target is shown before spending strategy
-    Then the Retirement Living Standards target should be displayed first
-    And the spending strategy dropdown should be displayed beneath it
+  Scenario: Retirement Living Standards target is configured before spending strategy
+    Then the Retirement Living Standards target field should precede spending strategy configuration
+    And the spending strategy editor should be configured on the target step
 
   Scenario: Flat spending is selected
     Given the user has selected a Retirement Living Standards target of £30000

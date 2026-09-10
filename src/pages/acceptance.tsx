@@ -56,7 +56,7 @@ type AcceptanceFeature = {
 const features: readonly AcceptanceFeature[] = acceptanceFeatures;
 
 const PUBLIC_STATUS_LABELS = {
-  covered: "Covered by tests",
+  covered: "Executable specification",
   "under-review": "Under review",
 } as const;
 
@@ -220,7 +220,7 @@ function FeatureSection({ feature }: { feature: AcceptanceFeature }) {
       <summary>
         <span>{feature.name}</span>
         <span className="acceptance-feature-count">
-          {coveredCount} covered
+          {coveredCount} executable
           {underReviewCount > 0 ? `, ${underReviewCount} under review` : ""}
         </span>
       </summary>
@@ -259,9 +259,12 @@ export function AcceptancePage() {
           behaviour easier to inspect alongside the public methodology.
         </p>
         <p className="section-copy">
-          Scenarios marked as covered are included in the behaviour test suite.
-          Items marked under review are retained as visible modelling questions
-          or future acceptance criteria.
+          Scenarios marked as executable specification are declared in the
+          behaviour test suite. A passing run is evidence for the production
+          paths exercised by those steps; it is not a separate guarantee that
+          every wording nuance is product functionality. Items marked under
+          review are retained as visible modelling questions or future
+          acceptance criteria.
         </p>
       </section>
 
@@ -270,7 +273,7 @@ export function AcceptancePage() {
           <strong>{features.length}</strong> feature files
         </p>
         <p>
-          <strong>{coveredScenarios}</strong> covered scenarios
+          <strong>{coveredScenarios}</strong> executable scenarios
         </p>
         <p>
           <strong>{underReviewScenarios}</strong> scenarios under review

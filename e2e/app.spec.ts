@@ -1746,6 +1746,12 @@ async function assertFooterPage(
 
     await resetButton.click();
     await expect(page.getByRole("status")).toHaveText("Data Cleared");
+    await expect(
+      page.getByLabel("Save inputs on this device")
+    ).not.toBeChecked();
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toBeNull();
 
     await page.getByLabel("Choose JSON parameter file").evaluate((element) => {
       const input = element as HTMLInputElement;
@@ -1768,22 +1774,14 @@ async function assertFooterPage(
     await expect(page.getByLabel("Choose JSON parameter file")).toHaveValue("");
     await expect
       .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
-      .toContain('"desiredRetirementIncome":45678');
-
-    await page.getByLabel("Save inputs on this device").uncheck();
-    await expect(
-      page.getByLabel("Save inputs on this device")
-    ).not.toBeChecked();
-    await expect(page.getByRole("status")).toHaveText(
-      "Local saving turned off"
-    );
-    await expect
-      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
       .toBeNull();
 
     await page.getByLabel("Save inputs on this device").check();
     await expect(page.getByLabel("Save inputs on this device")).toBeChecked();
     await expect(page.getByRole("status")).toHaveText("Local saving turned on");
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"desiredRetirementIncome":45678');
 
     const guidanceToggle = page.getByLabel("Show guidance notes");
     await guidanceToggle.uncheck();

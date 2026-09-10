@@ -1,65 +1,37 @@
 import { DataTable, Given, Then, When } from "@cucumber/cucumber";
+import premiumEarlyRetirementFactorData from "../../src/data/premium_pension_reduction_factors.json";
+import { OPTIONAL_SECTION_TOGGLES } from "../../src/app-domains/journeys";
+import { fieldGroups } from "../../src/fieldDefinitions";
+import { addYears, createProjectionTable } from "../../src/projection-core";
 import {
   calculateAnnualPremiumPensionAtDate,
   calculatePremiumPension,
+  type PremiumCalculationResult,
 } from "../../src/projection-domains/premium";
-import { defaultSettings } from "../../src/settings";
+import { defaultSettings, type PensionSettings } from "../../src/settings";
 
-const PREMIUM_ACCRUAL_DENOMINATOR = 60;
-const PREMIUM_COMMUTATION_FACTOR = 12;
 const ACCEPTANCE_DATE_OF_BIRTH = "1970-04-01";
 const ACCEPTANCE_VALUATION_DATE = "2026-04-01";
 
-type ServiceHistoryRow = {
-  period: string;
-  calendarYears: number;
-  actualWeeklyHours: number;
-  fullTimeWeeklyHours: number;
-  reckonableServiceYears: number;
-};
-
 type PremiumWorld = {
-  salaryIncrease?: number;
   cpiRate?: number;
   cpiEnabled?: boolean;
-  premiumRecord?: boolean;
-  premiumSchemeLabel?: string;
-  premiumSchemeStatus?: string;
+  premiumOptionalSectionLabel?: string;
+  premiumGroupTitle?: string;
   premiumSchemeExplanation?: string;
-  validationResult?: { messages: string[] };
-  contributionRejected?: boolean;
-  finalPensionableEarnings?: number;
-  preservedFinalPensionableEarnings?: number;
-  currentFinalPensionableEarnings?: number;
-  finalPensionableEarningsUsedForPremium?: number;
-  reckonableServiceYears?: number;
-  serviceHistory?: ServiceHistoryRow[];
-  unreducedAnnualPremiumPension?: number;
+  premiumFieldIds?: string[];
+  pensionAtValuation?: number;
+  valuationDate?: string;
+  dateOfBirth?: string;
   premiumNormalPensionAge?: number;
   premiumDrawAge?: number;
+  premiumCalculationResult?: PremiumCalculationResult;
   annualPremiumPensionPayable?: number;
   annualReduction?: number;
-  annualPremiumPensionAtAge60BeforeIncreases?: number;
-  pensionBreakdown?: Record<string, number | string>[];
-  activeAlphaYears?: number;
-  newPremiumAccrual?: number;
-  newAlphaAccrual?: number;
-  finalSalaryLinkStatus?: "maintained" | "broken";
-  pensionAtDeferral?: number;
-  deferredYears?: number;
+  premiumPensionAtLaterAgeBeforeIncreases?: number;
   deferredPremiumPensionAtDrawAge?: number;
   annualPremiumPensionAfterIncrease?: number;
   monthlyGrossPremiumPension?: number;
-  annualPremiumPensionBeforeCommutation?: number;
-  maximumPermittedOptionalLumpSum?: number;
-  chosenOptionalLumpSum?: number;
-  optionalLumpSumRejected?: boolean;
-  optionalLumpSumPayable?: number;
-  pensionGivenUpForOptionalLumpSum?: number;
-  annualPremiumPensionAfterEarlyRetirement?: number;
-  annualPremiumPensionAfterCommutation?: number;
-  resultText?: string;
-  resultRows?: Record<string, number | string>[];
 };
 
 function round(value: number, precision = 2) {
@@ -95,142 +67,157 @@ function assertDeepEqual(actual: unknown, expected: unknown) {
 }
 
 function expectMoney(actual: number | undefined, expected: number) {
-  assertCondition(actual !== undefined);
+  assertCondition(actual !== undefined, "Expected a monetary result");
   assertEqual(round(actual), expected);
 }
 
-function calculatePremiumFinalSalaryPension(
-  finalPensionableEarnings: number,
-  reckonableServiceYears: number
-) {
-  return (
-    (finalPensionableEarnings * reckonableServiceYears) /
-    PREMIUM_ACCRUAL_DENOMINATOR
+function getPremiumPresentation() {
+  const premiumToggle = OPTIONAL_SECTION_TOGGLES.find(
+    (toggle) => toggle.key === "showPremium"
   );
+  const premiumGroup = fieldGroups.find((group) => group.id === "premium");
+
+  assertCondition(premiumToggle, "Premium optional section was not found");
+  assertCondition(premiumGroup, "Premium field group was not found");
+
+  return { premiumGroup, premiumToggle };
 }
 
-function calculateReckonableService(row: {
-  calendarYears: number;
-  actualWeeklyHours: number;
-  fullTimeWeeklyHours: number;
-}) {
-  return row.calendarYears * (row.actualWeeklyHours / row.fullTimeWeeklyHours);
-}
-
-function calculateProjectedSalary(
-  salary: number,
-  salaryIncreasePercent: number,
-  years: number
-) {
-  return salary * (1 + salaryIncreasePercent / 100) ** years;
-}
-
-function addWholeYears(date: string, years: number) {
-  const [year, month, day] = date.split("-");
-
-  return `${Number(year) + years}-${month}-${day}`;
-}
-
-function calculatePremiumPayable(
-  annualPension: number,
-  drawAge: number,
-  normalPensionAge: number
-) {
-  return calculatePremiumPension({
-    annualPensionAtValuationDate: annualPension,
-    valuationDate: ACCEPTANCE_VALUATION_DATE,
-    dateOfBirth: ACCEPTANCE_DATE_OF_BIRTH,
-    drawAge,
-    normalPensionAge,
-    cpiAssumption: 0,
-  }).annualPensionPayableAtDrawAge;
-}
-
-function updatePremiumCommutation(world: PremiumWorld) {
-  const annualPensionBeforeCommutation =
-    world.annualPremiumPensionAfterEarlyRetirement ??
-    world.annualPremiumPensionBeforeCommutation ??
-    0;
-  const optionalLumpSum = world.chosenOptionalLumpSum ?? 0;
-  const pensionGivenUp = optionalLumpSum / PREMIUM_COMMUTATION_FACTOR;
-
-  world.pensionGivenUpForOptionalLumpSum = pensionGivenUp;
-  world.optionalLumpSumPayable = optionalLumpSum;
-  world.annualPremiumPensionAfterCommutation =
-    annualPensionBeforeCommutation - pensionGivenUp;
-  world.resultRows = [
-    {
-      component: "premiumBeforeEarlyRetirement",
-      annualAmount: world.unreducedAnnualPremiumPension ?? 0,
-    },
-    {
-      component: "premiumAfterEarlyRetirement",
-      annualAmount: world.annualPremiumPensionAfterEarlyRetirement ?? 0,
-    },
-    {
-      component: "pensionGivenUpForOptionalLumpSum",
-      annualAmount: pensionGivenUp,
-    },
-    {
-      component: "premiumAfterCommutation",
-      annualAmount: world.annualPremiumPensionAfterCommutation,
-    },
-  ];
-}
-
-function normalizeRows(rows: Record<string, number | string>[]) {
-  return rows.map((row) =>
-    Object.fromEntries(
-      Object.entries(row).map(([key, value]) => [
-        key,
-        typeof value === "number" ? round(value, 4) : value,
-      ])
-    )
+function calculatePreservedPremiumPension(world: PremiumWorld) {
+  assertCondition(
+    world.pensionAtValuation !== undefined,
+    "Expected a Premium pension amount at valuation"
   );
+
+  const result = calculatePremiumPension({
+    annualPensionAtValuationDate: world.pensionAtValuation,
+    valuationDate: world.valuationDate ?? ACCEPTANCE_VALUATION_DATE,
+    dateOfBirth: world.dateOfBirth ?? ACCEPTANCE_DATE_OF_BIRTH,
+    drawAge: world.premiumDrawAge ?? world.premiumNormalPensionAge ?? 60,
+    normalPensionAge: world.premiumNormalPensionAge ?? 60,
+    cpiAssumption: world.cpiEnabled ? (world.cpiRate ?? 0) / 100 : 0,
+  });
+
+  world.premiumCalculationResult = result;
+  world.deferredPremiumPensionAtDrawAge = result.cpiRevaluedPensionAtDrawAge;
+  world.annualPremiumPensionPayable = result.annualPensionPayableAtDrawAge;
+  world.annualReduction =
+    result.cpiRevaluedPensionAtDrawAge - result.annualPensionPayableAtDrawAge;
 }
 
-function parseExpectedRows(table: DataTable) {
-  return table
-    .hashes()
-    .map((row) =>
-      Object.fromEntries(
-        Object.entries(row).map(([key, value]) => [
-          key,
-          /^-?\d+(\.\d+)?$/.test(value) ? Number(value) : value,
-        ])
-      )
+function createPremiumProjectionSettings(world: PremiumWorld): PensionSettings {
+  return {
+    ...defaultSettings,
+    startDate: world.valuationDate ?? ACCEPTANCE_VALUATION_DATE,
+    dateOfBirth: world.dateOfBirth ?? ACCEPTANCE_DATE_OF_BIRTH,
+    lifeExpectancy: Math.max(
+      world.premiumNormalPensionAge ?? 60,
+      world.premiumDrawAge ?? 60,
+      61
+    ),
+    showAlpha: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: true,
+    showStatePension: false,
+    showSipp: false,
+    showCsAvc: false,
+    showIsa: false,
+    showLisa: false,
+    projectionBasis: world.cpiEnabled ? "nominal" : "real",
+    inflationRateAnnual: world.cpiRate ?? 0,
+    premiumAnnualPensionAtValuationDate: world.pensionAtValuation ?? 0,
+    premiumValuationDate: world.valuationDate ?? ACCEPTANCE_VALUATION_DATE,
+    premiumDrawAge: world.premiumDrawAge ?? 60,
+    premiumNormalPensionAge: world.premiumNormalPensionAge ?? 60,
+    premiumHasNpa65: (world.premiumNormalPensionAge ?? 60) === 65,
+  };
+}
+
+Given(
+  "Premium early-retirement factor tables version {string} are loaded",
+  function (version: string) {
+    assertEqual(
+      premiumEarlyRetirementFactorData.source.workbook_version,
+      version
     );
-}
-
-Given(
-  "Civil Service pension factor tables version {string} are loaded",
-  function (version: string) {
-    assertEqual(version, "GAD-2026-01");
   }
 );
 
-Given(
-  "Civil Service pension commutation tables version {string} are loaded",
-  function (version: string) {
-    assertEqual(version, "acceptance-v1");
-  }
-);
+Given("Premium early-retirement tables are:", function (table: DataTable) {
+  const actual = Object.entries(
+    premiumEarlyRetirementFactorData.source.tables
+  ).map(([normalPensionAge, source]) => ({
+    normalPensionAge,
+    workbookTable: source.workbook_table,
+    guidanceTable: source.guidance_table,
+  }));
 
-Given("the member has a Premium pension record", function (this: PremiumWorld) {
-  this.premiumRecord = true;
-  this.premiumSchemeLabel = "Premium";
-  this.premiumSchemeStatus = "Legacy";
-  this.premiumNormalPensionAge = 60;
-  this.premiumSchemeExplanation =
-    "Premium is a legacy Civil Service pension. You may have preserved or banked\n" +
-    "Premium benefits, but you cannot directly build up new Premium pension in\n" +
-    "the modeller.";
+  assertDeepEqual(actual, table.hashes());
 });
+
+When(
+  "the Premium pension input group is inspected",
+  function (this: PremiumWorld) {
+    const { premiumGroup, premiumToggle } = getPremiumPresentation();
+
+    this.premiumOptionalSectionLabel = premiumToggle.label;
+    this.premiumGroupTitle = premiumGroup.title;
+    this.premiumSchemeExplanation = premiumGroup.description;
+    this.premiumFieldIds = premiumGroup.fields.map((field) => field.id);
+  }
+);
+
+Then(
+  "the Premium optional-section label should be {string}",
+  function (this: PremiumWorld, expected: string) {
+    assertEqual(this.premiumOptionalSectionLabel, expected);
+  }
+);
+
+Then(
+  "the Premium field group title should be {string}",
+  function (this: PremiumWorld, expected: string) {
+    assertEqual(this.premiumGroupTitle, expected);
+  }
+);
+
+Then(
+  "the Premium field group should explain:",
+  function (this: PremiumWorld, expected: string) {
+    assertEqual(this.premiumSchemeExplanation, expected.trim());
+  }
+);
+
+Then(
+  "Premium should ask for these production fields:",
+  function (this: PremiumWorld, table: DataTable) {
+    assertCondition(this.premiumFieldIds, "Premium fields were not inspected");
+    assertDeepEqual(
+      this.premiumFieldIds.map((fieldId) => ({ fieldId })),
+      table.hashes()
+    );
+  }
+);
+
+Then(
+  "Premium should not ask for unsupported fields:",
+  function (this: PremiumWorld, table: DataTable) {
+    assertCondition(this.premiumFieldIds, "Premium fields were not inspected");
+
+    for (const { fieldId } of table.hashes()) {
+      assertCondition(
+        !this.premiumFieldIds.includes(fieldId),
+        `Unsupported Premium field "${fieldId}" is exposed`
+      );
+    }
+  }
+);
 
 Given(
   "the member has a deferred Premium pension record",
   function (this: PremiumWorld) {
-    this.premiumRecord = true;
     this.premiumNormalPensionAge = 60;
   }
 );
@@ -238,375 +225,28 @@ Given(
 Given(
   "the member has a Premium pension in payment",
   function (this: PremiumWorld) {
-    this.premiumRecord = true;
-    this.resultText =
-      "Premium is a legacy Civil Service pension and may be subject to abatement if\n" +
-      "you take the pension and later return to Civil Service employment.";
+    this.premiumNormalPensionAge = 60;
   }
 );
-
-When("the pension record is displayed", function () {
-  return;
-});
-
-Then(
-  "the scheme should be labelled {string}",
-  function (this: PremiumWorld, expected: string) {
-    assertEqual(this.premiumSchemeLabel, expected);
-  }
-);
-
-Then(
-  "the scheme status should be {string}",
-  function (this: PremiumWorld, expected: string) {
-    assertEqual(this.premiumSchemeStatus, expected);
-  }
-);
-
-Then(
-  "the scheme should explain:",
-  function (this: PremiumWorld, expected: string) {
-    assertEqual(this.premiumSchemeExplanation, expected.trim());
-  }
-);
-
-When(
-  "the member attempts to add a monthly Premium contribution of {float}",
-  function (this: PremiumWorld, _amount: number) {
-    this.contributionRejected = true;
-    this.validationResult = {
-      messages: [
-        "Premium is a legacy Civil Service pension and cannot receive new direct\n" +
-          "monthly contributions. New Civil Service pension accrual should normally be\n" +
-          "modelled under alpha.",
-      ],
-    };
-  }
-);
-
-When(
-  "the member attempts to add a Premium lump sum contribution of {float}",
-  function (this: PremiumWorld, _amount: number) {
-    this.contributionRejected = true;
-    this.validationResult = {
-      messages: [
-        "Premium is a legacy Civil Service pension and cannot receive new direct\n" +
-          "lump sum contributions.",
-      ],
-    };
-  }
-);
-
-Then("the contribution should be rejected", function (this: PremiumWorld) {
-  assertEqual(this.contributionRejected, true);
-});
 
 Given(
-  "the member has final pensionable earnings of {float}",
+  "the member has annual Premium pension of {float} at valuation",
   function (this: PremiumWorld, value: number) {
-    this.finalPensionableEarnings = value;
+    this.pensionAtValuation = value;
   }
 );
 
 Given(
-  "the member has Premium reckonable service of {float} years",
-  function (this: PremiumWorld, value: number) {
-    this.reckonableServiceYears = value;
-  }
-);
-
-When("the Premium pension is calculated", function (this: PremiumWorld) {
-  if (this.serviceHistory) {
-    this.reckonableServiceYears = this.serviceHistory.reduce(
-      (total, row) => total + row.reckonableServiceYears,
-      0
-    );
-  }
-
-  assertCondition(this.finalPensionableEarnings !== undefined);
-  assertCondition(this.reckonableServiceYears !== undefined);
-  this.unreducedAnnualPremiumPension = calculatePremiumFinalSalaryPension(
-    this.finalPensionableEarnings,
-    this.reckonableServiceYears
-  );
-});
-
-Then(
-  "the unreduced annual Premium pension should be {float}",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.unreducedAnnualPremiumPension, expected);
+  "the Premium valuation date is {word}",
+  function (this: PremiumWorld, valuationDate: string) {
+    this.valuationDate = valuationDate;
   }
 );
 
 Given(
-  "the member worked for {int} calendar years",
-  function (this: PremiumWorld, calendarYears: number) {
-    this.serviceHistory = [
-      {
-        period: "part-time",
-        calendarYears,
-        actualWeeklyHours: 0,
-        fullTimeWeeklyHours: 0,
-        reckonableServiceYears: 0,
-      },
-    ];
-  }
-);
-
-Given(
-  "the member worked {int} hours per week",
-  function (this: PremiumWorld, actualWeeklyHours: number) {
-    assertCondition(this.serviceHistory?.[0]);
-    this.serviceHistory[0].actualWeeklyHours = actualWeeklyHours;
-  }
-);
-
-Given(
-  "the full-time working pattern was {int} hours per week",
-  function (this: PremiumWorld, fullTimeWeeklyHours: number) {
-    assertCondition(this.serviceHistory?.[0]);
-    this.serviceHistory[0].fullTimeWeeklyHours = fullTimeWeeklyHours;
-    this.serviceHistory[0].reckonableServiceYears = calculateReckonableService(
-      this.serviceHistory[0]
-    );
-  }
-);
-
-Then(
-  "the Premium reckonable service should be {float} years",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.reckonableServiceYears, expected);
-  }
-);
-
-Given(
-  "the member has the following Premium service history:",
-  function (this: PremiumWorld, table: DataTable) {
-    this.serviceHistory = table.hashes().map((row) => {
-      const serviceRow = {
-        period: row.period,
-        calendarYears: Number(row.calendarYears),
-        actualWeeklyHours: Number(row.actualWeeklyHours),
-        fullTimeWeeklyHours: Number(row.fullTimeWeeklyHours),
-      };
-
-      return {
-        ...serviceRow,
-        reckonableServiceYears: calculateReckonableService(serviceRow),
-      };
-    });
-  }
-);
-
-Then(
-  "the Premium reckonable service breakdown should be:",
-  function (this: PremiumWorld, table: DataTable) {
-    assertCondition(this.serviceHistory);
-    const rows = this.serviceHistory.map((row) => ({
-      period: row.period,
-      reckonableServiceYears: round(row.reckonableServiceYears, 4),
-    }));
-    rows.push({
-      period: "total",
-      reckonableServiceYears: round(
-        this.serviceHistory.reduce(
-          (total, row) => total + row.reckonableServiceYears,
-          0
-        ),
-        4
-      ),
-    });
-
-    assertDeepEqual(rows, parseExpectedRows(table));
-  }
-);
-
-Given(
-  "the member moved to alpha on {word}",
-  function (this: PremiumWorld, _date: string) {
-    this.newPremiumAccrual = 0;
-  }
-);
-
-Given(
-  "the member remains active in alpha for {int} further scheme years",
-  function (this: PremiumWorld, years: number) {
-    this.activeAlphaYears = years;
-    this.newPremiumAccrual = 0;
-    this.newAlphaAccrual = years > 0 ? 1 : 0;
-
-    if (this.finalSalaryLinkStatus === "maintained") {
-      assertCondition(this.currentFinalPensionableEarnings !== undefined);
-      this.finalPensionableEarningsUsedForPremium = calculateProjectedSalary(
-        this.currentFinalPensionableEarnings,
-        this.salaryIncrease ?? 0,
-        years
-      );
-    }
-
-    if (this.finalSalaryLinkStatus === "broken") {
-      assertCondition(this.preservedFinalPensionableEarnings !== undefined);
-      this.finalPensionableEarningsUsedForPremium =
-        this.preservedFinalPensionableEarnings;
-    }
-
-    if (
-      this.finalPensionableEarningsUsedForPremium !== undefined &&
-      this.reckonableServiceYears !== undefined
-    ) {
-      this.unreducedAnnualPremiumPension = calculatePremiumFinalSalaryPension(
-        this.finalPensionableEarningsUsedForPremium,
-        this.reckonableServiceYears
-      );
-    }
-  }
-);
-
-When("the Civil Service pension projection is calculated", function () {
-  return;
-});
-
-Then(
-  "the Premium reckonable service should remain {float} years",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.reckonableServiceYears, expected);
-  }
-);
-
-Then(
-  "no new Premium pension accrual should be added",
-  function (this: PremiumWorld) {
-    assertEqual(this.newPremiumAccrual, 0);
-  }
-);
-
-Then(
-  "new Civil Service pension accrual should be added only to alpha",
-  function (this: PremiumWorld) {
-    assertEqual(this.newPremiumAccrual, 0);
-    assertCondition((this.newAlphaAccrual ?? 0) > 0);
-  }
-);
-
-Given(
-  "the member has final salary link status {string}",
-  function (this: PremiumWorld, status: "maintained" | "broken") {
-    this.finalSalaryLinkStatus = status;
-  }
-);
-
-Given(
-  "the member has current final pensionable earnings of {float}",
-  function (this: PremiumWorld, value: number) {
-    this.currentFinalPensionableEarnings = value;
-  }
-);
-
-Given(
-  "the member has preserved final pensionable earnings of {float}",
-  function (this: PremiumWorld, value: number) {
-    this.preservedFinalPensionableEarnings = value;
-    this.finalPensionableEarnings = value;
-  }
-);
-
-Then(
-  "the final pensionable earnings used for Premium should be {float}",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.finalPensionableEarningsUsedForPremium, expected);
-  }
-);
-
-Then(
-  "the final pensionable earnings used for Premium should remain {float}",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.finalPensionableEarningsUsedForPremium, expected);
-  }
-);
-
-When("the Premium pension age rules are loaded", function () {
-  return;
-});
-
-Then(
-  "the Premium normal pension age should be {int}",
-  function (this: PremiumWorld, expected: number) {
-    assertEqual(this.premiumNormalPensionAge, expected);
-  }
-);
-
-Given(
-  "the member has the following Civil Service pension pots:",
-  function (this: PremiumWorld, table: DataTable) {
-    this.pensionBreakdown = table.hashes().map((row) => ({
-      scheme: row.scheme,
-      unreducedAnnualPension: Number(row.unreducedAnnualPension),
-      normalPensionAge: Number(row.normalPensionAge),
-    }));
-  }
-);
-
-When(
-  "the member draws all Civil Service pension pots at age {int}",
-  function (this: PremiumWorld, drawAge: number) {
-    assertCondition(this.pensionBreakdown);
-    this.pensionBreakdown = this.pensionBreakdown.map((row) => {
-      const unreducedAnnualPension = Number(row.unreducedAnnualPension);
-      const normalPensionAge = Number(row.normalPensionAge);
-      const factor =
-        row.scheme === "premium" || drawAge >= normalPensionAge ? 1 : 0.7;
-      const payableAnnualPension = unreducedAnnualPension * factor;
-
-      return {
-        scheme: String(row.scheme),
-        unreducedAnnualPension,
-        payableAnnualPension,
-        annualReduction: unreducedAnnualPension - payableAnnualPension,
-      };
-    });
-    this.pensionBreakdown.push(
-      this.pensionBreakdown.reduce(
-        (total, row) => ({
-          scheme: "total",
-          unreducedAnnualPension:
-            Number(total.unreducedAnnualPension) +
-            Number(row.unreducedAnnualPension),
-          payableAnnualPension:
-            Number(total.payableAnnualPension) +
-            Number(row.payableAnnualPension),
-          annualReduction:
-            Number(total.annualReduction) + Number(row.annualReduction),
-        }),
-        {
-          scheme: "total",
-          unreducedAnnualPension: 0,
-          payableAnnualPension: 0,
-          annualReduction: 0,
-        }
-      )
-    );
-  }
-);
-
-Then(
-  "the Premium pension should be payable without early retirement reduction",
-  function (this: PremiumWorld) {
-    const premiumRow = this.pensionBreakdown?.find(
-      (row) => row.scheme === "premium"
-    );
-
-    assertEqual(premiumRow?.annualReduction, 0);
-  }
-);
-
-Then(
-  "the alpha pension should be reduced for early payment",
-  function (this: PremiumWorld) {
-    const alphaRow = this.pensionBreakdown?.find(
-      (row) => row.scheme === "alpha"
-    );
-
-    assertCondition(Number(alphaRow?.annualReduction) > 0);
+  "the Premium member date of birth is {word}",
+  function (this: PremiumWorld, dateOfBirth: string) {
+    this.dateOfBirth = dateOfBirth;
   }
 );
 
@@ -618,54 +258,62 @@ Given(
 );
 
 Given(
-  "the member has unreduced annual Premium pension of {float}",
-  function (this: PremiumWorld, value: number) {
-    this.unreducedAnnualPremiumPension = value;
+  "the planned Premium draw age is {float}",
+  function (this: PremiumWorld, drawAge: number) {
+    this.premiumDrawAge = drawAge;
+  }
+);
+
+When(
+  "the preserved Premium pension is calculated",
+  function (this: PremiumWorld) {
+    calculatePreservedPremiumPension(this);
   }
 );
 
 When(
   "the member draws Premium pension at age {int}",
   function (this: PremiumWorld, drawAge: number) {
-    drawPremiumPensionAtAge(this, drawAge);
+    this.premiumDrawAge = drawAge;
+    calculatePreservedPremiumPension(this);
   }
 );
 
 When(
   "the member draws Premium pension at age {int} and {int} months",
   function (this: PremiumWorld, drawAge: number, drawAgeMonths: number) {
-    drawPremiumPensionAtAge(this, drawAge + drawAgeMonths / 12);
+    this.premiumDrawAge = drawAge + drawAgeMonths / 12;
+    calculatePreservedPremiumPension(this);
   }
 );
-
-function drawPremiumPensionAtAge(world: PremiumWorld, drawAge: number) {
-  world.premiumDrawAge = drawAge;
-  const unreducedAnnualPremiumPension =
-    world.unreducedAnnualPremiumPension ??
-    calculatePremiumFinalSalaryPension(
-      world.finalPensionableEarnings ??
-        world.preservedFinalPensionableEarnings ??
-        0,
-      world.reckonableServiceYears ?? 0
-    );
-  world.unreducedAnnualPremiumPension = unreducedAnnualPremiumPension;
-  world.annualPremiumPensionPayable = calculatePremiumPayable(
-    unreducedAnnualPremiumPension,
-    drawAge,
-    world.premiumNormalPensionAge ?? 60
-  );
-  world.annualPremiumPensionAfterEarlyRetirement =
-    world.annualPremiumPensionPayable;
-  world.annualPremiumPensionAtAge60BeforeIncreases =
-    world.annualPremiumPensionPayable;
-  world.annualReduction =
-    unreducedAnnualPremiumPension - world.annualPremiumPensionPayable;
-}
 
 Then(
   "the annual Premium pension payable should be {float}",
   function (this: PremiumWorld, expected: number) {
     expectMoney(this.annualPremiumPensionPayable, expected);
+  }
+);
+
+Then(
+  "the Premium early-retirement factor should be {float}",
+  function (this: PremiumWorld, expected: number) {
+    assertCondition(
+      this.premiumCalculationResult?.earlyRetirementFactor !== undefined &&
+        this.premiumCalculationResult.earlyRetirementFactor !== null,
+      "Expected a Premium early-retirement factor"
+    );
+    assertEqual(
+      round(this.premiumCalculationResult.earlyRetirementFactor, 3),
+      expected
+    );
+  }
+);
+
+Then(
+  "the Premium early-retirement factor should be unavailable",
+  function (this: PremiumWorld) {
+    assertEqual(this.premiumCalculationResult?.earlyRetirementFactor, null);
+    assertEqual(this.premiumCalculationResult?.factorUnavailable, true);
   }
 );
 
@@ -678,40 +326,42 @@ Then(
 
 Then(
   "the annual Premium pension payable at age {int} before pension increases should still be {float}",
-  function (this: PremiumWorld, _age: number, expected: number) {
-    expectMoney(this.annualPremiumPensionAtAge60BeforeIncreases, expected);
-  }
-);
-
-Given(
-  "the member has annual Premium pension of {float} at deferral",
-  function (this: PremiumWorld, value: number) {
-    this.pensionAtDeferral = value;
-  }
-);
-
-Given(
-  "the member defers pension for {int} years",
-  function (this: PremiumWorld, years: number) {
-    this.deferredYears = years;
-  }
-);
-
-When(
-  "the deferred Premium pension is projected to draw age",
-  function (this: PremiumWorld) {
-    assertCondition(this.pensionAtDeferral !== undefined);
-    assertCondition(this.deferredYears !== undefined);
-    const result = calculatePremiumPension({
-      annualPensionAtValuationDate: this.pensionAtDeferral,
-      valuationDate: ACCEPTANCE_VALUATION_DATE,
-      dateOfBirth: ACCEPTANCE_DATE_OF_BIRTH,
-      drawAge: 56 + this.deferredYears,
-      normalPensionAge: this.premiumNormalPensionAge ?? 60,
-      cpiAssumption: this.cpiEnabled ? (this.cpiRate ?? 0) / 100 : 0,
+  function (this: PremiumWorld, age: number, expected: number) {
+    const settings = createPremiumProjectionSettings({
+      ...this,
+      cpiEnabled: false,
+      cpiRate: 0,
     });
+    const rowDate = addYears(settings.dateOfBirth, age);
+    const row = createProjectionTable(settings).find(
+      (candidate) => candidate.date === rowDate
+    );
 
-    this.deferredPremiumPensionAtDrawAge = result.cpiRevaluedPensionAtDrawAge;
+    assertCondition(row, `Expected a Premium projection row for ${rowDate}`);
+    this.premiumPensionAtLaterAgeBeforeIncreases =
+      row.annualPremiumPensionIncludingReduction;
+    expectMoney(this.premiumPensionAtLaterAgeBeforeIncreases, expected);
+  }
+);
+
+Then(
+  "calculating Premium at age {int} should use the original early-retirement reduction",
+  function (this: PremiumWorld, age: number) {
+    const settings = createPremiumProjectionSettings({
+      ...this,
+      cpiEnabled: false,
+      cpiRate: 0,
+    });
+    const rowDate = addYears(settings.dateOfBirth, age);
+    const row = createProjectionTable(settings).find(
+      (candidate) => candidate.date === rowDate
+    );
+
+    assertCondition(row, `Expected a Premium projection row for ${rowDate}`);
+    assertEqual(
+      row.annualPremiumPensionIncludingReduction,
+      this.annualPremiumPensionPayable
+    );
   }
 );
 
@@ -748,7 +398,7 @@ When(
       calculateAnnualPremiumPensionAtDate({
         settings,
         premiumDrawDate: ACCEPTANCE_VALUATION_DATE,
-        rowDate: addWholeYears(ACCEPTANCE_VALUATION_DATE, years),
+        rowDate: addYears(ACCEPTANCE_VALUATION_DATE, years),
       });
     this.monthlyGrossPremiumPension =
       this.annualPremiumPensionAfterIncrease / 12;
@@ -766,179 +416,5 @@ Then(
   "the monthly gross Premium pension should be {float}",
   function (this: PremiumWorld, expected: number) {
     expectMoney(this.monthlyGrossPremiumPension, expected);
-  }
-);
-
-Given(
-  "the member has annual Premium pension before commutation of {float}",
-  function (this: PremiumWorld, value: number) {
-    this.annualPremiumPensionBeforeCommutation = value;
-  }
-);
-
-Given(
-  "the member chooses an optional lump sum of {float}",
-  function (this: PremiumWorld, value: number) {
-    this.chosenOptionalLumpSum = value;
-
-    if (
-      this.maximumPermittedOptionalLumpSum !== undefined &&
-      value > this.maximumPermittedOptionalLumpSum
-    ) {
-      this.optionalLumpSumRejected = true;
-      this.validationResult = {
-        messages: [
-          "The selected lump sum is above the permitted maximum for this Premium pension.",
-        ],
-      };
-    }
-  }
-);
-
-When(
-  "the Premium commutation calculation is performed",
-  function (this: PremiumWorld) {
-    updatePremiumCommutation(this);
-  }
-);
-
-Then(
-  "the annual Premium pension after commutation should be {float}",
-  function (this: PremiumWorld, expected: number) {
-    if (this.annualPremiumPensionAfterCommutation === undefined) {
-      updatePremiumCommutation(this);
-    }
-
-    expectMoney(this.annualPremiumPensionAfterCommutation, expected);
-  }
-);
-
-Then(
-  "the optional lump sum payable should be {float}",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.optionalLumpSumPayable, expected);
-  }
-);
-
-Given(
-  "the maximum permitted optional lump sum is {float}",
-  function (this: PremiumWorld, value: number) {
-    this.maximumPermittedOptionalLumpSum = value;
-  }
-);
-
-Then("the optional lump sum should be rejected", function (this: PremiumWorld) {
-  assertEqual(this.optionalLumpSumRejected, true);
-});
-
-Given(
-  "the member indicates they may return to Civil Service employment",
-  function () {
-    return;
-  }
-);
-
-Then(
-  "the model should show the warning:",
-  function (this: PremiumWorld, expected: string) {
-    assertEqual(this.resultText, expected.trim());
-  }
-);
-
-Then(
-  "the model should not say {string}",
-  function (this: PremiumWorld, unexpected: string) {
-    assertCondition(!this.resultText?.includes(unexpected));
-  }
-);
-
-Then(
-  "the model should explain abatement only for applicable legacy pension schemes",
-  function (this: PremiumWorld) {
-    assertCondition(this.resultText?.includes("Premium is a legacy"));
-  }
-);
-
-Then(
-  "the unreduced annual Premium pension before early retirement should be {float}",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.unreducedAnnualPremiumPension, expected);
-  }
-);
-
-Then(
-  "the annual Premium pension after early retirement reduction should be {float}",
-  function (this: PremiumWorld, expected: number) {
-    expectMoney(this.annualPremiumPensionAfterEarlyRetirement, expected);
-  }
-);
-
-Then(
-  "the result should show Premium rows:",
-  function (this: PremiumWorld, table: DataTable) {
-    assertCondition(this.resultRows);
-    assertDeepEqual(normalizeRows(this.resultRows), parseExpectedRows(table));
-  }
-);
-
-Then("the Premium result rows are prepared", function (this: PremiumWorld) {
-  return;
-});
-
-Then(
-  "the result should include Premium commutation rows",
-  function (this: PremiumWorld) {
-    assertCondition(this.resultRows);
-  }
-);
-
-Then(
-  "the Premium end-to-end result should be ready",
-  function (this: PremiumWorld) {
-    assertCondition(this.annualPremiumPensionAfterCommutation !== undefined);
-  }
-);
-
-Then("the Premium acceptance state is internally consistent", function () {
-  return;
-});
-
-Then(
-  "the Premium end-to-end rows should be:",
-  function (this: PremiumWorld, table: DataTable) {
-    assertCondition(this.resultRows);
-    assertDeepEqual(normalizeRows(this.resultRows), parseExpectedRows(table));
-  }
-);
-
-Then(
-  "the Premium result table should be prepared",
-  function (this: PremiumWorld) {
-    this.resultRows = [
-      {
-        component: "premiumBeforeEarlyRetirement",
-        annualAmount: this.unreducedAnnualPremiumPension ?? 0,
-      },
-      {
-        component: "premiumAfterEarlyRetirement",
-        annualAmount: this.annualPremiumPensionAfterEarlyRetirement ?? 0,
-      },
-      {
-        component: "pensionGivenUpForOptionalLumpSum",
-        annualAmount: this.pensionGivenUpForOptionalLumpSum ?? 0,
-      },
-      {
-        component: "premiumAfterCommutation",
-        annualAmount: this.annualPremiumPensionAfterCommutation ?? 0,
-      },
-    ];
-  }
-);
-
-Then(
-  "the Premium result table should match:",
-  function (this: PremiumWorld, table: DataTable) {
-    assertCondition(this.resultRows);
-    assertDeepEqual(normalizeRows(this.resultRows), parseExpectedRows(table));
   }
 );

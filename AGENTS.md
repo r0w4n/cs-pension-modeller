@@ -26,18 +26,25 @@ that the modeller is official.
 
 ## Sources Of Truth And Architecture Map
 
-Use the existing project tooling. Resolve current facts in this order:
+Use the existing project tooling. Use the source that owns the relevant topic:
 
 - `README.md`: canonical project overview, supported capabilities,
   architecture, and modelling assumptions
 - `package.json`: commands, dependencies, and supported Node versions
-- `features/`: executable business specifications and acceptance examples
+- `features/`: intended executable business specifications and acceptance
+  examples; passing scenarios establish only the production paths they exercise
 - `src/pages/methodology.tsx`: public methodology and limitations
 - `.github/workflows/`: CI, security, audit, and deployment behaviour
+- authoritative scheme and government publications, with the metadata in
+  `src/data/`: scheme rules, tax rules and published factors; these do not imply
+  that the modeller supports every published case
 
-If this file conflicts with the README about current capabilities,
-architecture, or assumptions, follow the README and correct the inconsistency.
-Do not duplicate full feature or scheme inventories here.
+Report discrepancies between documentation, specifications, implementation and
+published rules. Correct clear documentation drift against its owning source;
+do not silently choose between conflicting financial rules or change model
+behaviour to reconcile them. The README defines supported scope and declared
+simplifications, not authority over published scheme rules. Do not duplicate
+full feature or scheme inventories here.
 
 This map is for orientation; the README architecture section is canonical:
 
@@ -62,7 +69,11 @@ The required flow is `Presentation -> Application State -> Domain / Calculation
 Engine -> Result Projection -> Presentation`.
 
 - Keep React state, hooks, browser APIs, persistence, analytics, generated IDs,
-  mutable caches, and other effects in `src/app/` or browser entry points.
+  mutable caches, and other effects at imperative application boundaries, with
+  `src/app/` or browser entry points as the default location for new code.
+  Existing storage/runtime helpers outside that directory remain shell-owned;
+  their location does not permit effects in the functional core or require an
+  unrelated file move during ordinary work.
 - Keep calculation and result-projection functions deterministic. Pass inputs
   explicitly; do not read local storage, the DOM, the current time, randomness,
   or mutable application state from the functional core.
@@ -104,7 +115,9 @@ changing financial meaning.
   Do not merge distinct scheme rules merely because their formulas look alike.
 - **Keep state minimal and owned** — derive values where practical and keep state
   with the narrowest appropriate application owner. Avoid unnecessary global
-  state and duplicate copies of canonical settings or calculated results.
+  state and independently maintained competing sources of truth. Deliberate
+  comparison snapshots, undo history and bounded caches are valid when ownership
+  and update or invalidation rules are explicit.
 - **Use types as contracts** — use narrow, meaningful types at component,
   exported-function and external-data boundaries. Allow clear local inference;
   TypeScript types do not replace runtime validation of external input.
@@ -136,22 +149,22 @@ changing financial meaning.
 
 Before editing:
 
-1. Read the relevant README or methodology sections.
-2. Inspect the affected production code and existing tests.
-3. Review relevant Gherkin scenarios when pension behaviour, validation,
+1. Inspect the working tree and identify existing changes. Preserve unrelated
+   user or agent work; do not overwrite or revert it to simplify the task or
+   obtain passing checks.
+2. Read the relevant README or methodology sections.
+3. Inspect the affected production code and existing tests.
+4. Review relevant Gherkin scenarios when pension behaviour, validation,
    user-visible workflows, or documented outcomes may change.
-4. Search for existing components, styles, utilities, and patterns before
+5. Search for existing components, styles, utilities, and patterns before
    creating new ones.
-5. Identify material assumptions, edge cases, persistence implications, and
+6. Identify material assumptions, edge cases, persistence implications, and
    the smallest coherent change.
 
 While editing:
 
-- preserve existing architecture and conventions unless the task requires a
-  deliberate departure
-- avoid unrelated refactors, premature abstraction, and duplicated logic
-- preserve TypeScript type safety and avoid unnecessary `any`
-- use descriptive names and named constants for material financial values
+- apply the engineering principles and architecture rules above
+- avoid unnecessary `any` and use named constants for material financial values
 - document non-obvious financial decisions, not obvious code
 - update tests, Gherkin, public documentation, and schema history when their
   documented behaviour changes
@@ -198,21 +211,34 @@ When behaviour changes, update or add scenarios in the same change. Do not
 weaken, delete, bypass, or retag a scenario as `@pending` merely to make tests
 pass. Use `@pending` only for explicit future or under-review behaviour.
 
-Step definitions must call production domain, projection, settings, or
-app-domain APIs. Do not create acceptance-only shadow implementations, use
-non-pending no-op steps for user-visible behaviour, or drive Playwright through
-Gherkin steps.
+Step definitions must call production domain, projection, settings, app-domain
+or application APIs. Use production application actions for orchestration and
+persistence scenarios. Do not create acceptance-only shadow implementations,
+use non-pending no-op steps for user-visible behaviour, or drive Playwright
+through Gherkin steps.
 
 Use the smallest relevant checks during development and meet these minimums
-before reporting completion:
+before reporting completion. Applicable rows are cumulative; a command already
+passed for the final relevant changes need not be repeated for each row.
 
-| Change                                                       | Specification and minimum verification                                                                                                           |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Documentation only                                           | Review affected documentation; run `npm run format:check`                                                                                        |
-| TypeScript source or test                                    | Update Vitest/Testing Library coverage as relevant; run `npm run format:check`, `npm run lint:hook`, `npm run typecheck:all`, and `npm run test` |
-| Pension or user-visible behaviour                            | Update relevant Gherkin and unit coverage; run TypeScript checks plus `npm run test:bdd`                                                         |
-| Journey, form, navigation, layout, storage, or accessibility | Update relevant component/Gherkin coverage and run source checks plus the smallest relevant Playwright suite                                     |
-| Broad or release-sensitive change                            | Run `npm run check` or, when appropriate, `npm run check:full`                                                                                   |
+The **source baseline** means `npm run format:check`, `npm run lint:hook`,
+`npm run typecheck:all`, and `npm run test`.
+
+| Change                                                       | Specification and minimum verification                                                                                                                                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation only                                           | Review affected documentation; run `npm run format:check`                                                                                                                                                           |
+| Hand-written TypeScript source or test                       | Update Vitest/Testing Library coverage as relevant; run the source baseline                                                                                                                                         |
+| JavaScript tooling, scripts or configuration                 | Run formatting, lint and checks that exercise the affected tool or configuration; run the source baseline if compilation or application/test behaviour is affected; run `npm run lint:actions` for workflow changes |
+| Gherkin features or step definitions                         | Run `npm run generate:acceptance`, `npm run check:acceptance`, `npm run format:check` and `npm run test:bdd`; apply the TypeScript row when step definitions change                                                 |
+| Pension or user-visible behaviour                            | Update relevant Gherkin and unit coverage; run the source baseline plus `npm run test:bdd`                                                                                                                          |
+| Journey, form, navigation, layout, storage, or accessibility | Update relevant component/Gherkin coverage; run the source baseline plus the smallest relevant Playwright suite                                                                                                     |
+| Broad or release-sensitive change                            | Run `npm run check` or, when appropriate, `npm run check:full`                                                                                                                                                      |
+
+After feature changes, regenerate and include `src/generated/acceptance-features.ts`
+in the change. Do not edit generated output by hand. `npm run check:acceptance`
+must detect drift without repairing it; build and CI must not silently update a
+stale artifact. Regeneration alone does not require the TypeScript source
+baseline when only feature text and its generated representation changed.
 
 Vitest and Testing Library cover domain, adapter, unit, and component behaviour.
 Cucumber/Gherkin covers fast business rules and pension acceptance examples.
@@ -232,11 +258,22 @@ as sensitive:
 
 - make clear what is saved and preserve reset or clear controls
 - respect any “do not save” setting
+- require analytics consent before loading analytics or tracking on every entry
+  point, including direct navigation to static pages; stop active tracking when
+  consent is withdrawn or data is cleared
+- clear retained application state as well as saved data when clearing all data;
+  previously cleared values must not return through later edits, re-enabling
+  saving or reload
 - avoid storing unnecessary personal information
 - do not add analytics, tracking, external storage, server endpoints, or
   submission of financial data without explicit instruction
 - do not introduce hard-coded secrets, unsafe HTML, or unnecessary external
   scripts
+
+When changing these lifecycles, test raw storage or tracking effects as well as
+UI state. Use populated data and retained state through reset, subsequent edits
+and reload; default-returning loaders or uninitialised analytics mocks alone
+cannot establish that data was removed or active tracking stopped.
 
 Write in calm, clear UK English for people without specialist pension
 knowledge. Explain unavoidable jargon at the point of use and keep terminology
@@ -261,8 +298,9 @@ For interface changes:
   validation, reset and responsive behaviour; do not create a bespoke control
   or approximate its styling
 - a materially different form control, field layout, or interaction requires a
-  concrete user benefit and explicit user agreement before implementation;
-  document the reason and cover the variant with relevant tests
+  concrete user benefit and user agreement unless the existing request already
+  authorises that change; do not request the same approval again. Document the
+  reason and cover the variant with relevant tests
 - prefer semantic HTML and native controls
 - preserve accessible names, visible focus, logical keyboard order, and
   appropriate focus movement
@@ -294,12 +332,9 @@ casually. `npm audit fix` may change the dependency graph; run it only for an
 explicit dependency or security-remediation task, review manifest and lockfile
 changes, and never use `--force` without explicit approval.
 
-Do not make large unrelated refactors, replace the architecture unnecessarily,
-or create noisy CI checks without clear value.
-
 For CI changes, use `npm ci`, preserve least-privilege permissions, and do not
 mask meaningful failures with `continue-on-error` without explicit
-justification.
+justification. Add CI checks only when they enforce a meaningful requirement.
 
 ## Concise Completion Checklist
 

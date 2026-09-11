@@ -85,6 +85,53 @@ Engine -> Result Projection -> Presentation`.
   application actions; the imperative shell may call the functional core; the
   core must not import presentation or application-state modules.
 
+## Engineering Principles
+
+Apply these principles within the safety priorities and FCIS architecture above.
+They guide implementation choices; they do not justify expanding task scope or
+changing financial meaning.
+
+- **Optimise for clarity** — prefer simple, explicit, straightforward code over
+  clever abstractions. Keep financial rules and assumptions easy to audit.
+- **Keep responsibilities focused** — give each function, component and module
+  a clear purpose. Extract cohesive responsibilities when it improves ownership
+  and reviewability, not merely to meet a line-count target.
+- **Prefer composition** — build behaviour from focused components and functions
+  with explicit inputs rather than deep inheritance or tightly coupled
+  abstractions.
+- **DRY behaviour, not syntax** — share the implementation of the same business
+  rule, but tolerate similar-looking code until a useful abstraction is clear.
+  Do not merge distinct scheme rules merely because their formulas look alike.
+- **Keep state minimal and owned** — derive values where practical and keep state
+  with the narrowest appropriate application owner. Avoid unnecessary global
+  state and duplicate copies of canonical settings or calculated results.
+- **Use types as contracts** — use narrow, meaningful types at component,
+  exported-function and external-data boundaries. Allow clear local inference;
+  TypeScript types do not replace runtime validation of external input.
+- **Make control flow obvious** — prefer guard clauses and early returns where
+  they improve readability. Avoid excessive nesting without scattering one
+  business decision across unnecessary helpers.
+- **Name for intent** — communicate purpose and domain meaning. Make units,
+  time periods and tax or inflation bases explicit where ambiguity matters.
+- **Be consistent** — follow established patterns for structure, naming,
+  formatting and error handling. Correct a demonstrated defect rather than
+  copying it for consistency.
+- **Justify dependencies and abstractions** — choose the simplest approach that
+  meets current requirements. Do not add complexity for hypothetical future
+  needs; follow the dependency and scope restrictions below.
+- **Fail clearly at boundaries** — validate external input and return actionable
+  validation outcomes. Preserve entered values, distinguish invalid, missing and
+  zero values, and avoid silently turning failures into plausible results.
+  Handle expected input errors without crashing the interface or exposing
+  internal details.
+- **Refactor deliberately within scope** — improve touched code when it directly
+  supports the task or reduces an identified risk. Keep refactors reviewable,
+  preserve behaviour, and avoid unrelated cleanup or unnecessary rewrites.
+- **Verify observable behaviour** — test production outcomes and meaningful
+  failure paths, not implementation details or results recreated inside tests.
+  Use the verification matrix below; a passing test must provide evidence for
+  the behaviour it claims to cover.
+
 ## Change Workflow
 
 Before editing:

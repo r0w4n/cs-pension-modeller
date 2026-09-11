@@ -567,6 +567,8 @@ const COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.comparisonRetirementIncomeDisplay";
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";
+const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
+const ANALYTICS_CONSENT_STORAGE_KEY = "cs-pension-modeller.analyticsConsent";
 
 function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   return {
@@ -979,7 +981,9 @@ describe.sequential("App settings form", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("clears all local storage data from the settings page and shows feedback", () => {
+  it("clears all local storage data from the settings page and shows feedback", async () => {
+    window.localStorage.setItem(ACKNOWLEDGEMENT_STORAGE_KEY, "v1");
+    window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, "true");
     window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
@@ -989,6 +993,14 @@ describe.sequential("App settings form", () => {
     window.history.pushState({}, "", "/settings/");
 
     render(<App />);
+    await waitFor(() =>
+      expect(applyAnalyticsConsent).toHaveBeenCalledWith(true)
+    );
+    expect(screen.getByLabelText("Allow analytics")).toBeChecked();
+
+    vi.mocked(applyAnalyticsConsent).mockClear();
+    vi.mocked(disableAnalytics).mockClear();
+    vi.mocked(trackAnalyticsEvent).mockClear();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
 
@@ -999,7 +1011,7 @@ describe.sequential("App settings form", () => {
     expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
       "false"
     );
-    expect(disableAnalytics).toHaveBeenCalled();
+    await waitFor(() => expect(disableAnalytics).toHaveBeenCalled());
   });
 
   it("does not save cleared settings or scenarios again after local saving is restored", () => {

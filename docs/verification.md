@@ -99,3 +99,56 @@ Bundle and browser assessment:
   viewport sizes. Firefox/WebKit coverage would improve browser breadth but
   should be weighed against CI runtime and maintenance cost before expanding
   the default matrix.
+
+## 2026-09-11 Analytics Consent Withdrawal Test Closure
+
+The production smoke test now serves a controlled local Google tag script stub
+instead of aborting the loader. The stub drains queued `gtag` commands and
+records subsequent commands emitted by the app while all other Google Analytics
+and Google Tag Manager traffic remains blocked. This verifies the app's
+commands only; it does not validate Google Analytics' internal consent runtime.
+
+The smoke coverage now confirms that analytics does not initialise before
+consent, accepted consent initialises the stub and emits an allowed page-view
+event, consent withdrawal and clearing data both emit
+`analytics_storage: "denied"`, and later navigation does not emit additional
+tracking events after withdrawal or clearing.
+
+The App settings unit test now starts from acknowledged accepted consent,
+confirms analytics activation, clears mock history, then clicks "Clear all
+data" and asserts that the clear-data action itself causes analytics shutdown.
+This prevents initial render effects from satisfying the assertion.
+
+Verification completed:
+
+- Focused `npm run test -- src/App.test.tsx -t "clears all local storage data"`
+  passed.
+- Focused `npx playwright test e2e/production-smoke.spec.ts --config playwright.prod.config.ts --grep "gates analytics"`
+  passed across the configured mobile and desktop Chromium projects after a
+  production build with `VITE_GA_MEASUREMENT_ID=G-TEST123`.
+- `npm run check` passed with formatting, lint, acceptance drift check,
+  typecheck, 883 Vitest coverage tests, 352 Gherkin scenarios and a production
+  build.
+- `npm run test:smoke:prod` initially rebuilt successfully but the sandbox
+  blocked the local preview server from binding to `127.0.0.1:4173`; the
+  approved rerun passed all 6 production smoke checks across mobile and desktop
+  Chromium projects.
+
+Failure demonstrations:
+
+- Temporarily removing the production `analytics_storage: "denied"` update in
+  `disableAnalytics` made the focused production smoke test fail on the
+  withdrawn-consent denial assertion, then the code was restored.
+- Temporarily preventing the clear-data transition from calling
+  `disableAnalytics` made the focused App unit test fail on the isolated
+  shutdown assertion, then the code was restored.
+
+Known limitations:
+
+- The browser test uses a local command-recording script stub and deliberately
+  blocks real analytics traffic. It proves the app emits, or stops emitting,
+  the expected commands; it does not prove how Google's hosted script would
+  process those commands internally.
+- The build continues to emit Vite's existing large-chunk warning for the
+  interactive modeller shell. No chunking change was part of this focused
+  consent-test closure.

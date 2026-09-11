@@ -92,9 +92,10 @@ Engine -> Result Projection -> Presentation`.
 - Keep bridge analysis in the canonical `RetirementPlanResult`. Result and
   comparison projections consume that shared diagnostic; they must not start a
   separate bridge projection or treat it as a journey-specific engine.
-- Dependency direction must follow the required flow. Presentation may call
-  application actions; the imperative shell may call the functional core; the
-  core must not import presentation or application-state modules.
+- Treat the required flow above as runtime data flow, not source import
+  direction. Presentation may call application actions; the imperative shell
+  may call the functional core; the core must not import presentation or
+  application-state modules.
 
 ## Engineering Principles
 
@@ -207,9 +208,10 @@ Treat relevant Gherkin features as primary specifications of pension behaviour
 and key user outcomes. Keep scenarios understandable to non-developers and
 focused on observable business rules.
 
-When behaviour changes, update or add scenarios in the same change. Do not
-weaken, delete, bypass, or retag a scenario as `@pending` merely to make tests
-pass. Use `@pending` only for explicit future or under-review behaviour.
+When a business rule or user outcome changes, update or add relevant scenarios
+in the same change. Do not weaken, delete, bypass, or retag a scenario as
+`@pending` merely to make tests pass. Use `@pending` only for explicit future or
+under-review behaviour.
 
 Step definitions must call production domain, projection, settings, app-domain
 or application APIs. Use production application actions for orchestration and
@@ -224,15 +226,15 @@ passed for the final relevant changes need not be repeated for each row.
 The **source baseline** means `npm run format:check`, `npm run lint:hook`,
 `npm run typecheck:all`, and `npm run test`.
 
-| Change                                                       | Specification and minimum verification                                                                                                                                                                              |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Documentation only                                           | Review affected documentation; run `npm run format:check`                                                                                                                                                           |
-| Hand-written TypeScript source or test                       | Update Vitest/Testing Library coverage as relevant; run the source baseline                                                                                                                                         |
-| JavaScript tooling, scripts or configuration                 | Run formatting, lint and checks that exercise the affected tool or configuration; run the source baseline if compilation or application/test behaviour is affected; run `npm run lint:actions` for workflow changes |
-| Gherkin features or step definitions                         | Run `npm run generate:acceptance`, `npm run check:acceptance`, `npm run format:check` and `npm run test:bdd`; apply the TypeScript row when step definitions change                                                 |
-| Pension or user-visible behaviour                            | Update relevant Gherkin and unit coverage; run the source baseline plus `npm run test:bdd`                                                                                                                          |
-| Journey, form, navigation, layout, storage, or accessibility | Update relevant component/Gherkin coverage; run the source baseline plus the smallest relevant Playwright suite                                                                                                     |
-| Broad or release-sensitive change                            | Run `npm run check` or, when appropriate, `npm run check:full`                                                                                                                                                      |
+| Change                                                       | Specification and minimum verification                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation only                                           | Review affected documentation; run `npm run format:check`                                                                                                                                                                                                                                                                                                            |
+| Hand-written TypeScript source or test                       | Update Vitest/Testing Library coverage as relevant; run the source baseline                                                                                                                                                                                                                                                                                          |
+| JavaScript tooling, scripts or configuration                 | Run formatting, lint and checks that exercise the affected tool or configuration; run the source baseline if compilation or application/test behaviour is affected; run `npm run lint:actions` for workflow changes                                                                                                                                                  |
+| Gherkin features or step definitions                         | Run `npm run generate:acceptance`, `npm run check:acceptance`, `npm run format:check` and `npm run test:bdd`; apply the TypeScript row when step definitions change                                                                                                                                                                                                  |
+| Pension or business-rule/user-outcome behaviour              | Update relevant Gherkin and unit coverage; run the source baseline plus `npm run test:bdd`                                                                                                                                                                                                                                                                           |
+| Journey, form, navigation, layout, storage, or accessibility | Update relevant component coverage; update Gherkin only when a business rule or user outcome changes; run the source baseline plus the smallest relevant Playwright suite. For accessibility changes, include the accessibility checks. For analytics consent, direct static-page navigation, or production entry-point changes, include the production smoke checks |
+| Broad or release-sensitive change                            | Run `npm run check` or, when appropriate, `npm run check:full`                                                                                                                                                                                                                                                                                                       |
 
 After feature changes, regenerate and include `src/generated/acceptance-features.ts`
 in the change. Do not edit generated output by hand. `npm run check:acceptance`

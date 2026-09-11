@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
-import { initialiseAnalytics, trackPageView } from "../analytics";
+import { applyAnalyticsConsent, trackPageView } from "../analytics";
 import { resolveAppBaseHref } from "../app/app-base";
+import { loadAnalyticsConsentState } from "../app/app-persistence";
 import { SiteFooter } from "../app/site-footer";
 import { Helmet } from "../helmet";
 
@@ -52,8 +53,9 @@ export function StaticPageLayout({
 
 function StaticPageAnalytics() {
   useEffect(() => {
-    initialiseAnalytics();
-    trackPageView();
+    if (applyAnalyticsConsent(loadAnalyticsConsentState())) {
+      trackPageView();
+    }
   }, []);
 
   return null;

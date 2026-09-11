@@ -461,6 +461,8 @@ Useful individual checks:
 ```bash
 npm run format:check
 npm run lint
+npm run check:acceptance
+npm run generate:acceptance
 npm run typecheck:all
 npm run test:coverage
 npm run test:bdd
@@ -497,6 +499,10 @@ The accessibility checks use `@axe-core/playwright` against key app states:
 Automated axe checks help catch regressions in CI, but they do not prove full
 WCAG compliance. Manual keyboard, focus-management, zoom, and screen-reader
 checks are still needed before release.
+
+Release-sensitive local verification notes that do not change product
+behaviour or modelling assumptions are recorded in
+[`docs/verification.md`](docs/verification.md).
 
 This repository includes Git hooks in [`.githooks/`](.githooks). `npm install`
 and `npm ci` configure `core.hooksPath` for the clone automatically, so commits

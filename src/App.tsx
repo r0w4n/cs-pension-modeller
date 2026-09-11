@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import {
+  applyAnalyticsConsent,
   disableAnalytics,
-  initialiseAnalytics,
   trackPageView,
 } from "./analytics";
 import { createRetirementIncomeSeries } from "./result-projection/retirement-income";
@@ -46,20 +46,16 @@ function App() {
 
   useEffect(() => {
     if (!hasAcknowledgedNotice) {
+      disableAnalytics();
       return;
     }
 
-    if (analyticsConsentGranted) {
-      initialiseAnalytics();
-
+    if (applyAnalyticsConsent(analyticsConsentGranted)) {
       if (!hasTrackedPageViewRef.current) {
         trackPageView();
         hasTrackedPageViewRef.current = true;
       }
-      return;
     }
-
-    disableAnalytics();
   }, [analyticsConsentGranted, hasAcknowledgedNotice]);
 
   if (isSettingsRoute()) {

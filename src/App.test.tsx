@@ -535,13 +535,19 @@ vi.mock("./projection", async () => {
 });
 
 vi.mock("./analytics", () => ({
+  applyAnalyticsConsent: vi.fn((consentGranted: boolean) => consentGranted),
   disableAnalytics: vi.fn(),
   initialiseAnalytics: vi.fn(),
   trackAnalyticsEvent: vi.fn(),
   trackPageView: vi.fn(),
 }));
 
-import { trackAnalyticsEvent, trackPageView } from "./analytics";
+import {
+  applyAnalyticsConsent,
+  disableAnalytics,
+  trackAnalyticsEvent,
+  trackPageView,
+} from "./analytics";
 import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
@@ -821,6 +827,8 @@ describe.sequential("App settings form", () => {
     window.history.replaceState({}, "", "/");
     vi.mocked(trackAnalyticsEvent).mockClear();
     vi.mocked(trackPageView).mockClear();
+    vi.mocked(applyAnalyticsConsent).mockClear();
+    vi.mocked(disableAnalytics).mockClear();
     vi.mocked(createProjectionTable).mockClear();
   });
 
@@ -991,6 +999,7 @@ describe.sequential("App settings form", () => {
     expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
       "false"
     );
+    expect(disableAnalytics).toHaveBeenCalled();
   });
 
   it("does not save cleared settings or scenarios again after local saving is restored", () => {

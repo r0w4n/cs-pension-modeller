@@ -37,6 +37,16 @@ export function isAnalyticsConfigured() {
   return getAnalyticsMeasurementId().length > 0;
 }
 
+export function applyAnalyticsConsent(consentGranted: boolean) {
+  if (!consentGranted) {
+    disableAnalytics();
+    return false;
+  }
+
+  initialiseAnalytics();
+  return true;
+}
+
 export function initialiseAnalytics() {
   if (typeof window === "undefined" || typeof document === "undefined") {
     return;

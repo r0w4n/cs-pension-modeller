@@ -93,6 +93,30 @@ it("loads Google Analytics with reporting enabled when configured", async () => 
   );
 });
 
+it("does not load or track Google Analytics when configured without consent", async () => {
+  vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
+
+  const { applyAnalyticsConsent, trackAnalyticsEvent } =
+    await import("./analytics");
+
+  expect(applyAnalyticsConsent(false)).toBe(false);
+  trackAnalyticsEvent("setting_changed", { field_id: "requirementAge" });
+
+  expect(window.gtag).toBeUndefined();
+  expect(window.dataLayer).toBeUndefined();
+  expect(document.getElementById("google-analytics-script")).toBeNull();
+});
+
+it("loads Google Analytics through the shared consent policy", async () => {
+  vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
+
+  const { applyAnalyticsConsent } = await import("./analytics");
+
+  expect(applyAnalyticsConsent(true)).toBe(true);
+  expect(window.gtag).toBeTypeOf("function");
+  expect(document.getElementById("google-analytics-script")).not.toBeNull();
+});
+
 it("disables Google Analytics after consent is withdrawn", async () => {
   vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
 

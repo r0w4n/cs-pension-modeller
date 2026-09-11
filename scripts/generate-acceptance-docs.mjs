@@ -17,6 +17,7 @@ const outputPath = path.join(
   "generated",
   "acceptance-features.ts"
 );
+const checkOnly = process.argv.includes("--check");
 
 const tableFromRows = (rows = []) =>
   rows.map((row) => ({
@@ -136,5 +137,25 @@ export const acceptanceFeatures = ${JSON.stringify(features, null, 2)} as const;
   { parser: "typescript" }
 );
 
-await mkdir(path.dirname(outputPath), { recursive: true });
-await writeFile(outputPath, generatedSource);
+if (checkOnly) {
+  const currentSource = await readFile(outputPath, "utf8").catch((error) => {
+    if (error?.code === "ENOENT") {
+      return "";
+    }
+
+    throw error;
+  });
+
+  if (currentSource !== generatedSource) {
+    console.error(
+      `${path.relative(
+        rootDir,
+        outputPath
+      )} is stale. Run npm run generate:acceptance and commit the result.`
+    );
+    process.exitCode = 1;
+  }
+} else {
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, generatedSource);
+}

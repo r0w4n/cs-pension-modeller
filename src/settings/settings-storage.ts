@@ -20,6 +20,7 @@ import { normalizeSettings } from "./settings-normalize";
 import { calculateNormalPensionAge } from "./settings-shared/state";
 import {
   LOCAL_STORAGE_ENABLED_KEY,
+  LOCAL_DATA_RESET_SIGNAL_KEY,
   SETTINGS_STORAGE_KEY,
   FLEXIBLE_FUND_ACCOUNT_IDS,
   type AddedPensionFactorType,
@@ -102,11 +103,32 @@ export function isLocalStorageEnabled() {
 }
 
 export function saveLocalStoragePreference(enabled: boolean) {
-  writeStorageItem(LOCAL_STORAGE_ENABLED_KEY, enabled ? "true" : "false");
+  return writeStorageItem(
+    LOCAL_STORAGE_ENABLED_KEY,
+    enabled ? "true" : "false"
+  );
+}
+
+export function signalLocalDataReset() {
+  return writeStorageItem(LOCAL_DATA_RESET_SIGNAL_KEY, String(Date.now()));
 }
 
 function coerceNumber(value: unknown) {
-  const parsed = Number(value);
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
@@ -142,6 +164,122 @@ function removeUndefinedValues<T extends object>(input: T) {
 
 function isSettingsObject(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object" && !Array.isArray(input);
+}
+
+const NUMERIC_IMPORT_KEYS = [
+  "lifeExpectancy",
+  "requirementAge",
+  "inflationRateAnnual",
+  "partialRetirementStartAge",
+  "partialRetirementWorkPercent",
+  "fullSalary",
+  "currentStatePension",
+  "desiredRetirementIncome",
+  "statePensionCpiPercent",
+  "statePensionWageGrowthPercent",
+  "assumedCpiPercent",
+  "alphaAddedPensionMonthly",
+  "alphaPensionLeaveAge",
+  "accruedPensionAtLastAbs",
+  "pensionableEarnings",
+  "alphaPayRisePercent",
+  "alphaPensionDrawAge",
+  "alphaEpaYearsBeforeNpa",
+  "classicCurrentFinalPensionableEarnings",
+  "classicPreservedFinalPensionableEarnings",
+  "classicReckonableServiceYears",
+  "classicAnnualPension",
+  "classicAutomaticLumpSum",
+  "classicPensionDrawAge",
+  "classicPlusCurrentFinalPensionableEarnings",
+  "classicPlusPreservedFinalPensionableEarnings",
+  "classicPlusPre2002ServiceYears",
+  "classicPlusPost2002ServiceYears",
+  "classicPlusAnnualPension",
+  "classicPlusAutomaticLumpSum",
+  "classicPlusPensionDrawAge",
+  "nuvosAccruedPensionAtLastAbs",
+  "nuvosPensionableEarnings",
+  "nuvosPensionLeaveAge",
+  "nuvosPensionDrawAge",
+  "nuvosAssumedCpiPercent",
+  "premiumAnnualPensionAtValuationDate",
+  "premiumNormalPensionAge",
+  "premiumDrawAge",
+  "sippCurrentPot",
+  "sippMonthlyContribution",
+  "sippProtectedPensionAge",
+  "sippDrawAge",
+  "sippRealInterestPercent",
+  "sippWithdrawalPercent",
+  "sippWithdrawalTargetAge",
+  "csAvcCurrentPot",
+  "csAvcMonthlyContribution",
+  "csAvcProtectedPensionAge",
+  "csAvcDrawAge",
+  "csAvcRealInterestPercent",
+  "csAvcWithdrawalPercent",
+  "csAvcWithdrawalTargetAge",
+  "isaCurrentPot",
+  "isaMonthlyContribution",
+  "isaDrawAge",
+  "isaRealInterestPercent",
+  "isaWithdrawalPercent",
+  "isaWithdrawalTargetAge",
+  "lisaCurrentPot",
+  "lisaMonthlyContribution",
+  "lisaDrawAge",
+  "lisaRealInterestPercent",
+  "lisaWithdrawalPercent",
+  "lisaWithdrawalTargetAge",
+  "taxPersonalAllowance",
+  "taxPersonalAllowanceTaperThreshold",
+  "taxBasicRateLimit",
+  "taxAdditionalRateThreshold",
+  "taxBasicRatePercent",
+  "taxHigherRatePercent",
+  "taxAdditionalRatePercent",
+  "taxSippTaxFreeWithdrawalPercent",
+  "taxCsAvcTaxFreeWithdrawalPercent",
+  "taxLumpSumAllowance",
+  "taxLumpSumAllowanceUsed",
+] as const satisfies readonly (keyof StoredPensionSettings)[];
+
+const JOINT_NUMERIC_IMPORT_KEYS = [
+  "transitionDesiredRetirementIncome",
+  "fullyRetiredDesiredRetirementIncome",
+] as const satisfies readonly (keyof JointRetirementSettings)[];
+
+function isPresentMalformedNumber(value: unknown) {
+  return value !== undefined && coerceNumber(value) === undefined;
+}
+
+function hasMalformedNumericImport(input: Record<string, unknown>): boolean {
+  if (NUMERIC_IMPORT_KEYS.some((key) => isPresentMalformedNumber(input[key]))) {
+    return true;
+  }
+
+  if (isSettingsObject(input.partner)) {
+    const {
+      partner: _partner,
+      jointRetirement: _jointRetirement,
+      ...partner
+    } = input.partner;
+
+    if (hasMalformedNumericImport(partner)) {
+      return true;
+    }
+  }
+
+  const jointRetirement = input.jointRetirement;
+
+  if (isSettingsObject(jointRetirement)) {
+    return JOINT_NUMERIC_IMPORT_KEYS.some((key) =>
+      isPresentMalformedNumber(jointRetirement[key])
+    );
+  }
+
+  return false;
 }
 
 function isStoredSettingsEnvelope(
@@ -402,18 +540,26 @@ export function parseStoredSettingsByJourney(
     return null;
   }
 
+  const simple = parseJourneySettings(journeys.simple);
+  const bridge = parseJourneySettings(journeys.bridge);
+  const expert = parseJourneySettings(journeys.expert);
+
+  if (!simple || !bridge || !expert) {
+    return null;
+  }
+
   return {
     settings: {
-      simple: parseJourneySettings(journeys.simple),
-      bridge: parseJourneySettings(journeys.bridge),
-      expert: parseJourneySettings(journeys.expert),
+      simple,
+      bridge,
+      expert,
     },
     migratedFromLegacy,
   };
 }
 
 function parseJourneySettings(input: unknown) {
-  return parseStoredSettings(input) ?? createDefaultSettings();
+  return parseStoredSettings(input);
 }
 
 function createDefaultJourneySettings(): LoadedJourneySettings {
@@ -429,6 +575,10 @@ function createDefaultJourneySettings(): LoadedJourneySettings {
 
 export function parseStoredSettings(input: unknown): PensionSettings | null {
   if (!isSettingsObject(input)) {
+    return null;
+  }
+
+  if (hasMalformedNumericImport(input)) {
     return null;
   }
 

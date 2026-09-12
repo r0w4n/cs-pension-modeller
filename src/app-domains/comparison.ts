@@ -1536,6 +1536,10 @@ function buildWithdrawalTaxStatusItems(
 export function buildComparisonStatusItems(
   result: ComparisonResult
 ): SummaryItemLike[] {
+  if (!result.targetWithdrawalConvergence.converged) {
+    return buildNonConvergedTargetWithdrawalStatusItems(result);
+  }
+
   if (result.modelType === "household" && result.household) {
     return buildHouseholdComparisonStatusItems(result);
   }
@@ -1583,6 +1587,35 @@ export function buildComparisonStatusItems(
           : "Before Income Tax",
     },
     ...buildWithdrawalTaxStatusItems(result.scenario.settings),
+  ];
+}
+
+function buildNonConvergedTargetWithdrawalStatusItems(
+  result: ComparisonResult
+): SummaryItemLike[] {
+  return [
+    {
+      label: "Overall status",
+      value: "Needs checking",
+    },
+    {
+      label: "Target shortfall",
+      value:
+        "Target-based withdrawal calculation reached its iteration limit; shortfall status is an estimate",
+    },
+    {
+      label: "Main issue",
+      value: `Review accounts set to use “Use to meet income target”; the estimate did not settle after ${result.targetWithdrawalConvergence.maxIterations} iterations`,
+    },
+    {
+      label: "Income basis",
+      value:
+        result.modelType === "household"
+          ? "Household target after estimated Income Tax liability, calculated separately for each person"
+          : result.scenario.settings.retirementIncomeTargetBasis === "after_tax"
+            ? "After estimated Income Tax liability by modelled tax year; PAYE timing and National Insurance are excluded"
+            : "Before Income Tax",
+    },
   ];
 }
 
@@ -1851,6 +1884,10 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 }
 
 function getComparisonStatusLabel(result: ComparisonResult) {
+  if (!result.targetWithdrawalConvergence.converged) {
+    return "Needs checking";
+  }
+
   if (!getComparisonAssessment(result).meetsTargetThroughout) {
     return "Needs attention";
   }

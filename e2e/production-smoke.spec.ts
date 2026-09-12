@@ -113,6 +113,14 @@ function hasAnalyticsStorageCommand(
   });
 }
 
+async function pageHasAnalyticsDisabled(page: import("@playwright/test").Page) {
+  return await page.evaluate(
+    () =>
+      window.gtag === undefined &&
+      document.getElementById("google-analytics-script") === null
+  );
+}
+
 test.describe("production build smoke checks", () => {
   test("serves the main app shell from the built artifact", async ({
     page,
@@ -320,5 +328,62 @@ test.describe("production build smoke checks", () => {
     ).toHaveLength(eventCountAfterClearing);
     expect(scriptUrls).toHaveLength(scriptCountAfterClearing);
     expect(blockedRealAnalyticsUrls).toHaveLength(0);
+  });
+
+  test("syncs analytics withdrawal and data clearing across open app and static tabs", async ({
+    context,
+  }) => {
+    const appPage = await context.newPage();
+    const staticPage = await context.newPage();
+    const appAnalytics = await interceptAnalyticsRequests(appPage);
+    const staticAnalytics = await interceptAnalyticsRequests(staticPage);
+
+    await appPage.goto("/");
+    await appPage
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
+    await expect.poll(() => appAnalytics.getState().loadedCount).toBe(1);
+
+    await staticPage.goto("/privacy/");
+    await expect(
+      staticPage.getByRole("heading", { level: 1, name: "Privacy" })
+    ).toBeVisible();
+    await expect.poll(() => staticAnalytics.getState().loadedCount).toBe(1);
+
+    await appPage.goto("/settings/");
+    await appPage.getByLabel("Allow analytics").uncheck();
+    await expect.poll(() => pageHasAnalyticsDisabled(appPage)).toBe(true);
+    await expect.poll(() => pageHasAnalyticsDisabled(staticPage)).toBe(true);
+    expect(
+      hasAnalyticsStorageCommand(
+        staticAnalytics.getState().commands,
+        "update",
+        "denied"
+      )
+    ).toBe(true);
+
+    await appPage.getByLabel("Allow analytics").check();
+    await expect.poll(() => appAnalytics.getState().loadedCount).toBe(2);
+    await expect.poll(() => staticAnalytics.getState().loadedCount).toBe(2);
+
+    await appPage.getByRole("button", { name: "Clear all data" }).click();
+    await expect.poll(() => pageHasAnalyticsDisabled(appPage)).toBe(true);
+    await expect.poll(() => pageHasAnalyticsDisabled(staticPage)).toBe(true);
+    await expect
+      .poll(() =>
+        appPage.evaluate(() =>
+          window.localStorage.getItem("cs-pension-modeller.localStorageEnabled")
+        )
+      )
+      .toBe("false");
+    expect(
+      hasAnalyticsStorageCommand(
+        staticAnalytics.getState().commands,
+        "update",
+        "denied"
+      )
+    ).toBe(true);
+    expect(appAnalytics.blockedRealAnalyticsUrls).toHaveLength(0);
+    expect(staticAnalytics.blockedRealAnalyticsUrls).toHaveLength(0);
   });
 });

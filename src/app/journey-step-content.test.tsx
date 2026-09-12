@@ -1287,6 +1287,7 @@ function createViewModel(): JourneyStepViewModel {
       retirementPlanResult
     ),
     isProjectionPending: false,
+    calculationError: false,
     validationIssues: [],
     pensionSummary: null,
     retirementIncomeSeries: [],

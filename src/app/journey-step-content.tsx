@@ -93,6 +93,7 @@ export type JourneyStepViewModel = {
   retirementPlanResult: RetirementPlanResult | null;
   currentComparisonResult: ComparisonResult | null;
   isProjectionPending: boolean;
+  calculationError: boolean;
   validationIssues: PensionValidationIssue[];
   pensionSummary: PensionSummary | null;
   retirementIncomeSeries: RetirementIncomePoint[];
@@ -260,6 +261,7 @@ function JourneyResultsStep({
     retirementPlanResult,
     currentComparisonResult,
     isProjectionPending,
+    calculationError,
     validationIssues,
     retirementIncomeSeries,
     retirementIncomeChartParameters,
@@ -289,6 +291,18 @@ function JourneyResultsStep({
     step,
     "inflation-basis"
   )?.presentation;
+
+  if (calculationError) {
+    return (
+      <>
+        <ValidationSummary validationIssues={validationIssues} />
+        <p className="section-copy" role="alert">
+          The model could not calculate these results. Check the entered
+          assumptions and try changing a value or reopening the Results step.
+        </p>
+      </>
+    );
+  }
 
   if (
     !retirementPlanResult ||

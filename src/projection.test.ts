@@ -26,6 +26,7 @@ import {
   getAddedPensionFactorForAge,
   getAlphaEarlyRetirementFactor,
   getLifeExpectancyDate,
+  getProjectionTableDiagnostics,
   getProjectionTaxYearKey,
 } from "./projection";
 import {
@@ -244,6 +245,21 @@ describe("projection calculations", () => {
       converged: false,
       iterations: 0,
       maxIterations: 0,
+    });
+  });
+
+  it("does not infer successful convergence from copied projection rows", () => {
+    const result = createProjectionTableResult(defaultSettings, {
+      targetWithdrawalMaxIterations: 0,
+    });
+    const copiedRows = result.rows.map((row) => ({ ...row }));
+
+    expect(getProjectionTableDiagnostics(copiedRows)).toEqual({
+      targetWithdrawalConvergence: {
+        converged: false,
+        iterations: 0,
+        maxIterations: 12,
+      },
     });
   });
 

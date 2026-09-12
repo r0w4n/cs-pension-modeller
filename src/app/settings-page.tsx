@@ -8,11 +8,17 @@ import { Helmet } from "../helmet";
 type SettingsPageProps = {
   analyticsConsentGranted: boolean;
   localStorageEnabled: boolean;
-  onClearAllData: () => void;
+  onClearAllData: () => {
+    persistentDataCleared: boolean;
+    localSavingDisabled: boolean;
+  };
   onExportParameters: () => void;
   onLoadParameters: (input: unknown) => boolean;
   onAnalyticsConsentChange: (consentGranted: boolean) => void;
-  onLocalStorageEnabledChange: (enabled: boolean) => void;
+  onLocalStorageEnabledChange: (enabled: boolean) => {
+    persistentDataCleared: boolean;
+    localSavingDisabled: boolean;
+  };
   showGuidanceNotes: boolean;
   onShowGuidanceNotesChange: (checked: boolean) => void;
 };
@@ -32,6 +38,7 @@ export function SettingsPage({
     null
   );
   const [actionFeedback, setActionFeedback] = useState("");
+  const [actionFeedbackIsError, setActionFeedbackIsError] = useState(false);
   const [fileInputVersion, setFileInputVersion] = useState(0);
   const [loadError, setLoadError] = useState("");
   const appBaseHref = resolveAppBaseHref();
@@ -44,12 +51,18 @@ export function SettingsPage({
     };
   }, []);
 
-  function showActionFeedback(message: string) {
+  function showActionFeedback(message: string, isError = false) {
     if (feedbackTimerRef.current) {
       window.clearTimeout(feedbackTimerRef.current);
     }
 
     setActionFeedback(message);
+    setActionFeedbackIsError(isError);
+    if (isError) {
+      feedbackTimerRef.current = null;
+      return;
+    }
+
     feedbackTimerRef.current = window.setTimeout(() => {
       setActionFeedback("");
       feedbackTimerRef.current = null;
@@ -62,8 +75,17 @@ export function SettingsPage({
   }
 
   function clearAllData() {
-    onClearAllData();
-    showActionFeedback("Data Cleared");
+    const result = onClearAllData();
+
+    if (result.persistentDataCleared && result.localSavingDisabled) {
+      showActionFeedback("Data cleared");
+      return;
+    }
+
+    showActionFeedback(
+      "The app reset this open page and turned analytics off, but the browser did not confirm deletion from local storage. Try again or clear this site's data in your browser settings.",
+      true
+    );
   }
 
   async function loadParameters(event: ChangeEvent<HTMLInputElement>) {
@@ -97,7 +119,24 @@ export function SettingsPage({
   function updateLocalStoragePreference(event: ChangeEvent<HTMLInputElement>) {
     const enabled = event.currentTarget.checked;
 
-    onLocalStorageEnabledChange(enabled);
+    const result = onLocalStorageEnabledChange(enabled);
+
+    if (!enabled && !result.persistentDataCleared) {
+      showActionFeedback(
+        "Local saving is off for this open page, but the browser did not confirm deletion from local storage. Try again or clear this site's data in your browser settings.",
+        true
+      );
+      return;
+    }
+
+    if (enabled && !result.persistentDataCleared) {
+      showActionFeedback(
+        "Local saving could not be turned on because the browser rejected the saved data.",
+        true
+      );
+      return;
+    }
+
     showActionFeedback(
       enabled ? "Local saving turned on" : "Local saving turned off"
     );
@@ -130,6 +169,7 @@ export function SettingsPage({
       <SavedLocalFeedback
         message={actionFeedback}
         show={actionFeedback.length > 0}
+        role={actionFeedbackIsError ? "alert" : "status"}
       />
 
       <section className="hero">

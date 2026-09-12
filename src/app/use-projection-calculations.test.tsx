@@ -41,6 +41,12 @@ class MockCalculationWorker {
     this.terminated = true;
   }
 
+  emitError() {
+    this.listeners
+      .get("error")
+      ?.forEach((listener) => listener({} as MessageEvent<never>));
+  }
+
   emitMessage(response: RetirementPlanCalculationWorkerResponse) {
     this.listeners
       .get("message")
@@ -168,6 +174,72 @@ describe("useProjectionCalculations", () => {
     expect(result.current.isProjectionPending).toBe(false);
   });
 
+  it("invalidates pending worker success when the caller clears calculation state", async () => {
+    const settings = createFastSettings();
+    const updatedSettings = {
+      ...settings,
+      desiredRetirementIncome: settings.desiredRetirementIncome + 1000,
+    };
+    const { result, rerender } = renderHook(
+      ({ currentSettings, invalidationToken }) =>
+        useProjectionCalculations({
+          settings: currentSettings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+          invalidationToken,
+        }),
+      { initialProps: { currentSettings: settings, invalidationToken: 0 } }
+    );
+
+    rerender({ currentSettings: updatedSettings, invalidationToken: 0 });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    const pendingWorker = MockCalculationWorker.instances[0];
+
+    rerender({ currentSettings: updatedSettings, invalidationToken: 1 });
+
+    expect(pendingWorker?.terminated).toBe(true);
+    expect(result.current.retirementPlanResult).toBeNull();
+
+    act(() => {
+      pendingWorker?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(updatedSettings),
+      });
+    });
+
+    expect(result.current.retirementPlanResult).toBeNull();
+  });
+
+  it("clears a retained result when the caller resets calculation state", () => {
+    const settings = createFastSettings();
+    const initialPlan = calculateRetirementPlan(settings);
+    const cache: RetirementPlanResultCache = new Map([
+      [JSON.stringify(settings), initialPlan],
+    ]);
+    const { result, rerender } = renderHook(
+      ({ calculationEnabled, invalidationToken }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: cache,
+          calculationEnabled,
+          invalidationToken,
+        }),
+      { initialProps: { calculationEnabled: true, invalidationToken: 0 } }
+    );
+
+    expect(result.current.retirementPlanResult).toEqual(initialPlan);
+
+    act(() => {
+      result.current.clearCalculationState();
+    });
+    rerender({ calculationEnabled: false, invalidationToken: 1 });
+
+    expect(result.current.retirementPlanResult).toBeNull();
+  });
+
   it("does not calculate until calculation is enabled", async () => {
     const settings = createFastSettings();
     const cache: RetirementPlanResultCache = new Map();
@@ -194,5 +266,124 @@ describe("useProjectionCalculations", () => {
     );
     expect(MockCalculationWorker.instances[0]?.messages).toEqual([settings]);
     expect(result.current.isProjectionPending).toBe(true);
+  });
+
+  it("shows an actionable error when worker and fallback calculation both fail, then recovers", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    const recoverySettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 2000,
+    };
+    const failingCache = new Map() as RetirementPlanResultCache;
+    let cacheReads = 0;
+    vi.spyOn(failingCache, "get").mockImplementation(() => {
+      cacheReads += 1;
+      if (cacheReads === 1) {
+        return undefined;
+      }
+
+      throw new Error("cache unavailable");
+    });
+    const recoveryCache: RetirementPlanResultCache = new Map();
+    const { result, rerender } = renderHook(
+      ({ settings, cache }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: cache,
+          calculationEnabled: true,
+        }),
+      {
+        initialProps: {
+          settings: initialSettings,
+          cache: recoveryCache,
+        },
+      }
+    );
+
+    rerender({ settings: updatedSettings, cache: failingCache });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitError();
+    });
+
+    await waitFor(() => expect(result.current.calculationError).toBe(true));
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.isProjectionPending).toBe(false);
+
+    rerender({ settings: recoverySettings, cache: recoveryCache });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    const recoveredPlan = calculateRetirementPlan(recoverySettings);
+    act(() => {
+      MockCalculationWorker.instances[1]?.emitMessage({
+        ok: true,
+        result: recoveredPlan,
+      });
+    });
+
+    expect(result.current.calculationError).toBe(false);
+    expect(result.current.retirementPlanResult).toEqual(recoveredPlan);
+  });
+
+  it("retries a failed calculation when requested for the same settings", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    const failingCache = new Map() as RetirementPlanResultCache;
+    let cacheReads = 0;
+    vi.spyOn(failingCache, "get").mockImplementation(() => {
+      cacheReads += 1;
+
+      if (cacheReads === 2) {
+        throw new Error("cache unavailable");
+      }
+
+      return undefined;
+    });
+    const { result, rerender } = renderHook(
+      ({ settings, cache }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: cache,
+          calculationEnabled: true,
+        }),
+      {
+        initialProps: {
+          settings: initialSettings,
+          cache: new Map() as RetirementPlanResultCache,
+        },
+      }
+    );
+
+    rerender({ settings: updatedSettings, cache: failingCache });
+    expect(MockCalculationWorker.instances).toHaveLength(1);
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitError();
+    });
+
+    await waitFor(() => expect(result.current.calculationError).toBe(true));
+
+    act(() => {
+      result.current.retryFailedCalculation();
+    });
+
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    expect(MockCalculationWorker.instances[1]?.messages).toEqual([
+      updatedSettings,
+    ]);
   });
 });

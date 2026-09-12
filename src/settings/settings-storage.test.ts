@@ -214,6 +214,26 @@ describe("settings-storage", () => {
     expect(imported?.settings.expert.desiredRetirementIncome).toBe(42000);
   });
 
+  it("rejects a journey envelope when any journey contains malformed material values", () => {
+    const defaults = createDefaultSettings();
+
+    expect(
+      parseStoredSettingsByJourney({
+        version: SETTINGS_SCHEMA_VERSION,
+        data: {
+          journeys: {
+            simple: defaults,
+            bridge: defaults,
+            expert: {
+              ...defaults,
+              desiredRetirementIncome: null,
+            },
+          },
+        },
+      })
+    ).toBeNull();
+  });
+
   it("defensively restores missing and invalid priority entries", () => {
     window.localStorage.setItem(
       SETTINGS_STORAGE_KEY,
@@ -299,6 +319,51 @@ describe("settings-storage", () => {
 
     expect(loaded.requirementAge).toBe(62);
     expect(loaded.desiredRetirementIncome).toBe(61000);
+  });
+
+  it("distinguishes missing, malformed and explicit-zero numeric imports", () => {
+    expect(
+      parseStoredSettings({
+        desiredRetirementIncome: "0",
+        sippCurrentPot: 0,
+        isaCurrentPot: "12500",
+      })?.desiredRetirementIncome
+    ).toBe(0);
+    expect(
+      parseStoredSettings({
+        desiredRetirementIncome: "0",
+        sippCurrentPot: 0,
+        isaCurrentPot: "12500.50",
+      })?.sippCurrentPot
+    ).toBe(0);
+    expect(
+      parseStoredSettings({
+        desiredRetirementIncome: "0",
+        sippCurrentPot: 0,
+        isaCurrentPot: "12500",
+      })?.isaCurrentPot
+    ).toBe(12500);
+
+    expect(parseStoredSettings({})).toMatchObject({
+      desiredRetirementIncome: createDefaultSettings().desiredRetirementIncome,
+    });
+    expect(parseStoredSettings({ desiredRetirementIncome: null })).toBeNull();
+    expect(parseStoredSettings({ desiredRetirementIncome: "" })).toBeNull();
+    expect(parseStoredSettings({ desiredRetirementIncome: false })).toBeNull();
+    expect(parseStoredSettings({ desiredRetirementIncome: [] })).toBeNull();
+    expect(
+      parseStoredSettings({ desiredRetirementIncome: "not a number" })
+    ).toBeNull();
+    expect(
+      parseStoredSettings({
+        partner: { desiredRetirementIncome: "not a number" },
+      })
+    ).toBeNull();
+    expect(
+      parseStoredSettings({
+        jointRetirement: { transitionDesiredRetirementIncome: "" },
+      })
+    ).toBeNull();
   });
 
   it("rounds imported ISA and SIPP ages to the nearest quarter year", () => {

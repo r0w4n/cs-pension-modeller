@@ -821,6 +821,74 @@ describe("comparison table rows", () => {
     );
   });
 
+  it("qualifies target-met comparison outcomes when target-withdrawal convergence is not proven", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      desiredRetirementIncome: 0,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings),
+      calculateRetirementPlan(settings, {
+        targetWithdrawalMaxIterations: 0,
+      })
+    );
+
+    expect(result.targetWithdrawalConvergence.converged).toBe(false);
+    expect(buildRetirementOutcomeBanner(result)).toMatchObject({
+      status: "atRisk",
+      label: "Needs checking",
+    });
+    expect(buildComparisonStatusItems(result)).toEqual(
+      expect.arrayContaining([
+        {
+          label: "Target shortfall",
+          value:
+            "Target-based withdrawal calculation reached its iteration limit; shortfall status is an estimate",
+        },
+      ])
+    );
+    expect(
+      getComparisonRow(buildComparisonTableRows([result]), "Status").values
+    ).toEqual([{ value: "Needs checking", tone: "caution" }]);
+  });
+
+  it("qualifies shortfall comparison outcomes when target-withdrawal convergence is not proven", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      desiredRetirementIncome: 100_000,
+    };
+    const result = createComparisonResult(
+      {
+        id: "scenario-1",
+        name: "Current model",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings),
+      calculateRetirementPlan(settings, {
+        targetWithdrawalMaxIterations: 0,
+      })
+    );
+
+    expect(result.targetWithdrawalConvergence.converged).toBe(false);
+    expect(result.assessment.meetsTargetThroughout).toBe(false);
+    expect(buildRetirementOutcomeBanner(result)).toMatchObject({
+      status: "atRisk",
+      label: "Needs checking",
+    });
+    expect(
+      getComparisonRow(buildComparisonTableRows([result]), "Status").values
+    ).toEqual([{ value: "Needs checking", tone: "caution" }]);
+  });
+
   it("shows expected flexible bridge exhaustion as caution rather than a problem", () => {
     const settings = createFlexibleAssetsScenario({
       isaCurrentPot: 120000,

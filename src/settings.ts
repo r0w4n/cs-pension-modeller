@@ -1,5 +1,6 @@
 export {
   LOCAL_STORAGE_ENABLED_KEY,
+  LOCAL_DATA_RESET_SIGNAL_KEY,
   SETTINGS_STORAGE_KEY,
   ALPHA_ADDED_PENSION_MONTHLY_MAX,
   FIRST_UNSUPPORTED_ADDED_PENSION_PURCHASE_AGE,
@@ -88,6 +89,7 @@ export {
   saveLocalStoragePreference,
   saveSettings,
   saveSettingsByJourney,
+  signalLocalDataReset,
   getStoredSettingsSnapshot,
   getStoredSettingsByJourneySnapshot,
   getStoredSettingsEnvelope,

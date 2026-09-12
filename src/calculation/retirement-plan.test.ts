@@ -52,6 +52,20 @@ describe("calculateRetirementPlan", () => {
     expect(result.householdAssessment?.meetsTargetThroughout).toBe(true);
     expect(result.statePensionAssumptionAffectsTarget).toBe(false);
   });
+
+  it("preserves exhausted target-withdrawal diagnostics in the canonical result", () => {
+    const result = calculateRetirementPlan(createDefaultSettings(), {
+      targetWithdrawalMaxIterations: 0,
+    });
+
+    expect(result.diagnostics.targetWithdrawalConvergence).toEqual({
+      converged: false,
+      iterations: 0,
+      maxIterations: 0,
+    });
+    expect(result.assessment).toBeDefined();
+    expect(result.statePensionAssumptionAffectsTarget).toBe(false);
+  });
 });
 
 function createHouseholdStatePensionSettings({

@@ -1,6 +1,7 @@
 import {
   calculateRetirementIncomeTargetAtDate,
   type PensionSummary,
+  type ProjectionConvergenceDiagnostic,
   type ProjectionRow,
 } from "../projection";
 import {
@@ -37,6 +38,7 @@ export type ComparisonResult = {
   csAvcDepletedAge: number | null;
   lifeExpectancyAnnualIncome: number;
   statePensionAssumptionAffectsTarget: boolean;
+  targetWithdrawalConvergence: ProjectionConvergenceDiagnostic;
   currentMatchesSaved: boolean;
   household?: HouseholdComparisonData;
 };
@@ -154,6 +156,9 @@ export function createComparisonResult(
     ),
     statePensionAssumptionAffectsTarget:
       plan.statePensionAssumptionAffectsTarget,
+    targetWithdrawalConvergence:
+      plan.jointProjection?.diagnostics.targetWithdrawalConvergence ??
+      plan.diagnostics.targetWithdrawalConvergence,
     scenario,
     currentMatchesSaved: settingsSignature === currentSettingsSignature,
     household,

@@ -1,11 +1,12 @@
 import {
   createProjectionTable,
+  createProjectionTableResult,
   deriveInflationAssumptions,
   generatePensionSummary,
-  getProjectionTableDiagnostics,
   type PensionSummary,
   type ProjectionDiagnostics,
   type ProjectionRow,
+  type ProjectionTableOptions,
 } from "../projection";
 import {
   validateSettings,
@@ -46,10 +47,12 @@ export type RetirementPlanResult = {
 };
 
 export function calculateRetirementPlan(
-  settings: PensionSettings
+  settings: PensionSettings,
+  options: ProjectionTableOptions = {}
 ): RetirementPlanResult {
   const validationIssues = validateSettings(settings);
-  const rows = createProjectionTable(settings);
+  const projection = createProjectionTableResult(settings, options);
+  const rows = projection.rows;
   const assessment = assessRetirementPlan(rows, settings);
   const jointProjection =
     settings.jointRetirement.enabled &&
@@ -72,13 +75,17 @@ export function calculateRetirementPlan(
       settings
     ),
     statePensionAssumptionAffectsTarget:
-      calculateStatePensionAssumptionAffectsTarget(
-        settings,
-        assessment,
-        householdAssessment
-      ),
+      projection.diagnostics.targetWithdrawalConvergence.converged &&
+      (jointProjection?.diagnostics.targetWithdrawalConvergence.converged ??
+        true)
+        ? calculateStatePensionAssumptionAffectsTarget(
+            settings,
+            assessment,
+            householdAssessment
+          )
+        : false,
     inflationAssumptions: deriveInflationAssumptions(settings),
-    diagnostics: getProjectionTableDiagnostics(rows),
+    diagnostics: projection.diagnostics,
     jointProjection,
     householdAssessment,
   };

@@ -158,123 +158,127 @@ vi.mock("./projection", async () => {
     await vi.importActual<typeof import("./projection")>("./projection");
   const { validateSettings } =
     await vi.importActual<typeof import("./settings")>("./settings");
+  const createProjectionTable = vi.fn(
+    (settings: PensionSettings): ProjectionRow[] => {
+      if (validateSettings(settings).length > 0) {
+        return [];
+      }
+
+      return projectionFixtures.baseRows.map((row, index) => ({
+        ...row,
+        milestones:
+          index === 2
+            ? [
+                ...(settings.showAlpha ? ["Starts Drawing Alpha Pension"] : []),
+                ...(settings.showStatePension
+                  ? ["Starts Drawing State Pension"]
+                  : []),
+                "Life expectancy",
+              ]
+            : row.milestones,
+        annualStandardAlphaPension: settings.showAlpha
+          ? row.annualStandardAlphaPension
+          : 0,
+        annualEpaAlphaPension: settings.showAlpha
+          ? row.annualEpaAlphaPension
+          : 0,
+        annualAccruedAlphaPension: settings.showAlpha
+          ? row.annualAccruedAlphaPension
+          : 0,
+        annualAlphaPensionIncludingReduction: settings.showAlpha
+          ? row.annualAlphaPensionIncludingReduction
+          : 0,
+        monthlyAlphaPensionGross: settings.showAlpha
+          ? row.monthlyAlphaPensionGross
+          : 0,
+        annualClassicPension: settings.showClassic
+          ? row.annualClassicPension
+          : 0,
+        classicAutomaticLumpSum: settings.showClassic
+          ? row.classicAutomaticLumpSum
+          : 0,
+        annualClassicPensionIncludingReduction: settings.showClassic
+          ? row.annualClassicPensionIncludingReduction
+          : 0,
+        classicAutomaticLumpSumIncludingReduction: settings.showClassic
+          ? row.classicAutomaticLumpSumIncludingReduction
+          : 0,
+        monthlyClassicPensionGross: settings.showClassic
+          ? row.monthlyClassicPensionGross
+          : 0,
+        annualClassicPlusPension: settings.showClassicPlus
+          ? row.annualClassicPlusPension
+          : 0,
+        classicPlusAutomaticLumpSum: settings.showClassicPlus
+          ? row.classicPlusAutomaticLumpSum
+          : 0,
+        annualClassicPlusPensionIncludingReduction: settings.showClassicPlus
+          ? row.annualClassicPlusPensionIncludingReduction
+          : 0,
+        classicPlusAutomaticLumpSumIncludingReduction: settings.showClassicPlus
+          ? row.classicPlusAutomaticLumpSumIncludingReduction
+          : 0,
+        monthlyClassicPlusPensionGross: settings.showClassicPlus
+          ? row.monthlyClassicPlusPensionGross
+          : 0,
+        monthlyStatePension: settings.showStatePension
+          ? row.monthlyStatePension
+          : 0,
+        monthlyNuvosPensionGross: settings.showNuvos
+          ? row.monthlyNuvosPensionGross
+          : 0,
+        monthlyPremiumPensionGross: settings.showPremium
+          ? row.monthlyPremiumPensionGross
+          : 0,
+        monthlyAdditionalGuaranteedIncomeGross:
+          row.monthlyAdditionalGuaranteedIncomeGross,
+        monthlyAdditionalGuaranteedIncomeTaxable:
+          row.monthlyAdditionalGuaranteedIncomeTaxable,
+        monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
+        monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
+        monthlyLisaPension: settings.showLisa ? row.monthlyLisaPension : 0,
+        totalMonthlyIncomeBeforeTax:
+          (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
+          (settings.showClassic ? row.monthlyClassicPensionGross : 0) +
+          (settings.showClassicPlus ? row.monthlyClassicPlusPensionGross : 0) +
+          (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
+          (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
+          (settings.showStatePension ? row.monthlyStatePension : 0) +
+          row.monthlyAdditionalGuaranteedIncomeGross +
+          (settings.showSipp ? row.monthlySippPension : 0) +
+          (settings.showCsAvc ? row.monthlyCsAvcPension : 0) +
+          (settings.showIsa ? row.monthlyIsaPension : 0) +
+          (settings.showLisa ? row.monthlyLisaPension : 0),
+        monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
+        totalMonthlyNetIncome:
+          (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
+          (settings.showClassic ? row.monthlyClassicPensionGross : 0) +
+          (settings.showClassicPlus ? row.monthlyClassicPlusPensionGross : 0) +
+          (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
+          (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
+          (settings.showStatePension ? row.monthlyStatePension : 0) +
+          row.monthlyAdditionalGuaranteedIncomeGross +
+          (settings.showSipp ? row.monthlySippPension : 0) +
+          (settings.showIsa ? row.monthlyIsaPension : 0) +
+          (settings.showLisa ? row.monthlyLisaPension : 0) -
+          (settings.taxationEnabled ? 100 : 0),
+      }));
+    }
+  );
 
   return {
     ...actual,
-    createProjectionTable: vi.fn(
-      (settings: PensionSettings): ProjectionRow[] => {
-        if (validateSettings(settings).length > 0) {
-          return [];
-        }
-
-        return projectionFixtures.baseRows.map((row, index) => ({
-          ...row,
-          milestones:
-            index === 2
-              ? [
-                  ...(settings.showAlpha
-                    ? ["Starts Drawing Alpha Pension"]
-                    : []),
-                  ...(settings.showStatePension
-                    ? ["Starts Drawing State Pension"]
-                    : []),
-                  "Life expectancy",
-                ]
-              : row.milestones,
-          annualStandardAlphaPension: settings.showAlpha
-            ? row.annualStandardAlphaPension
-            : 0,
-          annualEpaAlphaPension: settings.showAlpha
-            ? row.annualEpaAlphaPension
-            : 0,
-          annualAccruedAlphaPension: settings.showAlpha
-            ? row.annualAccruedAlphaPension
-            : 0,
-          annualAlphaPensionIncludingReduction: settings.showAlpha
-            ? row.annualAlphaPensionIncludingReduction
-            : 0,
-          monthlyAlphaPensionGross: settings.showAlpha
-            ? row.monthlyAlphaPensionGross
-            : 0,
-          annualClassicPension: settings.showClassic
-            ? row.annualClassicPension
-            : 0,
-          classicAutomaticLumpSum: settings.showClassic
-            ? row.classicAutomaticLumpSum
-            : 0,
-          annualClassicPensionIncludingReduction: settings.showClassic
-            ? row.annualClassicPensionIncludingReduction
-            : 0,
-          classicAutomaticLumpSumIncludingReduction: settings.showClassic
-            ? row.classicAutomaticLumpSumIncludingReduction
-            : 0,
-          monthlyClassicPensionGross: settings.showClassic
-            ? row.monthlyClassicPensionGross
-            : 0,
-          annualClassicPlusPension: settings.showClassicPlus
-            ? row.annualClassicPlusPension
-            : 0,
-          classicPlusAutomaticLumpSum: settings.showClassicPlus
-            ? row.classicPlusAutomaticLumpSum
-            : 0,
-          annualClassicPlusPensionIncludingReduction: settings.showClassicPlus
-            ? row.annualClassicPlusPensionIncludingReduction
-            : 0,
-          classicPlusAutomaticLumpSumIncludingReduction:
-            settings.showClassicPlus
-              ? row.classicPlusAutomaticLumpSumIncludingReduction
-              : 0,
-          monthlyClassicPlusPensionGross: settings.showClassicPlus
-            ? row.monthlyClassicPlusPensionGross
-            : 0,
-          monthlyStatePension: settings.showStatePension
-            ? row.monthlyStatePension
-            : 0,
-          monthlyNuvosPensionGross: settings.showNuvos
-            ? row.monthlyNuvosPensionGross
-            : 0,
-          monthlyPremiumPensionGross: settings.showPremium
-            ? row.monthlyPremiumPensionGross
-            : 0,
-          monthlyAdditionalGuaranteedIncomeGross:
-            row.monthlyAdditionalGuaranteedIncomeGross,
-          monthlyAdditionalGuaranteedIncomeTaxable:
-            row.monthlyAdditionalGuaranteedIncomeTaxable,
-          monthlySippPension: settings.showSipp ? row.monthlySippPension : 0,
-          monthlyIsaPension: settings.showIsa ? row.monthlyIsaPension : 0,
-          monthlyLisaPension: settings.showLisa ? row.monthlyLisaPension : 0,
-          totalMonthlyIncomeBeforeTax:
-            (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
-            (settings.showClassic ? row.monthlyClassicPensionGross : 0) +
-            (settings.showClassicPlus
-              ? row.monthlyClassicPlusPensionGross
-              : 0) +
-            (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
-            (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
-            (settings.showStatePension ? row.monthlyStatePension : 0) +
-            row.monthlyAdditionalGuaranteedIncomeGross +
-            (settings.showSipp ? row.monthlySippPension : 0) +
-            (settings.showCsAvc ? row.monthlyCsAvcPension : 0) +
-            (settings.showIsa ? row.monthlyIsaPension : 0) +
-            (settings.showLisa ? row.monthlyLisaPension : 0),
-          monthlyIncomeTax: settings.taxationEnabled ? 100 : 0,
-          totalMonthlyNetIncome:
-            (settings.showAlpha ? row.monthlyAlphaPensionGross : 0) +
-            (settings.showClassic ? row.monthlyClassicPensionGross : 0) +
-            (settings.showClassicPlus
-              ? row.monthlyClassicPlusPensionGross
-              : 0) +
-            (settings.showNuvos ? row.monthlyNuvosPensionGross : 0) +
-            (settings.showPremium ? row.monthlyPremiumPensionGross : 0) +
-            (settings.showStatePension ? row.monthlyStatePension : 0) +
-            row.monthlyAdditionalGuaranteedIncomeGross +
-            (settings.showSipp ? row.monthlySippPension : 0) +
-            (settings.showIsa ? row.monthlyIsaPension : 0) +
-            (settings.showLisa ? row.monthlyLisaPension : 0) -
-            (settings.taxationEnabled ? 100 : 0),
-        }));
-      }
-    ),
+    createProjectionTable,
+    createProjectionTableResult: vi.fn((settings: PensionSettings) => ({
+      rows: createProjectionTable(settings),
+      diagnostics: {
+        targetWithdrawalConvergence: {
+          converged: true,
+          iterations: 2,
+          maxIterations: 12,
+        },
+      },
+    })),
     generatePensionSummary: vi.fn(
       (rows: ProjectionRow[], settings: PensionSettings): PensionSummary => ({
         keyDates: {
@@ -551,6 +555,7 @@ import {
 import App, { APP_MODE_STORAGE_KEY, createRetirementIncomeSeries } from "./App";
 import { createProjectionTable } from "./projection";
 import {
+  LOCAL_DATA_RESET_SIGNAL_KEY,
   LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
   calculateDefaultIsaDrawAge,
@@ -560,6 +565,7 @@ import {
   defaultSettings,
   getTodayIsoDate,
 } from "./settings";
+import { SETTINGS_SCHEMA_VERSION } from "./settings/settings-versions";
 
 const JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.journeyRetirementIncomeDisplay";
@@ -1004,7 +1010,7 @@ describe.sequential("App settings form", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("Data Cleared");
+    expect(screen.getByRole("status")).toHaveTextContent("Data cleared");
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem("custom-key")).toBeNull();
@@ -1012,6 +1018,32 @@ describe.sequential("App settings form", () => {
       "false"
     );
     await waitFor(() => expect(disableAnalytics).toHaveBeenCalled());
+  });
+
+  it("reports clear-data deletion failure while resetting the open page", () => {
+    window.localStorage.setItem(ACKNOWLEDGEMENT_STORAGE_KEY, "v1");
+    window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, "true");
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem("custom-key", "custom-value");
+    const clearStorageSpy = vi
+      .spyOn(window.localStorage, "clear")
+      .mockImplementation(() => {
+        throw new Error("Storage deletion failed.");
+      });
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+
+    expect(screen.queryByText("Data cleared")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "the browser did not confirm deletion from local storage"
+    );
+    expect(screen.getByLabelText("Allow analytics")).not.toBeChecked();
+    expect(window.localStorage.getItem("custom-key")).toBe("custom-value");
+    expect(disableAnalytics).toHaveBeenCalled();
+    clearStorageSpy.mockRestore();
   });
 
   it("does not save cleared settings or scenarios again after local saving is restored", () => {
@@ -1056,6 +1088,137 @@ describe.sequential("App settings form", () => {
     );
     expect(window.localStorage.getItem(COMPARISON_SCENARIOS_STORAGE_KEY)).toBe(
       "[]"
+    );
+  });
+
+  it("keeps local saving disabled in storage when enabling persistence fails", () => {
+    window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
+    window.history.pushState({}, "", "/settings/");
+    const originalSetItem = window.localStorage.setItem.bind(
+      window.localStorage
+    );
+    const setItemSpy = vi
+      .spyOn(window.localStorage, "setItem")
+      .mockImplementation((key, value) => {
+        if (key === SETTINGS_STORAGE_KEY) {
+          throw new Error("Storage quota exceeded.");
+        }
+
+        originalSetItem(key, value);
+      });
+
+    render(<App />);
+
+    const localSavingToggle = screen.getByRole("checkbox", {
+      name: "Save inputs on this device",
+    });
+
+    fireEvent.click(localSavingToggle);
+
+    expect(localSavingToggle).not.toBeChecked();
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
+      "false"
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Local saving could not be turned on"
+    );
+
+    setItemSpy.mockRestore();
+  });
+
+  it("rejects malformed imported journey files without replacing current settings", async () => {
+    const currentSettings = expectedStoredSettings({
+      desiredRetirementIncome: 45000,
+    });
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: SETTINGS_SCHEMA_VERSION,
+        data: {
+          journeys: {
+            simple: currentSettings,
+            bridge: currentSettings,
+            expert: currentSettings,
+          },
+        },
+      })
+    );
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    const malformedExport = {
+      version: SETTINGS_SCHEMA_VERSION,
+      data: {
+        journeys: {
+          simple: currentSettings,
+          bridge: currentSettings,
+          expert: {
+            ...currentSettings,
+            desiredRetirementIncome: null,
+          },
+        },
+      },
+    };
+    const importInput = screen.getByLabelText("Choose JSON parameter file");
+    const malformedFile = new File(
+      [JSON.stringify(malformedExport)],
+      "malformed-parameters.json",
+      { type: "application/json" }
+    );
+
+    fireEvent.change(importInput, {
+      target: { files: [malformedFile] },
+    });
+
+    expect(
+      await screen.findByText(
+        "Could not load that file. Choose a JSON parameter export."
+      )
+    ).toBeInTheDocument();
+    expect(readStoredSettingsPayload("expert").desiredRetirementIncome).toBe(
+      45000
+    );
+  });
+
+  it("resets an already-open settings tab when another tab clears local data", () => {
+    window.localStorage.setItem(ACKNOWLEDGEMENT_STORAGE_KEY, "v1");
+    window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, "true");
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(expectedStoredSettings({ desiredRetirementIncome: 99000 }))
+    );
+    window.history.pushState({}, "", "/settings/");
+
+    render(<App />);
+
+    expect(screen.getByLabelText("Allow analytics")).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Save inputs on this device" })
+    ).toBeChecked();
+
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: LOCAL_DATA_RESET_SIGNAL_KEY,
+          newValue: "reset",
+        })
+      );
+    });
+
+    expect(disableAnalytics).toHaveBeenCalled();
+    expect(screen.getByLabelText("Allow analytics")).not.toBeChecked();
+    const localSavingToggle = screen.getByRole("checkbox", {
+      name: "Save inputs on this device",
+    });
+    expect(localSavingToggle).not.toBeChecked();
+
+    fireEvent.click(localSavingToggle);
+
+    expect(readStoredSettingsPayload("expert").desiredRetirementIncome).toBe(
+      defaultSettings.desiredRetirementIncome
     );
   });
 

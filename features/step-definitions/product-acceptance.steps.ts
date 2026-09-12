@@ -80,6 +80,7 @@ import {
   validateSettings,
   normalizeSettings,
   loadStoredSettingsByJourney,
+  LOCAL_DATA_RESET_SIGNAL_KEY,
   LOCAL_STORAGE_ENABLED_KEY,
   SETTINGS_STORAGE_KEY,
   type PensionSettings,
@@ -3965,12 +3966,19 @@ Then("local saving should be off", function (this: ProductAcceptanceWorld) {
 });
 
 Then(
-  "raw local storage should contain only the disabled saving preference",
+  "raw local storage should contain only the disabled saving preference and reset signal",
   function () {
+    const resetSignal = readRawStorageItem(LOCAL_DATA_RESET_SIGNAL_KEY);
+
+    assertCondition(
+      resetSignal !== null && resetSignal.length > 0,
+      "Expected local data reset signal"
+    );
     assertEqual(
       JSON.stringify(getRawStorageSnapshot()),
       JSON.stringify({
         [LOCAL_STORAGE_ENABLED_KEY]: "false",
+        [LOCAL_DATA_RESET_SIGNAL_KEY]: resetSignal,
       })
     );
     assertEqual(readRawStorageItem(LOCAL_STORAGE_ENABLED_KEY), "false");

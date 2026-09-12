@@ -17,6 +17,20 @@ export type RetirementOutcomeBanner = {
 export function buildRetirementOutcomeBanner(
   result: ComparisonResult
 ): RetirementOutcomeBanner {
+  if (!result.targetWithdrawalConvergence.converged) {
+    return {
+      status: "atRisk",
+      label: "Needs checking",
+      message:
+        "The model reached its iteration limit while estimating target-based withdrawals. The figures remain useful as planning estimates, but do not treat the target assessment as definitive until the assumptions are reviewed.",
+      warning: {
+        heading: "Target-based withdrawal estimate needs checking",
+        message:
+          "Try reviewing accounts set to use “Use to meet income target”, tax assumptions, and spending targets. The app keeps the latest estimate visible, but it has not proved that the target-withdrawal calculation settled.",
+      },
+    };
+  }
+
   if (result.household) {
     const assessment = result.household.assessment;
     if (!assessment.meetsTargetThroughout) {

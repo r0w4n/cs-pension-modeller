@@ -5,6 +5,7 @@ import {
   clearStoredSettings,
   saveLocalStoragePreference,
   saveSettingsByJourney,
+  signalLocalDataReset,
 } from "../settings";
 import {
   clonePensionSettings,
@@ -33,15 +34,35 @@ type SetBoolean = Dispatch<SetStateAction<boolean>>;
 type SetNumber = Dispatch<SetStateAction<number>>;
 type SetDisplay = Dispatch<SetStateAction<RetirementIncomeDisplay>>;
 
+export type LocalDataClearResult = {
+  persistentDataCleared: boolean;
+  localSavingDisabled: boolean;
+};
+
 export function clearLocalData() {
-  clearAllLocalStorageData();
-  saveLocalStoragePreference(false);
+  const persistentDataCleared = clearAllLocalStorageData();
+  const localSavingDisabled = saveLocalStoragePreference(false);
+  signalLocalDataReset();
+
+  return {
+    persistentDataCleared,
+    localSavingDisabled,
+  };
 }
 
 export function disableLocalSavingAndClearStoredData() {
-  clearStoredSettings();
-  clearStoredAppPreferences();
-  clearStoredComparisonScenarios();
+  const persistentDataCleared = [
+    clearStoredSettings(),
+    clearStoredAppPreferences(),
+    clearStoredComparisonScenarios(),
+  ].every(Boolean);
+  const localSavingDisabled = saveLocalStoragePreference(false);
+  signalLocalDataReset();
+
+  return {
+    persistentDataCleared,
+    localSavingDisabled,
+  };
 }
 
 export function enableLocalSavingAndPersistState({
@@ -63,22 +84,23 @@ export function enableLocalSavingAndPersistState({
   analyticsConsentGranted: boolean;
   hasAcknowledgedNotice: boolean;
 }) {
-  if (appMode) {
-    saveStoredAppMode(appMode);
-  }
-
-  saveSettingsByJourney(settingsByJourney);
-  saveStoredComparisonScenarios(comparisonScenarios);
-  saveStoredGuidanceNotes(showGuidanceNotes);
-  saveStoredJourneyRetirementIncomeDisplay(journeyRetirementIncomeDisplay);
-  saveStoredComparisonRetirementIncomeDisplay(
-    comparisonRetirementIncomeDisplay
-  );
-  saveAnalyticsConsentState(analyticsConsentGranted);
+  const outcomes = [
+    appMode ? saveStoredAppMode(appMode) : true,
+    saveSettingsByJourney(settingsByJourney),
+    saveStoredComparisonScenarios(comparisonScenarios),
+    saveStoredGuidanceNotes(showGuidanceNotes),
+    saveStoredJourneyRetirementIncomeDisplay(journeyRetirementIncomeDisplay),
+    saveStoredComparisonRetirementIncomeDisplay(
+      comparisonRetirementIncomeDisplay
+    ),
+    saveAnalyticsConsentState(analyticsConsentGranted),
+  ];
 
   if (hasAcknowledgedNotice) {
-    saveAcknowledgementState();
+    outcomes.push(saveAcknowledgementState());
   }
+
+  return outcomes.every(Boolean);
 }
 
 export function resetLocalDataState({
@@ -103,8 +125,47 @@ export function resetLocalDataState({
   setShowGuidanceNotes: SetBoolean;
   setJourneyRetirementIncomeDisplay: SetDisplay;
   setComparisonRetirementIncomeDisplay: SetDisplay;
+}): LocalDataClearResult {
+  const clearResult = clearLocalData();
+  resetApplicationLocalDataState({
+    resetSettingsToDefaults,
+    resetComparisonScenarios,
+    setLocalStorageEnabled,
+    setIsResultsStepActive,
+    setAppMode,
+    setHasAcknowledgedNotice,
+    setAnalyticsConsentGranted,
+    setShowGuidanceNotes,
+    setJourneyRetirementIncomeDisplay,
+    setComparisonRetirementIncomeDisplay,
+  });
+
+  return clearResult;
+}
+
+export function resetApplicationLocalDataState({
+  resetSettingsToDefaults,
+  resetComparisonScenarios,
+  setLocalStorageEnabled,
+  setIsResultsStepActive,
+  setAppMode,
+  setHasAcknowledgedNotice,
+  setAnalyticsConsentGranted,
+  setShowGuidanceNotes,
+  setJourneyRetirementIncomeDisplay,
+  setComparisonRetirementIncomeDisplay,
+}: {
+  resetSettingsToDefaults: () => void;
+  resetComparisonScenarios: () => void;
+  setLocalStorageEnabled: SetBoolean;
+  setIsResultsStepActive: SetBoolean;
+  setAppMode: SetAppMode;
+  setHasAcknowledgedNotice: SetBoolean;
+  setAnalyticsConsentGranted: SetBoolean;
+  setShowGuidanceNotes: SetBoolean;
+  setJourneyRetirementIncomeDisplay: SetDisplay;
+  setComparisonRetirementIncomeDisplay: SetDisplay;
 }) {
-  clearLocalData();
   setLocalStorageEnabled(false);
   resetSettingsToDefaults();
   resetComparisonScenarios();

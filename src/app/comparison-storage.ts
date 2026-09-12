@@ -45,17 +45,17 @@ export function loadStoredComparisonScenarios(): ComparisonScenario[] {
 
 export function saveStoredComparisonScenarios(scenarios: ComparisonScenario[]) {
   if (!isLocalStorageEnabled()) {
-    return;
+    return false;
   }
 
-  writeStorageItem(
+  return writeStorageItem(
     COMPARISON_SCENARIOS_STORAGE_KEY,
     JSON.stringify(scenarios.slice(0, MAX_COMPARISON_SCENARIOS))
   );
 }
 
 export function clearStoredComparisonScenarios() {
-  removeStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
+  return removeStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
 }
 
 export function createComparisonScenarioId() {

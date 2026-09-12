@@ -11418,7 +11418,7 @@ export const acceptanceFeatures = [
           {
             id: "line-51",
             keyword: "And",
-            text: "raw local storage should contain only the disabled saving preference",
+            text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
           {
             id: "line-52",
@@ -11490,7 +11490,7 @@ export const acceptanceFeatures = [
           {
             id: "line-66",
             keyword: "And",
-            text: "raw local storage should contain only the disabled saving preference",
+            text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
         ],
         examples: [],

@@ -96,7 +96,15 @@ export function normalizePensionWithdrawalTaxTreatment(
 }
 
 function coerceNumber(value: unknown) {
-  const parsed = Number(value);
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return undefined;
+  }
+
+  const parsed = Number(value.trim());
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 

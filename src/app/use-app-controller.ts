@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { trackAnalyticsEvent } from "../analytics";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { disableAnalytics, trackAnalyticsEvent } from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeChartParameters } from "../result-projection/retirement-income-chart-model";
 import {
   isLocalStorageEnabled as loadLocalStorageEnabled,
+  LOCAL_DATA_RESET_SIGNAL_KEY,
+  LOCAL_STORAGE_ENABLED_KEY,
   saveLocalStoragePreference,
   type PensionSettings,
 } from "../settings";
@@ -23,6 +25,7 @@ import {
   saveStoredComparisonRetirementIncomeDisplay,
   saveStoredGuidanceNotes,
   saveStoredJourneyRetirementIncomeDisplay,
+  ANALYTICS_CONSENT_STORAGE_KEY,
   type AppMode,
   type RetirementIncomeDisplay,
 } from "./app-persistence";
@@ -30,8 +33,10 @@ import {
   disableLocalSavingAndClearStoredData,
   enableLocalSavingAndPersistState,
   loadComparisonScenario as loadComparisonScenarioAction,
+  resetApplicationLocalDataState,
   resetLocalDataState,
   selectAppMode as selectAppModeAction,
+  type LocalDataClearResult,
 } from "./app-actions";
 import {
   updateRetirementIncomeChartParameters as updateRetirementIncomeChartParametersAction,
@@ -66,6 +71,8 @@ export function useAppController() {
     showSavedLabel,
   } = useSavedFeedback();
   const [chartUndoStack, setChartUndoStack] = useState<PensionSettings[]>([]);
+  const [calculationInvalidationToken, setCalculationInvalidationToken] =
+    useState(0);
   const {
     exportParameters,
     loadParameters,
@@ -118,17 +125,21 @@ export function useAppController() {
     flexibleWithdrawalSummary,
     incomeAgeRangeItems,
     isProjectionPending,
+    calculationError,
     pensionSummary,
     projectionRows,
     retirementPlanResult,
     retirementIncomeSeries,
     targetBasedWithdrawalPreviews,
+    clearCalculationState,
+    retryFailedCalculation,
     validationIssues,
   } = useProjectionCalculations({
     settings,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
     retirementPlanResultCache,
     calculationEnabled: isResultsStepActive,
+    invalidationToken: calculationInvalidationToken,
   });
   const currentComparisonResult = useMemo(() => {
     if (!retirementPlanResult) {
@@ -180,6 +191,56 @@ export function useAppController() {
   useEffect(() => {
     saveAnalyticsConsentState(analyticsConsentGranted);
   }, [analyticsConsentGranted]);
+
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (
+        event.key !== LOCAL_DATA_RESET_SIGNAL_KEY &&
+        !(
+          event.key === LOCAL_STORAGE_ENABLED_KEY && event.newValue === "false"
+        ) &&
+        event.key !== ANALYTICS_CONSENT_STORAGE_KEY &&
+        event.key !== null
+      ) {
+        return;
+      }
+
+      if (event.key === ANALYTICS_CONSENT_STORAGE_KEY) {
+        const granted = event.newValue === "true";
+        setAnalyticsConsentGrantedState(granted);
+        if (!granted) {
+          disableAnalytics();
+        }
+        return;
+      }
+
+      resetOpenApplicationAfterLocalDataClear();
+    }
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  });
+
+  function resetOpenApplicationAfterLocalDataClear() {
+    disableAnalytics();
+    clearCalculationState();
+    setCalculationInvalidationToken((current) => current + 1);
+    resetApplicationLocalDataState({
+      resetSettingsToDefaults,
+      resetComparisonScenarios,
+      setLocalStorageEnabled: setLocalStorageEnabledState,
+      setIsResultsStepActive,
+      setAppMode,
+      setHasAcknowledgedNotice,
+      setAnalyticsConsentGranted: setAnalyticsConsentGrantedState,
+      setShowGuidanceNotes,
+      setJourneyRetirementIncomeDisplay,
+      setComparisonRetirementIncomeDisplay,
+    });
+  }
 
   function updateSetting<K extends SettingsKey>(
     key: K,
@@ -238,9 +299,12 @@ export function useAppController() {
     });
   }
 
-  function clearAllData() {
+  function clearAllData(): LocalDataClearResult {
     trackAnalyticsEvent("local_data_cleared");
-    resetLocalDataState({
+    disableAnalytics();
+    clearCalculationState();
+    setCalculationInvalidationToken((current) => current + 1);
+    return resetLocalDataState({
       resetSettingsToDefaults,
       resetComparisonScenarios,
       setLocalStorageEnabled: setLocalStorageEnabledState,
@@ -262,15 +326,17 @@ export function useAppController() {
     trackAnalyticsEvent("local_storage_preference_changed", {
       enabled,
     });
-    saveLocalStoragePreference(enabled);
+    const preferenceSaved = saveLocalStoragePreference(enabled);
     setLocalStorageEnabledState(enabled);
 
     if (!enabled) {
-      disableLocalSavingAndClearStoredData();
-      return;
+      disableAnalytics();
+      clearCalculationState();
+      setCalculationInvalidationToken((current) => current + 1);
+      return disableLocalSavingAndClearStoredData();
     }
 
-    enableLocalSavingAndPersistState({
+    const saved = enableLocalSavingAndPersistState({
       appMode,
       settingsByJourney,
       comparisonScenarios,
@@ -280,11 +346,27 @@ export function useAppController() {
       analyticsConsentGranted,
       hasAcknowledgedNotice,
     });
+
+    if (!preferenceSaved || !saved) {
+      const disabled = disableLocalSavingAndClearStoredData();
+      setLocalStorageEnabledState(false);
+      disableAnalytics();
+      return {
+        persistentDataCleared: false,
+        localSavingDisabled: disabled.localSavingDisabled,
+      };
+    }
+
+    return {
+      persistentDataCleared: true,
+      localSavingDisabled: true,
+    };
   }
 
   const journeyStepViewModel: JourneyStepViewModel = {
     settings,
     isProjectionPending,
+    calculationError,
     retirementPlanResult,
     currentComparisonResult,
     validationIssues,
@@ -335,6 +417,17 @@ export function useAppController() {
     });
   }
 
+  const setResultsStepActive = useCallback(
+    (active: boolean) => {
+      if (active) {
+        retryFailedCalculation();
+      }
+
+      setIsResultsStepActive(active);
+    },
+    [retryFailedCalculation]
+  );
+
   return {
     activeJourneyDefinition,
     activeJourneyMode,
@@ -356,7 +449,7 @@ export function useAppController() {
     loadParameters,
     localStorageEnabled,
     loadComparisonScenario,
-    onResultsStepActiveChange: setIsResultsStepActive,
+    onResultsStepActiveChange: setResultsStepActive,
     pensionSummary,
     projectionRows,
     clearAllData,

@@ -1,9 +1,20 @@
 import { useEffect, type ReactNode } from "react";
-import { applyAnalyticsConsent, trackPageView } from "../analytics";
+import {
+  applyAnalyticsConsent,
+  disableAnalytics,
+  trackPageView,
+} from "../analytics";
 import { resolveAppBaseHref } from "../app/app-base";
-import { loadAnalyticsConsentState } from "../app/app-persistence";
+import {
+  ANALYTICS_CONSENT_STORAGE_KEY,
+  loadAnalyticsConsentState,
+} from "../app/app-persistence";
 import { SiteFooter } from "../app/site-footer";
 import { Helmet } from "../helmet";
+import {
+  LOCAL_DATA_RESET_SIGNAL_KEY,
+  LOCAL_STORAGE_ENABLED_KEY,
+} from "../settings";
 
 type StaticPageLayoutProps = {
   eyebrow?: string;
@@ -56,6 +67,34 @@ function StaticPageAnalytics() {
     if (applyAnalyticsConsent(loadAnalyticsConsentState())) {
       trackPageView();
     }
+
+    function handleStorage(event: StorageEvent) {
+      if (
+        event.key === LOCAL_DATA_RESET_SIGNAL_KEY ||
+        event.key === null ||
+        (event.key === LOCAL_STORAGE_ENABLED_KEY && event.newValue === "false")
+      ) {
+        disableAnalytics();
+        return;
+      }
+
+      if (event.key === ANALYTICS_CONSENT_STORAGE_KEY) {
+        if (event.newValue === "true") {
+          if (applyAnalyticsConsent(true)) {
+            trackPageView();
+          }
+          return;
+        }
+
+        disableAnalytics();
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   return null;

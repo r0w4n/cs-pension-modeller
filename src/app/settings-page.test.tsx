@@ -1,5 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { SettingsPage } from "./settings-page";
+
+const successfulStorageOutcome = {
+  persistentDataCleared: true,
+  localSavingDisabled: true,
+};
 
 describe("settings-page", () => {
   it("renders the guidance notes toggle and emits changes", () => {
@@ -9,11 +14,11 @@ describe("settings-page", () => {
       <SettingsPage
         analyticsConsentGranted={false}
         localStorageEnabled
-        onClearAllData={vi.fn()}
+        onClearAllData={vi.fn(() => successfulStorageOutcome)}
         onExportParameters={vi.fn()}
         onLoadParameters={vi.fn(() => true)}
         onAnalyticsConsentChange={vi.fn()}
-        onLocalStorageEnabledChange={vi.fn()}
+        onLocalStorageEnabledChange={vi.fn(() => successfulStorageOutcome)}
         showGuidanceNotes
         onShowGuidanceNotesChange={onShowGuidanceNotesChange}
       />
@@ -39,11 +44,11 @@ describe("settings-page", () => {
       <SettingsPage
         analyticsConsentGranted={false}
         localStorageEnabled
-        onClearAllData={vi.fn()}
+        onClearAllData={vi.fn(() => successfulStorageOutcome)}
         onExportParameters={vi.fn()}
         onLoadParameters={vi.fn(() => true)}
         onAnalyticsConsentChange={onAnalyticsConsentChange}
-        onLocalStorageEnabledChange={vi.fn()}
+        onLocalStorageEnabledChange={vi.fn(() => successfulStorageOutcome)}
         showGuidanceNotes
         onShowGuidanceNotesChange={vi.fn()}
       />
@@ -52,5 +57,43 @@ describe("settings-page", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Allow analytics" }));
     expect(onAnalyticsConsentChange).toHaveBeenCalledWith(true);
     expect(screen.getByRole("status")).toHaveTextContent("Analytics turned on");
+  });
+
+  it("keeps clear-data errors visible until superseded", () => {
+    vi.useFakeTimers();
+
+    render(
+      <SettingsPage
+        analyticsConsentGranted={false}
+        localStorageEnabled
+        onClearAllData={vi.fn(() => ({
+          persistentDataCleared: false,
+          localSavingDisabled: true,
+        }))}
+        onExportParameters={vi.fn()}
+        onLoadParameters={vi.fn(() => true)}
+        onAnalyticsConsentChange={vi.fn()}
+        onLocalStorageEnabledChange={vi.fn(() => successfulStorageOutcome)}
+        showGuidanceNotes
+        onShowGuidanceNotesChange={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+
+    expect(screen.queryByText("Data cleared")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "the browser did not confirm deletion from local storage"
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "the browser did not confirm deletion from local storage"
+    );
+
+    vi.useRealTimers();
   });
 });

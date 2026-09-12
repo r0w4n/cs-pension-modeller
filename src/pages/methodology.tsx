@@ -1048,6 +1048,14 @@ export function MethodologyPage() {
           allowance and tax bands.
         </p>
         <p className="section-copy">
+          If the repeated target-withdrawal calculation reaches its iteration
+          limit before settling, the app keeps the latest estimate visible but
+          marks the affected target assessment as needing checking. In that
+          case, the displayed withdrawals, shortfalls and comparison status
+          should be treated as provisional planning estimates rather than a
+          definitive statement that the target is met or missed.
+        </p>
+        <p className="section-copy">
           Existing withdrawal strategies remain explicit instructions and are
           not silently reduced. Where they produce income above the active
           target, the model separates unavoidable guaranteed-income surplus from

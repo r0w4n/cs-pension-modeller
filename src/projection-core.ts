@@ -30,14 +30,9 @@ export type ProjectionTableResult = {
   diagnostics: ProjectionDiagnostics;
 };
 
-type ProjectionTableOptions = {
+export type ProjectionTableOptions = {
   targetWithdrawalMaxIterations?: number;
 };
-
-const projectionTableDiagnostics = new WeakMap<
-  ProjectionRow[],
-  ProjectionDiagnostics
->();
 
 export type ProjectionRow = {
   date: string;
@@ -261,15 +256,14 @@ export function createProjectionTable(
 export function getProjectionTableDiagnostics(
   rows: ProjectionRow[]
 ): ProjectionDiagnostics {
-  return (
-    projectionTableDiagnostics.get(rows) ?? {
-      targetWithdrawalConvergence: {
-        converged: true,
-        iterations: 0,
-        maxIterations: TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS,
-      },
-    }
-  );
+  void rows;
+  return {
+    targetWithdrawalConvergence: {
+      converged: false,
+      iterations: 0,
+      maxIterations: TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS,
+    },
+  };
 }
 
 export function createProjectionTableResult(
@@ -282,7 +276,7 @@ export function createProjectionTableResult(
     TARGET_WITHDRAWAL_CONVERGENCE_MAX_ITERATIONS;
 
   if (!derivedInputs) {
-    return rememberProjectionTableResult({
+    return {
       rows: [],
       diagnostics: {
         targetWithdrawalConvergence: {
@@ -291,7 +285,7 @@ export function createProjectionTableResult(
           maxIterations,
         },
       },
-    });
+    };
   }
 
   const runtimeDates = createProjectionRuntimeDates(settings);
@@ -346,17 +340,10 @@ export function createProjectionTableResult(
     taxedRows = applyTaxYearIncomeTax(coordinatedRows, settings);
   }
 
-  return rememberProjectionTableResult({
+  return {
     rows: taxedRows,
     diagnostics: {
       targetWithdrawalConvergence: convergence,
     },
-  });
-}
-
-function rememberProjectionTableResult(
-  result: ProjectionTableResult
-): ProjectionTableResult {
-  projectionTableDiagnostics.set(result.rows, result.diagnostics);
-  return result;
+  };
 }

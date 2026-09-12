@@ -1,4 +1,11 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { RetirementIncomeDisplay } from "../projection";
 import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import { validateSettings, type PensionSettings } from "../settings";
@@ -18,27 +25,46 @@ export function useProjectionCalculations({
   retirementIncomeDisplay,
   retirementPlanResultCache,
   calculationEnabled,
+  invalidationToken = 0,
 }: {
   settings: PensionSettings;
   retirementIncomeDisplay: RetirementIncomeDisplay;
   retirementPlanResultCache?: RetirementPlanResultCache;
   calculationEnabled: boolean;
+  invalidationToken?: number;
 }) {
   const deferredSettings = useDeferredValue(settings);
-  const [retirementPlanResult, setRetirementPlanResult] =
-    useState<RetirementPlanResult | null>(() =>
-      calculationEnabled
-        ? getCachedRetirementPlanResult({
-            settings,
-            cache: retirementPlanResultCache,
-          })
-        : null
-    );
+  const [retirementPlanState, setRetirementPlanState] = useState<{
+    result: RetirementPlanResult | null;
+    invalidationToken: number;
+  }>(() => ({
+    result: calculationEnabled
+      ? getCachedRetirementPlanResult({
+          settings,
+          cache: retirementPlanResultCache,
+        })
+      : null,
+    invalidationToken,
+  }));
+  const [calculationErrorState, setCalculationErrorState] = useState<{
+    settingsSignature: string | null;
+    invalidationToken: number;
+  }>({
+    settingsSignature: null,
+    invalidationToken,
+  });
   const deferredSettingsSignature = useMemo(
     () => JSON.stringify(deferredSettings),
     [deferredSettings]
   );
   const settingsSignature = useMemo(() => JSON.stringify(settings), [settings]);
+  const retirementPlanResult =
+    retirementPlanState.invalidationToken === invalidationToken
+      ? retirementPlanState.result
+      : null;
+  const calculationError =
+    calculationErrorState.invalidationToken === invalidationToken &&
+    calculationErrorState.settingsSignature !== null;
   const calculatedSettingsSignature = useMemo(
     () =>
       retirementPlanResult
@@ -49,12 +75,34 @@ export function useProjectionCalculations({
   const latestSettingsSignatureRef = useRef(settingsSignature);
   latestSettingsSignatureRef.current = settingsSignature;
 
+  const clearCalculationState = useCallback(() => {
+    setRetirementPlanState({ result: null, invalidationToken });
+    setCalculationErrorState({
+      settingsSignature: null,
+      invalidationToken,
+    });
+  }, [invalidationToken]);
+
+  const retryFailedCalculation = useCallback(() => {
+    setCalculationErrorState({
+      settingsSignature: null,
+      invalidationToken,
+    });
+  }, [invalidationToken]);
+
   useEffect(() => {
     if (!calculationEnabled) {
       return;
     }
 
     if (deferredSettingsSignature === calculatedSettingsSignature) {
+      return;
+    }
+
+    if (
+      calculationErrorState.invalidationToken === invalidationToken &&
+      calculationErrorState.settingsSignature === deferredSettingsSignature
+    ) {
       return;
     }
 
@@ -67,21 +115,45 @@ export function useProjectionCalculations({
         active &&
         planSettingsSignature === latestSettingsSignatureRef.current
       ) {
-        setRetirementPlanResult(plan);
+        setCalculationErrorState({
+          settingsSignature: null,
+          invalidationToken,
+        });
+        setRetirementPlanState({ result: plan, invalidationToken });
       }
     };
     const calculateOnMainThread = () => {
-      commitPlan(
-        getCachedRetirementPlanResult({
-          settings: deferredSettings,
-          cache: retirementPlanResultCache,
-        }),
-        deferredSettingsSignature
-      );
+      try {
+        commitPlan(
+          getCachedRetirementPlanResult({
+            settings: deferredSettings,
+            cache: retirementPlanResultCache,
+          }),
+          deferredSettingsSignature
+        );
+      } catch {
+        if (
+          active &&
+          deferredSettingsSignature === latestSettingsSignatureRef.current
+        ) {
+          setRetirementPlanState({ result: null, invalidationToken });
+          setCalculationErrorState({
+            settingsSignature: deferredSettingsSignature,
+            invalidationToken,
+          });
+        }
+      }
     };
-    const cachedPlan = retirementPlanResultCache?.get(
-      deferredSettingsSignature
-    );
+    let cachedPlan: RetirementPlanResult | undefined;
+
+    try {
+      cachedPlan = retirementPlanResultCache?.get(deferredSettingsSignature);
+    } catch {
+      calculateOnMainThread();
+      return () => {
+        active = false;
+      };
+    }
 
     if (cachedPlan) {
       commitPlan(cachedPlan, deferredSettingsSignature);
@@ -143,7 +215,12 @@ export function useProjectionCalculations({
 
     worker.addEventListener("message", handleMessage);
     worker.addEventListener("error", handleError);
-    worker.postMessage(deferredSettings);
+    try {
+      worker.postMessage(deferredSettings);
+    } catch {
+      worker.terminate();
+      calculateOnMainThread();
+    }
 
     return () => {
       active = false;
@@ -154,8 +231,10 @@ export function useProjectionCalculations({
   }, [
     calculatedSettingsSignature,
     calculationEnabled,
+    calculationErrorState,
     deferredSettings,
     deferredSettingsSignature,
+    invalidationToken,
     retirementPlanResultCache,
   ]);
   const resultsProjection = useMemo(
@@ -201,12 +280,17 @@ export function useProjectionCalculations({
     ...resultControlProjection,
     deferredSettings,
     isProjectionPending:
-      calculationEnabled && settingsSignature !== calculatedSettingsSignature,
+      calculationEnabled &&
+      !calculationError &&
+      settingsSignature !== calculatedSettingsSignature,
+    calculationError,
     derivedInflationAssumptions:
       retirementPlanResult?.inflationAssumptions ?? null,
     pensionSummary: retirementPlanResult?.summary ?? null,
     projectionRows: retirementPlanResult?.rows ?? [],
     retirementPlanResult,
+    clearCalculationState,
+    retryFailedCalculation,
     validationIssues,
   };
 }

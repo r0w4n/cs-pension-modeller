@@ -1745,7 +1745,7 @@ async function assertFooterPage(
     await expect(page.getByRole("status")).toHaveText("Parameters exported");
 
     await resetButton.click();
-    await expect(page.getByRole("status")).toHaveText("Data Cleared");
+    await expect(page.getByRole("status")).toHaveText("Data cleared");
     await expect(
       page.getByLabel("Save inputs on this device")
     ).not.toBeChecked();

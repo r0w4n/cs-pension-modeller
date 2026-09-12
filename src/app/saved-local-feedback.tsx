@@ -1,10 +1,12 @@
 type SavedLocalFeedbackProps = {
   message?: string;
+  role?: "status" | "alert";
   show: boolean;
 };
 
 export function SavedLocalFeedback({
   message = "Saved Locally",
+  role = "status",
   show,
 }: SavedLocalFeedbackProps) {
   if (!show) {
@@ -12,7 +14,11 @@ export function SavedLocalFeedback({
   }
 
   return (
-    <span className="saved-feedback" role="status" aria-live="polite">
+    <span
+      className="saved-feedback"
+      role={role}
+      aria-live={role === "alert" ? "assertive" : "polite"}
+    >
       {message}
     </span>
   );

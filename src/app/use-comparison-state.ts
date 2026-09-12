@@ -31,6 +31,8 @@ export function useComparisonState() {
   function resetComparisonScenarios() {
     skipNextComparisonSaveRef.current = true;
     setComparisonScenarios([]);
+    comparisonResultCache.clear();
+    retirementPlanResultCache.clear();
   }
 
   return {

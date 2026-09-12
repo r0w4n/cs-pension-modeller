@@ -9,10 +9,15 @@ import { StaticPageLayout } from "./static-page-layout";
 
 vi.mock("../analytics", () => ({
   applyAnalyticsConsent: vi.fn((consentGranted: boolean) => consentGranted),
+  disableAnalytics: vi.fn(),
   trackPageView: vi.fn(),
 }));
 
-import { applyAnalyticsConsent, trackPageView } from "../analytics";
+import {
+  applyAnalyticsConsent,
+  disableAnalytics,
+  trackPageView,
+} from "../analytics";
 
 function renderStaticPage() {
   return render(
@@ -29,6 +34,7 @@ describe("StaticPageLayout analytics", () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.mocked(applyAnalyticsConsent).mockClear();
+    vi.mocked(disableAnalytics).mockClear();
     vi.mocked(trackPageView).mockClear();
   });
 
@@ -93,5 +99,19 @@ describe("StaticPageLayout analytics", () => {
 
     expect(applyAnalyticsConsent).toHaveBeenCalledWith(false);
     expect(trackPageView).not.toHaveBeenCalled();
+  });
+
+  it("disables analytics in an already-open static page when another tab clears data", () => {
+    saveAnalyticsConsentState(true);
+    renderStaticPage();
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "cs-pension-modeller.localDataResetSignal",
+        newValue: "reset",
+      })
+    );
+
+    expect(disableAnalytics).toHaveBeenCalled();
   });
 });

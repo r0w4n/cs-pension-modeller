@@ -180,6 +180,32 @@ describe("PensionSummarySection", () => {
     );
   });
 
+  it("qualifies results when target-based withdrawals do not converge", () => {
+    render(
+      <PensionSummarySection
+        activeResult={createComparisonResultFixture({
+          targetWithdrawalConverged: false,
+        })}
+        description="Summary description"
+        retirementIncomeDisplay="annual"
+        incomeAgeRangeItems={[]}
+        statusItems={[]}
+      />
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("Needs checking");
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent("reached its iteration limit");
+    expect(
+      screen.getByRole("region", { name: "Retirement outcome" })
+    ).toHaveTextContent(
+      "has not proved that the target-withdrawal calculation settled"
+    );
+  });
+
   it("warns when a Premium factor is unavailable and income is excluded", () => {
     const result = createComparisonResultFixture();
     result.summary.premiumPension.factorUnavailable = true;
@@ -250,6 +276,7 @@ describe("simple pension results", () => {
 function createComparisonResultFixture({
   targetMissMonths = 0,
   statePensionAssumptionAffectsTarget = false,
+  targetWithdrawalConverged = true,
   ageRanges = [
     {
       startAge: 60,
@@ -267,6 +294,7 @@ function createComparisonResultFixture({
 }: {
   targetMissMonths?: number;
   statePensionAssumptionAffectsTarget?: boolean;
+  targetWithdrawalConverged?: boolean;
   ageRanges?: ComparisonResult["summary"]["retirementIncome"]["ageRanges"];
 } = {}): ComparisonResult {
   const firstShortfallRange = ageRanges.find(
@@ -352,6 +380,11 @@ function createComparisonResultFixture({
     sippDepletedAge: null,
     lifeExpectancyAnnualIncome: 36667.6,
     statePensionAssumptionAffectsTarget,
+    targetWithdrawalConvergence: {
+      converged: targetWithdrawalConverged,
+      iterations: targetWithdrawalConverged ? 3 : 12,
+      maxIterations: 12,
+    },
     currentMatchesSaved: true,
   } as unknown as ComparisonResult;
 }

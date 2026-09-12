@@ -7,7 +7,8 @@ import {
 
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
-const ANALYTICS_CONSENT_STORAGE_KEY = "cs-pension-modeller.analyticsConsent";
+export const ANALYTICS_CONSENT_STORAGE_KEY =
+  "cs-pension-modeller.analyticsConsent";
 export const APP_MODE_STORAGE_KEY = "cs-pension-modeller.appMode";
 const GUIDANCE_NOTES_STORAGE_KEY = "cs-pension-modeller.guidanceNotes";
 const LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
@@ -32,10 +33,10 @@ export function loadAcknowledgementState() {
 
 export function saveAcknowledgementState() {
   if (!isLocalStorageEnabled()) {
-    return;
+    return false;
   }
 
-  writeStorageItem(ACKNOWLEDGEMENT_STORAGE_KEY, ACKNOWLEDGEMENT_VERSION);
+  return writeStorageItem(ACKNOWLEDGEMENT_STORAGE_KEY, ACKNOWLEDGEMENT_VERSION);
 }
 
 export function loadAnalyticsConsentState() {
@@ -48,10 +49,10 @@ export function loadAnalyticsConsentState() {
 
 export function saveAnalyticsConsentState(consentGranted: boolean) {
   if (!isLocalStorageEnabled()) {
-    return;
+    return false;
   }
 
-  writeStorageItem(
+  return writeStorageItem(
     ANALYTICS_CONSENT_STORAGE_KEY,
     consentGranted ? "true" : "false"
   );
@@ -77,10 +78,10 @@ export function loadStoredAppMode(): AppMode | null {
 
 export function saveStoredAppMode(mode: AppMode) {
   if (!isLocalStorageEnabled()) {
-    return;
+    return false;
   }
 
-  writeStorageItem(APP_MODE_STORAGE_KEY, mode);
+  return writeStorageItem(APP_MODE_STORAGE_KEY, mode);
 }
 
 export function loadStoredGuidanceNotes() {
@@ -95,10 +96,10 @@ export function loadStoredGuidanceNotes() {
 
 export function saveStoredGuidanceNotes(showGuidanceNotes: boolean) {
   if (!isLocalStorageEnabled()) {
-    return;
+    return false;
   }
 
-  writeStorageItem(
+  return writeStorageItem(
     GUIDANCE_NOTES_STORAGE_KEY,
     showGuidanceNotes ? "true" : "false"
   );
@@ -113,7 +114,7 @@ export function loadStoredJourneyRetirementIncomeDisplay(): RetirementIncomeDisp
 export function saveStoredJourneyRetirementIncomeDisplay(
   retirementIncomeDisplay: RetirementIncomeDisplay
 ) {
-  saveRetirementIncomeDisplayPreference(
+  return saveRetirementIncomeDisplayPreference(
     JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
     retirementIncomeDisplay
   );
@@ -128,20 +129,22 @@ export function loadStoredComparisonRetirementIncomeDisplay(): RetirementIncomeD
 export function saveStoredComparisonRetirementIncomeDisplay(
   retirementIncomeDisplay: RetirementIncomeDisplay
 ) {
-  saveRetirementIncomeDisplayPreference(
+  return saveRetirementIncomeDisplayPreference(
     COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
     retirementIncomeDisplay
   );
 }
 
 export function clearStoredAppPreferences() {
-  removeStorageItem(ACKNOWLEDGEMENT_STORAGE_KEY);
-  removeStorageItem(ANALYTICS_CONSENT_STORAGE_KEY);
-  removeStorageItem(APP_MODE_STORAGE_KEY);
-  removeStorageItem(GUIDANCE_NOTES_STORAGE_KEY);
-  removeStorageItem(JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
-  removeStorageItem(COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
-  removeStorageItem(LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY);
+  return [
+    removeStorageItem(ACKNOWLEDGEMENT_STORAGE_KEY),
+    removeStorageItem(ANALYTICS_CONSENT_STORAGE_KEY),
+    removeStorageItem(APP_MODE_STORAGE_KEY),
+    removeStorageItem(GUIDANCE_NOTES_STORAGE_KEY),
+    removeStorageItem(JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY),
+    removeStorageItem(COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY),
+    removeStorageItem(LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY),
+  ].every(Boolean);
 }
 
 function loadRetirementIncomeDisplayPreference(storageKey: string) {
@@ -165,8 +168,8 @@ function saveRetirementIncomeDisplayPreference(
   retirementIncomeDisplay: RetirementIncomeDisplay
 ) {
   if (!isLocalStorageEnabled()) {
-    return;
+    return false;
   }
 
-  writeStorageItem(storageKey, retirementIncomeDisplay);
+  return writeStorageItem(storageKey, retirementIncomeDisplay);
 }

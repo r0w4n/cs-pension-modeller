@@ -13,7 +13,7 @@ Feature: Voluntary support prompt
       | step    | calculation  | visibility | eligibility  |
       | inputs  | complete     | visible    | ineligible   |
       | results | pending      | visible    | ineligible   |
-      | results | unavailable  | visible    | ineligible   |
+      | results | unavailable  | visible    | eligible     |
       | results | failed       | visible    | ineligible   |
       | results | complete     | hidden     | ineligible   |
       | results | complete     | visible    | eligible     |

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import {
   trackSupportPromptEvent,
   type SupportPromptAnalyticsEvent,
@@ -36,13 +35,11 @@ export function useSupportPrompt({
   isResultsStepActive,
   isProjectionPending,
   calculationError,
-  retirementPlanResult,
   localStorageEnabled,
 }: {
   isResultsStepActive: boolean;
   isProjectionPending: boolean;
   calculationError: boolean;
-  retirementPlanResult: RetirementPlanResult | null;
   localStorageEnabled: boolean;
 }) {
   const [preference, setPreference] = useState<SupportPromptPreference | null>(
@@ -70,7 +67,6 @@ export function useSupportPrompt({
       isSupportPromptEligible({
         activeJourneyStep: isResultsStepActive ? "results" : "other",
         calculationFinished: !isProjectionPending,
-        retirementPlanResultAvailable: Boolean(retirementPlanResult),
         calculationError,
         documentVisible,
         preference,
@@ -83,7 +79,6 @@ export function useSupportPrompt({
       isProjectionPending,
       isResultsStepActive,
       preference,
-      retirementPlanResult,
       sessionSuppressed,
     ]
   );

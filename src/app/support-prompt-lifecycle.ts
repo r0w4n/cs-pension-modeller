@@ -9,7 +9,6 @@ import type { SupportPromptPreference } from "./support-prompt-storage";
 export type SupportPromptEligibilityInput = {
   activeJourneyStep: "results" | "other";
   calculationFinished: boolean;
-  retirementPlanResultAvailable: boolean;
   calculationError: boolean;
   documentVisible: boolean;
   preference: SupportPromptPreference | null;
@@ -20,7 +19,6 @@ export type SupportPromptEligibilityInput = {
 export function isSupportPromptEligible({
   activeJourneyStep,
   calculationFinished,
-  retirementPlanResultAvailable,
   calculationError,
   documentVisible,
   preference,
@@ -30,7 +28,6 @@ export function isSupportPromptEligible({
   return (
     activeJourneyStep === "results" &&
     calculationFinished &&
-    retirementPlanResultAvailable &&
     !calculationError &&
     documentVisible &&
     !sessionSuppressed &&

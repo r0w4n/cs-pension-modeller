@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { StrictMode, type ReactNode } from "react";
 import { trackAnalyticsEvent } from "../analytics";
-import type { RetirementPlanResult } from "../calculation/retirement-plan";
 import { saveLocalStoragePreference } from "../settings";
 import {
   SUPPORT_PROMPT_DECLINE_MONTHS,
@@ -20,7 +19,6 @@ vi.mock("../analytics", () => ({
 type SupportPromptHookProps = Parameters<typeof useSupportPrompt>[0];
 
 const now = new Date("2026-09-12T12:00:00.000Z");
-const retirementPlanResult = {} as RetirementPlanResult;
 
 function renderSupportPromptHook(
   overrides: Partial<SupportPromptHookProps> = {}
@@ -29,7 +27,6 @@ function renderSupportPromptHook(
     isResultsStepActive: false,
     isProjectionPending: false,
     calculationError: false,
-    retirementPlanResult,
     localStorageEnabled: true,
     ...overrides,
   };
@@ -80,7 +77,6 @@ describe("useSupportPrompt", () => {
       isResultsStepActive: true,
       isProjectionPending: false,
       calculationError: false,
-      retirementPlanResult,
       localStorageEnabled: true,
     });
 
@@ -101,7 +97,6 @@ describe("useSupportPrompt", () => {
       isResultsStepActive: true,
       isProjectionPending: false,
       calculationError: false,
-      retirementPlanResult,
       localStorageEnabled: true,
     });
     expect(
@@ -113,14 +108,10 @@ describe("useSupportPrompt", () => {
     ).toHaveLength(1);
   });
 
-  it("does not open while calculation is pending, unavailable, or failed", () => {
+  it("does not open while calculation is pending or failed", () => {
     const { result: pendingResult } = renderSupportPromptHook({
       isResultsStepActive: true,
       isProjectionPending: true,
-    });
-    const { result: unavailableResult } = renderSupportPromptHook({
-      isResultsStepActive: true,
-      retirementPlanResult: null,
     });
     const { result: failedResult } = renderSupportPromptHook({
       isResultsStepActive: true,
@@ -132,7 +123,6 @@ describe("useSupportPrompt", () => {
     });
 
     expect(pendingResult.current.viewModel.isOpen).toBe(false);
-    expect(unavailableResult.current.viewModel.isOpen).toBe(false);
     expect(failedResult.current.viewModel.isOpen).toBe(false);
   });
 
@@ -159,7 +149,6 @@ describe("useSupportPrompt", () => {
       isResultsStepActive: false,
       isProjectionPending: false,
       calculationError: false,
-      retirementPlanResult,
       localStorageEnabled: true,
     });
     act(() => {
@@ -171,7 +160,6 @@ describe("useSupportPrompt", () => {
       isResultsStepActive: true,
       isProjectionPending: false,
       calculationError: false,
-      retirementPlanResult,
       localStorageEnabled: true,
     });
     act(() => {
@@ -414,7 +402,6 @@ describe("useSupportPrompt", () => {
           isResultsStepActive: false,
           isProjectionPending: false,
           calculationError: false,
-          retirementPlanResult,
           localStorageEnabled: true,
         },
         wrapper,
@@ -428,7 +415,6 @@ describe("useSupportPrompt", () => {
       isResultsStepActive: false,
       isProjectionPending: false,
       calculationError: false,
-      retirementPlanResult,
       localStorageEnabled: true,
     });
     act(() => {

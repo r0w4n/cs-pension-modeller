@@ -70,7 +70,6 @@ When(
     this.supportPromptEligible = isSupportPromptEligible({
       activeJourneyStep: step === "results" ? "results" : "other",
       calculationFinished: calculation !== "pending",
-      retirementPlanResultAvailable: calculation !== "unavailable",
       calculationError: calculation === "failed",
       documentVisible: visibility === "visible",
       preference: loadSupportPromptPreference(),

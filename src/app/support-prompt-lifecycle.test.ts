@@ -17,7 +17,6 @@ describe("support prompt lifecycle", () => {
   const eligibleInput = {
     activeJourneyStep: "results" as const,
     calculationFinished: true,
-    retirementPlanResultAvailable: true,
     calculationError: false,
     documentVisible: true,
     preference: null,
@@ -25,7 +24,7 @@ describe("support prompt lifecycle", () => {
     now,
   };
 
-  it("requires visible completed Results with an available plan", () => {
+  it("requires visible completed Results without an error", () => {
     expect(isSupportPromptEligible(eligibleInput)).toBe(true);
 
     expect(
@@ -38,12 +37,6 @@ describe("support prompt lifecycle", () => {
       isSupportPromptEligible({
         ...eligibleInput,
         calculationFinished: false,
-      })
-    ).toBe(false);
-    expect(
-      isSupportPromptEligible({
-        ...eligibleInput,
-        retirementPlanResultAvailable: false,
       })
     ).toBe(false);
     expect(

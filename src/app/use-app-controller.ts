@@ -147,7 +147,6 @@ export function useAppController() {
       isResultsStepActive,
       isProjectionPending,
       calculationError,
-      retirementPlanResult,
       localStorageEnabled,
     });
   const currentComparisonResult = useMemo(() => {

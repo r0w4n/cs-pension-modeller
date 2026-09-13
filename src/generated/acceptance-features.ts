@@ -16963,7 +16963,7 @@ export const acceptanceFeatures = [
                   },
                   {
                     id: "line-16-column-47",
-                    value: "ineligible",
+                    value: "eligible",
                   },
                 ],
               },

@@ -55,9 +55,7 @@ describe("SupportPrompt", () => {
     expect(document.querySelector("script[src*='stripe']")).toBeNull();
     expect(document.querySelector("stripe-buy-button")).toBeNull();
     expect(
-      screen.getByText(
-        "Payment is handled by Stripe. The payment page opens in a new tab."
-      )
+      screen.getByText("Payment is handled securely by Stripe.")
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Maybe later" })

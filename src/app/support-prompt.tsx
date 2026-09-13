@@ -141,7 +141,7 @@ export function SupportPrompt({ prompt }: SupportPromptProps) {
         )}
 
         <p className="support-prompt-payment-note">
-          Payment is handled by Stripe. The payment page opens in a new tab.
+          Payment is handled securely by Stripe.
         </p>
 
         <div className="support-prompt-actions">

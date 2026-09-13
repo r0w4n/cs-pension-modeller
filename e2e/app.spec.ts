@@ -30,9 +30,7 @@ test.describe("app end-to-end journeys", () => {
     await expect(supportDialog).toBeVisible();
     await expectSupportPromptCardNotScrollable(page);
     await expect(
-      supportDialog.getByText(
-        "Payment is handled by Stripe. The payment page opens in a new tab."
-      )
+      supportDialog.getByText("Payment is handled securely by Stripe.")
     ).toBeVisible();
 
     const paymentLink = supportDialog.getByRole("link", {

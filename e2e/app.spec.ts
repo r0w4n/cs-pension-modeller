@@ -1,6 +1,105 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 
 test.describe("app end-to-end journeys", () => {
+  test("shows the voluntary support prompt after eligible Results time", async ({
+    page,
+  }) => {
+    const getStripeRequests = await interceptStripePaymentLink(page);
+    await page.clock.install({ time: new Date("2026-09-12T12:00:00.000Z") });
+    await acknowledgeAndOpenMode(page, "simple");
+
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("heading", {
+        name: "How your retirement income may change",
+      })
+    ).toBeVisible();
+    expect(getStripeRequests()).toHaveLength(0);
+
+    await expect(
+      page.getByRole("dialog", {
+        name: "Found the modeller useful?",
+      })
+    ).toHaveCount(0);
+    expect(getStripeRequests()).toHaveLength(0);
+
+    await page.clock.fastForward(60_000);
+    const supportDialog = page.getByRole("dialog", {
+      name: "Found the modeller useful?",
+    });
+    await expect(supportDialog).toBeVisible();
+    await expectSupportPromptCardNotScrollable(page);
+    await expect(
+      supportDialog.getByText(
+        "Payment is handled by Stripe. The payment page opens in a new tab."
+      )
+    ).toBeVisible();
+
+    const paymentLink = supportDialog.getByRole("link", {
+      name: "Buy me a coffee",
+    });
+    await expect(paymentLink).toHaveAttribute(
+      "href",
+      "https://buy.stripe.com/bJe00j5KM0tB1qd919fYY01"
+    );
+    await expect(paymentLink).toHaveAttribute("target", "_blank");
+    await expect(paymentLink).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(page.locator("stripe-buy-button")).toHaveCount(0);
+    expect(getStripeRequests()).toHaveLength(0);
+
+    await page.keyboard.press("Escape");
+    await expect(supportDialog).toBeHidden();
+    const storedPreference = await readLocalStorageItem(
+      page,
+      "cs-pension-modeller.supportPrompt"
+    );
+    expect(storedPreference).toContain('"status":"snoozed"');
+
+    await page.clock.fastForward(60_000);
+    await expect(supportDialog).toBeHidden();
+    expect(getStripeRequests()).toHaveLength(0);
+  });
+
+  test("activating the support Payment Link snoozes without marking support complete", async ({
+    page,
+  }) => {
+    const getStripeRequests = await interceptStripePaymentLink(page);
+    await page.clock.install({ time: new Date("2026-09-12T12:00:00.000Z") });
+    await acknowledgeAndOpenMode(page, "simple");
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("heading", {
+        name: "How your retirement income may change",
+      })
+    ).toBeVisible();
+
+    await page.clock.fastForward(60_000);
+    const supportDialog = page.getByRole("dialog", {
+      name: "Found the modeller useful?",
+    });
+
+    const paymentLink = supportDialog.getByRole("link", {
+      name: "Buy me a coffee",
+    });
+    const popupPromise = page.waitForEvent("popup");
+    await paymentLink.focus();
+    await expect(paymentLink).toBeFocused();
+    await page.keyboard.press("Enter");
+    const popup = await popupPromise;
+    await popup.close();
+
+    await expect(supportDialog).toBeHidden();
+    expect(getStripeRequests()).toEqual([
+      "https://buy.stripe.com/bJe00j5KM0tB1qd919fYY01",
+    ]);
+    const storedPreference = await readLocalStorageItem(
+      page,
+      "cs-pension-modeller.supportPrompt"
+    );
+    expect(storedPreference).toContain('"status":"snoozed"');
+    expect(storedPreference).not.toContain('"supported"');
+  });
+
   test("acknowledges first run, switches modes, and keeps expert mode usable", async ({
     page,
   }, testInfo) => {
@@ -1865,4 +1964,34 @@ async function expectProjectionBasisBelowResultsChart(page: Page) {
   });
 
   expect(chartComesFirst).toBe(true);
+}
+
+async function interceptStripePaymentLink(page: Page) {
+  const stripeRequests: string[] = [];
+  const context = page.context();
+
+  await context.route(
+    "https://js.stripe.com/v3/buy-button.js",
+    async (route) => {
+      stripeRequests.push(route.request().url());
+      await route.abort();
+    }
+  );
+  await context.route("https://buy.stripe.com/**", async (route) => {
+    stripeRequests.push(route.request().url());
+    await route.abort();
+  });
+
+  return () => [...stripeRequests];
+}
+
+async function expectSupportPromptCardNotScrollable(page: Page) {
+  await expect
+    .poll(() =>
+      page.locator(".support-prompt-card").evaluate((card) => ({
+        overflowY: getComputedStyle(card).overflowY,
+        scrolls: card.scrollHeight > card.clientHeight + 1,
+      }))
+    )
+    .toEqual({ overflowY: "visible", scrolls: false });
 }

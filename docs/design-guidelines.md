@@ -57,6 +57,8 @@ to maximise reuse.
 
 - Reuse established buttons, links, fields, summaries, disclosures, tables,
   notices, and navigation patterns.
+- Modal dialogs should use the shared dialog shell styles unless a materially
+  different interaction requires a documented exception.
 - Keep one primary action per decision area and preserve the established roles
   of secondary, back, cancel, reset, and destructive actions.
 - Prefer native HTML controls and make interactive elements visibly

@@ -12,6 +12,7 @@ import { SavedLocalFeedback } from "./app/saved-local-feedback";
 import { SettingsPage } from "./app/settings-page";
 import { useAppController } from "./app/use-app-controller";
 import { SiteFooter } from "./app/site-footer";
+import { SupportPrompt, SupportPromptThankYou } from "./app/support-prompt";
 import { Helmet } from "./helmet";
 
 function isSettingsRoute() {
@@ -40,6 +41,7 @@ function App() {
     settingsFormVersion,
     showGuidanceNotes,
     showSavedFeedback,
+    supportPrompt,
     visibleSettings,
   } = useAppController();
   const hasTrackedPageViewRef = useRef(false);
@@ -86,12 +88,12 @@ function App() {
 
       {!hasAcknowledgedNotice ? (
         <div
-          className="acknowledgement-overlay"
+          className="app-dialog-overlay acknowledgement-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="acknowledgement-title"
         >
-          <section className="acknowledgement-card">
+          <section className="app-dialog-card acknowledgement-card">
             <p className="eyebrow">Before you continue</p>
             <h2 id="acknowledgement-title">Important information</h2>
             <p className="section-copy">
@@ -132,8 +134,15 @@ function App() {
         </div>
       ) : null}
 
-      <main className="app-shell" aria-hidden={!hasAcknowledgedNotice}>
+      <main
+        className="app-shell"
+        aria-hidden={!hasAcknowledgedNotice || supportPrompt.isOpen}
+      >
         <SavedLocalFeedback show={showSavedFeedback} />
+        <SupportPromptThankYou
+          show={supportPrompt.showThankYouStatus}
+          onDismiss={supportPrompt.dismissThankYouStatus}
+        />
 
         <section className="hero">
           <div className="hero-copy">
@@ -162,6 +171,7 @@ function App() {
 
         <SiteFooter />
       </main>
+      {hasAcknowledgedNotice ? <SupportPrompt prompt={supportPrompt} /> : null}
     </>
   );
 }

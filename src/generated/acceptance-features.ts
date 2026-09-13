@@ -16843,4 +16843,559 @@ export const acceptanceFeatures = [
       },
     ],
   },
+  {
+    path: "features/support-prompt.feature",
+    name: "Voluntary support prompt",
+    description:
+      "The modeller may invite voluntary support after useful results are available,\n  but the modeller remains free and does not infer payment from opening Stripe.",
+    tags: ["@support-prompt"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-7",
+        keyword: "Scenario Outline",
+        name: "Support prompt eligibility uses completed visible Results only",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-8",
+            keyword: "Given",
+            text: "the support prompt has no stored preference",
+          },
+          {
+            id: "line-9",
+            keyword: "When",
+            text: 'support prompt eligibility is checked for step "<step>" with calculation "<calculation>" and document "<visibility>"',
+          },
+          {
+            id: "line-10",
+            keyword: "Then",
+            text: 'the support prompt should be "<eligibility>"',
+          },
+        ],
+        examples: [
+          {
+            id: "line-12",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-13",
+                cells: [
+                  {
+                    id: "line-13-column-9",
+                    value: "step",
+                  },
+                  {
+                    id: "line-13-column-19",
+                    value: "calculation",
+                  },
+                  {
+                    id: "line-13-column-34",
+                    value: "visibility",
+                  },
+                  {
+                    id: "line-13-column-47",
+                    value: "eligibility",
+                  },
+                ],
+              },
+              {
+                id: "line-14",
+                cells: [
+                  {
+                    id: "line-14-column-9",
+                    value: "inputs",
+                  },
+                  {
+                    id: "line-14-column-19",
+                    value: "complete",
+                  },
+                  {
+                    id: "line-14-column-34",
+                    value: "visible",
+                  },
+                  {
+                    id: "line-14-column-47",
+                    value: "ineligible",
+                  },
+                ],
+              },
+              {
+                id: "line-15",
+                cells: [
+                  {
+                    id: "line-15-column-9",
+                    value: "results",
+                  },
+                  {
+                    id: "line-15-column-19",
+                    value: "pending",
+                  },
+                  {
+                    id: "line-15-column-34",
+                    value: "visible",
+                  },
+                  {
+                    id: "line-15-column-47",
+                    value: "ineligible",
+                  },
+                ],
+              },
+              {
+                id: "line-16",
+                cells: [
+                  {
+                    id: "line-16-column-9",
+                    value: "results",
+                  },
+                  {
+                    id: "line-16-column-19",
+                    value: "unavailable",
+                  },
+                  {
+                    id: "line-16-column-34",
+                    value: "visible",
+                  },
+                  {
+                    id: "line-16-column-47",
+                    value: "ineligible",
+                  },
+                ],
+              },
+              {
+                id: "line-17",
+                cells: [
+                  {
+                    id: "line-17-column-9",
+                    value: "results",
+                  },
+                  {
+                    id: "line-17-column-19",
+                    value: "failed",
+                  },
+                  {
+                    id: "line-17-column-34",
+                    value: "visible",
+                  },
+                  {
+                    id: "line-17-column-47",
+                    value: "ineligible",
+                  },
+                ],
+              },
+              {
+                id: "line-18",
+                cells: [
+                  {
+                    id: "line-18-column-9",
+                    value: "results",
+                  },
+                  {
+                    id: "line-18-column-19",
+                    value: "complete",
+                  },
+                  {
+                    id: "line-18-column-34",
+                    value: "hidden",
+                  },
+                  {
+                    id: "line-18-column-47",
+                    value: "ineligible",
+                  },
+                ],
+              },
+              {
+                id: "line-19",
+                cells: [
+                  {
+                    id: "line-19-column-9",
+                    value: "results",
+                  },
+                  {
+                    id: "line-19-column-19",
+                    value: "complete",
+                  },
+                  {
+                    id: "line-19-column-34",
+                    value: "visible",
+                  },
+                  {
+                    id: "line-19-column-47",
+                    value: "eligible",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-21",
+        keyword: "Scenario",
+        name: "The support prompt requires continuous eligible time",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-22",
+            keyword: "Given",
+            text: "the support prompt has no stored preference",
+          },
+          {
+            id: "line-23",
+            keyword: "When",
+            text: "the support prompt becomes eligible",
+          },
+          {
+            id: "line-24",
+            keyword: "And",
+            text: "30 support prompt seconds pass",
+          },
+          {
+            id: "line-25",
+            keyword: "And",
+            text: "the support prompt becomes ineligible",
+          },
+          {
+            id: "line-26",
+            keyword: "And",
+            text: "60 support prompt seconds pass",
+          },
+          {
+            id: "line-27",
+            keyword: "Then",
+            text: "the support prompt delay should not be complete",
+          },
+          {
+            id: "line-28",
+            keyword: "When",
+            text: "the support prompt becomes eligible",
+          },
+          {
+            id: "line-29",
+            keyword: "And",
+            text: "60 support prompt seconds pass",
+          },
+          {
+            id: "line-30",
+            keyword: "Then",
+            text: "the support prompt delay should be complete",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-32",
+        keyword: "Scenario",
+        name: "Local support actions persist the intended hide period",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-33",
+            keyword: "Given",
+            text: "support prompt local storage is available",
+          },
+          {
+            id: "line-34",
+            keyword: "When",
+            text: 'the support prompt action "Buy me a coffee" is saved',
+          },
+          {
+            id: "line-35",
+            keyword: "Then",
+            text: 'the stored support prompt preference should be "snoozed" for "1 week"',
+          },
+          {
+            id: "line-36",
+            keyword: "When",
+            text: 'the support prompt action "Maybe later" is saved',
+          },
+          {
+            id: "line-37",
+            keyword: "Then",
+            text: 'the stored support prompt preference should be "snoozed" for "1 week"',
+          },
+          {
+            id: "line-38",
+            keyword: "When",
+            text: 'the support prompt action "I\'ve already bought you a coffee" is saved',
+          },
+          {
+            id: "line-39",
+            keyword: "Then",
+            text: 'the stored support prompt preference should be "supported" for "6 months"',
+          },
+          {
+            id: "line-40",
+            keyword: "When",
+            text: 'the support prompt action "No thanks - don\'t ask again" is saved',
+          },
+          {
+            id: "line-41",
+            keyword: "Then",
+            text: 'the stored support prompt preference should be "declined" for "1 month"',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-43",
+        keyword: "Scenario Outline",
+        name: "Stored support prompt values fail safely",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-44",
+            keyword: "Given",
+            text: 'support prompt local storage contains "<storedValue>"',
+          },
+          {
+            id: "line-45",
+            keyword: "When",
+            text: "the stored support prompt preference is loaded",
+          },
+          {
+            id: "line-46",
+            keyword: "Then",
+            text: "no stored support prompt preference should load",
+          },
+        ],
+        examples: [
+          {
+            id: "line-48",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-49",
+                cells: [
+                  {
+                    id: "line-49-column-9",
+                    value: "storedValue",
+                  },
+                ],
+              },
+              {
+                id: "line-50",
+                cells: [
+                  {
+                    id: "line-50-column-9",
+                    value: "malformed json",
+                  },
+                ],
+              },
+              {
+                id: "line-51",
+                cells: [
+                  {
+                    id: "line-51-column-9",
+                    value: "snoozed without date",
+                  },
+                ],
+              },
+              {
+                id: "line-52",
+                cells: [
+                  {
+                    id: "line-52-column-9",
+                    value: "supported without date",
+                  },
+                ],
+              },
+              {
+                id: "line-53",
+                cells: [
+                  {
+                    id: "line-53-column-9",
+                    value: "declined without date",
+                  },
+                ],
+              },
+              {
+                id: "line-54",
+                cells: [
+                  {
+                    id: "line-54-column-9",
+                    value: "unknown status",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-56",
+        keyword: "Scenario",
+        name: "Local saving opt-out and clear data remove the support preference",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-57",
+            keyword: "Given",
+            text: "support prompt local storage is available",
+          },
+          {
+            id: "line-58",
+            keyword: "When",
+            text: 'the support prompt action "No thanks - don\'t ask again" is saved',
+          },
+          {
+            id: "line-59",
+            keyword: "And",
+            text: "support prompt local saving is disabled",
+          },
+          {
+            id: "line-60",
+            keyword: "Then",
+            text: "no stored support prompt preference should load",
+          },
+          {
+            id: "line-61",
+            keyword: "When",
+            text: 'the support prompt action "I\'ve already bought you a coffee" is saved',
+          },
+          {
+            id: "line-62",
+            keyword: "Then",
+            text: "no raw support prompt preference should be stored",
+          },
+          {
+            id: "line-63",
+            keyword: "When",
+            text: "support prompt local storage is available",
+          },
+          {
+            id: "line-64",
+            keyword: "And",
+            text: 'the support prompt action "Maybe later" is saved',
+          },
+          {
+            id: "line-65",
+            keyword: "And",
+            text: "stored support prompt data is cleared",
+          },
+          {
+            id: "line-66",
+            keyword: "Then",
+            text: "no stored support prompt preference should load",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-68",
+        keyword: "Scenario",
+        name: "Support prompt analytics events stay coarse",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-69",
+            keyword: "Then",
+            text: "support prompt analytics should define these events:",
+            table: [
+              {
+                id: "line-70",
+                cells: [
+                  {
+                    id: "line-70-column-9",
+                    value: "event",
+                  },
+                ],
+              },
+              {
+                id: "line-71",
+                cells: [
+                  {
+                    id: "line-71-column-9",
+                    value: "support_prompt_shown",
+                  },
+                ],
+              },
+              {
+                id: "line-72",
+                cells: [
+                  {
+                    id: "line-72-column-9",
+                    value: "support_payment_link_selected",
+                  },
+                ],
+              },
+              {
+                id: "line-73",
+                cells: [
+                  {
+                    id: "line-73-column-9",
+                    value: "support_prompt_maybe_later_selected",
+                  },
+                ],
+              },
+              {
+                id: "line-74",
+                cells: [
+                  {
+                    id: "line-74-column-9",
+                    value: "support_prior_support_selected",
+                  },
+                ],
+              },
+              {
+                id: "line-75",
+                cells: [
+                  {
+                    id: "line-75-column-9",
+                    value: "support_prompt_decline_selected",
+                  },
+                ],
+              },
+              {
+                id: "line-76",
+                cells: [
+                  {
+                    id: "line-76-column-9",
+                    value: "support_prompt_dismissed",
+                  },
+                ],
+              },
+              {
+                id: "line-77",
+                cells: [
+                  {
+                    id: "line-77-column-9",
+                    value: "support_payment_returned",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-78",
+            keyword: "Then",
+            text: "support prompt analytics events should not contain financial or Stripe configuration values",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
 ] as const;

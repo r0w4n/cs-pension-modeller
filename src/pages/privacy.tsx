@@ -27,8 +27,8 @@ function PrivacyPage() {
         <h2>What is stored on your device</h2>
         <p className="section-copy">
           The modeller uses your browser&apos;s local storage to remember your
-          inputs, the selected mode, and a few UI preferences on this device
-          only.
+          inputs, the selected mode, a few UI preferences, and any support
+          prompt preference on this device only when local saving is enabled.
         </p>
         <p className="section-copy">
           You can manage this from the{" "}
@@ -44,15 +44,28 @@ function PrivacyPage() {
           Google Analytics is only loaded if you accept analytics in the start
           dialog or turn it on later in Settings. Analytics events are limited
           to coarse interactions, such as selected journey, journey step,
-          changed field identifier, comparison actions, and chart control names.
+          changed field identifier, comparison actions, chart control names, and
+          support prompt impressions or action selections.
         </p>
         <p className="section-copy">
           The app does not send entered amounts, dates, ages, scenario names,
           pension identifiers, or calculated retirement income figures in
-          analytics events.
+          analytics events. Support prompt analytics do not include payment
+          details or the Stripe payment link.
         </p>
         <p className="section-copy">
           You can turn analytics off at any time from the Settings page.
+        </p>
+      </section>
+
+      <section>
+        <h2>Optional support prompt</h2>
+        <p className="section-copy">
+          If local saving is enabled, the app may store whether the voluntary
+          support prompt has been snoozed, declined, or marked as already
+          supported. Stripe is contacted only if you activate the support link
+          and open the Stripe-hosted payment page. Payment information is
+          handled by Stripe and is not collected or stored by the modeller.
         </p>
       </section>
     </StaticPageLayout>

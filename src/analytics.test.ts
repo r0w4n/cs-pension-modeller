@@ -30,6 +30,17 @@ it("does not load Google Analytics without a measurement ID", async () => {
   expect(document.getElementById("google-analytics-script")).toBeNull();
 });
 
+it("keeps support prompt tracking disabled without analytics configuration", async () => {
+  const { trackSupportPromptEvent } =
+    await import("./app/support-prompt-analytics");
+
+  trackSupportPromptEvent("paymentLinkSelected");
+
+  expect(window.gtag).toBeUndefined();
+  expect(window.dataLayer).toBeUndefined();
+  expect(document.getElementById("google-analytics-script")).toBeNull();
+});
+
 it("loads Google Analytics with reporting enabled when configured", async () => {
   vi.stubEnv("VITE_GA_MEASUREMENT_ID", "G-TEST123");
 
@@ -98,9 +109,12 @@ it("does not load or track Google Analytics when configured without consent", as
 
   const { applyAnalyticsConsent, trackAnalyticsEvent } =
     await import("./analytics");
+  const { trackSupportPromptEvent } =
+    await import("./app/support-prompt-analytics");
 
   expect(applyAnalyticsConsent(false)).toBe(false);
   trackAnalyticsEvent("setting_changed", { field_id: "requirementAge" });
+  trackSupportPromptEvent("paymentReturned");
 
   expect(window.gtag).toBeUndefined();
   expect(window.dataLayer).toBeUndefined();

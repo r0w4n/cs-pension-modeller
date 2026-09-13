@@ -26,6 +26,7 @@ const JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
 const COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY =
   "cs-pension-modeller.comparisonRetirementIncomeDisplay";
 const LOCAL_STORAGE_ENABLED_KEY = "cs-pension-modeller.localStorageEnabled";
+const SUPPORT_PROMPT_STORAGE_KEY = "cs-pension-modeller.supportPrompt";
 
 describe("app persistence", () => {
   beforeEach(() => {
@@ -146,6 +147,7 @@ describe("app persistence", () => {
         COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY
       )
     ).toBeNull();
+    expect(window.localStorage.getItem(SUPPORT_PROMPT_STORAGE_KEY)).toBeNull();
   });
 
   it("clears app preferences without removing the local storage preference", () => {
@@ -164,6 +166,13 @@ describe("app persistence", () => {
     window.localStorage.setItem(
       LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY,
       "annual"
+    );
+    window.localStorage.setItem(
+      SUPPORT_PROMPT_STORAGE_KEY,
+      JSON.stringify({
+        status: "declined",
+        nextPromptAt: "2026-10-12T12:00:00.000Z",
+      })
     );
     window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
 
@@ -186,6 +195,7 @@ describe("app persistence", () => {
     expect(
       window.localStorage.getItem(LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY)
     ).toBeNull();
+    expect(window.localStorage.getItem(SUPPORT_PROMPT_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
       "false"
     );

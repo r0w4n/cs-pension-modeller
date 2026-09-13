@@ -121,6 +121,27 @@ async function pageHasAnalyticsDisabled(page: import("@playwright/test").Page) {
   );
 }
 
+async function navigateToJourneyResult(page: import("@playwright/test").Page) {
+  for (let index = 0; index < 20; index += 1) {
+    const resultHeading = page.getByRole("heading", {
+      level: 3,
+      name: "Your results",
+    });
+
+    if (await resultHeading.isVisible().catch(() => false)) {
+      return;
+    }
+
+    await page
+      .getByRole("button", {
+        name: /^(Next|Show my answer|Calculate my plan)$/,
+      })
+      .click();
+  }
+
+  throw new Error("Result step was not reached");
+}
+
 test.describe("production build smoke checks", () => {
   test("serves the main app shell from the built artifact", async ({
     page,
@@ -327,6 +348,79 @@ test.describe("production build smoke checks", () => {
       filterAnalyticsCommands(postClearingInteractionState.commands, "event")
     ).toHaveLength(eventCountAfterClearing);
     expect(scriptUrls).toHaveLength(scriptCountAfterClearing);
+    expect(blockedRealAnalyticsUrls).toHaveLength(0);
+  });
+
+  test("tracks consented support prompt analytics without support or payment details", async ({
+    page,
+  }) => {
+    await page.clock.install({ time: new Date("2026-09-12T12:00:00.000Z") });
+    const { blockedRealAnalyticsUrls, getState } =
+      await interceptAnalyticsRequests(page);
+
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
+    await expect.poll(() => getState().loadedCount).toBe(1);
+
+    await page
+      .getByRole("button", { name: /Simplified retirement journey/i })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "A little about you" })
+    ).toBeVisible();
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("heading", {
+        name: "How your retirement income may change",
+      })
+    ).toBeVisible();
+
+    await page.clock.fastForward(60_000);
+    const supportDialog = page.getByRole("dialog", {
+      name: "Found the modeller useful?",
+    });
+    await expect(supportDialog).toBeVisible();
+    await expect
+      .poll(
+        () =>
+          filterAnalyticsCommands(
+            getState().commands,
+            "event",
+            "support_prompt_shown"
+          ).length
+      )
+      .toBe(1);
+
+    await supportDialog.getByRole("button", { name: "Maybe later" }).click();
+    await expect(supportDialog).toBeHidden();
+    await expect
+      .poll(
+        () =>
+          filterAnalyticsCommands(
+            getState().commands,
+            "event",
+            "support_prompt_maybe_later_selected"
+          ).length
+      )
+      .toBe(1);
+
+    const supportEvents = filterAnalyticsCommands(
+      getState().commands,
+      "event"
+    ).filter(
+      (command) =>
+        typeof command[1] === "string" && command[1].startsWith("support_")
+    );
+
+    for (const command of supportEvents) {
+      expect(command).not.toContain("https://buy.stripe.com");
+      expect(command).not.toContain("bJe00j5KM0tB1qd919fYY01");
+      expect(command).not.toContain("pk_live");
+      expect(command).not.toContain("£");
+      expect(command).not.toContain(5);
+    }
     expect(blockedRealAnalyticsUrls).toHaveLength(0);
   });
 

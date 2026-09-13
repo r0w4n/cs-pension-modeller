@@ -248,6 +248,31 @@ test.describe("accessibility", () => {
     await expectNoAxeViolations(page, "expert taxation chart");
   });
 
+  test("support prompt dialog has no detectable axe violations", async ({
+    page,
+  }) => {
+    await page.clock.install({ time: new Date("2026-09-12T12:00:00.000Z") });
+    await acknowledgeAndOpenMode(page, "simple");
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("heading", {
+        name: "How your retirement income may change",
+      })
+    ).toBeVisible();
+
+    await page.clock.fastForward(60_000);
+    await expect(
+      page.getByRole("dialog", {
+        name: "Found the modeller useful?",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Buy me a coffee" })
+    ).toBeVisible();
+
+    await expectNoAxeViolations(page, "support prompt dialog");
+  });
+
   for (const staticPage of [
     { path: "/settings/", heading: "Settings" },
     { path: "/about/", heading: "About" },
@@ -374,6 +399,27 @@ async function clickNextAndExpectStep(page: Page, heading: string) {
   await expect(
     page.getByRole("heading", { level: 3, name: heading })
   ).toBeVisible();
+}
+
+async function navigateToJourneyResult(page: Page) {
+  for (let index = 0; index < 20; index += 1) {
+    const resultHeading = page.getByRole("heading", {
+      level: 3,
+      name: "Your results",
+    });
+
+    if (await resultHeading.isVisible().catch(() => false)) {
+      return;
+    }
+
+    await page
+      .getByRole("button", {
+        name: /^(Next|Show my answer|Calculate my plan)$/,
+      })
+      .click();
+  }
+
+  throw new Error("Result step was not reached");
 }
 
 async function expectProjectionTableForViewport(

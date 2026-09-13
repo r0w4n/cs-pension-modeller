@@ -51,6 +51,7 @@ import { useProjectionCalculations } from "./use-projection-calculations";
 import { useSavedFeedback } from "./use-saved-feedback";
 import { useUndoShortcut } from "./use-undo-shortcut";
 import { getCachedComparisonResult } from "./comparison-result-cache";
+import { useSupportPrompt } from "./use-support-prompt";
 
 export function useAppController() {
   const [isResultsStepActive, setIsResultsStepActive] = useState(false);
@@ -141,6 +142,14 @@ export function useAppController() {
     calculationEnabled: isResultsStepActive,
     invalidationToken: calculationInvalidationToken,
   });
+  const { viewModel: supportPrompt, reset: resetSupportPrompt } =
+    useSupportPrompt({
+      isResultsStepActive,
+      isProjectionPending,
+      calculationError,
+      retirementPlanResult,
+      localStorageEnabled,
+    });
   const currentComparisonResult = useMemo(() => {
     if (!retirementPlanResult) {
       return null;
@@ -227,6 +236,7 @@ export function useAppController() {
   function resetOpenApplicationAfterLocalDataClear() {
     disableAnalytics();
     clearCalculationState();
+    resetSupportPrompt();
     setCalculationInvalidationToken((current) => current + 1);
     resetApplicationLocalDataState({
       resetSettingsToDefaults,
@@ -303,6 +313,7 @@ export function useAppController() {
     trackAnalyticsEvent("local_data_cleared");
     disableAnalytics();
     clearCalculationState();
+    resetSupportPrompt();
     setCalculationInvalidationToken((current) => current + 1);
     return resetLocalDataState({
       resetSettingsToDefaults,
@@ -465,6 +476,7 @@ export function useAppController() {
     settingsFormVersion,
     showGuidanceNotes,
     showSavedFeedback,
+    supportPrompt,
     updateRetirementIncomeChartParameters,
     updateSetting,
     useDropdownDates,

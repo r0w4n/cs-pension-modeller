@@ -4,6 +4,7 @@ import {
   removeStorageItem,
   writeStorageItem,
 } from "../settings";
+import { clearStoredSupportPromptPreference } from "./support-prompt-storage";
 
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ACKNOWLEDGEMENT_VERSION = "v1";
@@ -144,6 +145,7 @@ export function clearStoredAppPreferences() {
     removeStorageItem(JOURNEY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY),
     removeStorageItem(COMPARISON_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY),
     removeStorageItem(LEGACY_RETIREMENT_INCOME_DISPLAY_STORAGE_KEY),
+    clearStoredSupportPromptPreference(),
   ].every(Boolean);
 }
 

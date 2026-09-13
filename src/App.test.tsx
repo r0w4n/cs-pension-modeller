@@ -575,6 +575,7 @@ const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";
 const ACKNOWLEDGEMENT_STORAGE_KEY = "cs-pension-modeller.acknowledgement";
 const ANALYTICS_CONSENT_STORAGE_KEY = "cs-pension-modeller.analyticsConsent";
+const SUPPORT_PROMPT_STORAGE_KEY = "cs-pension-modeller.supportPrompt";
 
 function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
   return {
@@ -995,6 +996,13 @@ describe.sequential("App settings form", () => {
       SETTINGS_STORAGE_KEY,
       JSON.stringify({ foo: 1 })
     );
+    window.localStorage.setItem(
+      SUPPORT_PROMPT_STORAGE_KEY,
+      JSON.stringify({
+        status: "declined",
+        nextPromptAt: "2026-10-12T12:00:00.000Z",
+      })
+    );
     window.localStorage.setItem("custom-key", "custom-value");
     window.history.pushState({}, "", "/settings/");
 
@@ -1013,6 +1021,7 @@ describe.sequential("App settings form", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Data cleared");
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(SUPPORT_PROMPT_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem("custom-key")).toBeNull();
     expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
       "false"
@@ -1024,6 +1033,13 @@ describe.sequential("App settings form", () => {
     window.localStorage.setItem(ACKNOWLEDGEMENT_STORAGE_KEY, "v1");
     window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, "true");
     window.localStorage.setItem(APP_MODE_STORAGE_KEY, "expert");
+    window.localStorage.setItem(
+      SUPPORT_PROMPT_STORAGE_KEY,
+      JSON.stringify({
+        status: "supported",
+        nextPromptAt: "2027-03-12T12:00:00.000Z",
+      })
+    );
     window.localStorage.setItem("custom-key", "custom-value");
     const clearStorageSpy = vi
       .spyOn(window.localStorage, "clear")
@@ -1042,6 +1058,7 @@ describe.sequential("App settings form", () => {
     );
     expect(screen.getByLabelText("Allow analytics")).not.toBeChecked();
     expect(window.localStorage.getItem("custom-key")).toBe("custom-value");
+    expect(window.localStorage.getItem(SUPPORT_PROMPT_STORAGE_KEY)).toBeNull();
     expect(disableAnalytics).toHaveBeenCalled();
     clearStorageSpy.mockRestore();
   });

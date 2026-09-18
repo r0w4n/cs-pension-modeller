@@ -65,6 +65,7 @@ import {
   calculateMonthlyIncomeTax,
   calculatePensionWithdrawalTaxBreakdown,
   createPensionLumpSumAllowanceState,
+  getProjectionBasisToNominalFactor,
   calculateMonthlyStatePension,
   calculateStatePensionDeferralIncreasePercent,
 } from "../../src/projection";
@@ -521,6 +522,16 @@ Given(
 
 Given(
   "the State Pension projection basis is {string}",
+  function (
+    this: ProductAcceptanceWorld,
+    projectionBasis: PensionSettings["projectionBasis"]
+  ) {
+    updateSettings(this, { projectionBasis });
+  }
+);
+
+Given(
+  "the projection basis is {string}",
   function (
     this: ProductAcceptanceWorld,
     projectionBasis: PensionSettings["projectionBasis"]
@@ -2283,6 +2294,8 @@ Given(
     this.settings = normalizeSettings({
       ...defaults,
       startDate: "2026-06-01",
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
       dateOfBirth: "1970-06-01",
       requirementAge: 60,
       lifeExpectancy: 90,
@@ -2602,9 +2615,16 @@ Then(
       withdrawalRows.length >= 3,
       "Expected at least three coordinated SIPP withdrawals"
     );
+    const nominalTaxFreeCash = withdrawalRows.reduce(
+      (total, row) =>
+        total +
+        (row.monthlyTaxFreePensionCash ?? 0) *
+          getProjectionBasisToNominalFactor(getSettings(this), row.date),
+      0
+    );
+
     expectMoney(withdrawalRows[0]?.monthlyTaxFreePensionCash, 250, 6);
-    expectMoney(withdrawalRows[1]?.monthlyTaxFreePensionCash, 50, 6);
-    expectMoney(withdrawalRows[2]?.monthlyTaxFreePensionCash, 0, 6);
+    expectMoney(nominalTaxFreeCash, 300, 6);
     expectMoney(withdrawalRows.at(-1)?.pensionLumpSumAllowanceRemaining, 0, 6);
   }
 );
@@ -3317,13 +3337,13 @@ Given(
     const settings = getSettings(this);
     this.settings = {
       ...settings,
-      desiredRetirementIncome: settings.currentStatePension - 100,
+      desiredRetirementIncome: 8_000,
       showAdditionalGuaranteedIncome: true,
       additionalGuaranteedIncomes: [
         {
           id: "bdd-other-pension",
           name: "Other pension",
-          annualAmount: settings.currentStatePension + 100,
+          annualAmount: 12_000,
           startAge: settings.requirementAge,
           endAge: null,
           indexation: "none",

@@ -8,6 +8,7 @@ import {
   calculatePensionWithdrawalTaxBreakdown,
   consumePensionLumpSumAllowance,
   createPensionLumpSumAllowanceState,
+  getProjectionBasisToNominalFactor,
   type PensionLumpSumAllowanceState,
 } from "../projection-domains/tax";
 import {
@@ -519,7 +520,8 @@ function preparePensionAllowanceForMonth(
   ) {
     ledger.state = consumePensionLumpSumAllowance(
       ledger.state,
-      row.classicAutomaticLumpSumIncludingReduction
+      row.classicAutomaticLumpSumIncludingReduction,
+      getProjectionBasisToNominalFactor(settings, row.date)
     ).nextState;
     ledger.classicLumpSumConsumed = true;
   }
@@ -530,7 +532,8 @@ function preparePensionAllowanceForMonth(
   ) {
     ledger.state = consumePensionLumpSumAllowance(
       ledger.state,
-      row.classicPlusAutomaticLumpSumIncludingReduction
+      row.classicPlusAutomaticLumpSumIncludingReduction,
+      getProjectionBasisToNominalFactor(settings, row.date)
     ).nextState;
     ledger.classicPlusLumpSumConsumed = true;
   }
@@ -707,6 +710,7 @@ function updateRowPensionWithdrawalTax(
     csAvcWithdrawal: row.monthlyCsAvcPension,
     allowanceState,
     accountOrder: pensionAccountOrder,
+    basisConversionFactor: getProjectionBasisToNominalFactor(person, row.date),
   });
   row.monthlySippTaxableIncome = breakdown.sippTaxable;
   row.monthlyCsAvcTaxableIncome = breakdown.csAvcTaxable;
@@ -767,6 +771,7 @@ function calculateNetWithdrawal(
     csAvcWithdrawal: row.monthlyCsAvcPension,
     allowanceState,
     accountOrder: pensionAccountOrder,
+    basisConversionFactor: getProjectionBasisToNominalFactor(person, row.date),
   });
   const candidateBreakdown = calculatePensionWithdrawalTaxBreakdown({
     settings: person,
@@ -774,6 +779,7 @@ function calculateNetWithdrawal(
     csAvcWithdrawal: account === "csAvc" ? gross : row.monthlyCsAvcPension,
     allowanceState,
     accountOrder: pensionAccountOrder,
+    basisConversionFactor: getProjectionBasisToNominalFactor(person, row.date),
   });
   const currentTaxable =
     currentBreakdown.sippTaxable + currentBreakdown.csAvcTaxable;

@@ -15,7 +15,6 @@ import {
   attachMilestonesToRows,
   buildProjectionRow,
   calculateAddedPensionValues,
-  calculateInvestmentProjectionValues,
   calculateClassicAnnualPension,
   calculateClassicAutomaticLumpSum,
   calculateClassicPlusAnnualPension,
@@ -25,6 +24,10 @@ import {
   calculateStartingAlphaPortionsAtStartDate,
   createHistoricalProjectionRows,
 } from "./row-assembly";
+import { calculateSippProjectionRows } from "./projection-domains/sipp";
+import { calculateCsAvcProjectionRows } from "./projection-domains/cs-avc";
+import { calculateIsaProjectionRows } from "./projection-domains/isa";
+import { calculateLisaProjectionRows } from "./projection-domains/lisa";
 
 export function createProjectionTableBase(
   settings: PensionSettings,
@@ -101,21 +104,51 @@ export function createProjectionTableBase(
   );
   let previousRowDate: string | undefined;
 
-  const projectionRows = generateMonthlyDateRange(
+  const projectionRowDates = generateMonthlyDateRange(
     settings.startDate,
     endDate
-  ).map((rowDate) => {
-    const { sippProjection, csAvcProjection, isaProjection, lisaProjection } =
-      calculateInvestmentProjectionValues({
-        settings,
-        rowDate,
-        endDate,
-        sippDrawDate,
-        csAvcDrawDate,
-        isaDrawDate,
-        lisaDrawDate,
-        active: true,
-      });
+  );
+  const sippProjections = calculateSippProjectionRows({
+    settings,
+    rowDates: projectionRowDates,
+    drawDate: sippDrawDate,
+    endDate,
+  });
+  const csAvcProjections = calculateCsAvcProjectionRows({
+    settings,
+    rowDates: projectionRowDates,
+    drawDate: csAvcDrawDate,
+    endDate,
+  });
+  const isaProjections = calculateIsaProjectionRows({
+    settings,
+    rowDates: projectionRowDates,
+    drawDate: isaDrawDate,
+    endDate,
+  });
+  const lisaProjections = calculateLisaProjectionRows({
+    settings,
+    rowDates: projectionRowDates,
+    drawDate: lisaDrawDate,
+    endDate,
+  });
+  const projectionRows = projectionRowDates.map((rowDate) => {
+    const sippProjection = sippProjections.get(rowDate) ?? {
+      sippPot: 0,
+      monthlySippPension: 0,
+    };
+    const csAvcProjection = csAvcProjections.get(rowDate) ?? {
+      csAvcPot: 0,
+      monthlyCsAvcPension: 0,
+    };
+    const isaProjection = isaProjections.get(rowDate) ?? {
+      isaPot: 0,
+      monthlyIsaPension: 0,
+    };
+    const lisaProjection = lisaProjections.get(rowDate) ?? {
+      lisaPot: 0,
+      monthlyLisaPension: 0,
+    };
     const monthlyStandardAlphaAccrual =
       rowDate <= accrualStopDate
         ? calculateMonthlyStandardAlphaAccrual(settings, rowDate)

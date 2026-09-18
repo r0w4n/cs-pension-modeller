@@ -13,6 +13,7 @@ import {
   calculatePensionWithdrawalTaxBreakdown,
   consumePensionLumpSumAllowance,
   createPensionLumpSumAllowanceState,
+  getProjectionBasisToNominalFactor,
   type PensionLumpSumAllowanceState,
 } from "./tax";
 import { getProjectionTaxYearKey } from "./tax-year";
@@ -61,7 +62,8 @@ export function coordinateFlexibleWithdrawals(
     ) {
       allowanceState = consumePensionLumpSumAllowance(
         allowanceState,
-        row.classicAutomaticLumpSumIncludingReduction
+        row.classicAutomaticLumpSumIncludingReduction,
+        getProjectionBasisToNominalFactor(settings, row.date)
       ).nextState;
       classicLumpSumConsumed = true;
     }
@@ -72,7 +74,8 @@ export function coordinateFlexibleWithdrawals(
     ) {
       allowanceState = consumePensionLumpSumAllowance(
         allowanceState,
-        row.classicPlusAutomaticLumpSumIncludingReduction
+        row.classicPlusAutomaticLumpSumIncludingReduction,
+        getProjectionBasisToNominalFactor(settings, row.date)
       ).nextState;
       classicPlusLumpSumConsumed = true;
     }
@@ -539,6 +542,10 @@ function calculateTaxDetails(input: {
     csAvcWithdrawal: withdrawals.csAvc,
     allowanceState,
     accountOrder: settings.flexibleWithdrawalPriority,
+    basisConversionFactor: getProjectionBasisToNominalFactor(
+      settings,
+      row.date
+    ),
   });
   const taxInput = {
     settings,

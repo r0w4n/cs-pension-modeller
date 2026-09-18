@@ -3,13 +3,15 @@ import {
   type AddedPensionLumpSum,
   type PensionSettings,
 } from "../settings";
-import { calculateAnchoredMonthDifference as calculateWholeMonthDifference } from "../projection-date";
 import {
   LISA_ANNUAL_ALLOWANCE,
   LISA_CONTRIBUTION_STOP_AGE,
   LISA_GOVERNMENT_BONUS_RATE,
 } from "../settings/settings-domains/lisa";
-import { getModelledMonthlyGrowthRate } from "./inflation";
+import {
+  calculateFlexibleFundProjectionAtDate,
+  calculateFlexibleFundProjectionRows,
+} from "./flexible-fund-forward-projection";
 
 type LisaTaxYearContributionTracker = Map<string, number>;
 
@@ -141,6 +143,25 @@ export function calculateLisaProjectionRow(input: {
   };
 }
 
+export function calculateLisaProjectionRows(input: {
+  settings: PensionSettings;
+  rowDates: string[];
+  drawDate: string;
+  endDate: string;
+}) {
+  const projections = calculatePotProjectionRows(input);
+
+  return new Map(
+    [...projections].map(([date, projection]) => [
+      date,
+      {
+        lisaPot: projection.pot,
+        monthlyLisaPension: projection.monthlyWithdrawal,
+      },
+    ])
+  );
+}
+
 function calculatePotProjectionAtDate(input: {
   settings: PensionSettings;
   rowDate: string;
@@ -155,114 +176,32 @@ function calculatePotProjectionAtDate(input: {
   withdrawalPercent: number;
   withdrawalTargetAge: number;
 }) {
-  const {
-    settings,
-    rowDate,
-    drawDate,
-    endDate,
-    showPot,
-    currentPot,
-    monthlyContribution,
-    lumpSums,
-    realInterestPercent,
-    withdrawalStrategy,
-    withdrawalPercent,
-    withdrawalTargetAge,
-  } = input;
-
-  if (!showPot || rowDate < settings.startDate) {
-    return {
-      pot: 0,
-      potBeforeWithdrawal: 0,
-      monthlyWithdrawal: 0,
-    };
-  }
-
-  const monthlyInterestRate = getModelledMonthlyGrowthRate(
-    settings,
-    realInterestPercent / 100
-  );
-  const projectionMonthCount = calculateWholeMonthDifference(
-    settings.startDate,
-    rowDate
-  );
-  const withdrawalEndDate =
-    withdrawalStrategy === "use_by_age"
-      ? addYears(settings.dateOfBirth, withdrawalTargetAge)
-      : endDate;
-  const contributionStopDate = getLisaContributionStopDate(settings, drawDate);
   const taxYearContributions: LisaTaxYearContributionTracker = new Map();
-  let pot = currentPot;
-  let monthlyWithdrawal = 0;
-  let potBeforeWithdrawal = currentPot;
-  let levelUseByAgeMonthlyWithdrawal: number | undefined;
-  let previousProjectionMonthDate: string | undefined;
 
-  for (
-    let monthIndex = 0;
-    monthIndex <= projectionMonthCount;
-    monthIndex += 1
-  ) {
-    const projectionMonthDate = addMonths(settings.startDate, monthIndex);
-
-    if (monthIndex > 0) {
-      pot *= 1 + monthlyInterestRate;
-    }
-
-    if (projectionMonthDate < contributionStopDate) {
-      pot += calculateLisaContributionWithBonus({
+  return calculateFlexibleFundProjectionAtDate({
+    ...input,
+    contributionStopDate: getLisaContributionStopDate(
+      input.settings,
+      input.drawDate
+    ),
+    calculateRegularContributionWithAdditions: ({ amount, contributionDate }) =>
+      calculateLisaContributionWithBonus({
         amount:
-          monthlyContribution *
+          amount *
           getPartialRetirementSavingsContributionMultiplier(
-            settings,
-            projectionMonthDate
+            input.settings,
+            contributionDate
           ),
-        contributionDate: projectionMonthDate,
+        contributionDate,
         taxYearContributions,
-      });
-    }
-    pot += calculateScheduledLisaLumpSums({
-      lumpSums,
-      previousRowDate: previousProjectionMonthDate,
-      rowDate: projectionMonthDate,
-      latestPaymentDateExclusive: contributionStopDate,
-      taxYearContributions,
-    });
-    potBeforeWithdrawal = pot;
-
-    if (projectionMonthDate >= drawDate) {
-      if (withdrawalStrategy === "use_by_age") {
-        levelUseByAgeMonthlyWithdrawal ??=
-          calculateLevelMonthlyWithdrawalFromPot({
-            pot,
-            rowDate: projectionMonthDate,
-            endDate: withdrawalEndDate,
-            monthlyInterestRate,
-          });
-        monthlyWithdrawal = Math.min(pot, levelUseByAgeMonthlyWithdrawal);
-      } else {
-        monthlyWithdrawal = calculateMonthlyWithdrawalFromPot({
-          pot,
-          rowDate: projectionMonthDate,
-          drawDate,
-          endDate: withdrawalEndDate,
-          strategy: withdrawalStrategy,
-          withdrawalPercent,
-        });
-      }
-    } else {
-      monthlyWithdrawal = 0;
-    }
-    pot = Math.max(0, pot - monthlyWithdrawal);
-
-    previousProjectionMonthDate = projectionMonthDate;
-  }
-
-  return {
-    pot,
-    potBeforeWithdrawal,
-    monthlyWithdrawal,
-  };
+      }),
+    calculateLumpSumContributionWithAdditions: ({ amount, contributionDate }) =>
+      calculateLisaContributionWithBonus({
+        amount,
+        contributionDate,
+        taxYearContributions,
+      }),
+  });
 }
 
 function calculateLisaContributionWithBonus(input: {
@@ -291,91 +230,6 @@ function calculateLisaContributionWithBonus(input: {
   return eligibleContribution * (1 + LISA_GOVERNMENT_BONUS_RATE);
 }
 
-function calculateMonthlyWithdrawalFromPot(input: {
-  pot: number;
-  rowDate: string;
-  drawDate: string;
-  endDate: string;
-  strategy: PensionSettings["lisaWithdrawalStrategy"];
-  withdrawalPercent: number;
-}) {
-  const { pot, rowDate, drawDate, endDate, strategy, withdrawalPercent } =
-    input;
-
-  if (pot <= 0 || rowDate < drawDate) {
-    return 0;
-  }
-
-  if (strategy === "meet_income_target") {
-    return 0;
-  }
-
-  if (strategy === "percentage") {
-    return Math.min(pot, (pot * (withdrawalPercent / 100)) / 12);
-  }
-
-  const drawdownMonthsRemaining =
-    strategy === "use_by_age" || strategy === "zero_at_death"
-      ? countScheduledWithdrawalDatesRemaining(rowDate, endDate, {
-          includeEndDate: strategy !== "use_by_age",
-        })
-      : Math.max(1, calculateWholeMonthDifference(rowDate, endDate));
-
-  return Math.min(pot, pot / drawdownMonthsRemaining);
-}
-
-function calculateLevelMonthlyWithdrawalFromPot(input: {
-  pot: number;
-  rowDate: string;
-  endDate: string;
-  monthlyInterestRate: number;
-}) {
-  const { pot, rowDate, endDate, monthlyInterestRate } = input;
-  const drawdownMonthsRemaining = countScheduledWithdrawalDatesRemaining(
-    rowDate,
-    endDate,
-    { includeEndDate: false }
-  );
-
-  if (pot <= 0) {
-    return 0;
-  }
-
-  if (Math.abs(monthlyInterestRate) < 0.0000000001) {
-    return pot / drawdownMonthsRemaining;
-  }
-
-  const discountFactor = 1 / (1 + monthlyInterestRate);
-  const annuityDueFactor =
-    (1 - discountFactor ** drawdownMonthsRemaining) / (1 - discountFactor);
-
-  return annuityDueFactor > 0
-    ? pot / annuityDueFactor
-    : pot / drawdownMonthsRemaining;
-}
-
-function countScheduledWithdrawalDatesRemaining(
-  rowDate: string,
-  endDate: string,
-  options: { includeEndDate?: boolean } = {}
-) {
-  const includeEndDate = options.includeEndDate ?? true;
-
-  if (endDate < rowDate) {
-    return 1;
-  }
-
-  const wholeMonths = calculateWholeMonthDifference(rowDate, endDate);
-  const lastScheduledDate = addMonths(rowDate, wholeMonths);
-  const lastScheduledDateIsInRange = includeEndDate
-    ? lastScheduledDate <= endDate
-    : lastScheduledDate < endDate;
-
-  return lastScheduledDateIsInRange
-    ? wholeMonths + 1
-    : Math.max(1, wholeMonths);
-}
-
 function getLisaContributionStopDate(
   settings: PensionSettings,
   drawDate: string
@@ -386,56 +240,6 @@ function getLisaContributionStopDate(
       addYears(settings.dateOfBirth, settings.requirementAge)
     ),
     addYears(settings.dateOfBirth, LISA_CONTRIBUTION_STOP_AGE)
-  );
-}
-
-function calculateScheduledLisaLumpSums(input: {
-  lumpSums: AddedPensionLumpSum[];
-  previousRowDate?: string;
-  rowDate: string;
-  latestPaymentDateExclusive: string;
-  taxYearContributions: LisaTaxYearContributionTracker;
-}) {
-  const {
-    lumpSums,
-    previousRowDate,
-    rowDate,
-    latestPaymentDateExclusive,
-    taxYearContributions,
-  } = input;
-
-  return lumpSums.reduce((total, lumpSum) => {
-    const matchingPaymentDates = getScheduledPaymentDatesThroughRow(
-      lumpSum,
-      previousRowDate,
-      rowDate
-    ).filter((paymentDate) => paymentDate < latestPaymentDateExclusive);
-
-    return (
-      total +
-      matchingPaymentDates.reduce(
-        (sum, paymentDate) =>
-          sum +
-          calculateLisaContributionWithBonus({
-            amount: lumpSum.amount,
-            contributionDate: paymentDate,
-            taxYearContributions,
-          }),
-        0
-      )
-    );
-  }, 0);
-}
-
-function getScheduledPaymentDatesThroughRow(
-  lumpSum: AddedPensionLumpSum,
-  previousRowDate: string | undefined,
-  rowDate: string
-) {
-  return getScheduledPaymentDates(lumpSum).filter(
-    (scheduledDate) =>
-      scheduledDate <= rowDate &&
-      (!previousRowDate || scheduledDate > previousRowDate)
   );
 }
 
@@ -491,4 +295,49 @@ function formatIsoDate(date: Date) {
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+}
+
+function calculatePotProjectionRows(input: {
+  settings: PensionSettings;
+  rowDates: string[];
+  drawDate: string;
+  endDate: string;
+}) {
+  const taxYearContributions: LisaTaxYearContributionTracker = new Map();
+
+  return calculateFlexibleFundProjectionRows({
+    settings: input.settings,
+    rowDates: input.rowDates,
+    drawDate: input.drawDate,
+    endDate: input.endDate,
+    showPot: input.settings.showLisa,
+    currentPot: input.settings.lisaCurrentPot,
+    monthlyContribution: input.settings.lisaMonthlyContribution,
+    lumpSums: input.settings.lisaLumpSums,
+    realInterestPercent: input.settings.lisaRealInterestPercent,
+    withdrawalStrategy: input.settings.lisaWithdrawalStrategy,
+    withdrawalPercent: input.settings.lisaWithdrawalPercent,
+    withdrawalTargetAge: input.settings.lisaWithdrawalTargetAge,
+    contributionStopDate: getLisaContributionStopDate(
+      input.settings,
+      input.drawDate
+    ),
+    calculateRegularContributionWithAdditions: ({ amount, contributionDate }) =>
+      calculateLisaContributionWithBonus({
+        amount:
+          amount *
+          getPartialRetirementSavingsContributionMultiplier(
+            input.settings,
+            contributionDate
+          ),
+        contributionDate,
+        taxYearContributions,
+      }),
+    calculateLumpSumContributionWithAdditions: ({ amount, contributionDate }) =>
+      calculateLisaContributionWithBonus({
+        amount,
+        contributionDate,
+        taxYearContributions,
+      }),
+  });
 }

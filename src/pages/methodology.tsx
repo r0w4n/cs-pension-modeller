@@ -897,9 +897,14 @@ export function MethodologyPage() {
           Regular SIPP contributions and scheduled lump sums are included until
           the earlier of the SIPP draw date and target retirement age. If tax
           relief is selected, the model grosses up net additions by 1 / 0.8 for
-          basic-rate relief or 1 / 0.6 for higher-rate relief. Partial
-          retirement can reduce future regular contributions from the
-          partial-retirement start date.
+          basic-rate relief or 1 / 0.6 for higher-rate relief. The higher-rate
+          option preserves existing saved-plan meaning: it treats the entered
+          amount as the ultimate net cost after all modelled relief and assumes
+          the extra relief is effectively reinvested in the pot. For a
+          relief-at-source SIPP, providers normally add basic-rate relief to the
+          payment made to them; any higher-rate relief depends on eligibility
+          and is claimed separately. Partial retirement can reduce future
+          regular contributions from the partial-retirement start date.
         </p>
         <p className="section-copy">
           The model supports different withdrawal approaches, including:
@@ -1260,7 +1265,11 @@ export function MethodologyPage() {
           The model includes a simplified 2026/27 UK Income Tax estimate for
           pension income and enables it for new plans by default. The selected
           regime is applied unchanged throughout the projection; the model does
-          not forecast future tax policy or uprate tax bands.
+          not forecast future tax policy or uprate tax bands. Tax thresholds are
+          treated as fixed nominal 2026/27 amounts. In real-terms projections,
+          taxable row amounts are converted to nominal-equivalent money for the
+          liability estimate, then the allocated monthly tax is converted back
+          to real terms for display and target comparison.
         </p>
         <p className="section-copy">Taxable income may include:</p>
         <ul className="section-copy">
@@ -1335,7 +1344,11 @@ export function MethodologyPage() {
           that balance for modelled classic and classic plus automatic lump
           sums, then for tax-free SIPP and CS AVC cash in the selected funding
           order. Once the balance is exhausted, later SIPP and CS AVC
-          withdrawals are taxable. The usual standard allowance is £
+          withdrawals are taxable. The allowance balance is kept in nominal
+          pounds. In real-terms projections, tax-free cash is converted to
+          nominal pounds before reducing the allowance, then converted back to
+          real terms for row-level income and tax outputs. The usual standard
+          allowance is £
           {PENSION_WITHDRAWAL_TAX_RULES.standardLumpSumAllowance.toLocaleString(
             "en-GB"
           )}

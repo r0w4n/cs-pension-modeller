@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateCsAvcPotAtDate,
+  calculateCsAvcProjectionRows,
   calculateMonthlyCsAvcPension,
   calculateTotalCsAvcContributions,
 } from "./cs-avc";
@@ -109,5 +110,28 @@ describe("projection CS AVC domain", () => {
         withdrawalPercent: 4,
       })
     ).toBeCloseTo(400, 6);
+  });
+
+  it("preserves month-end anchor state for dates before the next scheduled month", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-01-31",
+      dateOfBirth: "1986-01-31",
+      inflationRateAnnual: 0,
+      showCsAvc: true,
+      csAvcCurrentPot: 0,
+      csAvcMonthlyContribution: 100,
+      csAvcRealInterestPercent: 0,
+    };
+    const rows = calculateCsAvcProjectionRows({
+      settings,
+      rowDates: ["2026-02-28", "2026-03-15", "2026-03-31"],
+      drawDate: "2046-01-31",
+      endDate: "2046-01-31",
+    });
+
+    expect(rows.get("2026-02-28")?.csAvcPot).toBe(200);
+    expect(rows.get("2026-03-15")?.csAvcPot).toBe(200);
+    expect(rows.get("2026-03-31")?.csAvcPot).toBe(300);
   });
 });

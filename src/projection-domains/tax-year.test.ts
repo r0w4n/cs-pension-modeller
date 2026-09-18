@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defaultSettings } from "../settings";
 import {
   calculateTaxYearIncomeTaxAllocation,
+  calculateTaxYearEffectiveRatesForEntries,
   getProjectionTaxYearKey,
   getRemainingMonthsInTaxYear,
 } from "./tax-year";
@@ -13,7 +14,11 @@ describe("projection tax-year domain", () => {
   });
 
   it("applies one Personal Allowance to the modeled income in a tax year", () => {
-    const settings = { ...defaultSettings, taxationEnabled: true };
+    const settings = {
+      ...defaultSettings,
+      projectionBasis: "nominal" as const,
+      taxationEnabled: true,
+    };
     const entries = Array.from({ length: 12 }, (_, index) => ({
       date:
         index < 9
@@ -35,7 +40,11 @@ describe("projection tax-year domain", () => {
         { date: "2027-02-15", taxableIncome: 4_000 },
         { date: "2027-03-15", taxableIncome: 4_000 },
       ],
-      { ...defaultSettings, taxationEnabled: true }
+      {
+        ...defaultSettings,
+        projectionBasis: "nominal" as const,
+        taxationEnabled: true,
+      }
     );
 
     expect([...allocation.values()].reduce((sum, tax) => sum + tax, 0)).toBe(0);
@@ -49,6 +58,7 @@ describe("projection tax-year domain", () => {
       ],
       {
         ...defaultSettings,
+        projectionBasis: "nominal" as const,
         taxationEnabled: true,
         taxPersonalAllowance: 0,
       }
@@ -72,6 +82,7 @@ describe("projection tax-year domain", () => {
     ];
     const allocation = calculateTaxYearIncomeTaxAllocation(entries, {
       ...defaultSettings,
+      projectionBasis: "nominal" as const,
       taxationEnabled: true,
     });
 
@@ -89,7 +100,11 @@ describe("projection tax-year domain", () => {
         { date: "2026-05-15", taxableIncome: 4_000 },
         { date: "2026-06-15", taxableIncome: 4_000 },
       ],
-      { ...defaultSettings, taxationEnabled: true }
+      {
+        ...defaultSettings,
+        projectionBasis: "nominal" as const,
+        taxationEnabled: true,
+      }
     );
 
     expect(getRemainingMonthsInTaxYear("2026-06-15")).toBe(9);
@@ -99,4 +114,102 @@ describe("projection tax-year domain", () => {
       [...allocation.values()].reduce((sum, tax) => sum + tax, 0)
     ).toBeCloseTo(1_771.5, 6);
   });
+
+  it("applies fixed nominal tax thresholds consistently in real and nominal projection bases", () => {
+    const realSettings = {
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      projectionBasis: "real" as const,
+      inflationRateAnnual: 2.5,
+      taxationEnabled: true,
+    };
+    const nominalSettings = {
+      ...realSettings,
+      projectionBasis: "nominal" as const,
+    };
+    const realEntries = createTaxYearEntries("2046", 2_500);
+    const nominalEntries = realEntries.map((entry) => ({
+      ...entry,
+      taxableIncome:
+        entry.taxableIncome * getInflationFactor(realSettings, entry.date),
+    }));
+    const realAllocation = calculateTaxYearIncomeTaxAllocation(
+      realEntries,
+      realSettings
+    );
+    const nominalAllocation = calculateTaxYearIncomeTaxAllocation(
+      nominalEntries,
+      nominalSettings
+    );
+
+    for (const entry of realEntries) {
+      expect(realAllocation.get(entry.date)).toBeCloseTo(
+        (nominalAllocation.get(entry.date) ?? 0) /
+          getInflationFactor(realSettings, entry.date),
+        6
+      );
+    }
+  });
+
+  it("uses nominal-equivalent employment context and terminal continuation for real projections", () => {
+    const settings = {
+      ...defaultSettings,
+      startDate: "2026-04-01",
+      projectionBasis: "real" as const,
+      inflationRateAnnual: 2.5,
+      taxationEnabled: true,
+    };
+    const entries = [
+      {
+        date: "2046-04-15",
+        taxableIncome: 1_000,
+        taxableIncomeContext: 3_000,
+      },
+      { date: "2046-05-15", taxableIncome: 1_000 },
+    ];
+    const nominalEntries = entries.map((entry) => ({
+      ...entry,
+      taxableIncome:
+        entry.taxableIncome * getInflationFactor(settings, entry.date),
+      taxableIncomeContext:
+        (entry.taxableIncomeContext ?? 0) *
+        getInflationFactor(settings, entry.date),
+    }));
+    const realRates = calculateTaxYearEffectiveRatesForEntries(
+      entries,
+      settings
+    );
+    const nominalRates = calculateTaxYearEffectiveRatesForEntries(
+      nominalEntries,
+      { ...settings, projectionBasis: "nominal" as const }
+    );
+
+    expect(realRates.get("2046-2047")).toBeCloseTo(
+      nominalRates.get("2046-2047") ?? 0,
+      12
+    );
+  });
 });
+
+function createTaxYearEntries(year: string, monthlyTaxableIncome: number) {
+  return [
+    ...Array.from({ length: 9 }, (_, index) => ({
+      date: `${year}-${String(index + 4).padStart(2, "0")}-15`,
+      taxableIncome: monthlyTaxableIncome,
+    })),
+    ...Array.from({ length: 3 }, (_, index) => ({
+      date: `${Number(year) + 1}-${String(index + 1).padStart(2, "0")}-15`,
+      taxableIncome: monthlyTaxableIncome,
+    })),
+  ];
+}
+
+function getInflationFactor(settings: typeof defaultSettings, rowDate: string) {
+  const start = new Date(`${settings.startDate}T00:00:00Z`);
+  const row = new Date(`${rowDate}T00:00:00Z`);
+  const months =
+    (row.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+    (row.getUTCMonth() - start.getUTCMonth());
+
+  return (1 + settings.inflationRateAnnual / 100) ** (months / 12);
+}

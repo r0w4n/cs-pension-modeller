@@ -106,6 +106,8 @@ describe("retirement plan assessment", () => {
       ...createIsaOnlySettings({ isaCurrentPot: 0 }),
       requirementAge: 60,
       lifeExpectancy: 61,
+      projectionBasis: "nominal" as const,
+      inflationRateAnnual: 0,
       desiredRetirementIncome: 9000,
       retirementIncomeTargetBasis: "after_tax" as const,
       taxationEnabled: true,

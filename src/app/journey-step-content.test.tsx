@@ -1304,6 +1304,8 @@ function createViewModel(): JourneyStepViewModel {
       largestAnnualAvoidableSurplus: 0,
     },
     targetBasedWithdrawalPreviews: [],
+    isTargetBasedWithdrawalPreviewPending: false,
+    targetBasedWithdrawalPreviewError: false,
     projectionRows: [],
     retirementIncomeDisplay: "monthly",
     incomeAgeRangeItems: [],
@@ -1318,6 +1320,7 @@ function createViewModel(): JourneyStepViewModel {
     onLoadScenario: vi.fn(),
     onRetirementIncomeDisplayChange: vi.fn(),
     onComparisonRetirementIncomeDisplayChange: vi.fn(),
+    onRetryTargetBasedWithdrawalPreviews: vi.fn(),
   };
 }
 

@@ -61,7 +61,13 @@ export function calculateAdditionalGuaranteedIncomeStreamForDate(input: {
   }
 
   if (income.indexation === "none") {
-    return income.annualAmount;
+    return calculateFixedIncreaseIncome({
+      amount: income.annualAmount,
+      fixedIncreasePercent: 0,
+      settings,
+      startDate,
+      rowDate,
+    });
   }
 
   if (income.indexation === "cpi") {
@@ -77,7 +83,23 @@ export function calculateAdditionalGuaranteedIncomeStreamForDate(input: {
     );
   }
 
-  const fixedIncreasePercent = income.fixedIncreasePercent ?? 0;
+  return calculateFixedIncreaseIncome({
+    amount: income.annualAmount,
+    fixedIncreasePercent: income.fixedIncreasePercent ?? 0,
+    settings,
+    startDate,
+    rowDate,
+  });
+}
+
+function calculateFixedIncreaseIncome(input: {
+  amount: number;
+  fixedIncreasePercent: number;
+  settings: PensionSettings;
+  startDate: string;
+  rowDate: string;
+}) {
+  const { amount, fixedIncreasePercent, settings, startDate, rowDate } = input;
   const fixedRate =
     settings.projectionBasis === "real"
       ? calculateRealAnnualRate(
@@ -86,12 +108,7 @@ export function calculateAdditionalGuaranteedIncomeStreamForDate(input: {
         )
       : fixedIncreasePercent / 100;
 
-  return applyWholeYearGrowth(
-    income.annualAmount,
-    fixedRate,
-    startDate,
-    rowDate
-  );
+  return applyWholeYearGrowth(amount, fixedRate, startDate, rowDate);
 }
 
 function applyMonthlyGrowth(

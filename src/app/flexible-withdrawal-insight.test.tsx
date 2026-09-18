@@ -64,4 +64,59 @@ describe("FlexibleWithdrawalInsightPanel", () => {
     );
     expect(onApply).toHaveBeenCalledWith("isa");
   });
+
+  it("announces pending preview calculations", () => {
+    render(
+      <FlexibleWithdrawalInsightPanel
+        summary={createSummary()}
+        previews={[]}
+        isPreviewPending
+        onApplyTargetBasedStrategy={vi.fn()}
+        onReviewStrategy={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Previewing target-based withdrawals"
+    );
+  });
+
+  it("offers a retry when preview calculation fails", () => {
+    const onRetry = vi.fn();
+
+    render(
+      <FlexibleWithdrawalInsightPanel
+        summary={createSummary()}
+        previews={[]}
+        previewError
+        onApplyTargetBasedStrategy={vi.fn()}
+        onReviewStrategy={vi.fn()}
+        onRetryPreview={onRetry}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry preview" }));
+
+    expect(screen.getByText("Preview needs recalculating")).toBeInTheDocument();
+    expect(onRetry).toHaveBeenCalled();
+  });
 });
+
+function createSummary() {
+  return {
+    accounts: [
+      {
+        accountId: "isa" as const,
+        label: "ISA",
+        affectedAges: [65],
+        reducibleGrossWithdrawal: 12_000,
+        avoidableNetSurplus: 12_000,
+      },
+    ],
+    residualAccounts: [],
+    affectedAges: [65],
+    totalReducibleGrossWithdrawal: 12_000,
+    totalAvoidableNetSurplus: 12_000,
+    largestAnnualAvoidableSurplus: 12_000,
+  };
+}

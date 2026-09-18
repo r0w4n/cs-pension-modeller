@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateLisaPotAtDate,
+  calculateLisaProjectionRows,
   calculateTotalLisaContributionsWithBonus,
 } from "./lisa";
 import { defaultSettings, type PensionSettings } from "../settings";
@@ -116,5 +117,27 @@ describe("projection lisa domain", () => {
         drawDate: "2046-04-06",
       })
     ).toBe(10_000);
+  });
+
+  it("keeps leap-year anchored state until the next scheduled contribution date", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2028-02-29",
+      dateOfBirth: "1988-02-29",
+      projectionBasis: "nominal",
+      showLisa: true,
+      lisaCurrentPot: 0,
+      lisaMonthlyContribution: 100,
+      lisaRealInterestPercent: 0,
+    };
+    const rows = calculateLisaProjectionRows({
+      settings,
+      rowDates: ["2028-03-15", "2028-03-29"],
+      drawDate: "2048-02-29",
+      endDate: "2048-02-29",
+    });
+
+    expect(rows.get("2028-03-15")?.lisaPot).toBe(125);
+    expect(rows.get("2028-03-29")?.lisaPot).toBe(250);
   });
 });

@@ -175,9 +175,13 @@ Some important assumptions and simplifications are:
 - New State Pension deferral uses the post-2016 rule modelled by the app.
 - ISA, LISA and SIPP projections depend directly on entered balances,
   contributions, lump sums, growth assumptions, draw ages, and withdrawal
-  strategy. LISA additions are capped at the modelled Lifetime ISA annual
-  allowance, receive the modelled government bonus on eligible additions, stop
-  at age 50, and are modelled for retirement withdrawals from age 60.
+  strategy. SIPP tax relief grosses up the entered net cost; the higher-rate
+  option models the ultimate net cost after claimed relief with the extra
+  relief effectively reinvested, rather than only the payment sent to a
+  relief-at-source provider. LISA additions are capped at the modelled Lifetime
+  ISA annual allowance, receive the modelled government bonus on eligible
+  additions, stop at age 50, and are modelled for retirement withdrawals from
+  age 60.
 - Income Tax is enabled for new plans by default and uses the selected 2026/27
   regime throughout the projection. The retirement income target represents
   money available to spend after estimated Income Tax, so it is compared with
@@ -185,18 +189,25 @@ Some important assumptions and simplifications are:
   Scottish pension income uses the published starter, basic, intermediate,
   higher, advanced and top bands. Modelled taxable income is grouped into
   April-to-March years and one annual liability is allocated across taxable
-  rows; this is not PAYE deduction forecasting. New plans track the selected
-  shared pension lump-sum allowance across modelled classic, classic plus, SIPP
-  and CS AVC benefits, while migrated plans retain their previous untracked
-  behavior. Before retirement, the entered full salary is used only as tax-rate
-  context and is not added to the retirement-income chart. Reduced-hours
-  employment during partial retirement is included in both income and tax. In
-  the final partial tax year, the last modelled taxable monthly income is
-  assumed to continue to the following 5 April for tax-rate context only; this
-  does not extend the cash-flow projection. The estimate does not cover every
-  personal tax circumstance, employment income that differs from the entered
-  salary assumption, future tax-year changes, tax-code adjustments, savings or
-  dividend income, annual-allowance charges, or benefit interactions.
+  rows; this is not PAYE deduction forecasting. The tax thresholds are treated
+  as fixed nominal 2026/27 amounts. In real-terms projections, taxable row
+  amounts are converted to their nominal equivalents for the liability estimate
+  and the allocated tax is converted back to real terms for display. New plans
+  track the selected shared pension lump-sum allowance across modelled classic,
+  classic plus, SIPP and CS AVC benefits. The allowance ledger is held in
+  nominal pounds; real-terms projections convert tax-free cash to nominal
+  pounds for allowance consumption and back to real terms for row-level income
+  and tax outputs. Migrated plans retain their previous untracked behavior.
+  Before retirement, the entered full salary is
+  used only as tax-rate context and is not added to the retirement-income chart.
+  Reduced-hours employment during partial retirement is included in both income
+  and tax. In the final partial tax year, the last modelled taxable monthly
+  income is assumed to continue to the following 5 April for tax-rate context
+  only; this does not extend the cash-flow projection. The estimate does not
+  cover every personal tax circumstance, employment income that differs from the
+  entered salary assumption, future tax-year changes, tax-code adjustments,
+  savings or dividend income, annual-allowance charges, or benefit
+  interactions.
 - In Expert two-person mode, each person is modelled as a separate taxpayer
   with their own Personal Allowance and pension lump-sum allowance ledger.
   Household income is assessed against one shared after-tax spending target;

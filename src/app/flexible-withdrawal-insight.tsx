@@ -6,13 +6,19 @@ import type { FlexibleFundAccountId } from "../settings";
 export function FlexibleWithdrawalInsightPanel({
   summary,
   previews,
+  isPreviewPending = false,
+  previewError = false,
   onApplyTargetBasedStrategy,
   onReviewStrategy,
+  onRetryPreview,
 }: {
   summary: FlexibleWithdrawalSummary;
   previews: TargetBasedWithdrawalPreview[];
+  isPreviewPending?: boolean;
+  previewError?: boolean;
   onApplyTargetBasedStrategy: (accountId: FlexibleFundAccountId) => void;
   onReviewStrategy: (accountId: FlexibleFundAccountId) => void;
+  onRetryPreview?: () => void;
 }) {
   if (summary.accounts.length === 0) {
     return null;
@@ -76,6 +82,31 @@ export function FlexibleWithdrawalInsightPanel({
         is not silently placed back into an ISA, LISA, SIPP or Civil Service
         AVC.
       </p>
+      {isPreviewPending ? (
+        <p className="section-copy" role="status">
+          Previewing target-based withdrawals…
+        </p>
+      ) : null}
+      {previewError ? (
+        <div className="summary-outcome-banner summary-outcome-banner--atRisk">
+          <div className="summary-outcome-status">
+            Preview needs recalculating
+          </div>
+          <p>
+            The main projection is still available, but the target-based
+            withdrawal preview could not be calculated.
+          </p>
+          {onRetryPreview ? (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onRetryPreview}
+            >
+              Retry preview
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flexible-withdrawal-account-insights">
         {summary.accounts.map((account) => {

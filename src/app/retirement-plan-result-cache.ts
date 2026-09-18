@@ -1,5 +1,6 @@
 import {
   calculateRetirementPlan,
+  type RetirementPlanCalculationOptions,
   type RetirementPlanResult,
 } from "../calculation/retirement-plan";
 import type { PensionSettings } from "../settings";
@@ -12,16 +13,19 @@ export function getCachedRetirementPlanResult({
   settings,
   cache,
   precomputedPlan,
+  options,
 }: {
   settings: PensionSettings;
   cache?: RetirementPlanResultCache;
   precomputedPlan?: RetirementPlanResult;
+  options?: RetirementPlanCalculationOptions;
 }) {
-  const settingsSignature = JSON.stringify(settings);
+  const settingsSignature = getRetirementPlanCacheKey(settings, options);
+  const planSettingsSignature = JSON.stringify(settings);
 
   if (
     precomputedPlan &&
-    JSON.stringify(precomputedPlan.settings) === settingsSignature
+    JSON.stringify(precomputedPlan.settings) === planSettingsSignature
   ) {
     cacheRetirementPlanResult(cache, settingsSignature, precomputedPlan);
     return precomputedPlan;
@@ -33,9 +37,23 @@ export function getCachedRetirementPlanResult({
     return cachedPlan;
   }
 
-  const plan = calculateRetirementPlan(settings);
+  const plan = calculateRetirementPlan(settings, options);
   cacheRetirementPlanResult(cache, settingsSignature, plan);
   return plan;
+}
+
+export function getRetirementPlanCacheKey(
+  settings: PensionSettings,
+  options: RetirementPlanCalculationOptions = {}
+) {
+  if (options.includeTargetBasedWithdrawalPreviews !== false) {
+    return JSON.stringify(settings);
+  }
+
+  return JSON.stringify({
+    settings,
+    includeTargetBasedWithdrawalPreviews: false,
+  });
 }
 
 function cacheRetirementPlanResult(

@@ -21,6 +21,151 @@ function createBaseSettings(
 }
 
 describe("additional guaranteed income calculations", () => {
+  function createIncome(
+    patch: Partial<
+      Parameters<
+        typeof calculateAdditionalGuaranteedIncomeStreamForDate
+      >[0]["income"]
+    > = {}
+  ) {
+    return {
+      id: "income",
+      name: "Additional income",
+      annualAmount: 30_000,
+      startAge: 59,
+      endAge: null,
+      indexation: "none" as const,
+      fixedIncreasePercent: null,
+      taxable: true,
+      ...patch,
+    };
+  }
+
+  it("treats no increase and fixed 0% equivalently in real terms", () => {
+    const settings = createBaseSettings({
+      startDate: "2026-04-01",
+      dateOfBirth: "1967-04-01",
+      inflationRateAnnual: 2.5,
+      projectionBasis: "real",
+    });
+    const fixedZeroIncome = createIncome({
+      id: "fixed-zero",
+      indexation: "fixed",
+      fixedIncreasePercent: 0,
+    });
+
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income: createIncome(),
+        rowDate: "2046-04-01",
+      })
+    ).toBeCloseTo(30_000 / 1.025 ** 20, 6);
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income: createIncome(),
+        rowDate: "2046-04-01",
+      })
+    ).toBeCloseTo(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income: fixedZeroIncome,
+        rowDate: "2046-04-01",
+      }),
+      6
+    );
+  });
+
+  it("keeps no increase and fixed 0% flat in nominal terms", () => {
+    const settings = createBaseSettings({
+      startDate: "2026-04-01",
+      dateOfBirth: "1967-04-01",
+      projectionBasis: "nominal",
+      inflationRateAnnual: 2.5,
+    });
+
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income: createIncome(),
+        rowDate: "2046-04-01",
+      })
+    ).toBe(30_000);
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income: createIncome({
+          indexation: "fixed",
+          fixedIncreasePercent: 0,
+        }),
+        rowDate: "2046-04-01",
+      })
+    ).toBe(30_000);
+  });
+
+  it("applies no-increase deflation only after a future income start date", () => {
+    const settings = createBaseSettings({
+      startDate: "2026-04-01",
+      dateOfBirth: "1976-04-01",
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+    });
+    const income = createIncome({
+      startAge: 60,
+    });
+
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income,
+        rowDate: "2036-03-01",
+      })
+    ).toBe(0);
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income,
+        rowDate: "2036-04-01",
+      })
+    ).toBe(30_000);
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income,
+        rowDate: "2056-04-01",
+      })
+    ).toBeCloseTo(30_000 / 1.025 ** 20, 6);
+  });
+
+  it("stops no-increase income after the configured end age", () => {
+    const settings = createBaseSettings({
+      startDate: "2026-04-01",
+      dateOfBirth: "1966-04-01",
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+    });
+    const income = createIncome({
+      startAge: 60,
+      endAge: 60,
+    });
+
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income,
+        rowDate: "2027-03-01",
+      })
+    ).toBeCloseTo(30_000, 6);
+    expect(
+      calculateAdditionalGuaranteedIncomeStreamForDate({
+        settings,
+        income,
+        rowDate: "2027-04-01",
+      })
+    ).toBe(0);
+  });
+
   it("keeps CPI-linked income flat in real terms from the start age", () => {
     const settings = createBaseSettings();
     const income = {
@@ -61,6 +206,7 @@ describe("additional guaranteed income calculations", () => {
     const settings = createBaseSettings({
       dateOfBirth: "1975-01-01",
       startDate: "2029-01-01",
+      projectionBasis: "nominal",
     });
     const income = {
       id: "temporary",

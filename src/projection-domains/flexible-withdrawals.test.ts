@@ -2,6 +2,7 @@ import { createProjectionTable } from "../projection-core";
 import {
   createDefaultAdditionalGuaranteedIncome,
   createDefaultSettings,
+  normalizeSettings,
   type PensionSettings,
 } from "../settings";
 
@@ -194,6 +195,127 @@ describe("flexible withdrawal coordination", () => {
       6
     );
   });
+
+  it("keeps the lump-sum allowance ledger in nominal money for real projections", () => {
+    const realSettings = createNominalAllowanceSettings("real");
+    const nominalSettings = createNominalAllowanceSettings("nominal");
+    const realRows = createProjectionTable(realSettings);
+    const nominalRows = createProjectionTable(nominalSettings);
+    const realTaxFreeCashNominal = sumNominalTaxFreeCash(
+      realRows,
+      realSettings
+    );
+    const nominalTaxFreeCash = nominalRows.reduce(
+      (total, row) => total + (row.monthlyTaxFreePensionCash ?? 0),
+      0
+    );
+    const realFirstWithdrawal = realRows.find(
+      (row) => (row.monthlyTaxFreePensionCash ?? 0) > 0
+    );
+    const nominalFirstWithdrawal = nominalRows.find(
+      (row) => (row.monthlyTaxFreePensionCash ?? 0) > 0
+    );
+
+    expect(realFirstWithdrawal).toBeDefined();
+    expect(nominalFirstWithdrawal).toBeDefined();
+    if (!realFirstWithdrawal || !nominalFirstWithdrawal) {
+      throw new Error("Expected matching withdrawal rows");
+    }
+    expect(realTaxFreeCashNominal).toBeCloseTo(10_000, 6);
+    expect(nominalTaxFreeCash).toBeCloseTo(10_000, 6);
+    expect(
+      (realFirstWithdrawal.monthlyTaxFreePensionCash ?? 0) *
+        getInflationFactor(realSettings, realFirstWithdrawal.date)
+    ).toBeCloseTo(nominalFirstWithdrawal.monthlyTaxFreePensionCash ?? 0, 6);
+    expect(
+      (realFirstWithdrawal.monthlySippTaxableIncome ?? 0) *
+        getInflationFactor(realSettings, realFirstWithdrawal.date)
+    ).toBeCloseTo(nominalFirstWithdrawal.monthlySippTaxableIncome ?? 0, 6);
+    expect(
+      (realFirstWithdrawal.monthlyIncomeTax ?? 0) *
+        getInflationFactor(realSettings, realFirstWithdrawal.date)
+    ).toBeCloseTo(nominalFirstWithdrawal.monthlyIncomeTax ?? 0, 6);
+  });
+
+  it("uses the configured pension account priority when consuming the nominal allowance", () => {
+    const rows = createProjectionTable(
+      createSettings({
+        taxationEnabled: true,
+        taxTrackLumpSumAllowance: true,
+        taxLumpSumAllowance: 500,
+        taxLumpSumAllowanceUsed: 0,
+        taxSippWithdrawalTreatment: "ufpls",
+        taxCsAvcWithdrawalTreatment: "ufpls",
+        flexibleWithdrawalPriority: ["csAvc", "sipp", "isa", "lisa"],
+        showSipp: true,
+        sippCurrentPot: 120_000,
+        sippWithdrawalStrategy: "percentage",
+        sippWithdrawalPercent: 10,
+        showCsAvc: true,
+        csAvcCurrentPot: 120_000,
+        csAvcWithdrawalStrategy: "percentage",
+        csAvcWithdrawalPercent: 10,
+      })
+    );
+    const row = getRetirementRow(rows);
+
+    expect(row.monthlyCsAvcPension).toBeCloseTo(1_000, 6);
+    expect(row.monthlySippPension).toBeCloseTo(1_000, 6);
+    expect(row.monthlyCsAvcTaxableIncome).toBeCloseTo(750, 6);
+    expect(row.monthlySippTaxableIncome).toBeCloseTo(750, 6);
+    expect(row.monthlyTaxFreePensionCash).toBeCloseTo(500, 6);
+    expect(row.pensionLumpSumAllowanceRemaining).toBe(0);
+  });
+
+  it("counts classic and classic plus lump sums against the nominal allowance before flexible withdrawals", () => {
+    const settings = createSettings({
+      taxationEnabled: true,
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: 10_000,
+      taxLumpSumAllowanceUsed: 1_000,
+      taxSippWithdrawalTreatment: "ufpls",
+      projectionBasis: "real",
+      inflationRateAnnual: 2.5,
+      showClassic: true,
+      classicCalculationMode: "manual",
+      classicAnnualPension: 0,
+      classicAutomaticLumpSum: 3_000,
+      classicPensionDrawAge: 61,
+      classicApplyPensionIncreases: false,
+      showClassicPlus: true,
+      classicPlusCalculationMode: "manual",
+      classicPlusAnnualPension: 0,
+      classicPlusAutomaticLumpSum: 2_000,
+      classicPlusPensionDrawAge: 61,
+      classicPlusApplyPensionIncreases: false,
+      showSipp: true,
+      sippCurrentPot: 120_000,
+      sippWithdrawalStrategy: "percentage",
+      sippWithdrawalPercent: 10,
+    });
+    const row = getRetirementRow(createProjectionTable(settings));
+    const nominalAutomaticLumpSums =
+      (row.classicAutomaticLumpSumIncludingReduction +
+        row.classicPlusAutomaticLumpSumIncludingReduction) *
+      getInflationFactor(settings, row.date);
+    const remainingBeforeSipp = Math.max(
+      0,
+      settings.taxLumpSumAllowance -
+        settings.taxLumpSumAllowanceUsed -
+        nominalAutomaticLumpSums
+    );
+
+    expect(row.monthlyTaxFreePensionCash).toBeCloseTo(
+      row.monthlySippPension * 0.25,
+      6
+    );
+    expect(row.pensionLumpSumAllowanceRemaining).toBeCloseTo(
+      remainingBeforeSipp -
+        (row.monthlyTaxFreePensionCash ?? 0) *
+          getInflationFactor(settings, row.date),
+      6
+    );
+  });
 });
 
 describe("flexible withdrawal surplus analysis", () => {
@@ -372,4 +494,71 @@ function getRetirementRow(rows: ReturnType<typeof createProjectionTable>) {
   }
 
   return row;
+}
+
+function createNominalAllowanceSettings(
+  projectionBasis: PensionSettings["projectionBasis"]
+) {
+  return normalizeSettings({
+    ...createDefaultSettings(),
+    startDate: "2026-06-01",
+    dateOfBirth: "1986-06-01",
+    requirementAge: 60,
+    lifeExpectancy: 62,
+    projectionBasis,
+    inflationRateAnnual: 2.5,
+    taxationEnabled: true,
+    retirementIncomeTargetBasis: "after_tax",
+    taxTrackLumpSumAllowance: true,
+    taxLumpSumAllowance: 10_000,
+    taxLumpSumAllowanceUsed: 0,
+    taxPersonalAllowance: 0,
+    taxBasicRateLimit: 1_000_000,
+    taxAdditionalRateThreshold: 2_000_000,
+    taxBasicRatePercent: 20,
+    taxSippWithdrawalTreatment: "ufpls",
+    showAlpha: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: false,
+    showSipp: true,
+    sippCurrentPot: 200_000,
+    sippMonthlyContribution: 0,
+    sippDrawAge: 60,
+    sippWithdrawalStrategy: "percentage",
+    sippWithdrawalPercent: 100,
+    sippRealInterestPercent: 2.5,
+    showCsAvc: false,
+    showIsa: false,
+    showLisa: false,
+  });
+}
+
+function sumNominalTaxFreeCash(
+  rows: ReturnType<typeof createProjectionTable>,
+  settings: PensionSettings
+) {
+  return rows.reduce(
+    (total, row) =>
+      total +
+      (row.monthlyTaxFreePensionCash ?? 0) *
+        getInflationFactor(settings, row.date),
+    0
+  );
+}
+
+function getInflationFactor(settings: PensionSettings, rowDate: string) {
+  if (settings.projectionBasis === "nominal") {
+    return 1;
+  }
+
+  const start = new Date(`${settings.startDate}T00:00:00Z`);
+  const row = new Date(`${rowDate}T00:00:00Z`);
+  const months =
+    (row.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+    (row.getUTCMonth() - start.getUTCMonth());
+
+  return (1 + settings.inflationRateAnnual / 100) ** (months / 12);
 }

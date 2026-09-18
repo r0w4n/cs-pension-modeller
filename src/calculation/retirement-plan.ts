@@ -46,9 +46,13 @@ export type RetirementPlanResult = {
   householdAssessment?: HouseholdRetirementAssessment;
 };
 
+export type RetirementPlanCalculationOptions = ProjectionTableOptions & {
+  includeTargetBasedWithdrawalPreviews?: boolean;
+};
+
 export function calculateRetirementPlan(
   settings: PensionSettings,
-  options: ProjectionTableOptions = {}
+  options: RetirementPlanCalculationOptions = {}
 ): RetirementPlanResult {
   const validationIssues = validateSettings(settings);
   const projection = createProjectionTableResult(settings, options);
@@ -70,10 +74,10 @@ export function calculateRetirementPlan(
     rows,
     summary: generatePensionSummary(rows, settings),
     assessment,
-    targetBasedWithdrawalPreviews: calculateTargetBasedWithdrawalPreviews(
-      rows,
-      settings
-    ),
+    targetBasedWithdrawalPreviews:
+      options.includeTargetBasedWithdrawalPreviews === false
+        ? []
+        : calculateTargetBasedWithdrawalPreviews(rows, settings),
     statePensionAssumptionAffectsTarget:
       projection.diagnostics.targetWithdrawalConvergence.converged &&
       (jointProjection?.diagnostics.targetWithdrawalConvergence.converged ??

@@ -6,6 +6,7 @@
     "playwright.config.ts",
     "playwright.prod.config.ts",
     "e2e/**/*.ts",
-    "features/**/*.ts"
+    "features/**/*.ts",
+    "scripts/**/*.ts"
   ]
 }

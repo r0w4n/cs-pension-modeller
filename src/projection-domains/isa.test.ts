@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calculateIsaPotAtDate, calculateMonthlyIsaPension } from "./isa";
+import {
+  calculateIsaPotAtDate,
+  calculateIsaProjectionRows,
+  calculateMonthlyIsaPension,
+} from "./isa";
 import { defaultSettings, type PensionSettings } from "../settings";
 
 describe("projection isa domain", () => {
@@ -52,5 +56,34 @@ describe("projection isa domain", () => {
         withdrawalPercent: 4,
       })
     ).toBeCloseTo(200, 6);
+  });
+
+  it("applies contributions on exact scheduled dates but not before them", () => {
+    const settings: PensionSettings = {
+      ...defaultSettings,
+      startDate: "2026-01-10",
+      dateOfBirth: "1986-01-10",
+      inflationRateAnnual: 0,
+      showIsa: true,
+      isaCurrentPot: 0,
+      isaMonthlyContribution: 100,
+      isaRealInterestPercent: 0,
+    };
+    const rows = calculateIsaProjectionRows({
+      settings,
+      rowDates: ["2026-02-09", "2026-02-10"],
+      drawDate: "2046-01-10",
+      endDate: "2046-01-10",
+    });
+
+    expect(rows.get("2026-02-09")?.isaPot).toBe(100);
+    expect(rows.get("2026-02-10")?.isaPot).toBe(200);
+    expect(
+      calculateIsaPotAtDate({
+        settings,
+        rowDate: "2026-02-09",
+        drawDate: "2046-01-10",
+      })
+    ).toBe(100);
   });
 });

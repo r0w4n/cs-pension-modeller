@@ -27,8 +27,11 @@ export type PensionSummarySectionProps = {
   headingLevel?: 2 | 3;
   flexibleWithdrawalSummary?: FlexibleWithdrawalSummary;
   targetBasedWithdrawalPreviews?: TargetBasedWithdrawalPreview[];
+  isTargetBasedWithdrawalPreviewPending?: boolean;
+  targetBasedWithdrawalPreviewError?: boolean;
   onApplyTargetBasedStrategy?: (accountId: FlexibleFundAccountId) => void;
   onReviewWithdrawalStrategy?: (accountId: FlexibleFundAccountId) => void;
+  onRetryTargetBasedWithdrawalPreviews?: () => void;
 };
 
 export function PensionSummarySection({
@@ -41,8 +44,11 @@ export function PensionSummarySection({
   headingLevel = 3,
   flexibleWithdrawalSummary,
   targetBasedWithdrawalPreviews = [],
+  isTargetBasedWithdrawalPreviewPending = false,
+  targetBasedWithdrawalPreviewError = false,
   onApplyTargetBasedStrategy,
   onReviewWithdrawalStrategy,
+  onRetryTargetBasedWithdrawalPreviews,
 }: PensionSummarySectionProps) {
   if (!activeResult || !retirementIncomeDisplay) {
     return null;
@@ -92,8 +98,11 @@ export function PensionSummarySection({
             <FlexibleWithdrawalInsightPanel
               summary={flexibleWithdrawalSummary}
               previews={targetBasedWithdrawalPreviews}
+              isPreviewPending={isTargetBasedWithdrawalPreviewPending}
+              previewError={targetBasedWithdrawalPreviewError}
               onApplyTargetBasedStrategy={onApplyTargetBasedStrategy}
               onReviewStrategy={onReviewWithdrawalStrategy}
+              onRetryPreview={onRetryTargetBasedWithdrawalPreviews}
             />
           ) : null}
           {incomeAgeRangeItems.length > 0 ? (

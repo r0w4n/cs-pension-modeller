@@ -8637,56 +8637,32 @@ export const acceptanceFeatures = [
           {
             id: "line-88",
             keyword: "And",
+            text: 'the projection basis is "nominal"',
+          },
+          {
+            id: "line-89",
+            keyword: "And",
+            text: "the long-term inflation assumption is 0.00%",
+          },
+          {
+            id: "line-90",
+            keyword: "And",
             text: "the modelled tax year has these taxable monthly amounts:",
             table: [
-              {
-                id: "line-89",
-                cells: [
-                  {
-                    id: "line-89-column-11",
-                    value: "date",
-                  },
-                  {
-                    id: "line-89-column-24",
-                    value: "amount",
-                  },
-                  {
-                    id: "line-89-column-34",
-                    value: "taxContext",
-                  },
-                ],
-              },
-              {
-                id: "line-90",
-                cells: [
-                  {
-                    id: "line-90-column-11",
-                    value: "2026-04-15",
-                  },
-                  {
-                    id: "line-90-column-24",
-                    value: "0.00",
-                  },
-                  {
-                    id: "line-90-column-34",
-                    value: "3500.00",
-                  },
-                ],
-              },
               {
                 id: "line-91",
                 cells: [
                   {
                     id: "line-91-column-11",
-                    value: "2026-05-15",
+                    value: "date",
                   },
                   {
                     id: "line-91-column-24",
-                    value: "0.00",
+                    value: "amount",
                   },
                   {
                     id: "line-91-column-34",
-                    value: "3500.00",
+                    value: "taxContext",
                   },
                 ],
               },
@@ -8695,15 +8671,15 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-92-column-11",
-                    value: "2026-06-15",
+                    value: "2026-04-15",
                   },
                   {
                     id: "line-92-column-24",
-                    value: "3500.00",
+                    value: "0.00",
                   },
                   {
                     id: "line-92-column-34",
-                    value: "0.00",
+                    value: "3500.00",
                   },
                 ],
               },
@@ -8712,15 +8688,15 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-93-column-11",
-                    value: "2026-07-15",
+                    value: "2026-05-15",
                   },
                   {
                     id: "line-93-column-24",
-                    value: "3500.00",
+                    value: "0.00",
                   },
                   {
                     id: "line-93-column-34",
-                    value: "0.00",
+                    value: "3500.00",
                   },
                 ],
               },
@@ -8729,7 +8705,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-94-column-11",
-                    value: "2026-08-15",
+                    value: "2026-06-15",
                   },
                   {
                     id: "line-94-column-24",
@@ -8746,7 +8722,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-95-column-11",
-                    value: "2026-09-15",
+                    value: "2026-07-15",
                   },
                   {
                     id: "line-95-column-24",
@@ -8763,7 +8739,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-96-column-11",
-                    value: "2026-10-15",
+                    value: "2026-08-15",
                   },
                   {
                     id: "line-96-column-24",
@@ -8780,7 +8756,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-97-column-11",
-                    value: "2026-11-15",
+                    value: "2026-09-15",
                   },
                   {
                     id: "line-97-column-24",
@@ -8797,7 +8773,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-98-column-11",
-                    value: "2026-12-15",
+                    value: "2026-10-15",
                   },
                   {
                     id: "line-98-column-24",
@@ -8814,7 +8790,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-99-column-11",
-                    value: "2027-01-15",
+                    value: "2026-11-15",
                   },
                   {
                     id: "line-99-column-24",
@@ -8831,7 +8807,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-100-column-11",
-                    value: "2027-02-15",
+                    value: "2026-12-15",
                   },
                   {
                     id: "line-100-column-24",
@@ -8848,7 +8824,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-101-column-11",
-                    value: "2027-03-15",
+                    value: "2027-01-15",
                   },
                   {
                     id: "line-101-column-24",
@@ -8860,15 +8836,49 @@ export const acceptanceFeatures = [
                   },
                 ],
               },
+              {
+                id: "line-102",
+                cells: [
+                  {
+                    id: "line-102-column-11",
+                    value: "2027-02-15",
+                  },
+                  {
+                    id: "line-102-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-102-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
+              {
+                id: "line-103",
+                cells: [
+                  {
+                    id: "line-103-column-11",
+                    value: "2027-03-15",
+                  },
+                  {
+                    id: "line-103-column-24",
+                    value: "3500.00",
+                  },
+                  {
+                    id: "line-103-column-34",
+                    value: "0.00",
+                  },
+                ],
+              },
             ],
           },
           {
-            id: "line-102",
+            id: "line-104",
             keyword: "When",
             text: "the modelled tax-year liability is allocated",
           },
           {
-            id: "line-103",
+            id: "line-105",
             keyword: "Then",
             text: "the total modelled Income Tax should be 4905.00",
           },
@@ -8876,7 +8886,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-106",
+        id: "line-108",
         keyword: "Scenario",
         name: "Combine reduced-hours salary with pension income",
         description: "",
@@ -8885,27 +8895,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-107",
+            id: "line-109",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-108",
+            id: "line-110",
             keyword: "And",
             text: "monthly Alpha pension income is 500.00",
           },
           {
-            id: "line-109",
+            id: "line-111",
             keyword: "And",
             text: 'monthly "reduced-hours employment" income is 2000.00',
           },
           {
-            id: "line-110",
+            id: "line-112",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-111",
+            id: "line-113",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 2500.00",
           },
@@ -8913,7 +8923,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-116",
+        id: "line-118",
         keyword: "Scenario",
         name: "Distinguish estimated Income Tax from retirement-income shortfall",
         description: "",
@@ -8922,37 +8932,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-117",
+            id: "line-119",
             keyword: "Given",
             text: "the chart has annual gross retirement income of 40000.00",
           },
           {
-            id: "line-118",
+            id: "line-120",
             keyword: "And",
             text: "the chart has annual take-home retirement income of 34000.00",
           },
           {
-            id: "line-119",
+            id: "line-121",
             keyword: "And",
             text: "the chart has annual target retirement income of 35000.00",
           },
           {
-            id: "line-120",
+            id: "line-122",
             keyword: "When",
             text: "retirement chart overlays are prepared",
           },
           {
-            id: "line-121",
+            id: "line-123",
             keyword: "Then",
             text: "chart estimated Income Tax should be 6000.00",
           },
           {
-            id: "line-122",
+            id: "line-124",
             keyword: "And",
             text: "chart shortfall should be 1000.00",
           },
           {
-            id: "line-123",
+            id: "line-125",
             keyword: "And",
             text: 'the chart key should identify "Estimated Income Tax" separately from "Shortfall"',
           },
@@ -8960,7 +8970,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-128",
+        id: "line-130",
         keyword: "Scenario Outline",
         name: "Apply the 2026/27 Personal Allowance and taper",
         description: "",
@@ -8969,69 +8979,43 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-129",
+            id: "line-131",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-130",
+            id: "line-132",
             keyword: "And",
             text: "the Income Tax regime is England, Wales or Northern Ireland",
           },
           {
-            id: "line-131",
+            id: "line-133",
             keyword: "When",
             text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
           },
           {
-            id: "line-132",
+            id: "line-134",
             keyword: "Then",
             text: "the annual Income Tax should be <expectedAnnualTax>",
           },
         ],
         examples: [
           {
-            id: "line-134",
+            id: "line-136",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-135",
-                cells: [
-                  {
-                    id: "line-135-column-11",
-                    value: "annualTaxableIncome",
-                  },
-                  {
-                    id: "line-135-column-33",
-                    value: "expectedAnnualTax",
-                  },
-                ],
-              },
-              {
-                id: "line-136",
-                cells: [
-                  {
-                    id: "line-136-column-11",
-                    value: "0.00",
-                  },
-                  {
-                    id: "line-136-column-33",
-                    value: "0.00",
-                  },
-                ],
-              },
-              {
                 id: "line-137",
                 cells: [
                   {
                     id: "line-137-column-11",
-                    value: "12570.00",
+                    value: "annualTaxableIncome",
                   },
                   {
                     id: "line-137-column-33",
-                    value: "0.00",
+                    value: "expectedAnnualTax",
                   },
                 ],
               },
@@ -9040,11 +9024,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-138-column-11",
-                    value: "12571.00",
+                    value: "0.00",
                   },
                   {
                     id: "line-138-column-33",
-                    value: "0.20",
+                    value: "0.00",
                   },
                 ],
               },
@@ -9053,11 +9037,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-139-column-11",
-                    value: "100000.00",
+                    value: "12570.00",
                   },
                   {
                     id: "line-139-column-33",
-                    value: "27432.00",
+                    value: "0.00",
                   },
                 ],
               },
@@ -9066,11 +9050,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-140-column-11",
-                    value: "100002.00",
+                    value: "12571.00",
                   },
                   {
                     id: "line-140-column-33",
-                    value: "27433.20",
+                    value: "0.20",
                   },
                 ],
               },
@@ -9079,10 +9063,36 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-141-column-11",
-                    value: "125140.00",
+                    value: "100000.00",
                   },
                   {
                     id: "line-141-column-33",
+                    value: "27432.00",
+                  },
+                ],
+              },
+              {
+                id: "line-142",
+                cells: [
+                  {
+                    id: "line-142-column-11",
+                    value: "100002.00",
+                  },
+                  {
+                    id: "line-142-column-33",
+                    value: "27433.20",
+                  },
+                ],
+              },
+              {
+                id: "line-143",
+                cells: [
+                  {
+                    id: "line-143-column-11",
+                    value: "125140.00",
+                  },
+                  {
+                    id: "line-143-column-33",
                     value: "42516.00",
                   },
                 ],
@@ -9092,7 +9102,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-146",
+        id: "line-148",
         keyword: "Scenario Outline",
         name: "Apply each 2026/27 rest-of-UK marginal rate at its boundary",
         description: "",
@@ -9101,69 +9111,43 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-147",
+            id: "line-149",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-148",
+            id: "line-150",
             keyword: "And",
             text: "the Income Tax regime is England, Wales or Northern Ireland",
           },
           {
-            id: "line-149",
+            id: "line-151",
             keyword: "When",
             text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
           },
           {
-            id: "line-150",
+            id: "line-152",
             keyword: "Then",
             text: "the annual Income Tax should be <expectedAnnualTax>",
           },
         ],
         examples: [
           {
-            id: "line-152",
+            id: "line-154",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-153",
-                cells: [
-                  {
-                    id: "line-153-column-11",
-                    value: "annualTaxableIncome",
-                  },
-                  {
-                    id: "line-153-column-33",
-                    value: "expectedAnnualTax",
-                  },
-                ],
-              },
-              {
-                id: "line-154",
-                cells: [
-                  {
-                    id: "line-154-column-11",
-                    value: "50000.00",
-                  },
-                  {
-                    id: "line-154-column-33",
-                    value: "7486.00",
-                  },
-                ],
-              },
-              {
                 id: "line-155",
                 cells: [
                   {
                     id: "line-155-column-11",
-                    value: "50270.00",
+                    value: "annualTaxableIncome",
                   },
                   {
                     id: "line-155-column-33",
-                    value: "7540.00",
+                    value: "expectedAnnualTax",
                   },
                 ],
               },
@@ -9172,11 +9156,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-156-column-11",
-                    value: "50271.00",
+                    value: "50000.00",
                   },
                   {
                     id: "line-156-column-33",
-                    value: "7540.40",
+                    value: "7486.00",
                   },
                 ],
               },
@@ -9185,11 +9169,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-157-column-11",
-                    value: "125140.00",
+                    value: "50270.00",
                   },
                   {
                     id: "line-157-column-33",
-                    value: "42516.00",
+                    value: "7540.00",
                   },
                 ],
               },
@@ -9198,11 +9182,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-158-column-11",
-                    value: "125141.00",
+                    value: "50271.00",
                   },
                   {
                     id: "line-158-column-33",
-                    value: "42516.45",
+                    value: "7540.40",
                   },
                 ],
               },
@@ -9211,10 +9195,36 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-159-column-11",
-                    value: "130000.00",
+                    value: "125140.00",
                   },
                   {
                     id: "line-159-column-33",
+                    value: "42516.00",
+                  },
+                ],
+              },
+              {
+                id: "line-160",
+                cells: [
+                  {
+                    id: "line-160-column-11",
+                    value: "125141.00",
+                  },
+                  {
+                    id: "line-160-column-33",
+                    value: "42516.45",
+                  },
+                ],
+              },
+              {
+                id: "line-161",
+                cells: [
+                  {
+                    id: "line-161-column-11",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-161-column-33",
                     value: "44703.00",
                   },
                 ],
@@ -9224,7 +9234,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-162",
+        id: "line-164",
         keyword: "Scenario",
         name: "Treat a configured additional-rate threshold as taxable income",
         description: "",
@@ -9233,42 +9243,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-163",
+            id: "line-165",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-164",
+            id: "line-166",
             keyword: "And",
             text: "the Income Tax regime is England, Wales or Northern Ireland",
           },
           {
-            id: "line-165",
+            id: "line-167",
             keyword: "And",
             text: "the personal allowance is 20000.00",
           },
           {
-            id: "line-166",
+            id: "line-168",
             keyword: "And",
             text: "the personal allowance taper threshold is 200000.00",
           },
           {
-            id: "line-167",
+            id: "line-169",
             keyword: "And",
             text: "the basic rate band is 37700.00",
           },
           {
-            id: "line-168",
+            id: "line-170",
             keyword: "And",
             text: "the additional rate taxable-income threshold is 125140.00",
           },
           {
-            id: "line-169",
+            id: "line-171",
             keyword: "When",
             text: "annual taxable retirement income of 145140.00 is taxed",
           },
           {
-            id: "line-170",
+            id: "line-172",
             keyword: "Then",
             text: "the annual Income Tax should be 42516.00",
           },
@@ -9276,7 +9286,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-175",
+        id: "line-177",
         keyword: "Scenario Outline",
         name: "Apply each 2026/27 Scottish marginal rate at its boundary",
         description: "",
@@ -9285,69 +9295,43 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-176",
+            id: "line-178",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-177",
+            id: "line-179",
             keyword: "And",
             text: "the Income Tax regime is Scotland",
           },
           {
-            id: "line-178",
+            id: "line-180",
             keyword: "When",
             text: "annual taxable retirement income of <annualTaxableIncome> is taxed",
           },
           {
-            id: "line-179",
+            id: "line-181",
             keyword: "Then",
             text: "the annual Income Tax should be <expectedAnnualTax>",
           },
         ],
         examples: [
           {
-            id: "line-181",
+            id: "line-183",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-182",
-                cells: [
-                  {
-                    id: "line-182-column-11",
-                    value: "annualTaxableIncome",
-                  },
-                  {
-                    id: "line-182-column-33",
-                    value: "expectedAnnualTax",
-                  },
-                ],
-              },
-              {
-                id: "line-183",
-                cells: [
-                  {
-                    id: "line-183-column-11",
-                    value: "12570.00",
-                  },
-                  {
-                    id: "line-183-column-33",
-                    value: "0.00",
-                  },
-                ],
-              },
-              {
                 id: "line-184",
                 cells: [
                   {
                     id: "line-184-column-11",
-                    value: "12571.00",
+                    value: "annualTaxableIncome",
                   },
                   {
                     id: "line-184-column-33",
-                    value: "0.19",
+                    value: "expectedAnnualTax",
                   },
                 ],
               },
@@ -9356,11 +9340,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-185-column-11",
-                    value: "16537.00",
+                    value: "12570.00",
                   },
                   {
                     id: "line-185-column-33",
-                    value: "753.73",
+                    value: "0.00",
                   },
                 ],
               },
@@ -9369,11 +9353,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-186-column-11",
-                    value: "16538.00",
+                    value: "12571.00",
                   },
                   {
                     id: "line-186-column-33",
-                    value: "753.93",
+                    value: "0.19",
                   },
                 ],
               },
@@ -9382,11 +9366,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-187-column-11",
-                    value: "29526.00",
+                    value: "16537.00",
                   },
                   {
                     id: "line-187-column-33",
-                    value: "3351.53",
+                    value: "753.73",
                   },
                 ],
               },
@@ -9395,11 +9379,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-188-column-11",
-                    value: "29527.00",
+                    value: "16538.00",
                   },
                   {
                     id: "line-188-column-33",
-                    value: "3351.74",
+                    value: "753.93",
                   },
                 ],
               },
@@ -9408,11 +9392,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-189-column-11",
-                    value: "43662.00",
+                    value: "29526.00",
                   },
                   {
                     id: "line-189-column-33",
-                    value: "6320.09",
+                    value: "3351.53",
                   },
                 ],
               },
@@ -9421,11 +9405,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-190-column-11",
-                    value: "43663.00",
+                    value: "29527.00",
                   },
                   {
                     id: "line-190-column-33",
-                    value: "6320.51",
+                    value: "3351.74",
                   },
                 ],
               },
@@ -9434,11 +9418,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-191-column-11",
-                    value: "75000.00",
+                    value: "43662.00",
                   },
                   {
                     id: "line-191-column-33",
-                    value: "19482.05",
+                    value: "6320.09",
                   },
                 ],
               },
@@ -9447,11 +9431,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-192-column-11",
-                    value: "75001.00",
+                    value: "43663.00",
                   },
                   {
                     id: "line-192-column-33",
-                    value: "19482.50",
+                    value: "6320.51",
                   },
                 ],
               },
@@ -9460,11 +9444,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-193-column-11",
-                    value: "100000.00",
+                    value: "75000.00",
                   },
                   {
                     id: "line-193-column-33",
-                    value: "30732.05",
+                    value: "19482.05",
                   },
                 ],
               },
@@ -9473,11 +9457,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-194-column-11",
-                    value: "100002.00",
+                    value: "75001.00",
                   },
                   {
                     id: "line-194-column-33",
-                    value: "30733.40",
+                    value: "19482.50",
                   },
                 ],
               },
@@ -9486,11 +9470,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-195-column-11",
-                    value: "125140.00",
+                    value: "100000.00",
                   },
                   {
                     id: "line-195-column-33",
-                    value: "47701.55",
+                    value: "30732.05",
                   },
                 ],
               },
@@ -9499,11 +9483,11 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-196-column-11",
-                    value: "125141.00",
+                    value: "100002.00",
                   },
                   {
                     id: "line-196-column-33",
-                    value: "47702.03",
+                    value: "30733.40",
                   },
                 ],
               },
@@ -9512,10 +9496,36 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-197-column-11",
-                    value: "130000.00",
+                    value: "125140.00",
                   },
                   {
                     id: "line-197-column-33",
+                    value: "47701.55",
+                  },
+                ],
+              },
+              {
+                id: "line-198",
+                cells: [
+                  {
+                    id: "line-198-column-11",
+                    value: "125141.00",
+                  },
+                  {
+                    id: "line-198-column-33",
+                    value: "47702.03",
+                  },
+                ],
+              },
+              {
+                id: "line-199",
+                cells: [
+                  {
+                    id: "line-199-column-11",
+                    value: "130000.00",
+                  },
+                  {
+                    id: "line-199-column-33",
                     value: "50034.35",
                   },
                 ],
@@ -9525,7 +9535,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-202",
+        id: "line-204",
         keyword: "Scenario Outline",
         name: "Include each regular taxable retirement income source",
         description: "",
@@ -9534,72 +9544,54 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-203",
+            id: "line-205",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-204",
+            id: "line-206",
             keyword: "And",
             text: "the personal allowance is 0.00",
           },
           {
-            id: "line-205",
+            id: "line-207",
             keyword: "And",
             text: "the basic rate band is 50000.00",
           },
           {
-            id: "line-206",
+            id: "line-208",
             keyword: "And",
             text: "monthly <incomeSource> income is 1000.00",
           },
           {
-            id: "line-207",
+            id: "line-209",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-208",
+            id: "line-210",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 1000.00",
           },
           {
-            id: "line-209",
+            id: "line-211",
             keyword: "And",
             text: "the monthly Income Tax should be 200.00",
           },
         ],
         examples: [
           {
-            id: "line-211",
+            id: "line-213",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-212",
-                cells: [
-                  {
-                    id: "line-212-column-11",
-                    value: "incomeSource",
-                  },
-                ],
-              },
-              {
-                id: "line-213",
-                cells: [
-                  {
-                    id: "line-213-column-11",
-                    value: '"Alpha pension"',
-                  },
-                ],
-              },
-              {
                 id: "line-214",
                 cells: [
                   {
                     id: "line-214-column-11",
-                    value: '"classic pension"',
+                    value: "incomeSource",
                   },
                 ],
               },
@@ -9608,7 +9600,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-215-column-11",
-                    value: '"classic plus pension"',
+                    value: '"Alpha pension"',
                   },
                 ],
               },
@@ -9617,7 +9609,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-216-column-11",
-                    value: '"nuvos pension"',
+                    value: '"classic pension"',
                   },
                 ],
               },
@@ -9626,7 +9618,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-217-column-11",
-                    value: '"Premium pension"',
+                    value: '"classic plus pension"',
                   },
                 ],
               },
@@ -9635,7 +9627,7 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-218-column-11",
-                    value: '"State Pension"',
+                    value: '"nuvos pension"',
                   },
                 ],
               },
@@ -9644,6 +9636,24 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-219-column-11",
+                    value: '"Premium pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-220",
+                cells: [
+                  {
+                    id: "line-220-column-11",
+                    value: '"State Pension"',
+                  },
+                ],
+              },
+              {
+                id: "line-221",
+                cells: [
+                  {
+                    id: "line-221-column-11",
                     value: '"taxable additional guaranteed income"',
                   },
                 ],
@@ -9653,7 +9663,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-222",
+        id: "line-224",
         keyword: "Scenario",
         name: "Keep the selected tax-free SIPP share outside taxable income",
         description: "",
@@ -9662,42 +9672,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-223",
+            id: "line-225",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-224",
+            id: "line-226",
             keyword: "And",
             text: "the SIPP tax-free withdrawal share is 25.00%",
           },
           {
-            id: "line-225",
+            id: "line-227",
             keyword: "And",
             text: "monthly Alpha pension income is 2000.00",
           },
           {
-            id: "line-226",
+            id: "line-228",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-227",
+            id: "line-229",
             keyword: "And",
             text: "monthly SIPP income is 1000.00",
           },
           {
-            id: "line-228",
+            id: "line-230",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-229",
+            id: "line-231",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 3750.00",
           },
           {
-            id: "line-230",
+            id: "line-232",
             keyword: "And",
             text: "the monthly Income Tax should be 540.50",
           },
@@ -9705,7 +9715,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-233",
+        id: "line-235",
         keyword: "Scenario",
         name: "Keep the selected tax-free CS AVC share outside taxable income",
         description: "",
@@ -9714,42 +9724,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-234",
+            id: "line-236",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-235",
+            id: "line-237",
             keyword: "And",
             text: "the CS AVC tax-free withdrawal share is 25.00%",
           },
           {
-            id: "line-236",
+            id: "line-238",
             keyword: "And",
             text: "monthly Alpha pension income is 2000.00",
           },
           {
-            id: "line-237",
+            id: "line-239",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-238",
+            id: "line-240",
             keyword: "And",
             text: "monthly CS AVC income is 1000.00",
           },
           {
-            id: "line-239",
+            id: "line-241",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-240",
+            id: "line-242",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 3750.00",
           },
           {
-            id: "line-241",
+            id: "line-243",
             keyword: "And",
             text: "the monthly Income Tax should be 540.50",
           },
@@ -9757,7 +9767,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-244",
+        id: "line-246",
         keyword: "Scenario",
         name: "Treat an unconfirmed SIPP withdrawal basis as fully taxable",
         description: "",
@@ -9766,27 +9776,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-245",
+            id: "line-247",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-246",
+            id: "line-248",
             keyword: "And",
             text: 'the SIPP withdrawal treatment is "unknown"',
           },
           {
-            id: "line-247",
+            id: "line-249",
             keyword: "When",
             text: "tax treatment is applied to a SIPP withdrawal of 1000.00 and a CS AVC withdrawal of 0.00",
           },
           {
-            id: "line-248",
+            id: "line-250",
             keyword: "Then",
             text: "the SIPP tax-free cash should be 0.00",
           },
           {
-            id: "line-249",
+            id: "line-251",
             keyword: "And",
             text: "the SIPP taxable withdrawal should be 1000.00",
           },
@@ -9794,7 +9804,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-252",
+        id: "line-254",
         keyword: "Scenario",
         name: "Share the remaining pension lump-sum allowance in funding order",
         description: "",
@@ -9803,47 +9813,47 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-253",
+            id: "line-255",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-254",
+            id: "line-256",
             keyword: "And",
             text: 'the SIPP withdrawal treatment is "ufpls"',
           },
           {
-            id: "line-255",
+            id: "line-257",
             keyword: "And",
             text: 'the CS AVC withdrawal treatment is "ufpls"',
           },
           {
-            id: "line-256",
+            id: "line-258",
             keyword: "And",
             text: "the remaining pension lump-sum allowance is 300.00",
           },
           {
-            id: "line-257",
+            id: "line-259",
             keyword: "When",
             text: "tax treatment is applied to a SIPP withdrawal of 1000.00 and a CS AVC withdrawal of 1000.00",
           },
           {
-            id: "line-258",
+            id: "line-260",
             keyword: "Then",
             text: "the SIPP tax-free cash should be 250.00",
           },
           {
-            id: "line-259",
+            id: "line-261",
             keyword: "And",
             text: "the CS AVC tax-free cash should be 50.00",
           },
           {
-            id: "line-260",
+            id: "line-262",
             keyword: "And",
             text: "the CS AVC taxable withdrawal should be 950.00",
           },
           {
-            id: "line-261",
+            id: "line-263",
             keyword: "And",
             text: "the remaining pension lump-sum allowance should be 0.00",
           },
@@ -9851,7 +9861,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-264",
+        id: "line-266",
         keyword: "Scenario",
         name: "Apply Scottish bands after excluding the selected tax-free SIPP share",
         description: "",
@@ -9860,47 +9870,47 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-265",
+            id: "line-267",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-266",
+            id: "line-268",
             keyword: "And",
             text: "the Income Tax regime is Scotland",
           },
           {
-            id: "line-267",
+            id: "line-269",
             keyword: "And",
             text: "the SIPP tax-free withdrawal share is 25.00%",
           },
           {
-            id: "line-268",
+            id: "line-270",
             keyword: "And",
             text: "monthly Alpha pension income is 2000.00",
           },
           {
-            id: "line-269",
+            id: "line-271",
             keyword: "And",
             text: "monthly State Pension income is 1000.00",
           },
           {
-            id: "line-270",
+            id: "line-272",
             keyword: "And",
             text: "monthly SIPP income is 1000.00",
           },
           {
-            id: "line-271",
+            id: "line-273",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-272",
+            id: "line-274",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 3750.00",
           },
           {
-            id: "line-273",
+            id: "line-275",
             keyword: "And",
             text: "the monthly Income Tax should be 573.50",
           },
@@ -9908,7 +9918,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-276",
+        id: "line-278",
         keyword: "Scenario",
         name: "Combine pension sources before applying the allowance and bands",
         description: "",
@@ -9917,42 +9927,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-277",
+            id: "line-279",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-278",
+            id: "line-280",
             keyword: "And",
             text: "monthly Alpha pension income is 1000.00",
           },
           {
-            id: "line-279",
+            id: "line-281",
             keyword: "And",
             text: 'monthly "classic pension" income is 250.00',
           },
           {
-            id: "line-280",
+            id: "line-282",
             keyword: "And",
             text: "monthly nuvos pension income is 250.00",
           },
           {
-            id: "line-281",
+            id: "line-283",
             keyword: "And",
             text: "monthly State Pension income is 500.00",
           },
           {
-            id: "line-282",
+            id: "line-284",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-283",
+            id: "line-285",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 2000.00",
           },
           {
-            id: "line-284",
+            id: "line-286",
             keyword: "And",
             text: "the monthly Income Tax should be 190.50",
           },
@@ -9960,7 +9970,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-289",
+        id: "line-291",
         keyword: "Scenario Outline",
         name: "Exclude tax-free savings withdrawals from Income Tax",
         description: "",
@@ -9969,67 +9979,49 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-290",
+            id: "line-292",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-291",
+            id: "line-293",
             keyword: "And",
             text: "the personal allowance is 0.00",
           },
           {
-            id: "line-292",
+            id: "line-294",
             keyword: "And",
             text: "monthly <incomeSource> income is 1000.00",
           },
           {
-            id: "line-293",
+            id: "line-295",
             keyword: "When",
             text: "monthly Income Tax is calculated",
           },
           {
-            id: "line-294",
+            id: "line-296",
             keyword: "Then",
             text: "the monthly taxable retirement income should be 0.00",
           },
           {
-            id: "line-295",
+            id: "line-297",
             keyword: "And",
             text: "the monthly Income Tax should be 0.00",
           },
         ],
         examples: [
           {
-            id: "line-297",
+            id: "line-299",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-298",
-                cells: [
-                  {
-                    id: "line-298-column-11",
-                    value: "incomeSource",
-                  },
-                ],
-              },
-              {
-                id: "line-299",
-                cells: [
-                  {
-                    id: "line-299-column-11",
-                    value: '"ISA withdrawal"',
-                  },
-                ],
-              },
-              {
                 id: "line-300",
                 cells: [
                   {
                     id: "line-300-column-11",
-                    value: '"qualifying LISA withdrawal"',
+                    value: "incomeSource",
                   },
                 ],
               },
@@ -10038,6 +10030,24 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-301-column-11",
+                    value: '"ISA withdrawal"',
+                  },
+                ],
+              },
+              {
+                id: "line-302",
+                cells: [
+                  {
+                    id: "line-302-column-11",
+                    value: '"qualifying LISA withdrawal"',
+                  },
+                ],
+              },
+              {
+                id: "line-303",
+                cells: [
+                  {
+                    id: "line-303-column-11",
                     value: '"non-taxable additional guaranteed income"',
                   },
                 ],

@@ -104,6 +104,8 @@ export type JourneyStepViewModel = {
   > | null;
   flexibleWithdrawalSummary: FlexibleWithdrawalSummary;
   targetBasedWithdrawalPreviews: TargetBasedWithdrawalPreview[];
+  isTargetBasedWithdrawalPreviewPending: boolean;
+  targetBasedWithdrawalPreviewError: boolean;
   projectionRows: ProjectionRow[];
   retirementIncomeDisplay: RetirementIncomeDisplay;
   incomeAgeRangeItems: IncomeAgeRangeItem[];
@@ -122,6 +124,7 @@ export type JourneyStepViewModel = {
   onComparisonRetirementIncomeDisplayChange: (
     display: RetirementIncomeDisplay
   ) => void;
+  onRetryTargetBasedWithdrawalPreviews: () => void;
 };
 
 export type JourneyStepContentProps = {
@@ -269,6 +272,8 @@ function JourneyResultsStep({
     derivedInflationAssumptions,
     flexibleWithdrawalSummary,
     targetBasedWithdrawalPreviews,
+    isTargetBasedWithdrawalPreviewPending,
+    targetBasedWithdrawalPreviewError,
     projectionRows,
     retirementIncomeDisplay,
     incomeAgeRangeItems,
@@ -279,6 +284,7 @@ function JourneyResultsStep({
     onLoadScenario,
     onRetirementIncomeDisplayChange,
     onComparisonRetirementIncomeDisplayChange,
+    onRetryTargetBasedWithdrawalPreviews,
     onChangeChartParameters,
     onChange,
   } = viewModel;
@@ -376,6 +382,15 @@ function JourneyResultsStep({
               statusItems={buildStatusItems(currentComparisonResult)}
               flexibleWithdrawalSummary={flexibleWithdrawalSummary}
               targetBasedWithdrawalPreviews={targetBasedWithdrawalPreviews}
+              isTargetBasedWithdrawalPreviewPending={
+                isTargetBasedWithdrawalPreviewPending
+              }
+              targetBasedWithdrawalPreviewError={
+                targetBasedWithdrawalPreviewError
+              }
+              onRetryTargetBasedWithdrawalPreviews={
+                onRetryTargetBasedWithdrawalPreviews
+              }
               onApplyTargetBasedStrategy={(accountId) =>
                 applyTargetBasedStrategy(onChange, accountId)
               }

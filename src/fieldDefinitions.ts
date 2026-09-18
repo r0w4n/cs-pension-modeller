@@ -1019,7 +1019,7 @@ export const fieldGroups: FieldGroup[] = [
         infoUrl: knowledgeLinks.pensionTaxRelief,
         infoLinkText: "Check pension tax relief",
         description:
-          "How the modeller grosses up net SIPP contributions. This affects the SIPP pot projection, not Alpha defined benefit accrual.",
+          "How the modeller grosses up the entered net cost before adding it to the SIPP pot. The 40% option models ultimate higher-rate relief being available and effectively reinvested; a relief-at-source provider normally adds only basic-rate relief automatically, with extra relief claimed separately where eligible. This affects the SIPP pot projection, not Alpha defined benefit accrual.",
       },
       {
         id: "sippRealInterestPercent",

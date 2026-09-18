@@ -20,10 +20,13 @@ import {
   calculateClassicAutomaticLumpSum,
   calculateClassicPlusAnnualPension,
   calculateClassicPlusAutomaticLumpSum,
-  calculateInvestmentProjectionValues,
   calculateNuvosAnnualPension,
   calculatePremiumAnnualPension,
 } from "./row-assembly";
+import { calculateSippProjectionRows } from "./projection-domains/sipp";
+import { calculateCsAvcProjectionRows } from "./projection-domains/cs-avc";
+import { calculateIsaProjectionRows } from "./projection-domains/isa";
+import { calculateLisaProjectionRows } from "./projection-domains/lisa";
 
 type AlphaBenefitPortion = "standard" | "epa-1" | "epa-2" | "epa-3";
 
@@ -99,19 +102,48 @@ export function createProjectionTableWithPensionIncreases(
   const allRowDates = Array.from(
     new Set([...historicalRowDates, ...projectionRowDates])
   ).sort();
+  const sippProjections = calculateSippProjectionRows({
+    settings,
+    rowDates: allRowDates,
+    drawDate: sippDrawDate,
+    endDate,
+  });
+  const csAvcProjections = calculateCsAvcProjectionRows({
+    settings,
+    rowDates: allRowDates,
+    drawDate: csAvcDrawDate,
+    endDate,
+  });
+  const isaProjections = calculateIsaProjectionRows({
+    settings,
+    rowDates: allRowDates,
+    drawDate: isaDrawDate,
+    endDate,
+  });
+  const lisaProjections = calculateLisaProjectionRows({
+    settings,
+    rowDates: allRowDates,
+    drawDate: lisaDrawDate,
+    endDate,
+  });
 
   const allRows = allRowDates.map((rowDate) => {
-    const { sippProjection, csAvcProjection, isaProjection, lisaProjection } =
-      calculateInvestmentProjectionValues({
-        settings,
-        rowDate,
-        endDate,
-        sippDrawDate,
-        csAvcDrawDate,
-        isaDrawDate,
-        lisaDrawDate,
-        active: rowDate >= settings.startDate,
-      });
+    const sippProjection = sippProjections.get(rowDate) ?? {
+      sippPot: 0,
+      monthlySippPension: 0,
+    };
+    const csAvcProjection = csAvcProjections.get(rowDate) ?? {
+      csAvcPot: 0,
+      monthlyCsAvcPension: 0,
+    };
+    const isaProjection = isaProjections.get(rowDate) ?? {
+      isaPot: 0,
+      monthlyIsaPension: 0,
+    };
+    const lisaProjection = lisaProjections.get(rowDate) ?? {
+      lisaPot: 0,
+      monthlyLisaPension: 0,
+    };
     const shouldShowAbsStatementOnly =
       rowDate === alphaAbsDate && rowDate < settings.startDate;
     const shouldSuppressMonthlyAlphaAccrual = shouldShowAbsStatementOnly;

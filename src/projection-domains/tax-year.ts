@@ -6,6 +6,7 @@ import {
 import {
   calculateAnnualIncomeTax,
   calculateMonthlyTaxableRetirementIncome,
+  getProjectionBasisToNominalFactor,
 } from "./tax";
 
 const TAX_RATE_TOLERANCE = 1e-12;
@@ -26,22 +27,30 @@ export type TaxYearIncomeEntry = {
   taxableIncomeContext?: number;
 };
 
+type TaxYearIncomeEntryWithBasis = TaxYearIncomeEntry & {
+  basisConversionFactor: number;
+};
+
 export function calculateTaxYearIncomeTaxAllocation(
   entries: TaxYearIncomeEntry[],
   settings: PensionSettings
 ) {
-  const effectiveRates = calculateTaxYearEffectiveRatesForEntries(
-    entries,
+  const nominalEntries = entries.map((entry) =>
+    withTaxBasisConversionFactor(entry, settings)
+  );
+  const effectiveRates = calculateTaxYearEffectiveRatesForConvertedEntries(
+    nominalEntries,
     settings
   );
   const taxByDate = new Map<string, number>();
 
-  entries.forEach((entry) => {
-    taxByDate.set(
-      entry.date,
-      Math.max(0, entry.taxableIncome) *
-        (effectiveRates.get(getProjectionTaxYearKey(entry.date)) ?? 0)
-    );
+  nominalEntries.forEach((entry) => {
+    const nominalTaxableIncome =
+      Math.max(0, entry.taxableIncome) * entry.basisConversionFactor;
+    const nominalTax =
+      nominalTaxableIncome *
+      (effectiveRates.get(getProjectionTaxYearKey(entry.date)) ?? 0);
+    taxByDate.set(entry.date, nominalTax / entry.basisConversionFactor);
   });
 
   return taxByDate;
@@ -51,14 +60,24 @@ export function calculateTaxYearEffectiveRatesForEntries(
   entries: TaxYearIncomeEntry[],
   settings: PensionSettings
 ) {
-  const entriesByTaxYear = new Map<string, TaxYearIncomeEntry[]>();
+  return calculateTaxYearEffectiveRatesForConvertedEntries(
+    entries.map((entry) => withTaxBasisConversionFactor(entry, settings)),
+    settings
+  );
+}
+
+function calculateTaxYearEffectiveRatesForConvertedEntries(
+  entries: TaxYearIncomeEntryWithBasis[],
+  settings: PensionSettings
+) {
+  const entriesByTaxYear = new Map<string, TaxYearIncomeEntryWithBasis[]>();
 
   entries.forEach((entry) => {
     const key = getProjectionTaxYearKey(entry.date);
     entriesByTaxYear.set(key, [...(entriesByTaxYear.get(key) ?? []), entry]);
   });
 
-  const finalEntry = entries.reduce<TaxYearIncomeEntry | undefined>(
+  const finalEntry = entries.reduce<TaxYearIncomeEntryWithBasis | undefined>(
     (latest, entry) => (!latest || entry.date > latest.date ? entry : latest),
     undefined
   );
@@ -71,13 +90,15 @@ export function calculateTaxYearEffectiveRatesForEntries(
       const modelledTaxableIncome = taxYearEntries.reduce(
         (total, entry) =>
           total +
-          Math.max(0, entry.taxableIncome) +
-          Math.max(0, entry.taxableIncomeContext ?? 0),
+          (Math.max(0, entry.taxableIncome) +
+            Math.max(0, entry.taxableIncomeContext ?? 0)) *
+            entry.basisConversionFactor,
         0
       );
       const terminalContinuationIncome =
         key === finalTaxYearKey && finalEntry
           ? Math.max(0, finalEntry.taxableIncome) *
+            finalEntry.basisConversionFactor *
             getRemainingMonthsInTaxYear(finalEntry.date)
           : 0;
       const annualTaxableIncome =
@@ -90,6 +111,19 @@ export function calculateTaxYearEffectiveRatesForEntries(
       ] as const;
     })
   );
+}
+
+function withTaxBasisConversionFactor(
+  entry: TaxYearIncomeEntry,
+  settings: PensionSettings
+): TaxYearIncomeEntryWithBasis {
+  return {
+    ...entry,
+    basisConversionFactor: getProjectionBasisToNominalFactor(
+      settings,
+      entry.date
+    ),
+  };
 }
 
 export function getRemainingMonthsInTaxYear(date: string) {

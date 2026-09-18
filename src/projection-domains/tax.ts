@@ -4,6 +4,7 @@ import {
   type PensionSettings,
   type PensionWithdrawalTaxTreatment,
 } from "../settings";
+import { calculateWholeMonthDifference } from "../derive-inputs";
 import {
   SCOTTISH_INCOME_TAX_RULES,
   UK_INCOME_TAX_COMMON_RULES,
@@ -109,22 +110,41 @@ export function createPensionLumpSumAllowanceState(
 
 export function consumePensionLumpSumAllowance(
   state: PensionLumpSumAllowanceState,
-  requestedTaxFreeCash: number
+  requestedTaxFreeCash: number,
+  basisConversionFactor = 1
 ) {
   const requested = Math.max(0, requestedTaxFreeCash);
-  const taxFreeCash = state.trackingEnabled
-    ? Math.min(requested, state.remaining)
-    : requested;
+  const requestedNominal = requested * basisConversionFactor;
+  const taxFreeCashNominal = state.trackingEnabled
+    ? Math.min(requestedNominal, state.remaining)
+    : requestedNominal;
+  const taxFreeCash = taxFreeCashNominal / basisConversionFactor;
 
   return {
     taxFreeCash,
     nextState: {
       ...state,
       remaining: state.trackingEnabled
-        ? Math.max(0, state.remaining - taxFreeCash)
+        ? Math.max(0, state.remaining - taxFreeCashNominal)
         : state.remaining,
     },
   };
+}
+
+export function getProjectionBasisToNominalFactor(
+  settings: PensionSettings,
+  rowDate: string
+) {
+  if (settings.projectionBasis === "nominal") {
+    return 1;
+  }
+
+  const months = Math.max(
+    0,
+    calculateWholeMonthDifference(settings.startDate, rowDate)
+  );
+
+  return (1 + settings.inflationRateAnnual / 100) ** (months / 12);
 }
 
 export function calculatePensionWithdrawalTaxBreakdown(input: {
@@ -133,6 +153,7 @@ export function calculatePensionWithdrawalTaxBreakdown(input: {
   csAvcWithdrawal: number;
   allowanceState?: PensionLumpSumAllowanceState;
   accountOrder?: readonly FlexibleFundAccountId[];
+  basisConversionFactor?: number;
 }): PensionWithdrawalTaxBreakdown {
   let state =
     input.allowanceState ?? createPensionLumpSumAllowanceState(input.settings);
@@ -166,7 +187,8 @@ export function calculatePensionWithdrawalTaxBreakdown(input: {
       (getTaxFreeWithdrawalPercent(treatment, customPercent) / 100);
     const consumed = consumePensionLumpSumAllowance(
       state,
-      requestedTaxFreeCash
+      requestedTaxFreeCash,
+      input.basisConversionFactor
     );
 
     state = consumed.nextState;

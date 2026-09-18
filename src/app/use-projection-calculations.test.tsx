@@ -2,7 +2,10 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import { createDefaultSettings, type PensionSettings } from "../settings";
 import type { RetirementPlanCalculationWorkerResponse } from "./retirement-plan-calculation-worker";
-import { type RetirementPlanResultCache } from "./retirement-plan-result-cache";
+import {
+  getRetirementPlanCacheKey,
+  type RetirementPlanResultCache,
+} from "./retirement-plan-result-cache";
 import { useProjectionCalculations } from "./use-projection-calculations";
 
 type WorkerListener = (event: MessageEvent<never>) => void;
@@ -10,7 +13,7 @@ type WorkerListener = (event: MessageEvent<never>) => void;
 class MockCalculationWorker {
   static instances: MockCalculationWorker[] = [];
 
-  readonly messages: PensionSettings[] = [];
+  readonly messages: unknown[] = [];
   readonly listeners = new Map<string, WorkerListener[]>();
   terminated = false;
 
@@ -33,8 +36,8 @@ class MockCalculationWorker {
     );
   }
 
-  postMessage(settings: PensionSettings) {
-    this.messages.push(settings);
+  postMessage(message: unknown) {
+    this.messages.push(message);
   }
 
   terminate() {
@@ -69,6 +72,18 @@ function createFastSettings(): PensionSettings {
     showCsAvc: false,
     showIsa: false,
     showLisa: false,
+  };
+}
+
+function createPreviewSettings(): PensionSettings {
+  return {
+    ...createFastSettings(),
+    showIsa: true,
+    isaCurrentPot: 120_000,
+    isaMonthlyContribution: 0,
+    isaWithdrawalStrategy: "percentage",
+    isaWithdrawalPercent: 10,
+    desiredRetirementIncome: 6_000,
   };
 }
 
@@ -119,7 +134,13 @@ describe("useProjectionCalculations", () => {
 
     expect(result.current.isProjectionPending).toBe(false);
     expect(result.current.retirementPlanResult).toEqual(updatedPlan);
-    expect(cache.get(JSON.stringify(updatedSettings))).toEqual(updatedPlan);
+    expect(
+      cache.get(
+        getRetirementPlanCacheKey(updatedSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        })
+      )
+    ).toEqual(updatedPlan);
     expect(worker?.terminated).toBe(true);
   });
 
@@ -386,4 +407,316 @@ describe("useProjectionCalculations", () => {
       updatedSettings,
     ]);
   });
+
+  it("runs deferred previews again after cache clearing and invalidation", async () => {
+    const initialSettings = createFastSettings();
+    const previewSettings = createPreviewSettings();
+    const cache: RetirementPlanResultCache = new Map();
+    const { result, rerender } = renderHook(
+      ({ settings, invalidationToken }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: cache,
+          calculationEnabled: true,
+          invalidationToken,
+        }),
+      { initialProps: { settings: initialSettings, invalidationToken: 0 } }
+    );
+
+    rerender({ settings: previewSettings, invalidationToken: 0 });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    act(() => {
+      MockCalculationWorker.instances[1]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: true,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(1)
+    );
+
+    const completedWorkerCount = MockCalculationWorker.instances.length;
+    cache.clear();
+    act(() => {
+      result.current.clearCalculationState();
+    });
+    rerender({ settings: previewSettings, invalidationToken: 1 });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances.length).toBeGreaterThan(
+        completedWorkerCount
+      )
+    );
+    let latestWorker = MockCalculationWorker.instances.at(-1);
+
+    if (!isFullPreviewRequest(latestWorker?.messages[0])) {
+      act(() => {
+        latestWorker?.emitMessage({
+          ok: true,
+          result: calculateRetirementPlan(previewSettings, {
+            includeTargetBasedWithdrawalPreviews: false,
+          }),
+        });
+      });
+      await waitFor(() => {
+        if (
+          MockCalculationWorker.instances.length <=
+          completedWorkerCount + 1
+        ) {
+          throw new Error("Expected another worker");
+        }
+      });
+      latestWorker = MockCalculationWorker.instances.at(-1);
+    }
+
+    expect(isFullPreviewRequest(latestWorker?.messages[0])).toBe(true);
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
+    await waitFor(() =>
+      expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(true)
+    );
+  });
+
+  it("restarts a cancelled deferred preview when Results is re-entered", async () => {
+    const initialSettings = createFastSettings();
+    const previewSettings = createPreviewSettings();
+    const { result, rerender } = renderHook(
+      ({ calculationEnabled, settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled,
+        }),
+      {
+        initialProps: {
+          calculationEnabled: true,
+          settings: initialSettings,
+        },
+      }
+    );
+
+    rerender({ calculationEnabled: true, settings: previewSettings });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    const cancelledPreviewWorker = MockCalculationWorker.instances[1];
+    expect(isFullPreviewRequest(cancelledPreviewWorker?.messages[0])).toBe(
+      true
+    );
+    await waitFor(() =>
+      expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(true)
+    );
+
+    rerender({ calculationEnabled: false, settings: previewSettings });
+    expect(cancelledPreviewWorker?.terminated).toBe(true);
+    await waitFor(() =>
+      expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false)
+    );
+
+    rerender({ calculationEnabled: true, settings: previewSettings });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(3)
+    );
+    const replacementPreviewWorker = MockCalculationWorker.instances[2];
+    expect(isFullPreviewRequest(replacementPreviewWorker?.messages[0])).toBe(
+      true
+    );
+
+    const replacementPlan = calculateRetirementPlan(previewSettings, {
+      includeTargetBasedWithdrawalPreviews: true,
+    });
+    act(() => {
+      replacementPreviewWorker?.emitMessage({
+        ok: true,
+        result: replacementPlan,
+      });
+    });
+    await waitFor(() =>
+      expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(1)
+    );
+    expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false);
+
+    act(() => {
+      cancelledPreviewWorker?.emitMessage({
+        ok: true,
+        result: {
+          ...replacementPlan,
+          targetBasedWithdrawalPreviews: [],
+        },
+      });
+    });
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(1);
+    expect(result.current.retirementPlanResult).toEqual(replacementPlan);
+  });
+
+  it("cancels a pending deferred preview when settings change", async () => {
+    const initialSettings = createFastSettings();
+    const firstPreviewSettings = createPreviewSettings();
+    const latestPreviewSettings = {
+      ...firstPreviewSettings,
+      desiredRetirementIncome: firstPreviewSettings.desiredRetirementIncome + 1,
+    };
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    rerender({ settings: firstPreviewSettings });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(firstPreviewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    const obsoletePreviewWorker = MockCalculationWorker.instances[1];
+    await waitFor(() =>
+      expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(true)
+    );
+
+    rerender({ settings: latestPreviewSettings });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(3)
+    );
+    expect(obsoletePreviewWorker?.terminated).toBe(true);
+    expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false);
+
+    act(() => {
+      MockCalculationWorker.instances[2]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(latestPreviewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(4)
+    );
+    const latestPreviewWorker = MockCalculationWorker.instances[3];
+    expect(isFullPreviewRequest(latestPreviewWorker?.messages[0])).toBe(true);
+
+    const latestPreviewPlan = calculateRetirementPlan(latestPreviewSettings, {
+      includeTargetBasedWithdrawalPreviews: true,
+    });
+    act(() => {
+      latestPreviewWorker?.emitMessage({
+        ok: true,
+        result: latestPreviewPlan,
+      });
+      obsoletePreviewWorker?.emitMessage({
+        ok: true,
+        result: {
+          ...latestPreviewPlan,
+          settings: firstPreviewSettings,
+          targetBasedWithdrawalPreviews: [],
+        },
+      });
+    });
+
+    await waitFor(() =>
+      expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(1)
+    );
+    expect(result.current.retirementPlanResult).toEqual(latestPreviewPlan);
+    expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false);
+  });
+
+  it("does not permanently complete a failed deferred preview and can retry it", async () => {
+    const initialSettings = createFastSettings();
+    const previewSettings = createPreviewSettings();
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    rerender({ settings: previewSettings });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    act(() => {
+      MockCalculationWorker.instances[1]?.emitMessage({
+        ok: false,
+        message: "preview failed",
+      });
+    });
+
+    await waitFor(() =>
+      expect(result.current.targetBasedWithdrawalPreviewError).toBe(true)
+    );
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
+
+    act(() => {
+      result.current.retryTargetBasedWithdrawalPreviews();
+    });
+
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(3)
+    );
+  });
 });
+
+function isFullPreviewRequest(message: unknown) {
+  return (
+    typeof message === "object" &&
+    message !== null &&
+    "options" in message &&
+    (
+      message as {
+        options?: { includeTargetBasedWithdrawalPreviews?: boolean };
+      }
+    ).options?.includeTargetBasedWithdrawalPreviews === true
+  );
+}

@@ -132,8 +132,11 @@ export function useAppController() {
     retirementPlanResult,
     retirementIncomeSeries,
     targetBasedWithdrawalPreviews,
+    isTargetBasedWithdrawalPreviewPending,
+    targetBasedWithdrawalPreviewError,
     clearCalculationState,
     retryFailedCalculation,
+    retryTargetBasedWithdrawalPreviews,
     validationIssues,
   } = useProjectionCalculations({
     settings,
@@ -389,6 +392,8 @@ export function useAppController() {
     incomeAgeRangeItems,
     projectionRows,
     targetBasedWithdrawalPreviews,
+    isTargetBasedWithdrawalPreviewPending,
+    targetBasedWithdrawalPreviewError,
     retirementIncomeDisplay: journeyRetirementIncomeDisplay,
     comparisonRetirementIncomeDisplay,
     showGuidanceNotes,
@@ -402,6 +407,7 @@ export function useAppController() {
     onRetirementIncomeDisplayChange: setJourneyRetirementIncomeDisplay,
     onComparisonRetirementIncomeDisplayChange:
       setComparisonRetirementIncomeDisplay,
+    onRetryTargetBasedWithdrawalPreviews: retryTargetBasedWithdrawalPreviews,
   };
 
   function acknowledgeNotice(consentGranted: boolean) {

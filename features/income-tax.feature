@@ -85,6 +85,8 @@ Feature: Retirement income tax modelling
     @tax-year @employment-context
     Scenario: Use earlier employment income as tax context when retirement starts mid-year
       Given Income Tax modelling is on
+      And the projection basis is "nominal"
+      And the long-term inflation assumption is 0.00%
       And the modelled tax year has these taxable monthly amounts:
         | date       | amount  | taxContext |
         | 2026-04-15 | 0.00    | 3500.00    |

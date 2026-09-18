@@ -20,6 +20,21 @@ import {
 } from "./retirement-plan-result-cache";
 import type { RetirementPlanCalculationWorkerResponse } from "./retirement-plan-calculation-worker";
 
+const FAST_CALCULATION_OPTIONS = {
+  includeTargetBasedWithdrawalPreviews: false,
+} as const;
+
+const FULL_CALCULATION_OPTIONS = {
+  includeTargetBasedWithdrawalPreviews: true,
+} as const;
+
+type PreviewCalculationState = {
+  settingsSignature: string | null;
+  invalidationToken: number;
+  requestId: number | null;
+  status: "idle" | "pending" | "error";
+};
+
 export function useProjectionCalculations({
   settings,
   retirementIncomeDisplay,
@@ -42,6 +57,7 @@ export function useProjectionCalculations({
       ? getCachedRetirementPlanResult({
           settings,
           cache: retirementPlanResultCache,
+          options: FAST_CALCULATION_OPTIONS,
         })
       : null,
     invalidationToken,
@@ -53,6 +69,17 @@ export function useProjectionCalculations({
     settingsSignature: null,
     invalidationToken,
   });
+  const [previewCalculationState, setPreviewCalculationState] =
+    useState<PreviewCalculationState>({
+      settingsSignature: null,
+      invalidationToken,
+      requestId: null,
+      status: "idle",
+    });
+  const [previewRetryCounter, setPreviewRetryCounter] = useState(0);
+  const previewRequestIdRef = useRef(0);
+  const previewCalculationStateRef = useRef(previewCalculationState);
+  previewCalculationStateRef.current = previewCalculationState;
   const deferredSettingsSignature = useMemo(
     () => JSON.stringify(deferredSettings),
     [deferredSettings]
@@ -74,12 +101,26 @@ export function useProjectionCalculations({
   );
   const latestSettingsSignatureRef = useRef(settingsSignature);
   latestSettingsSignatureRef.current = settingsSignature;
+  const isPreviewPending =
+    previewCalculationState.invalidationToken === invalidationToken &&
+    previewCalculationState.settingsSignature === calculatedSettingsSignature &&
+    previewCalculationState.status === "pending";
+  const previewCalculationError =
+    previewCalculationState.invalidationToken === invalidationToken &&
+    previewCalculationState.settingsSignature === calculatedSettingsSignature &&
+    previewCalculationState.status === "error";
 
   const clearCalculationState = useCallback(() => {
     setRetirementPlanState({ result: null, invalidationToken });
     setCalculationErrorState({
       settingsSignature: null,
       invalidationToken,
+    });
+    setPreviewCalculationState({
+      settingsSignature: null,
+      invalidationToken,
+      requestId: null,
+      status: "idle",
     });
   }, [invalidationToken]);
 
@@ -88,6 +129,15 @@ export function useProjectionCalculations({
       settingsSignature: null,
       invalidationToken,
     });
+  }, [invalidationToken]);
+  const retryTargetBasedWithdrawalPreviews = useCallback(() => {
+    setPreviewCalculationState({
+      settingsSignature: null,
+      invalidationToken,
+      requestId: null,
+      status: "idle",
+    });
+    setPreviewRetryCounter((current) => current + 1);
   }, [invalidationToken]);
 
   useEffect(() => {
@@ -128,6 +178,7 @@ export function useProjectionCalculations({
           getCachedRetirementPlanResult({
             settings: deferredSettings,
             cache: retirementPlanResultCache,
+            options: FAST_CALCULATION_OPTIONS,
           }),
           deferredSettingsSignature
         );
@@ -200,6 +251,7 @@ export function useProjectionCalculations({
         settings: deferredSettings,
         cache: retirementPlanResultCache,
         precomputedPlan: event.data.result,
+        options: FAST_CALCULATION_OPTIONS,
       });
       worker.terminate();
       commitPlan(result, deferredSettingsSignature);
@@ -236,6 +288,182 @@ export function useProjectionCalculations({
     deferredSettingsSignature,
     invalidationToken,
     retirementPlanResultCache,
+  ]);
+  useEffect(() => {
+    if (
+      !calculationEnabled ||
+      !retirementPlanResult ||
+      calculatedSettingsSignature === null ||
+      calculatedSettingsSignature !== settingsSignature ||
+      !hasTargetBasedWithdrawalPreviewWork(retirementPlanResult) ||
+      retirementPlanResult.targetBasedWithdrawalPreviews.length > 0 ||
+      (previewCalculationStateRef.current.invalidationToken ===
+        invalidationToken &&
+        previewCalculationStateRef.current.settingsSignature ===
+          calculatedSettingsSignature &&
+        previewCalculationStateRef.current.status !== "idle")
+    ) {
+      return;
+    }
+
+    let active = true;
+    const requestId = previewRequestIdRef.current + 1;
+    previewRequestIdRef.current = requestId;
+    let previewPendingTimer: ReturnType<typeof setTimeout> | undefined =
+      setTimeout(() => {
+        if (active && previewRequestIdRef.current === requestId) {
+          setPreviewCalculationState({
+            settingsSignature: calculatedSettingsSignature,
+            invalidationToken,
+            requestId,
+            status: "pending",
+          });
+        }
+      }, 0);
+    const clearPreviewPendingTimer = () => {
+      if (previewPendingTimer !== undefined) {
+        clearTimeout(previewPendingTimer);
+        previewPendingTimer = undefined;
+      }
+    };
+    const commitPreviewPlan = (plan: RetirementPlanResult) => {
+      if (
+        active &&
+        previewRequestIdRef.current === requestId &&
+        JSON.stringify(plan.settings) === latestSettingsSignatureRef.current
+      ) {
+        clearPreviewPendingTimer();
+        setPreviewCalculationState({
+          settingsSignature: null,
+          invalidationToken,
+          requestId: null,
+          status: "idle",
+        });
+        setRetirementPlanState({ result: plan, invalidationToken });
+      }
+    };
+    const markPreviewError = () => {
+      if (
+        active &&
+        previewRequestIdRef.current === requestId &&
+        calculatedSettingsSignature === latestSettingsSignatureRef.current
+      ) {
+        clearPreviewPendingTimer();
+        setPreviewCalculationState({
+          settingsSignature: calculatedSettingsSignature,
+          invalidationToken,
+          requestId,
+          status: "error",
+        });
+      }
+    };
+    const cancelPreviewRequest = () => {
+      active = false;
+      clearPreviewPendingTimer();
+      setPreviewCalculationState((current) =>
+        current.requestId === requestId
+          ? {
+              settingsSignature: null,
+              invalidationToken,
+              requestId: null,
+              status: "idle",
+            }
+          : current
+      );
+    };
+    const calculateOnMainThread = () => {
+      try {
+        commitPreviewPlan(
+          getCachedRetirementPlanResult({
+            settings: retirementPlanResult.settings,
+            cache: retirementPlanResultCache,
+            options: FULL_CALCULATION_OPTIONS,
+          })
+        );
+      } catch {
+        markPreviewError();
+      }
+    };
+
+    if (typeof Worker === "undefined") {
+      calculateOnMainThread();
+      return () => {
+        cancelPreviewRequest();
+      };
+    }
+
+    let worker: Worker;
+
+    try {
+      worker = new Worker(
+        new URL("./retirement-plan-calculation-worker.ts", import.meta.url),
+        { type: "module" }
+      );
+    } catch {
+      calculateOnMainThread();
+      return () => {
+        cancelPreviewRequest();
+      };
+    }
+
+    const handleMessage = (
+      event: MessageEvent<RetirementPlanCalculationWorkerResponse>
+    ) => {
+      if (!active) {
+        return;
+      }
+
+      worker.terminate();
+
+      if (!event.data.ok) {
+        markPreviewError();
+        return;
+      }
+
+      const result = getCachedRetirementPlanResult({
+        settings: retirementPlanResult.settings,
+        cache: retirementPlanResultCache,
+        precomputedPlan: event.data.result,
+        options: FULL_CALCULATION_OPTIONS,
+      });
+      commitPreviewPlan(result);
+    };
+    const handleError = () => {
+      if (!active) {
+        return;
+      }
+
+      worker.terminate();
+      calculateOnMainThread();
+    };
+
+    worker.addEventListener("message", handleMessage);
+    worker.addEventListener("error", handleError);
+
+    try {
+      worker.postMessage({
+        settings: retirementPlanResult.settings,
+        options: FULL_CALCULATION_OPTIONS,
+      });
+    } catch {
+      worker.terminate();
+      calculateOnMainThread();
+    }
+
+    return () => {
+      cancelPreviewRequest();
+      worker.removeEventListener("message", handleMessage);
+      worker.removeEventListener("error", handleError);
+      worker.terminate();
+    };
+  }, [
+    calculatedSettingsSignature,
+    calculationEnabled,
+    invalidationToken,
+    previewRetryCounter,
+    retirementPlanResult,
+    retirementPlanResultCache,
+    settingsSignature,
   ]);
   const resultsProjection = useMemo(
     () =>
@@ -276,6 +504,8 @@ export function useProjectionCalculations({
     },
     targetBasedWithdrawalPreviews:
       resultsProjection?.targetBasedWithdrawalPreviews ?? [],
+    isTargetBasedWithdrawalPreviewPending: isPreviewPending,
+    targetBasedWithdrawalPreviewError: previewCalculationError,
     incomeAgeRangeItems: resultDisplayProjection?.incomeAgeRangeItems ?? [],
     ...resultControlProjection,
     deferredSettings,
@@ -291,6 +521,15 @@ export function useProjectionCalculations({
     retirementPlanResult,
     clearCalculationState,
     retryFailedCalculation,
+    retryTargetBasedWithdrawalPreviews,
     validationIssues,
   };
+}
+
+function hasTargetBasedWithdrawalPreviewWork(result: RetirementPlanResult) {
+  return result.rows.some((row) =>
+    Object.values(row.monthlyReducibleFlexibleWithdrawals ?? {}).some(
+      (withdrawal) => withdrawal.gross > 0
+    )
+  );
 }

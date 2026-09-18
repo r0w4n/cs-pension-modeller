@@ -340,6 +340,8 @@ describe("calculateJointRetirementProjection", () => {
     const settings = normalizeSettings({
       ...defaults,
       dateOfBirth: "1970-06-01",
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
       requirementAge: 60,
       lifeExpectancy: 90,
       showAlpha: false,
@@ -376,6 +378,8 @@ describe("calculateJointRetirementProjection", () => {
     const settings = normalizeSettings({
       ...defaults,
       dateOfBirth: "1970-06-01",
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
       requirementAge: 60,
       lifeExpectancy: 90,
       showAlpha: false,
@@ -415,6 +419,8 @@ describe("calculateJointRetirementProjection", () => {
     const settings = normalizeSettings({
       ...defaults,
       dateOfBirth: "1970-06-01",
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
       requirementAge: 60,
       lifeExpectancy: 90,
       showAlpha: false,
@@ -461,6 +467,8 @@ describe("calculateJointRetirementProjection", () => {
       dateOfBirth: "1970-06-01",
       requirementAge: 60,
       lifeExpectancy: 75,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
       taxationEnabled: false,
       taxTrackLumpSumAllowance: true,
       taxLumpSumAllowance: 300,
@@ -506,5 +514,79 @@ describe("calculateJointRetirementProjection", () => {
     expect(withdrawalRows[1].monthlyTaxFreePensionCash).toBeCloseTo(50, 6);
     expect(withdrawalRows[1].pensionLumpSumAllowanceRemaining).toBe(0);
     expect(withdrawalRows[2].monthlyTaxFreePensionCash).toBe(0);
+  });
+
+  it("keeps separate pension lump-sum allowance ledgers for each household member", () => {
+    const defaults = createDefaultSettings();
+    const settings = normalizeSettings({
+      ...defaults,
+      startDate: "2026-06-01",
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 75,
+      projectionBasis: "nominal",
+      inflationRateAnnual: 0,
+      taxationEnabled: false,
+      taxTrackLumpSumAllowance: true,
+      taxLumpSumAllowance: 300,
+      taxLumpSumAllowanceUsed: 0,
+      taxSippWithdrawalTreatment: "ufpls",
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: true,
+      sippCurrentPot: 100_000,
+      sippMonthlyContribution: 0,
+      sippDrawAge: 60,
+      sippWithdrawalStrategy: "meet_income_target",
+      showIsa: false,
+      flexibleWithdrawalPriority: ["sipp"],
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 75,
+        taxationEnabled: false,
+        taxTrackLumpSumAllowance: true,
+        taxLumpSumAllowance: 300,
+        taxLumpSumAllowanceUsed: 0,
+        taxSippWithdrawalTreatment: "ufpls",
+        showStatePension: false,
+        showSipp: true,
+        sippCurrentPot: 100_000,
+        sippMonthlyContribution: 0,
+        sippDrawAge: 60,
+        sippWithdrawalStrategy: "meet_income_target",
+        showIsa: false,
+        flexibleWithdrawalPriority: ["sipp"],
+      },
+      jointRetirement: {
+        ...defaults.jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 24_000,
+        fullyRetiredDesiredRetirementIncome: 24_000,
+        flexibleWithdrawalPriority: ["you:sipp", "partner:sipp"],
+      },
+    });
+
+    const projection = calculateJointRetirementProjection(settings);
+    const firstYouWithdrawal = projection.people.you.rows.find(
+      (row) => row.monthlySippPension > 0
+    );
+    const firstPartnerWithdrawal = projection.people.partner.rows.find(
+      (row) => row.monthlySippPension > 0
+    );
+
+    expect(firstYouWithdrawal?.monthlyTaxFreePensionCash).toBeCloseTo(300, 6);
+    expect(firstPartnerWithdrawal?.monthlyTaxFreePensionCash).toBeCloseTo(
+      (firstPartnerWithdrawal?.monthlySippPension ?? 0) * 0.25,
+      6
+    );
+    expect(firstYouWithdrawal?.pensionLumpSumAllowanceRemaining).toBe(0);
+    expect(
+      firstPartnerWithdrawal?.pensionLumpSumAllowanceRemaining
+    ).toBeCloseTo(
+      300 - (firstPartnerWithdrawal?.monthlyTaxFreePensionCash ?? 0),
+      6
+    );
   });
 });

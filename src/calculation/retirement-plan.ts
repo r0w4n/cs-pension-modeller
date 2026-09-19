@@ -48,6 +48,7 @@ export type RetirementPlanResult = {
 
 export type RetirementPlanCalculationOptions = ProjectionTableOptions & {
   includeTargetBasedWithdrawalPreviews?: boolean;
+  householdTargetWithdrawalMaxIterations?: number;
 };
 
 export function calculateRetirementPlan(
@@ -62,7 +63,10 @@ export function calculateRetirementPlan(
     settings.jointRetirement.enabled &&
     settings.partner &&
     validationIssues.length === 0
-      ? calculateJointRetirementProjection(settings)
+      ? calculateJointRetirementProjection(settings, {
+          targetWithdrawalMaxIterations:
+            options.householdTargetWithdrawalMaxIterations,
+        })
       : undefined;
   const householdAssessment = jointProjection
     ? assessHouseholdRetirementPlan(jointProjection, settings)

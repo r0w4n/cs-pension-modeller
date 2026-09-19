@@ -16,6 +16,7 @@ import {
 } from "../result-projection/retirement-results";
 import {
   getCachedRetirementPlanResult,
+  getRetirementPlanCacheKey,
   type RetirementPlanResultCache,
 } from "./retirement-plan-result-cache";
 import type { RetirementPlanCalculationWorkerResponse } from "./retirement-plan-calculation-worker";
@@ -198,7 +199,9 @@ export function useProjectionCalculations({
     let cachedPlan: RetirementPlanResult | undefined;
 
     try {
-      cachedPlan = retirementPlanResultCache?.get(deferredSettingsSignature);
+      cachedPlan = retirementPlanResultCache?.get(
+        getRetirementPlanCacheKey(deferredSettings, FAST_CALCULATION_OPTIONS)
+      );
     } catch {
       calculateOnMainThread();
       return () => {

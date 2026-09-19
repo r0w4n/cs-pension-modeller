@@ -1,5 +1,5 @@
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
-import { createDefaultSettings } from "../settings";
+import { createDefaultSettings, type PensionSettings } from "../settings";
 import {
   getCachedRetirementPlanResult,
   type RetirementPlanResultCache,
@@ -56,4 +56,93 @@ describe("getCachedRetirementPlanResult", () => {
     expect(cache.size).toBe(12);
     expect(cache.has(JSON.stringify(baseSettings))).toBe(false);
   });
+
+  it("does not reuse a fast cached result when full previews are requested later", () => {
+    const settings = createPreviewSettings();
+    const cache: RetirementPlanResultCache = new Map();
+    const fastPlan = getCachedRetirementPlanResult({
+      settings,
+      cache,
+      options: { includeTargetBasedWithdrawalPreviews: false },
+    });
+    const fullPlan = getCachedRetirementPlanResult({
+      settings: structuredClone(settings),
+      cache,
+      options: { includeTargetBasedWithdrawalPreviews: true },
+    });
+
+    expect(fullPlan).not.toBe(fastPlan);
+    expect(cache.size).toBe(2);
+    expect(fastPlan.targetBasedWithdrawalPreviews).toHaveLength(0);
+    expect(fullPlan.targetBasedWithdrawalPreviews.length).toBeGreaterThan(0);
+    expect(
+      getCachedRetirementPlanResult({
+        settings: structuredClone(settings),
+        cache,
+        options: { includeTargetBasedWithdrawalPreviews: false },
+      })
+    ).toBe(fastPlan);
+    expect(
+      getCachedRetirementPlanResult({
+        settings: structuredClone(settings),
+        cache,
+        options: { includeTargetBasedWithdrawalPreviews: true },
+      })
+    ).toBe(fullPlan);
+  });
+
+  it("does not reuse a full cached result when a fast result is requested later", () => {
+    const settings = createPreviewSettings();
+    const cache: RetirementPlanResultCache = new Map();
+    const fullPlan = getCachedRetirementPlanResult({
+      settings,
+      cache,
+      options: { includeTargetBasedWithdrawalPreviews: true },
+    });
+    const fastPlan = getCachedRetirementPlanResult({
+      settings: structuredClone(settings),
+      cache,
+      options: { includeTargetBasedWithdrawalPreviews: false },
+    });
+
+    expect(fastPlan).not.toBe(fullPlan);
+    expect(cache.size).toBe(2);
+    expect(fastPlan.targetBasedWithdrawalPreviews).toHaveLength(0);
+    expect(fullPlan.targetBasedWithdrawalPreviews.length).toBeGreaterThan(0);
+    expect(
+      getCachedRetirementPlanResult({
+        settings: structuredClone(settings),
+        cache,
+        options: { includeTargetBasedWithdrawalPreviews: true },
+      })
+    ).toBe(fullPlan);
+    expect(
+      getCachedRetirementPlanResult({
+        settings: structuredClone(settings),
+        cache,
+        options: { includeTargetBasedWithdrawalPreviews: false },
+      })
+    ).toBe(fastPlan);
+  });
 });
+
+function createPreviewSettings(): PensionSettings {
+  return {
+    ...createDefaultSettings(),
+    showAlpha: false,
+    showClassic: false,
+    showClassicPlus: false,
+    showNuvos: false,
+    showPremium: false,
+    showStatePension: false,
+    showSipp: false,
+    showCsAvc: false,
+    showIsa: true,
+    showLisa: false,
+    isaCurrentPot: 120_000,
+    isaMonthlyContribution: 0,
+    isaWithdrawalStrategy: "percentage",
+    isaWithdrawalPercent: 10,
+    desiredRetirementIncome: 6_000,
+  };
+}

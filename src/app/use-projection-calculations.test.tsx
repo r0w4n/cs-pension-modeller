@@ -237,7 +237,12 @@ describe("useProjectionCalculations", () => {
     const settings = createFastSettings();
     const initialPlan = calculateRetirementPlan(settings);
     const cache: RetirementPlanResultCache = new Map([
-      [JSON.stringify(settings), initialPlan],
+      [
+        getRetirementPlanCacheKey(settings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+        initialPlan,
+      ],
     ]);
     const { result, rerender } = renderHook(
       ({ calculationEnabled, invalidationToken }) =>
@@ -408,6 +413,250 @@ describe("useProjectionCalculations", () => {
     ]);
   });
 
+  it("shows an actionable error without stale results when worker construction and fallback calculation fail", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    const initialPlan = calculateRetirementPlan(initialSettings);
+    const failingCache = createFallbackFailureCache({
+      initialSettings,
+      initialPlan,
+      updatedSettings,
+      shouldFailFallback: () => workerConstructionAttempted,
+    });
+    let workerConstructionAttempted = false;
+
+    vi.stubGlobal(
+      "Worker",
+      class {
+        constructor() {
+          workerConstructionAttempted = true;
+          throw new Error("worker unavailable");
+        }
+      }
+    );
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: failingCache,
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    expect(result.current.retirementPlanResult).toEqual(initialPlan);
+
+    rerender({ settings: updatedSettings });
+
+    await waitFor(() => expect(result.current.calculationError).toBe(true));
+    expect(workerConstructionAttempted).toBe(true);
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.isProjectionPending).toBe(false);
+  });
+
+  it("uses the main-thread fallback successfully when worker construction fails", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    let workerConstructionAttempted = false;
+
+    vi.stubGlobal(
+      "Worker",
+      class {
+        constructor() {
+          workerConstructionAttempted = true;
+          throw new Error("worker unavailable");
+        }
+      }
+    );
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    rerender({ settings: updatedSettings });
+
+    const fallbackPlan = calculateRetirementPlan(updatedSettings, {
+      includeTargetBasedWithdrawalPreviews: false,
+    });
+    await waitFor(() =>
+      expect(result.current.retirementPlanResult).toEqual(fallbackPlan)
+    );
+    expect(workerConstructionAttempted).toBe(true);
+    expect(result.current.calculationError).toBe(false);
+    expect(result.current.isProjectionPending).toBe(false);
+  });
+
+  it("shows an actionable error without stale results when worker postMessage and fallback calculation fail", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    const initialPlan = calculateRetirementPlan(initialSettings);
+    const failingCache = createFallbackFailureCache({
+      initialSettings,
+      initialPlan,
+      updatedSettings,
+      shouldFailFallback: () => postMessageAttempted,
+    });
+    let postMessageAttempted = false;
+
+    vi.stubGlobal(
+      "Worker",
+      class extends MockCalculationWorker {
+        override postMessage(message: unknown) {
+          postMessageAttempted = true;
+          super.postMessage(message);
+          throw new Error("worker send failed");
+        }
+      }
+    );
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: failingCache,
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    expect(result.current.retirementPlanResult).toEqual(initialPlan);
+
+    rerender({ settings: updatedSettings });
+
+    await waitFor(() => expect(result.current.calculationError).toBe(true));
+    expect(postMessageAttempted).toBe(true);
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.isProjectionPending).toBe(false);
+  });
+
+  it("uses the main-thread fallback successfully when worker postMessage fails", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    let postMessageAttempted = false;
+
+    vi.stubGlobal(
+      "Worker",
+      class extends MockCalculationWorker {
+        override postMessage(message: unknown) {
+          postMessageAttempted = true;
+          super.postMessage(message);
+          throw new Error("worker send failed");
+        }
+      }
+    );
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    rerender({ settings: updatedSettings });
+
+    const fallbackPlan = calculateRetirementPlan(updatedSettings, {
+      includeTargetBasedWithdrawalPreviews: false,
+    });
+    await waitFor(() =>
+      expect(result.current.retirementPlanResult).toEqual(fallbackPlan)
+    );
+    expect(postMessageAttempted).toBe(true);
+    expect(result.current.calculationError).toBe(false);
+    expect(result.current.isProjectionPending).toBe(false);
+  });
+
+  it("retries a failed main calculation when Results is reopened", async () => {
+    const initialSettings = createFastSettings();
+    const updatedSettings = {
+      ...initialSettings,
+      desiredRetirementIncome: initialSettings.desiredRetirementIncome + 1000,
+    };
+    let firstFallbackShouldFail = false;
+    const cache = new Map() as RetirementPlanResultCache;
+    const updatedKey = getRetirementPlanCacheKey(updatedSettings, {
+      includeTargetBasedWithdrawalPreviews: false,
+    });
+    vi.spyOn(cache, "get").mockImplementation((key: string) => {
+      if (key === updatedKey && firstFallbackShouldFail) {
+        firstFallbackShouldFail = false;
+        throw new Error("fallback unavailable");
+      }
+
+      return undefined;
+    });
+    const { result, rerender } = renderHook(
+      ({ settings, calculationEnabled }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          retirementPlanResultCache: cache,
+          calculationEnabled,
+        }),
+      {
+        initialProps: {
+          settings: initialSettings,
+          calculationEnabled: true,
+        },
+      }
+    );
+
+    rerender({ settings: updatedSettings, calculationEnabled: true });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      firstFallbackShouldFail = true;
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: false,
+        message: "calculation failed",
+      });
+    });
+    await waitFor(() => expect(result.current.calculationError).toBe(true));
+
+    rerender({ settings: updatedSettings, calculationEnabled: false });
+    act(() => {
+      result.current.retryFailedCalculation();
+    });
+    rerender({ settings: updatedSettings, calculationEnabled: true });
+
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    expect(MockCalculationWorker.instances[1]?.messages).toEqual([
+      updatedSettings,
+    ]);
+    const recoveredPlan = calculateRetirementPlan(updatedSettings);
+    act(() => {
+      MockCalculationWorker.instances[1]?.emitMessage({
+        ok: true,
+        result: recoveredPlan,
+      });
+    });
+
+    expect(result.current.calculationError).toBe(false);
+    expect(result.current.retirementPlanResult).toEqual(recoveredPlan);
+  });
+
   it("runs deferred previews again after cache clearing and invalidation", async () => {
     const initialSettings = createFastSettings();
     const previewSettings = createPreviewSettings();
@@ -489,6 +738,119 @@ describe("useProjectionCalculations", () => {
     await waitFor(() =>
       expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(true)
     );
+  });
+
+  it("clears retained results, preview state and pending preview work explicitly", async () => {
+    const initialSettings = createFastSettings();
+    const previewSettings = createPreviewSettings();
+    const { result, rerender } = renderHook(
+      ({ settings }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+        }),
+      { initialProps: { settings: initialSettings } }
+    );
+
+    rerender({ settings: previewSettings });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    const pendingPreviewWorker = MockCalculationWorker.instances[1];
+    await waitFor(() =>
+      expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(true)
+    );
+
+    act(() => {
+      result.current.clearCalculationState();
+    });
+
+    await waitFor(() => expect(pendingPreviewWorker?.terminated).toBe(true));
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
+    expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false);
+    expect(result.current.targetBasedWithdrawalPreviewError).toBe(false);
+
+    act(() => {
+      pendingPreviewWorker?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: true,
+        }),
+      });
+    });
+
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
+  });
+
+  it("invalidates retained results, preview state and pending preview work by token", async () => {
+    const initialSettings = createFastSettings();
+    const previewSettings = createPreviewSettings();
+    const { result, rerender } = renderHook(
+      ({ settings, invalidationToken }) =>
+        useProjectionCalculations({
+          settings,
+          retirementIncomeDisplay: "annual",
+          calculationEnabled: true,
+          invalidationToken,
+        }),
+      { initialProps: { settings: initialSettings, invalidationToken: 0 } }
+    );
+
+    rerender({ settings: previewSettings, invalidationToken: 0 });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(1)
+    );
+    act(() => {
+      MockCalculationWorker.instances[0]?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: false,
+        }),
+      });
+    });
+    await waitFor(() =>
+      expect(MockCalculationWorker.instances).toHaveLength(2)
+    );
+    const invalidatedPreviewWorker = MockCalculationWorker.instances[1];
+    await waitFor(() =>
+      expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(true)
+    );
+
+    rerender({ settings: previewSettings, invalidationToken: 1 });
+
+    await waitFor(() =>
+      expect(invalidatedPreviewWorker?.terminated).toBe(true)
+    );
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
+    expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false);
+    expect(result.current.targetBasedWithdrawalPreviewError).toBe(false);
+
+    act(() => {
+      invalidatedPreviewWorker?.emitMessage({
+        ok: true,
+        result: calculateRetirementPlan(previewSettings, {
+          includeTargetBasedWithdrawalPreviews: true,
+        }),
+      });
+    });
+
+    expect(result.current.retirementPlanResult).toBeNull();
+    expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
   });
 
   it("restarts a cancelled deferred preview when Results is re-entered", async () => {
@@ -696,6 +1058,10 @@ describe("useProjectionCalculations", () => {
     await waitFor(() =>
       expect(result.current.targetBasedWithdrawalPreviewError).toBe(true)
     );
+    expect(result.current.calculationError).toBe(false);
+    expect(result.current.retirementPlanResult?.settings).toEqual(
+      previewSettings
+    );
     expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(0);
 
     act(() => {
@@ -705,6 +1071,25 @@ describe("useProjectionCalculations", () => {
     await waitFor(() =>
       expect(MockCalculationWorker.instances).toHaveLength(3)
     );
+    const retryPreviewWorker = MockCalculationWorker.instances[2];
+    expect(isFullPreviewRequest(retryPreviewWorker?.messages[0])).toBe(true);
+
+    const retriedPlan = calculateRetirementPlan(previewSettings, {
+      includeTargetBasedWithdrawalPreviews: true,
+    });
+    act(() => {
+      retryPreviewWorker?.emitMessage({
+        ok: true,
+        result: retriedPlan,
+      });
+    });
+
+    await waitFor(() =>
+      expect(result.current.targetBasedWithdrawalPreviews).toHaveLength(1)
+    );
+    expect(result.current.targetBasedWithdrawalPreviewError).toBe(false);
+    expect(result.current.isTargetBasedWithdrawalPreviewPending).toBe(false);
+    expect(result.current.retirementPlanResult).toEqual(retriedPlan);
   });
 });
 
@@ -719,4 +1104,38 @@ function isFullPreviewRequest(message: unknown) {
       }
     ).options?.includeTargetBasedWithdrawalPreviews === true
   );
+}
+
+function createFallbackFailureCache({
+  initialSettings,
+  initialPlan,
+  updatedSettings,
+  shouldFailFallback,
+}: {
+  initialSettings: PensionSettings;
+  initialPlan: ReturnType<typeof calculateRetirementPlan>;
+  updatedSettings: PensionSettings;
+  shouldFailFallback: () => boolean;
+}): RetirementPlanResultCache {
+  const cache = new Map() as RetirementPlanResultCache;
+  const initialKey = getRetirementPlanCacheKey(initialSettings, {
+    includeTargetBasedWithdrawalPreviews: false,
+  });
+  const updatedKey = getRetirementPlanCacheKey(updatedSettings, {
+    includeTargetBasedWithdrawalPreviews: false,
+  });
+
+  vi.spyOn(cache, "get").mockImplementation((key: string) => {
+    if (key === initialKey) {
+      return initialPlan;
+    }
+
+    if (key === updatedKey && shouldFailFallback()) {
+      throw new Error("fallback unavailable");
+    }
+
+    return undefined;
+  });
+
+  return cache;
 }

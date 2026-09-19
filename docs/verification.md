@@ -3,6 +3,56 @@
 This file records release-sensitive local verification that is not itself a
 product feature or modelling assumption.
 
+## 2026-09-19 Calculation Lifecycle Coverage Scope
+
+The calculation lifecycle coverage added for the two-stage result flow is
+intentionally focused on production APIs and presentation adapters affected by
+deferred target-based withdrawal previews:
+
+- application calculation state in `useProjectionCalculations`, including
+  explicit clearing, invalidation, worker failure fallback, Results re-entry,
+  deferred-preview failure and successful preview retry
+- calculation-worker request and response protocol for legacy settings-only
+  messages and structured settings-plus-options messages
+- retirement-plan cache separation between fast results and full results with
+  target-based withdrawal previews
+- comparison projection and presentation when target-withdrawal convergence is
+  not proven, including household-only non-convergence
+- desktop and mobile comparison component presentation modes
+
+Vitest coverage is explicitly scoped to `src/**/*.{ts,tsx}`. The source
+exclusions are:
+
+- `src/test/**` and `**/*.test.ts(x)`, which are test support and tests rather
+  than production behaviour
+- `src/generated/**`, which is generated from Gherkin feature files and
+  protected by `npm run check:acceptance`
+- `src/main.tsx` and `src/render-app.tsx`, which are browser entry points
+  exercised by `e2e/production-smoke.spec.ts` tests named
+  "serves the main app shell from the built artifact", "serves footer pages
+  from the built artifact", and "gates analytics on direct navigation, consent
+  changes and clearing data". Static entry-point accessibility is covered by
+  `e2e/a11y.spec.ts` tests named "{Settings|About|Acceptance
+  criteria|Methodology|Privacy} page has no detectable axe violations".
+
+The following temporary mutation checks were run against the final tests and
+restored immediately afterwards:
+
+- making fast and full retirement-plan cache keys identical failed the two
+  fast/full cache-order tests
+- removing the deferred-preview retry counter increment failed the preview
+  retry completion test
+- removing pending preview worker termination failed the clear, invalidation,
+  Results re-entry and settings-change cancellation tests
+- removing `retryFailedCalculation()` from the controller Results re-entry path
+  failed the controller-level reopening test
+
+No user-facing pension rule, journey, or Gherkin acceptance behaviour is
+intended to change. Browser journey and accessibility coverage remains with
+the existing Playwright suites; this focused work adds unit and component
+regressions for the current calculation lifecycle rather than expanding the
+end-to-end matrix.
+
 ## 2026-09-10 Gherkin Integrity Remediation
 
 The remediation is complete. The final state keeps Gherkin scenarios tied to

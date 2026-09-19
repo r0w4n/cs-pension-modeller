@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { useState } from "react";
 import {
   createComparisonResult,
+  getSettingsSignature,
   type ComparisonScenario,
 } from "../result-projection/comparison-result";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
@@ -19,6 +20,7 @@ import {
   useComparisonState,
   useScenarioActions,
 } from "./comparison-state";
+import { useComparisonState as useApplicationComparisonState } from "./use-comparison-state";
 
 function createScenario(
   id: string,
@@ -209,6 +211,47 @@ describe("comparison state scenario actions", () => {
       calculatedSettings
     );
     expect(result.current.currentResult?.currentMatchesSaved).toBe(false);
+  });
+
+  it("clears comparison and retirement-plan caches when scenarios are reset", () => {
+    const { result } = renderHook(() => useApplicationComparisonState());
+    const settings = createDefaultSettings();
+    const scenario = createScenario("scenario-1", "Scenario 1", settings);
+    const plan = calculateRetirementPlan(settings);
+    const comparisonResult = createComparisonResult(
+      scenario,
+      JSON.stringify(settings),
+      plan
+    );
+    const {
+      currentMatchesSaved: _currentMatchesSaved,
+      scenario: _scenario,
+      ...cachedResult
+    } = comparisonResult;
+
+    act(() => {
+      result.current.comparisonResultCache.set(
+        getSettingsSignature(settings),
+        cachedResult
+      );
+      result.current.retirementPlanResultCache.set(
+        getSettingsSignature(settings),
+        plan
+      );
+      result.current.setComparisonScenarios([scenario]);
+    });
+
+    expect(result.current.comparisonResultCache.size).toBe(1);
+    expect(result.current.retirementPlanResultCache.size).toBe(1);
+    expect(result.current.comparisonScenarios).toHaveLength(1);
+
+    act(() => {
+      result.current.resetComparisonScenarios();
+    });
+
+    expect(result.current.comparisonResultCache.size).toBe(0);
+    expect(result.current.retirementPlanResultCache.size).toBe(0);
+    expect(result.current.comparisonScenarios).toHaveLength(0);
   });
 
   it("does not compare single-person and household scenarios together", () => {

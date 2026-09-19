@@ -889,6 +889,152 @@ describe("comparison table rows", () => {
     ).toEqual([{ value: "Needs checking", tone: "caution" }]);
   });
 
+  it("qualifies household outcomes when only household target-withdrawal convergence is not proven", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 90,
+      showAlpha: false,
+      showStatePension: false,
+      showSipp: false,
+      showIsa: false,
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 90,
+        showAlpha: false,
+        showStatePension: false,
+        showSipp: false,
+        showIsa: false,
+      },
+      jointRetirement: {
+        ...createDefaultSettings().jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 30_000,
+        fullyRetiredDesiredRetirementIncome: 40_000,
+      },
+    });
+    const plan = calculateRetirementPlan(settings, {
+      householdTargetWithdrawalMaxIterations: 0,
+    });
+    const result = createComparisonResult(
+      {
+        id: "household-non-converged",
+        name: "Household non-converged",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings),
+      plan
+    );
+
+    expect(plan.diagnostics.targetWithdrawalConvergence.converged).toBe(true);
+    expect(
+      plan.jointProjection?.diagnostics.targetWithdrawalConvergence.converged
+    ).toBe(false);
+    expect(result.modelType).toBe("household");
+    expect(result.targetWithdrawalConvergence.converged).toBe(false);
+    expect(buildRetirementOutcomeBanner(result)).toMatchObject({
+      status: "atRisk",
+      label: "Needs checking",
+    });
+    expect(buildComparisonStatusItems(result)).toEqual(
+      expect.arrayContaining([
+        {
+          label: "Income basis",
+          value:
+            "Household target after estimated Income Tax liability, calculated separately for each person",
+        },
+        {
+          label: "Target shortfall",
+          value:
+            "Target-based withdrawal calculation reached its iteration limit; shortfall status is an estimate",
+        },
+      ])
+    );
+    expect(
+      getComparisonRow(buildComparisonTableRows([result]), "Status").values
+    ).toEqual([{ value: "Needs checking", tone: "caution" }]);
+  });
+
+  it("qualifies household target-met outcomes when only household target-withdrawal convergence is not proven", () => {
+    const settings = normalizeSettings({
+      ...createDefaultSettings(),
+      dateOfBirth: "1970-06-01",
+      requirementAge: 60,
+      lifeExpectancy: 90,
+      showAdditionalGuaranteedIncome: true,
+      additionalGuaranteedIncomes: [
+        {
+          id: "you-income",
+          name: "Small pension",
+          annualAmount: 1_000,
+          startAge: 60,
+          endAge: null,
+          indexation: "none",
+          fixedIncreasePercent: null,
+          taxable: false,
+        },
+      ],
+      partner: {
+        ...createDefaultPartnerSettings(),
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 90,
+        showAdditionalGuaranteedIncome: true,
+        additionalGuaranteedIncomes: [
+          {
+            id: "partner-income",
+            name: "Small pension",
+            annualAmount: 1_000,
+            startAge: 60,
+            endAge: null,
+            indexation: "none",
+            fixedIncreasePercent: null,
+            taxable: false,
+          },
+        ],
+      },
+      jointRetirement: {
+        ...createDefaultSettings().jointRetirement,
+        enabled: true,
+        transitionDesiredRetirementIncome: 1,
+        fullyRetiredDesiredRetirementIncome: 1,
+      },
+    });
+    const plan = calculateRetirementPlan(settings, {
+      householdTargetWithdrawalMaxIterations: 0,
+    });
+    const result = createComparisonResult(
+      {
+        id: "household-target-met-non-converged",
+        name: "Household target met",
+        settings,
+        createdAt: "",
+        updatedAt: "",
+      },
+      JSON.stringify(settings),
+      plan
+    );
+
+    expect(plan.householdAssessment?.meetsTargetThroughout).toBe(true);
+    expect(plan.diagnostics.targetWithdrawalConvergence.converged).toBe(true);
+    expect(
+      plan.jointProjection?.diagnostics.targetWithdrawalConvergence.converged
+    ).toBe(false);
+    expect(result.targetWithdrawalConvergence.converged).toBe(false);
+    expect(buildRetirementOutcomeBanner(result)).toMatchObject({
+      status: "atRisk",
+      label: "Needs checking",
+    });
+    expect(
+      getComparisonRow(buildComparisonTableRows([result]), "Status").values
+    ).toEqual([{ value: "Needs checking", tone: "caution" }]);
+  });
+
   it("shows expected flexible bridge exhaustion as caution rather than a problem", () => {
     const settings = createFlexibleAssetsScenario({
       isaCurrentPot: 120000,

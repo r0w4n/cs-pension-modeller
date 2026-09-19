@@ -44,7 +44,7 @@ self.addEventListener(
   }
 );
 
-function normalizeWorkerRequest(
+export function normalizeWorkerRequest(
   request: RetirementPlanCalculationWorkerRequest
 ) {
   if ("settings" in request) {

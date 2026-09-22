@@ -4,6 +4,19 @@ import { expect, test, type Page } from "@playwright/test";
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 test.describe("accessibility", () => {
+  test("Quick Alpha calculator input screen has no detectable axe violations", async ({
+    page,
+  }) => {
+    await page.goto("/quick-calculator/");
+    await page
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "Quick Alpha calculator input screen");
+  });
+
   test("first-run acknowledgement dialog has no detectable axe violations", async ({
     page,
   }) => {

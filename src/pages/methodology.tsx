@@ -278,6 +278,38 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Quick Alpha calculator comparisons</h2>
+        <p className="section-copy">
+          The separate Quick Alpha calculator runs the same canonical pension
+          calculation as the full modeller. It creates eight settings snapshots:
+          standard, Added Pension, reduced hours, and both assumptions at Alpha
+          Normal Pension Age and at the selected retirement age. In each case,
+          Alpha service is assumed to end when Alpha starts. The quick
+          comparison is prospective: a retirement date before the calculation
+          date is shown as unavailable because this page does not reconstruct
+          retirement already taken. Another comparison age can remain available
+          when its retirement date is still in the future.
+        </p>
+        <p className="section-copy">
+          Quick results are gross annual rates before tax in today&apos;s money.
+          Pensionable earnings are held flat before any reduced-hours
+          assumption. Regular Added Pension payments are treated as constant
+          over the supported post-statement modelling period and are reduced in
+          line with the entered working percentage after reduced hours begin.
+          This may include supported months between the statement checkpoint and
+          today.
+        </p>
+        <p className="section-copy">
+          The combined Alpha and State Pension figure uses both income amounts
+          from one projection row on or after the later start date. It is an
+          annualised rate at that date, rather than the amount paid in the first
+          calendar or tax year. The quick page excludes legacy pensions,
+          flexible savings, tax controls, spending targets and household
+          modelling; those remain available in the full modeller.
+        </p>
+      </section>
+
+      <section>
         <h2>Projection basis: real and nominal values</h2>
         <p className="section-copy">
           The model can show values in either real terms or nominal terms.

@@ -29,6 +29,8 @@ function PrivacyPage() {
           The modeller uses your browser&apos;s local storage to remember your
           inputs, the selected mode, a few UI preferences, and any support
           prompt preference on this device only when local saving is enabled.
+          The separate Quick Alpha calculator uses its own versioned local key
+          and does not store its calculated result rows.
         </p>
         <p className="section-copy">
           You can manage this from the{" "}

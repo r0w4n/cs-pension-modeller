@@ -49,6 +49,7 @@ Feature: Local-only preferences and data controls
     When local data is cleared through the application action
     Then local saving should be off
     And raw local storage should contain only the disabled saving preference and reset signal
+    And quick-calculator storage should be cleared
     And active modeller settings should be reset to their initial values
     And no previous acknowledgement should be loaded
     And no previous analytics consent should be loaded
@@ -64,6 +65,7 @@ Feature: Local-only preferences and data controls
     And the user edits settings and saves another comparison while local saving is disabled
     Then no settings or comparison data should be written while saving is disabled
     And raw local storage should contain only the disabled saving preference and reset signal
+    And quick-calculator storage should be cleared
 
   @clear-data
   Scenario: Re-enable saving after clearing and editing without restoring old values

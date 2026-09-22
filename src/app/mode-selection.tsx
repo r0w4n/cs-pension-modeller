@@ -1,3 +1,5 @@
+import { resolveAppBaseHref } from "./app-base";
+
 export type AppModeOption = "bridge" | "simple" | "expert";
 
 type ModeSelectionProps = {
@@ -66,6 +68,16 @@ export function ModeSelection({
           </span>
         </button>
       </div>
+      <p className="section-copy quick-calculator-entry-link">
+        Prefer sliders?{" "}
+        <a
+          href={`${resolveAppBaseHref()}quick-calculator/`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open the Quick Alpha calculator (opens in a new tab).
+        </a>
+      </p>
     </section>
   );
 }

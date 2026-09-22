@@ -25,6 +25,8 @@ to the selected planning horizon. The calculation start is set automatically.
 It supports:
 
 - simple, early-retirement bridge, and expert journeys
+- a separate Quick Alpha calculator that compares standard, Added Pension and
+  reduced-hours assumptions at Alpha Normal Pension Age and a selected age
 - optional Alpha, classic, classic plus, nuvos, Premium, State Pension, SIPP,
   ISA, LISA, taxation, and partial retirement sections
 - Alpha pension accrual from Annual Benefit Statement values and future
@@ -325,6 +327,11 @@ The concrete layer responsibilities are:
   calculation engine.
 - [`src/pages/`](src/pages) contains the static footer pages, and [`e2e/`](e2e)
   contains browser journey, accessibility, and production smoke checks.
+- [`src/app/quick-calculator/`](src/app/quick-calculator) owns the isolated
+  `quick-calculator/` page, its draft state, versioned local storage and one
+  batch worker. Its pure scenario builder uses the canonical calculation entry
+  point for all eight estimates, and its result projection selects semantic
+  Alpha and State Pension values from those canonical results.
 
 The FCIS boundary has four practical rules:
 
@@ -374,14 +381,15 @@ on later in Settings, and the choice can be changed afterwards.
 
 Keys currently used:
 
-| Key                                       | Purpose                                                                                            | Stored value                                                                        |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                              |
-| `cs-pension-modeller.settings`            | Pension inputs and assumptions for each journey, when local saving is enabled.                     | JSON object envelope `{ version, data: { journeys: { simple, bridge, expert } } }`. |
-| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                                |
-| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                              |
-| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.             |
-| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string, currently `"v1"`.                                                   |
+| Key                                       | Purpose                                                                                              | Stored value                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                           | `"true"` or `"false"`.                                                                                |
+| `cs-pension-modeller.settings`            | Pension inputs and assumptions for each journey, when local saving is enabled.                       | JSON object envelope `{ version, data: { journeys: { simple, bridge, expert } } }`.                   |
+| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                           | One of `bridge`, `simple`, `expert`.                                                                  |
+| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                            | `"true"` or `"false"`.                                                                                |
+| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                             | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.                               |
+| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled.   | Version string, currently `"v1"`.                                                                     |
+| `cs-pension-quick-calculator`             | Stores the separate Quick Alpha calculator inputs and completion state when local saving is enabled. | Versioned envelope `{ version: 1, data: { inputs, completion } }`; calculated results are not stored. |
 
 Settings storage is schema-versioned. Current saves use a versioned envelope so
 older browser data can be migrated safely when fields are renamed or

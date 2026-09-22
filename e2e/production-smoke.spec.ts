@@ -223,6 +223,44 @@ test.describe("production build smoke checks", () => {
     expect(acceptanceHorizontalOverflow).toBeLessThanOrEqual(1);
   });
 
+  test("serves the Quick Alpha calculator and its worker from the built artifact", async ({
+    page,
+  }) => {
+    await page.goto("/quick-calculator/");
+    await page
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Back to the full modeller" })
+    ).toHaveAttribute("href", "../");
+
+    await page.getByLabel("Birth month and year month").selectOption("06");
+    await page.getByLabel("Birth month and year year").selectOption("1987");
+    await page
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("5000");
+    await page
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await page
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .fill("42000");
+    const calculationWorker = page.waitForEvent("worker");
+    await page
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .blur();
+    await calculationWorker;
+    await expect(page.getByRole("article")).toHaveCount(8);
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+    ).toBeVisible();
+  });
+
   test("gates analytics on direct navigation, consent changes and clearing data", async ({
     page,
   }) => {

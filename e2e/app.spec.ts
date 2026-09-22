@@ -1,6 +1,146 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 
 test.describe("app end-to-end journeys", () => {
+  test("opens the separate Quick Alpha calculator and keeps full-modeller mode separate", async ({
+    page,
+    context,
+  }) => {
+    await acknowledgeAndOpenMode(page, "simple");
+    const popupPromise = context.waitForEvent("page");
+    await page
+      .getByRole("link", {
+        name: "Open the Quick Alpha calculator (opens in a new tab).",
+      })
+      .click();
+    const quickPage = await popupPromise;
+
+    await expect(
+      quickPage.getByRole("heading", {
+        level: 1,
+        name: "Quick Alpha calculator",
+      })
+    ).toBeVisible();
+    await quickPage.getByLabel("Birth month and year month").selectOption("06");
+    await quickPage
+      .getByLabel("Birth month and year year")
+      .selectOption("1987");
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("5000");
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await quickPage
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .fill("42000");
+    await quickPage
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .blur();
+
+    await expect(
+      quickPage.getByRole("heading", { name: /At normal pension age/ })
+    ).toBeVisible();
+    await expect(
+      quickPage.getByRole("heading", { name: /At your selected age/ })
+    ).toBeVisible();
+    await expect(
+      quickPage.getByText(
+        "Estimated annual income before tax, in today's money."
+      )
+    ).toBeVisible();
+    await expect(quickPage.getByRole("article")).toHaveCount(8);
+
+    const selectedAgeSlider = quickPage.getByLabel("Selected retirement age", {
+      exact: true,
+    });
+    await selectedAgeSlider.focus();
+    await quickPage.keyboard.press("ArrowRight");
+    await quickPage.keyboard.press("Tab");
+    await expect(
+      quickPage.getByRole("heading", { name: /At your selected age/ })
+    ).toContainText("60 years 3 months");
+
+    await quickPage.setViewportSize({ width: 320, height: 720 });
+    const horizontalOverflow = await quickPage.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(horizontalOverflow).toBeLessThanOrEqual(1);
+    await expect(
+      quickPage.getByRole("link", { name: "View estimates" })
+    ).toBeVisible();
+
+    await quickPage.reload();
+    await expect(
+      quickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("5000");
+    await expect(
+      page.getByRole("heading", { name: "Simplified retirement journey" })
+    ).toBeVisible();
+
+    const fullModellerStateBeforeReset = await readLocalStorageItem(
+      page,
+      "cs-pension-modeller.settings"
+    );
+    expect(fullModellerStateBeforeReset).not.toBeNull();
+    const secondQuickPage = await context.newPage();
+    await secondQuickPage.goto("/quick-calculator/");
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("5000");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+
+    quickPage.once("dialog", (dialog) => dialog.accept());
+    await quickPage
+      .getByRole("button", { name: "Reset quick calculator" })
+      .click();
+    await expect(
+      secondQuickPage.getByText(/reset in another open tab/)
+    ).toBeVisible();
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("");
+    expect(
+      await readLocalStorageItem(page, "cs-pension-modeller.settings")
+    ).toBe(fullModellerStateBeforeReset);
+    expect(
+      await readLocalStorageItem(page, "cs-pension-quick-calculator")
+    ).toBeNull();
+
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("321");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await expect
+      .poll(() =>
+        readLocalStorageItem(secondQuickPage, "cs-pension-quick-calculator")
+      )
+      .toContain('"accruedPensionAtLastAbs":321');
+    await secondQuickPage.reload();
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("321");
+    await expect(
+      secondQuickPage.getByLabel("Birth month and year month")
+    ).toHaveValue("");
+
+    await page.goto("/settings/");
+    await page.getByLabel("Save inputs on this device").uncheck();
+    await expect(
+      quickPage.getByRole("dialog", { name: "Important information" })
+    ).toBeVisible();
+    expect(
+      await readLocalStorageItem(quickPage, "cs-pension-quick-calculator")
+    ).toBeNull();
+  });
+
   test("shows the voluntary support prompt after eligible Results time", async ({
     page,
   }) => {

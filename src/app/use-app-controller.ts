@@ -411,6 +411,11 @@ export function useAppController() {
   };
 
   function acknowledgeNotice(consentGranted: boolean) {
+    // The first-run notice is also the point at which the user opts into the
+    // app's normal local-saving defaults. Persist this before saving the
+    // acknowledgement and analytics choice, because those preferences are
+    // intentionally guarded by the local-saving preference.
+    setLocalStorageEnabled(true);
     setHasAcknowledgedNotice(true);
     saveAcknowledgementState();
     setAnalyticsConsent(consentGranted);

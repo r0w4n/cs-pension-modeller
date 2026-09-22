@@ -988,6 +988,34 @@ describe.sequential("App settings form", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("enables local saving and persists consent when the notice is accepted after saving was disabled", async () => {
+    window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
+
+    const view = render(<App />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Accept analytics and continue" })
+    );
+
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe("true");
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY)).toBe("v1");
+    await waitFor(() =>
+      expect(window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)).toBe(
+        "true"
+      )
+    );
+
+    view.unmount();
+    window.history.pushState({}, "", "/settings/");
+    render(<App />);
+
+    expect(
+      screen.getByRole("checkbox", { name: "Save inputs on this device" })
+    ).toBeChecked();
+    expect(screen.getByLabelText("Allow analytics")).toBeChecked();
+  });
+
   it("clears all local storage data from the settings page and shows feedback", async () => {
     window.localStorage.setItem(ACKNOWLEDGEMENT_STORAGE_KEY, "v1");
     window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, "true");

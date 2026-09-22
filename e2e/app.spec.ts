@@ -196,6 +196,52 @@ test.describe("app end-to-end journeys", () => {
     expect(horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
+  test("accepting the first-run notice restores local saving and persists consent", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.evaluate(() => {
+      window.localStorage.clear();
+      window.localStorage.setItem(
+        "cs-pension-modeller.localStorageEnabled",
+        "false"
+      );
+    });
+    await page.reload();
+
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          localSaving: window.localStorage.getItem(
+            "cs-pension-modeller.localStorageEnabled"
+          ),
+          acknowledgement: window.localStorage.getItem(
+            "cs-pension-modeller.acknowledgement"
+          ),
+          settings: window.localStorage.getItem("cs-pension-modeller.settings"),
+          analytics: window.localStorage.getItem(
+            "cs-pension-modeller.analyticsConsent"
+          ),
+        }))
+      )
+      .toEqual({
+        localSaving: "true",
+        acknowledgement: "v1",
+        settings: expect.any(String),
+        analytics: "true",
+      });
+
+    await page.goto("/settings/");
+    await expect(
+      page.getByRole("checkbox", { name: "Save inputs on this device" })
+    ).toBeChecked();
+    await expect(page.getByLabel("Allow analytics")).toBeChecked();
+  });
+
   test("completes the simple journey without the comparison section", async ({
     page,
   }) => {

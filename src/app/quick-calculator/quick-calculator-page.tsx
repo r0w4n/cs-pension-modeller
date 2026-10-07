@@ -6,6 +6,7 @@ import type {
   RangeField,
   SelectField,
 } from "../../fieldDefinitions";
+import { useRef } from "react";
 import { fieldGroups } from "../../fieldDefinitions";
 import {
   calculateDateAge,
@@ -13,10 +14,9 @@ import {
   calculateStatePensionDrawDate,
   formatCurrency,
   formatModelAge,
-  getTodayIsoDate,
   type PensionValidationIssue,
 } from "../../settings";
-import { formatDate } from "../../result-projection/formatting";
+import { formatDate, formatPercent } from "../../result-projection/formatting";
 import { QUICK_CALCULATOR_RESULT_BASIS } from "../../result-projection/quick-calculator-results";
 import { Helmet } from "../../helmet";
 import { resolveAppBaseHref } from "../app-base";
@@ -34,6 +34,7 @@ import {
   getFieldCardClassName,
 } from "../form-fields-shared";
 import { ImportantInformationDialog } from "../important-information-dialog";
+import { SavedLocalFeedback } from "../saved-local-feedback";
 import { SettingsFields } from "../form-fields";
 import { SiteFooter } from "../site-footer";
 import { useQuickCalculator } from "./use-quick-calculator";
@@ -49,12 +50,13 @@ const statementYearField = getField("alphaPensionAbsDate", {
 const accruedPensionField = getField("accruedPensionAtLastAbs", {
   label: "Alpha pension on your statement (£ per year)",
   description:
-    "Enter annual pension income from your statement, not a pension pot or current cash value. Zero is a valid answer.",
+    "Enter annual pension income from your statement, not a pension pot or current cash value. The starting £0 is an assumption to check; zero is a valid answer.",
 }) as CurrencyInputField;
 const earningsField = getField("pensionableEarnings", {
   label: "Pensionable earnings (£ per year)",
   description:
     "Your actual annual pensionable earnings before the hypothetical hours reduction. Zero is a valid answer.",
+  emptyWhenZero: false,
 }) as RangeField;
 const retirementAgeField = getField("alphaPensionDrawAge", {
   label: "Selected retirement age",
@@ -87,9 +89,13 @@ const epaEnabledField = getField("alphaEpaEnabled") as CheckboxField;
 
 export function QuickCalculatorPage() {
   const calculator = useQuickCalculator();
+  const pageHeadingRef = useRef<HTMLHeadingElement>(null);
   const appBaseHref = resolveAppBaseHref();
   const currentAge = calculator.completion.dateOfBirth
-    ? calculateDateAge(calculator.inputs.dateOfBirth, getTodayIsoDate())
+    ? calculateDateAge(
+        calculator.inputs.dateOfBirth,
+        calculator.calculationDate
+      )
     : null;
   const normalPensionAge = calculator.completion.dateOfBirth
     ? calculateNormalPensionAge(calculator.inputs.dateOfBirth)
@@ -113,17 +119,25 @@ export function QuickCalculatorPage() {
         />
       </Helmet>
       {!calculator.hasAcknowledgedNotice ? (
-        <ImportantInformationDialog onContinue={calculator.acknowledgeNotice} />
+        <ImportantInformationDialog
+          onContinue={calculator.acknowledgeNotice}
+          manageFocus
+          focusAfterCloseRef={pageHeadingRef}
+        />
       ) : null}
 
       <main
         className="app-shell quick-calculator-shell"
         aria-hidden={!calculator.hasAcknowledgedNotice || undefined}
+        inert={!calculator.hasAcknowledgedNotice ? true : undefined}
       >
+        <SavedLocalFeedback show={calculator.showSavedFeedback} />
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">Civil Service Pensions</p>
-            <h1>Quick Alpha calculator</h1>
+            <h1 ref={pageHeadingRef} tabIndex={-1}>
+              Quick Alpha calculator
+            </h1>
             <p className="lead">
               Enter your statement figures, then adjust the sliders to compare
               retirement estimates. This calculator uses the same calculation
@@ -142,8 +156,9 @@ export function QuickCalculatorPage() {
               <p className="eyebrow">Your assumptions</p>
               <h2>Statement and retirement inputs</h2>
               <p className="section-copy">
-                Required fields start unanswered. Estimates update after a valid
-                value is committed.
+                Enter your birth month and year. The starting assumptions are £0
+                annual Alpha pension and £40,000 pensionable earnings; replace
+                these with your own figures.
               </p>
             </div>
 
@@ -186,8 +201,9 @@ export function QuickCalculatorPage() {
                 />
                 {currentAge !== null && normalPensionAge !== null ? (
                   <p className="quick-derived-value">
-                    Current age: {formatModelAge(currentAge)}. Alpha Normal
-                    Pension Age: {formatModelAge(normalPensionAge)}.
+                    Current age on {formatDate(calculator.calculationDate)}:{" "}
+                    {formatModelAge(currentAge)}. Alpha Normal Pension Age:{" "}
+                    {formatModelAge(normalPensionAge)}.
                   </p>
                 ) : null}
               </div>
@@ -204,6 +220,7 @@ export function QuickCalculatorPage() {
                 field={accruedPensionField}
                 value={calculator.inputs.accruedPensionAtLastAbs}
                 onChange={calculator.onChange}
+                resetValue={calculator.resetValues.accruedPensionAtLastAbs}
                 showGuidanceNotes
                 domIdPrefix="quick"
                 initialDraftValue={
@@ -224,6 +241,7 @@ export function QuickCalculatorPage() {
                 value={calculator.inputs.pensionableEarnings}
                 settings={calculator.inputs}
                 onChange={calculator.onChange}
+                resetValue={calculator.resetValues.pensionableEarnings}
                 showGuidanceNotes
                 domIdPrefix="quick"
                 isAnswered={calculator.completion.pensionableEarnings}
@@ -242,6 +260,7 @@ export function QuickCalculatorPage() {
                 value={calculator.inputs.alphaPensionDrawAge}
                 settings={calculator.inputs}
                 onChange={calculator.onChange}
+                resetValue={calculator.resetValues.alphaPensionDrawAge}
                 showGuidanceNotes
                 domIdPrefix="quick"
                 strictDraftValidation
@@ -259,6 +278,7 @@ export function QuickCalculatorPage() {
                 value={calculator.inputs.alphaAddedPensionMonthly}
                 settings={calculator.inputs}
                 onChange={calculator.onChange}
+                resetValue={calculator.resetValues.alphaAddedPensionMonthly}
                 showGuidanceNotes
                 domIdPrefix="quick"
                 strictDraftValidation
@@ -284,6 +304,7 @@ export function QuickCalculatorPage() {
                 value={calculator.inputs.partialRetirementStartAge}
                 settings={calculator.inputs}
                 onChange={calculator.onChange}
+                resetValue={calculator.resetValues.partialRetirementStartAge}
                 showGuidanceNotes
                 domIdPrefix="quick"
                 strictDraftValidation
@@ -301,6 +322,7 @@ export function QuickCalculatorPage() {
                 value={calculator.inputs.partialRetirementWorkPercent}
                 settings={calculator.inputs}
                 onChange={calculator.onChange}
+                resetValue={calculator.resetValues.partialRetirementWorkPercent}
                 showGuidanceNotes
                 domIdPrefix="quick"
                 strictDraftValidation
@@ -346,6 +368,7 @@ export function QuickCalculatorPage() {
                     field={statePensionField}
                     value={calculator.inputs.currentStatePension}
                     onChange={calculator.onChange}
+                    resetValue={calculator.resetValues.currentStatePension}
                     showGuidanceNotes
                     disabled={!calculator.inputs.showStatePension}
                     domIdPrefix="quick"
@@ -400,56 +423,25 @@ export function QuickCalculatorPage() {
               </div>
             </details>
 
-            <details className="quick-disclosure">
-              <summary>Assumptions used</summary>
-              <ul className="section-copy">
-                <li>
-                  Figures use today&apos;s money and the modeller&apos;s current
-                  default inflation assumption, with pension increases applied.
-                </li>
-                <li>
-                  Pensionable pay stays flat before any reduced-hours
-                  assumption. Service ends when Alpha starts in each comparison.
-                </li>
-                <li>
-                  The statement year uses the 1 April checkpoint. Regular Added
-                  Pension payments are modelled after that checkpoint, including
-                  any supported period before today.
-                </li>
-                <li>
-                  Outputs are gross annual rates before tax. This page excludes
-                  legacy pensions, savings, household modelling, spending
-                  targets and tax controls.
-                </li>
-              </ul>
-            </details>
+            <QuickCalculatorAssumptions
+              inflationRateAnnual={calculator.inflationRateAnnual}
+            />
 
-            <p className="section-copy quick-storage-status" role="status">
-              {calculator.storageMessage}
+            {calculator.storageMessage ? (
+              <p className="section-copy quick-storage-status" role="status">
+                {calculator.storageMessage}
+              </p>
+            ) : null}
+            <p className="section-copy">
+              Manage saved data in{" "}
+              <a href={`${appBaseHref}settings/`}>Settings</a>.
             </p>
-            <div className="quick-actions">
-              <a
-                className="primary-button quick-mobile-results-link"
-                href="#quick-results"
-              >
-                View estimates
-              </a>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Reset the quick calculator? This removes only quick calculator inputs and estimates."
-                    )
-                  ) {
-                    calculator.resetQuickCalculator();
-                  }
-                }}
-              >
-                Reset quick calculator
-              </button>
-            </div>
+            <a
+              className="primary-button quick-mobile-results-link"
+              href="#quick-results"
+            >
+              View estimates
+            </a>
           </div>
 
           <section
@@ -493,6 +485,39 @@ export function QuickCalculatorPage() {
   );
 }
 
+export function QuickCalculatorAssumptions({
+  inflationRateAnnual,
+}: {
+  inflationRateAnnual: number;
+}) {
+  return (
+    <details className="quick-disclosure">
+      <summary>Assumptions used</summary>
+      <ul className="section-copy">
+        <li>
+          Figures are in today&apos;s money, using an annual inflation
+          assumption of {formatPercent(inflationRateAnnual / 100)}, with pension
+          increases applied.
+        </li>
+        <li>
+          Pensionable pay stays flat before any reduced-hours assumption.
+          Service ends when Alpha starts in each comparison.
+        </li>
+        <li>
+          The statement year uses the 1 April checkpoint. Regular Added Pension
+          payments are modelled after that checkpoint, including any supported
+          period before today.
+        </li>
+        <li>
+          Outputs are gross annual rates before tax. This page excludes legacy
+          pensions, savings, household modelling, spending targets and tax
+          controls.
+        </li>
+      </ul>
+    </details>
+  );
+}
+
 function QuickResults({
   calculator,
 }: {
@@ -501,8 +526,8 @@ function QuickResults({
   if (!calculator.requiredInputsComplete) {
     return (
       <div className="quick-results-empty" role="status">
-        Complete birth date, accrued Alpha pension and pensionable earnings to
-        see current estimates. An explicit £0 is accepted.
+        Enter your birth month and year to see current estimates. Replace the
+        starting pension and earnings assumptions with your own figures.
       </div>
     );
   }

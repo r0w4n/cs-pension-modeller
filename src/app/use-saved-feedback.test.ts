@@ -25,4 +25,21 @@ describe("useSavedFeedback", () => {
     expect(clearTimeoutSpy).toHaveBeenCalledWith(pendingTimer);
     expect(result.current.savedFeedbackTimerRef.current).toBeNull();
   });
+
+  it("keeps its actions stable and can cancel visible feedback", () => {
+    vi.useFakeTimers();
+    const { result, rerender } = renderHook(() => useSavedFeedback());
+    const showSavedLabel = result.current.showSavedLabel;
+    const hideSavedLabel = result.current.hideSavedLabel;
+
+    rerender();
+    expect(result.current.showSavedLabel).toBe(showSavedLabel);
+    expect(result.current.hideSavedLabel).toBe(hideSavedLabel);
+
+    act(() => result.current.showSavedLabel());
+    expect(result.current.showSavedFeedback).toBe(true);
+    act(() => result.current.hideSavedLabel());
+    expect(result.current.showSavedFeedback).toBe(false);
+    expect(result.current.savedFeedbackTimerRef.current).toBeNull();
+  });
 });

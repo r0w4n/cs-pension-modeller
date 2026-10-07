@@ -8,6 +8,10 @@ test.describe("accessibility", () => {
     page,
   }) => {
     await page.goto("/quick-calculator/");
+    await expect(
+      page.getByRole("dialog", { name: "Important information" })
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "Quick Alpha acknowledgement dialog");
     await page
       .getByRole("button", { name: "Continue without analytics" })
       .click();
@@ -15,6 +19,27 @@ test.describe("accessibility", () => {
       page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
     ).toBeVisible();
     await expectNoAxeViolations(page, "Quick Alpha calculator input screen");
+
+    await page.getByLabel("Birth month and year month").selectOption("06");
+    await page.getByLabel("Birth month and year year").selectOption("1987");
+    await fillCurrency(
+      page,
+      "Alpha pension on your statement (£ per year)",
+      "5000"
+    );
+    await fillExactNumber(
+      page,
+      "Pensionable earnings (£ per year) exact value",
+      "42000"
+    );
+    await expect(page.getByRole("article")).toHaveCount(8);
+    await expectNoAxeViolations(page, "Quick Alpha populated results");
+
+    await fillExactNumber(page, "Selected retirement age exact value", "60.2");
+    await expect(
+      page.getByText("Use whole years or 3, 6 or 9 months.", { exact: true })
+    ).toBeVisible();
+    await expectNoAxeViolations(page, "Quick Alpha visible validation error");
   });
 
   test("first-run acknowledgement dialog has no detectable axe violations", async ({

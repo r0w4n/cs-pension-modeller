@@ -53,14 +53,32 @@ export function saveQuickCalculatorState(state: QuickCalculatorStoredState) {
     return false;
   }
 
+  const persistableState = getPersistableQuickCalculatorState(state);
+  if (!persistableState) {
+    return false;
+  }
+
   const envelope: StoredEnvelope = {
     version: QUICK_CALCULATOR_STORAGE_VERSION,
-    data: state,
+    data: persistableState,
   };
   return writeStorageItem(
     QUICK_CALCULATOR_STORAGE_KEY,
     JSON.stringify(envelope)
   );
+}
+
+export function isQuickCalculatorStatePersistable(
+  state: QuickCalculatorStoredState
+) {
+  return getPersistableQuickCalculatorState(state) !== null;
+}
+
+function getPersistableQuickCalculatorState(state: QuickCalculatorStoredState) {
+  return parseQuickCalculatorState({
+    version: QUICK_CALCULATOR_STORAGE_VERSION,
+    data: state,
+  });
 }
 
 export function loadQuickCalculatorState():

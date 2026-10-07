@@ -4,6 +4,14 @@ Feature: Quick Alpha pension comparisons
   The separate quick calculator should compare Alpha estimates through the
   canonical pension engine without changing full-modeller plans.
 
+  Scenario: Start with usable public assumptions and derive prospective ages
+    Given a fresh quick calculator on 24 September 2026
+    Then its birth date is unanswered
+    And its starting Alpha pension is 0 pounds and earnings are 40000 pounds
+    And its starting selected age is 57 and reduced-hours age is 55
+    When the member enters a birth date of 1 June 1960
+    Then untouched quick ages both move to 66.5
+
   Scenario: Compare the same assumptions at two retirement ages
     Given valid Alpha statement and earnings inputs in the quick calculator
     When the member selects a supported retirement age before normal pension age
@@ -23,11 +31,23 @@ Feature: Quick Alpha pension comparisons
     Then its regular Added Pension payment after that date is 100 pounds
     And the result explains that reduced payment assumption
 
+  Scenario: Explain Added Pension payments outside model coverage
+    Given quick Added Pension inputs whose supported purchase window has ended
+    When the quick comparisons are calculated on 23 September 2026
+    Then the selected Added Pension estimate retains the canonical amount
+    And the selected Added Pension estimate explains the model coverage limitation
+
   Scenario: Keep State Pension out of income before its start
     Given Alpha starts before the member's State Pension date
     When the quick estimates are displayed
     Then the Alpha-only amount is distinguished from the later combined amount
     And the combined amount states its actual start date
+
+  Scenario: Retain the exact derived State Pension date
+    Given quick inputs for a member born on 1 May 1977
+    When the quick comparisons are calculated with the derived State Pension date
+    Then the quick base uses the exact State Pension date 2044-05-06
+    And all quick scenarios retain the exact State Pension date 2044-05-06
 
   Scenario: Distinguish an unanswered amount from zero
     Given an unanswered accrued pension field
@@ -39,7 +59,7 @@ Feature: Quick Alpha pension comparisons
     Given browser local storage contains populated modeller data
     And retained quick results have been calculated from the stored quick inputs
     When local data is cleared through the application action
-    And the member edits quick inputs, enables saving and reloads
+    And saving is enabled and a valid post-clear quick snapshot is persisted
     Then cleared values and results do not return
 
   Scenario: Reject an incomplete enabled EPA schedule before normalisation

@@ -684,13 +684,6 @@ h3 {
   background: var(--accent-soft);
 }
 
-.quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
 .quick-mobile-results-link {
   display: inline-flex;
   align-items: center;

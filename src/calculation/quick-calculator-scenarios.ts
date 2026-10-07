@@ -12,6 +12,10 @@ import {
   type PensionValidationIssue,
 } from "../settings";
 import { addYearsToIsoDate } from "../model-date";
+import {
+  assessRegularAddedPensionSupport,
+  formatRegularAddedPensionSupportNote,
+} from "./added-pension-purchase-support";
 
 export const QUICK_CALCULATOR_SCENARIOS = [
   ["normal-standard", "normal", "standard", "Standard"],
@@ -136,6 +140,11 @@ export function createQuickCalculatorBaseSettings({
     { fallbackStartDate: calculationDate }
   );
 
+  // The shared normaliser exposes a quarter-year State Pension draw-age
+  // control. The quick calculator has no such override and must retain the
+  // exact statutory date derived for the entered birth date.
+  settings.statePensionDrawDate = statePensionDrawDate;
+
   return { status: "ready", settings, validationIssues: [] };
 }
 
@@ -249,6 +258,16 @@ export function runQuickCalculatorScenarios({
           includeTargetBasedWithdrawalPreviews: false,
         });
         calculatedBySignature.set(signature, result);
+      }
+
+      if (usesAddedPension) {
+        const supportDiagnostic = assessRegularAddedPensionSupport(
+          settings,
+          result.rows
+        );
+        if (supportDiagnostic) {
+          notes.push(formatRegularAddedPensionSupportNote(supportDiagnostic));
+        }
       }
 
       return {

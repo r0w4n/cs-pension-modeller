@@ -8,6 +8,7 @@ import {
   type PensionSettings,
 } from "../settings";
 import { calculateRetirementPlan } from "./retirement-plan";
+import { formatRegularAddedPensionSupportNote } from "./added-pension-purchase-support";
 import {
   createQuickCalculatorBaseSettings,
   QUICK_CALCULATOR_SCENARIOS,
@@ -63,7 +64,7 @@ function independentlyExpectedScenario(
   const usesReduced =
     requestsReduced && inputs.partialRetirementStartAge < retirementAge;
 
-  return normalizeSettings(
+  const settings = normalizeSettings(
     {
       ...defaults,
       startDate: CALCULATION_DATE,
@@ -119,6 +120,10 @@ function independentlyExpectedScenario(
     },
     { fallbackStartDate: CALCULATION_DATE }
   );
+  settings.statePensionDrawDate = calculateStatePensionDrawDate(
+    inputs.dateOfBirth
+  );
+  return settings;
 }
 
 describe("quick calculator scenarios", () => {
@@ -229,6 +234,42 @@ describe("quick calculator scenarios", () => {
     ).toBe("invalid");
   });
 
+  it("preserves exact derived State Pension dates through every canonical scenario", () => {
+    const transitionalInputs = {
+      ...validInputs(),
+      dateOfBirth: "1977-05-01",
+    };
+    const transitionalBase = readyBase(transitionalInputs);
+    expect(transitionalBase.statePensionDrawDate).toBe("2044-05-06");
+
+    const transitionalBatch = runQuickCalculatorScenarios({
+      baseSettings: transitionalBase,
+      calculationDate: CALCULATION_DATE,
+    });
+    expect(
+      transitionalBatch.scenarios.every(
+        (scenario) =>
+          scenario.settings.statePensionDrawDate === "2044-05-06" &&
+          scenario.result?.settings.statePensionDrawDate === "2044-05-06"
+      )
+    ).toBe(true);
+
+    const ordinaryInputs = {
+      ...validInputs(),
+      dateOfBirth: "1987-06-01",
+    };
+    const ordinaryBase = readyBase(ordinaryInputs);
+    expect(ordinaryBase.statePensionDrawDate).toBe("2055-06-01");
+    expect(
+      runQuickCalculatorScenarios({
+        baseSettings: ordinaryBase,
+        calculationDate: CALCULATION_DATE,
+      }).scenarios.every(
+        (scenario) => scenario.settings.statePensionDrawDate === "2055-06-01"
+      )
+    ).toBe(true);
+  });
+
   it("keeps overlap and scenario-specific EPA accrual checks canonical", () => {
     const overlap = validInputs();
     overlap.alphaEpaEnabled = true;
@@ -312,6 +353,142 @@ describe("quick calculator scenarios", () => {
       (fullRow?.monthlyAddedPension ?? 0) / 2,
       8
     );
+  });
+
+  it("qualifies regular Added Pension payments excluded by purchase and factor coverage", () => {
+    const inputs = {
+      ...validInputs(),
+      dateOfBirth: "1957-06-01",
+      alphaPensionAbsDate: "2026",
+      alphaPensionDrawAge: 70,
+      alphaAddedPensionMonthly: 200,
+      alphaAddedPensionFactorType: "self" as const,
+      partialRetirementStartAge: 70,
+      alphaEpaEnabled: false,
+    };
+    const batch = runQuickCalculatorScenarios({
+      baseSettings: readyBase(inputs, "2026-09-23"),
+      calculationDate: "2026-09-23",
+    });
+    const selectedStandard = batch.scenarios.find(
+      (scenario) => scenario.id === "selected-standard"
+    );
+    const selectedAdded = batch.scenarios.find(
+      (scenario) => scenario.id === "selected-added"
+    );
+
+    expect(selectedAdded?.result).not.toBeNull();
+    expect(selectedAdded?.result?.summary.alphaPension.annualAtDraw).toBe(
+      selectedStandard?.result?.summary.alphaPension.annualAtDraw
+    );
+    expect(selectedAdded?.notes.join(" ")).toContain(
+      "excludes all regular Added Pension payments"
+    );
+    expect(selectedAdded?.notes.join(" ")).toContain("model limitation");
+    expect(
+      batch.scenarios
+        .filter((scenario) => scenario.basis === "normal")
+        .every((scenario) => scenario.result === null)
+    ).toBe(true);
+  });
+
+  it("distinguishes partial Added Pension coverage from supported and zero-payment cases", () => {
+    const spanningInputs = {
+      ...validInputs(),
+      dateOfBirth: "1960-06-01",
+      alphaPensionAbsDate: "2026",
+      alphaPensionDrawAge: 70,
+      partialRetirementStartAge: 70,
+    };
+    const spanning = runQuickCalculatorScenarios({
+      baseSettings: readyBase(spanningInputs, "2026-09-23"),
+      calculationDate: "2026-09-23",
+    });
+    expect(
+      spanning.scenarios
+        .find((scenario) => scenario.id === "selected-added")
+        ?.notes.join(" ")
+    ).toContain("includes supported earlier regular Added Pension payments");
+
+    const supported = runQuickCalculatorScenarios({
+      baseSettings: readyBase(validInputs(), "2026-09-23"),
+      calculationDate: "2026-09-23",
+    });
+    expect(
+      supported.scenarios
+        .find((scenario) => scenario.id === "selected-added")
+        ?.notes.join(" ")
+    ).not.toContain("model limitation");
+
+    const zeroPayment = runQuickCalculatorScenarios({
+      baseSettings: readyBase(
+        { ...spanningInputs, alphaAddedPensionMonthly: 0 },
+        "2026-09-23"
+      ),
+      calculationDate: "2026-09-23",
+    });
+    expect(
+      zeroPayment.scenarios
+        .find((scenario) => scenario.id === "selected-added")
+        ?.notes.join(" ")
+    ).not.toContain("model limitation");
+
+    const zeroHours = runQuickCalculatorScenarios({
+      baseSettings: readyBase(
+        {
+          ...spanningInputs,
+          partialRetirementStartAge: 55,
+          partialRetirementWorkPercent: 0,
+        },
+        "2026-09-23"
+      ),
+      calculationDate: "2026-09-23",
+    });
+    expect(
+      zeroHours.scenarios
+        .find((scenario) => scenario.id === "selected-reduced-added")
+        ?.notes.join(" ")
+    ).not.toContain("model limitation");
+  });
+
+  it("identifies unavailable factor coverage inside an otherwise supported purchase period", () => {
+    const inputs = {
+      ...validInputs(),
+      dateOfBirth: "2010-06-01",
+      alphaPensionAbsDate: "2026",
+      alphaPensionDrawAge: 60,
+      partialRetirementStartAge: 55,
+    };
+    const batch = runQuickCalculatorScenarios({
+      baseSettings: readyBase(inputs, "2026-09-23"),
+      calculationDate: "2026-09-23",
+    });
+    const note = batch.scenarios
+      .find((scenario) => scenario.id === "selected-added")
+      ?.notes.join(" ");
+
+    expect(note).toContain("no matching factor coverage");
+    expect(note).not.toContain("supported purchase period or factor coverage");
+  });
+
+  it("does not assign a time order to partial factor-coverage exclusions", () => {
+    const factorOnly = formatRegularAddedPensionSupportNote({
+      extent: "some-excluded",
+      causes: ["factor-coverage"],
+    });
+    const mixed = formatRegularAddedPensionSupportNote({
+      extent: "some-excluded",
+      causes: ["purchase-period", "factor-coverage"],
+    });
+
+    expect(factorOnly).toContain(
+      "includes some regular Added Pension payments but excludes others"
+    );
+    expect(mixed).toContain(
+      "includes some regular Added Pension payments but excludes others"
+    );
+    expect(`${factorOnly} ${mixed}`).not.toContain("earlier");
+    expect(`${factorOnly} ${mixed}`).not.toContain("later payments");
   });
 
   it("marks only past retirement rows unavailable and keeps the calculation date aligned", () => {

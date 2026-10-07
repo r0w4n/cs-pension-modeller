@@ -24,6 +24,11 @@ import {
   type QuickCalculatorStoredInputs,
 } from "../../src/app/quick-calculator/quick-calculator-storage";
 import { getQuickCalculatorReadiness } from "../../src/app/quick-calculator/quick-calculator-readiness";
+import {
+  createQuickCalculatorDefaults,
+  FRESH_QUICK_CALCULATOR_COMPLETION,
+  getQuickCalculatorAgeDefaults,
+} from "../../src/app/quick-calculator/quick-calculator-defaults";
 import { loadStoredComparisonScenarios } from "../../src/app/comparison-storage";
 
 const CALCULATION_DATE = "2026-09-22";
@@ -46,6 +51,8 @@ type QuickWorld = {
   oldQuickAccrued?: number;
   reloadedQuickAccrued?: number;
   canonicalAddedPensionRatio?: number;
+  calculationDate?: string;
+  quickAgeDefaults?: ReturnType<typeof getQuickCalculatorAgeDefaults>;
 };
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -101,6 +108,76 @@ function calculateQuick(world: QuickWorld, calculationDate = CALCULATION_DATE) {
     calculationDate,
   });
 }
+
+Given(
+  "a fresh quick calculator on 24 September 2026",
+  function (this: QuickWorld) {
+    this.calculationDate = "2026-09-24";
+    this.quickInputs = createQuickCalculatorDefaults(createDefaultSettings());
+    this.quickCompletion = { ...FRESH_QUICK_CALCULATOR_COMPLETION };
+  }
+);
+
+Then("its birth date is unanswered", function (this: QuickWorld) {
+  assert(this.quickInputs, "Quick inputs were not prepared");
+  assert(
+    this.quickInputs.dateOfBirth === "" &&
+      this.quickCompletion?.dateOfBirth === false,
+    "Fresh birth date should remain unanswered"
+  );
+});
+
+Then(
+  "its starting Alpha pension is {int} pounds and earnings are {int} pounds",
+  function (this: QuickWorld, pension: number, earnings: number) {
+    assert(this.quickInputs, "Quick inputs were not prepared");
+    assert(
+      this.quickInputs.accruedPensionAtLastAbs === pension &&
+        this.quickInputs.pensionableEarnings === earnings &&
+        this.quickCompletion?.accruedPensionAtLastAbs === true &&
+        this.quickCompletion.pensionableEarnings === true,
+      "Fresh financial assumptions were not usable"
+    );
+  }
+);
+
+Then(
+  "its starting selected age is {int} and reduced-hours age is {int}",
+  function (this: QuickWorld, selectedAge: number, reducedHoursAge: number) {
+    assert(this.quickInputs, "Quick inputs were not prepared");
+    assert(
+      this.quickInputs.alphaPensionDrawAge === selectedAge &&
+        this.quickInputs.partialRetirementStartAge === reducedHoursAge &&
+        this.quickCompletion?.retirementAgeInitialised === false &&
+        this.quickCompletion.partialRetirementAgeInitialised === false,
+      "Fresh quick ages or their initialisation flags were incorrect"
+    );
+  }
+);
+
+When(
+  "the member enters a birth date of 1 June 1960",
+  function (this: QuickWorld) {
+    assert(this.quickInputs, "Quick inputs were not prepared");
+    this.quickInputs.dateOfBirth = "1960-06-01";
+    this.quickAgeDefaults = getQuickCalculatorAgeDefaults(
+      this.quickInputs.dateOfBirth,
+      this.calculationDate ?? CALCULATION_DATE
+    );
+  }
+);
+
+Then(
+  "untouched quick ages both move to {float}",
+  function (this: QuickWorld, expectedAge: number) {
+    assert(this.quickAgeDefaults?.supported, "Expected supported age defaults");
+    assert(
+      this.quickAgeDefaults.retirementAge === expectedAge &&
+        this.quickAgeDefaults.reducedHoursAge === expectedAge,
+      "Quick ages did not use the next future quarter age"
+    );
+  }
+);
 
 Given(
   "valid Alpha statement and earnings inputs in the quick calculator",
@@ -286,6 +363,64 @@ Then(
 );
 
 Given(
+  "quick Added Pension inputs whose supported purchase window has ended",
+  function (this: QuickWorld) {
+    this.quickInputs = {
+      ...validQuickInputs(),
+      dateOfBirth: "1957-06-01",
+      alphaPensionAbsDate: "2026",
+      alphaPensionDrawAge: 70,
+      alphaAddedPensionMonthly: 200,
+      alphaAddedPensionFactorType: "self",
+      partialRetirementStartAge: 70,
+      alphaEpaEnabled: false,
+    };
+  }
+);
+
+When(
+  "the quick comparisons are calculated on 23 September 2026",
+  function (this: QuickWorld) {
+    calculateQuick(this, "2026-09-23");
+  }
+);
+
+Then(
+  "the selected Added Pension estimate retains the canonical amount",
+  function (this: QuickWorld) {
+    const standard = this.quickBatch?.scenarios.find(
+      (scenario) => scenario.id === "selected-standard"
+    );
+    const added = this.quickBatch?.scenarios.find(
+      (scenario) => scenario.id === "selected-added"
+    );
+    assert(standard?.result && added?.result, "Selected estimates unavailable");
+    assert(
+      added.result.summary.alphaPension.annualAtDraw ===
+        standard.result.summary.alphaPension.annualAtDraw,
+      "Canonical Added Pension amount changed despite unsupported purchases"
+    );
+  }
+);
+
+Then(
+  "the selected Added Pension estimate explains the model coverage limitation",
+  function (this: QuickWorld) {
+    const added = this.quickBatch?.scenarios.find(
+      (scenario) => scenario.id === "selected-added"
+    );
+    assert(
+      added?.notes.some(
+        (note) =>
+          note.includes("excludes all regular Added Pension payments") &&
+          note.includes("model limitation")
+      ),
+      "Added Pension model coverage qualification missing"
+    );
+  }
+);
+
+Given(
   "Alpha starts before the member's State Pension date",
   function (this: QuickWorld) {
     this.quickInputs = validQuickInputs();
@@ -326,6 +461,48 @@ Then(
     assert(
       card?.combinedStartDate === scenario?.settings.statePensionDrawDate,
       "Combined amount did not use the actual State Pension start date"
+    );
+  }
+);
+
+Given(
+  "quick inputs for a member born on 1 May 1977",
+  function (this: QuickWorld) {
+    this.quickInputs = {
+      ...validQuickInputs(),
+      dateOfBirth: "1977-05-01",
+    };
+  }
+);
+
+When(
+  "the quick comparisons are calculated with the derived State Pension date",
+  function (this: QuickWorld) {
+    calculateQuick(this);
+  }
+);
+
+Then(
+  "the quick base uses the exact State Pension date 2044-05-06",
+  function (this: QuickWorld) {
+    assert(
+      this.baseResult?.status === "ready" &&
+        this.baseResult.settings.statePensionDrawDate === "2044-05-06",
+      "Quick base did not retain the exact derived State Pension date"
+    );
+  }
+);
+
+Then(
+  "all quick scenarios retain the exact State Pension date 2044-05-06",
+  function (this: QuickWorld) {
+    assert(
+      this.quickBatch?.scenarios.every(
+        (scenario) =>
+          scenario.settings.statePensionDrawDate === "2044-05-06" &&
+          scenario.result?.settings.statePensionDrawDate === "2044-05-06"
+      ),
+      "A quick scenario changed the exact derived State Pension date"
     );
   }
 );
@@ -405,7 +582,7 @@ Given(
 );
 
 When(
-  "the member edits quick inputs, enables saving and reloads",
+  "saving is enabled and a valid post-clear quick snapshot is persisted",
   function (this: QuickWorld) {
     assert(
       loadQuickCalculatorState().status === "empty",

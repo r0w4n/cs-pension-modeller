@@ -61,6 +61,42 @@ describe("quick calculator result projection", () => {
     expect(card?.notes.join(" ")).toContain("not included before");
   });
 
+  it("uses the exact transitional State Pension date and the first canonical row on or after it", () => {
+    const defaults = createDefaultSettings();
+    const inputs = {
+      ...defaults,
+      dateOfBirth: "1977-05-01",
+      alphaPensionAbsDate: "2025",
+      accruedPensionAtLastAbs: 5_000,
+      pensionableEarnings: 42_000,
+      alphaPensionDrawAge: 60,
+      currentStatePension: 12_000,
+      statePensionForecastConfirmed: false,
+    };
+    const batch = runQuickCalculatorScenarios({
+      baseSettings: readyBase(inputs, "2026-09-22"),
+      calculationDate: "2026-09-22",
+    });
+    const scenario = batch.scenarios.find(
+      (candidate) => candidate.id === "selected-standard"
+    );
+    const card = projectQuickCalculatorResults(batch).cards.find(
+      (candidate) => candidate.id === "selected-standard"
+    );
+    const expectedRow = scenario?.result?.rows.find(
+      (row) => row.date >= "2044-05-06"
+    );
+
+    expect(scenario?.settings.statePensionDrawDate).toBe("2044-05-06");
+    expect(expectedRow?.monthlyStatePension).toBeGreaterThan(0);
+    expect(card?.combinedStartDate).toBe("2044-05-06");
+    expect(card?.combinedAnnual).toBe(
+      ((expectedRow?.monthlyAlphaPensionGross ?? 0) +
+        (expectedRow?.monthlyStatePension ?? 0)) *
+        12
+    );
+  });
+
   it("reports a missing combined milestone row as unavailable", () => {
     const defaults = createDefaultSettings();
     const batch = runQuickCalculatorScenarios({

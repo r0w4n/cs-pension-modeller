@@ -20,10 +20,11 @@ import {
   saveAcknowledgementState,
   saveAnalyticsConsentState,
 } from "../app-persistence";
+import { useSavedFeedback } from "../use-saved-feedback";
 import type { CurrencyDraftState, RangeDraftState } from "../form-field-values";
 import type { SettingsFieldOnChange } from "../form-field-types";
 import {
-  clearStoredQuickCalculatorState,
+  isQuickCalculatorStatePersistable,
   loadQuickCalculatorState,
   QUICK_CALCULATOR_STORAGE_KEY,
   saveQuickCalculatorState,
@@ -31,7 +32,16 @@ import {
   type QuickCalculatorStoredInputs,
 } from "./quick-calculator-storage";
 import {
+  createQuickCalculatorDefaults,
+  FRESH_QUICK_CALCULATOR_COMPLETION,
+  getQuickCalculatorAgeDefaults,
+  QUICK_DEFAULT_ACCRUED_PENSION,
+  QUICK_DEFAULT_PENSIONABLE_EARNINGS,
+  QUICK_DEFAULT_WORK_PERCENT,
+} from "./quick-calculator-defaults";
+import {
   getQuickCalculatorReadiness,
+  hasQuickCalculatorDraftToPreserve,
   type QuickCalculatorDraftErrors,
   type QuickCalculatorDraftField,
   type QuickCalculatorDirtyDrafts,
@@ -43,14 +53,6 @@ type CalculationState =
   | { status: "pending"; batch: QuickCalculatorBatchResult | null }
   | { status: "ready"; batch: QuickCalculatorBatchResult }
   | { status: "error"; batch: QuickCalculatorBatchResult | null };
-
-const EMPTY_COMPLETION: QuickCalculatorCompletion = {
-  dateOfBirth: false,
-  accruedPensionAtLastAbs: false,
-  pensionableEarnings: false,
-  retirementAgeInitialised: false,
-  partialRetirementAgeInitialised: false,
-};
 
 export function useQuickCalculator() {
   const defaultsRef = useRef(createDefaultSettings());
@@ -78,21 +80,66 @@ export function useQuickCalculator() {
   const [dirtyDrafts, setDirtyDrafts] = useState<QuickCalculatorDirtyDrafts>(
     {}
   );
-  const [storageMessage, setStorageMessage] = useState(
+  const [storageMessage, setStorageMessage] = useState<string | null>(
     initialStateRef.current.storageMessage
   );
   const [resetVersion, setResetVersion] = useState(0);
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
+  const [localSavingEnabled, setLocalSavingEnabled] = useState(
+    isLocalStorageEnabled
+  );
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
   const adoptingExternalStateRef = useRef(false);
+  const hasLocalEditsRef = useRef(false);
+  const localSavingEnabledRef = useRef(localSavingEnabled);
+  const { hideSavedLabel, showSavedFeedback, showSavedLabel } =
+    useSavedFeedback();
+
+  const refreshCalculationDate = useCallback(() => {
+    const today = getTodayIsoDate();
+    setCalculationDate((current) => (current === today ? current : today));
+    return today;
+  }, []);
+
+  const clearOpenState = useCallback(() => {
+    workerRef.current?.terminate();
+    workerRef.current = null;
+    requestIdRef.current += 1;
+    adoptingExternalStateRef.current = false;
+    const defaults = createQuickCalculatorDefaults(defaultsRef.current);
+    setInputs(defaults);
+    setBirthMonthDraft("");
+    setCompletion(FRESH_QUICK_CALCULATOR_COMPLETION);
+    setDraftErrors({});
+    setDirtyDrafts({});
+    setCalculationState({ status: "idle", batch: null });
+    setRetryCounter(0);
+    hasLocalEditsRef.current = false;
+    setHasLocalEdits(false);
+    hideSavedLabel();
+    setResetVersion((current) => current + 1);
+  }, [hideSavedLabel]);
+
+  const clearForDisabledSaving = useCallback(() => {
+    localSavingEnabledRef.current = false;
+    setLocalSavingEnabled(false);
+    clearOpenState();
+    setHasAcknowledgedNotice(false);
+    setStorageMessage("Local data was cleared. Quick inputs were reset.");
+  }, [clearOpenState]);
 
   const readiness = getQuickCalculatorReadiness({
     inputs,
     completion,
+    draftErrors,
+    dirtyDrafts,
+  });
+  const hasDraftToPreserve = hasQuickCalculatorDraftToPreserve({
+    inputs,
     draftErrors,
     dirtyDrafts,
   });
@@ -209,60 +256,141 @@ export function useQuickCalculator() {
       adoptingExternalStateRef.current = false;
       return;
     }
-    if (!isLocalStorageEnabled()) {
-      setStorageMessage("Inputs are not being saved on this device.");
+    const savingEnabledAtBoundary = isLocalStorageEnabled();
+    if (!savingEnabledAtBoundary) {
+      if (localSavingEnabledRef.current) {
+        clearForDisabledSaving();
+      } else {
+        if (localSavingEnabled) {
+          setLocalSavingEnabled(false);
+        }
+        setStorageMessage("Inputs are not being saved on this device.");
+      }
+      return;
+    }
+    if (!localSavingEnabled) {
       return;
     }
     if (!hasLocalEdits) {
       return;
     }
 
-    const saved = saveQuickCalculatorState({
+    const state = {
       inputs: pickStoredInputs(inputs),
       completion,
-    });
-    setStorageMessage(
-      saved
-        ? "Quick calculator inputs are saved locally on this device."
-        : "The browser could not save these quick calculator inputs."
-    );
-  }, [completion, hasLocalEdits, inputs]);
+    };
+    if (hasDraftToPreserve) {
+      hideSavedLabel();
+      if (!isQuickCalculatorStatePersistable(state)) {
+        setStorageMessage(
+          "Current changes have not been saved. Enter valid EPA dates to replace the last saved inputs."
+        );
+      } else {
+        setStorageMessage(null);
+      }
+      return;
+    }
+    if (!isQuickCalculatorStatePersistable(state)) {
+      hideSavedLabel();
+      setStorageMessage(
+        "Current changes have not been saved. Enter valid EPA dates to replace the last saved inputs."
+      );
+      return;
+    }
 
-  const clearOpenState = useCallback(() => {
-    workerRef.current?.terminate();
-    workerRef.current = null;
-    requestIdRef.current += 1;
-    const defaults = createQuickDefaults(defaultsRef.current);
-    setInputs(defaults);
-    setBirthMonthDraft("");
-    setCompletion(EMPTY_COMPLETION);
-    setDraftErrors({});
-    setDirtyDrafts({});
-    setCalculationState({ status: "idle", batch: null });
-    setHasLocalEdits(false);
-    setResetVersion((current) => current + 1);
-  }, []);
+    const saved = saveQuickCalculatorState(state);
+    if (saved) {
+      setStorageMessage(null);
+      showSavedLabel();
+    } else {
+      hideSavedLabel();
+      setStorageMessage(
+        "The browser could not save these quick calculator inputs."
+      );
+    }
+  }, [
+    clearForDisabledSaving,
+    completion,
+    hasDraftToPreserve,
+    hasLocalEdits,
+    hideSavedLabel,
+    inputs,
+    localSavingEnabled,
+    showSavedLabel,
+  ]);
 
   useEffect(() => {
-    const refreshDate = () => {
-      const today = getTodayIsoDate();
-      setCalculationDate((current) => (current === today ? current : today));
+    let dateBoundaryTimer: number | undefined;
+
+    const scheduleDateBoundaryRefresh = () => {
+      if (dateBoundaryTimer !== undefined) {
+        window.clearTimeout(dateBoundaryTimer);
+      }
+      dateBoundaryTimer = window.setTimeout(() => {
+        refreshCalculationDate();
+        scheduleDateBoundaryRefresh();
+      }, getMillisecondsUntilNextLocalDate());
     };
+
+    const reconcileLocalSaving = () => {
+      const enabled = isLocalStorageEnabled();
+      const wasEnabled = localSavingEnabledRef.current;
+      localSavingEnabledRef.current = enabled;
+      setLocalSavingEnabled(enabled);
+
+      if (!enabled) {
+        if (wasEnabled) {
+          clearForDisabledSaving();
+        } else {
+          setStorageMessage("Inputs are not being saved on this device.");
+        }
+        return;
+      }
+
+      if (!wasEnabled && !hasLocalEditsRef.current) {
+        setStorageMessage(
+          "Local saving is enabled. New quick calculator inputs will be saved on this device."
+        );
+      }
+    };
+
     const handleFocus = () => {
-      refreshDate();
-      if (!isLocalStorageEnabled()) {
-        setStorageMessage("Inputs are not being saved on this device.");
+      refreshCalculationDate();
+      scheduleDateBoundaryRefresh();
+      reconcileLocalSaving();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshCalculationDate();
+        scheduleDateBoundaryRefresh();
+        reconcileLocalSaving();
       }
     };
     const handleStorage = (event: StorageEvent) => {
+      if (event.key === LOCAL_DATA_RESET_SIGNAL_KEY || event.key === null) {
+        clearForDisabledSaving();
+        return;
+      }
       if (
-        event.key === LOCAL_DATA_RESET_SIGNAL_KEY ||
-        event.key === null ||
-        (event.key === LOCAL_STORAGE_ENABLED_KEY && event.newValue === "false")
+        event.key === LOCAL_STORAGE_ENABLED_KEY &&
+        event.newValue === "false"
       ) {
-        clearOpenState();
-        setHasAcknowledgedNotice(false);
-        setStorageMessage("Local data was cleared. Quick inputs were reset.");
+        if (localSavingEnabledRef.current) {
+          clearForDisabledSaving();
+        }
+        return;
+      }
+      if (
+        event.key === LOCAL_STORAGE_ENABLED_KEY &&
+        event.newValue === "true"
+      ) {
+        localSavingEnabledRef.current = true;
+        setLocalSavingEnabled(true);
+        if (!hasLocalEditsRef.current) {
+          setStorageMessage(
+            "Local saving is enabled. New quick calculator inputs will be saved on this device."
+          );
+        }
         return;
       }
       if (
@@ -275,12 +403,20 @@ export function useQuickCalculator() {
         );
         return;
       }
-      if (
-        event.key === QUICK_CALCULATOR_STORAGE_KEY &&
-        !readiness.hasDraftProblems
-      ) {
+      if (event.key === QUICK_CALCULATOR_STORAGE_KEY && hasDraftToPreserve) {
+        hideSavedLabel();
+        setStorageMessage(
+          "Quick calculator inputs changed in another tab. Your local draft has been kept."
+        );
+        return;
+      }
+      if (event.key === QUICK_CALCULATOR_STORAGE_KEY) {
         const loaded = loadQuickCalculatorState();
         if (loaded.status === "loaded") {
+          hideSavedLabel();
+          workerRef.current?.terminate();
+          workerRef.current = null;
+          requestIdRef.current += 1;
           adoptingExternalStateRef.current = true;
           setInputs((current) => ({ ...current, ...loaded.state.inputs }));
           setBirthMonthDraft(
@@ -289,23 +425,39 @@ export function useQuickCalculator() {
               : ""
           );
           setCompletion(loaded.state.completion);
+          setDraftErrors({});
+          setDirtyDrafts({});
           setCalculationState({ status: "idle", batch: null });
+          hasLocalEditsRef.current = false;
           setHasLocalEdits(false);
           setResetVersion((current) => current + 1);
         } else if (loaded.status === "invalid") {
+          hideSavedLabel();
           setStorageMessage(
             "Quick calculator data changed in another tab but could not be used."
           );
         }
       }
     };
+    scheduleDateBoundaryRefresh();
     window.addEventListener("focus", handleFocus);
     window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
+      if (dateBoundaryTimer !== undefined) {
+        window.clearTimeout(dateBoundaryTimer);
+      }
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [clearOpenState, readiness.hasDraftProblems]);
+  }, [
+    clearForDisabledSaving,
+    clearOpenState,
+    hasDraftToPreserve,
+    hideSavedLabel,
+    refreshCalculationDate,
+  ]);
 
   useEffect(
     () => () => {
@@ -315,17 +467,23 @@ export function useQuickCalculator() {
     []
   );
 
-  const onChange: SettingsFieldOnChange = useCallback((key, value) => {
-    setHasLocalEdits(true);
-    setInputs((current) => ({
-      ...current,
-      [key]: normalizeSetting(key, value, {
-        fallbackStartDate: current.startDate,
-      }),
-    }));
-  }, []);
+  const onChange: SettingsFieldOnChange = useCallback(
+    (key, value) => {
+      refreshCalculationDate();
+      hasLocalEditsRef.current = true;
+      setHasLocalEdits(true);
+      setInputs((current) => ({
+        ...current,
+        [key]: normalizeSetting(key, value, {
+          fallbackStartDate: current.startDate,
+        }),
+      }));
+    },
+    [refreshCalculationDate]
+  );
 
   function updateBirthMonth(value: string) {
+    const currentCalculationDate = refreshCalculationDate();
     setBirthMonthDraft(value);
     const completeMonth = /^\d{4}-\d{2}$/.test(value);
     if (!completeMonth) {
@@ -337,9 +495,10 @@ export function useQuickCalculator() {
       return;
     }
 
+    hasLocalEditsRef.current = true;
     setHasLocalEdits(true);
     const dateOfBirth = `${value}-01`;
-    const currentAge = calculateDateAge(dateOfBirth, calculationDate);
+    const currentAge = calculateDateAge(dateOfBirth, currentCalculationDate);
     if (currentAge <= 0) {
       setDraftErrors((current) => ({
         ...current,
@@ -347,9 +506,12 @@ export function useQuickCalculator() {
       }));
       return;
     }
-    const nextFutureQuarterAge = Math.floor(currentAge * 4 + 1) / 4;
-    const selectedAge = Math.max(60, nextFutureQuarterAge);
-    const reducedHoursAge = Math.max(55, nextFutureQuarterAge);
+    const ageDefaults = getQuickCalculatorAgeDefaults(
+      dateOfBirth,
+      currentCalculationDate
+    );
+    const selectedAge = ageDefaults.retirementAge;
+    const reducedHoursAge = ageDefaults.reducedHoursAge;
 
     setInputs((current) => ({
       ...current,
@@ -376,7 +538,7 @@ export function useQuickCalculator() {
     setDraftErrors((current) => {
       const next = { ...current };
       delete next.dateOfBirth;
-      if (selectedAge > 70 || reducedHoursAge > 70) {
+      if (!ageDefaults.supported) {
         next.dateOfBirth =
           "This date of birth cannot be modelled with future retirement ages inside the supported maximum age of 70.";
       }
@@ -389,6 +551,8 @@ export function useQuickCalculator() {
     state: CurrencyDraftState | RangeDraftState,
     required = false
   ) {
+    refreshCalculationDate();
+    hasLocalEditsRef.current = true;
     setHasLocalEdits(true);
     if (state.status === "invalid") {
       setDraftErrors((current) => ({ ...current, [key]: state.message }));
@@ -410,6 +574,18 @@ export function useQuickCalculator() {
     if (required && state.status === "committed") {
       setCompletion((current) => ({ ...current, [key]: true }));
     }
+    if (state.status === "committed" && key === "alphaPensionDrawAge") {
+      setCompletion((current) => ({
+        ...current,
+        retirementAgeInitialised: true,
+      }));
+    }
+    if (state.status === "committed" && key === "partialRetirementStartAge") {
+      setCompletion((current) => ({
+        ...current,
+        partialRetirementAgeInitialised: true,
+      }));
+    }
   }
 
   function acknowledgeNotice(consentGranted: boolean) {
@@ -418,15 +594,10 @@ export function useQuickCalculator() {
     saveAnalyticsConsentState(consentGranted);
   }
 
-  function resetQuickCalculator() {
-    const removed = clearStoredQuickCalculatorState();
-    clearOpenState();
-    setStorageMessage(
-      removed
-        ? "Quick calculator inputs were reset."
-        : "Inputs were reset in this tab, but the browser could not remove the saved quick calculator data."
-    );
-  }
+  const ageResetValues = getQuickCalculatorAgeDefaults(
+    inputs.dateOfBirth,
+    calculationDate
+  );
 
   return {
     inputs,
@@ -446,6 +617,9 @@ export function useQuickCalculator() {
     hasInputProblems,
     inputValidationIssues: baseSettingsResult?.validationIssues ?? [],
     storageMessage,
+    showSavedFeedback,
+    calculationDate,
+    inflationRateAnnual: defaultsRef.current.inflationRateAnnual,
     resetVersion,
     hasAcknowledgedNotice,
     onChange,
@@ -453,11 +627,25 @@ export function useQuickCalculator() {
     updateBirthMonth,
     handleDraft,
     updateEpaPeriods: (periods: PensionSettings["alphaEpaPeriods"]) => {
+      refreshCalculationDate();
+      hasLocalEditsRef.current = true;
       setHasLocalEdits(true);
       setInputs((current) => ({ ...current, alphaEpaPeriods: periods }));
     },
     acknowledgeNotice,
-    resetQuickCalculator,
+    resetValues: {
+      accruedPensionAtLastAbs: QUICK_DEFAULT_ACCRUED_PENSION,
+      pensionableEarnings: QUICK_DEFAULT_PENSIONABLE_EARNINGS,
+      alphaPensionDrawAge: ageResetValues.supported
+        ? ageResetValues.retirementAge
+        : inputs.alphaPensionDrawAge,
+      alphaAddedPensionMonthly: 0,
+      partialRetirementStartAge: ageResetValues.supported
+        ? ageResetValues.reducedHoursAge
+        : inputs.partialRetirementStartAge,
+      partialRetirementWorkPercent: QUICK_DEFAULT_WORK_PERCENT,
+      currentStatePension: defaultsRef.current.currentStatePension,
+    },
     retry: () => setRetryCounter((current) => current + 1),
   };
 }
@@ -466,34 +654,24 @@ function loadInitialState(defaults: PensionSettings) {
   const stored = loadQuickCalculatorState();
   if (stored.status === "loaded") {
     return {
-      settings: { ...createQuickDefaults(defaults), ...stored.state.inputs },
+      settings: {
+        ...createQuickCalculatorDefaults(defaults),
+        ...stored.state.inputs,
+      },
       completion: stored.state.completion,
-      storageMessage: "Quick calculator inputs were restored from this device.",
+      storageMessage: null,
     };
   }
 
   return {
-    settings: createQuickDefaults(defaults),
-    completion: EMPTY_COMPLETION,
+    settings: createQuickCalculatorDefaults(defaults),
+    completion: FRESH_QUICK_CALCULATOR_COMPLETION,
     storageMessage:
       stored.status === "invalid"
-        ? "Saved quick calculator data could not be used. Reset the calculator to replace it."
+        ? "Saved quick calculator data could not be loaded. Valid new entries can replace it when saving is enabled; manage saved data in Settings."
         : isLocalStorageEnabled()
-          ? "Quick calculator inputs are saved locally on this device."
+          ? null
           : "Inputs are not being saved on this device.",
-  };
-}
-
-function createQuickDefaults(defaults: PensionSettings): PensionSettings {
-  return {
-    ...defaults,
-    dateOfBirth: "",
-    alphaAddedPensionMonthly: 0,
-    alphaAddedPensionFactorType: "self",
-    partialRetirementWorkPercent: 50,
-    showStatePension: true,
-    alphaEpaEnabled: false,
-    alphaEpaPeriods: [],
   };
 }
 
@@ -516,4 +694,10 @@ function pickStoredInputs(
     alphaEpaEnabled: settings.alphaEpaEnabled,
     alphaEpaPeriods: settings.alphaEpaPeriods.map((period) => ({ ...period })),
   };
+}
+
+export function getMillisecondsUntilNextLocalDate(now = new Date()) {
+  const nextDate = new Date(now);
+  nextDate.setHours(24, 0, 0, 0);
+  return Math.max(1, nextDate.getTime() - now.getTime());
 }

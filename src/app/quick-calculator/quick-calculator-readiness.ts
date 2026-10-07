@@ -1,4 +1,4 @@
-import type { PensionSettings } from "../../settings";
+import { isValidIsoDate, type PensionSettings } from "../../settings";
 import type { QuickCalculatorCompletion } from "./quick-calculator-storage";
 
 export type QuickCalculatorDraftField =
@@ -52,4 +52,23 @@ export function getQuickCalculatorReadiness({
     hasDraftProblems,
     calculationEnabled: requiredInputsComplete && !hasDraftProblems,
   };
+}
+
+export function hasQuickCalculatorDraftToPreserve({
+  inputs,
+  draftErrors,
+  dirtyDrafts,
+}: {
+  inputs: Pick<PensionSettings, "alphaEpaPeriods">;
+  draftErrors: QuickCalculatorDraftErrors;
+  dirtyDrafts: QuickCalculatorDirtyDrafts;
+}) {
+  return (
+    Object.values(draftErrors).some(Boolean) ||
+    Object.values(dirtyDrafts).some(Boolean) ||
+    inputs.alphaEpaPeriods.some(
+      (period) =>
+        !isValidIsoDate(period.startDate) || !isValidIsoDate(period.endDate)
+    )
+  );
 }

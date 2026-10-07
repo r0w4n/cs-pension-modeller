@@ -69,14 +69,11 @@ export function ModeSelection({
         </button>
       </div>
       <p className="section-copy quick-calculator-entry-link">
-        Prefer sliders?{" "}
-        <a
-          href={`${resolveAppBaseHref()}quick-calculator/`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Open the Quick Alpha calculator (opens in a new tab).
+        Looking for the old calculator?{" "}
+        <a href={`${resolveAppBaseHref()}quick-calculator/`}>
+          Open the Quick Alpha calculator
         </a>
+        .
       </p>
     </section>
   );

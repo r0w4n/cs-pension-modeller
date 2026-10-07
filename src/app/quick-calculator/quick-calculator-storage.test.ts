@@ -62,6 +62,64 @@ describe("quick calculator storage", () => {
     expect(loadQuickCalculatorState()).toEqual({ status: "invalid" });
   });
 
+  it("keeps the last valid snapshot when a direct save contains invalid EPA dates", () => {
+    const settings = createDefaultSettings();
+    const validState = {
+      inputs: {
+        dateOfBirth: "1987-06-01",
+        alphaPensionAbsDate: "2025",
+        accruedPensionAtLastAbs: 5_000,
+        pensionableEarnings: 42_000,
+        alphaPensionDrawAge: 60,
+        alphaAddedPensionMonthly: 200,
+        alphaAddedPensionFactorType: "self" as const,
+        partialRetirementStartAge: 55,
+        partialRetirementWorkPercent: 50,
+        showStatePension: true,
+        currentStatePension: settings.currentStatePension,
+        statePensionForecastConfirmed: false,
+        alphaEpaEnabled: true,
+        alphaEpaPeriods: [
+          {
+            id: "epa-one",
+            yearsBeforeNpa: 1 as const,
+            startDate: "2030-04-01",
+            endDate: "2031-03-31",
+          },
+        ],
+      },
+      completion: {
+        dateOfBirth: true,
+        accruedPensionAtLastAbs: true,
+        pensionableEarnings: true,
+        retirementAgeInitialised: true,
+        partialRetirementAgeInitialised: true,
+      },
+    };
+    expect(saveQuickCalculatorState(validState)).toBe(true);
+    const validRaw = window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY);
+
+    expect(
+      saveQuickCalculatorState({
+        ...validState,
+        inputs: {
+          ...validState.inputs,
+          alphaEpaEnabled: false,
+          alphaEpaPeriods: [
+            { ...validState.inputs.alphaEpaPeriods[0], startDate: "" },
+          ],
+        },
+      })
+    ).toBe(false);
+    expect(window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)).toBe(
+      validRaw
+    );
+    expect(loadQuickCalculatorState()).toEqual({
+      status: "loaded",
+      state: validState,
+    });
+  });
+
   it("does not save when global local saving is disabled", () => {
     window.localStorage.setItem(
       "cs-pension-modeller.localStorageEnabled",

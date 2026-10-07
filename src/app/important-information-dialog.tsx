@@ -1,18 +1,67 @@
+import { useEffect, useId, useRef, type RefObject } from "react";
+
 export function ImportantInformationDialog({
   onContinue,
+  manageFocus = false,
+  focusAfterCloseRef,
 }: {
   onContinue: (analyticsConsentGranted: boolean) => void;
+  manageFocus?: boolean;
+  focusAfterCloseRef?: RefObject<HTMLElement | null>;
 }) {
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!manageFocus) {
+      return;
+    }
+
+    const focusAfterClose = focusAfterCloseRef?.current;
+    const focusTimer = window.setTimeout(() => {
+      getFocusableElements(dialogRef.current)[0]?.focus();
+    }, 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+      } else if (event.key === "Tab") {
+        containTabFocus(event, dialogRef.current);
+      }
+    };
+    const handleFocusIn = (event: FocusEvent) => {
+      const dialog = dialogRef.current;
+      if (
+        dialog &&
+        event.target instanceof Node &&
+        !dialog.contains(event.target)
+      ) {
+        getFocusableElements(dialog)[0]?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", handleFocusIn);
+      queueMicrotask(() => focusAfterClose?.focus());
+    };
+  }, [focusAfterCloseRef, manageFocus]);
+
   return (
     <div
+      ref={dialogRef}
       className="app-dialog-overlay acknowledgement-overlay"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="acknowledgement-title"
+      aria-labelledby={titleId}
     >
       <section className="app-dialog-card acknowledgement-card">
         <p className="eyebrow">Before you continue</p>
-        <h2 id="acknowledgement-title">Important information</h2>
+        <h2 id={titleId}>Important information</h2>
         <p className="section-copy">
           This modeller is for planning and illustration only. It is not
           financial advice and is not affiliated with the Civil Service Pension
@@ -49,4 +98,35 @@ export function ImportantInformationDialog({
       </section>
     </div>
   );
+}
+
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "a[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+function containTabFocus(event: KeyboardEvent, dialog: HTMLElement | null) {
+  const focusable = getFocusableElements(dialog);
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (!first || !last) return;
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) return [];
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+  ).filter((element) => !element.hasAttribute("disabled"));
 }

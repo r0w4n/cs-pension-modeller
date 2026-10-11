@@ -395,6 +395,9 @@ Keys currently used:
 | `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled.                                                                                                                                                                                                                   | Version string, currently `"v1"`.                                                                                        |
 | `cs-pension-quick-calculator`             | Stores the separate Quick Alpha calculator inputs and completion state after an edit when local saving is enabled. Merely opening the page or clearing data does not save its public starting assumptions. An incomplete amount or EPA date remains in the open editor but does not replace the last valid snapshot. | Versioned envelope `{ version: 1, data: { inputs, completion } }`; calculated results and invalid drafts are not stored. |
 
+Disabling State Pension can save that valid selection and the other inputs while
+an unfinished State Pension amount remains only in the open editor.
+
 Settings storage is schema-versioned. Current saves use a versioned envelope so
 older browser data can be migrated safely when fields are renamed or
 restructured. The migration implementations and their compatibility tests live
@@ -419,7 +422,9 @@ early-retirement sections. This compatibility path has no time-based expiry.
 Google Analytics is disabled unless `VITE_GA_MEASUREMENT_ID` is set for the
 Vite build. When configured, the app sends coarse interaction events only:
 page views, notice acknowledgement, selected journey, journey step, changed
-field identifier, comparison actions, and chart control names.
+field identifier, comparison actions, and chart control names. The separate
+Quick Alpha page records a page view and, once per visit, a completed-estimates
+event when analytics consent is active.
 The GitHub Pages deployment workflow reads this value from the
 `VITE_GA_MEASUREMENT_ID` repository secret.
 

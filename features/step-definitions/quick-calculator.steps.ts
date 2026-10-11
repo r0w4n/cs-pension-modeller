@@ -23,7 +23,10 @@ import {
   type QuickCalculatorCompletion,
   type QuickCalculatorStoredInputs,
 } from "../../src/app/quick-calculator/quick-calculator-storage";
-import { getQuickCalculatorReadiness } from "../../src/app/quick-calculator/quick-calculator-readiness";
+import {
+  getQuickCalculatorIncompleteMessage,
+  getQuickCalculatorReadiness,
+} from "../../src/app/quick-calculator/quick-calculator-readiness";
 import {
   createQuickCalculatorDefaults,
   FRESH_QUICK_CALCULATOR_COMPLETION,
@@ -50,6 +53,7 @@ type QuickWorld = {
   comparisonsSnapshot?: string;
   oldQuickAccrued?: number;
   reloadedQuickAccrued?: number;
+  reloadedQuickStatePension?: number;
   canonicalAddedPensionRatio?: number;
   calculationDate?: string;
   quickAgeDefaults?: ReturnType<typeof getQuickCalculatorAgeDefaults>;
@@ -529,6 +533,93 @@ Then(
     assert(
       this.readiness?.calculationEnabled === false,
       "Production readiness should block calculation"
+    );
+  }
+);
+
+Then(
+  "the quick results ask for a valid annual Alpha pension",
+  function (this: QuickWorld) {
+    assert(this.quickCompletion, "Quick completion was not prepared");
+    assert(
+      getQuickCalculatorIncompleteMessage(this.quickCompletion) ===
+        "Enter a valid annual Alpha pension from your statement to see estimates.",
+      "Results did not identify the unanswered Alpha pension"
+    );
+  }
+);
+
+Given(
+  "an unfinished State Pension amount in the quick calculator",
+  function (this: QuickWorld) {
+    assert(
+      this.quickInputs && this.quickCompletion,
+      "Quick inputs were not prepared"
+    );
+    this.readiness = getQuickCalculatorReadiness({
+      inputs: { ...this.quickInputs, showStatePension: false },
+      completion: this.quickCompletion,
+      draftErrors: {
+        currentStatePension: "Enter a valid State Pension forecast.",
+      },
+      dirtyDrafts: { currentStatePension: true },
+    });
+  }
+);
+
+When(
+  "State Pension is excluded and the valid quick inputs are saved",
+  function (this: QuickWorld) {
+    assert(this.quickInputs, "Quick inputs were not prepared");
+    this.quickInputs.showStatePension = false;
+    assert(
+      saveQuickCalculatorState({
+        inputs: toStoredInputs(this.quickInputs),
+        completion: COMPLETE,
+      }),
+      "Valid quick inputs with State Pension excluded were not saved"
+    );
+    const reloaded = loadQuickCalculatorState();
+    assert(reloaded.status === "loaded", "Saved quick inputs did not reload");
+    this.reloadedQuickStatePension = reloaded.state.inputs.currentStatePension;
+    this.quickInputs = { ...createDefaultSettings(), ...reloaded.state.inputs };
+  }
+);
+
+Then(
+  "the quick calculator can estimate without State Pension",
+  function (this: QuickWorld) {
+    assert(
+      this.readiness?.calculationEnabled,
+      "Inactive draft blocked calculation"
+    );
+    calculateQuick(this);
+    assert(
+      this.quickBatch?.scenarios.every(
+        (scenario) => scenario.settings.showStatePension === false
+      ),
+      "State Pension remained in a quick scenario"
+    );
+  }
+);
+
+Then(
+  "the saved quick inputs reload with State Pension excluded",
+  function (this: QuickWorld) {
+    assert(
+      this.quickInputs?.showStatePension === false,
+      "Saved State Pension exclusion was lost"
+    );
+  }
+);
+
+Then(
+  "the unfinished State Pension amount was not saved",
+  function (this: QuickWorld) {
+    assert(
+      this.reloadedQuickStatePension ===
+        createDefaultSettings().currentStatePension,
+      "The unfinished State Pension draft replaced the valid saved amount"
     );
   }
 );

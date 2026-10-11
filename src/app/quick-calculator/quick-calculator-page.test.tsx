@@ -395,6 +395,16 @@ describe("QuickCalculatorPage", () => {
     fireEvent.blur(accrued);
     expect(accrued).toHaveValue(null);
     expect(screen.queryAllByRole("article")).toHaveLength(0);
+    expect(
+      screen.getByText(
+        "Enter a valid annual Alpha pension from your statement to see estimates."
+      )
+    ).toBeVisible();
+    expect(
+      screen.queryByText(
+        /Enter your birth month and year to see current estimates/
+      )
+    ).not.toBeInTheDocument();
     expect(window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)).toBe(
       stored
     );
@@ -1211,6 +1221,20 @@ describe("QuickCalculatorPage", () => {
     act(() => excludedWorker.respond());
     await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(8));
     expect(amount).toHaveValue(-1);
+    expect(loadQuickCalculatorState()).toMatchObject({
+      status: "loaded",
+      state: {
+        inputs: {
+          showStatePension: false,
+          currentStatePension: createDefaultSettings().currentStatePension,
+        },
+      },
+    });
+    expect(
+      screen.getByText(
+        /State Pension is excluded and the other inputs were saved/
+      )
+    ).toBeVisible();
 
     fireEvent.click(
       screen.getByRole("checkbox", { name: /Include State Pension/ })
@@ -1227,6 +1251,38 @@ describe("QuickCalculatorPage", () => {
     });
     act(() => corrected.respond());
     await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(8));
+  });
+
+  it("restores the saved exclusion without restoring an invalid State Pension draft", async () => {
+    saveCompleteQuickState();
+    const view = render(<QuickCalculatorPage />);
+    await latestWorker();
+    fireEvent.click(screen.getByText("State Pension and EPA"));
+    const amount = screen.getByLabelText("State Pension forecast (£ per year)");
+    fireEvent.change(amount, { target: { value: "-1" } });
+    fireEvent.blur(amount);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Include State Pension/ })
+    );
+
+    await waitFor(() =>
+      expect(loadQuickCalculatorState()).toMatchObject({
+        status: "loaded",
+        state: { inputs: { showStatePension: false } },
+      })
+    );
+    expect(amount).toHaveValue(-1);
+
+    view.unmount();
+    ControlledWorker.instances = [];
+    render(<QuickCalculatorPage />);
+    fireEvent.click(screen.getByText("State Pension and EPA"));
+    expect(
+      screen.getByRole("checkbox", { name: /Include State Pension/ })
+    ).not.toBeChecked();
+    expect(
+      screen.getByLabelText("State Pension forecast (£ per year)")
+    ).toHaveValue(createDefaultSettings().currentStatePension);
   });
 
   it("reloads the prior valid EPA snapshot while an invalid live draft is deferred", async () => {

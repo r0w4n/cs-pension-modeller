@@ -47,7 +47,9 @@ function PrivacyPage() {
           dialog or turn it on later in Settings. Analytics events are limited
           to coarse interactions, such as selected journey, journey step,
           changed field identifier, comparison actions, chart control names, and
-          support prompt impressions or action selections.
+          support prompt impressions or action selections. With consent, the
+          Quick Alpha calculator records a page view and whether estimates were
+          shown during the visit.
         </p>
         <p className="section-copy">
           The app does not send entered amounts, dates, ages, scenario names,

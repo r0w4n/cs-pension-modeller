@@ -1,6 +1,12 @@
 /* eslint-disable @eslint-react/set-state-in-effect -- worker, storage and date-boundary effects synchronise external state */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  applyAnalyticsConsent,
+  disableAnalytics,
+  trackAnalyticsEvent,
+  trackPageView,
+} from "../../analytics";
+import {
   createQuickCalculatorBaseSettings,
   type QuickCalculatorBatchResult,
 } from "../../calculation/quick-calculator-scenarios";
@@ -16,7 +22,9 @@ import {
 } from "../../settings";
 import { projectQuickCalculatorResults } from "../../result-projection/quick-calculator-results";
 import {
+  ANALYTICS_CONSENT_STORAGE_KEY,
   loadAcknowledgementState,
+  loadAnalyticsConsentState,
   saveAcknowledgementState,
   saveAnalyticsConsentState,
 } from "../app-persistence";
@@ -91,6 +99,8 @@ export function useQuickCalculator() {
   const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
     loadAcknowledgementState
   );
+  const hasTrackedPageViewRef = useRef(false);
+  const hasTrackedEstimateRef = useRef(false);
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
   const adoptingExternalStateRef = useRef(false);
@@ -127,6 +137,7 @@ export function useQuickCalculator() {
   const clearForDisabledSaving = useCallback(() => {
     localSavingEnabledRef.current = false;
     setLocalSavingEnabled(false);
+    disableAnalytics();
     clearOpenState();
     setHasAcknowledgedNotice(false);
     setStorageMessage("Local data was cleared. Quick inputs were reset.");
@@ -163,6 +174,45 @@ export function useQuickCalculator() {
     () => (baseSettings ? JSON.stringify(baseSettings) : null),
     [baseSettings]
   );
+
+  useEffect(() => {
+    const trackConsentedUsage = () => {
+      if (
+        !hasAcknowledgedNotice ||
+        !applyAnalyticsConsent(loadAnalyticsConsentState())
+      ) {
+        disableAnalytics();
+        return;
+      }
+
+      if (!hasTrackedPageViewRef.current) {
+        trackPageView();
+        hasTrackedPageViewRef.current = true;
+      }
+      if (
+        calculationState.status === "ready" &&
+        !hasTrackedEstimateRef.current
+      ) {
+        trackAnalyticsEvent("quick_calculator_estimates_viewed");
+        hasTrackedEstimateRef.current = true;
+      }
+    };
+
+    trackConsentedUsage();
+
+    const handleAnalyticsStorage = (event: StorageEvent) => {
+      if (
+        event.key === ANALYTICS_CONSENT_STORAGE_KEY ||
+        event.key === LOCAL_STORAGE_ENABLED_KEY ||
+        event.key === LOCAL_DATA_RESET_SIGNAL_KEY ||
+        event.key === null
+      ) {
+        trackConsentedUsage();
+      }
+    };
+    window.addEventListener("storage", handleAnalyticsStorage);
+    return () => window.removeEventListener("storage", handleAnalyticsStorage);
+  }, [calculationState.status, hasAcknowledgedNotice]);
 
   useEffect(() => {
     if (!baseSettings || !settingsSignature) {
@@ -279,7 +329,7 @@ export function useQuickCalculator() {
       inputs: pickStoredInputs(inputs),
       completion,
     };
-    if (hasDraftToPreserve) {
+    if (readiness.hasDraftProblems) {
       hideSavedLabel();
       if (!isQuickCalculatorStatePersistable(state)) {
         setStorageMessage(
@@ -300,8 +350,15 @@ export function useQuickCalculator() {
 
     const saved = saveQuickCalculatorState(state);
     if (saved) {
-      setStorageMessage(null);
-      showSavedLabel();
+      if (hasDraftToPreserve) {
+        hideSavedLabel();
+        setStorageMessage(
+          "State Pension is excluded and the other inputs were saved. Its unfinished amount remains only on this open page."
+        );
+      } else {
+        setStorageMessage(null);
+        showSavedLabel();
+      }
     } else {
       hideSavedLabel();
       setStorageMessage(
@@ -316,6 +373,7 @@ export function useQuickCalculator() {
     hideSavedLabel,
     inputs,
     localSavingEnabled,
+    readiness.hasDraftProblems,
     showSavedLabel,
   ]);
 

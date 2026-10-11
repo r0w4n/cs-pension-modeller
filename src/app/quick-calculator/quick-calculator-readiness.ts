@@ -72,3 +72,18 @@ export function hasQuickCalculatorDraftToPreserve({
     )
   );
 }
+
+export function getQuickCalculatorIncompleteMessage(
+  completion: QuickCalculatorCompletion
+) {
+  if (!completion.dateOfBirth) {
+    return "Enter your birth month and year to see current estimates. Replace the starting pension and earnings assumptions with your own figures.";
+  }
+  if (!completion.accruedPensionAtLastAbs) {
+    return "Enter a valid annual Alpha pension from your statement to see estimates.";
+  }
+  if (!completion.pensionableEarnings) {
+    return "Enter valid annual pensionable earnings to see estimates.";
+  }
+  return "Choose supported retirement and reduced-hours ages to see estimates.";
+}

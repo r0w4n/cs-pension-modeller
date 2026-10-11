@@ -52,8 +52,17 @@ Feature: Quick Alpha pension comparisons
   Scenario: Distinguish an unanswered amount from zero
     Given an unanswered accrued pension field
     Then no current pension estimate is presented as complete
+    And the quick results ask for a valid annual Alpha pension
     When the member explicitly enters zero and completes the remaining inputs
     Then the zero accrued amount is used in the canonical calculation
+
+  Scenario: Save an excluded State Pension while its amount is unfinished
+    Given valid Alpha statement and earnings inputs in the quick calculator
+    And an unfinished State Pension amount in the quick calculator
+    When State Pension is excluded and the valid quick inputs are saved
+    Then the quick calculator can estimate without State Pension
+    And the saved quick inputs reload with State Pension excluded
+    And the unfinished State Pension amount was not saved
 
   Scenario: Do not restore cleared quick-calculator data
     Given browser local storage contains populated modeller data

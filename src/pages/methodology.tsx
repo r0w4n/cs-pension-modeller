@@ -330,9 +330,11 @@ export function MethodologyPage() {
           the open editor with its validation message, while the previous valid
           snapshot remains available for a later reload. Correcting the date
           saves the current inputs. The shared transient Saved Locally notice
-          confirms a successful write. Clearing local data in Settings removes
-          that snapshot and returns the open page to its public starting
-          assumptions without immediately saving them.
+          confirms a successful write. If State Pension is switched off while
+          its amount is unfinished, the exclusion and other valid inputs can be
+          saved; the unfinished amount stays only on the open page. Clearing
+          local data in Settings removes that snapshot and returns the open page
+          to its public starting assumptions without immediately saving them.
         </p>
       </section>
 

@@ -15494,11 +15494,16 @@ export const acceptanceFeatures = [
           },
           {
             id: "line-55",
+            keyword: "And",
+            text: "the quick results ask for a valid annual Alpha pension",
+          },
+          {
+            id: "line-56",
             keyword: "When",
             text: "the member explicitly enters zero and completes the remaining inputs",
           },
           {
-            id: "line-56",
+            id: "line-57",
             keyword: "Then",
             text: "the zero accrued amount is used in the canonical calculation",
           },
@@ -15506,7 +15511,49 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-58",
+        id: "line-59",
+        keyword: "Scenario",
+        name: "Save an excluded State Pension while its amount is unfinished",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-60",
+            keyword: "Given",
+            text: "valid Alpha statement and earnings inputs in the quick calculator",
+          },
+          {
+            id: "line-61",
+            keyword: "And",
+            text: "an unfinished State Pension amount in the quick calculator",
+          },
+          {
+            id: "line-62",
+            keyword: "When",
+            text: "State Pension is excluded and the valid quick inputs are saved",
+          },
+          {
+            id: "line-63",
+            keyword: "Then",
+            text: "the quick calculator can estimate without State Pension",
+          },
+          {
+            id: "line-64",
+            keyword: "And",
+            text: "the saved quick inputs reload with State Pension excluded",
+          },
+          {
+            id: "line-65",
+            keyword: "And",
+            text: "the unfinished State Pension amount was not saved",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-67",
         keyword: "Scenario",
         name: "Do not restore cleared quick-calculator data",
         description: "",
@@ -15515,27 +15562,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-59",
+            id: "line-68",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-60",
+            id: "line-69",
             keyword: "And",
             text: "retained quick results have been calculated from the stored quick inputs",
           },
           {
-            id: "line-61",
+            id: "line-70",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-62",
+            id: "line-71",
             keyword: "And",
             text: "saving is enabled and a valid post-clear quick snapshot is persisted",
           },
           {
-            id: "line-63",
+            id: "line-72",
             keyword: "Then",
             text: "cleared values and results do not return",
           },
@@ -15543,7 +15590,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-65",
+        id: "line-74",
         keyword: "Scenario",
         name: "Reject an incomplete enabled EPA schedule before normalisation",
         description: "",
@@ -15552,32 +15599,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-66",
+            id: "line-75",
             keyword: "Given",
             text: "valid quick inputs with an enabled EPA purchase period",
           },
           {
-            id: "line-67",
+            id: "line-76",
             keyword: "When",
             text: "the EPA period start date is cleared",
           },
           {
-            id: "line-68",
+            id: "line-77",
             keyword: "Then",
             text: "the raw EPA schedule is rejected with an actionable period error",
           },
           {
-            id: "line-69",
+            id: "line-78",
             keyword: "And",
             text: "no repaired quick-calculator estimate is produced",
           },
           {
-            id: "line-70",
+            id: "line-79",
             keyword: "When",
             text: "EPA is disabled and then re-enabled",
           },
           {
-            id: "line-71",
+            id: "line-80",
             keyword: "Then",
             text: "the raw EPA schedule error is restored",
           },
@@ -15585,7 +15632,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-73",
+        id: "line-82",
         keyword: "Scenario",
         name: "Keep future selected retirement available when normal retirement is past",
         description: "",
@@ -15594,22 +15641,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-74",
+            id: "line-83",
             keyword: "Given",
             text: "quick inputs for a member born in June 1959 with selected retirement at age 68",
           },
           {
-            id: "line-75",
+            id: "line-84",
             keyword: "When",
             text: "the quick comparisons are calculated on 22 September 2026",
           },
           {
-            id: "line-76",
+            id: "line-85",
             keyword: "Then",
             text: "normal-age variants are unavailable as past retirement",
           },
           {
-            id: "line-77",
+            id: "line-86",
             keyword: "And",
             text: "selected-age variants remain available",
           },

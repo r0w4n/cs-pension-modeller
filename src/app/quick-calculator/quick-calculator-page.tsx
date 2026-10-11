@@ -38,6 +38,7 @@ import { SavedLocalFeedback } from "../saved-local-feedback";
 import { SettingsFields } from "../form-fields";
 import { SiteFooter } from "../site-footer";
 import { useQuickCalculator } from "./use-quick-calculator";
+import { getQuickCalculatorIncompleteMessage } from "./quick-calculator-readiness";
 
 const birthField = getField("dateOfBirth", {
   label: "Birth month and year",
@@ -526,8 +527,7 @@ function QuickResults({
   if (!calculator.requiredInputsComplete) {
     return (
       <div className="quick-results-empty" role="status">
-        Enter your birth month and year to see current estimates. Replace the
-        starting pension and earnings assumptions with your own figures.
+        {getQuickCalculatorIncompleteMessage(calculator.completion)}
       </div>
     );
   }

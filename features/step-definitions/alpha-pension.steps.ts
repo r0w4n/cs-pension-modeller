@@ -69,6 +69,7 @@ type PensionBreakdownRow = {
 
 class AlphaPensionWorld {
   dateOfBirth = DEFAULT_ACCEPTANCE_DATE_OF_BIRTH;
+  hasProtectedAlphaAge = false;
   startingAlphaPension = 0;
   startingSalary = 0;
   salaryIncrease = 0;
@@ -336,6 +337,7 @@ function validateDrawRequest(world: AlphaPensionWorld) {
     startDate: ACCEPTANCE_START_DATE,
     requirementAge: 55,
     alphaPensionDrawAge: ageAtDrawDate,
+    alphaHasProtectedPensionAge: world.hasProtectedAlphaAge,
     alphaPensionLeaveAge: ageAtDrawDate,
     lifeExpectancy: 90,
   };
@@ -1054,8 +1056,18 @@ Given(
 );
 
 When("the minimum claim age is determined", function (this: AlphaPensionWorld) {
-  this.minimumClaimAge = calculateMinimumPensionAccessAge(this.dateOfBirth);
+  this.minimumClaimAge = calculateMinimumPensionAccessAge(
+    this.dateOfBirth,
+    this.hasProtectedAlphaAge
+  );
 });
+
+Given(
+  "the member has a confirmed protected Alpha minimum pension age of 55",
+  function (this: AlphaPensionWorld) {
+    this.hasProtectedAlphaAge = true;
+  }
+);
 
 Then(
   "the minimum claim age is {int}",

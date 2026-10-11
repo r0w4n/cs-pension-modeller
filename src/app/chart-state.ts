@@ -50,6 +50,7 @@ type ChartStateContext = {
   currentPlanningAge: number;
   defaultStatePensionAge: number;
   minimumAlphaAccessAge: number;
+  minimumNuvosAccessAge: number;
   minimumSippAccessAge: number;
 };
 
@@ -80,6 +81,10 @@ function createChartStateContext(settings: PensionSettings): ChartStateContext {
       settings.dateOfBirth
     ),
     minimumAlphaAccessAge: calculateMinimumPensionAccessAge(
+      settings.dateOfBirth,
+      settings.alphaHasProtectedPensionAge
+    ),
+    minimumNuvosAccessAge: calculateMinimumPensionAccessAge(
       settings.dateOfBirth
     ),
     minimumSippAccessAge: calculateMinimumSippAccessAge(
@@ -257,7 +262,8 @@ function applyRetirementAgePatch(
   if (alphaDrawAgeWasAligned && next.requirementAge > previousRetirementAge) {
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
       next.requirementAge,
-      next.dateOfBirth
+      next.dateOfBirth,
+      next.alphaHasProtectedPensionAge
     );
   }
 
@@ -373,14 +379,15 @@ function applyAccessAgePatch(
     );
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
       alphaStartAge,
-      next.dateOfBirth
+      next.dateOfBirth,
+      next.alphaHasProtectedPensionAge
     );
   }
 
   if (patch.nuvosStartAge !== undefined) {
     const nuvosStartAgeBounds = getStandalonePensionStartAgeBounds({
       currentPlanningAge: context.currentPlanningAge,
-      minimumPensionAccessAge: context.minimumAlphaAccessAge,
+      minimumPensionAccessAge: context.minimumNuvosAccessAge,
     });
     const nuvosStartAge = clampNumber(
       patch.nuvosStartAge,
@@ -495,7 +502,8 @@ function reconcileChartState(
   if (next.alphaPensionLeaveAge > next.alphaPensionDrawAge) {
     next.alphaPensionDrawAge = normalizeAlphaPensionDrawAge(
       next.alphaPensionLeaveAge,
-      next.dateOfBirth
+      next.dateOfBirth,
+      next.alphaHasProtectedPensionAge
     );
   }
 }
@@ -621,7 +629,11 @@ export function applySettingsFieldChange(
     key === "statePensionDrawDate"
       ? normalizeStatePensionDrawDate(value as string, current.dateOfBirth)
       : key === "alphaPensionDrawAge"
-        ? normalizeAlphaPensionDrawAge(value as number, current.dateOfBirth)
+        ? normalizeAlphaPensionDrawAge(
+            value as number,
+            current.dateOfBirth,
+            current.alphaHasProtectedPensionAge
+          )
         : key === "sippDrawAge"
           ? normalizeSippDrawAge(value as number, current.dateOfBirth)
           : normalizeSetting(key, value);
@@ -662,7 +674,8 @@ export function applySettingsFieldChange(
             )
               ? updatedNormalPensionAge
               : current.alphaPensionDrawAge,
-            normalizedValue as string
+            normalizedValue as string,
+            current.alphaHasProtectedPensionAge
           ),
           sippDrawAge: normalizeSippDrawAge(
             current.sippDrawAge === current.normalPensionAge ||
@@ -684,6 +697,14 @@ export function applySettingsFieldChange(
               current,
               normalizedValue as string
             )
+          ),
+        }
+      : {}),
+    ...(key === "alphaHasProtectedPensionAge" && !normalizedValue
+      ? {
+          alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
+            current.alphaPensionDrawAge,
+            current.dateOfBirth
           ),
         }
       : {}),

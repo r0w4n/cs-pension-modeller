@@ -369,6 +369,7 @@ export const JOURNEY_DEFINITIONS = [
         groupId: "alpha",
         fieldIds: [
           "alphaPensionDrawAge",
+          "alphaHasProtectedPensionAge",
           "alphaPensionAbsDate",
           "accruedPensionAtLastAbs",
           "pensionableEarnings",

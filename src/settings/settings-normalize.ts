@@ -338,6 +338,8 @@ export function normalizeSetting<K extends keyof PensionSettings>(
     case "showSipp":
     case "sippHasProtectedPensionAge":
       return normalizeSippBooleanSetting(value) as PensionSettings[K];
+    case "alphaHasProtectedPensionAge":
+      return normalizeAlphaPensionBooleanSetting(value) as PensionSettings[K];
     case "showCsAvc":
     case "csAvcHasProtectedPensionAge":
       return normalizeCsAvcBooleanSetting(value) as PensionSettings[K];
@@ -581,8 +583,10 @@ export function normalizeSettings(
     ),
     alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
       settings.alphaPensionDrawAge,
-      dateOfBirth
+      dateOfBirth,
+      settings.alphaHasProtectedPensionAge
     ),
+    alphaHasProtectedPensionAge: Boolean(settings.alphaHasProtectedPensionAge),
     alphaEpaEnabled: Boolean(settings.alphaEpaEnabled),
     alphaEpaPeriods: normalizeSetting(
       "alphaEpaPeriods",

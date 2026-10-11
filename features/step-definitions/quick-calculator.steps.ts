@@ -86,6 +86,7 @@ function toStoredInputs(
     accruedPensionAtLastAbs: settings.accruedPensionAtLastAbs,
     pensionableEarnings: settings.pensionableEarnings,
     alphaPensionDrawAge: settings.alphaPensionDrawAge,
+    alphaHasProtectedPensionAge: settings.alphaHasProtectedPensionAge,
     alphaAddedPensionMonthly: settings.alphaAddedPensionMonthly,
     alphaAddedPensionFactorType: settings.alphaAddedPensionFactorType,
     partialRetirementStartAge: settings.partialRetirementStartAge,

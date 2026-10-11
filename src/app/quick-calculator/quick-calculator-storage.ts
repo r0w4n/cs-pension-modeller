@@ -10,7 +10,7 @@ import {
 } from "../../settings";
 
 export const QUICK_CALCULATOR_STORAGE_KEY = "cs-pension-quick-calculator";
-const QUICK_CALCULATOR_STORAGE_VERSION = 1;
+const QUICK_CALCULATOR_STORAGE_VERSION = 2;
 
 export type QuickCalculatorCompletion = {
   dateOfBirth: boolean;
@@ -27,6 +27,7 @@ export type QuickCalculatorStoredInputs = Pick<
   | "accruedPensionAtLastAbs"
   | "pensionableEarnings"
   | "alphaPensionDrawAge"
+  | "alphaHasProtectedPensionAge"
   | "alphaAddedPensionMonthly"
   | "alphaAddedPensionFactorType"
   | "partialRetirementStartAge"
@@ -112,7 +113,10 @@ export function clearStoredQuickCalculatorState() {
 export function parseQuickCalculatorState(
   value: unknown
 ): QuickCalculatorStoredState | null {
-  if (!isRecord(value) || value.version !== QUICK_CALCULATOR_STORAGE_VERSION) {
+  if (
+    !isRecord(value) ||
+    (value.version !== 1 && value.version !== QUICK_CALCULATOR_STORAGE_VERSION)
+  ) {
     return null;
   }
   if (!isRecord(value.data) || !isRecord(value.data.inputs)) {
@@ -208,6 +212,12 @@ export function parseQuickCalculatorState(
   if (booleanInputKeys.some((key) => typeof inputs[key] !== "boolean")) {
     return null;
   }
+  if (
+    value.version === QUICK_CALCULATOR_STORAGE_VERSION &&
+    typeof inputs.alphaHasProtectedPensionAge !== "boolean"
+  ) {
+    return null;
+  }
   return {
     inputs: {
       dateOfBirth,
@@ -215,6 +225,10 @@ export function parseQuickCalculatorState(
       accruedPensionAtLastAbs,
       pensionableEarnings,
       alphaPensionDrawAge,
+      alphaHasProtectedPensionAge:
+        value.version === 1
+          ? false
+          : (inputs.alphaHasProtectedPensionAge as boolean),
       alphaAddedPensionMonthly,
       alphaAddedPensionFactorType: factorType,
       partialRetirementStartAge,

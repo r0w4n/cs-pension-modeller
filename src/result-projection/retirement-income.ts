@@ -323,7 +323,8 @@ export function createRetirementIncomeChartLimits(
     settings
   );
   const minimumAlphaAccessAge = calculateMinimumPensionAccessAge(
-    settings.dateOfBirth
+    settings.dateOfBirth,
+    settings.alphaHasProtectedPensionAge
   );
   const currentPlanningAge = calculateCurrentPlanningAge(settings);
   const defaultStatePensionAge = calculateMinimumStatePensionDrawAge(
@@ -364,7 +365,9 @@ export function createRetirementIncomeChartLimits(
   });
   const nuvosStartAgeBounds = getStandalonePensionStartAgeBounds({
     currentPlanningAge,
-    minimumPensionAccessAge: minimumAlphaAccessAge,
+    minimumPensionAccessAge: calculateMinimumPensionAccessAge(
+      settings.dateOfBirth
+    ),
   });
   const premiumStartAgeBounds = getPensionStartAgeBounds({
     currentPlanningAge,

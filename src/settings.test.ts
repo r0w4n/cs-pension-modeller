@@ -79,6 +79,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     pensionableEarnings: defaultSettings.pensionableEarnings,
     alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
     alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+    alphaHasProtectedPensionAge: defaultSettings.alphaHasProtectedPensionAge,
     alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
     alphaEpaPeriods: defaultSettings.alphaEpaPeriods,
     alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
@@ -433,6 +434,7 @@ describe("settings unit tests", () => {
       pensionableEarnings: 56321,
       alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
       alphaPensionDrawAge: 70,
+      alphaHasProtectedPensionAge: false,
       alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
       alphaEpaPeriods: defaultSettings.alphaEpaPeriods,
       alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
@@ -1122,6 +1124,7 @@ describe("settings unit tests", () => {
     expect(calculateMinimumPensionAccessAge("1973-04-05")).toBe(55);
     expect(calculateMinimumPensionAccessAge("1973-04-06")).toBe(57);
     expect(calculateMinimumPensionAccessAge("1977-11-23")).toBe(57);
+    expect(calculateMinimumPensionAccessAge("1977-11-23", true)).toBe(55);
     expect(calculateMinimumSippAccessAge("1972-08-01")).toBe(55);
     expect(calculateMinimumSippAccessAge("1973-04-06")).toBe(57);
     expect(
@@ -1134,6 +1137,7 @@ describe("settings unit tests", () => {
 
   it("normalizes Alpha draw ages that would fall after the 2028 rule change but before age 57", () => {
     expect(normalizeAlphaPensionDrawAge(55, "1977-11-23")).toBe(57);
+    expect(normalizeAlphaPensionDrawAge(55, "1977-11-23", true)).toBe(55);
     expect(normalizeAlphaPensionDrawAge(56, "1972-08-01")).toBe(57);
     expect(normalizeAlphaPensionDrawAge(55, "1972-08-01")).toBe(55);
   });

@@ -48,6 +48,8 @@ export const knowledgeLinks = {
     "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
   pensionAccessAge:
     "https://www.gov.uk/personal-pensions-your-rights/how-you-can-take-pension",
+  alphaMinimumPensionAge:
+    "https://www.civilservicepensionscheme.org.uk/memberhub/planning-for-retirement/what-are-my-options/mpa/",
   incomeTaxRates: "https://www.gov.uk/income-tax-rates",
   scottishIncomeTaxRates: "https://www.gov.uk/scottish-income-tax",
   pensionTaxableIncome: "https://www.gov.uk/tax-on-pension/taxed",

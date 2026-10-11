@@ -64,6 +64,9 @@ const retirementAgeField = getField("alphaPensionDrawAge", {
   description:
     "The model assumes Alpha service ends and Alpha starts at this age. Use whole years or 3, 6 or 9 months.",
 }) as RangeField;
+const protectedAlphaAgeField = getField(
+  "alphaHasProtectedPensionAge"
+) as CheckboxField;
 const addedPensionField = getField("alphaAddedPensionMonthly", {
   label: "Monthly Added Pension payment (£ per month)",
   description:
@@ -272,6 +275,15 @@ export function QuickCalculatorPage() {
                 onDraftStateChange={(state) =>
                   calculator.handleDraft("alphaPensionDrawAge", state)
                 }
+              />
+              <SettingsFields
+                fields={[protectedAlphaAgeField]}
+                settings={calculator.inputs}
+                validationIssues={resultIssues}
+                onChange={calculator.onChange}
+                showGuidanceNotes
+                useDropdownDates={false}
+                domIdPrefix="quick"
               />
 
               <RangeSettingField

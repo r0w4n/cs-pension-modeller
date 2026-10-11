@@ -117,6 +117,7 @@ export function createQuickCalculatorBaseSettings({
       fullSalary: inputs.pensionableEarnings,
       alphaPensionLeaveAge: inputs.alphaPensionDrawAge,
       alphaPensionDrawAge: inputs.alphaPensionDrawAge,
+      alphaHasProtectedPensionAge: inputs.alphaHasProtectedPensionAge,
       alphaAddedPensionMonthly: inputs.alphaAddedPensionMonthly,
       alphaAddedPensionFactorType: inputs.alphaAddedPensionFactorType,
       alphaAddedPensionLumpSums: [],

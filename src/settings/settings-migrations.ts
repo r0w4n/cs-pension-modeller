@@ -368,6 +368,35 @@ export function migrateFromV17ToV18(data: unknown) {
   };
 }
 
+export function migrateFromV18ToV19(data: unknown) {
+  if (!isRecord(data) || !isRecord(data.journeys)) {
+    return { journeys: {} };
+  }
+
+  return {
+    ...data,
+    journeys: Object.fromEntries(
+      Object.entries(data.journeys).map(([journey, settings]) => [
+        journey,
+        isRecord(settings)
+          ? {
+              ...settings,
+              alphaHasProtectedPensionAge: false,
+              ...(isRecord(settings.partner)
+                ? {
+                    partner: {
+                      ...settings.partner,
+                      alphaHasProtectedPensionAge: false,
+                    },
+                  }
+                : {}),
+            }
+          : settings,
+      ])
+    ),
+  };
+}
+
 const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   [LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION]: migrateFromV1ToV2,
   2: migrateFromV2ToV3,
@@ -386,6 +415,7 @@ const SETTINGS_MIGRATIONS: Record<number, SettingsMigration> = {
   15: migrateFromV15ToV16,
   16: migrateFromV16ToV17,
   17: migrateFromV17ToV18,
+  18: migrateFromV18ToV19,
 };
 
 export function migrateSettingsToLatest(

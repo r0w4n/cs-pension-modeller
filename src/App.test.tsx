@@ -624,6 +624,7 @@ function expectedStoredSettings(overrides: Record<string, unknown> = {}) {
     pensionableEarnings: defaultSettings.pensionableEarnings,
     alphaPayRisePercent: defaultSettings.alphaPayRisePercent,
     alphaPensionDrawAge: defaultSettings.alphaPensionDrawAge,
+    alphaHasProtectedPensionAge: defaultSettings.alphaHasProtectedPensionAge,
     alphaEpaEnabled: defaultSettings.alphaEpaEnabled,
     alphaEpaPeriods: defaultSettings.alphaEpaPeriods,
     alphaEpaYearsBeforeNpa: defaultSettings.alphaEpaYearsBeforeNpa,
@@ -1449,6 +1450,11 @@ describe.sequential("App settings form", () => {
       "href",
       "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/"
     );
+    expect(
+      screen.queryByRole("checkbox", {
+        name: "I have confirmed Alpha access from age 55",
+      })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Apply Alpha pension increases")
     ).not.toBeInTheDocument();
@@ -2947,6 +2953,51 @@ describe.sequential("App settings form", () => {
     expect(screen.getByLabelText("State Pension start age")).toHaveAttribute(
       "min",
       "67.75"
+    );
+  });
+
+  it("allows a confirmed protected Alpha age of 55 after the 2028 change", () => {
+    const protectedSettings = expectedStoredSettings({
+      dateOfBirth: "1977-11-23",
+      alphaPensionDrawAge: 55,
+      alphaHasProtectedPensionAge: true,
+    });
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        version: SETTINGS_SCHEMA_VERSION,
+        data: {
+          journeys: {
+            simple: protectedSettings,
+            bridge: protectedSettings,
+            expert: protectedSettings,
+          },
+        },
+      })
+    );
+
+    renderAcknowledgedApp();
+    openJourneyStep(/Alpha pension details/i);
+
+    expect(
+      screen.getByRole("checkbox", {
+        name: "I have confirmed Alpha access from age 55",
+      })
+    ).toBeChecked();
+    expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
+      "55"
+    );
+    expect(
+      screen.getByLabelText("Planned Alpha Pension Draw Age")
+    ).toHaveAttribute("min", "55");
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "I have confirmed Alpha access from age 55",
+      })
+    );
+    expect(screen.getByLabelText("Planned Alpha Pension Draw Age")).toHaveValue(
+      "57"
     );
   });
 

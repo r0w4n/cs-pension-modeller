@@ -203,7 +203,8 @@ export function calculateStatePensionDrawDateFromAge(
 function normalizeMinimumPensionAccessAge(
   value: number,
   dateOfBirth: string,
-  maxAge = 70
+  maxAge = 70,
+  hasProtectedPensionAge = false
 ) {
   const normalizedDateOfBirth = normalizeIsoDate(
     dateOfBirth,
@@ -213,11 +214,12 @@ function normalizeMinimumPensionAccessAge(
   const normalizedAge = Number.isFinite(parsed)
     ? roundModelAge(Math.min(maxAge, Math.max(55, parsed)))
     : 58;
-  const sippDrawDate = addYearsToIsoDate(normalizedDateOfBirth, normalizedAge);
+  const drawDate = addYearsToIsoDate(normalizedDateOfBirth, normalizedAge);
 
   if (
-    sippDrawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE &&
-    normalizedAge < 57
+    drawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE &&
+    normalizedAge < 57 &&
+    !hasProtectedPensionAge
   ) {
     return 57;
   }
@@ -225,13 +227,21 @@ function normalizeMinimumPensionAccessAge(
   return normalizedAge;
 }
 
-export function calculateMinimumPensionAccessAge(dateOfBirth: string) {
+export function calculateMinimumPensionAccessAge(
+  dateOfBirth: string,
+  hasProtectedPensionAge = false
+) {
   const normalizedDateOfBirth = normalizeIsoDate(
     dateOfBirth,
     DEFAULT_DATE_OF_BIRTH
   );
 
-  return normalizeMinimumPensionAccessAge(55, normalizedDateOfBirth) > 55
+  return normalizeMinimumPensionAccessAge(
+    55,
+    normalizedDateOfBirth,
+    70,
+    hasProtectedPensionAge
+  ) > 55
     ? 57
     : 55;
 }
@@ -325,9 +335,15 @@ export function calculateMinimumCsAvcAccessAge(
 
 export function normalizeAlphaPensionDrawAge(
   value: number,
-  dateOfBirth: string
+  dateOfBirth: string,
+  hasProtectedPensionAge = false
 ) {
-  return normalizeMinimumPensionAccessAge(value, dateOfBirth);
+  return normalizeMinimumPensionAccessAge(
+    value,
+    dateOfBirth,
+    70,
+    hasProtectedPensionAge
+  );
 }
 
 export function normalizeSippDrawAge(value: number, _dateOfBirth: string) {

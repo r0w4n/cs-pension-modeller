@@ -91,6 +91,7 @@ export const defaultSettings: PensionSettings = {
   pensionableEarnings: 0,
   alphaPayRisePercent: 0,
   alphaPensionDrawAge: personalDetailsDefaults.requirementAge,
+  alphaHasProtectedPensionAge: false,
   alphaEpaEnabled: false,
   alphaEpaPeriods: [],
   alphaEpaYearsBeforeNpa: 3,

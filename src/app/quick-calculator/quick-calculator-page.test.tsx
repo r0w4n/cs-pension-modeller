@@ -101,6 +101,7 @@ function saveCompleteQuickState(
       accruedPensionAtLastAbs: 5_000,
       pensionableEarnings: 42_000,
       alphaPensionDrawAge: 60,
+      alphaHasProtectedPensionAge: false,
       alphaAddedPensionMonthly: 200,
       alphaAddedPensionFactorType: "self",
       partialRetirementStartAge: 55,
@@ -351,6 +352,38 @@ describe("QuickCalculatorPage", () => {
       screen.getByLabelText("Selected retirement age exact value")
     ).toHaveValue(61);
     expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
+  });
+
+  it("allows a confirmed protected Alpha age of 55 in the quick calculator", () => {
+    saveCompleteQuickState({
+      dateOfBirth: "1977-05-01",
+      alphaPensionDrawAge: 55,
+      alphaHasProtectedPensionAge: true,
+    });
+
+    render(<QuickCalculatorPage />);
+
+    expect(
+      screen.getByRole("checkbox", {
+        name: "I have confirmed Alpha access from age 55",
+      })
+    ).toBeChecked();
+    expect(
+      screen.getByLabelText("Selected retirement age exact value")
+    ).toHaveValue(55);
+    expect(screen.getByLabelText("Selected retirement age")).toHaveAttribute(
+      "min",
+      "55"
+    );
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "I have confirmed Alpha access from age 55",
+      })
+    );
+    expect(
+      screen.getByLabelText("Selected retirement age exact value")
+    ).toHaveValue(57);
   });
 
   it("uses quick defaults for field reset controls", () => {

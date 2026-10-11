@@ -20,6 +20,7 @@ describe("quick calculator storage", () => {
         accruedPensionAtLastAbs: 5_000,
         pensionableEarnings: 42_000,
         alphaPensionDrawAge: 60,
+        alphaHasProtectedPensionAge: false,
         alphaAddedPensionMonthly: 200,
         alphaAddedPensionFactorType: "self" as const,
         partialRetirementStartAge: 55,
@@ -43,11 +44,52 @@ describe("quick calculator storage", () => {
     expect(loadQuickCalculatorState()).toEqual({ status: "loaded", state });
     expect(
       JSON.parse(window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)!)
-    ).toMatchObject({ version: 1, data: state });
+    ).toMatchObject({ version: 2, data: state });
     expect(clearStoredQuickCalculatorState()).toBe(true);
     expect(
       window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
     ).toBeNull();
+  });
+
+  it("loads a version 1 quick snapshot with Alpha protection off", () => {
+    const settings = createDefaultSettings();
+    const state = {
+      inputs: {
+        dateOfBirth: "1977-05-01",
+        alphaPensionAbsDate: "2025",
+        accruedPensionAtLastAbs: 5_000,
+        pensionableEarnings: 42_000,
+        alphaPensionDrawAge: 57,
+        alphaAddedPensionMonthly: 0,
+        alphaAddedPensionFactorType: "self",
+        partialRetirementStartAge: 55,
+        partialRetirementWorkPercent: 50,
+        showStatePension: true,
+        currentStatePension: settings.currentStatePension,
+        statePensionForecastConfirmed: false,
+        alphaEpaEnabled: false,
+        alphaEpaPeriods: [],
+      },
+      completion: {
+        dateOfBirth: true,
+        accruedPensionAtLastAbs: true,
+        pensionableEarnings: true,
+        retirementAgeInitialised: true,
+        partialRetirementAgeInitialised: true,
+      },
+    };
+    window.localStorage.setItem(
+      QUICK_CALCULATOR_STORAGE_KEY,
+      JSON.stringify({ version: 1, data: state })
+    );
+
+    expect(loadQuickCalculatorState()).toEqual({
+      status: "loaded",
+      state: {
+        ...state,
+        inputs: { ...state.inputs, alphaHasProtectedPensionAge: false },
+      },
+    });
   });
 
   it("rejects malformed and unknown-version data", () => {
@@ -71,6 +113,7 @@ describe("quick calculator storage", () => {
         accruedPensionAtLastAbs: 5_000,
         pensionableEarnings: 42_000,
         alphaPensionDrawAge: 60,
+        alphaHasProtectedPensionAge: false,
         alphaAddedPensionMonthly: 200,
         alphaAddedPensionFactorType: "self" as const,
         partialRetirementStartAge: 55,
@@ -133,6 +176,7 @@ describe("quick calculator storage", () => {
           accruedPensionAtLastAbs: 0,
           pensionableEarnings: 0,
           alphaPensionDrawAge: 60,
+          alphaHasProtectedPensionAge: false,
           alphaAddedPensionMonthly: 0,
           alphaAddedPensionFactorType: "self",
           partialRetirementStartAge: 55,

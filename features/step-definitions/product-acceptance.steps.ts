@@ -3736,6 +3736,7 @@ Given(
         accruedPensionAtLastAbs: 8_750,
         pensionableEarnings: 52_250,
         alphaPensionDrawAge: 60,
+        alphaHasProtectedPensionAge: false,
         alphaAddedPensionMonthly: 200,
         alphaAddedPensionFactorType: "self",
         partialRetirementStartAge: 55,

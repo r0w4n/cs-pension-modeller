@@ -29,7 +29,10 @@ export function getAlphaEffectiveRangeField(
   if (field.id === "alphaPensionDrawAge") {
     effectiveField = {
       ...effectiveField,
-      min: calculateMinimumPensionAccessAge(settings.dateOfBirth),
+      min: calculateMinimumPensionAccessAge(
+        settings.dateOfBirth,
+        settings.alphaHasProtectedPensionAge
+      ),
     };
   }
 

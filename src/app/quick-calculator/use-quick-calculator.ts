@@ -18,6 +18,7 @@ import {
   LOCAL_DATA_RESET_SIGNAL_KEY,
   LOCAL_STORAGE_ENABLED_KEY,
   normalizeSetting,
+  normalizeAlphaPensionDrawAge,
   type PensionSettings,
 } from "../../settings";
 import { projectQuickCalculatorResults } from "../../result-projection/quick-calculator-results";
@@ -535,6 +536,22 @@ export function useQuickCalculator() {
         [key]: normalizeSetting(key, value, {
           fallbackStartDate: current.startDate,
         }),
+        ...(key === "alphaHasProtectedPensionAge" && value === false
+          ? {
+              alphaPensionDrawAge: normalizeAlphaPensionDrawAge(
+                current.alphaPensionDrawAge,
+                current.dateOfBirth
+              ),
+              alphaPensionLeaveAge: normalizeAlphaPensionDrawAge(
+                current.alphaPensionDrawAge,
+                current.dateOfBirth
+              ),
+              requirementAge: normalizeAlphaPensionDrawAge(
+                current.alphaPensionDrawAge,
+                current.dateOfBirth
+              ),
+            }
+          : {}),
       }));
     },
     [refreshCalculationDate]
@@ -742,6 +759,7 @@ function pickStoredInputs(
     accruedPensionAtLastAbs: settings.accruedPensionAtLastAbs,
     pensionableEarnings: settings.pensionableEarnings,
     alphaPensionDrawAge: settings.alphaPensionDrawAge,
+    alphaHasProtectedPensionAge: settings.alphaHasProtectedPensionAge,
     alphaAddedPensionMonthly: settings.alphaAddedPensionMonthly,
     alphaAddedPensionFactorType: settings.alphaAddedPensionFactorType,
     partialRetirementStartAge: settings.partialRetirementStartAge,

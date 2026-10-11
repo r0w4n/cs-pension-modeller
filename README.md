@@ -131,6 +131,10 @@ Some important assumptions and simplifications are:
   their date or month resolution.
 - Alpha accrual is calculated from pensionable earnings using the Alpha accrual
   rate encoded in the model.
+- Alpha pension access is generally modelled from age 55 before 6 April 2028
+  and age 57 from that date. Members with a confirmed protected Alpha minimum
+  pension age may select age 55 after the change; the model does not determine
+  eligibility. See the [Civil Service Pensions guidance](https://www.civilservicepensionscheme.org.uk/memberhub/planning-for-retirement/what-are-my-options/mpa/).
 - The starting Alpha pension is rolled forward from the latest ABS year to the
   current date, which is used as the internal calculation start date.
 - Future Alpha accrual depends on pensionable earnings, and Alpha CPI-linked

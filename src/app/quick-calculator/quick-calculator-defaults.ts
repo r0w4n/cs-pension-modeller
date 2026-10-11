@@ -28,6 +28,7 @@ export function createQuickCalculatorDefaults(
     accruedPensionAtLastAbs: QUICK_DEFAULT_ACCRUED_PENSION,
     pensionableEarnings: QUICK_DEFAULT_PENSIONABLE_EARNINGS,
     alphaPensionDrawAge: QUICK_DEFAULT_RETIREMENT_AGE,
+    alphaHasProtectedPensionAge: false,
     alphaPensionLeaveAge: QUICK_DEFAULT_RETIREMENT_AGE,
     requirementAge: QUICK_DEFAULT_RETIREMENT_AGE,
     alphaAddedPensionMonthly: 0,

@@ -111,6 +111,7 @@ export type CheckboxField = {
     | "statePensionForecastConfirmed"
     | "statePensionApplyFutureGrowth"
     | "alphaEpaEnabled"
+    | "alphaHasProtectedPensionAge"
     | "classicApplyPensionIncreases"
     | "classicPlusApplyPensionIncreases"
     | "nuvosApplyPensionIncreases"
@@ -518,9 +519,18 @@ export const fieldGroups: FieldGroup[] = [
         inputStep: 0.25,
         format: "age",
         description:
-          "The age you plan to start taking Alpha. In expert mode this defaults to your Alpha Normal Pension Age (NPA). Alpha NPA is linked to State Pension age or 65 if later, so draw age changes both when income starts and whether early-payment reductions apply. If you draw Alpha before NPA, the model applies reduction factors.",
+          "The age you plan to take Alpha. From 6 April 2028, the minimum is usually 57. Taking it before normal pension age reduces the amount.",
         infoUrl: knowledgeLinks.alphaEarlyRetirementFactors,
         infoLinkText: "Reduction factors",
+      },
+      {
+        id: "alphaHasProtectedPensionAge",
+        label: "I have confirmed Alpha access from age 55",
+        type: "checkbox",
+        description:
+          "Only some members keep age 55 after April 2028. Those joining since 4 November 2021 generally do not. Check with Civil Service Pensions.",
+        infoUrl: knowledgeLinks.alphaMinimumPensionAge,
+        infoLinkText: "Alpha minimum pension age",
       },
       {
         id: "alphaAddedPensionMonthly",

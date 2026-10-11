@@ -455,7 +455,7 @@ Feature: Alpha pension modelling
     When one year of Alpha pension is accrued
     Then the new annual Alpha pension should be 779.52
 
-  Rule: Minimum pension access age is date dependent
+  Rule: Alpha minimum pension age depends on the draw date and confirmed protection
 
   @minimum-claim-age
   Scenario Outline: Determine minimum claim age from date of birth
@@ -490,6 +490,17 @@ Feature: Alpha pension modelling
       | 1977-05-01  | 2033-05-01 | 57                | 56            | invalid          |
 
   @validation @minimum-pension-age
+  Scenario: A member with confirmed Alpha protection can draw at 55 after April 2028
+    Given the member is in the alpha scheme
+    And the member was born on 1977-05-01
+    And the member has a confirmed protected Alpha minimum pension age of 55
+    And the member requests to draw pension on 2032-05-01
+    And the applicable minimum pension age is 55
+    When the draw age is validated
+    Then the member's age at draw date should be 55
+    And the draw request should be valid
+
+  @validation @minimum-pension-age
   Scenario: Explain invalid draw age to the user
     Given the member is in the alpha scheme
     And the member was born on 1977-05-01
@@ -498,7 +509,7 @@ Feature: Alpha pension modelling
     When the draw age is validated
     Then the model should show the validation message:
       """
-      Alpha pension draw age must be at least 57 for access dates on or after 6 April 2028.
+      Alpha draw age must be at least 57 from 6 April 2028 unless your age 55 access is confirmed.
       """
 
   Rule: Combined projections retain the separate Alpha components

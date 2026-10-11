@@ -10,6 +10,26 @@ import {
 } from "../settings";
 
 describe("chart-state", () => {
+  it("lets protected Alpha draw at 55 without changing nuvos access", () => {
+    const current = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1977-05-01",
+      startDate: "2026-06-01",
+      requirementAge: 55,
+      alphaPensionLeaveAge: 55,
+      alphaPensionDrawAge: 57,
+      alphaHasProtectedPensionAge: true,
+      showNuvos: true,
+      nuvosPensionDrawAge: 65,
+    };
+    const next = applyRetirementIncomeChartParameterPatch(current, {
+      alphaStartAge: 55,
+      nuvosStartAge: 55,
+    });
+
+    expect(next.alphaPensionDrawAge).toBe(55);
+    expect(next.nuvosPensionDrawAge).toBe(57);
+  });
   it("caps SMILE phase ages when life expectancy is reduced", () => {
     const current = {
       ...createDefaultSettings(),

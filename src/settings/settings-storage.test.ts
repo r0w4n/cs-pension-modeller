@@ -55,6 +55,7 @@ describe("settings-storage", () => {
       desiredRetirementIncome: 60000,
       retirementIncomeTargetBasis: "after_tax" as const,
       statePensionForecastConfirmed: true,
+      alphaHasProtectedPensionAge: true,
       sippHasProtectedPensionAge: true,
       sippProtectedPensionAge: 50,
       startDate: "2026-05-01",
@@ -75,6 +76,7 @@ describe("settings-storage", () => {
     expect(loaded.desiredRetirementIncome).toBe(60000);
     expect(loaded.retirementIncomeTargetBasis).toBe("after_tax");
     expect(loaded.statePensionForecastConfirmed).toBe(true);
+    expect(loaded.alphaHasProtectedPensionAge).toBe(true);
     expect(loaded.sippHasProtectedPensionAge).toBe(true);
     expect(loaded.sippProtectedPensionAge).toBe(50);
     expect(loaded.startDate).toBe("2026-04-25");

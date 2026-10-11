@@ -556,6 +556,23 @@ export function MethodologyPage() {
 
         <h3>Alpha draw age and early retirement</h3>
         <p className="section-copy">
+          The model uses a minimum Alpha draw age of 55 before 6 April 2028 and
+          generally 57 from that date. Some members retain age 55, including
+          members who joined before 4 November 2021 and some affected by the
+          2015 Remedy. If you mark your Alpha minimum pension age of 55 as
+          confirmed, the model permits a draw from 55 after April 2028. It does
+          not determine your eligibility. Check this with Civil Service Pensions
+          before relying on the estimate. See the{" "}
+          <a
+            href={knowledgeLinks.alphaMinimumPensionAge}
+            target="_blank"
+            rel="noreferrer"
+          >
+            scheme minimum pension age guidance
+          </a>
+          .
+        </p>
+        <p className="section-copy">
           If Alpha is drawn before its normal pension age, the model applies the
           Government Actuary&apos;s Department (GAD) Alpha early-payment
           reduction factor for the relevant Normal Pension Age or EPA.

@@ -701,7 +701,8 @@ function getRangeResetValue(
   if (useNpaLinkedDefaults && field.id === "alphaPensionDrawAge") {
     return normalizeAlphaPensionDrawAge(
       settings.normalPensionAge,
-      settings.dateOfBirth
+      settings.dateOfBirth,
+      settings.alphaHasProtectedPensionAge
     );
   }
 

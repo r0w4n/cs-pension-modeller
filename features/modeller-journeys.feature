@@ -81,6 +81,7 @@ Feature: Modeller journeys
       | What year is your latest pension statement?        |
       | Yearly Alpha pension built up so far (£)            |
       | Yearly pay used to build your Alpha pension (£)     |
+    And the "Add your Alpha pension details" journey step should not include the field "I have confirmed Alpha access from age 55"
     And the "Add your Alpha pension details" journey step should link to Annual Benefit Statement help
     And the "Add your Alpha pension details" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
 

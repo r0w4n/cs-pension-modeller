@@ -378,12 +378,13 @@ export function validateAlphaPensionRules({
 
   if (
     alphaDrawDate >= NORMAL_MINIMUM_PENSION_AGE_INCREASE_DATE &&
-    settings.alphaPensionDrawAge < 57
+    settings.alphaPensionDrawAge < 57 &&
+    !settings.alphaHasProtectedPensionAge
   ) {
     issues.push({
       field: "alphaPensionDrawAge",
       message:
-        "Alpha pension draw age must be at least 57 for access dates on or after 6 April 2028.",
+        "Alpha draw age must be at least 57 from 6 April 2028 unless your age 55 access is confirmed.",
     });
   }
 

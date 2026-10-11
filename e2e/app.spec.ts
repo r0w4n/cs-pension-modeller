@@ -590,6 +590,11 @@ test.describe("app end-to-end journeys", () => {
     await clickNextAndExpectStep(page, "Add your Alpha pension details");
 
     await expect(
+      page.getByRole("checkbox", {
+        name: "I have confirmed Alpha access from age 55",
+      })
+    ).toHaveCount(0);
+    await expect(
       page.getByRole("link", {
         name: /Help me find my Annual Benefit Statement/i,
       })

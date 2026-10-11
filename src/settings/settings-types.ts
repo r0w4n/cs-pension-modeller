@@ -155,6 +155,7 @@ export type PensionSettings = {
   pensionableEarnings: number;
   alphaPayRisePercent: number;
   alphaPensionDrawAge: number;
+  alphaHasProtectedPensionAge: boolean;
   alphaEpaEnabled: boolean;
   alphaEpaPeriods: AlphaEpaPeriod[];
   /** @deprecated Retained to read and model pre-version-9 settings. */

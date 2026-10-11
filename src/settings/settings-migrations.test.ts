@@ -16,11 +16,35 @@ import {
   migrateFromV15ToV16,
   migrateFromV16ToV17,
   migrateFromV17ToV18,
+  migrateFromV18ToV19,
   migrateSettingsToLatest,
 } from "./settings-migrations";
 import { SETTINGS_SCHEMA_VERSION } from "./settings-versions";
 
 describe("settings-migrations", () => {
+  it("defaults Alpha protection off for saved members and partners", () => {
+    expect(
+      migrateFromV18ToV19({
+        journeys: {
+          expert: {
+            alphaPensionDrawAge: 57,
+            partner: { alphaPensionDrawAge: 57 },
+          },
+        },
+      })
+    ).toEqual({
+      journeys: {
+        expert: {
+          alphaPensionDrawAge: 57,
+          alphaHasProtectedPensionAge: false,
+          partner: {
+            alphaPensionDrawAge: 57,
+            alphaHasProtectedPensionAge: false,
+          },
+        },
+      },
+    });
+  });
   it("adds dormant joint household settings without copying existing financial data", () => {
     expect(
       migrateFromV17ToV18({
@@ -295,6 +319,7 @@ describe("settings-migrations", () => {
 
   it("migrates legacy data to the latest schema", () => {
     const migratedLegacySettings = {
+      alphaHasProtectedPensionAge: false,
       dateOfBirth: "1987-06-01",
       requirementAge: 60,
       additionalGuaranteedIncomes: [],

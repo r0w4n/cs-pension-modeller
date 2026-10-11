@@ -4,7 +4,7 @@ import type {
 } from "./settings-types";
 
 export const LEGACY_UNVERSIONED_SETTINGS_SCHEMA_VERSION = 1;
-export const SETTINGS_SCHEMA_VERSION = 18;
+export const SETTINGS_SCHEMA_VERSION = 19;
 
 export type StoredJourneySettingsData = {
   journeys: StoredPensionSettingsByJourney;

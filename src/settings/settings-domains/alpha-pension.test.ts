@@ -46,4 +46,35 @@ describe("alpha-pension settings module", () => {
 
     expect(issues.length).toBeGreaterThan(0);
   });
+
+  it("accepts age 55 after April 2028 only with confirmed Alpha protection", () => {
+    const settings = {
+      ...createDefaultSettings(),
+      dateOfBirth: "1977-05-01",
+      requirementAge: 55,
+      alphaPensionLeaveAge: 55,
+      alphaPensionDrawAge: 55,
+    };
+    const context = {
+      lifeExpectancyDate: "2067-05-01",
+      alphaDrawDate: "2032-05-01",
+      alphaLeaveDate: "2032-05-01",
+      alphaAccrualStopDate: "2032-05-01",
+      alphaAbsDate: "2025-04-01",
+      alphaEpaAgeDate: "2044-05-01",
+      latestAlphaAddedPensionPurchaseDate: "2044-05-01",
+    };
+
+    expect(
+      validateAlphaPensionRules({ settings, ...context }).some(
+        (issue) => issue.field === "alphaPensionDrawAge"
+      )
+    ).toBe(true);
+    expect(
+      validateAlphaPensionRules({
+        settings: { ...settings, alphaHasProtectedPensionAge: true },
+        ...context,
+      }).some((issue) => issue.field === "alphaPensionDrawAge")
+    ).toBe(false);
+  });
 });

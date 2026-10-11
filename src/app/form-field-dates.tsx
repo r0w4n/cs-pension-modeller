@@ -580,6 +580,11 @@ export function MonthSelectField({
             commit(parts.year, event.target.value);
           }}
         >
+          {parts.month === "" ? (
+            <option value="" disabled>
+              Choose month
+            </option>
+          ) : null}
           {monthOptions.map((month) => (
             <option key={month.value} value={month.value}>
               {month.label}
@@ -601,6 +606,11 @@ export function MonthSelectField({
             commit(event.target.value, parts.month);
           }}
         >
+          {parts.year === "" ? (
+            <option value="" disabled>
+              Choose year
+            </option>
+          ) : null}
           {yearOptions.map((year) => (
             <option key={year} value={year}>
               {year}

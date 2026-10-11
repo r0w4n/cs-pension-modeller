@@ -25,6 +25,12 @@ to the selected planning horizon. The calculation start is set automatically.
 It supports:
 
 - simple, early-retirement bridge, and expert journeys
+- a separate Quick Alpha calculator that compares standard, Added Pension and
+  reduced-hours assumptions at Alpha Normal Pension Age and a selected age. A
+  fresh quick calculation starts with an unanswered birth month, £0 annual
+  Alpha pension, £40,000 pensionable earnings, selected age 57, reduced hours
+  from 55 and 50% working hours; these are starting assumptions for the user to
+  replace, rather than personal data
 - optional Alpha, classic, classic plus, nuvos, Premium, State Pension, SIPP,
   ISA, LISA, taxation, and partial retirement sections
 - Alpha pension accrual from Annual Benefit Statement values and future
@@ -325,6 +331,11 @@ The concrete layer responsibilities are:
   calculation engine.
 - [`src/pages/`](src/pages) contains the static footer pages, and [`e2e/`](e2e)
   contains browser journey, accessibility, and production smoke checks.
+- [`src/app/quick-calculator/`](src/app/quick-calculator) owns the isolated
+  `quick-calculator/` page, its draft state, versioned local storage and one
+  batch worker. Its pure scenario builder uses the canonical calculation entry
+  point for all eight estimates, and its result projection selects semantic
+  Alpha and State Pension values from those canonical results.
 
 The FCIS boundary has four practical rules:
 
@@ -374,14 +385,18 @@ on later in Settings, and the choice can be changed afterwards.
 
 Keys currently used:
 
-| Key                                       | Purpose                                                                                            | Stored value                                                                        |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                         | `"true"` or `"false"`.                                                              |
-| `cs-pension-modeller.settings`            | Pension inputs and assumptions for each journey, when local saving is enabled.                     | JSON object envelope `{ version, data: { journeys: { simple, bridge, expert } } }`. |
-| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                         | One of `bridge`, `simple`, `expert`.                                                |
-| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                          | `"true"` or `"false"`.                                                              |
-| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                           | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.             |
-| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled. | Version string, currently `"v1"`.                                                   |
+| Key                                       | Purpose                                                                                                                                                                                                                                                                                                              | Stored value                                                                                                             |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `cs-pension-modeller.localStorageEnabled` | Remembers whether local saving is enabled.                                                                                                                                                                                                                                                                           | `"true"` or `"false"`.                                                                                                   |
+| `cs-pension-modeller.settings`            | Pension inputs and assumptions for each journey, when local saving is enabled.                                                                                                                                                                                                                                       | JSON object envelope `{ version, data: { journeys: { simple, bridge, expert } } }`.                                      |
+| `cs-pension-modeller.appMode`             | Remembers the selected mode, when local saving is enabled.                                                                                                                                                                                                                                                           | One of `bridge`, `simple`, `expert`.                                                                                     |
+| `cs-pension-modeller.guidanceNotes`       | Remembers whether guidance notes are shown, when local saving is enabled.                                                                                                                                                                                                                                            | `"true"` or `"false"`.                                                                                                   |
+| `cs-pension-modeller.comparisonScenarios` | Stores up to 5 saved comparison scenarios, when local saving is enabled.                                                                                                                                                                                                                                             | JSON array of scenarios `{ id, name, settings, createdAt, updatedAt }`.                                                  |
+| `cs-pension-modeller.acknowledgement`     | Records that the important information notice has been acknowledged, when local saving is enabled.                                                                                                                                                                                                                   | Version string, currently `"v1"`.                                                                                        |
+| `cs-pension-quick-calculator`             | Stores the separate Quick Alpha calculator inputs and completion state after an edit when local saving is enabled. Merely opening the page or clearing data does not save its public starting assumptions. An incomplete amount or EPA date remains in the open editor but does not replace the last valid snapshot. | Versioned envelope `{ version: 1, data: { inputs, completion } }`; calculated results and invalid drafts are not stored. |
+
+Disabling State Pension can save that valid selection and the other inputs while
+an unfinished State Pension amount remains only in the open editor.
 
 Settings storage is schema-versioned. Current saves use a versioned envelope so
 older browser data can be migrated safely when fields are renamed or
@@ -407,7 +422,9 @@ early-retirement sections. This compatibility path has no time-based expiry.
 Google Analytics is disabled unless `VITE_GA_MEASUREMENT_ID` is set for the
 Vite build. When configured, the app sends coarse interaction events only:
 page views, notice acknowledgement, selected journey, journey step, changed
-field identifier, comparison actions, and chart control names.
+field identifier, comparison actions, and chart control names. The separate
+Quick Alpha page records a page view and, once per visit, a completed-estimates
+event when analytics consent is active.
 The GitHub Pages deployment workflow reads this value from the
 `VITE_GA_MEASUREMENT_ID` repository secret.
 

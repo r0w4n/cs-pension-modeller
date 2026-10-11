@@ -91,6 +91,10 @@ import {
   loadStoredComparisonScenarios,
   saveStoredComparisonScenarios,
 } from "../../src/app/comparison-storage";
+import {
+  QUICK_CALCULATOR_STORAGE_KEY,
+  saveQuickCalculatorState,
+} from "../../src/app/quick-calculator/quick-calculator-storage";
 import { createHouseholdChartEvents } from "../../src/result-projection/joint-retirement-chart";
 import { getRetirementIncomeEventsForDate } from "../../src/result-projection/retirement-income-chart-layout";
 import type { RetirementIncomeChartEvent } from "../../src/result-projection/retirement-income-chart-model";
@@ -201,6 +205,7 @@ const APP_PREFERENCE_STORAGE_KEYS = [
 const DISABLED_SAVING_DATA_KEYS = [
   SETTINGS_STORAGE_KEY,
   COMPARISON_SCENARIOS_STORAGE_KEY,
+  QUICK_CALCULATOR_STORAGE_KEY,
   ...APP_PREFERENCE_STORAGE_KEYS,
 ] as const;
 
@@ -3724,6 +3729,31 @@ Given(
         bridgeSensitiveSettings
       ),
     ]);
+    saveQuickCalculatorState({
+      inputs: {
+        dateOfBirth: "1977-11-01",
+        alphaPensionAbsDate: "2025",
+        accruedPensionAtLastAbs: 8_750,
+        pensionableEarnings: 52_250,
+        alphaPensionDrawAge: 60,
+        alphaAddedPensionMonthly: 200,
+        alphaAddedPensionFactorType: "self",
+        partialRetirementStartAge: 55,
+        partialRetirementWorkPercent: 50,
+        showStatePension: true,
+        currentStatePension: 12_000,
+        statePensionForecastConfirmed: false,
+        alphaEpaEnabled: false,
+        alphaEpaPeriods: [],
+      },
+      completion: {
+        dateOfBirth: true,
+        accruedPensionAtLastAbs: true,
+        pensionableEarnings: true,
+        retirementAgeInitialised: true,
+        partialRetirementAgeInitialised: true,
+      },
+    });
     saveStoredAppMode("expert");
     saveAcknowledgementState();
     saveAnalyticsConsentState(true);
@@ -4008,6 +4038,10 @@ Then(
     }
   }
 );
+
+Then("quick-calculator storage should be cleared", function () {
+  assertEqual(readRawStorageItem(QUICK_CALCULATOR_STORAGE_KEY), null);
+});
 
 Then(
   "active modeller settings should be reset to their initial values",

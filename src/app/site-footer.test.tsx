@@ -5,6 +5,10 @@ describe("site-footer", () => {
   it("links to consolidated footer pages", () => {
     render(<SiteFooter />);
 
+    expect(
+      screen.getByRole("link", { name: "Quick Alpha calculator" })
+    ).toHaveAttribute("href", "./quick-calculator/");
+
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
       "href",
       "./settings/"

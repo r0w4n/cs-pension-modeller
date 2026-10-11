@@ -278,6 +278,67 @@ export function MethodologyPage() {
       </section>
 
       <section>
+        <h2>Quick Alpha calculator comparisons</h2>
+        <p className="section-copy">
+          The separate Quick Alpha calculator runs the same canonical pension
+          calculation as the full modeller. It creates eight settings snapshots:
+          standard, Added Pension, reduced hours, and both assumptions at Alpha
+          Normal Pension Age and at the selected retirement age. In each case,
+          Alpha service is assumed to end when Alpha starts. The quick
+          comparison is prospective: a retirement date before the calculation
+          date is shown as unavailable because this page does not reconstruct
+          retirement already taken. Another comparison age can remain available
+          when its retirement date is still in the future.
+        </p>
+        <p className="section-copy">
+          A fresh quick calculation leaves birth month and year unanswered. It
+          starts from public assumptions of £0 annual Alpha pension, £40,000
+          annual pensionable earnings, retirement at age 57, reduced hours from
+          age 55, 50% working hours and no Added Pension payment. These are
+          starting values to check and replace, not statements about the
+          user&apos;s pension. On the first valid birth date, untouched
+          comparison ages move to the later of their starting age and the next
+          future quarter-year age, within the supported maximum age of 70.
+        </p>
+        <p className="section-copy">
+          Quick results are gross annual rates before tax in today&apos;s money.
+          Pensionable earnings are held flat before any reduced-hours
+          assumption. Regular Added Pension payments are treated as constant
+          over the supported post-statement modelling period and are reduced in
+          line with the entered working percentage after reduced hours begin.
+          This may include supported months between the statement checkpoint and
+          today. Where an affected comparison reaches dates or ages without the
+          model&apos;s supported purchase-period or factor coverage, its result
+          states whether some earlier payments were included or all regular
+          payments were excluded. This is a model limitation rather than a
+          statement of scheme eligibility.
+        </p>
+        <p className="section-copy">
+          The combined Alpha and State Pension figure uses both income amounts
+          from one projection row on or after the later start date. The quick
+          calculation retains the exact State Pension entitlement date derived
+          from the entered birth date; monthly projection rows can begin on the
+          first modelled row after that exact date. The combined figure is an
+          annualised rate at that date, rather than the amount paid in the first
+          calendar or tax year. The quick page excludes legacy pensions,
+          flexible savings, tax controls, spending targets and household
+          modelling; those remain available in the full modeller.
+        </p>
+        <p className="section-copy">
+          When local saving is enabled, only structurally valid quick inputs
+          replace the saved snapshot. An incomplete EPA date stays visible in
+          the open editor with its validation message, while the previous valid
+          snapshot remains available for a later reload. Correcting the date
+          saves the current inputs. The shared transient Saved Locally notice
+          confirms a successful write. If State Pension is switched off while
+          its amount is unfinished, the exclusion and other valid inputs can be
+          saved; the unfinished amount stays only on the open page. Clearing
+          local data in Settings removes that snapshot and returns the open page
+          to its public starting assumptions without immediately saving them.
+        </p>
+      </section>
+
+      <section>
         <h2>Projection basis: real and nominal values</h2>
         <p className="section-copy">
           The model can show values in either real terms or nominal terms.

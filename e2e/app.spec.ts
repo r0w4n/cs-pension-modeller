@@ -1,6 +1,328 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 
 test.describe("app end-to-end journeys", () => {
+  test("keeps the Quick Alpha acknowledgement modal until a consent choice is made", async ({
+    page,
+  }) => {
+    await page.goto("/quick-calculator/");
+    const dialog = page.getByRole("dialog", { name: "Important information" });
+    const accept = page.getByRole("button", {
+      name: "Accept analytics and continue",
+    });
+    const decline = page.getByRole("button", {
+      name: "Continue without analytics",
+    });
+
+    await expect(dialog).toBeVisible();
+    await expect(accept).toBeFocused();
+    await expect(page.locator("main")).toHaveAttribute("inert", "");
+    await page.keyboard.press("Shift+Tab");
+    await expect(decline).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(accept).toBeFocused();
+    await page
+      .locator("main button")
+      .last()
+      .evaluate((element) => (element as HTMLElement).focus());
+    await expect(accept).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeVisible();
+
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(accept).toBeVisible();
+    await expect(decline).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth
+      )
+    ).toBeLessThanOrEqual(1);
+
+    await decline.click();
+    await expect(
+      page.getByRole("heading", { name: "Quick Alpha calculator" })
+    ).toBeFocused();
+    expect(
+      await readLocalStorageItem(page, "cs-pension-modeller.analyticsConsent")
+    ).toBe("false");
+
+    await page.evaluate(() => window.localStorage.clear());
+    await page.reload();
+    await expect(accept).toBeFocused();
+    await accept.click();
+    await expect(
+      page.getByRole("heading", { name: "Quick Alpha calculator" })
+    ).toBeFocused();
+    expect(
+      await readLocalStorageItem(page, "cs-pension-modeller.analyticsConsent")
+    ).toBe("true");
+  });
+
+  test("opens the separate Quick Alpha calculator in the same tab and keeps saved modeller data separate", async ({
+    page,
+    context,
+  }) => {
+    await acknowledgeAndOpenMode(page, "simple");
+    const fullModellerStateBeforeQuick = await readLocalStorageItem(
+      page,
+      "cs-pension-modeller.settings"
+    );
+    expect(fullModellerStateBeforeQuick).not.toBeNull();
+    const pageCount = context.pages().length;
+    const navigationPromise = page.waitForURL(/\/quick-calculator\/$/);
+    await page
+      .getByRole("link", {
+        name: "Open the Quick Alpha calculator",
+      })
+      .click();
+    await navigationPromise;
+    expect(context.pages()).toHaveLength(pageCount);
+    const quickPage = page;
+
+    await expect(
+      quickPage.getByRole("heading", {
+        level: 1,
+        name: "Quick Alpha calculator",
+      })
+    ).toBeVisible();
+    await expect(
+      quickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("0");
+    await expect(
+      quickPage.getByLabel("Pensionable earnings (£ per year) exact value")
+    ).toHaveValue("40000");
+    await expect(
+      quickPage.getByLabel("Selected retirement age exact value")
+    ).toHaveValue("57");
+    await expect(
+      quickPage.getByLabel("Reduce working hours from age exact value")
+    ).toHaveValue("55");
+    await expect(
+      quickPage.getByLabel(
+        "Working percentage after reducing hours (%) exact value"
+      )
+    ).toHaveValue("50");
+    await expect(
+      quickPage.getByRole("link", { name: "Settings" }).first()
+    ).toHaveAttribute("href", "../settings/");
+    await expect(
+      quickPage.getByRole("button", { name: "Reset quick calculator" })
+    ).toHaveCount(0);
+    expect(
+      await readLocalStorageItem(quickPage, "cs-pension-quick-calculator")
+    ).toBeNull();
+    await expect(quickPage.getByRole("article")).toHaveCount(0);
+    await expect(
+      quickPage.getByText(
+        "Quick calculator inputs are saved locally on this device."
+      )
+    ).toHaveCount(0);
+
+    await quickPage.getByLabel("Birth month and year month").selectOption("06");
+    await quickPage
+      .getByLabel("Birth month and year year")
+      .selectOption("1987");
+    await expect(quickPage.getByRole("article")).toHaveCount(8);
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("5000");
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await quickPage
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .fill("42000");
+    await quickPage
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .blur();
+
+    await expect(
+      quickPage.getByRole("heading", { name: /At normal pension age/ })
+    ).toBeVisible();
+    await expect(
+      quickPage.getByRole("heading", { name: /At your selected age/ })
+    ).toBeVisible();
+    await expect(
+      quickPage.getByText(
+        "Estimated annual income before tax, in today's money."
+      )
+    ).toBeVisible();
+    await expect(quickPage.getByRole("article")).toHaveCount(8);
+
+    const selectedAgeSlider = quickPage.getByLabel("Selected retirement age", {
+      exact: true,
+    });
+    await selectedAgeSlider.focus();
+    await quickPage.keyboard.press("ArrowRight");
+    await quickPage.keyboard.press("Tab");
+    await expect(
+      quickPage.getByRole("heading", { name: /At your selected age/ })
+    ).toContainText("57 years 3 months");
+
+    await quickPage.setViewportSize({ width: 320, height: 720 });
+    const horizontalOverflow = await quickPage.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(horizontalOverflow).toBeLessThanOrEqual(1);
+    await expect(
+      quickPage.getByRole("link", { name: "View estimates" })
+    ).toBeVisible();
+
+    await quickPage.reload();
+    await expect(
+      quickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("5000");
+    await quickPage
+      .getByRole("link", { name: "Back to the full modeller" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Simplified retirement journey" })
+    ).toBeVisible();
+    expect(
+      await readLocalStorageItem(page, "cs-pension-modeller.settings")
+    ).toBe(fullModellerStateBeforeQuick);
+    await quickPage.goto("/quick-calculator/");
+
+    const secondQuickPage = await context.newPage();
+    await secondQuickPage.goto("/quick-calculator/");
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("5000");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+
+    await quickPage.evaluate(() =>
+      window.localStorage.removeItem("cs-pension-quick-calculator")
+    );
+    await expect(
+      secondQuickPage.getByText(/reset in another open tab/)
+    ).toBeVisible();
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("0");
+    expect(
+      await readLocalStorageItem(page, "cs-pension-modeller.settings")
+    ).toBe(fullModellerStateBeforeQuick);
+    expect(
+      await readLocalStorageItem(page, "cs-pension-quick-calculator")
+    ).toBeNull();
+
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("321");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await expect
+      .poll(() =>
+        readLocalStorageItem(secondQuickPage, "cs-pension-quick-calculator")
+      )
+      .toContain('"accruedPensionAtLastAbs":321');
+    await secondQuickPage.reload();
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("321");
+    await expect(
+      secondQuickPage.getByLabel("Birth month and year month")
+    ).toHaveValue("");
+
+    await page.goto("/settings/");
+    await page.getByLabel("Save inputs on this device").uncheck();
+    const reopenedNotice = secondQuickPage.getByRole("dialog", {
+      name: "Important information",
+    });
+    await expect(reopenedNotice).toBeVisible();
+    await expect(
+      secondQuickPage.getByRole("button", {
+        name: "Accept analytics and continue",
+      })
+    ).toBeFocused();
+    expect(
+      await readLocalStorageItem(secondQuickPage, "cs-pension-quick-calculator")
+    ).toBeNull();
+
+    await secondQuickPage
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("777");
+    await secondQuickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    expect(
+      await readLocalStorageItem(secondQuickPage, "cs-pension-quick-calculator")
+    ).toBeNull();
+
+    await page.getByLabel("Save inputs on this device").check();
+    await expect
+      .poll(() =>
+        readLocalStorageItem(secondQuickPage, "cs-pension-quick-calculator")
+      )
+      .toContain('"accruedPensionAtLastAbs":777');
+    await expect(secondQuickPage.getByText("Saved Locally")).toBeVisible();
+  });
+
+  test("keeps a local EPA draft when another Quick calculator tab saves", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/quick-calculator/");
+    await page
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await page.getByLabel("Birth month and year month").selectOption("06");
+    await page.getByLabel("Birth month and year year").selectOption("1987");
+    await page
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("5000");
+    await page
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await page
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .fill("42000");
+    await page
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .blur();
+    await page.getByText("State Pension and EPA").click();
+    await page.getByLabel("Add EPA").check();
+    await page.getByRole("button", { name: "Add EPA period" }).click();
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-quick-calculator"))
+      .toContain('"alphaEpaEnabled":true');
+
+    const otherPage = await context.newPage();
+    await otherPage.goto("/quick-calculator/");
+    const startDate = page.getByLabel("EPA start date 1");
+    await startDate.fill("");
+    await expect(page.getByText("Enter a valid EPA start date.")).toBeVisible();
+
+    const otherAddedPension = otherPage.getByLabel(
+      "Monthly Added Pension payment (£ per month) exact value"
+    );
+    await otherAddedPension.fill("250");
+    await otherAddedPension.blur();
+
+    await expect(startDate).toHaveValue("");
+    await expect(page.getByText("Enter a valid EPA start date.")).toBeVisible();
+    await expect(page.getByText(/local draft has been kept/)).toBeVisible();
+    await expect(
+      page.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("5000");
+
+    await page.getByLabel("Add EPA").uncheck();
+    await otherAddedPension.fill("275");
+    await otherAddedPension.blur();
+    await page.getByLabel("Add EPA").check();
+    await expect(page.getByLabel("EPA start date 1")).toHaveValue("");
+    await expect(page.getByText("Enter a valid EPA start date.")).toBeVisible();
+  });
+
   test("shows the voluntary support prompt after eligible Results time", async ({
     page,
   }) => {

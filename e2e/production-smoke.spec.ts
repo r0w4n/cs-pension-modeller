@@ -223,6 +223,142 @@ test.describe("production build smoke checks", () => {
     expect(acceptanceHorizontalOverflow).toBeLessThanOrEqual(1);
   });
 
+  test("serves the Quick Alpha calculator and its worker from the built artifact", async ({
+    page,
+  }) => {
+    await page.goto("/quick-calculator/");
+    await page
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Back to the full modeller" })
+    ).toHaveAttribute("href", "../");
+
+    await page.getByLabel("Birth month and year month").selectOption("06");
+    await page.getByLabel("Birth month and year year").selectOption("1987");
+    await page
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("5000");
+    await page
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await page
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .fill("42000");
+    const calculationWorker = page.waitForEvent("worker");
+    await page
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .blur();
+    await calculationWorker;
+    await expect(page.getByRole("article")).toHaveCount(8);
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+    ).toBeVisible();
+  });
+
+  test("counts consented Quick Alpha visits and completed estimates without financial inputs", async ({
+    context,
+  }) => {
+    const quickPage = await context.newPage();
+    const settingsPage = await context.newPage();
+    const quickAnalytics = await interceptAnalyticsRequests(quickPage);
+
+    await quickPage.goto("/quick-calculator/");
+    await expect.poll(() => quickAnalytics.getState().commands).toEqual([]);
+    expect(quickAnalytics.scriptUrls).toHaveLength(0);
+
+    await quickPage
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await quickPage.getByLabel("Birth month and year month").selectOption("06");
+    await quickPage
+      .getByLabel("Birth month and year year")
+      .selectOption("1987");
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("6789");
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await quickPage
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .fill("51321");
+    await quickPage
+      .getByLabel("Pensionable earnings (£ per year) exact value")
+      .blur();
+    await expect(quickPage.getByRole("article")).toHaveCount(8);
+    expect(quickAnalytics.getState().commands).toEqual([]);
+    expect(quickAnalytics.scriptUrls).toHaveLength(0);
+
+    await settingsPage.goto("/settings/");
+    await settingsPage.getByLabel("Allow analytics").check();
+    await expect.poll(() => quickAnalytics.getState().loadedCount).toBe(1);
+    await expect
+      .poll(
+        () =>
+          filterAnalyticsCommands(
+            quickAnalytics.getState().commands,
+            "event",
+            "quick_calculator_estimates_viewed"
+          ).length
+      )
+      .toBe(1);
+
+    const pageViews = filterAnalyticsCommands(
+      quickAnalytics.getState().commands,
+      "event",
+      "page_view"
+    );
+    const estimateEvents = filterAnalyticsCommands(
+      quickAnalytics.getState().commands,
+      "event",
+      "quick_calculator_estimates_viewed"
+    );
+    expect(pageViews).toHaveLength(1);
+    expect(pageViews[0]?.[2]).toMatchObject({
+      page_path: "/quick-calculator/",
+    });
+    expect(estimateEvents).toHaveLength(1);
+    for (const event of [...pageViews, ...estimateEvents]) {
+      expect(JSON.stringify(event)).not.toContain("1987");
+      expect(JSON.stringify(event)).not.toContain("6789");
+      expect(JSON.stringify(event)).not.toContain("51321");
+    }
+
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .fill("7000");
+    await quickPage
+      .getByLabel("Alpha pension on your statement (£ per year)")
+      .blur();
+    await expect(quickPage.getByRole("article")).toHaveCount(8);
+    expect(
+      filterAnalyticsCommands(
+        quickAnalytics.getState().commands,
+        "event",
+        "quick_calculator_estimates_viewed"
+      )
+    ).toHaveLength(1);
+
+    await settingsPage.getByLabel("Allow analytics").uncheck();
+    await expect.poll(() => pageHasAnalyticsDisabled(quickPage)).toBe(true);
+    const eventCountAfterWithdrawal = filterAnalyticsCommands(
+      quickAnalytics.getState().commands,
+      "event"
+    ).length;
+    await quickPage.reload();
+    await expect(quickPage.getByRole("article")).toHaveCount(8);
+    expect(
+      filterAnalyticsCommands(quickAnalytics.getState().commands, "event")
+    ).toHaveLength(eventCountAfterWithdrawal);
+    expect(quickAnalytics.blockedRealAnalyticsUrls).toHaveLength(0);
+  });
+
   test("gates analytics on direct navigation, consent changes and clearing data", async ({
     page,
   }) => {

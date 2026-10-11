@@ -26,6 +26,7 @@ import {
   clearStoredComparisonScenarios,
   saveStoredComparisonScenarios,
 } from "./comparison-storage";
+import { clearStoredQuickCalculatorState } from "./quick-calculator/quick-calculator-storage";
 
 type SetSettings = Dispatch<SetStateAction<PensionSettings>>;
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
@@ -55,6 +56,7 @@ export function disableLocalSavingAndClearStoredData() {
     clearStoredSettings(),
     clearStoredAppPreferences(),
     clearStoredComparisonScenarios(),
+    clearStoredQuickCalculatorState(),
   ].every(Boolean);
   const localSavingDisabled = saveLocalStoragePreference(false);
   signalLocalDataReset();

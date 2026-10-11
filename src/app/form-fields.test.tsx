@@ -2,8 +2,305 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { fieldGroups } from "../fieldDefinitions";
 import { calculateNormalPensionAge, createDefaultSettings } from "../settings";
 import { DateInputFieldEditor, SettingsFields } from "./form-fields";
+import { CurrencySettingField, RangeSettingField } from "./form-field-values";
 
 describe("form-fields module", () => {
+  it("keeps an opt-in required currency draft empty rather than committing zero", () => {
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "accruedPensionAtLastAbs");
+    if (!field || field.type !== "currency-input") {
+      throw new Error("Expected accrued pension currency field");
+    }
+    const onChange = vi.fn();
+    const onDraftStateChange = vi.fn();
+
+    render(
+      <CurrencySettingField
+        field={field}
+        value={0}
+        onChange={onChange}
+        showGuidanceNotes
+        initialDraftValue=""
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+
+    const input = screen.getByLabelText(field.label);
+    expect(input).toHaveValue(null);
+    fireEvent.blur(input);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onDraftStateChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "invalid" })
+    );
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith("accruedPensionAtLastAbs", 0);
+  });
+
+  it("distinguishes an unanswered required range from an explicit zero", () => {
+    const settings = createDefaultSettings();
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "pensionableEarnings");
+    if (!field || field.type !== "range") {
+      throw new Error("Expected earnings range field");
+    }
+    const onChange = vi.fn();
+    const onDraftStateChange = vi.fn();
+
+    const view = render(
+      <RangeSettingField
+        field={field}
+        value={0}
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes
+        isAnswered={false}
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+
+    const exact = screen.getByLabelText(`${field.label} exact value`);
+    expect(exact).toHaveValue(null);
+    fireEvent.change(exact, { target: { value: "0" } });
+    fireEvent.blur(exact);
+    expect(onChange).toHaveBeenCalledWith("pensionableEarnings", 0);
+    expect(onDraftStateChange).toHaveBeenLastCalledWith({
+      status: "committed",
+      value: 0,
+    });
+    view.rerender(
+      <RangeSettingField
+        field={field}
+        value={0}
+        settings={{ ...settings, pensionableEarnings: 0 }}
+        onChange={onChange}
+        showGuidanceNotes
+        isAnswered
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+    expect(exact).toHaveValue(0);
+  });
+
+  it("preserves legacy currency commit behaviour unless strict validation is requested", () => {
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "accruedPensionAtLastAbs");
+    if (!field || field.type !== "currency-input") {
+      throw new Error("Expected accrued pension currency field");
+    }
+    const onChange = vi.fn();
+
+    render(
+      <CurrencySettingField
+        field={field}
+        value={4_000}
+        onChange={onChange}
+        showGuidanceNotes
+      />
+    );
+    const input = screen.getByLabelText(field.label);
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+
+    expect(onChange).toHaveBeenCalledWith("accruedPensionAtLastAbs", 0);
+  });
+
+  it("retains strict currency errors in displayed units until a valid commit", () => {
+    const baseField = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "currentStatePension");
+    if (!baseField || baseField.type !== "currency-input") {
+      throw new Error("Expected State Pension currency field");
+    }
+    const field = {
+      ...baseField,
+      min: 1_200,
+      max: 12_000,
+      displayDivisor: 12,
+      presets: [{ label: "Preset", value: 6_000 }],
+    };
+    const onChange = vi.fn();
+    const onDraftStateChange = vi.fn();
+    const view = render(
+      <CurrencySettingField
+        field={field}
+        value={6_000}
+        onChange={onChange}
+        showGuidanceNotes
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+    const input = screen.getByLabelText(field.label);
+
+    for (const [draft, message] of [
+      ["", `Enter ${field.label.toLowerCase()}.`],
+      ["-1", "Enter 100 or more."],
+      ["1001", "Enter 1000 or less."],
+    ]) {
+      fireEvent.change(input, { target: { value: draft } });
+      fireEvent.blur(input);
+      expect(input).toHaveValue(draft === "" ? null : Number(draft));
+      expect(onDraftStateChange).toHaveBeenLastCalledWith({
+        status: "invalid",
+        message,
+      });
+    }
+    expect(onChange).not.toHaveBeenCalled();
+
+    input.focus();
+    view.rerender(
+      <CurrencySettingField
+        field={field}
+        value={6_000}
+        onChange={onChange}
+        showGuidanceNotes
+        initialDraftValue=""
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+    expect(input).toHaveValue(1001);
+    expect(input).toHaveFocus();
+
+    fireEvent.change(input, { target: { value: "250" } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenLastCalledWith("currentStatePension", 3_000);
+    expect(onDraftStateChange).toHaveBeenLastCalledWith({
+      status: "committed",
+      value: 250,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Preset" }));
+    expect(onChange).toHaveBeenLastCalledWith("currentStatePension", 6_000);
+    expect(onDraftStateChange).toHaveBeenLastCalledWith({
+      status: "committed",
+      value: 500,
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Reset State Pension forecast.*to default value/,
+      })
+    );
+    expect(onDraftStateChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "committed" })
+    );
+  });
+
+  it("preserves legacy range clamping when strict validation is not requested", () => {
+    const settings = createDefaultSettings();
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "pensionableEarnings");
+    if (!field || field.type !== "range") {
+      throw new Error("Expected earnings range field");
+    }
+    const onChange = vi.fn();
+    render(
+      <RangeSettingField
+        field={field}
+        value={42_000}
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes
+      />
+    );
+    const exact = screen.getByLabelText(`${field.label} exact value`);
+    fireEvent.change(exact, { target: { value: "200000" } });
+    fireEvent.blur(exact);
+    expect(onChange).toHaveBeenCalledWith("pensionableEarnings", 150_000);
+  });
+
+  it("blocks invalid strict range drafts on blur and Enter while retaining valid slider commits", () => {
+    const settings = createDefaultSettings();
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "pensionableEarnings");
+    if (!field || field.type !== "range") {
+      throw new Error("Expected earnings range field");
+    }
+    const onChange = vi.fn();
+    const onDraftStateChange = vi.fn();
+    const view = render(
+      <RangeSettingField
+        field={field}
+        value={42_000}
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+    const exact = screen.getByLabelText(`${field.label} exact value`);
+
+    for (const draft of ["", "-1", "150001"]) {
+      fireEvent.change(exact, { target: { value: draft } });
+      fireEvent.keyDown(exact, { key: "Enter" });
+      fireEvent.blur(exact);
+      expect(exact).toHaveValue(draft === "" ? null : Number(draft));
+    }
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.change(exact, { target: { value: "0" } });
+    fireEvent.keyDown(exact, { key: "Enter" });
+    expect(onChange).toHaveBeenLastCalledWith("pensionableEarnings", 0);
+    view.rerender(
+      <RangeSettingField
+        field={field}
+        value={0}
+        settings={{ ...settings, pensionableEarnings: 0 }}
+        onChange={onChange}
+        showGuidanceNotes
+        strictDraftValidation
+        onDraftStateChange={onDraftStateChange}
+      />
+    );
+    expect(exact).toHaveValue(0);
+
+    const slider = screen.getByLabelText(field.label);
+    fireEvent.change(slider, { target: { value: "50000" } });
+    fireEvent.blur(slider);
+    expect(onChange).toHaveBeenLastCalledWith("pensionableEarnings", 50_000);
+  });
+
+  it("keeps non-quarter ages invalid in strict range mode until corrected", () => {
+    const settings = createDefaultSettings();
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((candidate) => candidate.id === "alphaPensionDrawAge");
+    if (!field || field.type !== "range") {
+      throw new Error("Expected Alpha draw age range field");
+    }
+    const onChange = vi.fn();
+    render(
+      <RangeSettingField
+        field={field}
+        value={60}
+        settings={settings}
+        onChange={onChange}
+        showGuidanceNotes
+        strictDraftValidation
+        onDraftStateChange={vi.fn()}
+      />
+    );
+    const exact = screen.getByLabelText(`${field.label} exact value`);
+    fireEvent.change(exact, { target: { value: "60.2" } });
+    fireEvent.blur(exact);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(exact).toHaveValue(60.2);
+
+    fireEvent.change(exact, { target: { value: "60.25" } });
+    fireEvent.blur(exact);
+    expect(onChange).toHaveBeenCalledWith("alphaPensionDrawAge", 60.25);
+  });
+
   it("commits date editor changes on blur", () => {
     const onCommit = vi.fn((value: string) => value);
 

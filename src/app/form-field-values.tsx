@@ -134,6 +134,9 @@ export function CurrencySettingField({
   validationIssue,
   resetValue: resetValueOverride,
   domIdPrefix,
+  initialDraftValue,
+  strictDraftValidation = false,
+  onDraftStateChange,
 }: {
   field: CurrencyInputField;
   value: number;
@@ -145,6 +148,11 @@ export function CurrencySettingField({
   /** Lets an adapter preserve an independently owned setting's default. */
   resetValue?: number;
   domIdPrefix?: string;
+  /** Optional shell-owned draft used by required fields on isolated screens. */
+  initialDraftValue?: string;
+  /** Retains invalid text and blocks commits for shells that own draft errors. */
+  strictDraftValidation?: boolean;
+  onDraftStateChange?: (state: CurrencyDraftState) => void;
 }) {
   const domId = getFieldDomId(field.id, domIdPrefix);
   const validationId = validationIssue ? `${domId}-validation` : undefined;
@@ -166,10 +174,13 @@ export function CurrencySettingField({
         key={`${field.id}-${value}-${displayDivisor}`}
         field={field}
         initialValue={value / displayDivisor}
+        initialDraftValue={initialDraftValue}
         resetValue={resetValue / displayDivisor}
         disabled={disabled}
         describedBy={validationId}
         hasValidationIssue={Boolean(validationIssue)}
+        strictDraftValidation={strictDraftValidation}
+        onDraftStateChange={onDraftStateChange}
         onCommit={(nextValue) => {
           const normalizedValue = clampNumber(
             nextValue * displayDivisor,
@@ -186,25 +197,36 @@ export function CurrencySettingField({
   );
 }
 
+export type CurrencyDraftState =
+  | { status: "valid-draft"; value: number }
+  | { status: "invalid"; message: string }
+  | { status: "committed"; value: number };
+
 function CurrencySettingFieldEditor({
   field,
   initialValue,
+  initialDraftValue,
   resetValue,
   disabled = false,
   describedBy,
   hasValidationIssue = false,
+  strictDraftValidation,
   onCommit,
+  onDraftStateChange,
 }: {
   field: CurrencyInputField;
   initialValue: number;
+  initialDraftValue?: string;
   resetValue: PensionSettings[typeof field.id];
   disabled?: boolean;
   describedBy?: string;
   hasValidationIssue?: boolean;
+  strictDraftValidation: boolean;
   onCommit: (nextValue: number) => number;
+  onDraftStateChange?: (state: CurrencyDraftState) => void;
 }) {
-  const [draftValue, setDraftValue] = useState(() =>
-    formatCurrencyInputValue(initialValue)
+  const [draftValue, setDraftValue] = useState(
+    () => initialDraftValue ?? formatCurrencyInputValue(initialValue)
   );
   const displayDivisor = field.displayDivisor ?? 1;
   const showsResetButton =
@@ -212,12 +234,21 @@ function CurrencySettingFieldEditor({
     field.id !== "accruedPensionAtLastAbs";
 
   const commitValue = (nextValue: string) => {
+    if (strictDraftValidation) {
+      const draftState = validateCurrencyDraft(nextValue, field);
+      if (draftState.status === "invalid") {
+        onDraftStateChange?.(draftState);
+        return;
+      }
+    }
+
     const parsedValue = Number(nextValue);
     const normalizedValue = Number.isFinite(parsedValue)
       ? parsedValue
       : initialValue;
     const committedValue = onCommit(normalizedValue);
     setDraftValue(committedValue.toString());
+    onDraftStateChange?.({ status: "committed", value: committedValue });
   };
 
   const applyPresetValue = (
@@ -225,7 +256,8 @@ function CurrencySettingFieldEditor({
   ) => {
     const displayValue = presetValue / displayDivisor;
     setDraftValue(formatCurrencyInputValue(displayValue));
-    onCommit(displayValue);
+    const committedValue = onCommit(displayValue);
+    onDraftStateChange?.({ status: "committed", value: committedValue });
   };
 
   return (
@@ -242,7 +274,11 @@ function CurrencySettingFieldEditor({
         aria-invalid={hasValidationIssue || undefined}
         aria-describedby={describedBy}
         onChange={(event) => {
-          setDraftValue(event.target.value);
+          const nextValue = event.target.value;
+          setDraftValue(nextValue);
+          if (strictDraftValidation) {
+            onDraftStateChange?.(validateCurrencyDraft(nextValue, field));
+          }
         }}
         onBlur={(event) => {
           commitValue(event.target.value);
@@ -282,7 +318,11 @@ function CurrencySettingFieldEditor({
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
             setDraftValue(formatCurrencyInputValue(resetValue));
-            onCommit(resetValue);
+            const committedValue = onCommit(resetValue);
+            onDraftStateChange?.({
+              status: "committed",
+              value: committedValue,
+            });
           }}
         >
           {`Reset to default (${formatCurrency(resetValue)})`}
@@ -290,6 +330,40 @@ function CurrencySettingFieldEditor({
       ) : null}
     </>
   );
+}
+
+function validateCurrencyDraft(
+  value: string,
+  field: CurrencyInputField
+): CurrencyDraftState {
+  if (value.trim() === "") {
+    return {
+      status: "invalid",
+      message: `Enter ${field.label.toLowerCase()}.`,
+    };
+  }
+
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return { status: "invalid", message: "Enter a valid number." };
+  }
+  const displayDivisor = field.displayDivisor ?? 1;
+  const displayMinimum = field.min / displayDivisor;
+  const displayMaximum = field.max / displayDivisor;
+  if (parsedValue < displayMinimum) {
+    return {
+      status: "invalid",
+      message: `Enter ${displayMinimum} or more.`,
+    };
+  }
+  if (parsedValue > displayMaximum) {
+    return {
+      status: "invalid",
+      message: `Enter ${displayMaximum} or less.`,
+    };
+  }
+
+  return { status: "valid-draft", value: parsedValue };
 }
 
 function formatCurrencyInputValue(value: number) {
@@ -302,6 +376,8 @@ function getAnnualEquivalent(draftValue: string) {
   return Number.isFinite(parsedValue) ? parsedValue * 12 : 0;
 }
 
+// Required-draft support adds two shell-owned states to the established range control.
+// eslint-disable-next-line sonarjs/cyclomatic-complexity
 export function RangeSettingField({
   field,
   value,
@@ -314,6 +390,9 @@ export function RangeSettingField({
   useNpaLinkedDefaults = false,
   resetValue: resetValueOverride,
   domIdPrefix,
+  isAnswered = true,
+  strictDraftValidation = false,
+  onDraftStateChange,
 }: {
   field: RangeField;
   value: number;
@@ -327,6 +406,11 @@ export function RangeSettingField({
   /** Lets an adapter preserve an independently owned setting's default. */
   resetValue?: number;
   domIdPrefix?: string;
+  /** Keeps a required range distinguishable from an explicit zero. */
+  isAnswered?: boolean;
+  /** Retains invalid exact text and blocks blur/Enter commits. */
+  strictDraftValidation?: boolean;
+  onDraftStateChange?: (state: RangeDraftState) => void;
 }) {
   const effectiveField = getEffectiveRangeField(field, settings);
   const preservesBelowMinimumValue =
@@ -353,13 +437,17 @@ export function RangeSettingField({
         effectiveField.max,
         Math.max(effectiveField.min, draftValue ?? value)
       );
-  const displayedExactValue = getDisplayedRangeExactValue({
-    field: effectiveField,
-    value,
-    draftExactValue,
-    displayedRangeValue,
-    preservesBelowMinimumValue,
-  });
+  const displayedExactValue =
+    !isAnswered && draftExactValue === null
+      ? ""
+      : getDisplayedRangeExactValue({
+          field: effectiveField,
+          value,
+          draftExactValue,
+          displayedRangeValue,
+          preservesBelowMinimumValue,
+          preserveExplicitZero: strictDraftValidation && isAnswered,
+        });
   const domId = getFieldDomId(field.id, domIdPrefix);
   const validationId = validationIssue ? `${domId}-validation` : undefined;
   const ageStepValidationId = hasInvalidAgeStep
@@ -386,6 +474,36 @@ export function RangeSettingField({
     onChange(field.id, normalizedValue);
     setDraftValue(null);
     setDraftExactValue(null);
+    onDraftStateChange?.({ status: "committed", value: normalizedValue });
+  };
+
+  const commitExactDraft = (nextDraftValue: string) => {
+    if (strictDraftValidation) {
+      const draftState = validateRangeDraft(
+        nextDraftValue,
+        effectiveField,
+        isAgeField
+      );
+      if (draftState.status === "invalid") {
+        onDraftStateChange?.(draftState);
+        return false;
+      }
+    }
+
+    const parsedValue = Number(nextDraftValue);
+    if (
+      isAgeField &&
+      Number.isFinite(parsedValue) &&
+      !isModelAge(parsedValue)
+    ) {
+      return false;
+    }
+    const nextValue =
+      nextDraftValue.trim() === "" || !Number.isFinite(parsedValue)
+        ? displayedRangeValue
+        : parsedValue;
+    commitValue(nextValue);
+    return true;
   };
 
   return (
@@ -420,6 +538,7 @@ export function RangeSettingField({
               const nextValue = Number(event.target.value);
               setDraftValue(nextValue);
               setDraftExactValue(null);
+              onDraftStateChange?.({ status: "valid-draft", value: nextValue });
             }}
             onMouseUp={(event) =>
               commitValue(Number(event.currentTarget.value))
@@ -457,6 +576,12 @@ export function RangeSettingField({
             const nextDraftValue = event.target.value;
             setDraftExactValue(nextDraftValue);
 
+            if (strictDraftValidation) {
+              onDraftStateChange?.(
+                validateRangeDraft(nextDraftValue, effectiveField, isAgeField)
+              );
+            }
+
             const parsedValue = Number(nextDraftValue);
             if (
               nextDraftValue.trim() !== "" &&
@@ -468,37 +593,13 @@ export function RangeSettingField({
             }
           }}
           onBlur={(event) => {
-            const parsedValue = Number(event.target.value);
-            if (
-              isAgeField &&
-              Number.isFinite(parsedValue) &&
-              !isModelAge(parsedValue)
-            ) {
-              return;
-            }
-            const nextValue =
-              event.target.value.trim() === "" || !Number.isFinite(parsedValue)
-                ? displayedRangeValue
-                : parsedValue;
-            commitValue(nextValue);
+            commitExactDraft(event.target.value);
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
-              const parsedValue = Number(event.currentTarget.value);
-              if (
-                isAgeField &&
-                Number.isFinite(parsedValue) &&
-                !isModelAge(parsedValue)
-              ) {
-                return;
+              if (commitExactDraft(event.currentTarget.value)) {
+                event.currentTarget.blur();
               }
-              const nextValue =
-                event.currentTarget.value.trim() === "" ||
-                !Number.isFinite(parsedValue)
-                  ? displayedRangeValue
-                  : parsedValue;
-              commitValue(nextValue);
-              event.currentTarget.blur();
             }
           }}
         />
@@ -536,6 +637,7 @@ export function RangeSettingField({
             onChange(field.id, resetValue);
             setDraftValue(null);
             setDraftExactValue(null);
+            onDraftStateChange?.({ status: "committed", value: resetValue });
           }}
         >
           {`Reset to default (${formatFieldValue(resetValue, effectiveField.format)})`}
@@ -545,6 +647,43 @@ export function RangeSettingField({
       <FieldValidationMessage id={validationId} issue={validationIssue} />
     </div>
   );
+}
+
+export type RangeDraftState =
+  | { status: "valid-draft"; value: number }
+  | { status: "invalid"; message: string }
+  | { status: "committed"; value: number };
+
+function validateRangeDraft(
+  value: string,
+  field: RangeField,
+  isAgeField: boolean
+): RangeDraftState {
+  if (value.trim() === "") {
+    return {
+      status: "invalid",
+      message: `Enter ${field.label.toLowerCase()}.`,
+    };
+  }
+
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return { status: "invalid", message: "Enter a valid number." };
+  }
+  if (parsedValue < field.min || parsedValue > field.max) {
+    return {
+      status: "invalid",
+      message: `Enter a value from ${field.min} to ${field.max}.`,
+    };
+  }
+  if (isAgeField && !isModelAge(parsedValue)) {
+    return {
+      status: "invalid",
+      message: "Use whole years or 3, 6 or 9 months.",
+    };
+  }
+
+  return { status: "valid-draft", value: parsedValue };
 }
 
 function getRangeResetValue(
@@ -648,18 +787,20 @@ function getDisplayedRangeExactValue({
   draftExactValue,
   displayedRangeValue,
   preservesBelowMinimumValue,
+  preserveExplicitZero,
 }: {
   field: RangeField;
   value: number;
   draftExactValue: string | null;
   displayedRangeValue: number;
   preservesBelowMinimumValue: boolean;
+  preserveExplicitZero: boolean;
 }) {
   if (draftExactValue !== null) {
     return draftExactValue;
   }
 
-  if (field.emptyWhenZero && value === 0) {
+  if (field.emptyWhenZero && value === 0 && !preserveExplicitZero) {
     return "";
   }
 

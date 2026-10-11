@@ -4,7 +4,8 @@
     "src/pages/about.tsx",
     "src/pages/acceptance.tsx",
     "src/pages/methodology.tsx",
-    "src/pages/privacy.tsx"
+    "src/pages/privacy.tsx",
+    "src/app/quick-calculator/entry.tsx"
   ],
   "ignoreBinaries": ["actionlint"],
   "ignoreUnresolved": ["progress", "summary"],

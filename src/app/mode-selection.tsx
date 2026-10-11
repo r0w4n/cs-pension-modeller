@@ -1,3 +1,5 @@
+import { resolveAppBaseHref } from "./app-base";
+
 export type AppModeOption = "bridge" | "simple" | "expert";
 
 type ModeSelectionProps = {
@@ -66,6 +68,13 @@ export function ModeSelection({
           </span>
         </button>
       </div>
+      <p className="section-copy quick-calculator-entry-link">
+        Looking for the old calculator?{" "}
+        <a href={`${resolveAppBaseHref()}quick-calculator/`}>
+          Open the Quick Alpha calculator
+        </a>
+        .
+      </p>
     </section>
   );
 }

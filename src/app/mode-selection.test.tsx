@@ -11,18 +11,16 @@ describe("mode-selection", () => {
     expect(onSelectMode).toHaveBeenCalledWith("simple");
   });
 
-  it("offers the separate quick calculator without adding a fourth mode", () => {
-    render(<ModeSelection selectedMode={null} onSelectMode={vi.fn()} />);
-
-    expect(screen.getAllByRole("button")).toHaveLength(3);
-    const link = screen.getByRole("link", {
-      name: "Open the Quick Alpha calculator",
-    });
-    expect(link.parentElement).toHaveTextContent(
-      "Looking for the old calculator? Open the Quick Alpha calculator."
-    );
-    expect(link).toHaveAttribute("href", "./quick-calculator/");
-    expect(link).not.toHaveAttribute("target");
-    expect(link).not.toHaveAttribute("rel");
+  it("offers Quick before Simple and selects it within the modeller", () => {
+    const onSelectMode = vi.fn();
+    render(<ModeSelection selectedMode="quick" onSelectMode={onSelectMode} />);
+    const cards = screen.getAllByRole("button");
+    expect(cards).toHaveLength(4);
+    expect(cards[0]).toHaveTextContent("Quick journey");
+    expect(cards[1]).toHaveTextContent("Simple journey");
+    expect(cards[0]).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(cards[0]);
+    expect(onSelectMode).toHaveBeenCalledWith("quick");
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });

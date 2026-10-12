@@ -34,6 +34,31 @@ import {
 } from "../../src/app/quick-calculator/quick-calculator-defaults";
 import { loadStoredComparisonScenarios } from "../../src/app/comparison-storage";
 
+import { selectAppMode } from "../../src/app/app-actions";
+import { loadStoredAppMode } from "../../src/app/app-persistence";
+
+When("Quick is selected as the modeller journey", function (this: QuickWorld) {
+  this.fullPlansSnapshot = JSON.stringify(
+    loadStoredSettingsByJourney().settings
+  );
+  this.comparisonsSnapshot = JSON.stringify(loadStoredComparisonScenarios());
+  selectAppMode({
+    mode: "quick",
+    currentMode: "simple",
+    setChartUndoStack: () => {},
+    shouldFocusActiveModeRef: { current: false },
+    scrollActiveModeIntoView: () => {},
+    setAppMode: () => {},
+  });
+});
+
+Then("the saved selected journey should be Quick", function () {
+  assert(
+    loadStoredAppMode() === "quick",
+    "Quick journey selection was not saved"
+  );
+});
+
 const CALCULATION_DATE = "2026-09-22";
 const COMPLETE: QuickCalculatorCompletion = {
   dateOfBirth: true,

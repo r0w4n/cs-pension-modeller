@@ -188,9 +188,10 @@ export function SettingsPage({
           <section className="field-card">
             <span className="field-label">Export parameters</span>
             <p className="field-help">
-              Download the assumptions for all three journeys as one JSON file.
-              This is useful if you want a backup or want to move your scenarios
-              to another browser.
+              Download the Simple, early retirement and Expert assumptions as
+              one JSON file. Quick inputs are saved separately on this device
+              and are not included. This is useful if you want a backup or want
+              to move your scenarios to another browser.
             </p>
 
             <div className="settings-panel-actions">
@@ -208,7 +209,8 @@ export function SettingsPage({
             <span className="field-label">Load parameters</span>
             <p className="field-help">
               Load a JSON parameter export from this modeller. Imported
-              assumptions replace the saved scenarios for each journey. Older
+              assumptions replace the inputs for those three journeys. Quick
+              inputs and saved comparison scenarios are kept. Older
               single-scenario exports are also supported.
             </p>
 

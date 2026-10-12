@@ -29,8 +29,8 @@ function PrivacyPage() {
           The modeller uses your browser&apos;s local storage to remember your
           inputs, the selected mode, a few UI preferences, and any support
           prompt preference on this device only when local saving is enabled.
-          The separate Quick Alpha calculator uses its own versioned local key
-          and does not store its calculated result rows.
+          The Quick modeller journey uses its own versioned local key and does
+          not store its calculated result rows.
         </p>
         <p className="section-copy">
           You can manage this from the{" "}
@@ -48,8 +48,8 @@ function PrivacyPage() {
           to coarse interactions, such as selected journey, journey step,
           changed field identifier, comparison actions, chart control names, and
           support prompt impressions or action selections. With consent, the
-          Quick Alpha calculator records a page view and whether estimates were
-          shown during the visit.
+          Quick journey shares the main page view and records whether estimates
+          were shown during the visit.
         </p>
         <p className="section-copy">
           The app does not send entered amounts, dates, ages, scenario names,

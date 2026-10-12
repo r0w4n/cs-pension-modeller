@@ -20,7 +20,7 @@ import {
   applyExpertJourneyDefaults,
   applySimpleJourneyDefaults,
 } from "../app-domains/journeys";
-import type { AppMode } from "./app-persistence";
+import type { PlanningJourneyMode } from "./app-persistence";
 
 type SetChartUndoStack = Dispatch<SetStateAction<PensionSettings[]>>;
 
@@ -42,8 +42,8 @@ export function useJourneySettings({
   setChartUndoStack,
   showSavedLabel,
 }: {
-  activeJourneyMode: AppMode | null;
-  initialAppMode: AppMode | null;
+  activeJourneyMode: PlanningJourneyMode | null;
+  initialAppMode: PlanningJourneyMode | null;
   setChartUndoStack: SetChartUndoStack;
   showSavedLabel: () => void;
 }) {

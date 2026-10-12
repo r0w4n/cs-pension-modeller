@@ -69,6 +69,46 @@ describe("useAppController calculation lifecycle", () => {
     window.localStorage.clear();
   });
 
+  it("adopts re-enabled saving from another tab without replacing open inputs", async () => {
+    window.localStorage.setItem(
+      "cs-pension-modeller.localStorageEnabled",
+      "false"
+    );
+    const { useAppController } = await import("./use-app-controller");
+    const { result } = renderHook(() => useAppController());
+    expect(result.current.localStorageEnabled).toBe(false);
+    act(() => {
+      result.current.selectAppMode("quick");
+      result.current.acknowledgeNotice(false);
+    });
+    act(() =>
+      result.current.quickCalculator.onChange("pensionableEarnings", 44444)
+    );
+    expect(
+      window.localStorage.getItem("cs-pension-quick-calculator")
+    ).toBeNull();
+    act(() => {
+      window.localStorage.setItem(
+        "cs-pension-modeller.localStorageEnabled",
+        "true"
+      );
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "cs-pension-modeller.localStorageEnabled",
+          newValue: "true",
+        })
+      );
+    });
+    expect(result.current.localStorageEnabled).toBe(true);
+    expect(result.current.quickCalculator.inputs.pensionableEarnings).toBe(
+      44444
+    );
+    expect(
+      window.localStorage.getItem("cs-pension-quick-calculator")
+    ).toContain('"pensionableEarnings":44444');
+    window.history.replaceState(null, "", "/");
+  });
+
   it("retries a failed main calculation when Results is reopened through the controller", async () => {
     let fallbackShouldFail = false;
     vi.doMock("../calculation/retirement-plan", async (importOriginal) => {

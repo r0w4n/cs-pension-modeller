@@ -43,6 +43,16 @@ Feature: Local-only preferences and data controls
     And no previous modeller mode should be loaded
     And guidance notes should be shown
 
+  @acknowledgement @storage-disabled
+  Scenario: Acknowledge the notice without re-enabling disabled saving
+    Given browser local storage is disabled
+    When the important information notice is acknowledged
+    And analytics consent is saved as "accepted"
+    And the stored modeller preferences are loaded
+    Then local saving should be off
+    And no previous acknowledgement should be loaded
+    And no previous analytics consent should be loaded
+
   @clear-data
   Scenario: Clear populated local data and reset active values
     Given browser local storage contains populated modeller data

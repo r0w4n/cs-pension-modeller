@@ -989,32 +989,30 @@ describe.sequential("App settings form", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("enables local saving and persists consent when the notice is accepted after saving was disabled", async () => {
+  it("respects disabled local saving when the shared notice is accepted", () => {
     window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
-
     const view = render(<App />);
-
+    expect(
+      screen.getByText(/Local saving is off. Inputs stay on this open page/)
+    ).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Accept analytics and continue" })
     );
-
-    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe("true");
-    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).not.toBeNull();
-    expect(window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY)).toBe("v1");
-    await waitFor(() =>
-      expect(window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)).toBe(
-        "true"
-      )
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
+      "false"
     );
-
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(ACKNOWLEDGEMENT_STORAGE_KEY)).toBeNull();
+    expect(
+      window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY)
+    ).toBeNull();
     view.unmount();
     window.history.pushState({}, "", "/settings/");
     render(<App />);
-
     expect(
       screen.getByRole("checkbox", { name: "Save inputs on this device" })
-    ).toBeChecked();
-    expect(screen.getByLabelText("Allow analytics")).toBeChecked();
+    ).not.toBeChecked();
+    expect(screen.getByLabelText("Allow analytics")).not.toBeChecked();
   });
 
   it("clears all local storage data from the settings page and shows feedback", async () => {
@@ -1303,10 +1301,10 @@ describe.sequential("App settings form", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("does not show the retired third mode option", () => {
+  it("offers the four modeller journeys", () => {
     renderAcknowledgedApp({ mode: null });
 
-    expect(document.querySelectorAll(".mode-card")).toHaveLength(3);
+    expect(document.querySelectorAll(".mode-card")).toHaveLength(4);
   });
 
   it("uses the simplified early retirement journey by default", () => {
@@ -1337,7 +1335,7 @@ describe.sequential("App settings form", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /Added pension/i })
+      screen.queryByRole("button", { name: /^Added pension$/i })
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Alpha EPA/i })
@@ -1638,7 +1636,7 @@ describe.sequential("App settings form", () => {
       screen.getByRole("button", { name: /Add your Alpha pension details/i })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /Added pension/i })
+      screen.queryByRole("button", { name: /^Added pension$/i })
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Alpha EPA/i })
@@ -1842,7 +1840,7 @@ describe.sequential("App settings form", () => {
     renderAcknowledgedApp({ mode: "simple" });
 
     expect(
-      screen.queryByRole("button", { name: /Added Pension/i })
+      screen.queryByRole("button", { name: /^Added Pension$/i })
     ).not.toBeInTheDocument();
     openJourneyStep(/Your results/i);
     expect(vi.mocked(createProjectionTable).mock.calls.at(-1)?.[0]).toEqual(

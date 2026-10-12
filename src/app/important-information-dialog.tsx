@@ -2,10 +2,12 @@ import { useEffect, useId, useRef, type RefObject } from "react";
 
 export function ImportantInformationDialog({
   onContinue,
+  localStorageEnabled,
   manageFocus = false,
   focusAfterCloseRef,
 }: {
   onContinue: (analyticsConsentGranted: boolean) => void;
+  localStorageEnabled: boolean;
   manageFocus?: boolean;
   focusAfterCloseRef?: RefObject<HTMLElement | null>;
 }) {
@@ -73,11 +75,12 @@ export function ImportantInformationDialog({
           appropriate, a regulated financial adviser.
         </p>
         <p className="section-copy">
-          Your inputs are saved locally in your browser so you can come back to
-          the same assumptions later. This site can use analytics to record
-          coarse interaction events only, and no financial or personal inputs
-          are sent. You can accept or decline analytics now and change that
-          choice later in Settings.
+          {localStorageEnabled
+            ? "Your inputs are saved locally in your browser so you can come back to the same assumptions later."
+            : "Local saving is off. Inputs stay on this open page and are not saved for a later visit. You can enable saving in Settings."}{" "}
+          This site can use analytics to record coarse interaction events only,
+          and no financial or personal inputs are sent. You can accept or
+          decline analytics now and change that choice later in Settings.
         </p>
         <div className="acknowledgement-actions">
           <button

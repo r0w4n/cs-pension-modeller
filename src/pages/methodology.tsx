@@ -278,17 +278,17 @@ export function MethodologyPage() {
       </section>
 
       <section>
-        <h2>Quick Alpha calculator comparisons</h2>
+        <h2>Quick modeller comparisons</h2>
         <p className="section-copy">
-          The separate Quick Alpha calculator runs the same canonical pension
-          calculation as the full modeller. It creates eight settings snapshots:
-          standard, Added Pension, reduced hours, and both assumptions at Alpha
-          Normal Pension Age and at the selected retirement age. In each case,
-          Alpha service is assumed to end when Alpha starts. The quick
-          comparison is prospective: a retirement date before the calculation
-          date is shown as unavailable because this page does not reconstruct
-          retirement already taken. Another comparison age can remain available
-          when its retirement date is still in the future.
+          The Quick modeller journey runs the same canonical pension calculation
+          as the full modeller. It creates eight settings snapshots: standard,
+          Added Pension, reduced hours, and both assumptions at Alpha Normal
+          Pension Age and at the selected retirement age. In each case, Alpha
+          service is assumed to end when Alpha starts. The quick comparison is
+          prospective: a retirement date before the calculation date is shown as
+          unavailable because this journey does not reconstruct retirement
+          already taken. Another comparison age can remain available when its
+          retirement date is still in the future.
         </p>
         <p className="section-copy">
           A fresh quick calculation leaves birth month and year unanswered. It

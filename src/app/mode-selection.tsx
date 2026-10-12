@@ -1,6 +1,6 @@
-import { resolveAppBaseHref } from "./app-base";
+import type { AppMode } from "./app-persistence";
 
-export type AppModeOption = "bridge" | "simple" | "expert";
+export type AppModeOption = AppMode;
 
 type ModeSelectionProps = {
   selectedMode: AppModeOption | null;
@@ -16,13 +16,27 @@ export function ModeSelection({
       <div className="panel-heading">
         <h2 id="mode-selection-title">Choose the level of detail</h2>
         <p className="section-copy">
-          The simplified journey asks fewer questions and keeps assumptions
-          simple. Switch to the expert journey any time if you want every
-          modelling control.
+          Use Quick for Alpha pension comparisons, Simple for a guided
+          retirement income plan, or the early retirement and expert journeys
+          for more detail. Each journey keeps its own inputs.
         </p>
       </div>
 
       <div className="mode-card-grid">
+        <button
+          type="button"
+          className={getModeCardClassName(selectedMode === "quick")}
+          aria-pressed={selectedMode === "quick"}
+          onClick={() => onSelectMode("quick")}
+        >
+          <span className="card-label">Quick journey</span>
+          <strong>Quick modeller</strong>
+          <span>
+            Compare Alpha pension estimates at two retirement ages using your
+            statement figures. Explore Added Pension and reduced working hours,
+            with optional State Pension and EPA assumptions.
+          </span>
+        </button>
         <button
           type="button"
           className={getModeCardClassName(selectedMode === "simple")}
@@ -68,13 +82,6 @@ export function ModeSelection({
           </span>
         </button>
       </div>
-      <p className="section-copy quick-calculator-entry-link">
-        Looking for the old calculator?{" "}
-        <a href={`${resolveAppBaseHref()}quick-calculator/`}>
-          Open the Quick Alpha calculator
-        </a>
-        .
-      </p>
     </section>
   );
 }

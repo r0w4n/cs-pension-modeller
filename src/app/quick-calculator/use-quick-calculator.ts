@@ -1,11 +1,6 @@
 /* eslint-disable @eslint-react/set-state-in-effect -- worker, storage and date-boundary effects synchronise external state */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  applyAnalyticsConsent,
-  disableAnalytics,
-  trackAnalyticsEvent,
-  trackPageView,
-} from "../../analytics";
+import { trackAnalyticsEvent } from "../../analytics";
 import {
   createQuickCalculatorBaseSettings,
   type QuickCalculatorBatchResult,
@@ -22,13 +17,6 @@ import {
   type PensionSettings,
 } from "../../settings";
 import { projectQuickCalculatorResults } from "../../result-projection/quick-calculator-results";
-import {
-  ANALYTICS_CONSENT_STORAGE_KEY,
-  loadAcknowledgementState,
-  loadAnalyticsConsentState,
-  saveAcknowledgementState,
-  saveAnalyticsConsentState,
-} from "../app-persistence";
 import { useSavedFeedback } from "../use-saved-feedback";
 import type { CurrencyDraftState, RangeDraftState } from "../form-field-values";
 import type { SettingsFieldOnChange } from "../form-field-types";
@@ -63,7 +51,27 @@ type CalculationState =
   | { status: "ready"; batch: QuickCalculatorBatchResult }
   | { status: "error"; batch: QuickCalculatorBatchResult | null };
 
-export function useQuickCalculator() {
+export function useQuickCalculator({
+  active,
+  hasAcknowledgedNotice,
+  analyticsConsentGranted,
+  localStorageEnabled,
+  onSavingDisabled,
+}: {
+  active: boolean;
+  hasAcknowledgedNotice: boolean;
+  analyticsConsentGranted: boolean;
+  localStorageEnabled: boolean;
+  onSavingDisabled: () => void;
+}) {
+  const onSavingDisabledRef = useRef(onSavingDisabled);
+  useEffect(() => {
+    onSavingDisabledRef.current = onSavingDisabled;
+  }, [onSavingDisabled]);
+  const [hasBeenActive, setHasBeenActive] = useState(active);
+  useEffect(() => {
+    if (active) setHasBeenActive(true);
+  }, [active]);
   const defaultsRef = useRef(createDefaultSettings());
   const initialStateRef = useRef(loadInitialState(defaultsRef.current));
   const [inputs, setInputs] = useState<PensionSettings>(
@@ -97,10 +105,6 @@ export function useQuickCalculator() {
   const [localSavingEnabled, setLocalSavingEnabled] = useState(
     isLocalStorageEnabled
   );
-  const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(
-    loadAcknowledgementState
-  );
-  const hasTrackedPageViewRef = useRef(false);
   const hasTrackedEstimateRef = useRef(false);
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
@@ -138,9 +142,7 @@ export function useQuickCalculator() {
   const clearForDisabledSaving = useCallback(() => {
     localSavingEnabledRef.current = false;
     setLocalSavingEnabled(false);
-    disableAnalytics();
     clearOpenState();
-    setHasAcknowledgedNotice(false);
     setStorageMessage("Local data was cleared. Quick inputs were reset.");
   }, [clearOpenState]);
 
@@ -177,46 +179,33 @@ export function useQuickCalculator() {
   );
 
   useEffect(() => {
-    const trackConsentedUsage = () => {
-      if (
-        !hasAcknowledgedNotice ||
-        !applyAnalyticsConsent(loadAnalyticsConsentState())
-      ) {
-        disableAnalytics();
-        return;
-      }
-
-      if (!hasTrackedPageViewRef.current) {
-        trackPageView();
-        hasTrackedPageViewRef.current = true;
-      }
-      if (
-        calculationState.status === "ready" &&
-        !hasTrackedEstimateRef.current
-      ) {
-        trackAnalyticsEvent("quick_calculator_estimates_viewed");
-        hasTrackedEstimateRef.current = true;
-      }
-    };
-
-    trackConsentedUsage();
-
-    const handleAnalyticsStorage = (event: StorageEvent) => {
-      if (
-        event.key === ANALYTICS_CONSENT_STORAGE_KEY ||
-        event.key === LOCAL_STORAGE_ENABLED_KEY ||
-        event.key === LOCAL_DATA_RESET_SIGNAL_KEY ||
-        event.key === null
-      ) {
-        trackConsentedUsage();
-      }
-    };
-    window.addEventListener("storage", handleAnalyticsStorage);
-    return () => window.removeEventListener("storage", handleAnalyticsStorage);
-  }, [calculationState.status, hasAcknowledgedNotice]);
+    if (
+      active &&
+      analyticsConsentGranted &&
+      calculationState.status === "ready" &&
+      !hasTrackedEstimateRef.current
+    ) {
+      trackAnalyticsEvent("quick_calculator_estimates_viewed");
+      hasTrackedEstimateRef.current = true;
+    }
+  }, [active, analyticsConsentGranted, calculationState.status]);
 
   useEffect(() => {
-    if (!baseSettings || !settingsSignature) {
+    if (!localStorageEnabled && localSavingEnabledRef.current) {
+      clearForDisabledSaving();
+    } else if (localStorageEnabled && !localSavingEnabledRef.current) {
+      localSavingEnabledRef.current = true;
+      setLocalSavingEnabled(true);
+    }
+  }, [clearForDisabledSaving, localStorageEnabled]);
+
+  useEffect(() => {
+    if (
+      !active ||
+      !hasAcknowledgedNotice ||
+      !baseSettings ||
+      !settingsSignature
+    ) {
       workerRef.current?.terminate();
       workerRef.current = null;
       requestIdRef.current += 1;
@@ -300,7 +289,14 @@ export function useQuickCalculator() {
         workerRef.current = null;
       }
     };
-  }, [baseSettings, calculationDate, retryCounter, settingsSignature]);
+  }, [
+    active,
+    hasAcknowledgedNotice,
+    baseSettings,
+    calculationDate,
+    retryCounter,
+    settingsSignature,
+  ]);
 
   useEffect(() => {
     if (adoptingExternalStateRef.current) {
@@ -311,6 +307,7 @@ export function useQuickCalculator() {
     if (!savingEnabledAtBoundary) {
       if (localSavingEnabledRef.current) {
         clearForDisabledSaving();
+        onSavingDisabledRef.current();
       } else {
         if (localSavingEnabled) {
           setLocalSavingEnabled(false);
@@ -663,18 +660,13 @@ export function useQuickCalculator() {
     }
   }
 
-  function acknowledgeNotice(consentGranted: boolean) {
-    setHasAcknowledgedNotice(true);
-    saveAcknowledgementState();
-    saveAnalyticsConsentState(consentGranted);
-  }
-
   const ageResetValues = getQuickCalculatorAgeDefaults(
     inputs.dateOfBirth,
     calculationDate
   );
 
   return {
+    hasBeenActive,
     inputs,
     birthMonthDraft,
     completion,
@@ -696,7 +688,6 @@ export function useQuickCalculator() {
     calculationDate,
     inflationRateAnnual: defaultsRef.current.inflationRateAnnual,
     resetVersion,
-    hasAcknowledgedNotice,
     onChange,
     setCompletion,
     updateBirthMonth,
@@ -707,7 +698,7 @@ export function useQuickCalculator() {
       setHasLocalEdits(true);
       setInputs((current) => ({ ...current, alphaEpaPeriods: periods }));
     },
-    acknowledgeNotice,
+    clearLocalData: clearForDisabledSaving,
     resetValues: {
       accruedPensionAtLastAbs: QUICK_DEFAULT_ACCRUED_PENSION,
       pensionableEarnings: QUICK_DEFAULT_PENSIONABLE_EARNINGS,

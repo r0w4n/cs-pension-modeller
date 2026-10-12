@@ -1,7 +1,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 
 test.describe("app end-to-end journeys", () => {
-  test("keeps the Quick Alpha acknowledgement modal until a consent choice is made", async ({
+  test("keeps the Quick journey acknowledgement modal until a consent choice is made", async ({
     page,
   }) => {
     await page.goto("/quick-calculator/");
@@ -39,7 +39,7 @@ test.describe("app end-to-end journeys", () => {
 
     await decline.click();
     await expect(
-      page.getByRole("heading", { name: "Quick Alpha calculator" })
+      page.getByRole("heading", { name: "Quick modeller" })
     ).toBeFocused();
     expect(
       await readLocalStorageItem(page, "cs-pension-modeller.analyticsConsent")
@@ -50,14 +50,14 @@ test.describe("app end-to-end journeys", () => {
     await expect(accept).toBeFocused();
     await accept.click();
     await expect(
-      page.getByRole("heading", { name: "Quick Alpha calculator" })
+      page.getByRole("heading", { name: "Quick modeller" })
     ).toBeFocused();
     expect(
       await readLocalStorageItem(page, "cs-pension-modeller.analyticsConsent")
     ).toBe("true");
   });
 
-  test("opens the separate Quick Alpha calculator in the same tab and keeps saved modeller data separate", async ({
+  test("selects Quick before Simple inside the modeller and keeps saved plans separate", async ({
     page,
     context,
   }) => {
@@ -68,20 +68,31 @@ test.describe("app end-to-end journeys", () => {
     );
     expect(fullModellerStateBeforeQuick).not.toBeNull();
     const pageCount = context.pages().length;
-    const navigationPromise = page.waitForURL(/\/quick-calculator\/$/);
+    const cards = page.locator(".mode-card");
+    await expect(cards).toHaveCount(4);
+    await expect(cards.nth(0)).toContainText("Quick journey");
+    await expect(cards.nth(1)).toContainText("Simple journey");
+    let navigations = 0;
+    page.on("request", (request) => {
+      if (request.isNavigationRequest()) navigations += 1;
+    });
     await page
-      .getByRole("link", {
-        name: "Open the Quick Alpha calculator",
+      .getByRole("button", {
+        name: /Quick journey/,
       })
       .click();
-    await navigationPromise;
+    await expect(page).toHaveURL(/\/\?journey=quick$/);
+    expect(navigations).toBe(0);
+    await expect(
+      page.locator(".active-mode-region:not([hidden])")
+    ).toBeFocused();
     expect(context.pages()).toHaveLength(pageCount);
     const quickPage = page;
 
     await expect(
       quickPage.getByRole("heading", {
-        level: 1,
-        name: "Quick Alpha calculator",
+        level: 2,
+        name: "Quick modeller",
       })
     ).toBeVisible();
     await expect(
@@ -103,7 +114,7 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveValue("50");
     await expect(
       quickPage.getByRole("link", { name: "Settings" }).first()
-    ).toHaveAttribute("href", "../settings/");
+    ).toHaveAttribute("href", "./settings/");
     await expect(
       quickPage.getByRole("button", { name: "Reset quick calculator" })
     ).toHaveCount(0);
@@ -172,9 +183,7 @@ test.describe("app end-to-end journeys", () => {
     await expect(
       quickPage.getByLabel("Alpha pension on your statement (£ per year)")
     ).toHaveValue("5000");
-    await quickPage
-      .getByRole("link", { name: "Back to the full modeller" })
-      .click();
+    await quickPage.getByRole("button", { name: /Simple journey/ }).click();
     await expect(
       page.getByRole("heading", { name: "Simplified retirement journey" })
     ).toBeVisible();
@@ -249,6 +258,9 @@ test.describe("app end-to-end journeys", () => {
       .getByRole("button", { name: "Continue without analytics" })
       .click();
     await secondQuickPage
+      .getByRole("button", { name: /Quick journey/ })
+      .click();
+    await secondQuickPage
       .getByLabel("Alpha pension on your statement (£ per year)")
       .fill("777");
     await secondQuickPage
@@ -265,6 +277,63 @@ test.describe("app end-to-end journeys", () => {
       )
       .toContain('"accruedPensionAtLastAbs":777');
     await expect(secondQuickPage.getByText("Saved Locally")).toBeVisible();
+  });
+
+  test("keeps unfinished Quick inputs when switching with local saving off", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.evaluate(() => {
+      window.localStorage.clear();
+      window.localStorage.setItem(
+        "cs-pension-modeller.localStorageEnabled",
+        "false"
+      );
+    });
+    await page.reload();
+    await expect(
+      page.getByText(/Local saving is off. Inputs stay on this open page/)
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Continue without analytics" })
+      .click();
+    await page.getByRole("button", { name: /Quick journey/ }).click();
+    await page.getByLabel("Birth month and year month").selectOption("06");
+    await page.getByLabel("Birth month and year year").selectOption("1987");
+    const pension = page.getByLabel(
+      "Alpha pension on your statement (£ per year)"
+    );
+    await pension.fill("321");
+    await pension.blur();
+    await page.getByText("State Pension and EPA", { exact: true }).click();
+    await page.getByLabel("Add EPA").check();
+    await page.getByRole("button", { name: "Add EPA period" }).click();
+    const epaStart = page.getByLabel("EPA start date 1");
+    await epaStart.fill("");
+    await expect(page.getByText("Enter a valid EPA start date.")).toBeVisible();
+    await page.getByRole("button", { name: /Simple journey/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "Simplified retirement journey" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Quick modeller" })
+    ).toBeHidden();
+    await page.getByRole("button", { name: /Quick journey/ }).click();
+    await expect(pension).toHaveValue("321");
+    await expect(epaStart).toHaveValue("");
+    await expect(page.getByText("Enter a valid EPA start date.")).toBeVisible();
+    expect(
+      await readLocalStorageItem(page, "cs-pension-quick-calculator")
+    ).toBeNull();
+    expect(
+      await readLocalStorageItem(page, "cs-pension-modeller.settings")
+    ).toBeNull();
+    expect(
+      await readLocalStorageItem(
+        page,
+        "cs-pension-modeller.localStorageEnabled"
+      )
+    ).toBe("false");
   });
 
   test("keeps a local EPA draft when another Quick calculator tab saves", async ({
@@ -289,7 +358,7 @@ test.describe("app end-to-end journeys", () => {
     await page
       .getByLabel("Pensionable earnings (£ per year) exact value")
       .blur();
-    await page.getByText("State Pension and EPA").click();
+    await page.getByText("State Pension and EPA", { exact: true }).click();
     await page.getByLabel("Add EPA").check();
     await page.getByRole("button", { name: "Add EPA period" }).click();
     await expect
@@ -518,7 +587,7 @@ test.describe("app end-to-end journeys", () => {
     expect(horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test("accepting the first-run notice restores local saving and persists consent", async ({
+  test("accepting the shared notice respects disabled saving", async ({
     page,
   }) => {
     await page.goto("/");
@@ -551,17 +620,17 @@ test.describe("app end-to-end journeys", () => {
         }))
       )
       .toEqual({
-        localSaving: "true",
-        acknowledgement: "v1",
-        settings: expect.any(String),
-        analytics: "true",
+        localSaving: "false",
+        acknowledgement: null,
+        settings: null,
+        analytics: null,
       });
 
     await page.goto("/settings/");
     await expect(
       page.getByRole("checkbox", { name: "Save inputs on this device" })
-    ).toBeChecked();
-    await expect(page.getByLabel("Allow analytics")).toBeChecked();
+    ).not.toBeChecked();
+    await expect(page.getByLabel("Allow analytics")).not.toBeChecked();
   });
 
   test("completes the simple journey without the comparison section", async ({

@@ -1,11 +1,7 @@
-import { useEffect, useRef } from "react";
-import {
-  applyAnalyticsConsent,
-  disableAnalytics,
-  trackPageView,
-} from "./analytics";
+import { useRef } from "react";
 import { createRetirementIncomeSeries } from "./result-projection/retirement-income";
 import { APP_MODE_STORAGE_KEY } from "./app/app-persistence";
+import { QuickCalculatorJourney } from "./app/quick-calculator/quick-calculator-journey";
 import { ModeSelection } from "./app/mode-selection";
 import { JourneyModeScreen } from "./app/journey-mode-screen";
 import { SavedLocalFeedback } from "./app/saved-local-feedback";
@@ -27,6 +23,7 @@ function App() {
     activeModeRef,
     acknowledgeNotice,
     appMode,
+    quickCalculator,
     analyticsConsentGranted,
     exportParameters,
     hasAcknowledgedNotice,
@@ -45,21 +42,8 @@ function App() {
     supportPrompt,
     visibleSettings,
   } = useAppController();
-  const hasTrackedPageViewRef = useRef(false);
-
-  useEffect(() => {
-    if (!hasAcknowledgedNotice) {
-      disableAnalytics();
-      return;
-    }
-
-    if (applyAnalyticsConsent(analyticsConsentGranted)) {
-      if (!hasTrackedPageViewRef.current) {
-        trackPageView();
-        hasTrackedPageViewRef.current = true;
-      }
-    }
-  }, [analyticsConsentGranted, hasAcknowledgedNotice]);
+  const pageHeadingRef = useRef<HTMLHeadingElement>(null);
+  const quickHeadingRef = useRef<HTMLHeadingElement>(null);
 
   if (isSettingsRoute()) {
     return (
@@ -80,7 +64,11 @@ function App() {
   return (
     <>
       <Helmet>
-        <title>Civil Service Pension Modeller</title>
+        <title>
+          {appMode === "quick"
+            ? "Quick modeller | Civil Service Pension Modeller"
+            : "Civil Service Pension Modeller"}
+        </title>
         <meta
           name="description"
           content="Estimate your Civil Service pension and retirement income with a browser-based planning tool."
@@ -88,14 +76,29 @@ function App() {
       </Helmet>
 
       {!hasAcknowledgedNotice ? (
-        <ImportantInformationDialog onContinue={acknowledgeNotice} />
+        <ImportantInformationDialog
+          onContinue={acknowledgeNotice}
+          localStorageEnabled={localStorageEnabled}
+          manageFocus
+          focusAfterCloseRef={
+            appMode === "quick" ? quickHeadingRef : pageHeadingRef
+          }
+        />
       ) : null}
 
       <main
         className="app-shell"
         aria-hidden={!hasAcknowledgedNotice || supportPrompt.isOpen}
+        inert={
+          !hasAcknowledgedNotice || supportPrompt.isOpen ? true : undefined
+        }
       >
-        <SavedLocalFeedback show={showSavedFeedback} />
+        <SavedLocalFeedback
+          show={
+            showSavedFeedback ||
+            (appMode === "quick" && quickCalculator.showSavedFeedback)
+          }
+        />
         <SupportPromptThankYou
           show={supportPrompt.showThankYouStatus}
           onDismiss={supportPrompt.dismissThankYouStatus}
@@ -104,7 +107,9 @@ function App() {
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">Civil Service Pensions</p>
-            <h1>Retirement Income Modeller</h1>
+            <h1 ref={pageHeadingRef} tabIndex={-1}>
+              Retirement Income Modeller
+            </h1>
             <p className="lead">
               Work through a Civil Service pension journey, then review your
               retirement income, funding gaps, key dates, and assumptions.
@@ -113,6 +118,21 @@ function App() {
 
           <ModeSelection selectedMode={appMode} onSelectMode={selectAppMode} />
         </section>
+
+        {appMode === "quick" || quickCalculator.hasBeenActive ? (
+          <div
+            hidden={appMode !== "quick"}
+            ref={appMode === "quick" ? activeModeRef : undefined}
+            className="active-mode-region"
+            tabIndex={-1}
+            aria-label="Quick journey"
+          >
+            <QuickCalculatorJourney
+              calculator={quickCalculator}
+              headingRef={quickHeadingRef}
+            />
+          </div>
+        ) : null}
 
         {activeJourneyMode && activeJourneyDefinition ? (
           <JourneyModeScreen

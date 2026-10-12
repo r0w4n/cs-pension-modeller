@@ -23,10 +23,21 @@ import type {
   QuickCalculatorWorkerRequest,
   QuickCalculatorWorkerResponse,
 } from "./quick-calculator-worker";
-import {
-  QuickCalculatorAssumptions,
-  QuickCalculatorPage,
-} from "./quick-calculator-page";
+import { QuickCalculatorAssumptions } from "./quick-calculator-journey";
+import App from "../../App";
+
+function continueWithoutAnalytics() {
+  fireEvent.click(
+    screen.getByRole("button", { name: "Continue without analytics" })
+  );
+  if (
+    screen
+      .getByRole("button", { name: /Quick journey/ })
+      .getAttribute("aria-pressed") !== "true"
+  ) {
+    fireEvent.click(screen.getByRole("button", { name: /Quick journey/ }));
+  }
+}
 
 class ControlledWorker {
   static instances: ControlledWorker[] = [];
@@ -134,8 +145,9 @@ async function latestWorker() {
   return worker;
 }
 
-describe("QuickCalculatorPage", () => {
+describe("Quick modeller journey", () => {
   beforeEach(() => {
+    window.history.replaceState(null, "", "/?journey=quick");
     window.localStorage.clear();
     window.localStorage.setItem("cs-pension-modeller.acknowledgement", "v1");
     ControlledWorker.instances = [];
@@ -143,15 +155,134 @@ describe("QuickCalculatorPage", () => {
   });
 
   afterEach(() => {
+    window.history.replaceState(null, "", "/");
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
+  it("retains unsaved amounts and unfinished drafts when switching journeys", () => {
+    window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
+    render(<App />);
+    continueWithoutAnalytics();
+    const amount = screen.getByLabelText(
+      "Alpha pension on your statement (£ per year)"
+    );
+    fireEvent.change(amount, { target: { value: "321" } });
+    fireEvent.blur(amount);
+    const added = screen.getByLabelText(
+      "Monthly Added Pension payment (£ per month) exact value"
+    );
+    fireEvent.change(added, { target: { value: "" } });
+    fireEvent.blur(added);
+    fireEvent.click(screen.getByRole("button", { name: /Simple journey/ }));
+    expect(
+      screen.queryByRole("heading", { name: "Quick modeller" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Simplified retirement journey" })
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Quick journey/ }));
+    expect(amount).toHaveValue(321);
+    expect(added).toHaveValue(null);
+    expect(
+      screen.getByRole("heading", { name: "Quick modeller" })
+    ).toBeVisible();
+    expect(
+      window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
+    ).toBeNull();
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
+      "false"
+    );
+  });
+
+  it("runs Quick work only while selected and discards replies from a previous visit", async () => {
+    saveCompleteQuickState();
+    window.history.replaceState(null, "", "/");
+    window.localStorage.setItem("cs-pension-modeller.appMode", "simple");
+    render(<App />);
+    expect(ControlledWorker.instances).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: /Quick journey/ }));
+    const first = await latestWorker();
+    fireEvent.click(screen.getByRole("button", { name: /Simple journey/ }));
+    expect(first.terminated).toBe(true);
+    act(() => first.respond());
+    fireEvent.click(screen.getByRole("button", { name: /Quick journey/ }));
+    expect(screen.queryAllByRole("article")).toHaveLength(0);
+    const current = await latestWorker();
+    expect(current).not.toBe(first);
+    act(() => current.respond());
+    expect(screen.getAllByRole("article")).toHaveLength(8);
+  });
+
+  it("clears retained Quick values through shared Settings without reviving them", async () => {
+    saveCompleteQuickState({
+      accruedPensionAtLastAbs: 8750,
+      pensionableEarnings: 61000,
+    });
+    const view = render(<App />);
+    const worker = await latestWorker();
+    act(() => worker.respond());
+    expect(screen.getAllByRole("article")).toHaveLength(8);
+    window.history.replaceState(null, "", "/settings/");
+    view.rerender(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    expect(
+      window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
+    ).toBeNull();
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
+      "false"
+    );
+    window.history.replaceState(null, "", "/");
+    view.rerender(<App />);
+    continueWithoutAnalytics();
+    expect(screen.queryAllByRole("article")).toHaveLength(0);
+    const accrued = screen.getByLabelText(
+      "Alpha pension on your statement (£ per year)"
+    );
+    expect(accrued).toHaveValue(0);
+    expect(screen.getByLabelText("Birth month and year month")).toHaveValue("");
+    expect(
+      screen.getByLabelText("Pensionable earnings (£ per year) exact value")
+    ).toHaveValue(40000);
+    fireEvent.change(accrued, { target: { value: "321" } });
+    fireEvent.blur(accrued);
+    expect(
+      window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
+    ).toBeNull();
+    window.history.replaceState(null, "", "/settings/");
+    view.rerender(<App />);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Save inputs on this device" })
+    );
+    expect(loadQuickCalculatorState()).toMatchObject({
+      status: "loaded",
+      state: {
+        inputs: {
+          accruedPensionAtLastAbs: 321,
+          pensionableEarnings: 40000,
+          dateOfBirth: "",
+        },
+      },
+    });
+    view.unmount();
+    window.history.replaceState(null, "", "/?journey=quick");
+    render(<App />);
+    expect(
+      screen.queryByRole("dialog", { name: "Important information" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Alpha pension on your statement (£ per year)")
+    ).toHaveValue(321);
+    expect(
+      screen.getByLabelText("Pensionable earnings (£ per year) exact value")
+    ).toHaveValue(40000);
+  });
+
   it("starts with usable financial assumptions and waits only for birth month", () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
 
     expect(
-      screen.getByRole("heading", { name: "Quick Alpha calculator" })
+      screen.getByRole("heading", { name: "Quick modeller" })
     ).toBeInTheDocument();
     expect(
       screen.getByLabelText("Alpha pension on your statement (£ per year)")
@@ -205,7 +336,7 @@ describe("QuickCalculatorPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-24T12:00:00"));
     try {
-      render(<QuickCalculatorPage />);
+      render(<App />);
 
       fireEvent.change(screen.getByLabelText("Birth month and year month"), {
         target: { value: "06" },
@@ -253,7 +384,7 @@ describe("QuickCalculatorPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-24T12:00:00"));
     try {
-      render(<QuickCalculatorPage />);
+      render(<App />);
       fireEvent.change(screen.getByLabelText("Birth month and year month"), {
         target: { value: "06" },
       });
@@ -278,7 +409,7 @@ describe("QuickCalculatorPage", () => {
   });
 
   it("preserves explicitly chosen ages when a birth month is entered later", () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const selectedAge = screen.getByLabelText(
       "Selected retirement age exact value"
     );
@@ -305,7 +436,7 @@ describe("QuickCalculatorPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-24T12:00:00"));
     try {
-      render(<QuickCalculatorPage />);
+      render(<App />);
       fireEvent.change(screen.getByLabelText("Birth month and year month"), {
         target: { value: "06" },
       });
@@ -340,7 +471,7 @@ describe("QuickCalculatorPage", () => {
       }
     );
 
-    render(<QuickCalculatorPage />);
+    render(<App />);
 
     expect(
       screen.getByLabelText("Alpha pension on your statement (£ per year)")
@@ -361,7 +492,7 @@ describe("QuickCalculatorPage", () => {
       alphaHasProtectedPensionAge: true,
     });
 
-    render(<QuickCalculatorPage />);
+    render(<App />);
 
     expect(
       screen.getByRole("checkbox", {
@@ -387,7 +518,7 @@ describe("QuickCalculatorPage", () => {
   });
 
   it("uses quick defaults for field reset controls", () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const earnings = screen.getByLabelText(
       "Pensionable earnings (£ per year) exact value"
     );
@@ -416,7 +547,7 @@ describe("QuickCalculatorPage", () => {
 
   it("does not save an invalid amount draft and accepts explicit zero again", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const worker = await latestWorker();
     act(() => worker.respond());
     const stored = window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY);
@@ -458,7 +589,7 @@ describe("QuickCalculatorPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-24T12:00:00"));
     try {
-      render(<QuickCalculatorPage />);
+      render(<App />);
       expect(screen.queryByText("Saved Locally")).not.toBeInTheDocument();
 
       fireEvent.change(screen.getByLabelText("Birth month and year month"), {
@@ -492,7 +623,7 @@ describe("QuickCalculatorPage", () => {
 
   it("explains malformed storage without showing saved feedback", () => {
     window.localStorage.setItem(QUICK_CALCULATOR_STORAGE_KEY, "not-json");
-    render(<QuickCalculatorPage />);
+    render(<App />);
 
     expect(
       screen.getByText(
@@ -503,7 +634,7 @@ describe("QuickCalculatorPage", () => {
   });
 
   it("cancels pending saved feedback when quick data is cleared externally", () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
     fireEvent.change(screen.getByLabelText("Birth month and year month"), {
       target: { value: "06" },
     });
@@ -535,7 +666,7 @@ describe("QuickCalculatorPage", () => {
   });
 
   it("shows shared advanced controls in the State Pension and EPA disclosure", () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
 
     fireEvent.click(screen.getByText("State Pension and EPA"));
     expect(
@@ -552,7 +683,7 @@ describe("QuickCalculatorPage", () => {
 
   it("shows the exact derived State Pension date used by the worker", async () => {
     saveCompleteQuickState({ dateOfBirth: "1977-05-01" });
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const worker = await latestWorker();
 
     fireEvent.click(screen.getByText("State Pension and EPA"));
@@ -565,7 +696,7 @@ describe("QuickCalculatorPage", () => {
   });
 
   it("shows the inflation assumption supplied to the worker before inputs are complete", async () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
     fireEvent.click(screen.getByText("Assumptions used"));
     expect(
       screen.getByText(/annual inflation assumption of 2.5%/)
@@ -615,7 +746,7 @@ describe("QuickCalculatorPage", () => {
         alphaAddedPensionFactorType: "self",
         partialRetirementStartAge: 70,
       });
-      render(<QuickCalculatorPage />);
+      render(<App />);
       const worker = ControlledWorker.instances.at(-1)!;
       act(() => worker.respond());
 
@@ -629,7 +760,7 @@ describe("QuickCalculatorPage", () => {
 
   it("keeps the acknowledgement modal focused and the quick page inert", async () => {
     window.localStorage.removeItem("cs-pension-modeller.acknowledgement");
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const dialog = screen.getByRole("dialog", {
       name: "Important information",
     });
@@ -653,7 +784,7 @@ describe("QuickCalculatorPage", () => {
     fireEvent.click(decline);
     await waitFor(() =>
       expect(
-        screen.getByRole("heading", { name: "Quick Alpha calculator" })
+        screen.getByRole("heading", { name: "Quick modeller" })
       ).toHaveFocus()
     );
     expect(dialog).not.toBeInTheDocument();
@@ -665,7 +796,7 @@ describe("QuickCalculatorPage", () => {
 
   it("suppresses stale and invalid estimates until the latest worker reply is current", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const first = await latestWorker();
     const addedPension = screen.getByLabelText(
       "Monthly Added Pension payment (£ per month) exact value"
@@ -711,7 +842,7 @@ describe("QuickCalculatorPage", () => {
 
   it("shows worker failure, retries, and terminates active work on unmount", async () => {
     saveCompleteQuickState();
-    const view = render(<QuickCalculatorPage />);
+    const view = render(<App />);
     const failed = await latestWorker();
     act(() => failed.fail());
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -731,7 +862,7 @@ describe("QuickCalculatorPage", () => {
 
   it("applies an external quick reset even while a local draft is invalid", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const pending = await latestWorker();
     const accrued = screen.getByLabelText(
       "Alpha pension on your statement (£ per year)"
@@ -781,7 +912,7 @@ describe("QuickCalculatorPage", () => {
         },
       ],
     });
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const validStoredSnapshot = window.localStorage.getItem(
       QUICK_CALCULATOR_STORAGE_KEY
     );
@@ -866,7 +997,7 @@ describe("QuickCalculatorPage", () => {
 
   it("persists post-reset edits when another tab re-enables local saving", async () => {
     saveCompleteQuickState({ accruedPensionAtLastAbs: 8_750 });
-    render(<QuickCalculatorPage />);
+    render(<App />);
     await latestWorker();
 
     window.localStorage.removeItem(QUICK_CALCULATOR_STORAGE_KEY);
@@ -880,9 +1011,7 @@ describe("QuickCalculatorPage", () => {
         })
       );
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue without analytics" })
-    );
+    continueWithoutAnalytics();
     const accrued = screen.getByLabelText(
       "Alpha pension on your statement (£ per year)"
     );
@@ -943,10 +1072,8 @@ describe("QuickCalculatorPage", () => {
   it("does not create a quick snapshot when saving is enabled without new edits", () => {
     window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
     window.localStorage.removeItem("cs-pension-modeller.acknowledgement");
-    render(<QuickCalculatorPage />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue without analytics" })
-    );
+    render(<App />);
+    continueWithoutAnalytics();
 
     window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "true");
     void act(() => {
@@ -985,7 +1112,7 @@ describe("QuickCalculatorPage", () => {
           },
         ],
       });
-      const view = render(<QuickCalculatorPage />);
+      const view = render(<App />);
       const initialWorker = ControlledWorker.instances.at(-1)!;
       act(() => initialWorker.respond());
       expect(screen.getAllByRole("article")).toHaveLength(8);
@@ -1009,9 +1136,7 @@ describe("QuickCalculatorPage", () => {
       act(() => staleWorker.respond());
       expect(screen.queryAllByRole("article")).toHaveLength(0);
 
-      fireEvent.click(
-        screen.getByRole("button", { name: "Continue without analytics" })
-      );
+      continueWithoutAnalytics();
       const accrued = screen.getByLabelText(
         "Alpha pension on your statement (£ per year)"
       );
@@ -1047,10 +1172,8 @@ describe("QuickCalculatorPage", () => {
 
       view.unmount();
       ControlledWorker.instances = [];
-      render(<QuickCalculatorPage />);
-      fireEvent.click(
-        screen.getByRole("button", { name: "Continue without analytics" })
-      );
+      render(<App />);
+      continueWithoutAnalytics();
       expect(
         screen.getByLabelText("Alpha pension on your statement (£ per year)")
       ).toHaveValue(321);
@@ -1070,10 +1193,8 @@ describe("QuickCalculatorPage", () => {
   it("keeps a new invalid EPA draft unsaved when saving is re-enabled", () => {
     window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
     window.localStorage.removeItem("cs-pension-modeller.acknowledgement");
-    render(<QuickCalculatorPage />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue without analytics" })
-    );
+    render(<App />);
+    continueWithoutAnalytics();
     fireEvent.change(
       screen.getByLabelText("Alpha pension on your statement (£ per year)"),
       { target: { value: "321" } }
@@ -1109,7 +1230,7 @@ describe("QuickCalculatorPage", () => {
 
   it("reports a quick snapshot write failure without claiming the edit was saved", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     await latestWorker();
     const addedPension = screen.getByLabelText(
       "Monthly Added Pension payment (£ per month) exact value"
@@ -1132,10 +1253,8 @@ describe("QuickCalculatorPage", () => {
   it("reconciles an enabled saving preference on focus without another edit", async () => {
     window.localStorage.setItem(LOCAL_STORAGE_ENABLED_KEY, "false");
     window.localStorage.removeItem("cs-pension-modeller.acknowledgement");
-    render(<QuickCalculatorPage />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Continue without analytics" })
-    );
+    render(<App />);
+    continueWithoutAnalytics();
     const accrued = screen.getByLabelText(
       "Alpha pension on your statement (£ per year)"
     );
@@ -1164,7 +1283,7 @@ describe("QuickCalculatorPage", () => {
         alphaPensionAbsDate: "2025",
         alphaPensionDrawAge: 68,
       });
-      const view = render(<QuickCalculatorPage />);
+      const view = render(<App />);
       const first = ControlledWorker.instances.at(-1)!;
       expect(first.request?.calculationDate).toBe("2026-01-01");
       act(() => first.respond());
@@ -1233,7 +1352,7 @@ describe("QuickCalculatorPage", () => {
 
   it("gates an invalid State Pension draft only while that source is enabled", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const initial = await latestWorker();
     act(() => initial.respond());
     await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(8));
@@ -1288,7 +1407,7 @@ describe("QuickCalculatorPage", () => {
 
   it("restores the saved exclusion without restoring an invalid State Pension draft", async () => {
     saveCompleteQuickState();
-    const view = render(<QuickCalculatorPage />);
+    const view = render(<App />);
     await latestWorker();
     fireEvent.click(screen.getByText("State Pension and EPA"));
     const amount = screen.getByLabelText("State Pension forecast (£ per year)");
@@ -1308,7 +1427,7 @@ describe("QuickCalculatorPage", () => {
 
     view.unmount();
     ControlledWorker.instances = [];
-    render(<QuickCalculatorPage />);
+    render(<App />);
     fireEvent.click(screen.getByText("State Pension and EPA"));
     expect(
       screen.getByRole("checkbox", { name: /Include State Pension/ })
@@ -1330,7 +1449,7 @@ describe("QuickCalculatorPage", () => {
         },
       ],
     });
-    const view = render(<QuickCalculatorPage />);
+    const view = render(<App />);
     await latestWorker();
     fireEvent.click(screen.getByText("State Pension and EPA"));
     fireEvent.change(screen.getByLabelText("EPA start date 1"), {
@@ -1348,7 +1467,7 @@ describe("QuickCalculatorPage", () => {
 
     view.unmount();
     ControlledWorker.instances = [];
-    render(<QuickCalculatorPage />);
+    render(<App />);
     fireEvent.click(screen.getByText("State Pension and EPA"));
     expect(screen.getByLabelText("EPA start date 1")).toHaveValue("2030-04-01");
   });
@@ -1359,7 +1478,7 @@ describe("QuickCalculatorPage", () => {
       alphaPensionAbsDate: "2026",
       alphaPensionDrawAge: 68,
     });
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const worker = await latestWorker();
     act(() => worker.respond());
 
@@ -1375,7 +1494,7 @@ describe("QuickCalculatorPage", () => {
 
   it("preserves a disabled invalid State Pension draft across an external update", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     await latestWorker();
     fireEvent.click(screen.getByText("State Pension and EPA"));
     const amount = screen.getByLabelText("State Pension forecast (£ per year)");
@@ -1423,7 +1542,7 @@ describe("QuickCalculatorPage", () => {
           },
         ],
       });
-      render(<QuickCalculatorPage />);
+      render(<App />);
       await latestWorker();
       fireEvent.click(screen.getByText("State Pension and EPA"));
       const dateInput = screen.getByLabelText(label);
@@ -1467,7 +1586,7 @@ describe("QuickCalculatorPage", () => {
         },
       ],
     });
-    render(<QuickCalculatorPage />);
+    render(<App />);
     await latestWorker();
     fireEvent.click(screen.getByText("State Pension and EPA"));
     fireEvent.change(screen.getByLabelText("EPA start date 1"), {
@@ -1498,7 +1617,7 @@ describe("QuickCalculatorPage", () => {
 
   it("preserves a valid uncommitted numeric draft across an external update", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     await latestWorker();
     const accrued = screen.getByLabelText(
       "Alpha pension on your statement (£ per year)"
@@ -1527,7 +1646,7 @@ describe("QuickCalculatorPage", () => {
   });
 
   it("preserves a partial birth-month draft across an external update", () => {
-    render(<QuickCalculatorPage />);
+    render(<App />);
     fireEvent.change(screen.getByLabelText("Birth month and year month"), {
       target: { value: "06" },
     });
@@ -1556,7 +1675,7 @@ describe("QuickCalculatorPage", () => {
 
   it("adopts a clean external snapshot without echoing it or accepting stale work", async () => {
     saveCompleteQuickState();
-    render(<QuickCalculatorPage />);
+    render(<App />);
     const staleWorker = await latestWorker();
     const oldValue = window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY);
     saveCompleteQuickState({ accruedPensionAtLastAbs: 9_999 });

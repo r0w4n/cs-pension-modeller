@@ -6,8 +6,8 @@ describe("site-footer", () => {
     render(<SiteFooter />);
 
     expect(
-      screen.getByRole("link", { name: "Quick Alpha calculator" })
-    ).toHaveAttribute("href", "./quick-calculator/");
+      screen.queryByRole("link", { name: /Quick/ })
+    ).not.toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
       "href",

@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { disableAnalytics, trackAnalyticsEvent } from "../analytics";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  applyAnalyticsConsent,
+  disableAnalytics,
+  trackAnalyticsEvent,
+  trackPageView,
+} from "../analytics";
 import type { SettingsKey } from "../fieldDefinitions";
 import type { RetirementIncomeChartParameters } from "../result-projection/retirement-income-chart-model";
 import {
@@ -44,6 +49,7 @@ import {
 } from "./chart-state";
 import { useMobileDateDropdowns as useMobileDateDropdownsHook } from "./form-fields";
 import type { JourneyStepViewModel } from "./journey-step-content";
+import { useQuickCalculator } from "./quick-calculator/use-quick-calculator";
 import { useAppModeState } from "./use-app-mode-state";
 import { useComparisonState } from "./use-comparison-state";
 import { useJourneySettings } from "./use-journey-settings";
@@ -86,7 +92,7 @@ export function useAppController() {
     settingsFormVersion,
   } = useJourneySettings({
     activeJourneyMode,
-    initialAppMode,
+    initialAppMode: initialAppMode === "quick" ? null : initialAppMode,
     setChartUndoStack,
     showSavedLabel,
   });
@@ -117,6 +123,29 @@ export function useAppController() {
   const [localStorageEnabled, setLocalStorageEnabledState] = useState(
     loadLocalStorageEnabled
   );
+  const hasTrackedPageViewRef = useRef(false);
+  useEffect(() => {
+    if (!hasAcknowledgedNotice) {
+      disableAnalytics();
+      return;
+    }
+    if (
+      applyAnalyticsConsent(analyticsConsentGranted) &&
+      !hasTrackedPageViewRef.current
+    ) {
+      trackPageView();
+      hasTrackedPageViewRef.current = true;
+    }
+  }, [analyticsConsentGranted, hasAcknowledgedNotice]);
+
+  const quickCalculator = useQuickCalculator({
+    active:
+      appMode === "quick" && !window.location.pathname.endsWith("/settings/"),
+    hasAcknowledgedNotice,
+    analyticsConsentGranted: hasAcknowledgedNotice && analyticsConsentGranted,
+    localStorageEnabled,
+    onSavingDisabled: resetOpenApplicationAfterLocalDataClear,
+  });
   const useDropdownDates = useMobileDateDropdownsHook();
   const {
     retirementIncomeChartLimits,
@@ -206,6 +235,14 @@ export function useAppController() {
   useEffect(() => {
     function handleStorage(event: StorageEvent) {
       if (
+        event.key === LOCAL_STORAGE_ENABLED_KEY &&
+        event.newValue === "true"
+      ) {
+        setLocalStorageEnabledState(true);
+        return;
+      }
+
+      if (
         event.key !== LOCAL_DATA_RESET_SIGNAL_KEY &&
         !(
           event.key === LOCAL_STORAGE_ENABLED_KEY && event.newValue === "false"
@@ -236,6 +273,7 @@ export function useAppController() {
   });
 
   function resetOpenApplicationAfterLocalDataClear() {
+    quickCalculator.clearLocalData();
     disableAnalytics();
     clearCalculationState();
     resetSupportPrompt();
@@ -312,6 +350,7 @@ export function useAppController() {
   }
 
   function clearAllData(): LocalDataClearResult {
+    quickCalculator.clearLocalData();
     trackAnalyticsEvent("local_data_cleared");
     disableAnalytics();
     clearCalculationState();
@@ -343,6 +382,7 @@ export function useAppController() {
     setLocalStorageEnabledState(enabled);
 
     if (!enabled) {
+      quickCalculator.clearLocalData();
       disableAnalytics();
       clearCalculationState();
       setCalculationInvalidationToken((current) => current + 1);
@@ -411,11 +451,6 @@ export function useAppController() {
   };
 
   function acknowledgeNotice(consentGranted: boolean) {
-    // The first-run notice is also the point at which the user opts into the
-    // app's normal local-saving defaults. Persist this before saving the
-    // acknowledgement and analytics choice, because those preferences are
-    // intentionally guarded by the local-saving preference.
-    setLocalStorageEnabled(true);
     setHasAcknowledgedNotice(true);
     saveAcknowledgementState();
     setAnalyticsConsent(consentGranted);
@@ -436,6 +471,13 @@ export function useAppController() {
       scrollActiveModeIntoView,
       setAppMode,
     });
+    const url = new URL(window.location.href);
+    if (mode === "quick") {
+      url.searchParams.set("journey", "quick");
+    } else {
+      url.searchParams.delete("journey");
+    }
+    window.history.replaceState(null, "", url);
   }
 
   const setResultsStepActive = useCallback(
@@ -453,6 +495,7 @@ export function useAppController() {
     activeJourneyDefinition,
     activeJourneyMode,
     activeModeRef,
+    quickCalculator,
     acknowledgeNotice,
     appMode,
     analyticsConsentGranted,

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { JOURNEY_DEFINITIONS } from "../app-domains/journeys";
-import { loadStoredAppMode, type AppMode } from "./app-persistence";
+import {
+  loadStoredAppMode,
+  type AppMode,
+  type PlanningJourneyMode,
+} from "./app-persistence";
 
 const [
   bridgeJourneyDefinition,
@@ -12,10 +16,13 @@ const JOURNEY_DEFINITION_BY_MODE = {
   bridge: bridgeJourneyDefinition,
   simple: simpleJourneyDefinition,
   expert: expertJourneyDefinition,
-} satisfies Record<AppMode, (typeof JOURNEY_DEFINITIONS)[number]>;
+} satisfies Record<PlanningJourneyMode, (typeof JOURNEY_DEFINITIONS)[number]>;
 
 export function useAppModeState() {
-  const initialAppMode = loadStoredAppMode();
+  const initialAppMode =
+    new URLSearchParams(window.location.search).get("journey") === "quick"
+      ? "quick"
+      : loadStoredAppMode();
   const [appMode, setAppMode] = useState<AppMode | null>(initialAppMode);
   const activeModeRef = useRef<HTMLDivElement | null>(null);
   const shouldFocusActiveMode = useRef(false);
@@ -41,7 +48,7 @@ export function useAppModeState() {
     scrollActiveModeIntoView();
   }, [appMode, scrollActiveModeIntoView]);
 
-  const activeJourneyMode = appMode;
+  const activeJourneyMode = appMode === "quick" ? null : appMode;
   const activeJourneyDefinition = activeJourneyMode
     ? JOURNEY_DEFINITION_BY_MODE[activeJourneyMode]
     : null;

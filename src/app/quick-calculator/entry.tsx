@@ -1,10 +1,5 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "../../index.css";
-import { QuickCalculatorPage } from "./quick-calculator-page";
+import { resolveAppBaseHref } from "../app-base";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QuickCalculatorPage />
-  </StrictMode>
-);
+const destination = new URL(resolveAppBaseHref(), window.location.href);
+destination.searchParams.set("journey", "quick");
+window.location.replace(destination.href);

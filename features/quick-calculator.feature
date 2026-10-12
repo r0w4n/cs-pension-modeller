@@ -1,8 +1,14 @@
 @quick-calculator
-Feature: Quick Alpha pension comparisons
+Feature: Quick modeller pension comparisons
 
-  The separate quick calculator should compare Alpha estimates through the
+  The integrated Quick journey should compare Alpha estimates through the
   canonical pension engine without changing full-modeller plans.
+
+  Scenario: Select Quick within the modeller without replacing longer plans
+    Given browser local storage contains populated modeller data
+    When Quick is selected as the modeller journey
+    Then the saved selected journey should be Quick
+    And all populated full-modeller plans and saved comparisons retain their original values
 
   Scenario: Start with usable public assumptions and derive prospective ages
     Given a fresh quick calculator on 24 September 2026

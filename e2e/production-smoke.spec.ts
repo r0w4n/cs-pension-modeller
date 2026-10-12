@@ -223,7 +223,7 @@ test.describe("production build smoke checks", () => {
     expect(acceptanceHorizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test("serves the Quick Alpha calculator and its worker from the built artifact", async ({
+  test("serves the Quick modeller and its worker from the built artifact", async ({
     page,
   }) => {
     await page.goto("/quick-calculator/");
@@ -231,11 +231,18 @@ test.describe("production build smoke checks", () => {
       .getByRole("button", { name: "Continue without analytics" })
       .click();
     await expect(
-      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+      page.getByRole("heading", { level: 2, name: "Quick modeller" })
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/\?journey=quick$/);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Retirement Income Modeller",
+      })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Back to the full modeller" })
-    ).toHaveAttribute("href", "../");
+      page.getByRole("button", { name: /Quick journey/ })
+    ).toHaveAttribute("aria-pressed", "true");
 
     await page.getByLabel("Birth month and year month").selectOption("06");
     await page.getByLabel("Birth month and year year").selectOption("1987");
@@ -257,11 +264,11 @@ test.describe("production build smoke checks", () => {
 
     await page.reload();
     await expect(
-      page.getByRole("heading", { level: 1, name: "Quick Alpha calculator" })
+      page.getByRole("heading", { level: 2, name: "Quick modeller" })
     ).toBeVisible();
   });
 
-  test("counts consented Quick Alpha visits and completed estimates without financial inputs", async ({
+  test("counts consented Quick journey visits and completed estimates without financial inputs", async ({
     context,
   }) => {
     const quickPage = await context.newPage();
@@ -321,7 +328,7 @@ test.describe("production build smoke checks", () => {
     );
     expect(pageViews).toHaveLength(1);
     expect(pageViews[0]?.[2]).toMatchObject({
-      page_path: "/quick-calculator/",
+      page_path: "/",
     });
     expect(estimateEvents).toHaveLength(1);
     for (const event of [...pageViews, ...estimateEvents]) {

@@ -11456,6 +11456,53 @@ export const acceptanceFeatures = [
       {
         id: "line-47",
         keyword: "Scenario",
+        name: "Acknowledge the notice without re-enabling disabled saving",
+        description: "",
+        tags: ["@acknowledgement", "@storage-disabled"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-48",
+            keyword: "Given",
+            text: "browser local storage is disabled",
+          },
+          {
+            id: "line-49",
+            keyword: "When",
+            text: "the important information notice is acknowledged",
+          },
+          {
+            id: "line-50",
+            keyword: "And",
+            text: 'analytics consent is saved as "accepted"',
+          },
+          {
+            id: "line-51",
+            keyword: "And",
+            text: "the stored modeller preferences are loaded",
+          },
+          {
+            id: "line-52",
+            keyword: "Then",
+            text: "local saving should be off",
+          },
+          {
+            id: "line-53",
+            keyword: "And",
+            text: "no previous acknowledgement should be loaded",
+          },
+          {
+            id: "line-54",
+            keyword: "And",
+            text: "no previous analytics consent should be loaded",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-57",
+        keyword: "Scenario",
         name: "Clear populated local data and reset active values",
         description: "",
         tags: ["@clear-data"],
@@ -11463,62 +11510,62 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-48",
+            id: "line-58",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-49",
+            id: "line-59",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-50",
+            id: "line-60",
             keyword: "Then",
             text: "local saving should be off",
           },
           {
-            id: "line-51",
+            id: "line-61",
             keyword: "And",
             text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
           {
-            id: "line-52",
+            id: "line-62",
             keyword: "And",
             text: "quick-calculator storage should be cleared",
           },
           {
-            id: "line-53",
+            id: "line-63",
             keyword: "And",
             text: "active modeller settings should be reset to their initial values",
           },
           {
-            id: "line-54",
+            id: "line-64",
             keyword: "And",
             text: "no previous acknowledgement should be loaded",
           },
           {
-            id: "line-55",
+            id: "line-65",
             keyword: "And",
             text: "no previous analytics consent should be loaded",
           },
           {
-            id: "line-56",
+            id: "line-66",
             keyword: "And",
             text: "no previous modeller mode should be loaded",
           },
           {
-            id: "line-57",
+            id: "line-67",
             keyword: "And",
             text: "guidance notes should be shown",
           },
           {
-            id: "line-58",
+            id: "line-68",
             keyword: "And",
             text: "display preferences should be reset to monthly values",
           },
           {
-            id: "line-59",
+            id: "line-69",
             keyword: "And",
             text: "saved comparison scenarios should be cleared",
           },
@@ -11526,7 +11573,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-62",
+        id: "line-72",
         keyword: "Scenario",
         name: "Disable saving with existing data and ignore later edits",
         description: "",
@@ -11535,32 +11582,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-63",
+            id: "line-73",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-64",
+            id: "line-74",
             keyword: "When",
             text: "local saving is disabled through the application action",
           },
           {
-            id: "line-65",
+            id: "line-75",
             keyword: "And",
             text: "the user edits settings and saves another comparison while local saving is disabled",
           },
           {
-            id: "line-66",
+            id: "line-76",
             keyword: "Then",
             text: "no settings or comparison data should be written while saving is disabled",
           },
           {
-            id: "line-67",
+            id: "line-77",
             keyword: "And",
             text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
           {
-            id: "line-68",
+            id: "line-78",
             keyword: "And",
             text: "quick-calculator storage should be cleared",
           },
@@ -11568,7 +11615,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-71",
+        id: "line-81",
         keyword: "Scenario",
         name: "Re-enable saving after clearing and editing without restoring old values",
         description: "",
@@ -11577,42 +11624,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-72",
+            id: "line-82",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-73",
+            id: "line-83",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-74",
+            id: "line-84",
             keyword: "And",
             text: "the user edits active settings and comparisons while local saving is disabled",
           },
           {
-            id: "line-75",
+            id: "line-85",
             keyword: "And",
             text: "local saving is re-enabled through the application action",
           },
           {
-            id: "line-76",
+            id: "line-86",
             keyword: "And",
             text: "the modeller is reloaded from local storage",
           },
           {
-            id: "line-77",
+            id: "line-87",
             keyword: "Then",
             text: "the reloaded settings should contain the new edits",
           },
           {
-            id: "line-78",
+            id: "line-88",
             keyword: "And",
             text: "the reloaded comparison scenarios should contain only the new scenario",
           },
           {
-            id: "line-79",
+            id: "line-89",
             keyword: "And",
             text: "old cleared data should not reload",
           },
@@ -15285,16 +15332,16 @@ export const acceptanceFeatures = [
   },
   {
     path: "features/quick-calculator.feature",
-    name: "Quick Alpha pension comparisons",
+    name: "Quick modeller pension comparisons",
     description:
-      "The separate quick calculator should compare Alpha estimates through the\n  canonical pension engine without changing full-modeller plans.",
+      "The integrated Quick journey should compare Alpha estimates through the\n  canonical pension engine without changing full-modeller plans.",
     tags: ["@quick-calculator"],
     status: "covered",
     scenarios: [
       {
         id: "line-7",
         keyword: "Scenario",
-        name: "Start with usable public assumptions and derive prospective ages",
+        name: "Select Quick within the modeller without replacing longer plans",
         description: "",
         tags: [],
         status: "covered",
@@ -15303,30 +15350,62 @@ export const acceptanceFeatures = [
           {
             id: "line-8",
             keyword: "Given",
-            text: "a fresh quick calculator on 24 September 2026",
+            text: "browser local storage contains populated modeller data",
           },
           {
             id: "line-9",
-            keyword: "Then",
-            text: "its birth date is unanswered",
+            keyword: "When",
+            text: "Quick is selected as the modeller journey",
           },
           {
             id: "line-10",
-            keyword: "And",
-            text: "its starting Alpha pension is 0 pounds and earnings are 40000 pounds",
+            keyword: "Then",
+            text: "the saved selected journey should be Quick",
           },
           {
             id: "line-11",
             keyword: "And",
+            text: "all populated full-modeller plans and saved comparisons retain their original values",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-13",
+        keyword: "Scenario",
+        name: "Start with usable public assumptions and derive prospective ages",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-14",
+            keyword: "Given",
+            text: "a fresh quick calculator on 24 September 2026",
+          },
+          {
+            id: "line-15",
+            keyword: "Then",
+            text: "its birth date is unanswered",
+          },
+          {
+            id: "line-16",
+            keyword: "And",
+            text: "its starting Alpha pension is 0 pounds and earnings are 40000 pounds",
+          },
+          {
+            id: "line-17",
+            keyword: "And",
             text: "its starting selected age is 57 and reduced-hours age is 55",
           },
           {
-            id: "line-12",
+            id: "line-18",
             keyword: "When",
             text: "the member enters a birth date of 1 June 1960",
           },
           {
-            id: "line-13",
+            id: "line-19",
             keyword: "Then",
             text: "untouched quick ages both move to 66.5",
           },
@@ -15334,7 +15413,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-15",
+        id: "line-21",
         keyword: "Scenario",
         name: "Compare the same assumptions at two retirement ages",
         description: "",
@@ -15343,27 +15422,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-16",
+            id: "line-22",
             keyword: "Given",
             text: "valid Alpha statement and earnings inputs in the quick calculator",
           },
           {
-            id: "line-17",
+            id: "line-23",
             keyword: "When",
             text: "the member selects a supported retirement age before normal pension age",
           },
           {
-            id: "line-18",
+            id: "line-24",
             keyword: "Then",
             text: "estimates are available for both retirement ages",
           },
           {
-            id: "line-19",
+            id: "line-25",
             keyword: "And",
             text: "each age has standard, added-pension, reduced-hours and combined variants",
           },
           {
-            id: "line-20",
+            id: "line-26",
             keyword: "And",
             text: "the amounts are labelled annual, before tax and in today's money",
           },
@@ -15371,7 +15450,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-22",
+        id: "line-28",
         keyword: "Scenario",
         name: "Keep full-modeller plans separate",
         description: "",
@@ -15380,17 +15459,17 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-23",
+            id: "line-29",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-24",
+            id: "line-30",
             keyword: "When",
             text: "quick-calculator inputs are saved and the quick calculator storage is reset",
           },
           {
-            id: "line-25",
+            id: "line-31",
             keyword: "Then",
             text: "all populated full-modeller plans and saved comparisons retain their original values",
           },
@@ -15398,7 +15477,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-27",
+        id: "line-33",
         keyword: "Scenario",
         name: "Apply working percentage to monthly Added Pension",
         description: "",
@@ -15407,27 +15486,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-28",
+            id: "line-34",
             keyword: "Given",
             text: "monthly Added Pension payments of 200 pounds",
           },
           {
-            id: "line-29",
+            id: "line-35",
             keyword: "And",
             text: "working hours reduce to 50 percent before retirement",
           },
           {
-            id: "line-30",
+            id: "line-36",
             keyword: "When",
             text: "the combined quick-calculator variant is calculated",
           },
           {
-            id: "line-31",
+            id: "line-37",
             keyword: "Then",
             text: "its regular Added Pension payment after that date is 100 pounds",
           },
           {
-            id: "line-32",
+            id: "line-38",
             keyword: "And",
             text: "the result explains that reduced payment assumption",
           },
@@ -15435,7 +15514,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-34",
+        id: "line-40",
         keyword: "Scenario",
         name: "Explain Added Pension payments outside model coverage",
         description: "",
@@ -15444,22 +15523,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-35",
+            id: "line-41",
             keyword: "Given",
             text: "quick Added Pension inputs whose supported purchase window has ended",
           },
           {
-            id: "line-36",
+            id: "line-42",
             keyword: "When",
             text: "the quick comparisons are calculated on 23 September 2026",
           },
           {
-            id: "line-37",
+            id: "line-43",
             keyword: "Then",
             text: "the selected Added Pension estimate retains the canonical amount",
           },
           {
-            id: "line-38",
+            id: "line-44",
             keyword: "And",
             text: "the selected Added Pension estimate explains the model coverage limitation",
           },
@@ -15467,7 +15546,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-40",
+        id: "line-46",
         keyword: "Scenario",
         name: "Keep State Pension out of income before its start",
         description: "",
@@ -15476,22 +15555,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-41",
+            id: "line-47",
             keyword: "Given",
             text: "Alpha starts before the member's State Pension date",
           },
           {
-            id: "line-42",
+            id: "line-48",
             keyword: "When",
             text: "the quick estimates are displayed",
           },
           {
-            id: "line-43",
+            id: "line-49",
             keyword: "Then",
             text: "the Alpha-only amount is distinguished from the later combined amount",
           },
           {
-            id: "line-44",
+            id: "line-50",
             keyword: "And",
             text: "the combined amount states its actual start date",
           },
@@ -15499,7 +15578,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-46",
+        id: "line-52",
         keyword: "Scenario",
         name: "Retain the exact derived State Pension date",
         description: "",
@@ -15508,22 +15587,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-47",
+            id: "line-53",
             keyword: "Given",
             text: "quick inputs for a member born on 1 May 1977",
           },
           {
-            id: "line-48",
+            id: "line-54",
             keyword: "When",
             text: "the quick comparisons are calculated with the derived State Pension date",
           },
           {
-            id: "line-49",
+            id: "line-55",
             keyword: "Then",
             text: "the quick base uses the exact State Pension date 2044-05-06",
           },
           {
-            id: "line-50",
+            id: "line-56",
             keyword: "And",
             text: "all quick scenarios retain the exact State Pension date 2044-05-06",
           },
@@ -15531,7 +15610,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-52",
+        id: "line-58",
         keyword: "Scenario",
         name: "Distinguish an unanswered amount from zero",
         description: "",
@@ -15540,27 +15619,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-53",
+            id: "line-59",
             keyword: "Given",
             text: "an unanswered accrued pension field",
           },
           {
-            id: "line-54",
+            id: "line-60",
             keyword: "Then",
             text: "no current pension estimate is presented as complete",
           },
           {
-            id: "line-55",
+            id: "line-61",
             keyword: "And",
             text: "the quick results ask for a valid annual Alpha pension",
           },
           {
-            id: "line-56",
+            id: "line-62",
             keyword: "When",
             text: "the member explicitly enters zero and completes the remaining inputs",
           },
           {
-            id: "line-57",
+            id: "line-63",
             keyword: "Then",
             text: "the zero accrued amount is used in the canonical calculation",
           },
@@ -15568,7 +15647,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-59",
+        id: "line-65",
         keyword: "Scenario",
         name: "Save an excluded State Pension while its amount is unfinished",
         description: "",
@@ -15577,32 +15656,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-60",
+            id: "line-66",
             keyword: "Given",
             text: "valid Alpha statement and earnings inputs in the quick calculator",
           },
           {
-            id: "line-61",
+            id: "line-67",
             keyword: "And",
             text: "an unfinished State Pension amount in the quick calculator",
           },
           {
-            id: "line-62",
+            id: "line-68",
             keyword: "When",
             text: "State Pension is excluded and the valid quick inputs are saved",
           },
           {
-            id: "line-63",
+            id: "line-69",
             keyword: "Then",
             text: "the quick calculator can estimate without State Pension",
           },
           {
-            id: "line-64",
+            id: "line-70",
             keyword: "And",
             text: "the saved quick inputs reload with State Pension excluded",
           },
           {
-            id: "line-65",
+            id: "line-71",
             keyword: "And",
             text: "the unfinished State Pension amount was not saved",
           },
@@ -15610,7 +15689,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-67",
+        id: "line-73",
         keyword: "Scenario",
         name: "Do not restore cleared quick-calculator data",
         description: "",
@@ -15619,27 +15698,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-68",
+            id: "line-74",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-69",
+            id: "line-75",
             keyword: "And",
             text: "retained quick results have been calculated from the stored quick inputs",
           },
           {
-            id: "line-70",
+            id: "line-76",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-71",
+            id: "line-77",
             keyword: "And",
             text: "saving is enabled and a valid post-clear quick snapshot is persisted",
           },
           {
-            id: "line-72",
+            id: "line-78",
             keyword: "Then",
             text: "cleared values and results do not return",
           },
@@ -15647,7 +15726,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-74",
+        id: "line-80",
         keyword: "Scenario",
         name: "Reject an incomplete enabled EPA schedule before normalisation",
         description: "",
@@ -15656,32 +15735,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-75",
+            id: "line-81",
             keyword: "Given",
             text: "valid quick inputs with an enabled EPA purchase period",
           },
           {
-            id: "line-76",
+            id: "line-82",
             keyword: "When",
             text: "the EPA period start date is cleared",
           },
           {
-            id: "line-77",
+            id: "line-83",
             keyword: "Then",
             text: "the raw EPA schedule is rejected with an actionable period error",
           },
           {
-            id: "line-78",
+            id: "line-84",
             keyword: "And",
             text: "no repaired quick-calculator estimate is produced",
           },
           {
-            id: "line-79",
+            id: "line-85",
             keyword: "When",
             text: "EPA is disabled and then re-enabled",
           },
           {
-            id: "line-80",
+            id: "line-86",
             keyword: "Then",
             text: "the raw EPA schedule error is restored",
           },
@@ -15689,7 +15768,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-82",
+        id: "line-88",
         keyword: "Scenario",
         name: "Keep future selected retirement available when normal retirement is past",
         description: "",
@@ -15698,22 +15777,22 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-83",
+            id: "line-89",
             keyword: "Given",
             text: "quick inputs for a member born in June 1959 with selected retirement at age 68",
           },
           {
-            id: "line-84",
+            id: "line-90",
             keyword: "When",
             text: "the quick comparisons are calculated on 22 September 2026",
           },
           {
-            id: "line-85",
+            id: "line-91",
             keyword: "Then",
             text: "normal-age variants are unavailable as past retirement",
           },
           {
-            id: "line-86",
+            id: "line-92",
             keyword: "And",
             text: "selected-age variants remain available",
           },

@@ -77,6 +77,7 @@ import {
   getStoredSettingsEnvelope,
   parseStoredSettingsByJourney,
   saveLocalStoragePreference,
+  isLocalStorageEnabled,
   saveSettingsByJourney,
   validateSettings,
   normalizeSettings,
@@ -3794,9 +3795,7 @@ When(
     this.analyticsConsentLoaded = loadAnalyticsConsentState();
     this.appModeLoaded = loadStoredAppMode();
     this.guidanceNotesLoaded = loadStoredGuidanceNotes();
-    this.localStorageEnabledLoaded =
-      loadStoredSettingsByJourney().settings.expert.desiredRetirementIncome !==
-      36000;
+    this.localStorageEnabledLoaded = isLocalStorageEnabled();
     this.storedScenarioCount = loadStoredComparisonScenarios().length;
   }
 );

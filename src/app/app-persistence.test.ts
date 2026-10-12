@@ -63,6 +63,8 @@ describe("app persistence", () => {
   it("round-trips a saved app mode and ignores invalid stored values", () => {
     saveStoredAppMode("expert");
     expect(loadStoredAppMode()).toBe("expert");
+    saveStoredAppMode("quick");
+    expect(loadStoredAppMode()).toBe("quick");
 
     window.localStorage.setItem(APP_MODE_STORAGE_KEY, "unexpected");
     expect(loadStoredAppMode()).toBeNull();

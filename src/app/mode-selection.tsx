@@ -32,9 +32,9 @@ export function ModeSelection({
           <span className="card-label">Quick journey</span>
           <strong>Quick modeller</strong>
           <span>
-            Compare Alpha pension estimates at two retirement ages using your
-            statement figures. Explore Added Pension and reduced working hours,
-            with optional State Pension and EPA assumptions.
+            The original pension calculator, kept for those who prefer a simpler
+            approach. Enter a few figures, explore your options and get a quick
+            estimate of your retirement pension.
           </span>
         </button>
         <button

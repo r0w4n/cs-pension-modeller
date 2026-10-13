@@ -17,6 +17,9 @@ describe("mode-selection", () => {
     const cards = screen.getAllByRole("button");
     expect(cards).toHaveLength(4);
     expect(cards[0]).toHaveTextContent("Quick journey");
+    expect(cards[0]).toHaveTextContent(
+      "The original pension calculator, kept for those who prefer a simpler approach. Enter a few figures, explore your options and get a quick estimate of your retirement pension."
+    );
     expect(cards[1]).toHaveTextContent("Simple journey");
     expect(cards[0]).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(cards[0]);

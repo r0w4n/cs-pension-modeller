@@ -1106,6 +1106,125 @@ test.describe("app end-to-end journeys", () => {
     await expect(sippDrawStartAge).toHaveValue("67.25");
   });
 
+  test("expert State Pension CPI changes gross income and survives reload", async ({
+    page,
+  }, testInfo) => {
+    await page.clock.setFixedTime(new Date("2026-11-04T12:00:00Z"));
+    await acknowledgeAndOpenMode(page, "expert");
+    for (const name of ["Alpha", "SIPP", "ISA"]) {
+      await page.getByRole("checkbox", { name, exact: true }).uncheck();
+    }
+    await page.getByRole("button", { name: /Personal details/i }).click();
+    await page.getByLabel("Your Birth Month and Year month").selectOption("12");
+    await page
+      .getByLabel("Your Birth Month and Year year")
+      .selectOption("1961");
+    await page
+      .getByRole("button", { name: /Inflation and projection basis/i })
+      .click();
+    await page
+      .getByRole("combobox", {
+        name: "How should the modeller treat inflation?",
+      })
+      .selectOption("nominal");
+    await page.getByRole("button", { name: /State Pension details/i }).click();
+    await fillCurrency(page, "State Pension forecast (£ per year)", "10000");
+    await page
+      .getByRole("checkbox", { name: "Project State Pension future growth" })
+      .check();
+
+    for (const example of [
+      { cpi: "0", growth: "2.5%", monthly: "£875.52" },
+      { cpi: "3", growth: "3%", monthly: "£884.08" },
+      { cpi: "10", growth: "10%", monthly: "£1,008.33" },
+    ]) {
+      await fillExactNumber(
+        page,
+        "State Pension CPI assumption (%) exact value",
+        example.cpi
+      );
+      await page.getByRole("button", { name: /Your results/i }).click();
+      await renderDeferredComparisonContent(page);
+      const growthRow = page
+        .getByRole("row")
+        .filter({ hasText: "State Pension increase" });
+      await expect(growthRow.getByRole("cell").nth(0)).toHaveText(
+        example.growth
+      );
+      await expect(growthRow.getByRole("cell").nth(1)).toHaveText(
+        example.growth
+      );
+      if (!testInfo.project.name.startsWith("mobile")) {
+        const drawRow = page.getByRole("row", {
+          name: /Starts Drawing State Pension/,
+        });
+        await expect(drawRow.getByRole("cell").nth(5)).toHaveText(
+          example.monthly
+        );
+      }
+      await page
+        .getByRole("button", { name: /State Pension details/i })
+        .click();
+    }
+
+    await expect
+      .poll(() => readLocalStorageItem(page, "cs-pension-modeller.settings"))
+      .toContain('"statePensionCpiPercent":10');
+    await page.reload();
+    await page.getByRole("button", { name: /State Pension details/i }).click();
+    await expect(
+      page.getByRole("spinbutton", {
+        name: "State Pension CPI assumption (%) exact value",
+      })
+    ).toHaveValue("10");
+    await page.getByRole("button", { name: /Your results/i }).click();
+    await renderDeferredComparisonContent(page);
+    await expect(
+      page.getByRole("row").filter({ hasText: "State Pension increase" })
+    ).toContainText("10%");
+    if (!testInfo.project.name.startsWith("mobile")) {
+      const drawRow = page.getByRole("row", {
+        name: /Starts Drawing State Pension/,
+      });
+      await expect(drawRow.getByRole("cell").nth(5)).toHaveText("£1,008.33");
+      await drawRow.scrollIntoViewIfNeeded();
+      const evidencePath = testInfo.outputPath(
+        "state-pension-cpi-after-reload.png"
+      );
+      await page.screenshot({ path: evidencePath });
+      await testInfo.attach("State Pension CPI 10 percent after reload", {
+        path: evidencePath,
+        contentType: "image/png",
+      });
+    }
+
+    await page.getByRole("button", { name: /State Pension details/i }).click();
+    await page
+      .getByRole("checkbox", { name: "Project State Pension future growth" })
+      .uncheck();
+    const disabledCpi = page.getByRole("spinbutton", {
+      name: "State Pension CPI assumption (%) exact value",
+    });
+    if (testInfo.project.name.startsWith("mobile")) {
+      await expect(disabledCpi).toHaveCount(0);
+    } else {
+      await expect(disabledCpi).toBeDisabled();
+    }
+    await page.getByRole("button", { name: /Your results/i }).click();
+    await renderDeferredComparisonContent(page);
+    await expect(
+      page.getByRole("row").filter({ hasText: "State Pension increase" })
+    ).toContainText("Not applied");
+    if (!testInfo.project.name.startsWith("mobile")) {
+      await expect(
+        page
+          .getByRole("row", { name: /Starts Drawing State Pension/ })
+          .getByRole("cell")
+          .nth(5)
+      ).toHaveText("£833.33");
+    }
+  });
+
   test("expert mode persists the Scottish Income Tax regime and shows its relevant assumptions", async ({
     page,
   }) => {

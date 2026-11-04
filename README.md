@@ -183,6 +183,15 @@ Some important assumptions and simplifications are:
   each person&apos;s unconfirmed amount, and the result identifies whether the
   assumption belongs to You, Partner, or both.
 - New State Pension deferral uses the post-2016 rule modelled by the app.
+- Optional State Pension growth uses the highest of its separate CPI assumption,
+  its wage-growth assumption and 2.5%, before and after the selected draw date.
+  Main inflation converts this growth to today's money in real-terms mode.
+  This corrects earlier versions that ignored the State Pension CPI input and
+  used main inflation instead. Existing saved input values are retained; plans
+  with growth enabled may produce different estimates where those assumptions
+  differ. No settings-schema change is needed because the CPI field is already
+  stored. See the [published uprating rule](https://www.gov.uk/new-state-pension/what-youll-get);
+  future uprating policy remains uncertain.
 - ISA, LISA and SIPP projections depend directly on entered balances,
   contributions, lump sums, growth assumptions, draw ages, and withdrawal
   strategy. SIPP tax relief grosses up the entered net cost; the higher-rate

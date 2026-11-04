@@ -82,6 +82,33 @@ describe("settings-storage", () => {
     expect(loaded.startDate).toBe("2026-04-25");
   });
 
+  it.each([0, 3, 10])(
+    "retains a saved and imported State Pension CPI of %s independently of main inflation",
+    (statePensionCpiPercent) => {
+      const settings = {
+        ...createDefaultSettings(),
+        statePensionApplyFutureGrowth: true,
+        statePensionCpiPercent,
+        inflationRateAnnual: 5,
+      };
+
+      expect(saveSettings(settings)).toBe(true);
+      const loaded = loadStoredSettings();
+      const imported = parseStoredSettingsByJourney(
+        JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "null")
+      );
+
+      expect(loaded.statePensionCpiPercent).toBe(statePensionCpiPercent);
+      expect(loaded.inflationRateAnnual).toBe(5);
+      expect(imported?.settings.expert.statePensionCpiPercent).toBe(
+        statePensionCpiPercent
+      );
+      expect(imported?.settings.expert.statePensionApplyFutureGrowth).toBe(
+        true
+      );
+    }
+  );
+
   it("persists target-based withdrawal strategies and account priority", () => {
     const settings = {
       ...createDefaultSettings(),

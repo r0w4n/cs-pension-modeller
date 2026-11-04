@@ -8,6 +8,63 @@ import {
 import { defaultSettings } from "../settings";
 
 describe("projection state pension domain", () => {
+  it.each([
+    { cpi: 3, wages: 0, inflation: 2.5, annual: 10609 },
+    { cpi: 10, wages: 0, inflation: 2.5, annual: 12100 },
+    { cpi: 0, wages: 4, inflation: 2.5, annual: 10816 },
+    { cpi: 0, wages: 0, inflation: 5, annual: 10506.25 },
+    { cpi: 3, wages: 0, inflation: 5, annual: 10609 },
+  ])(
+    "uses CPI $cpi%, wages $wages% and the floor independently of main inflation $inflation%",
+    ({ cpi, wages, inflation, annual }) => {
+      expect(
+        calculateAnnualStatePensionAtDraw({
+          ...defaultSettings,
+          dateOfBirth: "1961-12-01",
+          startDate: "2026-12-01",
+          statePensionDrawDate: "2028-12-01",
+          projectionBasis: "nominal",
+          currentStatePension: 10000,
+          statePensionApplyFutureGrowth: true,
+          statePensionCpiPercent: cpi,
+          statePensionWageGrowthPercent: wages,
+          inflationRateAnnual: inflation,
+        })
+      ).toBeCloseTo(annual, 6);
+    }
+  );
+
+  it("deflates CPI-driven growth using main inflation and continues it after draw", () => {
+    const settings = {
+      ...defaultSettings,
+      dateOfBirth: "1961-12-01",
+      startDate: "2026-12-01",
+      statePensionDrawDate: "2028-12-01",
+      currentStatePension: 10000,
+      statePensionApplyFutureGrowth: true,
+      statePensionCpiPercent: 3,
+      statePensionWageGrowthPercent: 0,
+      inflationRateAnnual: 2.5,
+    };
+
+    expect(calculateAnnualStatePensionAtDraw(settings)).toBeCloseTo(
+      10097.7989292088,
+      6
+    );
+    expect(
+      calculateAnnualStatePensionAtDate(
+        { ...settings, projectionBasis: "nominal" },
+        "2029-12-01"
+      )
+    ).toBeCloseTo(10927.27, 6);
+    expect(
+      calculateAnnualStatePensionAtDate(
+        { ...settings, showStatePension: false },
+        "2029-12-01"
+      )
+    ).toBe(0);
+  });
+
   it("starts state pension from the configured state pension date", () => {
     expect(
       calculateMonthlyStatePension("2055-06-14", "2055-06-15", 11500)

@@ -17354,6 +17354,257 @@ export const acceptanceFeatures = [
       },
       {
         id: "line-40",
+        keyword: "Scenario Outline",
+        name: "Keep the State Pension CPI assumption separate from main inflation",
+        description: "",
+        tags: ["@growth", "@triple-lock", "@cpi"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-41",
+            keyword: "Given",
+            text: "the member date of birth is 1961-12-01",
+          },
+          {
+            id: "line-42",
+            keyword: "And",
+            text: "the State Pension forecast is 10000.00 per year",
+          },
+          {
+            id: "line-43",
+            keyword: "And",
+            text: "the modelling start date is 2026-12-01",
+          },
+          {
+            id: "line-44",
+            keyword: "And",
+            text: "the State Pension start date is 2028-12-01",
+          },
+          {
+            id: "line-45",
+            keyword: "And",
+            text: 'the State Pension projection basis is "<basis>"',
+          },
+          {
+            id: "line-46",
+            keyword: "And",
+            text: "the long-term inflation assumption is <inflation>%",
+          },
+          {
+            id: "line-47",
+            keyword: "And",
+            text: "State Pension CPI growth is <cpi>%",
+          },
+          {
+            id: "line-48",
+            keyword: "And",
+            text: "State Pension earnings growth is <wages>%",
+          },
+          {
+            id: "line-49",
+            keyword: "And",
+            text: "future State Pension growth is on",
+          },
+          {
+            id: "line-50",
+            keyword: "When",
+            text: "the State Pension at the chosen start date is calculated",
+          },
+          {
+            id: "line-51",
+            keyword: "Then",
+            text: "the annual State Pension at the chosen start date should be <annualPension>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-53",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-54",
+                cells: [
+                  {
+                    id: "line-54-column-9",
+                    value: "basis",
+                  },
+                  {
+                    id: "line-54-column-19",
+                    value: "inflation",
+                  },
+                  {
+                    id: "line-54-column-31",
+                    value: "cpi",
+                  },
+                  {
+                    id: "line-54-column-39",
+                    value: "wages",
+                  },
+                  {
+                    id: "line-54-column-47",
+                    value: "annualPension",
+                  },
+                ],
+              },
+              {
+                id: "line-55",
+                cells: [
+                  {
+                    id: "line-55-column-9",
+                    value: "nominal",
+                  },
+                  {
+                    id: "line-55-column-19",
+                    value: "2.50",
+                  },
+                  {
+                    id: "line-55-column-31",
+                    value: "3.00",
+                  },
+                  {
+                    id: "line-55-column-39",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-55-column-47",
+                    value: "10609.00",
+                  },
+                ],
+              },
+              {
+                id: "line-56",
+                cells: [
+                  {
+                    id: "line-56-column-9",
+                    value: "nominal",
+                  },
+                  {
+                    id: "line-56-column-19",
+                    value: "2.50",
+                  },
+                  {
+                    id: "line-56-column-31",
+                    value: "10.00",
+                  },
+                  {
+                    id: "line-56-column-39",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-56-column-47",
+                    value: "12100.00",
+                  },
+                ],
+              },
+              {
+                id: "line-57",
+                cells: [
+                  {
+                    id: "line-57-column-9",
+                    value: "nominal",
+                  },
+                  {
+                    id: "line-57-column-19",
+                    value: "5.00",
+                  },
+                  {
+                    id: "line-57-column-31",
+                    value: "3.00",
+                  },
+                  {
+                    id: "line-57-column-39",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-57-column-47",
+                    value: "10609.00",
+                  },
+                ],
+              },
+              {
+                id: "line-58",
+                cells: [
+                  {
+                    id: "line-58-column-9",
+                    value: "nominal",
+                  },
+                  {
+                    id: "line-58-column-19",
+                    value: "5.00",
+                  },
+                  {
+                    id: "line-58-column-31",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-58-column-39",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-58-column-47",
+                    value: "10506.25",
+                  },
+                ],
+              },
+              {
+                id: "line-59",
+                cells: [
+                  {
+                    id: "line-59-column-9",
+                    value: "real",
+                  },
+                  {
+                    id: "line-59-column-19",
+                    value: "2.50",
+                  },
+                  {
+                    id: "line-59-column-31",
+                    value: "3.00",
+                  },
+                  {
+                    id: "line-59-column-39",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-59-column-47",
+                    value: "10097.80",
+                  },
+                ],
+              },
+              {
+                id: "line-60",
+                cells: [
+                  {
+                    id: "line-60-column-9",
+                    value: "real",
+                  },
+                  {
+                    id: "line-60-column-19",
+                    value: "2.50",
+                  },
+                  {
+                    id: "line-60-column-31",
+                    value: "2.50",
+                  },
+                  {
+                    id: "line-60-column-39",
+                    value: "0.00",
+                  },
+                  {
+                    id: "line-60-column-47",
+                    value: "10000.00",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-63",
         keyword: "Scenario",
         name: "Add State Pension deferral uplift when the user starts later",
         description: "",
@@ -17362,37 +17613,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-41",
+            id: "line-64",
             keyword: "Given",
             text: "the member date of birth is 1987-06-15",
           },
           {
-            id: "line-42",
+            id: "line-65",
             keyword: "And",
             text: "the State Pension forecast is 12000.00 per year",
           },
           {
-            id: "line-43",
+            id: "line-66",
             keyword: "And",
             text: "the State Pension start date is 2056-06-14",
           },
           {
-            id: "line-44",
+            id: "line-67",
             keyword: "And",
             text: "future State Pension growth is off",
           },
           {
-            id: "line-45",
+            id: "line-68",
             keyword: "When",
             text: "the State Pension at the chosen start date is calculated",
           },
           {
-            id: "line-46",
+            id: "line-69",
             keyword: "Then",
             text: "the State Pension deferral uplift should be 5.78%",
           },
           {
-            id: "line-47",
+            id: "line-70",
             keyword: "And",
             text: "the annual State Pension at the chosen start date should be 12693.33",
           },
@@ -17400,7 +17651,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-50",
+        id: "line-73",
         keyword: "Scenario",
         name: "Pay State Pension only from the selected start date",
         description: "",
@@ -17409,27 +17660,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-51",
+            id: "line-74",
             keyword: "Given",
             text: "the State Pension forecast is 11500.00 per year",
           },
           {
-            id: "line-52",
+            id: "line-75",
             keyword: "And",
             text: "the State Pension start date is 2055-06-15",
           },
           {
-            id: "line-53",
+            id: "line-76",
             keyword: "When",
             text: "the model checks State Pension income around the start date",
           },
           {
-            id: "line-54",
+            id: "line-77",
             keyword: "Then",
             text: "the monthly State Pension before the start date should be 0.00",
           },
           {
-            id: "line-55",
+            id: "line-78",
             keyword: "And",
             text: "the monthly State Pension from the start date should be 958.33",
           },

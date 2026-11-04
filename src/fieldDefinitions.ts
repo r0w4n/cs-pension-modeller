@@ -412,7 +412,7 @@ export const fieldGroups: FieldGroup[] = [
         label: "Project State Pension future growth",
         type: "checkbox",
         description:
-          "Uprate the current forecast each year until State Pension age using the highest of the inflation assumption, wage growth, and 2.5%. The start date controls when income begins; this controls whether the current forecast is projected forward before then.",
+          "Uprate the current forecast before and after the selected start date using the highest of the State Pension CPI assumption, State Pension wage growth, and 2.5%. These are planning assumptions, not guaranteed future increases. The main inflation assumption converts the growth into today's money in real-terms mode.",
         infoUrl: knowledgeLinks.statePensionTripleLock,
         infoLinkText: "What is the triple lock?",
       },
@@ -424,7 +424,7 @@ export const fieldGroups: FieldGroup[] = [
         max: 10,
         step: 0.1,
         description:
-          "The inflation leg of the triple-lock style growth test. The modeller compares this with wage growth and 2.5% when future growth is enabled.",
+          "The CPI leg of the triple-lock style growth test. The modeller compares this with State Pension wage growth and 2.5% when future growth is enabled. This is separate from the main inflation assumption used to express results in today's money.",
       },
       {
         id: "statePensionWageGrowthPercent",
@@ -434,7 +434,7 @@ export const fieldGroups: FieldGroup[] = [
         max: 10,
         step: 0.1,
         description:
-          "The earnings-growth leg of the triple-lock style growth test. Set this to your long-term wage-growth assumption if projecting the forecast before State Pension age.",
+          "The earnings-growth leg of the triple-lock style growth test. Set this to your long-term wage-growth assumption when projecting the forecast before and after the selected State Pension start date.",
       },
     ],
   },

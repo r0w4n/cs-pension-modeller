@@ -4,6 +4,8 @@ import {
 } from "../settings";
 import { getModelledAnnualGrowthRate } from "./inflation";
 
+const STATE_PENSION_MINIMUM_INCREASE_PERCENT = 2.5;
+
 export function calculateMonthlyStatePension(
   rowDate: string,
   statePensionStartDate: string,
@@ -80,9 +82,9 @@ export function calculateStatePensionDeferralIncreasePercent(
 export function getStatePensionNominalIncreaseRate(settings: PensionSettings) {
   return (
     Math.max(
-      settings.inflationRateAnnual,
+      settings.statePensionCpiPercent,
       settings.statePensionWageGrowthPercent,
-      2.5
+      STATE_PENSION_MINIMUM_INCREASE_PERCENT
     ) / 100
   );
 }

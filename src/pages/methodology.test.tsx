@@ -251,9 +251,17 @@ describe("MethodologyPage", () => {
       "Each account then follows its configured access age and withdrawal strategy"
     );
     expect(
-      screen.getByText(/highest of the main inflation assumption/)
+      screen.getByText(/highest of the State Pension CPI assumption/)
     ).toHaveTextContent(
-      "the main inflation assumption, the State Pension wage-growth assumption, and 2.5%"
+      "the State Pension CPI assumption, the State Pension wage-growth assumption, and 2.5%"
+    );
+    expect(
+      screen.getByText(/highest of the State Pension CPI assumption/)
+    ).toHaveTextContent(
+      "the main inflation assumption converts this nominal increase back into today's spending power"
+    );
+    expect(screen.getByText(/Calculation correction:/)).toHaveTextContent(
+      "Saved plans now use their entered State Pension CPI value"
     );
     expect(
       screen.getByRole("heading", { name: "Scenario comparison methodology" })

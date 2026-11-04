@@ -36,6 +36,29 @@ Feature: State Pension modelling
     When the State Pension at the chosen start date is calculated
     Then the annual State Pension at the chosen start date should be 10000.00
 
+  @growth @triple-lock @cpi
+  Scenario Outline: Keep the State Pension CPI assumption separate from main inflation
+    Given the member date of birth is 1961-12-01
+    And the State Pension forecast is 10000.00 per year
+    And the modelling start date is 2026-12-01
+    And the State Pension start date is 2028-12-01
+    And the State Pension projection basis is "<basis>"
+    And the long-term inflation assumption is <inflation>%
+    And State Pension CPI growth is <cpi>%
+    And State Pension earnings growth is <wages>%
+    And future State Pension growth is on
+    When the State Pension at the chosen start date is calculated
+    Then the annual State Pension at the chosen start date should be <annualPension>
+
+    Examples:
+      | basis   | inflation | cpi   | wages | annualPension |
+      | nominal | 2.50      | 3.00  | 0.00  | 10609.00      |
+      | nominal | 2.50      | 10.00 | 0.00  | 12100.00      |
+      | nominal | 5.00      | 3.00  | 0.00  | 10609.00      |
+      | nominal | 5.00      | 0.00  | 0.00  | 10506.25      |
+      | real    | 2.50      | 3.00  | 0.00  | 10097.80      |
+      | real    | 2.50      | 2.50  | 0.00  | 10000.00      |
+
   @deferral
   Scenario: Add State Pension deferral uplift when the user starts later
     Given the member date of birth is 1987-06-15

@@ -937,10 +937,20 @@ export function MethodologyPage() {
         <p className="section-copy">
           The model can also apply future State Pension growth assumptions,
           depending on the selected settings. When future growth is enabled, the
-          base forecast is uprated using the highest of the main inflation
-          assumption, the State Pension wage-growth assumption, and 2.5%. In
-          real-terms mode this nominal increase is converted back into
-          today&apos;s spending power.
+          base forecast is uprated using the highest of the State Pension CPI
+          assumption, the State Pension wage-growth assumption, and 2.5%. These
+          are planning assumptions, not guaranteed future increases. In
+          real-terms mode the main inflation assumption converts this nominal
+          increase back into today&apos;s spending power. When CPI and main
+          inflation are both 2.5% and wage growth is no higher, the base pension
+          stays flat in real terms.
+        </p>
+        <p className="section-copy">
+          Calculation correction: earlier versions used the main inflation
+          assumption in place of the separate State Pension CPI input. Saved
+          plans now use their entered State Pension CPI value, so projections
+          with future growth enabled may change where the two assumptions
+          differ. Saved input values are retained.
         </p>
         <p className="section-copy">
           The deferred uplift component is calculated at the draw date. After

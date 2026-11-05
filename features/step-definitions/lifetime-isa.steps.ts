@@ -23,6 +23,7 @@ import {
 } from "../../src/settings";
 
 type LisaWorld = {
+  allowancePlan?: ReturnType<typeof calculateRetirementPlan>;
   settings?: PensionSettings;
   precision?: number;
   acceptedAdditions?: number;
@@ -167,6 +168,64 @@ function setMemberAge(world: LisaWorld, age: number) {
 Given("a default LISA modelling scenario", function (this: LisaWorld) {
   this.settings = createLisaScenario();
 });
+
+Given(
+  "a future LISA contribution of {float} on {string} for a holder born on {string}",
+  function (this: LisaWorld, amount: number, date: string, birthday: string) {
+    updateSettings(this, {
+      dateOfBirth: birthday,
+      lisaCurrentPot: 0,
+      lisaMonthlyContribution: 0,
+      lisaLumpSums: [createLumpSum(amount, date)],
+    });
+  }
+);
+
+Given(
+  "the LISA projection is in {string} terms with {float}% inflation and {float}% investment return",
+  function (
+    this: LisaWorld,
+    basis: string,
+    inflation: number,
+    investmentReturn: number
+  ) {
+    assertCondition(basis === "real" || basis === "nominal");
+    updateSettings(this, {
+      projectionBasis: basis,
+      inflationRateAnnual: inflation,
+      lisaRealInterestPercent: investmentReturn,
+    });
+  }
+);
+
+When(
+  "the canonical LISA allowance plan is calculated",
+  function (this: LisaWorld) {
+    this.allowancePlan = calculateRetirementPlan(getSettings(this), {
+      includeTargetBasedWithdrawalPreviews: false,
+    });
+    assertEqual(this.allowancePlan.validationIssues.length, 0);
+  }
+);
+
+Then(
+  "the projected LISA addition on {string} should be {float}",
+  function (this: LisaWorld, date: string, expected: number) {
+    const row = this.allowancePlan?.rows.find((row) => row.date === date);
+    expectMoney(row?.lisaPot, expected, this.precision);
+  }
+);
+
+Then(
+  "total LISA contributions including bonuses should be {float}",
+  function (this: LisaWorld, expected: number) {
+    expectMoney(
+      this.allowancePlan?.summary.lisaPension.totalContributionsWithBonus,
+      expected,
+      this.precision
+    );
+  }
+);
 
 Given(
   "LISA outputs are rounded to {int} decimal places",

@@ -281,6 +281,12 @@ describe("MethodologyPage", () => {
       screen.getByText(/Regular LISA saving and scheduled lump sums/)
     ).toHaveTextContent("modeller convention for regular saving");
     expect(
+      screen.getByText(/Regular LISA saving and scheduled lump sums/)
+    ).toHaveTextContent("holds this cash limit fixed in future years");
+    expect(
+      screen.getByText(/Regular LISA saving and scheduled lump sums/)
+    ).toHaveTextContent("maximum bonus is £1,000 in cash per tax year");
+    expect(
       screen.getByText(/Known simplification: the retirement LISA projection/)
     ).toHaveTextContent("terminal-illness withdrawals");
     expect(

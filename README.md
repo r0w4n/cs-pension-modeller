@@ -212,6 +212,17 @@ Some important assumptions and simplifications are:
   ISA annual allowance, receive the modelled government bonus on eligible
   additions, stop at age 50, and are modelled for retirement withdrawals from
   age 60.
+- The model holds the [published LISA allowance](https://www.gov.uk/lifetime-isa)
+  of £4,000 and maximum annual bonus of £1,000 fixed in cash pounds throughout
+  the projection (GOV.UK overview, checked 5 November 2026). Future policy may
+  change. Real-terms contributions are converted to cash pounds when consuming
+  the shared tax-year allowance, and accepted contributions plus bonuses are
+  converted back to today's money. Excess contributions are excluded from the
+  LISA projection. This corrects earlier real-terms projections that effectively
+  increased the cash allowance with inflation. Saved input values are retained
+  without a schema change; affected balances and retirement income estimates
+  may be lower. Contribution totals use the same payment order as the balance
+  projection and exclude the starting balance and investment returns.
 - Income Tax is enabled for new plans by default and uses the selected 2026/27
   regime throughout the projection. The retirement income target represents
   money available to spend after estimated Income Tax, so it is compared with

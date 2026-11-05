@@ -12,6 +12,7 @@ import {
   calculateFlexibleFundProjectionAtDate,
   calculateFlexibleFundProjectionRows,
 } from "./flexible-fund-forward-projection";
+import { getProjectionBasisToNominalFactor } from "./tax";
 
 type LisaTaxYearContributionTracker = Map<string, number>;
 
@@ -79,40 +80,25 @@ export function calculateTotalLisaContributionsWithBonus(
     return 0;
   }
 
-  const taxYearContributions: LisaTaxYearContributionTracker = new Map();
-  let totalContributions = 0;
-
-  for (
-    let monthIndex = 0;
-    addMonths(settings.startDate, monthIndex) < contributionStopDate;
-    monthIndex += 1
-  ) {
-    const contributionDate = addMonths(settings.startDate, monthIndex);
-    totalContributions += calculateLisaContributionWithBonus({
-      amount:
-        settings.lisaMonthlyContribution *
-        getPartialRetirementSavingsContributionMultiplier(
-          settings,
-          contributionDate
-        ),
-      contributionDate,
-      taxYearContributions,
-    });
-  }
-
-  settings.lisaLumpSums.forEach((lumpSum) => {
-    getScheduledPaymentDates(lumpSum)
-      .filter((paymentDate) => paymentDate < contributionStopDate)
-      .forEach((paymentDate) => {
-        totalContributions += calculateLisaContributionWithBonus({
-          amount: lumpSum.amount,
-          contributionDate: paymentDate,
-          taxYearContributions,
-        });
-      });
-  });
-
-  return totalContributions;
+  // Reuse the production payment timeline so regular payments and lump sums
+  // consume the cash allowance in the same order as the projected balance.
+  // Start empty and neutralise investment growth; before the first withdrawal,
+  // this balance is the sum of accepted contributions and bonuses only.
+  return calculatePotProjectionAtDate({
+    settings,
+    rowDate: contributionStopDate,
+    drawDate,
+    endDate: drawDate,
+    showPot: true,
+    currentPot: 0,
+    monthlyContribution: settings.lisaMonthlyContribution,
+    lumpSums: settings.lisaLumpSums,
+    realInterestPercent:
+      settings.projectionBasis === "real" ? settings.inflationRateAnnual : 0,
+    withdrawalStrategy: settings.lisaWithdrawalStrategy,
+    withdrawalPercent: settings.lisaWithdrawalPercent,
+    withdrawalTargetAge: settings.lisaWithdrawalTargetAge,
+  }).potBeforeWithdrawal;
 }
 
 export function calculateLisaProjectionRow(input: {
@@ -186,6 +172,7 @@ function calculatePotProjectionAtDate(input: {
     ),
     calculateRegularContributionWithAdditions: ({ amount, contributionDate }) =>
       calculateLisaContributionWithBonus({
+        settings: input.settings,
         amount:
           amount *
           getPartialRetirementSavingsContributionMultiplier(
@@ -197,6 +184,7 @@ function calculatePotProjectionAtDate(input: {
       }),
     calculateLumpSumContributionWithAdditions: ({ amount, contributionDate }) =>
       calculateLisaContributionWithBonus({
+        settings: input.settings,
         amount,
         contributionDate,
         taxYearContributions,
@@ -205,6 +193,7 @@ function calculatePotProjectionAtDate(input: {
 }
 
 function calculateLisaContributionWithBonus(input: {
+  settings: PensionSettings;
   amount: number;
   contributionDate: string;
   taxYearContributions: LisaTaxYearContributionTracker;
@@ -216,18 +205,27 @@ function calculateLisaContributionWithBonus(input: {
   }
 
   const taxYear = getUkTaxYear(contributionDate);
-  const contributedThisTaxYear = taxYearContributions.get(taxYear) ?? 0;
-  const eligibleContribution = Math.min(
-    amount,
-    Math.max(0, LISA_ANNUAL_ALLOWANCE - contributedThisTaxYear)
+  const basisConversionFactor = getProjectionBasisToNominalFactor(
+    input.settings,
+    contributionDate
+  );
+  // The statutory allowance is fixed in cash pounds, including in real-terms
+  // projections. Regular payments and lump sums consume the same cash ledger.
+  const contributedThisTaxYearNominal = taxYearContributions.get(taxYear) ?? 0;
+  const eligibleContributionNominal = Math.min(
+    amount * basisConversionFactor,
+    Math.max(0, LISA_ANNUAL_ALLOWANCE - contributedThisTaxYearNominal)
   );
 
   taxYearContributions.set(
     taxYear,
-    contributedThisTaxYear + eligibleContribution
+    contributedThisTaxYearNominal + eligibleContributionNominal
   );
 
-  return eligibleContribution * (1 + LISA_GOVERNMENT_BONUS_RATE);
+  return (
+    (eligibleContributionNominal * (1 + LISA_GOVERNMENT_BONUS_RATE)) /
+    basisConversionFactor
+  );
 }
 
 function getLisaContributionStopDate(
@@ -241,23 +239,6 @@ function getLisaContributionStopDate(
     ),
     addYears(settings.dateOfBirth, LISA_CONTRIBUTION_STOP_AGE)
   );
-}
-
-function getScheduledPaymentDates(lumpSum: AddedPensionLumpSum) {
-  const dates: string[] = [];
-  let scheduledDate = lumpSum.startDate;
-
-  while (scheduledDate <= lumpSum.endDate) {
-    dates.push(scheduledDate);
-
-    if (lumpSum.cadence === "once") {
-      break;
-    }
-
-    scheduledDate = addYears(scheduledDate, 1);
-  }
-
-  return dates;
 }
 
 function getUkTaxYear(date: string) {
@@ -324,6 +305,7 @@ function calculatePotProjectionRows(input: {
     ),
     calculateRegularContributionWithAdditions: ({ amount, contributionDate }) =>
       calculateLisaContributionWithBonus({
+        settings: input.settings,
         amount:
           amount *
           getPartialRetirementSavingsContributionMultiplier(
@@ -335,6 +317,7 @@ function calculatePotProjectionRows(input: {
       }),
     calculateLumpSumContributionWithAdditions: ({ amount, contributionDate }) =>
       calculateLisaContributionWithBonus({
+        settings: input.settings,
         amount,
         contributionDate,
         taxYearContributions,

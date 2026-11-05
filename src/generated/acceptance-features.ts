@@ -10781,7 +10781,158 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-67",
+        id: "line-69",
+        keyword: "Scenario Outline",
+        name: "Do not inflate the cash allowance in real-terms projections",
+        description: "",
+        tags: ["@contributions", "@annual-limit", "@inflation"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-70",
+            keyword: "Given",
+            text: 'a future LISA contribution of 4000.00 on "2036-04-06" for a holder born on "1990-04-06"',
+          },
+          {
+            id: "line-71",
+            keyword: "And",
+            text: 'the LISA projection is in "<basis>" terms with <inflation>% inflation and <return>% investment return',
+          },
+          {
+            id: "line-72",
+            keyword: "When",
+            text: "the canonical LISA allowance plan is calculated",
+          },
+          {
+            id: "line-73",
+            keyword: "Then",
+            text: 'the projected LISA addition on "2036-04-06" should be <addition>',
+          },
+          {
+            id: "line-74",
+            keyword: "And",
+            text: "total LISA contributions including bonuses should be <addition>",
+          },
+        ],
+        examples: [
+          {
+            id: "line-76",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-77",
+                cells: [
+                  {
+                    id: "line-77-column-9",
+                    value: "basis",
+                  },
+                  {
+                    id: "line-77-column-19",
+                    value: "inflation",
+                  },
+                  {
+                    id: "line-77-column-31",
+                    value: "return",
+                  },
+                  {
+                    id: "line-77-column-40",
+                    value: "addition",
+                  },
+                ],
+              },
+              {
+                id: "line-78",
+                cells: [
+                  {
+                    id: "line-78-column-9",
+                    value: "real",
+                  },
+                  {
+                    id: "line-78-column-19",
+                    value: "2.5",
+                  },
+                  {
+                    id: "line-78-column-31",
+                    value: "2.5",
+                  },
+                  {
+                    id: "line-78-column-40",
+                    value: "3905.99",
+                  },
+                ],
+              },
+              {
+                id: "line-79",
+                cells: [
+                  {
+                    id: "line-79-column-9",
+                    value: "real",
+                  },
+                  {
+                    id: "line-79-column-19",
+                    value: "10.0",
+                  },
+                  {
+                    id: "line-79-column-31",
+                    value: "10.0",
+                  },
+                  {
+                    id: "line-79-column-40",
+                    value: "1927.72",
+                  },
+                ],
+              },
+              {
+                id: "line-80",
+                cells: [
+                  {
+                    id: "line-80-column-9",
+                    value: "real",
+                  },
+                  {
+                    id: "line-80-column-19",
+                    value: "0.0",
+                  },
+                  {
+                    id: "line-80-column-31",
+                    value: "0.0",
+                  },
+                  {
+                    id: "line-80-column-40",
+                    value: "5000.00",
+                  },
+                ],
+              },
+              {
+                id: "line-81",
+                cells: [
+                  {
+                    id: "line-81-column-9",
+                    value: "nominal",
+                  },
+                  {
+                    id: "line-81-column-19",
+                    value: "2.5",
+                  },
+                  {
+                    id: "line-81-column-31",
+                    value: "0.0",
+                  },
+                  {
+                    id: "line-81-column-40",
+                    value: "5000.00",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-84",
         keyword: "Scenario",
         name: "Cap combined regular and lump-sum additions within a tax year",
         description: "",
@@ -10790,42 +10941,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-68",
+            id: "line-85",
             keyword: "Given",
             text: 'the member is under age 50 throughout tax year "2026/27"',
           },
           {
-            id: "line-69",
+            id: "line-86",
             keyword: "And",
             text: 'planned regular LISA contributions total 3600.00 in tax year "2026/27"',
           },
           {
-            id: "line-70",
+            id: "line-87",
             keyword: "And",
             text: 'planned lump-sum LISA contributions total 1000.00 in tax year "2026/27"',
           },
           {
-            id: "line-71",
+            id: "line-88",
             keyword: "When",
             text: 'eligible LISA additions are calculated for tax year "2026/27"',
           },
           {
-            id: "line-72",
+            id: "line-89",
             keyword: "Then",
             text: "accepted LISA additions should be 4000.00",
           },
           {
-            id: "line-73",
+            id: "line-90",
             keyword: "And",
             text: "additions above the LISA annual limit should be 600.00",
           },
           {
-            id: "line-74",
+            id: "line-91",
             keyword: "And",
             text: "the LISA government bonus should be 1000.00",
           },
           {
-            id: "line-75",
+            id: "line-92",
             keyword: "And",
             text: "total accepted additions including government bonus should be 5000.00",
           },
@@ -10833,7 +10984,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-78",
+        id: "line-95",
         keyword: "Scenario Outline",
         name: "Apply a 25 percent government bonus only to eligible additions",
         description: "",
@@ -10842,94 +10993,94 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-79",
+            id: "line-96",
             keyword: "Given",
             text: "the member is under age 50",
           },
           {
-            id: "line-80",
+            id: "line-97",
             keyword: "And",
             text: "eligible LISA additions in the tax year are <eligibleAdditions>",
           },
           {
-            id: "line-81",
+            id: "line-98",
             keyword: "When",
             text: "the LISA government bonus is calculated",
           },
           {
-            id: "line-82",
+            id: "line-99",
             keyword: "Then",
             text: "the LISA government bonus should be <expectedBonus>",
           },
         ],
         examples: [
           {
-            id: "line-84",
+            id: "line-101",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-85",
+                id: "line-102",
                 cells: [
                   {
-                    id: "line-85-column-9",
+                    id: "line-102-column-9",
                     value: "eligibleAdditions",
                   },
                   {
-                    id: "line-85-column-29",
+                    id: "line-102-column-29",
                     value: "expectedBonus",
                   },
                 ],
               },
               {
-                id: "line-86",
+                id: "line-103",
                 cells: [
                   {
-                    id: "line-86-column-9",
+                    id: "line-103-column-9",
                     value: "0.00",
                   },
                   {
-                    id: "line-86-column-29",
+                    id: "line-103-column-29",
                     value: "0.00",
                   },
                 ],
               },
               {
-                id: "line-87",
+                id: "line-104",
                 cells: [
                   {
-                    id: "line-87-column-9",
+                    id: "line-104-column-9",
                     value: "1000.00",
                   },
                   {
-                    id: "line-87-column-29",
+                    id: "line-104-column-29",
                     value: "250.00",
                   },
                 ],
               },
               {
-                id: "line-88",
+                id: "line-105",
                 cells: [
                   {
-                    id: "line-88-column-9",
+                    id: "line-105-column-9",
                     value: "2500.00",
                   },
                   {
-                    id: "line-88-column-29",
+                    id: "line-105-column-29",
                     value: "625.00",
                   },
                 ],
               },
               {
-                id: "line-89",
+                id: "line-106",
                 cells: [
                   {
-                    id: "line-89-column-9",
+                    id: "line-106-column-9",
                     value: "4000.00",
                   },
                   {
-                    id: "line-89-column-29",
+                    id: "line-106-column-29",
                     value: "1000.00",
                   },
                 ],
@@ -10939,7 +11090,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-92",
+        id: "line-109",
         keyword: "Scenario",
         name: "Reset the LISA contribution limit on 6 April",
         description: "",
@@ -10948,32 +11099,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-93",
+            id: "line-110",
             keyword: "Given",
             text: 'the member is under age 50 on "2027-04-05" and "2027-04-06"',
           },
           {
-            id: "line-94",
+            id: "line-111",
             keyword: "And",
             text: 'the member has already made 4000.00 of eligible LISA additions in tax year "2026/27"',
           },
           {
-            id: "line-95",
+            id: "line-112",
             keyword: "When",
             text: 'a further LISA addition of 4000.00 is scheduled on "2027-04-06"',
           },
           {
-            id: "line-96",
+            id: "line-113",
             keyword: "Then",
             text: 'the further addition should be assessed against tax year "2027/28"',
           },
           {
-            id: "line-97",
+            id: "line-114",
             keyword: "And",
             text: 'up to 4000.00 of that addition should be eligible in tax year "2027/28"',
           },
           {
-            id: "line-98",
+            id: "line-115",
             keyword: "And",
             text: 'the government bonus for 4000.00 of eligible additions in tax year "2027/28" should be 1000.00',
           },
@@ -10981,7 +11132,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-101",
+        id: "line-118",
         keyword: "Scenario",
         name: "Do not apply the government bonus to an existing balance or investment return",
         description: "",
@@ -10990,37 +11141,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-102",
+            id: "line-119",
             keyword: "Given",
             text: "the member is under age 50",
           },
           {
-            id: "line-103",
+            id: "line-120",
             keyword: "And",
             text: "the member has a LISA balance of 10000.00",
           },
           {
-            id: "line-104",
+            id: "line-121",
             keyword: "And",
             text: "the member makes no eligible LISA additions in the tax year",
           },
           {
-            id: "line-105",
+            id: "line-122",
             keyword: "And",
             text: "the annual LISA net investment return assumption is 5.00%",
           },
           {
-            id: "line-106",
+            id: "line-123",
             keyword: "When",
             text: "the LISA is projected for the tax year",
           },
           {
-            id: "line-107",
+            id: "line-124",
             keyword: "Then",
             text: "the LISA government bonus should be 0.00",
           },
           {
-            id: "line-108",
+            id: "line-125",
             keyword: "And",
             text: "the existing balance should still receive modelled investment growth",
           },
@@ -11028,7 +11179,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-111",
+        id: "line-128",
         keyword: "Scenario",
         name: "Do not present one twelfth of the annual allowance as a statutory monthly limit",
         description: "",
@@ -11037,27 +11188,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-112",
+            id: "line-129",
             keyword: "When",
             text: "the regular LISA contribution control and guidance are inspected",
           },
           {
-            id: "line-113",
+            id: "line-130",
             keyword: "Then",
             text: "the guidance should explain that the statutory LISA payment limit is 4000.00 per tax year",
           },
           {
-            id: "line-114",
+            id: "line-131",
             keyword: "And",
             text: "the guidance should not describe 333.33 per month as a statutory LISA contribution limit",
           },
           {
-            id: "line-115",
+            id: "line-132",
             keyword: "And",
             text: "any regular monthly planning maximum should be described as a modeller convention for regular saving",
           },
           {
-            id: "line-116",
+            id: "line-133",
             keyword: "And",
             text: "regular and lump-sum additions should share the same annual LISA limit",
           },
@@ -11065,7 +11216,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-119",
+        id: "line-136",
         keyword: "Scenario",
         name: "Explain that LISA payments form part of the overall ISA allowance",
         description: "",
@@ -11074,27 +11225,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-120",
+            id: "line-137",
             keyword: "Given",
             text: "the model includes both ISA and LISA contributions",
           },
           {
-            id: "line-121",
+            id: "line-138",
             keyword: "When",
             text: "the LISA allowance guidance is inspected",
           },
           {
-            id: "line-122",
+            id: "line-139",
             keyword: "Then",
             text: "it should explain that LISA payments count towards the overall annual ISA subscription limit",
           },
           {
-            id: "line-123",
+            id: "line-140",
             keyword: "And",
             text: "it should not describe the LISA allowance as an additional allowance on top of the overall ISA allowance",
           },
           {
-            id: "line-124",
+            id: "line-141",
             keyword: "And",
             text: "if cross-account ISA allowance validation is not implemented the methodology should say so explicitly",
           },
@@ -11102,7 +11253,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-129",
+        id: "line-146",
         keyword: "Scenario",
         name: "Require age 60 for the modeller's retirement LISA draw start age",
         description: "",
@@ -11111,27 +11262,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-130",
+            id: "line-147",
             keyword: "Given",
             text: "the modeller is using LISA for later-life retirement spending",
           },
           {
-            id: "line-131",
+            id: "line-148",
             keyword: "When",
             text: "the LISA draw start age is 59",
           },
           {
-            id: "line-132",
+            id: "line-149",
             keyword: "Then",
             text: 'the LISA draw start age validation message should be "LISA retirement draw start age must be at least 60. The modeller does not model first-home, terminal-illness or charged early withdrawals."',
           },
           {
-            id: "line-133",
+            id: "line-150",
             keyword: "When",
             text: "the LISA draw start age is 60",
           },
           {
-            id: "line-134",
+            id: "line-151",
             keyword: "Then",
             text: "LISA draw start age validation should pass",
           },
@@ -11139,7 +11290,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-137",
+        id: "line-154",
         keyword: "Scenario",
         name: "Do not make retirement LISA funds available before the configured qualifying draw age",
         description: "",
@@ -11148,37 +11299,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-138",
+            id: "line-155",
             keyword: "Given",
             text: "the member retires at age 57",
           },
           {
-            id: "line-139",
+            id: "line-156",
             keyword: "And",
             text: "the member has a LISA balance of 40000.00",
           },
           {
-            id: "line-140",
+            id: "line-157",
             keyword: "And",
             text: "the LISA draw start age is 60",
           },
           {
-            id: "line-141",
+            id: "line-158",
             keyword: "And",
             text: "the LISA uses the target-based withdrawal strategy",
           },
           {
-            id: "line-142",
+            id: "line-159",
             keyword: "When",
             text: "the retirement income projection is calculated",
           },
           {
-            id: "line-143",
+            id: "line-160",
             keyword: "Then",
             text: "LISA retirement withdrawals at ages 57 through 59 should be 0.00",
           },
           {
-            id: "line-144",
+            id: "line-161",
             keyword: "And",
             text: "the LISA may be used for retirement withdrawals from age 60",
           },
@@ -11186,7 +11337,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-147",
+        id: "line-164",
         keyword: "Scenario Outline",
         name: "Apply each supported LISA withdrawal strategy only after LISA retirement access",
         description: "",
@@ -11195,84 +11346,84 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-148",
+            id: "line-165",
             keyword: "Given",
             text: "the member has a LISA balance of 50000.00",
           },
           {
-            id: "line-149",
+            id: "line-166",
             keyword: "And",
             text: "the LISA draw start age is 60",
           },
           {
-            id: "line-150",
+            id: "line-167",
             keyword: "And",
             text: "the LISA withdrawal strategy is <strategy>",
           },
           {
-            id: "line-151",
+            id: "line-168",
             keyword: "When",
             text: "the retirement income projection is calculated",
           },
           {
-            id: "line-152",
+            id: "line-169",
             keyword: "Then",
             text: "the strategy should not produce LISA retirement withdrawals before age 60",
           },
           {
-            id: "line-153",
+            id: "line-170",
             keyword: "And",
             text: "the strategy may produce LISA retirement withdrawals from age 60 subject to its configured rules",
           },
         ],
         examples: [
           {
-            id: "line-155",
+            id: "line-172",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-156",
+                id: "line-173",
                 cells: [
                   {
-                    id: "line-156-column-9",
+                    id: "line-173-column-9",
                     value: "strategy",
                   },
                 ],
               },
               {
-                id: "line-157",
+                id: "line-174",
                 cells: [
                   {
-                    id: "line-157-column-9",
+                    id: "line-174-column-9",
                     value: '"Annual percentage"',
                   },
                 ],
               },
               {
-                id: "line-158",
+                id: "line-175",
                 cells: [
                   {
-                    id: "line-158-column-9",
+                    id: "line-175-column-9",
                     value: '"Use by age"',
                   },
                 ],
               },
               {
-                id: "line-159",
+                id: "line-176",
                 cells: [
                   {
-                    id: "line-159-column-9",
+                    id: "line-176-column-9",
                     value: '"Zero at death"',
                   },
                 ],
               },
               {
-                id: "line-160",
+                id: "line-177",
                 cells: [
                   {
-                    id: "line-160-column-9",
+                    id: "line-177-column-9",
                     value: '"Use to meet income target"',
                   },
                 ],
@@ -11282,7 +11433,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-163",
+        id: "line-180",
         keyword: "Scenario",
         name: "Exclude qualifying LISA withdrawals from taxable retirement income",
         description: "",
@@ -11291,32 +11442,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-164",
+            id: "line-181",
             keyword: "Given",
             text: "Income Tax modelling is on",
           },
           {
-            id: "line-165",
+            id: "line-182",
             keyword: "And",
             text: "the member is age 60",
           },
           {
-            id: "line-166",
+            id: "line-183",
             keyword: "And",
             text: "monthly qualifying LISA withdrawal income is 1000.00",
           },
           {
-            id: "line-167",
+            id: "line-184",
             keyword: "When",
             text: "monthly Income Tax is calculated for the retirement projection",
           },
           {
-            id: "line-168",
+            id: "line-185",
             keyword: "Then",
             text: "taxable income from the qualifying LISA withdrawal should be 0.00",
           },
           {
-            id: "line-169",
+            id: "line-186",
             keyword: "And",
             text: "the full 1000.00 LISA withdrawal should be available toward after-tax spending",
           },
@@ -11324,7 +11475,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-174",
+        id: "line-191",
         keyword: "Scenario",
         name: "Explain the LISA behaviours that the retirement model does not determine",
         description: "",
@@ -11333,32 +11484,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-175",
+            id: "line-192",
             keyword: "When",
             text: "the LISA methodology and important information are inspected",
           },
           {
-            id: "line-176",
+            id: "line-193",
             keyword: "Then",
             text: "they should explain that the retirement LISA projection does not model first-home withdrawals",
           },
           {
-            id: "line-177",
+            id: "line-194",
             keyword: "And",
             text: "they should explain that the retirement LISA projection does not model the 25 percent withdrawal charge for other pre-60 withdrawals",
           },
           {
-            id: "line-178",
+            id: "line-195",
             keyword: "And",
             text: "they should explain that the retirement LISA projection does not model terminal-illness withdrawals",
           },
           {
-            id: "line-179",
+            id: "line-196",
             keyword: "And",
             text: "they should explain that the modeller does not determine legal contribution eligibility from UK residence or Crown-service status",
           },
           {
-            id: "line-180",
+            id: "line-197",
             keyword: "And",
             text: "they should explain that provider-specific payment, bonus-claim and transfer mechanics are outside the projection",
           },
@@ -11366,7 +11517,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-183",
+        id: "line-200",
         keyword: "Scenario",
         name: "Treat an entered balance as an existing LISA rather than deciding whether a new LISA can be opened",
         description: "",
@@ -11375,27 +11526,27 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-184",
+            id: "line-201",
             keyword: "Given",
             text: "a user is age 40 or over",
           },
           {
-            id: "line-185",
+            id: "line-202",
             keyword: "And",
             text: "the user enters a current LISA balance greater than 0.00",
           },
           {
-            id: "line-186",
+            id: "line-203",
             keyword: "When",
             text: "the LISA retirement projection is calculated",
           },
           {
-            id: "line-187",
+            id: "line-204",
             keyword: "Then",
             text: "the existing LISA balance should be accepted for modelling",
           },
           {
-            id: "line-188",
+            id: "line-205",
             keyword: "And",
             text: "the modeller should not claim that the user is currently eligible to open a new LISA",
           },

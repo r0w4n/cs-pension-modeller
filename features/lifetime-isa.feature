@@ -61,7 +61,24 @@ Feature: Lifetime ISA retirement modelling
     Then the existing LISA balance should continue to receive modelled investment growth
     And investment growth should not receive a LISA government bonus
 
-  Rule: Eligible additions share a £4,000 tax-year limit and receive a 25% bonus
+  Rule: Eligible additions share a £4,000 cash tax-year limit and receive a 25% bonus
+
+  # The cash limit was checked against https://www.gov.uk/lifetime-isa on
+  # 2026-11-05. Holding it fixed in future years is a modelling assumption.
+  @contributions @annual-limit @inflation
+  Scenario Outline: Do not inflate the cash allowance in real-terms projections
+    Given a future LISA contribution of 4000.00 on "2036-04-06" for a holder born on "1990-04-06"
+    And the LISA projection is in "<basis>" terms with <inflation>% inflation and <return>% investment return
+    When the canonical LISA allowance plan is calculated
+    Then the projected LISA addition on "2036-04-06" should be <addition>
+    And total LISA contributions including bonuses should be <addition>
+
+    Examples:
+      | basis   | inflation | return | addition |
+      | real    | 2.5       | 2.5    | 3905.99  |
+      | real    | 10.0      | 10.0   | 1927.72  |
+      | real    | 0.0       | 0.0    | 5000.00  |
+      | nominal | 2.5       | 0.0    | 5000.00  |
 
   @contributions @annual-limit @government-bonus
   Scenario: Cap combined regular and lump-sum additions within a tax year

@@ -8,6 +8,70 @@ import { assessHouseholdRetirementPlan } from "./household-retirement-assessment
 import { calculateJointRetirementProjection } from "./joint-retirement-plan";
 
 describe("assessHouseholdRetirementPlan", () => {
+  it.each([NaN, Infinity, -Infinity])(
+    "does not treat invalid household income or targets (%s) as success",
+    (invalid) => {
+      const defaults = createDefaultSettings();
+      const settings = normalizeSettings({
+        ...defaults,
+        startDate: "2026-06-01",
+        dateOfBirth: "1970-06-01",
+        requirementAge: 60,
+        lifeExpectancy: 70,
+        showAlpha: false,
+        showStatePension: false,
+        showSipp: false,
+        showIsa: false,
+        partner: {
+          ...createDefaultPartnerSettings(),
+          dateOfBirth: "1970-06-01",
+          requirementAge: 60,
+          lifeExpectancy: 70,
+          showAlpha: false,
+          showStatePension: false,
+          showSipp: false,
+          showIsa: false,
+        },
+        jointRetirement: {
+          ...defaults.jointRetirement,
+          enabled: true,
+          transitionDesiredRetirementIncome: 0,
+          fullyRetiredDesiredRetirementIncome: 0,
+        },
+      });
+      const projection = calculateJointRetirementProjection(settings);
+      expect(projection.rows.length).toBeGreaterThan(0);
+      for (const field of ["netIncome", "shortfall"] as const) {
+        const invalidProjection = {
+          ...projection,
+          rows: projection.rows.map((row, index) =>
+            index === projection.rows.length - 1
+              ? { ...row, household: { ...row.household, [field]: invalid } }
+              : row
+          ),
+        };
+        expect(
+          assessHouseholdRetirementPlan(invalidProjection, settings)
+        ).toMatchObject({
+          hasInvalidValues: true,
+          meetsTargetThroughout: false,
+        });
+      }
+      expect(
+        assessHouseholdRetirementPlan(
+          {
+            ...projection,
+            rows: projection.rows.map((row, index) =>
+              index === projection.rows.length - 1
+                ? { ...row, target: invalid }
+                : row
+            ),
+          },
+          settings
+        )
+      ).toMatchObject({ hasInvalidValues: true, meetsTargetThroughout: false });
+    }
+  );
   it("includes each person's final flexible assets when horizons differ", () => {
     const defaults = createDefaultSettings();
     const settings = normalizeSettings({

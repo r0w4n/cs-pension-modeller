@@ -441,6 +441,19 @@ Keys currently used:
 Disabling State Pension can save that valid selection and the other inputs while
 an unfinished State Pension amount remains only in the open editor.
 
+Saved comparison settings must pass the normal settings parser before they can
+be calculated. If any saved entry is malformed or the stored JSON is unreadable,
+the app excludes affected entries from results and pauses automatic comparison
+saving. Valid entries can still be compared. The original stored data is kept
+unchanged, and the comparison warning offers a local recovery download. New
+comparison edits remain in the current session until saved data is cleared in
+Settings; download the original data before clearing it. Clear-all-data also
+removes recovery state, so old values cannot return when saving is enabled again.
+Calculated results containing non-finite financial values are marked “Needs
+checking”, cannot satisfy the income-target assessment and are excluded from
+comparison insights. Valid legacy settings still migrate through the existing
+parser; this correction does not change the settings schema.
+
 Quick keeps its existing versioned storage key and supports old saved inputs;
 this integration does not change either settings schema. Parameter JSON
 imports and exports cover Simple, early retirement and Expert settings;

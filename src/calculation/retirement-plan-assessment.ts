@@ -12,6 +12,7 @@ export type FlexibleFundAssessmentAccount =
   "ISA" | "LISA" | "SIPP" | "Civil Service AVC";
 
 export type RetirementPlanAssessment = {
+  hasInvalidValues: boolean;
   meetsTargetThroughout: boolean;
   targetMissMonths: number;
   firstShortfallAge: number | null;
@@ -58,11 +59,27 @@ export function assessRetirementPlan(
       point.age <= settings.lifeExpectancy
   );
   const retirementPoint = assessmentPoints[0];
+  const shortfallAssessment = assessShortfalls(assessmentPoints);
+  const hasInvalidValues =
+    rows.some((row) =>
+      Object.values(row).some(
+        (value) => typeof value === "number" && !Number.isFinite(value)
+      )
+    ) ||
+    assessmentPoints.some(
+      (point) =>
+        !Number.isFinite(point.assessedIncomeAnnual) ||
+        !Number.isFinite(point.targetIncomeAnnual) ||
+        !Number.isFinite(point.shortfallAnnual)
+    );
   return {
-    ...assessShortfalls(assessmentPoints),
+    ...shortfallAssessment,
     ...assessRetirementPoint(retirementPoint, settings),
     ...assessSecureIncome(assessmentPoints, settings),
     ...assessFlexibleFundExhaustion(rows, settings),
+    hasInvalidValues,
+    meetsTargetThroughout:
+      !hasInvalidValues && shortfallAssessment.meetsTargetThroughout,
   };
 }
 

@@ -5,41 +5,55 @@ import {
   removeStorageItem,
   writeStorageItem,
 } from "../settings";
-import {
-  clonePensionSettings,
-  type ComparisonScenario,
-} from "../result-projection/comparison-result";
+import type { ComparisonScenario } from "../result-projection/comparison-result";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";
 const MAX_COMPARISON_SCENARIOS = 5;
 
 export function loadStoredComparisonScenarios(): ComparisonScenario[] {
+  return loadStoredComparisonState().scenarios;
+}
+
+export function loadStoredComparisonState(): {
+  scenarios: ComparisonScenario[];
+  recoveryJson: string | null;
+} {
   if (!isLocalStorageEnabled()) {
-    return [];
+    return { scenarios: [], recoveryJson: null };
   }
 
   const storedScenarios = readStorageItem(COMPARISON_SCENARIOS_STORAGE_KEY);
 
   if (!storedScenarios) {
-    return [];
+    return { scenarios: [], recoveryJson: null };
   }
 
   try {
     const parsed = JSON.parse(storedScenarios) as unknown;
 
     if (!Array.isArray(parsed)) {
-      return [];
+      return { scenarios: [], recoveryJson: storedScenarios };
     }
 
-    return parsed
-      .map((scenario, index) =>
-        normalizeStoredComparisonScenario(scenario, index)
-      )
+    const normalized = parsed.map((scenario, index) => {
+      try {
+        return normalizeStoredComparisonScenario(scenario, index);
+      } catch {
+        return null;
+      }
+    });
+    const scenarios = normalized
       .filter((scenario): scenario is ComparisonScenario => Boolean(scenario))
       .slice(0, MAX_COMPARISON_SCENARIOS);
+    return {
+      scenarios,
+      recoveryJson: normalized.some((scenario) => scenario === null)
+        ? storedScenarios
+        : null,
+    };
   } catch {
-    return [];
+    return { scenarios: [], recoveryJson: storedScenarios };
   }
 }
 
@@ -82,8 +96,10 @@ function normalizeStoredComparisonScenario(
   }
 
   const now = new Date().toISOString();
-  const parsedSettings =
-    parseStoredSettings(settings) ?? clonePensionSettings(settings);
+  const parsedSettings = parseStoredSettings(settings);
+  if (!parsedSettings) {
+    return null;
+  }
 
   return {
     id:

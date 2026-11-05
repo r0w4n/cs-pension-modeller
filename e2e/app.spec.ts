@@ -1,6 +1,85 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
+import AxeBuilderClass from "@axe-core/playwright";
 
 test.describe("app end-to-end journeys", () => {
+  test("preserves malformed saved comparisons and offers accessible recovery", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "expert");
+    const raw = await page.evaluate(() => {
+      const key = "cs-pension-modeller.comparisonScenarios";
+      const settingsEnvelope = JSON.parse(
+        window.localStorage.getItem("cs-pension-modeller.settings") ?? "{}"
+      ) as { data: { journeys: { expert: Record<string, unknown> } } };
+      const settings = settingsEnvelope.data.journeys.expert;
+      const value = JSON.stringify([
+        {
+          id: "invalid-saved-plan",
+          name: "Malformed stored plan",
+          settings: { ...settings, currentStatePension: "invalid" },
+          createdAt: "2026-01-01",
+          updatedAt: "2026-01-01",
+        },
+      ]);
+      window.localStorage.setItem(key, value);
+      return value;
+    });
+    await page.reload();
+    await navigateToJourneyResult(page);
+    const warning = page.getByRole("region", {
+      name: "Saved comparisons need checking",
+    });
+    await expect(warning).toBeVisible();
+    await expect(warning.getByRole("alert")).toContainText(
+      "Changes to comparisons will stay in this session"
+    );
+    const downloadButton = warning.getByRole("button", {
+      name: "Download saved comparison data",
+    });
+    await downloadButton.focus();
+    const downloadPromise = page.waitForEvent("download");
+    await page.keyboard.press("Enter");
+    expect((await downloadPromise).suggestedFilename()).toBe(
+      "cs-pension-comparison-recovery.json"
+    );
+    const accessibility = await new AxeBuilderClass({ page })
+      .include('[aria-label="Saved comparisons need checking"]')
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    await renderDeferredComparisonContent(page);
+    await page
+      .getByRole("textbox", { name: "Scenario name" })
+      .fill("Session comparison");
+    await page.getByRole("button", { name: "Add to comparison" }).click();
+    await expect(
+      page.locator(
+        '.comparison-saved-section input[value="Session comparison"]'
+      )
+    ).toBeVisible();
+    expect(
+      await readLocalStorageItem(
+        page,
+        "cs-pension-modeller.comparisonScenarios"
+      )
+    ).toBe(raw);
+    await page.reload();
+    await navigateToJourneyResult(page);
+    await expect(
+      page.getByRole("region", { name: "Saved comparisons need checking" })
+    ).toBeVisible();
+    expect(
+      await readLocalStorageItem(
+        page,
+        "cs-pension-modeller.comparisonScenarios"
+      )
+    ).toBe(raw);
+    await expect(
+      page.locator(
+        '.comparison-saved-section input[value="Session comparison"]'
+      )
+    ).toHaveCount(0);
+  });
   test("keeps the Quick journey acknowledgement modal until a consent choice is made", async ({
     page,
   }) => {

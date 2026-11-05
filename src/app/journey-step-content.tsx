@@ -117,6 +117,7 @@ export type JourneyStepViewModel = {
     patch: Partial<RetirementIncomeChartParameters>
   ) => void;
   comparisonScenarios: ComparisonScenario[];
+  onDownloadComparisonRecovery?: () => void;
   comparisonResultCache: ComparisonResultCache;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (scenarioSettings: PensionSettings) => void;
@@ -279,6 +280,7 @@ function JourneyResultsStep({
     incomeAgeRangeItems,
     comparisonRetirementIncomeDisplay,
     comparisonScenarios,
+    onDownloadComparisonRecovery,
     comparisonResultCache,
     onScenariosChange,
     onLoadScenario,
@@ -343,6 +345,7 @@ function JourneyResultsStep({
           onComparisonRetirementIncomeDisplayChange
         }
         comparisonScenarios={comparisonScenarios}
+        onDownloadComparisonRecovery={onDownloadComparisonRecovery}
         comparisonResultCache={comparisonResultCache}
         onScenariosChange={onScenariosChange}
         onLoadScenario={onLoadScenario}
@@ -463,6 +466,7 @@ function JourneyResultsStep({
             settings={settings}
             validationIssues={validationIssues}
             scenarios={comparisonScenarios}
+            onDownloadComparisonRecovery={onDownloadComparisonRecovery}
             comparisonResultCache={comparisonResultCache}
             retirementPlanResult={retirementPlanResult}
             isProjectionPending={isProjectionPending}
@@ -494,6 +498,7 @@ function JointJourneyResultsStep({
   comparisonRetirementIncomeDisplay,
   onComparisonRetirementIncomeDisplayChange,
   comparisonScenarios,
+  onDownloadComparisonRecovery,
   comparisonResultCache,
   onScenariosChange,
   onLoadScenario,
@@ -516,6 +521,7 @@ function JointJourneyResultsStep({
     display: RetirementIncomeDisplay
   ) => void;
   comparisonScenarios: ComparisonScenario[];
+  onDownloadComparisonRecovery?: () => void;
   comparisonResultCache: ComparisonResultCache;
   onScenariosChange: (scenarios: ComparisonScenario[]) => void;
   onLoadScenario: (settings: PensionSettings) => void;
@@ -589,6 +595,7 @@ function JointJourneyResultsStep({
             settings={settings}
             validationIssues={validationIssues}
             scenarios={comparisonScenarios}
+            onDownloadComparisonRecovery={onDownloadComparisonRecovery}
             comparisonResultCache={comparisonResultCache}
             retirementPlanResult={retirementPlanResult}
             isProjectionPending={isProjectionPending}

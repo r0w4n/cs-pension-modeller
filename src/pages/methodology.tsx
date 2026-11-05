@@ -1538,6 +1538,16 @@ export function MethodologyPage() {
           on-screen result.
         </p>
         <p className="section-copy">
+          Saved comparisons with malformed settings are excluded from results.
+          If saved data cannot be loaded, the original data is kept unchanged
+          and automatic comparison saving is paused. The comparison warning
+          offers a local recovery download; subsequent comparison edits remain
+          in this session until saved data is cleared in Settings. Download a
+          copy before clearing it. Calculations containing invalid or
+          unavailable amounts are marked “Needs checking” and are excluded from
+          comparison insights rather than treated as meeting the income target.
+        </p>
+        <p className="section-copy">
           The comparison view derives metrics including:
         </p>
         <ul className="section-copy">

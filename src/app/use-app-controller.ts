@@ -111,6 +111,7 @@ export function useAppController() {
     comparisonResultCache,
     comparisonScenarios,
     resetComparisonScenarios,
+    onDownloadComparisonRecovery,
     retirementPlanResultCache,
     setComparisonScenarios,
   } = useComparisonState();
@@ -443,6 +444,7 @@ export function useAppController() {
     comparisonScenarios,
     comparisonResultCache,
     onScenariosChange: setComparisonScenarios,
+    onDownloadComparisonRecovery,
     onLoadScenario: loadComparisonScenario,
     onRetirementIncomeDisplayChange: setJourneyRetirementIncomeDisplay,
     onComparisonRetirementIncomeDisplayChange:

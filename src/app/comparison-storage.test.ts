@@ -1,5 +1,6 @@
 import {
   createDefaultSettings,
+  parseStoredSettings,
   saveLocalStoragePreference,
   type PensionSettings,
 } from "../settings";
@@ -13,6 +14,11 @@ import {
   type ComparisonScenario,
 } from "../result-projection/comparison-result";
 import { calculateRetirementPlan } from "../calculation/retirement-plan";
+import { buildRetirementOutcomeBanner } from "../app-domains/comparison-outcome";
+import {
+  buildComparisonStatusItems,
+  calculateComparisonInsights,
+} from "../app-domains/comparison";
 
 const COMPARISON_SCENARIOS_STORAGE_KEY =
   "cs-pension-modeller.comparisonScenarios";
@@ -169,5 +175,66 @@ describe("comparison scenario storage", () => {
     expect(
       window.localStorage.getItem(COMPARISON_SCENARIOS_STORAGE_KEY)
     ).toBeNull();
+  });
+
+  it("rejects malformed financial settings while retaining valid neighbouring scenarios and raw storage", () => {
+    const malformedSettings = {
+      ...createDefaultSettings(),
+      currentStatePension: "invalid",
+      statePensionForecastConfirmed: true,
+    };
+    expect(parseStoredSettings(malformedSettings)).toBeNull();
+    const raw = JSON.stringify([
+      {
+        ...createScenario("bad", "Malformed scenario"),
+        settings: malformedSettings,
+      },
+      createScenario("valid", "Valid scenario"),
+    ]);
+    window.localStorage.setItem(COMPARISON_SCENARIOS_STORAGE_KEY, raw);
+    const loaded = loadStoredComparisonScenarios();
+    const outcomes = loaded.map((scenario) =>
+      buildRetirementOutcomeBanner(
+        createComparisonResult(
+          scenario,
+          "",
+          calculateRetirementPlan(scenario.settings)
+        )
+      )
+    );
+
+    expect(loaded.map((scenario) => scenario.id)).toEqual(["valid"]);
+    expect(outcomes).toHaveLength(1);
+    expect(window.localStorage.getItem(COMPARISON_SCENARIOS_STORAGE_KEY)).toBe(
+      raw
+    );
+  });
+
+  it("does not report a malformed numeric calculation as workable even if the storage boundary is bypassed", () => {
+    const scenario = createScenario("bad", "Malformed scenario");
+    Object.assign(scenario.settings, {
+      currentStatePension: "invalid",
+      statePensionForecastConfirmed: true,
+    });
+    const plan = calculateRetirementPlan(scenario.settings);
+    expect(
+      plan.rows.some((row) => !Number.isFinite(row.totalMonthlyNetIncome))
+    ).toBe(true);
+    expect(plan.assessment.meetsTargetThroughout).toBe(false);
+    expect(
+      buildRetirementOutcomeBanner(createComparisonResult(scenario, "", plan))
+    ).toMatchObject({ label: "Needs checking", status: "atRisk" });
+    const result = createComparisonResult(scenario, "", plan);
+    expect(buildComparisonStatusItems(result)).toContainEqual({
+      label: "Overall status",
+      value: "Needs checking",
+    });
+    expect(Object.values(calculateComparisonInsights([result]))).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
   });
 });

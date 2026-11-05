@@ -7033,6 +7033,158 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/comparison-validation.feature",
+    name: "Do not endorse invalid saved comparisons",
+    description:
+      "A comparison must not bypass settings parsing or present invalid calculated\n  amounts as a workable retirement plan. Original stored data must remain\n  available for recovery when saved comparisons cannot be loaded.",
+    tags: ["@comparison-results", "@validation", "@settings-storage"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-7",
+        keyword: "Scenario",
+        name: "Keep valid comparisons and preserve malformed stored data",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-8",
+            keyword: "Given",
+            text: "browser local storage is available",
+          },
+          {
+            id: "line-9",
+            keyword: "And",
+            text: "saved comparison data contains a valid plan and a malformed State Pension amount",
+          },
+          {
+            id: "line-10",
+            keyword: "When",
+            text: "saved comparisons are loaded with recovery information",
+          },
+          {
+            id: "line-11",
+            keyword: "Then",
+            text: "only the valid saved comparison should be available for calculation",
+          },
+          {
+            id: "line-12",
+            keyword: "And",
+            text: "the original comparison data should remain unchanged for recovery",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-14",
+        keyword: "Scenario",
+        name: "Preserve unreadable comparison JSON for recovery",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-15",
+            keyword: "Given",
+            text: "browser local storage is available",
+          },
+          {
+            id: "line-16",
+            keyword: "And",
+            text: "saved comparison data is unreadable JSON",
+          },
+          {
+            id: "line-17",
+            keyword: "When",
+            text: "saved comparisons are loaded with recovery information",
+          },
+          {
+            id: "line-18",
+            keyword: "Then",
+            text: "no saved comparisons should be available for calculation",
+          },
+          {
+            id: "line-19",
+            keyword: "And",
+            text: "the original comparison data should remain unchanged for recovery",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-21",
+        keyword: "Scenario Outline",
+        name: "Do not classify non-finite financial results as workable",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-22",
+            keyword: "Given",
+            text: 'a "<model>" comparison calculation has a malformed State Pension amount',
+          },
+          {
+            id: "line-23",
+            keyword: "When",
+            text: "that comparison outcome is assessed",
+          },
+          {
+            id: "line-24",
+            keyword: "Then",
+            text: "the comparison should say Needs checking rather than Looks workable",
+          },
+          {
+            id: "line-25",
+            keyword: "And",
+            text: "the invalid comparison should not be selected by comparison insights",
+          },
+        ],
+        examples: [
+          {
+            id: "line-27",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-28",
+                cells: [
+                  {
+                    id: "line-28-column-9",
+                    value: "model",
+                  },
+                ],
+              },
+              {
+                id: "line-29",
+                cells: [
+                  {
+                    id: "line-29-column-9",
+                    value: "single-person",
+                  },
+                ],
+              },
+              {
+                id: "line-30",
+                cells: [
+                  {
+                    id: "line-30-column-9",
+                    value: "household",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     path: "features/cs-avc.feature",
     name: "Civil Service AVC modelling",
     description:

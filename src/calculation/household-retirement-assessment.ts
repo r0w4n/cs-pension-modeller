@@ -9,6 +9,7 @@ import type { JointRetirementProjection } from "./joint-retirement-plan";
 import { isReportableLifetimeShortfall, normalizeMoney } from "../money";
 
 export type HouseholdRetirementAssessment = {
+  hasInvalidValues: boolean;
   meetsTargetThroughout: boolean;
   targetMissMonths: number;
   firstShortfallDate: string | null;
@@ -57,6 +58,11 @@ export function assessHouseholdRetirementPlan(
 ): HouseholdRetirementAssessment {
   const partnerSettings = createPartnerCalculationSettings(settings);
   const assessedRows = projection.rows.filter((row) => row.target !== null);
+  const hasInvalidValues = projection.rows.some(
+    (row) =>
+      (row.target !== null && !Number.isFinite(row.target)) ||
+      Object.values(row.household).some((value) => !Number.isFinite(value))
+  );
   const calculatedShortfallRows = assessedRows.filter(
     (row) => row.household.shortfall > 0
   );
@@ -89,8 +95,11 @@ export function assessHouseholdRetirementPlan(
   );
 
   return {
+    hasInvalidValues,
     meetsTargetThroughout:
-      assessedRows.length > 0 && shortfallRows.length === 0,
+      !hasInvalidValues &&
+      assessedRows.length > 0 &&
+      shortfallRows.length === 0,
     targetMissMonths: shortfallRows.length,
     firstShortfallDate: firstShortfall?.date ?? null,
     firstShortfallAnnualTarget: normalizeMoney(firstShortfall?.target ?? 0),

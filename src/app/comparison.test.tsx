@@ -1,8 +1,35 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ComparisonSection } from "./comparison";
+import { ComparisonPanel, ComparisonSection } from "./comparison";
+import { createDefaultSettings } from "../settings";
+import { calculateRetirementPlan } from "../calculation/retirement-plan";
 import { ScenarioBuilder } from "./scenario-builder";
 
 describe("comparison module", () => {
+  it("explains paused saving and offers recovery when saved comparison data is invalid", () => {
+    const settings = createDefaultSettings();
+    const download = vi.fn();
+    render(
+      <ComparisonPanel
+        settings={settings}
+        validationIssues={[]}
+        scenarios={[]}
+        retirementPlanResult={calculateRetirementPlan(settings)}
+        onScenariosChange={vi.fn()}
+        onLoadScenario={vi.fn()}
+        onDownloadComparisonRecovery={download}
+      />
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "original saved data has been kept on this device"
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Changes to comparisons will stay in this session"
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Download saved comparison data" })
+    );
+    expect(download).toHaveBeenCalledOnce();
+  });
   it("renders comparison section children", () => {
     render(
       <ComparisonSection>

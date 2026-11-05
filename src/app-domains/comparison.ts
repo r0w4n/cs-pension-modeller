@@ -8,7 +8,10 @@ import {
   type FlexibleWithdrawalStrategy,
   type PensionSettings,
 } from "../settings";
-import type { ComparisonResult } from "../result-projection/comparison-result";
+import {
+  hasInvalidComparisonValues,
+  type ComparisonResult,
+} from "../result-projection/comparison-result";
 import {
   calculateSmilePhaseTarget,
   type SmilePercentageField,
@@ -65,14 +68,18 @@ type SummaryItemLike = {
 export function calculateComparisonInsights(
   results: ComparisonResult[]
 ): ComparisonInsights {
-  const earliestRetirementResult = results.reduce<ComparisonResult | null>(
-    (best, result) =>
-      !best || getRetirementSortValue(result) < getRetirementSortValue(best)
-        ? result
-        : best,
-    null
+  const assessedResults = results.filter(
+    (result) => !hasInvalidComparisonValues(result)
   );
-  const bestTargetResult = results.reduce<ComparisonResult | null>(
+  const earliestRetirementResult =
+    assessedResults.reduce<ComparisonResult | null>(
+      (best, result) =>
+        !best || getRetirementSortValue(result) < getRetirementSortValue(best)
+          ? result
+          : best,
+      null
+    );
+  const bestTargetResult = assessedResults.reduce<ComparisonResult | null>(
     (best, result) =>
       !best ||
       getComparisonAssessment(result).targetMissMonths <
@@ -81,8 +88,8 @@ export function calculateComparisonInsights(
         : best,
     null
   );
-  const lowestShortfallRiskResult = results.reduce<ComparisonResult | null>(
-    (best, result) => {
+  const lowestShortfallRiskResult =
+    assessedResults.reduce<ComparisonResult | null>((best, result) => {
       if (!best) {
         return result;
       }
@@ -93,10 +100,8 @@ export function calculateComparisonInsights(
         getComparisonAssessment(result).largestAnnualShortfall;
 
       return resultShortfall < bestShortfall ? result : best;
-    },
-    null
-  );
-  const longestCapitalResult = results.reduce<ComparisonResult | null>(
+    }, null);
+  const longestCapitalResult = assessedResults.reduce<ComparisonResult | null>(
     (best, result) => {
       if (!best) {
         return result;
@@ -109,13 +114,15 @@ export function calculateComparisonInsights(
     },
     null
   );
-  const highestLaterIncomeResult = results.reduce<ComparisonResult | null>(
-    (best, result) =>
-      !best || getComparisonLaterIncome(result) > getComparisonLaterIncome(best)
-        ? result
-        : best,
-    null
-  );
+  const highestLaterIncomeResult =
+    assessedResults.reduce<ComparisonResult | null>(
+      (best, result) =>
+        !best ||
+        getComparisonLaterIncome(result) > getComparisonLaterIncome(best)
+          ? result
+          : best,
+      null
+    );
 
   return {
     earliestRetirementResult,
@@ -1536,6 +1543,16 @@ function buildWithdrawalTaxStatusItems(
 export function buildComparisonStatusItems(
   result: ComparisonResult
 ): SummaryItemLike[] {
+  if (hasInvalidComparisonValues(result)) {
+    return [
+      { label: "Overall status", value: "Needs checking" },
+      {
+        label: "Target shortfall",
+        value:
+          "Cannot assess while calculated amounts are invalid or unavailable",
+      },
+    ];
+  }
   if (!result.targetWithdrawalConvergence.converged) {
     return buildNonConvergedTargetWithdrawalStatusItems(result);
   }
@@ -1884,6 +1901,9 @@ function findFlexibleAssetsExhaustedAge(result: ComparisonResult) {
 }
 
 function getComparisonStatusLabel(result: ComparisonResult) {
+  if (hasInvalidComparisonValues(result)) {
+    return "Needs checking";
+  }
   if (!result.targetWithdrawalConvergence.converged) {
     return "Needs checking";
   }

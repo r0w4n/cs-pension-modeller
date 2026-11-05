@@ -1,7 +1,8 @@
 import type { PensionSettings } from "../settings";
-import type {
-  ComparisonResult,
-  ComparisonScenario,
+import {
+  hasInvalidComparisonValues,
+  type ComparisonResult,
+  type ComparisonScenario,
 } from "../result-projection/comparison-result";
 import { formatCurrencyDetailed } from "../result-projection/formatting";
 import { getComparisonAssessment } from "../app-domains";
@@ -55,11 +56,13 @@ export function SavedScenariosSection({
               </label>
               <strong>{formatCurrencyDetailed(result.annualIncome)}</strong>
               <span>
-                {getComparisonAssessment(result).meetsTargetThroughout
-                  ? result.statePensionAssumptionAffectsTarget
-                    ? "Needs checking"
-                    : "Looks workable"
-                  : "Needs attention"}
+                {hasInvalidComparisonValues(result)
+                  ? "Needs checking"
+                  : getComparisonAssessment(result).meetsTargetThroughout
+                    ? result.statePensionAssumptionAffectsTarget
+                      ? "Needs checking"
+                      : "Looks workable"
+                    : "Needs attention"}
               </span>
               <small>
                 {result.modelType === "household"

@@ -42,6 +42,7 @@ export type ComparisonPanelProps = {
   settings: PensionSettings;
   validationIssues: PensionValidationIssue[];
   scenarios: ComparisonScenario[];
+  onDownloadComparisonRecovery?: () => void;
   comparisonResultCache?: ComparisonResultCache;
   retirementPlanResult?: RetirementPlanResult;
   isProjectionPending?: boolean;
@@ -69,6 +70,7 @@ export function ComparisonPanel({
   settings,
   validationIssues,
   scenarios,
+  onDownloadComparisonRecovery,
   comparisonResultCache,
   retirementPlanResult,
   isProjectionPending = false,
@@ -138,6 +140,27 @@ export function ComparisonPanel({
           />
         ) : null}
       </div>
+
+      {onDownloadComparisonRecovery ? (
+        <section
+          className="summary-section summary-section--compact"
+          aria-label="Saved comparisons need checking"
+        >
+          <p className="section-copy" role="alert">
+            Some saved comparisons could not be loaded and are excluded from
+            results. The original saved data has been kept on this device.
+            Changes to comparisons will stay in this session until you clear
+            saved data in Settings. Download a copy before clearing it.
+          </p>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onDownloadComparisonRecovery}
+          >
+            Download saved comparison data
+          </button>
+        </section>
+      ) : null}
 
       <DeferredBelowFold estimatedHeight={180}>
         <ScenarioBuilder

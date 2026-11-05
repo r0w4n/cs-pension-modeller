@@ -1,4 +1,7 @@
-import type { ComparisonResult } from "../result-projection/comparison-result";
+import {
+  hasInvalidComparisonValues,
+  type ComparisonResult,
+} from "../result-projection/comparison-result";
 import type { PensionSettings } from "../settings";
 import { formatDate, formatDecimalAge } from "../result-projection/formatting";
 
@@ -17,6 +20,19 @@ export type RetirementOutcomeBanner = {
 export function buildRetirementOutcomeBanner(
   result: ComparisonResult
 ): RetirementOutcomeBanner {
+  if (hasInvalidComparisonValues(result)) {
+    return {
+      status: "atRisk",
+      label: "Needs checking",
+      message:
+        "Some calculated amounts are invalid or unavailable, so this plan cannot be assessed against your income target. Review the inputs before relying on the results.",
+      warning: {
+        heading: "Calculation needs checking",
+        message:
+          "Review the entered amounts and dates. The model cannot establish whether this plan meets your target while calculated values are invalid.",
+      },
+    };
+  }
   if (!result.targetWithdrawalConvergence.converged) {
     return {
       status: "atRisk",

@@ -10,6 +10,7 @@ import { buildIncomeAgeRangeItems } from "../result-projection/income-age-ranges
 import {
   createDefaultSettings,
   createDefaultPartnerSettings,
+  saveLocalStoragePreference,
   normalizeSettings,
   type PensionSettings,
   type PensionValidationIssue,
@@ -21,6 +22,7 @@ import {
   useScenarioActions,
 } from "./comparison-state";
 import { useComparisonState as useApplicationComparisonState } from "./use-comparison-state";
+import { clearLocalData } from "./app-actions";
 
 function createScenario(
   id: string,
@@ -252,6 +254,143 @@ describe("comparison state scenario actions", () => {
     expect(result.current.comparisonResultCache.size).toBe(0);
     expect(result.current.retirementPlanResultCache.size).toBe(0);
     expect(result.current.comparisonScenarios).toHaveLength(0);
+  });
+
+  it("does not overwrite malformed saved comparisons on mount or after subsequent scenario edits", () => {
+    const key = "cs-pension-modeller.comparisonScenarios";
+    const valid = createScenario("valid", "Valid saved plan");
+    const raw = JSON.stringify([
+      valid,
+      {
+        ...createScenario("bad", "Malformed plan"),
+        settings: { ...valid.settings, currentStatePension: "invalid" },
+      },
+    ]);
+    window.localStorage.setItem(key, raw);
+    const { result, unmount } = renderHook(() =>
+      useApplicationComparisonState()
+    );
+    expect(
+      result.current.comparisonScenarios.map((scenario) => scenario.id)
+    ).toEqual(["valid"]);
+    expect(window.localStorage.getItem(key)).toBe(raw);
+    act(() =>
+      result.current.setComparisonScenarios([
+        valid,
+        createScenario("new", "New session plan"),
+      ])
+    );
+    expect(window.localStorage.getItem(key)).toBe(raw);
+    unmount();
+    const { result: reloadedResult, unmount: unmountReloaded } = renderHook(
+      () => useApplicationComparisonState()
+    );
+    expect(
+      reloadedResult.current.comparisonScenarios.map((scenario) => scenario.id)
+    ).toEqual(["valid"]);
+    expect(window.localStorage.getItem(key)).toBe(raw);
+    unmountReloaded();
+    window.localStorage.removeItem(key);
+  });
+
+  it("downloads the original saved data and removes recovery state through clear-all-data", async () => {
+    vi.useRealTimers();
+    const key = "cs-pension-modeller.comparisonScenarios";
+    const raw = JSON.stringify([
+      {
+        ...createScenario("bad", "Malformed plan"),
+        settings: {
+          ...createDefaultSettings(),
+          currentStatePension: "invalid",
+        },
+      },
+    ]);
+    window.localStorage.setItem(key, raw);
+    const createObjectURL = vi
+      .fn<(blob: Blob) => string>()
+      .mockReturnValue("blob:comparison-recovery");
+    const revokeObjectURL = vi.fn();
+    const originalCreate = Object.getOwnPropertyDescriptor(
+      window.URL,
+      "createObjectURL"
+    );
+    const originalRevoke = Object.getOwnPropertyDescriptor(
+      window.URL,
+      "revokeObjectURL"
+    );
+    window.URL.createObjectURL = createObjectURL;
+    window.URL.revokeObjectURL = revokeObjectURL;
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    const { result, unmount } = renderHook(() =>
+      useApplicationComparisonState()
+    );
+    try {
+      expect(result.current.onDownloadComparisonRecovery).toBeTypeOf(
+        "function"
+      );
+      act(() => result.current.onDownloadComparisonRecovery?.());
+      const blob = createObjectURL.mock.calls[0]?.[0];
+      expect(blob).toBeInstanceOf(Blob);
+      const content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") resolve(reader.result);
+          else
+            reject(new Error("Expected the recovery download to contain text"));
+        };
+        reader.onerror = () =>
+          reject(new Error("Could not read recovery download"));
+        reader.readAsText(blob);
+      });
+      expect(content).toBe(raw);
+      expect(click).toHaveBeenCalledOnce();
+      expect(revokeObjectURL).toHaveBeenCalledWith("blob:comparison-recovery");
+      expect(window.localStorage.getItem(key)).toBe(raw);
+      act(() => {
+        clearLocalData();
+        result.current.resetComparisonScenarios();
+      });
+      expect(result.current.onDownloadComparisonRecovery).toBeUndefined();
+      expect(result.current.comparisonScenarios).toEqual([]);
+      expect(window.localStorage.getItem(key)).toBeNull();
+      act(() =>
+        result.current.setComparisonScenarios([
+          createScenario("new", "New plan"),
+        ])
+      );
+      expect(window.localStorage.getItem(key)).toBeNull();
+      act(() => {
+        saveLocalStoragePreference(true);
+        result.current.setComparisonScenarios([
+          createScenario("new", "New plan"),
+        ]);
+      });
+      expect(window.localStorage.getItem(key)).not.toContain("Malformed plan");
+      unmount();
+      const { result: reloadedResult, unmount: unmountReloaded } = renderHook(
+        () => useApplicationComparisonState()
+      );
+      expect(
+        reloadedResult.current.onDownloadComparisonRecovery
+      ).toBeUndefined();
+      expect(
+        reloadedResult.current.comparisonScenarios.map(
+          (scenario) => scenario.id
+        )
+      ).toEqual(["new"]);
+      unmountReloaded();
+    } finally {
+      click.mockRestore();
+      if (originalCreate)
+        Object.defineProperty(window.URL, "createObjectURL", originalCreate);
+      else Reflect.deleteProperty(window.URL, "createObjectURL");
+      if (originalRevoke)
+        Object.defineProperty(window.URL, "revokeObjectURL", originalRevoke);
+      else Reflect.deleteProperty(window.URL, "revokeObjectURL");
+      window.localStorage.clear();
+    }
   });
 
   it("does not compare single-person and household scenarios together", () => {

@@ -4,6 +4,29 @@ import { createDefaultSettings } from "../settings";
 import { assessRetirementPlan } from "./retirement-plan-assessment";
 
 describe("retirement plan assessment", () => {
+  it.each([NaN, Infinity, -Infinity])(
+    "does not treat non-finite income, targets or balances (%s) as success",
+    (invalid) => {
+      const settings = createIsaOnlySettings({ isaCurrentPot: 100000 });
+      const rows = createProjectionTable(settings);
+      expect(assessRetirementPlan(rows, settings).hasInvalidValues).toBe(false);
+      for (const field of ["monthlyIncomeTax", "isaPot", "age"] as const) {
+        const invalidRows = rows.map((row, index) =>
+          index === rows.length - 1 ? { ...row, [field]: invalid } : row
+        );
+        expect(assessRetirementPlan(invalidRows, settings)).toMatchObject({
+          hasInvalidValues: true,
+          meetsTargetThroughout: false,
+        });
+      }
+      expect(
+        assessRetirementPlan(rows, {
+          ...settings,
+          desiredRetirementIncome: invalid,
+        })
+      ).toMatchObject({ hasInvalidValues: true, meetsTargetThroughout: false });
+    }
+  );
   it("uses the configured withdrawal strategy rather than assuming savings fill the target", () => {
     const settings = createIsaOnlySettings({
       isaCurrentPot: 100_000,

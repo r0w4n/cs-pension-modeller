@@ -56,6 +56,13 @@ export type CachedComparisonResult = Omit<
   "scenario" | "currentMatchesSaved"
 >;
 
+export function hasInvalidComparisonValues(result: ComparisonResult) {
+  return (
+    result.assessment.hasInvalidValues ||
+    result.household?.assessment.hasInvalidValues === true
+  );
+}
+
 export function clonePensionSettings(
   settings: PensionSettings
 ): PensionSettings {

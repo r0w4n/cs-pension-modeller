@@ -4586,6 +4586,182 @@ export const acceptanceFeatures = [
     ],
   },
   {
+    path: "features/classic-final-salary.feature",
+    name: "Stop salary growth when linked legacy benefits are fixed",
+    description:
+      "A maintained final salary link can increase estimated classic and classic plus\n  benefits before leaving linked service or drawing the legacy pension.\n  Later salary rises must not increase those benefits once their salary is fixed.\n  Configured pension increases remain a separate assumption.\n  These examples use a member born on 1 June 1970, current final pensionable\n  earnings of £70,000, and ten years of classic service. The classic plus examples\n  instead use ten pre-2002 years and five post-2002 years.",
+    tags: [
+      "@civil-service-pension",
+      "@legacy",
+      "@classic",
+      "@classic-plus",
+      "@final-salary-link",
+    ],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-11",
+        keyword: "Scenario Outline",
+        name: "Salary rises do not continue after leaving or drawing",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-12",
+            keyword: "Given",
+            text: 'a salary-linked "<scheme>" estimate with Alpha leaving age <leaveAge> and legacy draw age 60',
+          },
+          {
+            id: "line-13",
+            keyword: "When",
+            text: "the legacy plan is projected from 1 June 2026 with 3% pay rises and no inflation",
+          },
+          {
+            id: "line-14",
+            keyword: "Then",
+            text: 'the legacy gross annual pension on "2030-06-01" should be <annualPension>',
+          },
+          {
+            id: "line-15",
+            keyword: "And",
+            text: 'the legacy gross annual pension on "2040-06-01" should be <annualPension>',
+          },
+        ],
+        examples: [
+          {
+            id: "line-17",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-18",
+                cells: [
+                  {
+                    id: "line-18-column-9",
+                    value: "scheme",
+                  },
+                  {
+                    id: "line-18-column-24",
+                    value: "leaveAge",
+                  },
+                  {
+                    id: "line-18-column-35",
+                    value: "annualPension",
+                  },
+                ],
+              },
+              {
+                id: "line-19",
+                cells: [
+                  {
+                    id: "line-19-column-9",
+                    value: "classic",
+                  },
+                  {
+                    id: "line-19-column-24",
+                    value: "60",
+                  },
+                  {
+                    id: "line-19-column-35",
+                    value: "9848.20",
+                  },
+                ],
+              },
+              {
+                id: "line-20",
+                cells: [
+                  {
+                    id: "line-20-column-9",
+                    value: "classic plus",
+                  },
+                  {
+                    id: "line-20-column-24",
+                    value: "60",
+                  },
+                  {
+                    id: "line-20-column-35",
+                    value: "16413.67",
+                  },
+                ],
+              },
+              {
+                id: "line-21",
+                cells: [
+                  {
+                    id: "line-21-column-9",
+                    value: "classic",
+                  },
+                  {
+                    id: "line-21-column-24",
+                    value: "58",
+                  },
+                  {
+                    id: "line-21-column-35",
+                    value: "9282.88",
+                  },
+                ],
+              },
+              {
+                id: "line-22",
+                cells: [
+                  {
+                    id: "line-22-column-9",
+                    value: "classic plus",
+                  },
+                  {
+                    id: "line-22-column-24",
+                    value: "58",
+                  },
+                  {
+                    id: "line-22-column-35",
+                    value: "15471.46",
+                  },
+                ],
+              },
+              {
+                id: "line-23",
+                cells: [
+                  {
+                    id: "line-23-column-9",
+                    value: "classic",
+                  },
+                  {
+                    id: "line-23-column-24",
+                    value: "65",
+                  },
+                  {
+                    id: "line-23-column-35",
+                    value: "9848.20",
+                  },
+                ],
+              },
+              {
+                id: "line-24",
+                cells: [
+                  {
+                    id: "line-24-column-9",
+                    value: "classic plus",
+                  },
+                  {
+                    id: "line-24-column-24",
+                    value: "65",
+                  },
+                  {
+                    id: "line-24-column-35",
+                    value: "16413.67",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     path: "features/classic-pension.feature",
     name: "Model classic and classic plus Civil Service legacy pensions",
     description:

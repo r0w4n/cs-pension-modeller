@@ -733,10 +733,18 @@ export function MethodologyPage() {
         </FormulaBlock>
         <p className="section-copy">
           If the final salary link is maintained, the model projects current
-          final pensionable earnings using the salary increase assumption. If
-          the link is broken, it uses the preserved final pensionable earnings
-          entered by the user. The entered reckonable service is treated as
-          fixed and does not increase during future Alpha service.
+          final pensionable earnings using the salary increase assumption up to
+          the earlier of the Alpha leaving age (when Alpha is included) and that
+          legacy pension's draw age. Without Alpha, the legacy draw age fixes
+          the salary basis. The income assessment start age does not determine
+          this date. This is a simplified proxy for leaving linked service or
+          claiming benefits, including during partial retirement; later pay
+          rises do not increase benefits already drawn. Earlier versions
+          continued salary growth beyond these dates, so affected saved plans
+          may now show lower estimates. If the link is broken, it uses the
+          preserved final pensionable earnings entered by the user. The entered
+          reckonable service is treated as fixed and does not increase during
+          future Alpha service.
         </p>
         <p className="section-copy">
           When pension increases are enabled, deferred classic and classic plus

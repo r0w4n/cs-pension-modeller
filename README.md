@@ -147,6 +147,17 @@ Some important assumptions and simplifications are:
 - classic plus estimates split pre-2002 service at 1/80 with an automatic lump
   sum from that part, and post-2002 service at 1/60 with no automatic lump sum
   in the model.
+- For maintained classic and classic plus final salary links, assumed pay rises
+  stop at the earlier of the enabled Alpha leaving age and the legacy pension's
+  draw age. If Alpha is not included, the model uses the legacy draw age; the
+  income assessment start age does not determine the final salary date. This is
+  the model's proxy for leaving linked service or claiming benefits, including
+  during partial retirement. It follows the final salary principle in the
+  [Civil Service Pensions alpha guide, section 01A](https://www.civilservicepensionscheme.org.uk/memberhub/kbarticle/?id=KA-01106)
+  (undated guidance, checked 4 November 2026). Configured pension increases remain
+  separate. This corrects earlier projections that continued adding pay rises
+  after leaving or drawing. Saved settings are retained without a schema change;
+  affected estimates may be lower after recalculation.
 - classic and classic plus use age 60 as Normal Pension Age, with early-payment
   reductions modelled as 5% per year early, pro-rated by month.
 - Premium is treated as a preserved closed legacy pension. The model does not

@@ -1,4 +1,5 @@
 import type { PensionSettings } from "../settings";
+import { addYearsToIsoDate } from "../model-date";
 
 export const CLASSIC_NORMAL_PENSION_AGE = 60;
 const CLASSIC_ACCRUAL_DENOMINATOR = 80;
@@ -153,6 +154,10 @@ function calculateClassicAmountsAtDate(input: {
             payRisePercent: settings.alphaPayRisePercent,
             startDate: settings.startDate,
             rowDate,
+            salaryGrowthEndDate: getFinalSalaryGrowthEndDate(
+              settings,
+              settings.classicPensionDrawAge
+            ),
           }),
           reckonableServiceYears: settings.classicReckonableServiceYears,
         });
@@ -189,6 +194,10 @@ function calculateClassicPlusAmountsAtDate(input: {
             payRisePercent: settings.alphaPayRisePercent,
             startDate: settings.startDate,
             rowDate,
+            salaryGrowthEndDate: getFinalSalaryGrowthEndDate(
+              settings,
+              settings.classicPlusPensionDrawAge
+            ),
           }),
           pre2002ServiceYears: settings.classicPlusPre2002ServiceYears,
           post2002ServiceYears: settings.classicPlusPost2002ServiceYears,
@@ -205,6 +214,20 @@ function calculateClassicPlusAmountsAtDate(input: {
   });
 }
 
+function getFinalSalaryGrowthEndDate(
+  settings: PensionSettings,
+  pensionDrawAge: number
+) {
+  // The enabled Alpha leaving age is the model's proxy for leaving linked
+  // service. Drawing legacy benefits fixes their salary basis even if work
+  // continues during partial retirement. Hidden Alpha inputs must not affect it.
+  const finalSalaryAge = settings.showAlpha
+    ? Math.min(settings.alphaPensionLeaveAge, pensionDrawAge)
+    : pensionDrawAge;
+
+  return addYearsToIsoDate(settings.dateOfBirth, finalSalaryAge);
+}
+
 function getFinalPensionableEarnings(input: {
   currentFinalPensionableEarnings: number;
   preservedFinalPensionableEarnings: number;
@@ -212,13 +235,18 @@ function getFinalPensionableEarnings(input: {
   payRisePercent: number;
   startDate: string;
   rowDate: string;
+  salaryGrowthEndDate: string;
 }) {
   if (input.finalSalaryLink === "broken") {
     return input.preservedFinalPensionableEarnings;
   }
 
   const payRiseRate = input.payRisePercent / 100;
-  const years = calculateWholeYearDifference(input.startDate, input.rowDate);
+  const earningsDate =
+    input.rowDate < input.salaryGrowthEndDate
+      ? input.rowDate
+      : input.salaryGrowthEndDate;
+  const years = calculateWholeYearDifference(input.startDate, earningsDate);
 
   return input.currentFinalPensionableEarnings * (1 + payRiseRate) ** years;
 }

@@ -17,6 +17,7 @@ declare global {
   interface Window {
     dataLayer?: GtagDataLayerCommand[];
     gtag?: GtagFunction;
+    [key: `ga-disable-${string}`]: boolean | undefined;
   }
 }
 
@@ -54,7 +55,16 @@ export function initialiseAnalytics() {
 
   const measurementId = getAnalyticsMeasurementId();
 
-  if (!measurementId || window.gtag) {
+  if (!measurementId) {
+    return;
+  }
+
+  const wasDisabled = window[`ga-disable-${measurementId}`] === true;
+  window[`ga-disable-${measurementId}`] = false;
+  if (window.gtag) {
+    if (wasDisabled) {
+      window.gtag("consent", "update", getConsentParameters("granted"));
+    }
     return;
   }
 
@@ -64,12 +74,10 @@ export function initialiseAnalytics() {
     window.dataLayer?.push(arguments);
   };
 
-  window.gtag("consent", "default", {
-    ad_personalization: "denied",
-    ad_storage: "denied",
-    ad_user_data: "denied",
-    analytics_storage: "granted",
-  });
+  window.gtag("consent", "default", getConsentParameters("granted"));
+  if (wasDisabled) {
+    window.gtag("consent", "update", getConsentParameters("granted"));
+  }
   window.gtag("js", new Date());
   window.gtag("config", measurementId, {
     allow_ad_personalization_signals: false,
@@ -95,20 +103,20 @@ export function disableAnalytics() {
   }
 
   const script = document.getElementById(GA_SCRIPT_ID);
-
-  if (!window.gtag && !script) {
-    return;
+  const measurementId = getAnalyticsMeasurementId();
+  if (measurementId) {
+    // Removing the element cannot unload an executed SDK or cancel all pending
+    // script execution. Set Google's opt-out before any further gtag calls.
+    // https://developers.google.com/tag-platform/security/guides/privacy#turn_off_google_analytics
+    window[`ga-disable-${measurementId}`] = true;
   }
 
   if (window.gtag) {
-    window.gtag("consent", "update", {
-      ad_personalization: "denied",
-      ad_storage: "denied",
-      ad_user_data: "denied",
-      analytics_storage: "denied",
-    });
+    window.gtag("consent", "update", getConsentParameters("denied"));
   }
 
+  // An executed SDK may retain this array after its window property is removed.
+  if (window.dataLayer) window.dataLayer.length = 0;
   delete window.gtag;
   delete window.dataLayer;
   script?.remove();
@@ -135,7 +143,8 @@ export function trackAnalyticsEvent(
   if (
     typeof window === "undefined" ||
     !isAnalyticsConfigured() ||
-    !window.gtag
+    !window.gtag ||
+    window[`ga-disable-${getAnalyticsMeasurementId()}`] !== false
   ) {
     return;
   }
@@ -144,6 +153,15 @@ export function trackAnalyticsEvent(
     ...APP_EVENT_PARAMETERS,
     ...removeEmptyParameters(parameters),
   });
+}
+
+function getConsentParameters(analyticsStorage: "granted" | "denied") {
+  return {
+    ad_personalization: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    analytics_storage: analyticsStorage,
+  };
 }
 
 function removeEmptyParameters(parameters: AnalyticsEventParameters) {

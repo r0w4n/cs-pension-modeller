@@ -58,7 +58,9 @@ function PrivacyPage() {
           details or the Stripe payment link.
         </p>
         <p className="section-copy">
-          You can turn analytics off at any time from the Settings page.
+          You can turn analytics off at any time from the Settings page. Turning
+          analytics off or clearing local data stops further analytics
+          collection. It stays off until you choose to accept analytics again.
         </p>
       </section>
 

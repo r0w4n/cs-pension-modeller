@@ -426,6 +426,16 @@ saving preference so the browser can remember that saving is off. Analytics are
 not initialised unless the user accepts them in the start dialog or turns them
 on later in Settings, and the choice can be changed afterwards.
 
+Withdrawing analytics consent or clearing local data sets Google's
+measurement-specific `ga-disable` flag before notifying the SDK, clears queued
+app commands, and blocks further app events even if an in-flight script later
+restores its globals. Explicitly accepting analytics again releases that flag
+and updates consent. This follows [Google's documented opt-out mechanism](https://developers.google.com/tag-platform/security/guides/privacy#turn_off_google_analytics)
+(checked 5 November 2026). The production smoke tests use an active SDK fixture
+with retained callbacks and intercepted collection requests; no test data is
+sent to Google. These tests verify the documented SDK contract rather than
+executing Google's live, remotely managed SDK.
+
 Keys currently used:
 
 | Key                                       | Purpose                                                                                                                                                                                                                                                                                                        | Stored value                                                                                                                                          |

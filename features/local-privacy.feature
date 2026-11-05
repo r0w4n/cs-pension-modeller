@@ -3,6 +3,9 @@ Feature: Local-only preferences and data controls
 
   The modeller should keep user-entered data local to the browser and allow the
   user to disable or clear local persistence.
+  Analytics withdrawal must stop app events and active SDK collection. The
+  production browser checks cover the loaded SDK opt-out contract; these fast
+  scenarios cover the persisted consent choices and local-data actions.
 
   @acknowledgement
   Scenario: Remember that the user has acknowledged the important information notice
@@ -20,6 +23,13 @@ Feature: Local-only preferences and data controls
       | consent  |
       | accepted |
       | rejected |
+
+  @analytics-consent
+  Scenario: Remember withdrawal after analytics was previously accepted
+    Given browser local storage is available
+    When analytics consent is saved as "accepted"
+    And analytics consent is saved as "rejected"
+    Then analytics consent should load as "rejected"
 
   @preferences
   Scenario Outline: Store journey and comparison display preferences independently

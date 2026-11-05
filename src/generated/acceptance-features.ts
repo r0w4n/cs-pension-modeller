@@ -11711,12 +11711,12 @@ export const acceptanceFeatures = [
     path: "features/local-privacy.feature",
     name: "Local-only preferences and data controls",
     description:
-      "The modeller should keep user-entered data local to the browser and allow the\n  user to disable or clear local persistence.",
+      "The modeller should keep user-entered data local to the browser and allow the\n  user to disable or clear local persistence.\n  Analytics withdrawal must stop app events and active SDK collection. The\n  production browser checks cover the loaded SDK opt-out contract; these fast\n  scenarios cover the persisted consent choices and local-data actions.",
     tags: ["@local-privacy"],
     status: "covered",
     scenarios: [
       {
-        id: "line-8",
+        id: "line-11",
         keyword: "Scenario",
         name: "Remember that the user has acknowledged the important information notice",
         description: "",
@@ -11725,17 +11725,17 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-9",
+            id: "line-12",
             keyword: "Given",
             text: "browser local storage is available",
           },
           {
-            id: "line-10",
+            id: "line-13",
             keyword: "When",
             text: "the important information notice is acknowledged",
           },
           {
-            id: "line-11",
+            id: "line-14",
             keyword: "Then",
             text: "the acknowledgement should be remembered locally",
           },
@@ -11743,7 +11743,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-14",
+        id: "line-17",
         keyword: "Scenario Outline",
         name: "Remember the user's analytics consent choice",
         description: "",
@@ -11752,51 +11752,51 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-15",
+            id: "line-18",
             keyword: "Given",
             text: "browser local storage is available",
           },
           {
-            id: "line-16",
+            id: "line-19",
             keyword: "When",
             text: 'analytics consent is saved as "<consent>"',
           },
           {
-            id: "line-17",
+            id: "line-20",
             keyword: "Then",
             text: 'analytics consent should load as "<consent>"',
           },
         ],
         examples: [
           {
-            id: "line-19",
+            id: "line-22",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-20",
+                id: "line-23",
                 cells: [
                   {
-                    id: "line-20-column-9",
+                    id: "line-23-column-9",
                     value: "consent",
                   },
                 ],
               },
               {
-                id: "line-21",
+                id: "line-24",
                 cells: [
                   {
-                    id: "line-21-column-9",
+                    id: "line-24-column-9",
                     value: "accepted",
                   },
                 ],
               },
               {
-                id: "line-22",
+                id: "line-25",
                 cells: [
                   {
-                    id: "line-22-column-9",
+                    id: "line-25-column-9",
                     value: "rejected",
                   },
                 ],
@@ -11806,7 +11806,39 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-25",
+        id: "line-28",
+        keyword: "Scenario",
+        name: "Remember withdrawal after analytics was previously accepted",
+        description: "",
+        tags: ["@analytics-consent"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-29",
+            keyword: "Given",
+            text: "browser local storage is available",
+          },
+          {
+            id: "line-30",
+            keyword: "When",
+            text: 'analytics consent is saved as "accepted"',
+          },
+          {
+            id: "line-31",
+            keyword: "And",
+            text: 'analytics consent is saved as "rejected"',
+          },
+          {
+            id: "line-32",
+            keyword: "Then",
+            text: 'analytics consent should load as "rejected"',
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-35",
         keyword: "Scenario Outline",
         name: "Store journey and comparison display preferences independently",
         description: "",
@@ -11815,73 +11847,73 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-26",
+            id: "line-36",
             keyword: "Given",
             text: "browser local storage is available",
           },
           {
-            id: "line-27",
+            id: "line-37",
             keyword: "When",
             text: 'the journey retirement income display is saved as "<journeyDisplay>"',
           },
           {
-            id: "line-28",
+            id: "line-38",
             keyword: "And",
             text: 'the comparison retirement income display is saved as "<comparisonDisplay>"',
           },
           {
-            id: "line-29",
+            id: "line-39",
             keyword: "Then",
             text: 'the journey retirement income display should load as "<journeyDisplay>"',
           },
           {
-            id: "line-30",
+            id: "line-40",
             keyword: "And",
             text: 'the comparison retirement income display should load as "<comparisonDisplay>"',
           },
         ],
         examples: [
           {
-            id: "line-32",
+            id: "line-42",
             name: "",
             tags: [],
             status: "covered",
             table: [
               {
-                id: "line-33",
+                id: "line-43",
                 cells: [
                   {
-                    id: "line-33-column-9",
+                    id: "line-43-column-9",
                     value: "journeyDisplay",
                   },
                   {
-                    id: "line-33-column-26",
+                    id: "line-43-column-26",
                     value: "comparisonDisplay",
                   },
                 ],
               },
               {
-                id: "line-34",
+                id: "line-44",
                 cells: [
                   {
-                    id: "line-34-column-9",
+                    id: "line-44-column-9",
                     value: "annual",
                   },
                   {
-                    id: "line-34-column-26",
+                    id: "line-44-column-26",
                     value: "monthly",
                   },
                 ],
               },
               {
-                id: "line-35",
+                id: "line-45",
                 cells: [
                   {
-                    id: "line-35-column-9",
+                    id: "line-45-column-9",
                     value: "monthly",
                   },
                   {
-                    id: "line-35-column-26",
+                    id: "line-45-column-26",
                     value: "annual",
                   },
                 ],
@@ -11891,7 +11923,7 @@ export const acceptanceFeatures = [
         ],
       },
       {
-        id: "line-38",
+        id: "line-48",
         keyword: "Scenario",
         name: "Use safe defaults when local storage is disabled",
         description: "",
@@ -11900,32 +11932,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-39",
+            id: "line-49",
             keyword: "Given",
             text: "browser local storage is disabled",
           },
           {
-            id: "line-40",
+            id: "line-50",
             keyword: "When",
             text: "the stored modeller preferences are loaded",
           },
           {
-            id: "line-41",
+            id: "line-51",
             keyword: "Then",
             text: "no previous acknowledgement should be loaded",
           },
           {
-            id: "line-42",
+            id: "line-52",
             keyword: "And",
             text: "no previous analytics consent should be loaded",
           },
           {
-            id: "line-43",
+            id: "line-53",
             keyword: "And",
             text: "no previous modeller mode should be loaded",
           },
           {
-            id: "line-44",
+            id: "line-54",
             keyword: "And",
             text: "guidance notes should be shown",
           },
@@ -11933,7 +11965,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-47",
+        id: "line-57",
         keyword: "Scenario",
         name: "Acknowledge the notice without re-enabling disabled saving",
         description: "",
@@ -11942,37 +11974,37 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-48",
+            id: "line-58",
             keyword: "Given",
             text: "browser local storage is disabled",
           },
           {
-            id: "line-49",
+            id: "line-59",
             keyword: "When",
             text: "the important information notice is acknowledged",
           },
           {
-            id: "line-50",
+            id: "line-60",
             keyword: "And",
             text: 'analytics consent is saved as "accepted"',
           },
           {
-            id: "line-51",
+            id: "line-61",
             keyword: "And",
             text: "the stored modeller preferences are loaded",
           },
           {
-            id: "line-52",
+            id: "line-62",
             keyword: "Then",
             text: "local saving should be off",
           },
           {
-            id: "line-53",
+            id: "line-63",
             keyword: "And",
             text: "no previous acknowledgement should be loaded",
           },
           {
-            id: "line-54",
+            id: "line-64",
             keyword: "And",
             text: "no previous analytics consent should be loaded",
           },
@@ -11980,7 +12012,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-57",
+        id: "line-67",
         keyword: "Scenario",
         name: "Clear populated local data and reset active values",
         description: "",
@@ -11989,62 +12021,62 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-58",
+            id: "line-68",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-59",
+            id: "line-69",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-60",
+            id: "line-70",
             keyword: "Then",
             text: "local saving should be off",
           },
           {
-            id: "line-61",
+            id: "line-71",
             keyword: "And",
             text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
           {
-            id: "line-62",
+            id: "line-72",
             keyword: "And",
             text: "quick-calculator storage should be cleared",
           },
           {
-            id: "line-63",
+            id: "line-73",
             keyword: "And",
             text: "active modeller settings should be reset to their initial values",
           },
           {
-            id: "line-64",
+            id: "line-74",
             keyword: "And",
             text: "no previous acknowledgement should be loaded",
           },
           {
-            id: "line-65",
+            id: "line-75",
             keyword: "And",
             text: "no previous analytics consent should be loaded",
           },
           {
-            id: "line-66",
+            id: "line-76",
             keyword: "And",
             text: "no previous modeller mode should be loaded",
           },
           {
-            id: "line-67",
+            id: "line-77",
             keyword: "And",
             text: "guidance notes should be shown",
           },
           {
-            id: "line-68",
+            id: "line-78",
             keyword: "And",
             text: "display preferences should be reset to monthly values",
           },
           {
-            id: "line-69",
+            id: "line-79",
             keyword: "And",
             text: "saved comparison scenarios should be cleared",
           },
@@ -12052,7 +12084,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-72",
+        id: "line-82",
         keyword: "Scenario",
         name: "Disable saving with existing data and ignore later edits",
         description: "",
@@ -12061,32 +12093,32 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-73",
+            id: "line-83",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-74",
+            id: "line-84",
             keyword: "When",
             text: "local saving is disabled through the application action",
           },
           {
-            id: "line-75",
+            id: "line-85",
             keyword: "And",
             text: "the user edits settings and saves another comparison while local saving is disabled",
           },
           {
-            id: "line-76",
+            id: "line-86",
             keyword: "Then",
             text: "no settings or comparison data should be written while saving is disabled",
           },
           {
-            id: "line-77",
+            id: "line-87",
             keyword: "And",
             text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
           {
-            id: "line-78",
+            id: "line-88",
             keyword: "And",
             text: "quick-calculator storage should be cleared",
           },
@@ -12094,7 +12126,7 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-81",
+        id: "line-91",
         keyword: "Scenario",
         name: "Re-enable saving after clearing and editing without restoring old values",
         description: "",
@@ -12103,42 +12135,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-82",
+            id: "line-92",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-83",
+            id: "line-93",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-84",
+            id: "line-94",
             keyword: "And",
             text: "the user edits active settings and comparisons while local saving is disabled",
           },
           {
-            id: "line-85",
+            id: "line-95",
             keyword: "And",
             text: "local saving is re-enabled through the application action",
           },
           {
-            id: "line-86",
+            id: "line-96",
             keyword: "And",
             text: "the modeller is reloaded from local storage",
           },
           {
-            id: "line-87",
+            id: "line-97",
             keyword: "Then",
             text: "the reloaded settings should contain the new edits",
           },
           {
-            id: "line-88",
+            id: "line-98",
             keyword: "And",
             text: "the reloaded comparison scenarios should contain only the new scenario",
           },
           {
-            id: "line-89",
+            id: "line-99",
             keyword: "And",
             text: "old cleared data should not reload",
           },

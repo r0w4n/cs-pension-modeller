@@ -6,6 +6,8 @@ declare global {
     __recordAnalyticsCommand?: (command: AnalyticsCommand) => void;
     __recordAnalyticsStubLoad?: () => void;
     __analyticsStubLoadedCount?: number;
+    __analyticsProbeInstalled?: boolean;
+    __analyticsProbeResults?: Array<"sent" | "blocked">;
   }
 }
 
@@ -17,6 +19,7 @@ async function interceptAnalyticsRequests(
   const blockedRealAnalyticsUrls: string[] = [];
   const commands: AnalyticsCommand[] = [];
   const scriptUrls: string[] = [];
+  const sdkProbeRequests: string[] = [];
   let loadedCount = 0;
 
   await page.exposeFunction(
@@ -63,8 +66,38 @@ async function interceptAnalyticsRequests(
               window.gtag = function gtag() {
                 forwardCommand(arguments);
               };
+
+              // One autonomous SDK callback survives removal of the script and
+              // gtag globals. It follows Google's documented opt-out contract;
+              // its synthetic collection requests are intercepted below.
+              if (!window.__analyticsProbeInstalled) {
+                window.__analyticsProbeInstalled = true;
+                window.addEventListener("analytics-sdk-probe", () => {
+                  window.__analyticsProbeResults ??= [];
+                  if (window["ga-disable-G-TEST123"] === true) {
+                    window.__analyticsProbeResults.push("blocked");
+                    return;
+                  }
+                  window.__analyticsProbeResults.push("sent");
+                  void fetch("https://www.google-analytics.com/g/collect?tid=G-TEST123&en=retained_sdk_probe", {
+                    method: "POST", body: "synthetic-test-probe", keepalive: true
+                  });
+                });
+              }
             })();
           `,
+        });
+        return;
+      }
+
+      if (
+        url ===
+        "https://www.google-analytics.com/g/collect?tid=G-TEST123&en=retained_sdk_probe"
+      ) {
+        sdkProbeRequests.push(url);
+        await route.fulfill({
+          status: 204,
+          headers: { "access-control-allow-origin": "*" },
         });
         return;
       }
@@ -78,6 +111,7 @@ async function interceptAnalyticsRequests(
     blockedRealAnalyticsUrls,
     getState: () => ({ commands, loadedCount }),
     scriptUrls,
+    sdkProbeRequests,
   };
 }
 
@@ -117,6 +151,7 @@ async function pageHasAnalyticsDisabled(page: import("@playwright/test").Page) {
   return await page.evaluate(
     () =>
       window.gtag === undefined &&
+      window["ga-disable-G-TEST123"] === true &&
       document.getElementById("google-analytics-script") === null
   );
 }
@@ -143,6 +178,42 @@ async function navigateToJourneyResult(page: import("@playwright/test").Page) {
 }
 
 test.describe("production build smoke checks", () => {
+  test("stops retained SDK collection on withdrawal and clearing, and resumes only on re-consent", async ({
+    page,
+  }) => {
+    const analytics = await interceptAnalyticsRequests(page);
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
+    await expect.poll(() => analytics.getState().loadedCount).toBe(1);
+    await page.goto("/settings/");
+    await expect.poll(() => analytics.getState().loadedCount).toBe(2);
+
+    const probe = () =>
+      page.evaluate(() => {
+        window.dispatchEvent(new Event("analytics-sdk-probe"));
+        return window.__analyticsProbeResults?.at(-1);
+      });
+    expect(await probe()).toBe("sent");
+    await expect.poll(() => analytics.sdkProbeRequests.length).toBe(1);
+
+    await page.getByLabel("Allow analytics").uncheck();
+    await expect.poll(() => pageHasAnalyticsDisabled(page)).toBe(true);
+    expect(await probe()).toBe("blocked");
+    expect(analytics.sdkProbeRequests).toHaveLength(1);
+
+    await page.getByLabel("Allow analytics").check();
+    await expect.poll(() => analytics.getState().loadedCount).toBe(3);
+    expect(await probe()).toBe("sent");
+    await expect.poll(() => analytics.sdkProbeRequests.length).toBe(2);
+
+    await page.getByRole("button", { name: "Clear all data" }).click();
+    await expect.poll(() => pageHasAnalyticsDisabled(page)).toBe(true);
+    expect(await probe()).toBe("blocked");
+    expect(analytics.sdkProbeRequests).toHaveLength(2);
+    expect(analytics.blockedRealAnalyticsUrls).toEqual([]);
+  });
   test("serves the main app shell from the built artifact", async ({
     page,
   }) => {

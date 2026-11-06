@@ -273,6 +273,14 @@ dialog.app-dialog-overlay {
   outline: none;
 }
 
+/* Dialog close moves focus to these headings for assistive-technology context.
+   They are not interactive or keyboard-tab stops, so avoid drawing the browser's
+   large default focus rectangle around the heading text. */
+.hero-copy > h1[tabindex="-1"]:focus,
+.hero-copy > h2[tabindex="-1"]:focus {
+  outline: none;
+}
+
 .hero,
 .panel {
   border: 1px solid var(--border);
@@ -932,6 +940,7 @@ h3 {
 
 .journey-step {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.625rem;
   min-width: 0;
 }

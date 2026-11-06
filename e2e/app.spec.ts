@@ -251,6 +251,22 @@ test.describe("app end-to-end journeys", () => {
     ).toBe("true");
   });
 
+  test("closes analytics consent without outlining the page heading", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
+
+    const pageHeading = page.getByRole("heading", {
+      level: 1,
+      name: "Retirement Income Modeller",
+    });
+    await expect(pageHeading).toBeFocused();
+    await expect(pageHeading).toHaveCSS("outline-style", "none");
+  });
+
   test("selects Quick before Simple inside the modeller and keeps saved plans separate", async ({
     page,
     context,

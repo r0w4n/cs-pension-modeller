@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import {
   fieldGroups,
   type FieldDefinition,
@@ -32,6 +32,7 @@ import {
   type JourneyOptionalSectionCopy,
   type JourneyResultsSection,
   type JourneyStepDefinition,
+  type JourneySupportLink,
   type OptionalSectionToggleKey,
 } from "../app-domains";
 import type {
@@ -144,6 +145,24 @@ export function JourneyStepContent({
   >({});
   const shouldRenderProjectionTable =
     !useMobileDateDropdowns("(max-width: 640px)");
+
+  if (step.kind === "reading") {
+    return (
+      <div className="journey-reading">
+        <div>
+          <h4>Helpful things to have</h4>
+          <ul className="section-copy">
+            {step.prerequisites.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        {step.sections.map((section) => (
+          <JourneySupportPanel key={section.href} supportLink={section} />
+        ))}
+      </div>
+    );
+  }
 
   if (step.kind === "optional-sections") {
     return renderOptionalSectionsStep(step, viewModel);
@@ -708,11 +727,7 @@ function renderFieldsStep(
         />
       ) : null}
       {step.supportLinkLayout === "inline" && step.supportLink ? (
-        <JourneySupportPanel
-          stepId={step.id}
-          supportLink={step.supportLink}
-          inline
-        />
+        <JourneySupportPanel supportLink={step.supportLink} inline />
       ) : null}
     </SettingsFieldsFeature>
   );
@@ -725,7 +740,7 @@ function renderFieldsStep(
       <ValidationSummary validationIssues={validationIssues} />
 
       {step.supportLink && step.supportLinkLayout !== "inline" ? (
-        <JourneySupportPanel stepId={step.id} supportLink={step.supportLink} />
+        <JourneySupportPanel supportLink={step.supportLink} />
       ) : null}
 
       {step.optionalQuestion ? (
@@ -861,32 +876,29 @@ function getPartnerFieldLabel(label: string) {
 }
 
 function JourneySupportPanel({
-  stepId,
   supportLink,
   inline = false,
 }: {
-  stepId: string;
-  supportLink: NonNullable<
-    Extract<JourneyStepDefinition, { kind: "fields" }>["supportLink"]
-  >;
+  supportLink: JourneySupportLink;
   inline?: boolean;
 }) {
+  const headingId = useId();
+
   return (
     <aside
       className={
         inline ? "field-card journey-support-field" : "journey-support-callout"
       }
-      aria-labelledby={`journey-support-${stepId}`}
+      aria-labelledby={headingId}
     >
-      <h4
-        id={`journey-support-${stepId}`}
-        className={inline ? "field-label" : undefined}
-      >
+      <h4 id={headingId} className={inline ? "field-label" : undefined}>
         {supportLink.heading}
       </h4>
-      <p className={inline ? "field-help" : undefined}>
-        {supportLink.description}
-      </p>
+      {supportLink.paragraphs.map((paragraph) => (
+        <p key={paragraph} className={inline ? "field-help" : undefined}>
+          {paragraph}
+        </p>
+      ))}
       <a href={supportLink.href} target="_blank" rel="noreferrer">
         {supportLink.label}
         <span className="visually-hidden"> (opens in a new tab)</span>

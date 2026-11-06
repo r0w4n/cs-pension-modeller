@@ -30,10 +30,10 @@ Feature: Modeller journeys
       | Work out what I need to retire early | What would you like to spend each month? | Your bridging money         | show the projection table    | show bridge funding details by default | show the comparison section |
 
   @simple-journey
-  Scenario: Start the simplified journey with personal details
+  Scenario: Start the simplified journey with reading and preparation
     When the "Simplified retirement journey" journey is loaded
-    Then the first journey step should be titled "A little about you"
-    And the journey should not include a step titled "Alpha pension: the basics"
+    Then the first journey step should be titled "Before we get started..."
+    And the "Before we get started..." journey step should appear before the "A little about you" journey step
     And the journey should include a step titled "What would you like to spend each month?"
     And the "What would you like to spend each month?" journey step should contain these fields:
       | field                                                              |
@@ -82,7 +82,6 @@ Feature: Modeller journeys
       | Yearly Alpha pension built up so far (£)            |
       | Yearly pay used to build your Alpha pension (£)     |
     And the "Add your Alpha pension details" journey step should not include the field "I have confirmed Alpha access from age 55"
-    And the "Add your Alpha pension details" journey step should link to Annual Benefit Statement help
     And the "Add your Alpha pension details" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
 
   @simple-journey @alpha
@@ -105,7 +104,6 @@ Feature: Modeller journeys
     When the "Simplified retirement journey" journey is loaded
     Then the journey should include a step titled "Do you know your State Pension forecast?"
     And the "Do you know your State Pension forecast?" journey step should use a yes or no question
-    And the "Do you know your State Pension forecast?" journey step should link to the personalised State Pension forecast
     And the "Do you know your State Pension forecast?" journey step should appear before the "Do you have any other Civil Service pensions?" journey step
     Given an unconfirmed full State Pension assumption
     And the assumed State Pension is enough to meet the retirement target
@@ -316,3 +314,18 @@ Feature: Modeller journeys
     When retirement income chart titles are prepared
     Then the standard results chart title should be "Retirement income over time"
     And the simple results chart title should be "How your retirement income may change"
+
+  @simple-journey @alpha @state-pension
+  Scenario: Explain both pensions and link to official figures before asking for inputs
+    When the "Simplified retirement journey" journey is loaded
+    Then the "Before we get started..." journey step should link to Annual Benefit Statement help
+    And the "Before we get started..." journey step should link to the personalised State Pension forecast
+    And the "How Alpha builds up" section of the "Before we get started..." journey step should explain:
+      | detail                                                    |
+      | 2.32%                                                     |
+      | £696 a year to your pension before tax                    |
+    And the "How the new State Pension builds up" section of the "Before we get started..." journey step should explain:
+      | detail                                                    |
+      | how many years count on your National Insurance record    |
+      | National Insurance credits that help a year count        |
+      | how much you might get and when you can start getting it |

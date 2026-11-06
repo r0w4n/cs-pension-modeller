@@ -407,12 +407,12 @@ duplicating its setting or calculation. It can also turn shared results
 components on or off, or select their simple, standard, or detailed
 presentation. The current compositions are:
 
-| Journey                              | Input presentation                                                              | Results composition                                                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Quick modeller                       | Statement figures and sliders with optional State Pension and EPA assumptions   | Eight Alpha pension comparisons at Normal Pension Age and a selected retirement age, in today's money before tax |
-| Simplified retirement journey        | Short guided sequence with plain-language field labels and constrained defaults | Simple summary, simple retirement-income chart, income details, and concise inflation disclosure                 |
-| Work out what I need to retire early | Guided sequence focused on retirement timing and flexible funds                 | Standard summary and retirement-income chart, expanded inflation basis, comparison, and projection table         |
-| Expert journey                       | Full field groups and advanced controls                                         | Detailed summary and retirement-income chart, expanded inflation basis, comparison, and projection table         |
+| Journey                              | Input presentation                                                            | Results composition                                                                                              |
+| ------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Quick modeller                       | Statement figures and sliders with optional State Pension and EPA assumptions | Eight Alpha pension comparisons at Normal Pension Age and a selected retirement age, in today's money before tax |
+| Simplified retirement journey        | Opening Alpha and State Pension reading and checklist, then guided inputs     | Simple summary, simple retirement-income chart, income details, and concise inflation disclosure                 |
+| Work out what I need to retire early | Guided sequence focused on retirement timing and flexible funds               | Standard summary and retirement-income chart, expanded inflation basis, comparison, and projection table         |
+| Expert journey                       | Full field groups and advanced controls                                       | Detailed summary and retirement-income chart, expanded inflation basis, comparison, and projection table         |
 
 Early-retirement withdrawals and any remaining shortfall come directly from the
 canonical `RetirementPlanResult`. They are not calculated through a

@@ -1318,17 +1318,37 @@ describe.sequential("App settings form", () => {
     );
     expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
       "content",
-      "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like."
+      "Learn how your Civil Service Alpha pension and the new State Pension build up, then see how they could contribute to your retirement income."
     );
+    expect(
+      screen.getByRole("heading", { name: "Before we get started..." })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Before we get started/i })
+    ).toHaveAttribute("aria-current", "step");
+    const preparation = screen.getByRole("region", {
+      name: "Before we get started...",
+    });
+    expect(within(preparation).getByRole("list")).toHaveTextContent(
+      "yearly pay that counts towards Alpha, before tax"
+    );
+    expect(
+      within(preparation).getByRole("link", {
+        name: /Check my State Pension estimate on GOV.UK/i,
+      })
+    ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
+    expect(
+      within(preparation).getByRole("link", {
+        name: /Find my Alpha pension statement/i,
+      })
+    ).toHaveAttribute(
+      "href",
+      "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(
       screen.getByRole("heading", { name: "A little about you" })
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /A little about you/i })
-    ).toHaveAttribute("aria-current", "step");
-    expect(
-      screen.queryByRole("button", { name: /Alpha pension: the basics/i })
-    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Add your Alpha pension details/i })
     ).toBeInTheDocument();
@@ -1441,16 +1461,8 @@ describe.sequential("App settings form", () => {
       )
     ).toHaveValue(null);
     expect(
-      screen.getByText(/statement may call it ‘pensionable earnings’/i)
+      screen.getByText(/known as pensionable earnings/i)
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", {
-        name: /Help me find my Annual Benefit Statement/i,
-      })
-    ).toHaveAttribute(
-      "href",
-      "https://www.civilservicepensionscheme.org.uk/memberhub/annualbenefitstatement/"
-    );
     expect(
       screen.queryByRole("checkbox", {
         name: "I have confirmed Alpha access from age 55",
@@ -1868,9 +1880,6 @@ describe.sequential("App settings form", () => {
     expect(screen.getByText(/Your result will remind you/)).toHaveTextContent(
       "changing it could leave you with less than the amount you want"
     );
-    expect(
-      screen.getByRole("link", { name: /Check my State Pension forecast/i })
-    ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
     expect(
       screen.queryByLabelText(
         "How much State Pension does your forecast show each year?"

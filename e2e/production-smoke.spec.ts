@@ -623,7 +623,7 @@ test.describe("production build smoke checks", () => {
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "A little about you" })
+      page.getByRole("heading", { name: "Before we get started..." })
     ).toBeVisible();
     await navigateToJourneyResult(page);
     await expect(

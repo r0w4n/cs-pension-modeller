@@ -75,6 +75,11 @@ test.describe("accessibility", () => {
 
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
+      page.getByRole("heading", { name: "A little about you" })
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
       page.getByRole("heading", {
         name: "What would you like to spend each month?",
       })
@@ -393,7 +398,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "A little about you" })
+      page.getByRole("heading", { name: "Before we get started..." })
     ).toBeVisible();
     return;
   }

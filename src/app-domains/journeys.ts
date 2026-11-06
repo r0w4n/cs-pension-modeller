@@ -122,7 +122,7 @@ export type JourneyOptionalSectionCopy = Partial<
 
 export type JourneySupportLink = {
   heading: string;
-  description: string;
+  paragraphs: readonly string[];
   href: string;
   label: string;
 };
@@ -168,6 +168,16 @@ export type JourneyResultsSection =
   | { id: "projection-table" };
 
 export type JourneyStepDefinition =
+  | {
+      id: string;
+      eyebrow: string;
+      title: string;
+      description: string;
+      kind: "reading";
+      prerequisites: readonly string[];
+      sections: readonly JourneySupportLink[];
+      visible?: (settings: PensionSettings) => boolean;
+    }
   | {
       id: string;
       eyebrow: string;
@@ -285,8 +295,9 @@ const MONTHLY_SPENDING_TARGET_STEP = {
   supportLinkLayout: "inline",
   supportLink: {
     heading: "Not sure what amount to choose?",
-    description:
+    paragraphs: [
       "These one-person household examples come from the Retirement Living Standards. Your housing costs, household and personal circumstances can make your spending different, so use them only as a starting point.",
+    ],
     href: knowledgeLinks.retirementLivingStandards,
     label: "Help me choose a retirement income",
   },
@@ -679,18 +690,52 @@ export const JOURNEY_DEFINITIONS = [
     id: "simple-early-retirement",
     title: "Simplified retirement journey",
     description:
-      "A short, step-by-step guide to help you understand your Alpha pension and estimate what your retirement income could look like.",
+      "Learn how your Civil Service Alpha pension and the new State Pension build up, then see how they could contribute to your retirement income.",
     settingsPresentation: {
       alignAlphaLeaveAgeToRetirement: true,
       dateOfBirthUpdate: "reset-retirement-ages-to-npa",
     },
     steps: [
       {
-        id: "personal",
+        id: "before-we-get-started",
         eyebrow: "Step 1",
+        title: "Before we get started...",
+        description:
+          "A pension is money you can get regularly in later life. We’ll look at two pensions and estimate what they could pay you. We’ll go one step at a time, and you can change your answers later.",
+        kind: "reading",
+        prerequisites: [
+          "Your latest Alpha pension statement (called an Annual Benefit Statement). Look for the year and the yearly pension you’ve built up so far.",
+          "Your yearly pay that counts towards Alpha, before tax. If you work part time, use your actual pay.",
+          "Your State Pension estimate from GOV.UK, called a forecast. If you don’t have it yet, you can use a temporary figure.",
+          "A rough idea of when you’d like to stop working and how much you’d like to have left to spend each month.",
+        ],
+        sections: [
+          {
+            heading: "How Alpha builds up",
+            paragraphs: [
+              "Alpha is the pension you build up through your Civil Service job. It pays a regular income for life once you start taking it.",
+              "Each year, 2.32% of the pay that counts towards Alpha is added to your future yearly pension. For example, if £30,000 of your pay counts, that year adds £696 a year to your pension before tax. The scheme also adjusts what you’ve built up as prices change.",
+            ],
+            href: knowledgeLinks.annualBenefitStatement,
+            label: "Find my Alpha pension statement",
+          },
+          {
+            heading: "How the new State Pension builds up",
+            paragraphs: [
+              "The government pays the State Pension. How much you could get depends on how many years count on your National Insurance record. A year can count through work. If you care for someone, you may get National Insurance credits that help a year count.",
+              "Your GOV.UK forecast shows how much you might get and when you can start getting it.",
+            ],
+            href: knowledgeLinks.statePensionForecast,
+            label: "Check my State Pension estimate on GOV.UK",
+          },
+        ],
+      },
+      {
+        id: "personal",
+        eyebrow: "Step 2",
         title: "A little about you",
         description:
-          "We use your date of birth to work out your current age and when your Alpha pension can normally start.",
+          "Your date of birth helps us estimate your State Pension age and the age you can normally take Alpha without an early payment reduction.",
         kind: "fields",
         fieldIds: ["dateOfBirth"],
         fieldLabels: {
@@ -699,20 +744,22 @@ export const JOURNEY_DEFINITIONS = [
       },
       {
         id: "target",
-        eyebrow: "Step 2",
+        eyebrow: "Step 3",
         ...MONTHLY_SPENDING_TARGET_STEP,
       },
       {
         id: "retirement-age",
-        eyebrow: "Step 3",
+        eyebrow: "Step 4",
         ...RETIREMENT_AGE_STEP,
+        description:
+          "Choose when you want to stop working. Your pensions may start at a different age.",
       },
       {
         id: "alpha",
-        eyebrow: "Step 4",
+        eyebrow: "Step 5",
         title: "Add your Alpha pension details",
         description:
-          "Use the Alpha section of your latest Annual Benefit Statement. You only need three figures, and you can change them later.",
+          "Use the Alpha section of your latest Annual Benefit Statement to enter the pension you’ve built up so far.",
         kind: "fields",
         fieldIds: [
           "alphaPensionAbsDate",
@@ -731,24 +778,17 @@ export const JOURNEY_DEFINITIONS = [
           accruedPensionAtLastAbs:
             "Copy the yearly Alpha pension amount from your statement. It may be called ‘accrued pension’. Do not enter a total pot value.",
           pensionableEarnings:
-            "Copy the yearly pay figure used for your Alpha pension. Your statement may call it ‘pensionable earnings’. If you cannot find it, ask your employer which pay figure Alpha uses.",
+            "Enter your current yearly pay that counts towards Alpha, known as pensionable earnings, before tax. Use your actual pay if you work part time. Your employer can tell you which parts of your pay count.",
         },
         hideFieldInfoLinks: true,
-        supportLink: {
-          heading: "Where can I find these figures?",
-          description:
-            "Look for the Alpha section of your latest Annual Benefit Statement. If you cannot find your current pensionable pay, your employer can tell you which parts of your pay count towards Alpha.",
-          href: knowledgeLinks.annualBenefitStatement,
-          label: "Help me find my Annual Benefit Statement",
-        },
         visible: (settings) => settings.showAlpha,
       },
       {
         id: "state-pension-forecast",
-        eyebrow: "Step 5",
+        eyebrow: "Step 6",
         title: "Do you know your State Pension forecast?",
         description:
-          "Your State Pension amount is personal to you. If you have checked it on GOV.UK, enter the yearly amount shown there. If not, we can use a temporary amount.",
+          "Enter your GOV.UK forecast if you have it. You can use a temporary estimate and come back to update it.",
         kind: "fields",
         fieldIds: ["currentStatePension"],
         fieldLabels: {
@@ -760,13 +800,6 @@ export const JOURNEY_DEFINITIONS = [
             "Enter the yearly amount from your personalised forecast. If it shows a weekly amount, multiply it by 52.",
         },
         hideFieldInfoLinks: true,
-        supportLink: {
-          heading: "Check your personalised forecast",
-          description:
-            "GOV.UK can show how much State Pension you could get, when you can get it and whether you may be able to increase it.",
-          href: knowledgeLinks.statePensionForecast,
-          label: "Check my State Pension forecast",
-        },
         optionalQuestion: {
           prompt: "Do you know your State Pension forecast?",
           noLabel: "No — use £12,548 a year for now",
@@ -781,7 +814,7 @@ export const JOURNEY_DEFINITIONS = [
       },
       {
         id: "include",
-        eyebrow: "Step 6",
+        eyebrow: "Step 7",
         title: "Do you have any other Civil Service pensions?",
         description:
           "Alpha is always included in this simplified journey. Select any older Civil Service pension or Civil Service AVC savings shown on your pension statement. If you are not sure, leave it off for now — you can come back later.",
@@ -1022,7 +1055,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Result",
         title: "Your results",
         description:
-          "See how much money you may have each month and where it may come from.",
+          "Follow when Alpha and State Pension are included in your estimate. Compare the money left after estimated tax with what you’d like to spend.",
         kind: "results",
         sections: [
           { id: "summary", presentation: "simple" },

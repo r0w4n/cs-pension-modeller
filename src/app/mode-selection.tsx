@@ -46,9 +46,9 @@ export function ModeSelection({
           <span className="card-label">Simple journey</span>
           <strong>Simplified retirement journey</strong>
           <span>
-            Answer a few plain-English questions about you, the income you would
-            like, and when you want to retire. At the end, see an estimate of
-            how much money you might have each month and where it may come from.
+            Learn how Alpha and the State Pension build up and what figures
+            you’ll need. Then enter your details to see when each pension could
+            start and what it could mean for your monthly income.
           </span>
         </button>
 

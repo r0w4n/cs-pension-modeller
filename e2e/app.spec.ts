@@ -7,6 +7,9 @@ test.describe("app end-to-end journeys", () => {
       page,
     }) => {
       await acknowledgeAndOpenMode(page, mode);
+      if (mode === "simple") {
+        await clickNextAndExpectStep(page, "A little about you");
+      }
       await clickNextAndExpectStep(
         page,
         "What would you like to spend each month?"
@@ -762,7 +765,7 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("heading", { name: "Simplified retirement journey" })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "A little about you" })
+      page.getByRole("heading", { name: "Before we get started..." })
     ).toBeVisible();
 
     await page
@@ -886,6 +889,35 @@ test.describe("app end-to-end journeys", () => {
   }) => {
     await acknowledgeAndOpenMode(page, "simple");
 
+    await expect(
+      page.getByRole("heading", { name: "Helpful things to have" })
+    ).toBeVisible();
+    const alphaExplanation = page.getByRole("complementary", {
+      name: "How Alpha builds up",
+    });
+    await expect(alphaExplanation).toContainText("2.32%");
+    await expect(alphaExplanation).toContainText("£696 a year");
+    await expect(
+      page.getByRole("link", {
+        name: /Find my Alpha pension statement/i,
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("complementary", {
+        name: "How the new State Pension builds up",
+      })
+    ).toContainText("how many years count on your National Insurance record");
+    await expect(
+      page.getByRole("link", {
+        name: /Check my State Pension estimate on GOV.UK/i,
+      })
+    ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
+    await clickNextAndExpectStep(page, "A little about you");
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Before we get started..." })
+    ).toBeVisible();
+    await clickNextAndExpectStep(page, "A little about you");
     await clickNextAndExpectStep(
       page,
       "What would you like to spend each month?"
@@ -911,11 +943,6 @@ test.describe("app end-to-end journeys", () => {
         name: "I have confirmed Alpha access from age 55",
       })
     ).toHaveCount(0);
-    await expect(
-      page.getByRole("link", {
-        name: /Help me find my Annual Benefit Statement/i,
-      })
-    ).toBeVisible();
     await fillCurrency(
       page,
       "Yearly Alpha pension built up so far (£)",
@@ -934,9 +961,6 @@ test.describe("app end-to-end journeys", () => {
       page.getByRole("heading", { name: "What we'll use for now" })
     ).toBeVisible();
     await expect(page.getByText(/We'll use £12,548 a year/i)).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /Check my State Pension forecast/i })
-    ).toHaveAttribute("href", "https://www.gov.uk/check-state-pension");
     await page.getByRole("radio", { name: "Yes, enter my forecast" }).click();
     await fillCurrency(
       page,
@@ -2499,7 +2523,7 @@ async function acknowledgeAndOpenMode(
       .getByRole("button", { name: /Simplified retirement journey/i })
       .click();
     await expect(
-      page.getByRole("heading", { name: "A little about you" })
+      page.getByRole("heading", { name: "Before we get started..." })
     ).toBeVisible();
     return;
   }

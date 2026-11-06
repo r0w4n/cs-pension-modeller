@@ -1772,6 +1772,36 @@ Then(
 );
 
 Then(
+  "the {string} section of the {string} journey step should explain:",
+  function (
+    this: ProductAcceptanceWorld,
+    heading: string,
+    stepTitle: string,
+    table: DataTable
+  ) {
+    assertCondition(this.selectedJourney, "No journey has been selected");
+    const step = this.selectedJourney.steps.find(
+      (candidate) => candidate.title === stepTitle
+    );
+    assertCondition(
+      step?.kind === "reading",
+      `Expected "${stepTitle}" to be a reading step`
+    );
+    const section = step.sections.find(
+      (candidate) => candidate.heading === heading
+    );
+    assertCondition(section, `Reading section "${heading}" not found`);
+
+    for (const { detail } of table.hashes()) {
+      assertCondition(
+        section.paragraphs.some((paragraph) => paragraph.includes(detail)),
+        `Expected reading section "${heading}" to explain "${detail}"`
+      );
+    }
+  }
+);
+
+Then(
   "the {string} journey step should link to Annual Benefit Statement help",
   function (this: ProductAcceptanceWorld, stepTitle: string) {
     assertCondition(this.selectedJourney, "No journey has been selected");
@@ -1781,8 +1811,10 @@ Then(
 
     assertCondition(step, `Journey step "${stepTitle}" not found`);
     assertCondition(
-      step.kind === "fields" &&
-        step.supportLink?.href === knowledgeLinks.annualBenefitStatement,
+      step.kind === "reading" &&
+        step.sections.some(
+          (section) => section.href === knowledgeLinks.annualBenefitStatement
+        ),
       `Expected journey step "${stepTitle}" to link to Annual Benefit Statement help`
     );
   }
@@ -1798,8 +1830,10 @@ Then(
 
     assertCondition(step, `Journey step "${stepTitle}" not found`);
     assertCondition(
-      step.kind === "fields" &&
-        step.supportLink?.href === knowledgeLinks.statePensionForecast,
+      step.kind === "reading" &&
+        step.sections.some(
+          (section) => section.href === knowledgeLinks.statePensionForecast
+        ),
       `Expected journey step "${stepTitle}" to link to the personalised State Pension forecast`
     );
   }

@@ -6,6 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
+import { JOURNEY_DEFINITIONS } from "../app-domains";
 import { deriveInflationAssumptions } from "../projection";
 import {
   createDefaultPartnerSettings,
@@ -191,7 +192,7 @@ describe("JourneyStepContent", () => {
           supportLinkLayout: "inline",
           supportLink: {
             heading: "Not sure what amount to choose?",
-            description: "Use this guide as a starting point.",
+            paragraphs: ["Use this guide as a starting point."],
             href: "https://www.retirementlivingstandards.org.uk/",
             label: "Help me choose a retirement income",
           },
@@ -608,33 +609,13 @@ describe("JourneyStepContent", () => {
       statePensionForecastConfirmed: false,
     };
 
-    render(
-      <JourneyStepContent
-        step={{
-          id: "state-pension-forecast",
-          eyebrow: "Step 5",
-          title: "Do you know your State Pension forecast?",
-          description: "Confirm the State Pension amount.",
-          kind: "fields",
-          fieldIds: ["currentStatePension"],
-          fieldLabels: {
-            currentStatePension:
-              "How much State Pension does your forecast show each year?",
-          },
-          optionalQuestion: {
-            prompt: "Do you know your State Pension forecast?",
-            noLabel: "No — use £12,548 a year for now",
-            yesLabel: "Yes, enter my forecast",
-            showPrompt: true,
-            setting: {
-              id: "statePensionForecastConfirmed",
-              enabledWhen: "true",
-            },
-          },
-        }}
-        viewModel={viewModel}
-      />
-    );
+    const step = JOURNEY_DEFINITIONS.find(
+      (journey) => journey.id === "simple-early-retirement"
+    )?.steps.find((step) => step.id === "state-pension-forecast");
+    if (!step) {
+      throw new Error("Expected the simple State Pension forecast step");
+    }
+    render(<JourneyStepContent step={step} viewModel={viewModel} />);
 
     expect(
       screen.getByRole("radio", {

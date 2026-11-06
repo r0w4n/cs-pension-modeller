@@ -20,6 +20,7 @@ export {
   type JourneyResultsSection,
   type JourneyStepDefinition,
   type JourneySettingsPresentation,
+  type JourneySupportLink,
   type OptionalSectionToggleKey,
 } from "./app-domains/journeys";
 

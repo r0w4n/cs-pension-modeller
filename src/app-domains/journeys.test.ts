@@ -7,7 +7,6 @@ import {
   type JourneyStepDefinition,
 } from "./journeys";
 import { fieldGroups, type FieldDefinition } from "../fieldDefinitions";
-import { knowledgeLinks } from "../knowledgeLinks";
 import { defaultSettings } from "../settings";
 
 function getJourneyFieldIds(journeyId: string) {
@@ -549,9 +548,7 @@ describe("journey definitions", () => {
       "pensionable earnings"
     );
     expect(alphaStep.hideFieldInfoLinks).toBe(true);
-    expect(alphaStep.supportLink?.href).toBe(
-      knowledgeLinks.annualBenefitStatement
-    );
+    expect(alphaStep).not.toHaveProperty("supportLink");
   });
 
   it("asks for retirement age after the income target and before Alpha details", () => {
@@ -589,7 +586,7 @@ describe("journey definitions", () => {
     expect(step.optionalQuestion?.setting.id).toBe(
       "statePensionForecastConfirmed"
     );
-    expect(step.supportLink?.href).toBe(knowledgeLinks.statePensionForecast);
+    expect(step).not.toHaveProperty("supportLink");
     expect(stepIds.indexOf("state-pension-forecast")).toBeLessThan(
       stepIds.indexOf("include")
     );

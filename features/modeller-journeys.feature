@@ -327,5 +327,4 @@ Feature: Modeller journeys
     And the "How the new State Pension builds up" section of the "Before we get started..." journey step should explain:
       | detail                                                    |
       | how many years count on your National Insurance record    |
-      | National Insurance credits that help a year count        |
       | how much you might get and when you can start getting it |

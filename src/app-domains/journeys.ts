@@ -722,7 +722,7 @@ export const JOURNEY_DEFINITIONS = [
           {
             heading: "How the new State Pension builds up",
             paragraphs: [
-              "The government pays the State Pension. How much you could get depends on how many years count on your National Insurance record. A year can count through work. If you care for someone, you may get National Insurance credits that help a year count.",
+              "The government pays the State Pension. How much you could get depends on how many years count on your National Insurance record. A year can count through work.",
               "Your GOV.UK forecast shows how much you might get and when you can start getting it.",
             ],
             href: knowledgeLinks.statePensionForecast,

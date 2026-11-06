@@ -14250,15 +14250,6 @@ export const acceptanceFeatures = [
                 cells: [
                   {
                     id: "line-330-column-9",
-                    value: "National Insurance credits that help a year count",
-                  },
-                ],
-              },
-              {
-                id: "line-331",
-                cells: [
-                  {
-                    id: "line-331-column-9",
                     value:
                       "how much you might get and when you can start getting it",
                   },

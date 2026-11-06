@@ -1,4 +1,9 @@
-import { useState } from "react";
+import {
+  validateCurrencyDraft,
+  type CurrencyDraftState,
+} from "../app-domains/currency-draft";
+export type { CurrencyDraftState } from "../app-domains/currency-draft";
+import { useId, useState } from "react";
 import type {
   CurrencyInputField,
   RangeField,
@@ -135,7 +140,7 @@ export function CurrencySettingField({
   resetValue: resetValueOverride,
   domIdPrefix,
   initialDraftValue,
-  strictDraftValidation = false,
+  strictDraftValidation = field.id === "desiredRetirementIncome",
   onDraftStateChange,
 }: {
   field: CurrencyInputField;
@@ -150,7 +155,7 @@ export function CurrencySettingField({
   domIdPrefix?: string;
   /** Optional shell-owned draft used by required fields on isolated screens. */
   initialDraftValue?: string;
-  /** Retains invalid text and blocks commits for shells that own draft errors. */
+  /** Retains invalid text and blocks commits; enabled by default for spending targets. */
   strictDraftValidation?: boolean;
   onDraftStateChange?: (state: CurrencyDraftState) => void;
 }) {
@@ -197,11 +202,6 @@ export function CurrencySettingField({
   );
 }
 
-export type CurrencyDraftState =
-  | { status: "valid-draft"; value: number }
-  | { status: "invalid"; message: string }
-  | { status: "committed"; value: number };
-
 function CurrencySettingFieldEditor({
   field,
   initialValue,
@@ -232,6 +232,14 @@ function CurrencySettingFieldEditor({
   const showsResetButton =
     field.id !== "desiredRetirementIncome" &&
     field.id !== "accruedPensionAtLastAbs";
+  const draftValidationId = useId();
+  const draftError = getCurrencyDraftError(
+    draftValue,
+    field,
+    strictDraftValidation,
+    disabled
+  );
+  const showDraftError = Boolean(draftError) && !hasValidationIssue;
 
   const commitValue = (nextValue: string) => {
     if (strictDraftValidation) {
@@ -271,8 +279,13 @@ function CurrencySettingFieldEditor({
         max={field.max === undefined ? undefined : field.max / displayDivisor}
         value={draftValue}
         disabled={disabled}
-        aria-invalid={hasValidationIssue || undefined}
-        aria-describedby={describedBy}
+        data-invalid-draft={Boolean(draftError) || undefined}
+        aria-invalid={hasValidationIssue || Boolean(draftError) || undefined}
+        aria-describedby={
+          [describedBy, showDraftError ? draftValidationId : undefined]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
         onChange={(event) => {
           const nextValue = event.target.value;
           setDraftValue(nextValue);
@@ -284,7 +297,12 @@ function CurrencySettingFieldEditor({
           commitValue(event.target.value);
         }}
       />
-      {field.showAnnualEquivalent ? (
+      {showDraftError ? (
+        <p id={draftValidationId} className="field-help" role="alert">
+          {draftError}
+        </p>
+      ) : null}
+      {field.showAnnualEquivalent && !draftError ? (
         <p className="field-help" aria-live="polite">
           Yearly equivalent:{" "}
           {formatCurrency(Math.round(getAnnualEquivalent(draftValue)))}
@@ -332,42 +350,19 @@ function CurrencySettingFieldEditor({
   );
 }
 
-function validateCurrencyDraft(
-  value: string,
-  field: CurrencyInputField
-): CurrencyDraftState {
-  if (value.trim() === "") {
-    return {
-      status: "invalid",
-      message: `Enter ${field.label.toLowerCase()}.`,
-    };
-  }
-
-  const parsedValue = Number(value);
-  if (!Number.isFinite(parsedValue)) {
-    return { status: "invalid", message: "Enter a valid number." };
-  }
-  const displayDivisor = field.displayDivisor ?? 1;
-  const displayMinimum = field.min / displayDivisor;
-  const displayMaximum = field.max / displayDivisor;
-  if (parsedValue < displayMinimum) {
-    return {
-      status: "invalid",
-      message: `Enter ${displayMinimum} or more.`,
-    };
-  }
-  if (parsedValue > displayMaximum) {
-    return {
-      status: "invalid",
-      message: `Enter ${displayMaximum} or less.`,
-    };
-  }
-
-  return { status: "valid-draft", value: parsedValue };
-}
-
 function formatCurrencyInputValue(value: number) {
   return (Math.round(value * 100) / 100).toString();
+}
+
+function getCurrencyDraftError(
+  value: string,
+  field: CurrencyInputField,
+  strictValidation: boolean,
+  disabled: boolean
+) {
+  if (!strictValidation || disabled) return null;
+  const state = validateCurrencyDraft(value, field);
+  return state.status === "invalid" ? state.message : null;
 }
 
 function getAnnualEquivalent(draftValue: string) {

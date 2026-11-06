@@ -1,3 +1,4 @@
+import { projectSimpleIncomeSummary } from "../result-projection/simple-income-summary";
 import type { RetirementIncomeDisplay } from "../projection";
 import {
   buildRetirementOutcomeBanner,
@@ -238,9 +239,11 @@ export function SimplePensionSummary({
     return null;
   }
 
-  const divisor = retirementIncomeDisplay === "monthly" ? 12 : 1;
-  const period = retirementIncomeDisplay === "monthly" ? "a month" : "a year";
-  const difference = activeResult.annualGap / divisor;
+  const headline = projectSimpleIncomeSummary(
+    activeResult,
+    retirementIncomeDisplay
+  );
+  const { period, difference } = headline;
   const differenceLabel =
     difference < 0 ? "Less than you want" : "More than you want";
   const outcome = buildRetirementOutcomeBanner(activeResult);
@@ -260,19 +263,22 @@ export function SimplePensionSummary({
         An estimate of the money available to spend after Income Tax, based on
         the answers you entered.
       </p>
+      <RetirementOutcomeBannerView outcome={outcome} simple />
+      <p className="simple-results-context">
+        At your chosen retirement age of {headline.retirementAge},{" "}
+        {headline.moneyBasis}:
+      </p>
       <div className="simple-results-figures">
         <div className="simple-results-figure simple-results-figure--primary">
           <span>Money left after estimated tax</span>
           <strong>
-            {formatCurrencyDetailed(activeResult.annualIncome / divisor)}{" "}
-            {period}
+            {formatCurrencyDetailed(headline.income)} {period}
           </strong>
         </div>
         <div className="simple-results-figure">
           <span>Amount you want to spend</span>
           <strong>
-            {formatCurrencyDetailed(activeResult.annualTarget / divisor)}{" "}
-            {period}
+            {formatCurrencyDetailed(headline.target)} {period}
           </strong>
         </div>
         <div className="simple-results-figure">
@@ -283,11 +289,16 @@ export function SimplePensionSummary({
         </div>
       </div>
       <p className="simple-results-context">
-        These headline figures are from the point when all the pension income
-        you selected has started. The chart below shows how the estimate may
-        change at other ages.
+        {headline.secureStartAge !== null ? (
+          <>
+            At age {headline.secureStartAge}, the model estimates{" "}
+            {formatCurrencyDetailed(headline.secureIncome)} {period} after tax{" "}
+            {headline.moneyBasis} from pension income, excluding withdrawals
+            from pension pots or savings.{" "}
+          </>
+        ) : null}
+        The chart below shows how income may change at other ages.
       </p>
-      <RetirementOutcomeBannerView outcome={outcome} simple />
     </section>
   );
 }
@@ -344,8 +355,14 @@ export function SimplePensionDetails({
         <div className="simple-age-ranges">
           <h2>Income at different ages</h2>
           <p className="section-copy">
-            These ranges provide a text version of the important changes shown
-            in the chart.
+            Each range groups ages with the same income sources. Amounts and
+            spending differences are estimates at the start of each range, shown{" "}
+            {showMonthly ? "per month" : "per year"}{" "}
+            {activeResult.scenario.settings.projectionBasis === "real"
+              ? "in today’s money"
+              : "in future cash terms"}
+            . They may change within the range, including as estimated tax
+            changes. The chart shows these changes.
           </p>
           <ul>
             {incomeAgeRangeItems.map((item) => (

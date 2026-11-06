@@ -1,3 +1,4 @@
+import { buildChartShortfallRanges } from "./result-projection/chart-shortfall-ranges";
 import {
   useCallback,
   useEffect,
@@ -204,6 +205,8 @@ const DRAG_AGE_LABEL_WIDTH = 58;
 const DRAG_AGE_LABEL_HEIGHT = 19;
 const TARGET_INCOME_Y_AXIS_HEADROOM_PERCENT = 0.18;
 const TARGET_INCOME_Y_AXIS_MIN_HEADROOM_ANNUAL = 5000;
+const CALENDAR_DATE_TICK_MIN_SPACING = 100;
+const CALENDAR_DATE_LABEL_HALF_WIDTH = 36;
 const MARKER_DRAG_LEFT_OVERSCAN_RATIO = 0.4;
 const CALENDAR_AXIS_HEIGHT = 530;
 const CALENDAR_AXIS_HEIGHT_COMPACT = 510;
@@ -819,7 +822,17 @@ export function RetirementIncomeChart({
   });
   const yTicks = yScale.ticks(5);
   const xTicks = xScale.ticks(
-    usesCalendarDateAxis ? (width < 640 ? 4 : 7) : width < 640 ? 5 : 8
+    usesCalendarDateAxis
+      ? Math.max(
+          1,
+          Math.min(
+            width < 640 ? 4 : 7,
+            Math.floor(plotWidth / CALENDAR_DATE_TICK_MIN_SPACING)
+          )
+        )
+      : width < 640
+        ? 5
+        : 8
   );
   const xYearTicks = createWholeYearTicks(xDomainMin, xDomainMax);
   const personAgeAxisTicks = {
@@ -1001,9 +1014,11 @@ export function RetirementIncomeChart({
         showStatePension,
         statePensionAge,
         alphaStartAge,
+        displayMode,
       }),
     [
       alphaStartAge,
+      displayMode,
       displayedData,
       displayedTargetIncomeAnnual,
       isCalendarTimeline,
@@ -2716,7 +2731,16 @@ export function RetirementIncomeChart({
                   y1={plotHeight}
                   y2={plotHeight + 6}
                 />
-                <text x={xScale(tick)} y={plotHeight + 18} textAnchor="middle">
+                <text
+                  x={xScale(tick)}
+                  y={plotHeight + 18}
+                  textAnchor={
+                    usesCalendarDateAxis &&
+                    xScale(tick) > plotWidth - CALENDAR_DATE_LABEL_HALF_WIDTH
+                      ? "end"
+                      : "middle"
+                  }
+                >
                   {isCalendarTimeline
                     ? formatCalendarTimelineTick(tick)
                     : isSinglePersonCalendarTimeline
@@ -3125,6 +3149,7 @@ function createMobileRetirementIncomeSummary({
   showStatePension,
   statePensionAge,
   alphaStartAge,
+  displayMode,
 }: {
   displayedData: RetirementIncomePoint[];
   displayedTargetIncomeAnnual: number;
@@ -3134,23 +3159,22 @@ function createMobileRetirementIncomeSummary({
   showStatePension: boolean;
   statePensionAge: number;
   alphaStartAge: number;
+  displayMode: "annual" | "monthly";
 }) {
-  const shortfallPoints = displayedData.filter(
-    (point) => point.age >= retirementAge && point.shortfallAnnual > 0
+  const shortfallRanges = buildChartShortfallRanges(
+    displayedData,
+    retirementAge
   );
-  const firstShortfallPoint = shortfallPoints[0];
-  const lastShortfallPoint = shortfallPoints.at(-1);
-  const shortfallValue =
-    firstShortfallPoint && lastShortfallPoint
-      ? `${isCalendarTimeline ? "Years" : "Ages"} ${formatTimelineValue(firstShortfallPoint.age, isCalendarTimeline)}-${formatTimelineValue(lastShortfallPoint.age, isCalendarTimeline)}`
-      : isSimplePresentation
-        ? "No ages with less than you want"
-        : "No modelled shortfall";
+  const shortfallValue = shortfallRanges.length
+    ? `${isCalendarTimeline ? "Years" : "Ages"} ${shortfallRanges.map(({ start, end }) => `${formatTimelineValue(start, isCalendarTimeline)}-${formatTimelineValue(end, isCalendarTimeline)}`).join("; ")}`
+    : isSimplePresentation
+      ? "No ages with less than you want"
+      : "No modelled shortfall";
 
   const summary = [
     {
       label: isSimplePresentation ? "Amount you want" : "Target",
-      value: `${formatCurrency(displayedTargetIncomeAnnual)} / year`,
+      value: `${formatCurrency(displayedTargetIncomeAnnual / (displayMode === "monthly" ? 12 : 1))} / ${displayMode === "monthly" ? "month" : "year"}`,
     },
     {
       label: getRetirementIncomeShortfallLabel(isSimplePresentation),

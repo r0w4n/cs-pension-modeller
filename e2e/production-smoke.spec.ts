@@ -178,6 +178,45 @@ async function navigateToJourneyResult(page: import("@playwright/test").Page) {
 }
 
 test.describe("production build smoke checks", () => {
+  test("keeps analytics active when disabling saving is cancelled and stops it after confirmation", async ({
+    page,
+  }) => {
+    const analytics = await interceptAnalyticsRequests(page);
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Accept analytics and continue" })
+      .click();
+    await expect.poll(() => analytics.getState().loadedCount).toBe(1);
+    await page.goto("/settings/");
+    await expect.poll(() => analytics.getState().loadedCount).toBe(2);
+    const probe = () =>
+      page.evaluate(() => {
+        window.dispatchEvent(new Event("analytics-sdk-probe"));
+        return window.__analyticsProbeResults?.at(-1);
+      });
+    const saving = page.getByLabel("Save inputs on this device");
+    await saving.click();
+    const dialog = page.getByRole("dialog", {
+      name: "Turn off local saving and delete saved data?",
+    });
+    await expect(dialog).toBeVisible();
+    expect(await pageHasAnalyticsDisabled(page)).toBe(false);
+    expect(await probe()).toBe("sent");
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(saving).toBeChecked();
+    expect(await probe()).toBe("sent");
+    await expect.poll(() => analytics.sdkProbeRequests.length).toBe(2);
+    await saving.click();
+    await dialog
+      .getByRole("button", { name: "Turn off saving and delete saved data" })
+      .click();
+    await expect(saving).not.toBeChecked();
+    await expect.poll(() => pageHasAnalyticsDisabled(page)).toBe(true);
+    expect(await probe()).toBe("blocked");
+    expect(analytics.sdkProbeRequests).toHaveLength(2);
+    expect(analytics.blockedRealAnalyticsUrls).toEqual([]);
+  });
+
   test("stops retained SDK collection on withdrawal and clearing, and resumes only on re-consent", async ({
     page,
   }) => {
@@ -209,6 +248,7 @@ test.describe("production build smoke checks", () => {
     await expect.poll(() => analytics.sdkProbeRequests.length).toBe(2);
 
     await page.getByRole("button", { name: "Clear all data" }).click();
+    await page.getByRole("button", { name: "Delete all data" }).click();
     await expect.poll(() => pageHasAnalyticsDisabled(page)).toBe(true);
     expect(await probe()).toBe("blocked");
     expect(analytics.sdkProbeRequests).toHaveLength(2);
@@ -534,6 +574,7 @@ test.describe("production build smoke checks", () => {
       .poll(() => getState().loadedCount)
       .toBe(loadedCountBeforeClearingConsent + 1);
     await page.getByRole("button", { name: "Clear all data" }).click();
+    await page.getByRole("button", { name: "Delete all data" }).click();
     await expect
       .poll(() =>
         page.evaluate(
@@ -675,6 +716,7 @@ test.describe("production build smoke checks", () => {
     await expect.poll(() => staticAnalytics.getState().loadedCount).toBe(2);
 
     await appPage.getByRole("button", { name: "Clear all data" }).click();
+    await appPage.getByRole("button", { name: "Delete all data" }).click();
     await expect.poll(() => pageHasAnalyticsDisabled(appPage)).toBe(true);
     await expect.poll(() => pageHasAnalyticsDisabled(staticPage)).toBe(true);
     await expect

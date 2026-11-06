@@ -21,3 +21,11 @@ Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
   configurable: true,
 });
+
+// jsdom does not implement native dialog methods; browser tests cover focus and Escape.
+HTMLDialogElement.prototype.showModal = function () {
+  this.setAttribute("open", "");
+};
+HTMLDialogElement.prototype.close = function () {
+  this.removeAttribute("open");
+};

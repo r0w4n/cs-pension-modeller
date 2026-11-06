@@ -5,6 +5,35 @@ import { DateInputFieldEditor, SettingsFields } from "./form-fields";
 import { CurrencySettingField, RangeSettingField } from "./form-field-values";
 
 describe("form-fields module", () => {
+  it("keeps a blank spending target invalid without committing zero", () => {
+    const field = fieldGroups
+      .flatMap((group) => group.fields)
+      .find((field) => field.id === "desiredRetirementIncome");
+    if (!field || field.type !== "currency-input")
+      throw new Error("Missing spending field");
+    const onChange = vi.fn();
+    render(
+      <CurrencySettingField
+        field={{ ...field, displayDivisor: 12, showAnnualEquivalent: true }}
+        value={30000}
+        onChange={onChange}
+        showGuidanceNotes
+      />
+    );
+    const input = screen.getByLabelText(field.label);
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue(null);
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter");
+    expect(screen.queryByText(/Yearly equivalent/)).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith("desiredRetirementIncome", 0);
+    expect(input).not.toHaveAttribute("aria-invalid");
+  });
+
   it("keeps an opt-in required currency draft empty rather than committing zero", () => {
     const field = fieldGroups
       .flatMap((group) => group.fields)

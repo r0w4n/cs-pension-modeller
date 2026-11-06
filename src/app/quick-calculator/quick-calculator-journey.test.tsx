@@ -214,6 +214,104 @@ describe("Quick modeller journey", () => {
     expect(screen.getAllByRole("article")).toHaveLength(8);
   });
 
+  it("preserves retained Quick inputs when disabling saving is cancelled and clears them only after confirmation", async () => {
+    saveCompleteQuickState({
+      accruedPensionAtLastAbs: 8750,
+      pensionableEarnings: 61000,
+    });
+    const view = render(<App />);
+    const worker = await latestWorker();
+    act(() => worker.respond());
+    const storedQuick = window.localStorage.getItem(
+      QUICK_CALCULATOR_STORAGE_KEY
+    );
+    const storedSettings = window.localStorage.getItem(
+      "cs-pension-modeller.settings"
+    );
+    window.history.replaceState(null, "", "/settings/");
+    view.rerender(<App />);
+    const saving = screen.getByRole("checkbox", {
+      name: "Save inputs on this device",
+    });
+    fireEvent.click(saving);
+    expect(saving).toBeChecked();
+    expect(window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)).toBe(
+      storedQuick
+    );
+    expect(window.localStorage.getItem("cs-pension-modeller.settings")).toBe(
+      storedSettings
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    window.history.replaceState(null, "", "/");
+    view.rerender(<App />);
+    expect(
+      screen.getByLabelText("Alpha pension on your statement (£ per year)")
+    ).toHaveValue(8750);
+    expect(
+      screen.getByLabelText("Pensionable earnings (£ per year) exact value")
+    ).toHaveValue(61000);
+    expect(screen.getByLabelText("Birth month and year month")).toHaveValue(
+      "06"
+    );
+
+    window.history.replaceState(null, "", "/settings/");
+    view.rerender(<App />);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Save inputs on this device" })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Turn off saving and delete saved data",
+      })
+    );
+    expect(
+      window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
+    ).toBeNull();
+    expect(
+      window.localStorage.getItem("cs-pension-modeller.settings")
+    ).toBeNull();
+    expect(window.localStorage.getItem(LOCAL_STORAGE_ENABLED_KEY)).toBe(
+      "false"
+    );
+    window.history.replaceState(null, "", "/");
+    view.rerender(<App />);
+    const accrued = screen.getByLabelText(
+      "Alpha pension on your statement (£ per year)"
+    );
+    expect(accrued).toHaveValue(0);
+    expect(screen.getByLabelText("Birth month and year month")).toHaveValue("");
+    expect(
+      screen.getByLabelText("Pensionable earnings (£ per year) exact value")
+    ).toHaveValue(40000);
+    fireEvent.change(accrued, { target: { value: "321" } });
+    fireEvent.blur(accrued);
+    expect(
+      window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
+    ).toBeNull();
+    window.history.replaceState(null, "", "/settings/");
+    view.rerender(<App />);
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Save inputs on this device" })
+    );
+    expect(loadQuickCalculatorState()).toMatchObject({
+      status: "loaded",
+      state: {
+        inputs: {
+          accruedPensionAtLastAbs: 321,
+          pensionableEarnings: 40000,
+          dateOfBirth: "",
+        },
+      },
+    });
+    view.unmount();
+    window.history.replaceState(null, "", "/?journey=quick");
+    render(<App />);
+    expect(
+      screen.getByLabelText("Alpha pension on your statement (£ per year)")
+    ).toHaveValue(321);
+    expect(screen.getByLabelText("Birth month and year month")).toHaveValue("");
+  });
+
   it("clears retained Quick values through shared Settings without reviving them", async () => {
     saveCompleteQuickState({
       accruedPensionAtLastAbs: 8750,
@@ -226,6 +324,7 @@ describe("Quick modeller journey", () => {
     window.history.replaceState(null, "", "/settings/");
     view.rerender(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete all data" }));
     expect(
       window.localStorage.getItem(QUICK_CALCULATOR_STORAGE_KEY)
     ).toBeNull();

@@ -2,6 +2,121 @@ import { test, expect, type Locator, type Page } from "@playwright/test";
 import AxeBuilderClass from "@axe-core/playwright";
 
 test.describe("app end-to-end journeys", () => {
+  for (const mode of ["simple", "bridge"] as const) {
+    test(`GUI regressions: ${mode} retains a blank spending draft and blocks navigation`, async ({
+      page,
+    }) => {
+      await acknowledgeAndOpenMode(page, mode);
+      await clickNextAndExpectStep(
+        page,
+        "What would you like to spend each month?"
+      );
+      const input = page.getByLabel(
+        "How much would you like available to spend each month after tax?",
+        { exact: true }
+      );
+      await input.fill("2500");
+      await input.blur();
+      await input.fill("");
+      await page.getByRole("button", { name: "Next", exact: true }).click();
+      await expect(input).toHaveValue("");
+      await expect(input).toBeFocused();
+      await expect(input).toHaveAttribute("aria-invalid", "true");
+      await expect(page.getByRole("alert")).toContainText("Enter");
+      await page
+        .locator('.journey-stepper [data-step-id="answer"]')
+        .dispatchEvent("click");
+      await expect(input).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Your results", exact: true })
+      ).not.toBeVisible();
+      const saved = await page.evaluate(() =>
+        window.localStorage.getItem("cs-pension-modeller.settings")
+      );
+      expect(
+        (
+          JSON.parse(saved!) as {
+            data: {
+              journeys: Record<string, { desiredRetirementIncome: number }>;
+            };
+          }
+        ).data.journeys[mode].desiredRetirementIncome
+      ).toBe(30000);
+      await input.fill("0");
+      await page.getByRole("button", { name: "Next", exact: true }).click();
+      await expect(
+        page.getByRole("heading", {
+          name: "What age would you like to retire?",
+          exact: true,
+        })
+      ).toBeVisible();
+    });
+  }
+
+  test("GUI regressions: clear confirmation is cancellable, accessible and fits at 320px", async ({
+    page,
+  }) => {
+    await acknowledgeAndOpenMode(page, "simple");
+    await page.goto("/settings/");
+    await page.setViewportSize({ width: 320, height: 844 });
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth
+      )
+    ).toBe(true);
+    const savedBefore = await page.evaluate(() =>
+      window.localStorage.getItem("cs-pension-modeller.settings")
+    );
+    const clear = page.getByRole("button", {
+      name: "Clear all data",
+      exact: true,
+    });
+    await clear.click();
+    const dialog = page.getByRole("dialog", {
+      name: "Clear all data from this browser?",
+    });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(
+      dialog.getByRole("button", { name: "Delete all data" })
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+    expect(
+      (await new AxeBuilderClass({ page }).include("dialog").analyze())
+        .violations
+    ).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+    await expect(clear).toBeFocused();
+    expect(
+      await page.evaluate(() =>
+        window.localStorage.getItem("cs-pension-modeller.settings")
+      )
+    ).toBe(savedBefore);
+    await clear.click();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(clear).toBeFocused();
+    await clear.click();
+    await dialog.getByRole("button", { name: "Delete all data" }).click();
+    await expect(page.getByRole("status")).toHaveText("Data cleared");
+    expect(
+      await page.evaluate(() =>
+        window.localStorage.getItem("cs-pension-modeller.settings")
+      )
+    ).toBeNull();
+    await expect(
+      page.getByLabel("Save inputs on this device")
+    ).not.toBeChecked();
+    await page.reload();
+    await expect(
+      page.getByLabel("Save inputs on this device")
+    ).not.toBeChecked();
+  });
+
   test("preserves malformed saved comparisons and offers accessible recovery", async ({
     page,
   }) => {
@@ -319,7 +434,61 @@ test.describe("app end-to-end journeys", () => {
     ).toHaveValue("");
 
     await page.goto("/settings/");
-    await page.getByLabel("Save inputs on this device").uncheck();
+    const beforeDisablingSaving = await page.evaluate(() =>
+      Object.fromEntries(
+        Object.keys(localStorage)
+          .sort()
+          .map((key) => [key, localStorage.getItem(key)])
+      )
+    );
+    const savingToggle = page.getByLabel("Save inputs on this device");
+    await savingToggle.click();
+    const disableSavingDialog = page.getByRole("dialog", {
+      name: "Turn off local saving and delete saved data?",
+    });
+    await expect(disableSavingDialog).toBeVisible();
+    await expect(savingToggle).toBeChecked();
+    await expect(
+      disableSavingDialog.getByRole("button", { name: "Cancel" })
+    ).toBeFocused();
+    await expect(
+      secondQuickPage.getByLabel("Alpha pension on your statement (£ per year)")
+    ).toHaveValue("321");
+    expect(
+      await page.evaluate(() =>
+        Object.fromEntries(
+          Object.keys(localStorage)
+            .sort()
+            .map((key) => [key, localStorage.getItem(key)])
+        )
+      )
+    ).toEqual(beforeDisablingSaving);
+    expect(
+      (await new AxeBuilderClass({ page }).include("dialog").analyze())
+        .violations
+    ).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(disableSavingDialog).not.toBeVisible();
+    await expect(savingToggle).toBeFocused();
+    await expect(savingToggle).toBeChecked();
+    await savingToggle.click();
+    await disableSavingDialog.getByRole("button", { name: "Cancel" }).click();
+    await page.reload();
+    await expect(savingToggle).toBeChecked();
+    expect(
+      await page.evaluate(() =>
+        Object.fromEntries(
+          Object.keys(localStorage)
+            .sort()
+            .map((key) => [key, localStorage.getItem(key)])
+        )
+      )
+    ).toEqual(beforeDisablingSaving);
+    await savingToggle.click();
+    await disableSavingDialog
+      .getByRole("button", { name: "Turn off saving and delete saved data" })
+      .click();
+    await expect(savingToggle).not.toBeChecked();
     const reopenedNotice = secondQuickPage.getByRole("dialog", {
       name: "Important information",
     });
@@ -807,6 +976,29 @@ test.describe("app end-to-end journeys", () => {
     await expect(page.getByText(/spending target/i)).toHaveCount(0);
     await expect(page.getByLabel("Target income line")).toHaveCount(0);
     await expect(page.getByLabel("Added Alpha pension")).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.locator(".retirement-income-chart-svg").evaluate((svg) => {
+          const bounds = svg.getBoundingClientRect();
+          const labels = Array.from(
+            svg.querySelectorAll(".retirement-income-x-tick text")
+          )
+            .filter((text) =>
+              /[A-Z][a-z]{2} \d{4}/.test(text.textContent ?? "")
+            )
+            .map((text) => text.getBoundingClientRect());
+          return (
+            labels.length >= 2 &&
+            labels.every(
+              (label, index) =>
+                label.left >= bounds.left &&
+                label.right <= bounds.right &&
+                (index === 0 || labels[index - 1].right + 4 <= label.left)
+            )
+          );
+        })
+      )
+      .toBe(true);
     await expect(
       page.getByText("What to check", { exact: true })
     ).toBeVisible();
@@ -2482,6 +2674,7 @@ async function assertFooterPage(
     await expect(page.getByRole("status")).toHaveText("Parameters exported");
 
     await resetButton.click();
+    await page.getByRole("button", { name: "Delete all data" }).click();
     await expect(page.getByRole("status")).toHaveText("Data cleared");
     await expect(
       page.getByLabel("Save inputs on this device")

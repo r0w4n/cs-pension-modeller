@@ -12086,7 +12086,7 @@ export const acceptanceFeatures = [
       {
         id: "line-82",
         keyword: "Scenario",
-        name: "Disable saving with existing data and ignore later edits",
+        name: "Cancelling a request to turn saving off preserves saved data",
         description: "",
         tags: ["@storage-disabled"],
         status: "covered",
@@ -12100,25 +12100,72 @@ export const acceptanceFeatures = [
           {
             id: "line-84",
             keyword: "When",
-            text: "local saving is disabled through the application action",
+            text: "turning local saving off is requested in Settings",
           },
           {
             id: "line-85",
-            keyword: "And",
-            text: "the user edits settings and saves another comparison while local saving is disabled",
+            keyword: "Then",
+            text: "the request should await confirmation without changing saved data",
           },
           {
             id: "line-86",
-            keyword: "Then",
-            text: "no settings or comparison data should be written while saving is disabled",
+            keyword: "When",
+            text: "the local data confirmation is cancelled",
           },
           {
             id: "line-87",
+            keyword: "Then",
+            text: "local saving and the populated data should be preserved",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-90",
+        keyword: "Scenario",
+        name: "Confirming a request to turn saving off clears saved data",
+        description: "",
+        tags: ["@storage-disabled"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-91",
+            keyword: "Given",
+            text: "browser local storage contains populated modeller data",
+          },
+          {
+            id: "line-92",
+            keyword: "When",
+            text: "turning local saving off is requested in Settings",
+          },
+          {
+            id: "line-93",
+            keyword: "Then",
+            text: "the request should await confirmation without changing saved data",
+          },
+          {
+            id: "line-94",
+            keyword: "When",
+            text: "turning local saving off is confirmed",
+          },
+          {
+            id: "line-95",
+            keyword: "And",
+            text: "the stored modeller preferences are loaded",
+          },
+          {
+            id: "line-96",
+            keyword: "Then",
+            text: "local saving should be off",
+          },
+          {
+            id: "line-97",
             keyword: "And",
             text: "raw local storage should contain only the disabled saving preference and reset signal",
           },
           {
-            id: "line-88",
+            id: "line-98",
             keyword: "And",
             text: "quick-calculator storage should be cleared",
           },
@@ -12126,7 +12173,49 @@ export const acceptanceFeatures = [
         examples: [],
       },
       {
-        id: "line-91",
+        id: "line-101",
+        keyword: "Scenario",
+        name: "Disable saving with existing data and ignore later edits",
+        description: "",
+        tags: ["@storage-disabled"],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-102",
+            keyword: "Given",
+            text: "browser local storage contains populated modeller data",
+          },
+          {
+            id: "line-103",
+            keyword: "When",
+            text: "local saving is disabled through the application action",
+          },
+          {
+            id: "line-104",
+            keyword: "And",
+            text: "the user edits settings and saves another comparison while local saving is disabled",
+          },
+          {
+            id: "line-105",
+            keyword: "Then",
+            text: "no settings or comparison data should be written while saving is disabled",
+          },
+          {
+            id: "line-106",
+            keyword: "And",
+            text: "raw local storage should contain only the disabled saving preference and reset signal",
+          },
+          {
+            id: "line-107",
+            keyword: "And",
+            text: "quick-calculator storage should be cleared",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-110",
         keyword: "Scenario",
         name: "Re-enable saving after clearing and editing without restoring old values",
         description: "",
@@ -12135,42 +12224,42 @@ export const acceptanceFeatures = [
         hasUnderReviewExamples: false,
         steps: [
           {
-            id: "line-92",
+            id: "line-111",
             keyword: "Given",
             text: "browser local storage contains populated modeller data",
           },
           {
-            id: "line-93",
+            id: "line-112",
             keyword: "When",
             text: "local data is cleared through the application action",
           },
           {
-            id: "line-94",
+            id: "line-113",
             keyword: "And",
             text: "the user edits active settings and comparisons while local saving is disabled",
           },
           {
-            id: "line-95",
+            id: "line-114",
             keyword: "And",
             text: "local saving is re-enabled through the application action",
           },
           {
-            id: "line-96",
+            id: "line-115",
             keyword: "And",
             text: "the modeller is reloaded from local storage",
           },
           {
-            id: "line-97",
+            id: "line-116",
             keyword: "Then",
             text: "the reloaded settings should contain the new edits",
           },
           {
-            id: "line-98",
+            id: "line-117",
             keyword: "And",
             text: "the reloaded comparison scenarios should contain only the new scenario",
           },
           {
-            id: "line-99",
+            id: "line-118",
             keyword: "And",
             text: "old cleared data should not reload",
           },
@@ -16306,6 +16395,228 @@ export const acceptanceFeatures = [
             id: "line-92",
             keyword: "And",
             text: "selected-age variants remain available",
+          },
+        ],
+        examples: [],
+      },
+    ],
+  },
+  {
+    path: "features/result-presentation.feature",
+    name: "Explain the timing and completeness of retirement income",
+    description: "",
+    tags: ["@results", "@modeller-journeys"],
+    status: "covered",
+    scenarios: [
+      {
+        id: "line-4",
+        keyword: "Scenario Outline",
+        name: "A missing spending target is different from an explicit zero",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-5",
+            keyword: "When",
+            text: 'the spending target draft is "<draft>"',
+          },
+          {
+            id: "line-6",
+            keyword: "Then",
+            text: 'the spending target draft should be "<status>"',
+          },
+        ],
+        examples: [
+          {
+            id: "line-8",
+            name: "",
+            tags: [],
+            status: "covered",
+            table: [
+              {
+                id: "line-9",
+                cells: [
+                  {
+                    id: "line-9-column-9",
+                    value: "draft",
+                  },
+                  {
+                    id: "line-9-column-17",
+                    value: "status",
+                  },
+                ],
+              },
+              {
+                id: "line-10",
+                cells: [
+                  {
+                    id: "line-10-column-15",
+                    value: "",
+                  },
+                  {
+                    id: "line-10-column-17",
+                    value: "invalid",
+                  },
+                ],
+              },
+              {
+                id: "line-11",
+                cells: [
+                  {
+                    id: "line-11-column-9",
+                    value: "0",
+                  },
+                  {
+                    id: "line-11-column-17",
+                    value: "valid-draft",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "line-13",
+        keyword: "Scenario",
+        name: "Lead with income at retirement when pensions start later",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-14",
+            keyword: "Given",
+            text: "retirement at age 60 with only State Pension starting at age 68",
+          },
+          {
+            id: "line-15",
+            keyword: "When",
+            text: "the Simple income headline is projected monthly",
+          },
+          {
+            id: "line-16",
+            keyword: "Then",
+            text: "the headline income at retirement should be zero",
+          },
+          {
+            id: "line-17",
+            keyword: "And",
+            text: "the later pension income should be shown separately at age 68",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-19",
+        keyword: "Scenario",
+        name: "Keep a funded interval between shortfalls visible",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-20",
+            keyword: "When",
+            text: "chart shortfalls are projected for these ages:",
+            table: [
+              {
+                id: "line-21",
+                cells: [
+                  {
+                    id: "line-21-column-9",
+                    value: "age",
+                  },
+                  {
+                    id: "line-21-column-15",
+                    value: "shortfall",
+                  },
+                ],
+              },
+              {
+                id: "line-22",
+                cells: [
+                  {
+                    id: "line-22-column-9",
+                    value: "60",
+                  },
+                  {
+                    id: "line-22-column-15",
+                    value: "1000",
+                  },
+                ],
+              },
+              {
+                id: "line-23",
+                cells: [
+                  {
+                    id: "line-23-column-9",
+                    value: "61",
+                  },
+                  {
+                    id: "line-23-column-15",
+                    value: "0",
+                  },
+                ],
+              },
+              {
+                id: "line-24",
+                cells: [
+                  {
+                    id: "line-24-column-9",
+                    value: "67",
+                  },
+                  {
+                    id: "line-24-column-15",
+                    value: "1000",
+                  },
+                ],
+              },
+              {
+                id: "line-25",
+                cells: [
+                  {
+                    id: "line-25-column-9",
+                    value: "68",
+                  },
+                  {
+                    id: "line-25-column-15",
+                    value: "1000",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "line-26",
+            keyword: "Then",
+            text: "the chart should report two separate shortfall ranges",
+          },
+        ],
+        examples: [],
+      },
+      {
+        id: "line-28",
+        keyword: "Scenario",
+        name: "Use calendar coordinates for household shortfall ranges",
+        description: "",
+        tags: [],
+        status: "covered",
+        hasUnderReviewExamples: false,
+        steps: [
+          {
+            id: "line-29",
+            keyword: "When",
+            text: "chart shortfalls are projected for a household calendar timeline",
+          },
+          {
+            id: "line-30",
+            keyword: "Then",
+            text: "the shortfall range should use years 2030 to 2031",
           },
         ],
         examples: [],

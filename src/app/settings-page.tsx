@@ -4,6 +4,12 @@ import { GuidanceNotesToggle } from "./journey";
 import { SavedLocalFeedback } from "./saved-local-feedback";
 import { SiteFooter } from "./site-footer";
 import { Helmet } from "../helmet";
+import { ClearDataDialog } from "./clear-data-dialog";
+import {
+  resolveLocalDataConfirmation,
+  type LocalDataAction,
+  type LocalDataConfirmationEvent,
+} from "./local-data-confirmation";
 
 type SettingsPageProps = {
   analyticsConsentGranted: boolean;
@@ -41,6 +47,8 @@ export function SettingsPage({
   const [actionFeedbackIsError, setActionFeedbackIsError] = useState(false);
   const [fileInputVersion, setFileInputVersion] = useState(0);
   const [loadError, setLoadError] = useState("");
+  const [pendingLocalDataAction, setPendingLocalDataAction] =
+    useState<LocalDataAction | null>(null);
   const appBaseHref = resolveAppBaseHref();
 
   useEffect(() => {
@@ -118,7 +126,17 @@ export function SettingsPage({
 
   function updateLocalStoragePreference(event: ChangeEvent<HTMLInputElement>) {
     const enabled = event.currentTarget.checked;
+    if (!enabled) {
+      dispatchLocalDataConfirmation({
+        type: "request",
+        action: "disable-saving",
+      });
+      return;
+    }
+    applyLocalStoragePreference(true);
+  }
 
+  function applyLocalStoragePreference(enabled: boolean) {
     const result = onLocalStorageEnabledChange(enabled);
 
     if (!enabled && !result.persistentDataCleared) {
@@ -140,6 +158,14 @@ export function SettingsPage({
     showActionFeedback(
       enabled ? "Local saving turned on" : "Local saving turned off"
     );
+  }
+
+  function dispatchLocalDataConfirmation(event: LocalDataConfirmationEvent) {
+    const next = resolveLocalDataConfirmation(pendingLocalDataAction, event);
+    setPendingLocalDataAction(next.pendingAction);
+    if (next.confirmedAction === "clear-all") clearAllData();
+    if (next.confirmedAction === "disable-saving")
+      applyLocalStoragePreference(false);
   }
 
   function updateAnalyticsConsent(event: ChangeEvent<HTMLInputElement>) {
@@ -171,6 +197,13 @@ export function SettingsPage({
         show={actionFeedback.length > 0}
         role={actionFeedbackIsError ? "alert" : "status"}
       />
+      {pendingLocalDataAction ? (
+        <ClearDataDialog
+          action={pendingLocalDataAction}
+          onCancel={() => dispatchLocalDataConfirmation({ type: "cancel" })}
+          onConfirm={() => dispatchLocalDataConfirmation({ type: "confirm" })}
+        />
+      ) : null}
 
       <section className="hero">
         <div className="hero-copy">
@@ -189,9 +222,9 @@ export function SettingsPage({
             <span className="field-label">Export parameters</span>
             <p className="field-help">
               Download the Simple, early retirement and Expert assumptions as
-              one JSON file. Quick inputs are saved separately on this device
-              and are not included. This is useful if you want a backup or want
-              to move your scenarios to another browser.
+              one JSON file to back up these journey inputs or move them to
+              another browser. Quick inputs and saved comparison scenarios are
+              not included in the export.
             </p>
 
             <div className="settings-panel-actions">
@@ -247,7 +280,12 @@ export function SettingsPage({
               <button
                 type="button"
                 className="secondary-button settings-reset-button"
-                onClick={clearAllData}
+                onClick={() =>
+                  dispatchLocalDataConfirmation({
+                    type: "request",
+                    action: "clear-all",
+                  })
+                }
               >
                 Clear all data
               </button>
@@ -258,8 +296,9 @@ export function SettingsPage({
             <span className="field-label">Local saving</span>
             <p className="field-help">
               Choose whether the app saves inputs and preferences in this
-              browser. Turning this off removes saved parameters from local
-              storage and stops future automatic saves.
+              browser. Turning this off asks for confirmation before deleting
+              saved inputs, comparisons and preferences, resetting Quick inputs
+              on this open page, and stopping future automatic saves.
             </p>
 
             <label className="checkbox-row">

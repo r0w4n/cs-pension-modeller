@@ -1044,6 +1044,7 @@ describe.sequential("App settings form", () => {
     vi.mocked(trackAnalyticsEvent).mockClear();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete all data" }));
 
     expect(screen.getByRole("status")).toHaveTextContent("Data cleared");
     expect(window.localStorage.getItem(APP_MODE_STORAGE_KEY)).toBeNull();
@@ -1078,6 +1079,7 @@ describe.sequential("App settings form", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete all data" }));
 
     expect(screen.queryByText("Data cleared")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -1113,6 +1115,7 @@ describe.sequential("App settings form", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete all data" }));
 
     const localSavingToggle = screen.getByRole("checkbox", {
       name: "Save inputs on this device",

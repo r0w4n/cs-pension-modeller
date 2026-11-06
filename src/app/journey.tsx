@@ -110,6 +110,7 @@ export function JourneyFlow({
   const topBookmarkRef = useRef<HTMLDivElement | null>(null);
   const hasMountedRef = useRef(false);
   const trackedStepRef = useRef("");
+  const stepContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!activeStep) {
@@ -168,6 +169,13 @@ export function JourneyFlow({
   };
 
   const goToStep = (stepIndex: number) => {
+    const invalidInput = stepContentRef.current?.querySelector<HTMLElement>(
+      'input[data-invalid-draft="true"]'
+    );
+    if (invalidInput) {
+      invalidInput.focus();
+      return;
+    }
     const nextStep = visibleSteps[stepIndex];
 
     if (nextStep) {
@@ -281,7 +289,7 @@ export function JourneyFlow({
           <p className="section-copy">{activeStep.description}</p>
         </div>
 
-        {renderStepContent(activeStep)}
+        <div ref={stepContentRef}>{renderStepContent(activeStep)}</div>
 
         <div className="journey-actions">
           <button

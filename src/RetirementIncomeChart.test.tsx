@@ -326,6 +326,36 @@ function getPathYSpan(path: string) {
 }
 
 describe("RetirementIncomeChart", () => {
+  it("matches mobile target units to the selected display and preserves funded gaps", () => {
+    render(
+      <RetirementIncomeChart
+        {...baseProps}
+        targetIncomeAnnual={30000}
+        data={[
+          { ...basePoint, age: 60, shortfallAnnual: 1000 },
+          {
+            ...basePoint,
+            age: 61,
+            shortfallAnnual: 0,
+            assessedIncomeAnnual: 40000,
+            totalIncomeAnnual: 40000,
+            alphaIncomeAnnual: 40000,
+          },
+          { ...basePoint, age: 67, shortfallAnnual: 1000 },
+          { ...basePoint, age: 68, shortfallAnnual: 1000 },
+        ]}
+      />
+    );
+    const summary = screen.getByLabelText("Chart summary");
+    expect(summary).toHaveTextContent("£30,000 / year");
+    expect(summary).toHaveTextContent("Ages 60-60; 67-68");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show chart as monthly" })
+    );
+    expect(summary).toHaveTextContent("£2,500 / month");
+    expect(summary).not.toHaveTextContent("£30,000 / year");
+  });
+
   it("caps ISA and SIPP contribution drag controls at £2,000 per month", () => {
     renderChart({ showIsa: true, showSipp: true });
 

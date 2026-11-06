@@ -79,6 +79,25 @@ Feature: Local-only preferences and data controls
     And saved comparison scenarios should be cleared
 
   @storage-disabled
+  Scenario: Cancelling a request to turn saving off preserves saved data
+    Given browser local storage contains populated modeller data
+    When turning local saving off is requested in Settings
+    Then the request should await confirmation without changing saved data
+    When the local data confirmation is cancelled
+    Then local saving and the populated data should be preserved
+
+  @storage-disabled
+  Scenario: Confirming a request to turn saving off clears saved data
+    Given browser local storage contains populated modeller data
+    When turning local saving off is requested in Settings
+    Then the request should await confirmation without changing saved data
+    When turning local saving off is confirmed
+    And the stored modeller preferences are loaded
+    Then local saving should be off
+    And raw local storage should contain only the disabled saving preference and reset signal
+    And quick-calculator storage should be cleared
+
+  @storage-disabled
   Scenario: Disable saving with existing data and ignore later edits
     Given browser local storage contains populated modeller data
     When local saving is disabled through the application action

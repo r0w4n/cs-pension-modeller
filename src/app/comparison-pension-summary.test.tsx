@@ -229,6 +229,33 @@ describe("PensionSummarySection", () => {
 });
 
 describe("simple pension results", () => {
+  it("leads with retirement income even when later pension income is higher", () => {
+    const result = createComparisonResultFixture({ targetMissMonths: 87 });
+    Object.assign(result.assessment, {
+      retirementAnnualIncome: 0,
+      retirementAnnualTarget: 30000,
+      retirementAnnualGap: -30000,
+      allSecureIncomeStartAge: 67,
+      allSecureIncomeStartAgeMonths: 3,
+      allSecureAnnualIncome: 36000,
+    });
+    render(
+      <SimplePensionSummary
+        activeResult={result}
+        retirementIncomeDisplay="monthly"
+      />
+    );
+    expect(screen.getByText("£0.00 a month")).toBeVisible();
+    expect(screen.getAllByText("£2,500.00 a month")).toHaveLength(2);
+    expect(screen.getByText(/At age 67y 3m/)).toHaveTextContent("67y 3m");
+    expect(screen.getByText(/At age 67y 3m/)).toHaveTextContent(
+      "£3,000.00 a month"
+    );
+    expect(screen.getByText(/At your chosen retirement age/)).toHaveTextContent(
+      "60"
+    );
+  });
+
   it("explains the headline result without target or shortfall jargon", () => {
     const result = createComparisonResultFixture({ targetMissMonths: 12 });
     result.annualGap = -4200;
@@ -264,6 +291,9 @@ describe("simple pension results", () => {
       />
     );
 
+    expect(screen.getByText(/Each range groups/)).toHaveTextContent(
+      "at the start of each range"
+    );
     expect(screen.getAllByText("£15,771.35 less than you want")).toHaveLength(
       2
     );

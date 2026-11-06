@@ -7,6 +7,78 @@ const successfulStorageOutcome = {
 };
 
 describe("settings-page", () => {
+  it("waits for confirmation before turning saving off and supports cancellation", () => {
+    const onLocalStorageEnabledChange = vi.fn(() => successfulStorageOutcome);
+    render(
+      <SettingsPage
+        analyticsConsentGranted
+        localStorageEnabled
+        onClearAllData={vi.fn(() => successfulStorageOutcome)}
+        onExportParameters={vi.fn()}
+        onLoadParameters={vi.fn(() => true)}
+        onAnalyticsConsentChange={vi.fn()}
+        onLocalStorageEnabledChange={onLocalStorageEnabledChange}
+        showGuidanceNotes
+        onShowGuidanceNotesChange={vi.fn()}
+      />
+    );
+    const toggle = screen.getByRole("checkbox", {
+      name: "Save inputs on this device",
+    });
+    fireEvent.click(toggle);
+    expect(onLocalStorageEnabledChange).not.toHaveBeenCalled();
+    expect(toggle).toBeChecked();
+    expect(screen.getByRole("dialog")).toHaveTextContent("Quick inputs");
+    expect(screen.getByRole("dialog")).toHaveTextContent("cannot be undone");
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onLocalStorageEnabledChange).not.toHaveBeenCalled();
+    expect(toggle).toBeChecked();
+    fireEvent.click(toggle);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Turn off saving and delete saved data",
+      })
+    );
+    expect(onLocalStorageEnabledChange).toHaveBeenCalledExactlyOnceWith(false);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Local saving turned off"
+    );
+  });
+
+  it("requires confirmation and lets the user cancel without clearing data", () => {
+    const onClearAllData = vi.fn(() => successfulStorageOutcome);
+    render(
+      <SettingsPage
+        analyticsConsentGranted={false}
+        localStorageEnabled
+        onClearAllData={onClearAllData}
+        onExportParameters={vi.fn()}
+        onLoadParameters={vi.fn(() => true)}
+        onAnalyticsConsentChange={vi.fn()}
+        onLocalStorageEnabledChange={vi.fn(() => successfulStorageOutcome)}
+        showGuidanceNotes
+        onShowGuidanceNotesChange={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "This cannot be undone"
+    );
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    expect(onClearAllData).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onClearAllData).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete all data" }));
+    expect(onClearAllData).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Data cleared");
+  });
+
   it("renders the guidance notes toggle and emits changes", () => {
     const onShowGuidanceNotesChange = vi.fn();
 
@@ -80,6 +152,7 @@ describe("settings-page", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all data" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete all data" }));
 
     expect(screen.queryByText("Data cleared")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(

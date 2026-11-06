@@ -66,6 +66,14 @@ It supports:
 The app presents results as planning estimates. It should not present modelled
 figures as guaranteed outcomes.
 
+The Simple headline shows estimated income at the chosen retirement age, with
+later secure pension income identified separately by age. Income-by-age-range
+amounts describe the start of each range; estimated tax and income can change
+within a range. Chart summaries follow the selected monthly or annual display
+and keep separate shortfall periods distinct. A blank spending target remains
+an invalid draft and blocks journey navigation; an explicitly entered zero is
+valid.
+
 ## Core Modelling Outputs
 
 For each projection month, the model can calculate values such as:
@@ -417,11 +425,15 @@ By default, the modeller persists inputs and a few UI preferences using
 `window.localStorage` on the same device/browser. The Settings page lets users
 turn local saving off, manage analytics consent, export parameters to JSON,
 load a parameter JSON file, or clear all locally saved data. Clearing all data
-also turns local saving off until the user enables it again in Settings. Accepting
+requires confirmation and also turns local saving off until the user enables it
+again in Settings. Parameter exports contain the three longer journeys' inputs;
+they exclude Quick inputs and saved comparison scenarios. Accepting
 the shared notice does not re-enable saving after it has been turned off.
 
-When local saving is turned off, saved modeller data is removed from browser
-storage and future automatic saves are skipped. The app keeps only the local
+Turning local saving off requires confirmation before saved modeller data is
+removed from browser storage and Quick inputs on the open page are reset.
+Cancelling leaves saving, saved data and open Quick inputs unchanged. After
+confirmation, future automatic saves are skipped. The app keeps only the local
 saving preference so the browser can remember that saving is off. Analytics are
 not initialised unless the user accepts them in the start dialog or turns them
 on later in Settings, and the choice can be changed afterwards.

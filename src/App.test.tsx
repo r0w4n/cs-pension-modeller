@@ -1381,8 +1381,8 @@ describe.sequential("App settings form", () => {
       screen.getByLabelText(
         "How much would you like available to spend each month after tax?"
       )
-    ).toHaveValue(2641.67);
-    expect(screen.getByText("Yearly equivalent: £31,700")).toBeInTheDocument();
+    ).toHaveValue(2725);
+    expect(screen.getByText("Yearly equivalent: £32,700")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Minimum — £1,158 a month/i })
     ).toBeInTheDocument();
@@ -2240,7 +2240,7 @@ describe.sequential("App settings form", () => {
     expect(screen.getByRole("checkbox", { name: /^ISA$/ })).toBeChecked();
     expect(
       screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
-    ).toBeChecked();
+    ).not.toBeChecked();
     expect(
       screen.getByRole("checkbox", { name: "SIPP or personal pension" })
     ).toBeChecked();
@@ -2279,9 +2279,15 @@ describe.sequential("App settings form", () => {
       screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
     );
     expect(
+      screen.getByRole("button", { name: /Your Lifetime ISA/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    );
+    expect(
       screen.queryByRole("button", { name: /Your Lifetime ISA/i })
     ).not.toBeInTheDocument();
-
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
     );
@@ -2909,7 +2915,7 @@ describe.sequential("App settings form", () => {
       )
     ).toBeInTheDocument();
     expect(within(ageRangeTable).getByText("£2,850.00")).toBeInTheDocument();
-    expect(within(ageRangeTable).getByText("£2,641.67")).toBeInTheDocument();
+    expect(within(ageRangeTable).getByText("£2,725.00")).toBeInTheDocument();
     expect(
       screen.getAllByText("Starts Drawing Alpha Pension").length
     ).toBeGreaterThan(0);
@@ -3192,7 +3198,7 @@ describe.sequential("App settings form", () => {
       )
     ).toBeInTheDocument();
     expect(screen.getByText("£34,200.00")).toBeInTheDocument();
-    expect(screen.getByText("£31,700.00")).toBeInTheDocument();
+    expect(screen.getByText("£32,700.00")).toBeInTheDocument();
   });
 
   it("restores journey and comparison summary displays independently after a refresh", () => {
@@ -3210,7 +3216,7 @@ describe.sequential("App settings form", () => {
     expect(
       screen.getByRole("heading", { name: "Income by age range" })
     ).toBeInTheDocument();
-    expect(screen.getByText("£31,700.00")).toBeInTheDocument();
+    expect(screen.getByText("£32,700.00")).toBeInTheDocument();
     expect(
       within(
         screen.getByRole("region", { name: "Comparison results" })
@@ -3219,7 +3225,7 @@ describe.sequential("App settings form", () => {
     expect(
       within(
         screen.getByRole("region", { name: "Comparison results" })
-      ).getByText("£2,641.67/month")
+      ).getByText("£2,725.00/month")
     ).toBeInTheDocument();
   });
 
@@ -3882,7 +3888,7 @@ describe.sequential("App settings form", () => {
     renderAcknowledgedExpertResult();
 
     expect(document.body.innerHTML).toContain(
-      "Annual income (£) · Target £31,700"
+      "Annual income (£) · Target £32,700"
     );
   });
 
@@ -3940,7 +3946,7 @@ describe.sequential("App settings form", () => {
 
     expect(readStoredSettingsPayload()).toEqual(
       expect.objectContaining({
-        desiredRetirementIncome: 32400,
+        desiredRetirementIncome: 33600,
       })
     );
   });

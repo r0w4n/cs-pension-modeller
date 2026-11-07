@@ -1692,7 +1692,7 @@ test.describe("app end-to-end journeys", () => {
     ).toBeChecked();
     await expect(
       page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
-    ).toBeChecked();
+    ).not.toBeChecked();
     await expect(
       page.getByRole("checkbox", { name: "SIPP or personal pension" })
     ).toBeChecked();
@@ -1705,7 +1705,6 @@ test.describe("app end-to-end journeys", () => {
     await page
       .getByRole("checkbox", { name: "Other guaranteed income" })
       .check();
-    await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).uncheck();
     await expect(
       page.locator('.journey-step-button[data-step-id="lisa"]')
     ).toHaveCount(0);

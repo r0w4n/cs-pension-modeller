@@ -280,12 +280,14 @@ Feature: Modeller journeys
     Then Partner validation should report only the primary birth-date issue
 
   @defaults
-  Scenario: Bridge journey enables bridge pots and Income Tax by default
+  Scenario: Bridge journey enables common bridge pots and Income Tax by default
     Given default modeller settings
     When bridge journey defaults are applied
-    Then State Pension, ISA, LISA and SIPP should be included
+    Then State Pension, ISA and SIPP should be included
+    But LISA should not be included by default
     And Income Tax modelling should be on
     And ISA, LISA and SIPP withdrawals should use the use-by-age strategy
+    And the default after-tax spending target should be 2725 per month
 
   @settings-storage
   Scenario: Keep journey settings separate while supporting older parameter files

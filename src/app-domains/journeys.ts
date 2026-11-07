@@ -488,7 +488,7 @@ export const JOURNEY_DEFINITIONS = [
         eyebrow: "Bridge funding",
         title: "Your bridging money",
         description:
-          "Select the flexible savings, pension pots, and other guaranteed income that could support your retirement. ISA, LISA and SIPP are included initially; untick anything you do not have or do not want to use in this scenario. Values you entered are kept if you hide an option and select it again later.",
+          "Select the flexible savings, pension pots, and other guaranteed income that could support your retirement. ISA and SIPP are included initially; tick any other options you have and want to use in this scenario. Values you entered are kept if you hide an option and select it again later.",
         kind: "optional-sections",
         toggleKeys: [
           "showIsa",
@@ -1165,7 +1165,7 @@ export function applyBridgeJourneyDefaults(
     showSipp: true,
     showCsAvc: settings.showCsAvc,
     showIsa: true,
-    showLisa: true,
+    showLisa: false,
     sippWithdrawalStrategy: "use_by_age",
     csAvcWithdrawalStrategy: "use_by_age",
     isaWithdrawalStrategy: "use_by_age",

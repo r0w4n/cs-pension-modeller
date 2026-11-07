@@ -194,7 +194,7 @@ describe("SpendingSmileEditor", () => {
       })
     ).toHaveValue(80);
     expect(
-      screen.getByText(/Slow-go annual spending is £26,945/)
+      screen.getByText(/Slow-go annual spending is £27,795/)
     ).toBeInTheDocument();
 
     fireEvent.pointerUp(
@@ -233,7 +233,7 @@ describe("SpendingSmileEditor", () => {
       "£0"
     );
     expect(screen.getByTestId("spending-profile-y-axis")).not.toHaveTextContent(
-      "£31,700"
+      "£32,700"
     );
   });
 

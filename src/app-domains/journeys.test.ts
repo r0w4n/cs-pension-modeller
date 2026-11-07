@@ -204,6 +204,15 @@ describe("journey definitions", () => {
     expect(settings.lisaWithdrawalStrategy).toBe("use_by_age");
   });
 
+  it("keeps LISA optional when applying bridge journey defaults", () => {
+    expect(
+      applyBridgeJourneyDefaults({
+        ...defaultSettings,
+        showLisa: true,
+      }).showLisa
+    ).toBe(false);
+  });
+
   it("keeps the Alpha pay-rise control in the expert journey only", () => {
     const alphaPayRiseFieldIds = [
       "alphaPayRisePercent",

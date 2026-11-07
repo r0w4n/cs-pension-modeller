@@ -3615,14 +3615,20 @@ When(
 );
 
 Then(
-  "State Pension, ISA, LISA and SIPP should be included",
+  "State Pension, ISA and SIPP should be included",
   function (this: ProductAcceptanceWorld) {
     const settings = getSettings(this);
 
     assertEqual(settings.showStatePension, true);
     assertEqual(settings.showIsa, true);
-    assertEqual(settings.showLisa, true);
     assertEqual(settings.showSipp, true);
+  }
+);
+
+Then(
+  "LISA should not be included by default",
+  function (this: ProductAcceptanceWorld) {
+    assertEqual(getSettings(this).showLisa, false);
   }
 );
 
@@ -3641,6 +3647,13 @@ Then(
     assertEqual(settings.isaWithdrawalStrategy, "use_by_age");
     assertEqual(settings.lisaWithdrawalStrategy, "use_by_age");
     assertEqual(settings.sippWithdrawalStrategy, "use_by_age");
+  }
+);
+
+Then(
+  "the default after-tax spending target should be {float} per month",
+  function (this: ProductAcceptanceWorld, monthlyTarget: number) {
+    assertEqual(getSettings(this).desiredRetirementIncome / 12, monthlyTarget);
   }
 );
 

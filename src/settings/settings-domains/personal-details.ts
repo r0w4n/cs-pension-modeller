@@ -13,7 +13,7 @@ export const personalDetailsDefaults = {
   dateOfBirth: "1987-06-01",
   lifeExpectancy: 80,
   requirementAge: 68,
-  desiredRetirementIncome: 31700,
+  desiredRetirementIncome: 32700,
 } as const;
 
 export const personalDetailsNumericSettingRules = {

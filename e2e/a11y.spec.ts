@@ -207,6 +207,10 @@ test.describe("accessibility", () => {
 
     await clickNextAndExpectStep(page, "Your bridging money");
     await expectNoAxeViolations(page, "bridge money selection");
+    await expect(
+      page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" })
+    ).not.toBeChecked();
+    await page.getByRole("checkbox", { name: "Lifetime ISA (LISA)" }).check();
     await page
       .getByRole("checkbox", { name: "Other guaranteed income" })
       .check();
